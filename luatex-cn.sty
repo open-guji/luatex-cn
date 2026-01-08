@@ -1,0 +1,84 @@
+% luatex-cn.sty
+% LuaTeX package for Chinese character and vertical typesetting support
+% 
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{luatex-cn}[2025/01/08 v0.1.0 Chinese and vertical typesetting support for LuaTeX]
+
+% Check if LuaTeX is being used
+\RequirePackage{ifluatex}
+\ifluatex\else
+  \PackageError{luatex-cn}{This package requires LuaTeX}{%
+    Please compile your document with LuaLaTeX instead of pdfLaTeX or XeLaTeX.}
+\fi
+
+% Load required packages
+\RequirePackage{luatexja}
+\RequirePackage{luatexja-fontspec}
+\RequirePackage{luatexja-otf}
+
+% Package options
+\newif\ifluatexcn@vertical
+\newif\ifluatexcn@traditional
+\newif\ifluatexcn@simplified
+
+\DeclareOption{vertical}{\luatexcn@verticaltrue}
+\DeclareOption{traditional}{\luatexcn@traditionaltrue}
+\DeclareOption{simplified}{\luatexcn@simplifiedtrue}
+
+\ProcessOptions\relax
+
+% Load Lua scripts for advanced features
+% Initialize luatexcn namespace
+\directlua{
+  luatexcn = luatexcn or {}
+  -- Load Lua modules (they should be in the same directory as the .sty file)
+  local kpse = kpse or require("kpse")
+  kpse.set_program_name("luatex")
+  local luatexcn_path = kpse.find_file("luatex-cn-vertical.lua", "lua")
+  if luatexcn_path then
+    dofile(luatexcn_path)
+  end
+  luatexcn_path = kpse.find_file("luatex-cn-chinese.lua", "lua")
+  if luatexcn_path then
+    dofile(luatexcn_path)
+  end
+}
+
+% Default font settings
+\ifluatexcn@traditional
+  \setmainjfont{Noto Serif CJK TC}[
+    UprightFont = *-Regular,
+    BoldFont = *-Bold,
+  ]
+\else
+  \setmainjfont{Noto Serif CJK SC}[
+    UprightFont = *-Regular,
+    BoldFont = *-Bold,
+  ]
+\fi
+
+% Vertical typesetting environment
+\ifluatexcn@vertical
+  \RequirePackage{tate}
+\fi
+
+% Chinese punctuation spacing adjustments
+\directlua{
+  luatexcn = luatexcn or {}
+  luatexcn.adjust_punctuation = function(head)
+    -- Adjust spacing for Chinese punctuation
+    return head
+  end
+}
+
+% Vertical typesetting commands
+\newcommand{\verticaltext}[1]{%
+  \begin{tate}#1\end{tate}%
+}
+
+\newcommand{\chinesetext}[1]{%
+  #1%
+}
+
+% End of package
+\endinput

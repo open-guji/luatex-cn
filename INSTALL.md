@@ -1,0 +1,54 @@
+# Installation Guide
+
+## Requirements
+
+- LuaTeX (part of TeX Live or MiKTeX)
+- Required packages:
+  - `luatexja`
+  - `luatexja-fontspec`
+  - `luatexja-otf`
+
+## Installation Methods
+
+### Method 1: Manual Installation
+
+1. Copy the package files to your local texmf tree:
+   ```bash
+   mkdir -p ~/texmf/tex/latex/luatex-cn
+   cp luatex-cn.sty *.lua ~/texmf/tex/latex/luatex-cn/
+   ```
+
+2. Update the TeX database:
+   ```bash
+   texhash
+   ```
+
+### Method 2: Using Makefile
+
+```bash
+make install
+```
+
+### Method 3: Development Mode
+
+For development, you can place the package files in the same directory as your `.tex` files.
+
+## Verification
+
+Test the installation by compiling the example:
+
+```bash
+lualatex example.tex
+```
+
+## Font Setup
+
+Make sure you have Chinese fonts installed. Recommended fonts:
+- Noto Serif CJK SC/TC
+- Source Han Serif SC/TC
+- FandolSong
+
+Set fonts in your document:
+```latex
+\setCJKmainfont{Noto Serif CJK SC}
+```

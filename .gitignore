@@ -1,0 +1,49 @@
+# Miscellaneous
+*.class
+*.lock
+*.log
+*.pyc
+*.swp
+.buildlog/
+.history
+
+.idea
+
+# LaTeX build artifacts
+*.aux
+*.bbl
+*.blg
+*.fdb_latexmk
+*.fls
+*.idx
+*.ilg
+*.ind
+*.lof
+*.lot
+*.out
+*.synctex.gz
+*.toc
+*.xdy
+*.glo
+*.gls
+*.glg
+*.acn
+*.acr
+*.alg
+*.bcf
+*.run.xml
+*.figlist
+*.makefile
+*.figlist
+*.auxlock
+
+# LaTeX output
+*.pdf
+!example.pdf
+
+# AI related
+progress/
+.claudeignore
+.clauderules
+.claude/
+.agent/

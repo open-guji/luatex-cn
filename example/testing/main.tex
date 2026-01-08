@@ -2,7 +2,10 @@
 % Example document demonstrating luatex-cn package usage
 
 \documentclass[12pt]{ctexart}
-\usepackage[vertical,simplified]{luatex-cn}
+\makeatletter
+\def\input@path{{../../src/}}
+\makeatother
+\usepackage[vertical,simplified]{luatex_cn}
 
 % Set fonts
 \setCJKmainfont{Noto Serif CJK SC}[

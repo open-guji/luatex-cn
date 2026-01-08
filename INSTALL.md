@@ -14,8 +14,8 @@
 
 1. Copy the package files to your local texmf tree:
    ```bash
-   mkdir -p ~/texmf/tex/latex/luatex-cn
-   cp luatex-cn.sty *.lua ~/texmf/tex/latex/luatex-cn/
+   mkdir -p ~/texmf/tex/latex/luatex_cn
+   cp src/luatex_cn.sty src/*.lua ~/texmf/tex/latex/luatex_cn/
    ```
 
 2. Update the TeX database:

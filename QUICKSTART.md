@@ -22,7 +22,7 @@
 
 ```latex
 \documentclass{ctexart}
-\usepackage[vertical,simplified]{luatex-cn}
+\usepackage[vertical,simplified]{luatex_cn}
 
 \setCJKmainfont{Noto Serif CJK SC}
 

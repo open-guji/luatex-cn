@@ -2,8 +2,8 @@
 -- Lua module for Chinese character processing
 -- Naming convention: use underscores for all function and variable names
 
-luatexcn = luatexcn or {}
-luatexcn.chinese = luatexcn.chinese or {}
+if not luatexcn then luatexcn = {} end
+if not luatexcn.chinese then luatexcn.chinese = {} end
 
 -- Chinese punctuation marks
 local chinese_punctuation = {

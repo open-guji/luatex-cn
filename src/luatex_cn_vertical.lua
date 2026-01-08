@@ -2,8 +2,8 @@
 -- Lua module for vertical typesetting support
 -- Naming convention: use underscores for all function and variable names
 
-luatexcn = luatexcn or {}
-luatexcn.vertical = luatexcn.vertical or {}
+if not luatexcn then luatexcn = {} end
+if not luatexcn.vertical then luatexcn.vertical = {} end
 
 -- Vertical typesetting helper functions
 function luatexcn.vertical.process_node(head)

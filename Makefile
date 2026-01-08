@@ -1,6 +1,6 @@
 # Makefile for luatex-cn package
 
-PACKAGE = luatex-cn
+PACKAGE = luatex_cn
 TEXMF = $(shell kpsewhich -var-value TEXMFHOME)
 
 .PHONY: install clean test
@@ -9,20 +9,20 @@ TEXMF = $(shell kpsewhich -var-value TEXMFHOME)
 install:
 	@echo "Installing $(PACKAGE) to $(TEXMF)/tex/latex/$(PACKAGE)/"
 	@mkdir -p $(TEXMF)/tex/latex/$(PACKAGE)
-	@cp $(PACKAGE).sty $(TEXMF)/tex/latex/$(PACKAGE)/
-	@cp *.lua $(TEXMF)/tex/latex/$(PACKAGE)/
+	@cp src/$(PACKAGE).sty $(TEXMF)/tex/latex/$(PACKAGE)/
+	@cp src/*.lua $(TEXMF)/tex/latex/$(PACKAGE)/
 	@texhash
 
 # Clean build artifacts
 clean:
-	rm -f *.aux *.log *.out *.toc *.synctex.gz *.fls *.fdb_latexmk
+	rm -f *.aux *.log *.out *.toc *.synctex.gz *.fls *.fdb_latexmk src/*.aux src/*.log src/*.out src/*.idx src/*.ilg src/*.ind
 
 # Test compilation
 test: example.tex
-	lualatex example.tex
+	TEXINPUTS=./src//: lualatex example.tex
 
 # Generate documentation
-doc: luatex-cn.dtx
-	pdflatex luatex-cn.dtx
-	makeindex -s gind.ist luatex-cn.idx
-	pdflatex luatex-cn.dtx
+doc: src/luatex_cn.dtx
+	cd src && pdflatex luatex_cn.dtx
+	cd src && makeindex -s gind.ist luatex_cn.idx
+	cd src && pdflatex luatex_cn.dtx

@@ -1,4 +1,4 @@
-# luatex-cn
+# luatex_cn
 
 LuaTeX package for Chinese character and vertical typesetting support.
 
@@ -25,7 +25,7 @@ make install
 
 ```latex
 \documentclass{ctexart}
-\usepackage[vertical,simplified]{luatex-cn}
+\usepackage[vertical,simplified]{luatex_cn}
 
 \begin{document}
 \begin{tate}

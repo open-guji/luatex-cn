@@ -3,7 +3,7 @@
 % This package uses expl3 (LaTeX3 programming layer)
 % 
 \NeedsTeXFormat{LaTeX2e}
-\ProvidesPackage{luatex-cn}[2025/01/08 v0.1.0 Chinese and vertical typesetting support for LuaTeX]
+\ProvidesPackage{luatex_cn}[2025/01/08 v0.1.0 Chinese and vertical typesetting support for LuaTeX]
 
 % Load expl3 (LaTeX3 programming layer)
 % This package follows expl3 naming conventions:
@@ -16,7 +16,7 @@
 % Check if LuaTeX is being used
 \RequirePackage{ifluatex}
 \ifluatex\else
-  \PackageError{luatex-cn}{This package requires LuaTeX}{%
+  \PackageError{luatex_cn}{This package requires LuaTeX}{%
     Please compile your document with LuaLaTeX instead of pdfLaTeX or XeLaTeX.}
 \fi
 
@@ -54,17 +54,39 @@
 % Load Lua scripts for advanced features
 % Initialize luatexcn namespace
 \directlua{
-  luatexcn = luatexcn or {}
-  -- Load Lua modules (they should be in the same directory as the .sty file)
+  if not luatexcn then luatexcn = {} end
+  -- Get the directory of the current .sty file
   local kpse = kpse or require("kpse")
   kpse.set_program_name("luatex")
-  local luatexcn_path = kpse.find_file("luatex-cn-vertical.lua", "lua")
-  if luatexcn_path then
-    dofile(luatexcn_path)
+
+  -- Try to find the .sty file first to get its directory
+  local sty_path = kpse.find_file("luatex_cn.sty", "tex")
+  local lua_dir = ""
+
+  if sty_path then
+    -- Extract directory from the .sty file path
+    lua_dir = sty_path:match("(.*[/\\\\])")
   end
-  luatexcn_path = kpse.find_file("luatex-cn-chinese.lua", "lua")
-  if luatexcn_path then
-    dofile(luatexcn_path)
+
+  -- Load Lua modules from the same directory as the .sty file
+  local vertical_path = lua_dir .. "luatex_cn_vertical.lua"
+  local chinese_path = lua_dir .. "luatex_cn_chinese.lua"
+
+  -- Try to load the files
+  local vertical_file = io.open(vertical_path, "r")
+  if vertical_file then
+    vertical_file:close()
+    dofile(vertical_path)
+  else
+    texio.write_nl("Warning: Could not find luatex_cn_vertical.lua")
+  end
+
+  local chinese_file = io.open(chinese_path, "r")
+  if chinese_file then
+    chinese_file:close()
+    dofile(chinese_path)
+  else
+    texio.write_nl("Warning: Could not find luatex_cn_chinese.lua")
   end
 }
 
@@ -92,7 +114,7 @@
 
 % Chinese punctuation spacing adjustments
 \directlua{
-  luatexcn = luatexcn or {}
+  if not luatexcn then luatexcn = {} end
   luatexcn.adjust_punctuation = function(head)
     -- Adjust spacing for Chinese punctuation
     return head

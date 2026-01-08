@@ -1,0 +1,33 @@
+% Test verticaltext command
+\documentclass[12pt]{article}
+\makeatletter
+\def\input@path{{../../luatex_cn/}{../../cn_vertical/}}
+\makeatother
+\usepackage[vertical,simplified]{luatex_cn}
+\usepackage{fontspec}
+
+% Set a Chinese font
+\setmainfont{SimSun}
+
+% Make page smaller for easier viewing
+\usepackage[paperwidth=10cm,paperheight=15cm,margin=1cm]{geometry}
+
+\begin{document}
+
+\section*{横排测试}
+
+这是横排：一二三四五
+
+\section*{竖排测试}
+
+\verticaltext{竖排测试：一二三四五}
+
+\section*{混合}
+
+横排文字
+
+\verticaltext{竖排文字}
+
+横排文字
+
+\end{document}

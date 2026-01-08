@@ -1,13 +1,9 @@
 % cn_vertical.sty
-% Chinese vertical typesetting package for LuaTeX
+% Chinese vertical typesetting package for LuaTeX  
 % This is a sub-package of luatex_cn
 %
 \NeedsTeXFormat{LaTeX2e}
-\ProvidesPackage{cn_vertical}[2025/01/08 v0.1.0 Chinese vertical typesetting for LuaTeX]
-
-% Load expl3 for consistent syntax with main package
-\RequirePackage{expl3}
-\ExplSyntaxOn
+\ProvidesPackage{cn_vertical}[2025/01/08 v0.2.0 Chinese vertical typesetting for LuaTeX]
 
 % Check if LuaTeX is being used
 \RequirePackage{ifluatex}
@@ -16,88 +12,45 @@
     Please compile your document with LuaLaTeX.}
 \fi
 
-% Load luatexbase for callback management
-\RequirePackage{luatexbase}
-
-% Load currfile to get current file directory
-\RequirePackage{currfile}
-
-% Package option: enable or disable vertical typesetting
-\bool_new:N \l_cnvertical_enabled_bool
-\bool_set_true:N \l_cnvertical_enabled_bool
-
-\DeclareOption{disable}
-  {
-    \bool_set_false:N \l_cnvertical_enabled_bool
-  }
-
-\ProcessOptions\relax
-
-\ExplSyntaxOff
-
-% Load the Lua module
-% Use kpse to search in the input path
+% Load the Lua module using kpse
 \directlua{
-  local kpse = require("kpse")
-
-  % Add the current directory and parent directories to the search path
-  kpse.set_program_name("luatex")
-
-  % Try to find cn_vertical.lua using kpse
-  local lua_file = kpse.find_file("cn_vertical.lua")
-
-  if lua_file then
-    texio.write_nl("term and log", "Loading cn_vertical.lua from: " .. lua_file)
-    dofile(lua_file)
-    if cn_vertical and cn_vertical.init then
-      cn_vertical.init()
-    else
-      texio.write_nl("term and log", "Error: cn_vertical module not properly initialized")
-    end
+  local path = kpse.find_file('cn_vertical.lua', 'lua')
+  if path then
+    texio.write_nl('Loading cn_vertical.lua from: ' .. path)
+    dofile(path)
   else
-    texio.write_nl("term and log", "Error: Cannot find cn_vertical.lua in search path")
+    local f = io.open('cn_vertical.lua')
+    if f then
+      f:close()
+      texio.write_nl('Loading cn_vertical.lua from current directory')
+      dofile('cn_vertical.lua')
+    else
+      texio.write_nl('ERROR: Cannot find cn_vertical.lua')
+      tex.error('Fatal error: cn_vertical.lua not found!')
+    end
   end
+  texio.write_nl('cn_vertical: Module initialized')
 }
 
-% Define the vertical environment for Chinese vertical typesetting
-% Check if vertical environment already exists
-\@ifundefined{vertical}{%
-  \newenvironment{vertical}
-    {%
-      \par
-      % Call Lua function to enable vertical mode
-      \directlua{
-        if cn_vertical and cn_vertical.begin_vertical then
-          cn_vertical.begin_vertical()
-        end
-      }%
-    }
-    {%
-      % Call Lua function to disable vertical mode
-      \directlua{
-        if cn_vertical and cn_vertical.end_vertical then
-          cn_vertical.end_vertical()
-        end
-      }%
-      \par
-    }
-}{%
-  \PackageWarning{cn_vertical}{vertical environment already defined, skipping}
+% Define a simple command for vertical text
+\newcommand{\verticaltext}[1]{%
+  \par\noindent
+  \addfontfeatures{RawFeature=+vert}%
+  \directlua{cn_vertical.split_to_vbox([===[#1]===])}%
+  \par
 }
 
-\ExplSyntaxOn
-
-% Define user command for vertical text
-\bool_if:NT \l_cnvertical_enabled_bool
-  {
-    \cs_new_protected:Npn \cnvertical_text:n #1
-      {
-        \begin{vertical} #1 \end{vertical}
-      }
-    \cs_new_eq:NN \verticaltext \cnvertical_text:n
+% Define the vertical environment
+\newenvironment{vertical}
+  {%
+    \par\noindent
+    \addfontfeatures{RawFeature=+vert}%
+    \directlua{cn_vertical.split_to_vbox([===[%
   }
-
-\ExplSyntaxOff
+  {%
+    ]===])}%
+    \par
+  }
 
 % Package information
 \PackageInfo{cn_vertical}{Chinese vertical typesetting package loaded}

@@ -1,0 +1,62 @@
+% luatex_cn.sty
+% LuaTeX package for Chinese typesetting support
+% Main package that loads sub-packages for specific features
+%
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{luatex_cn}[2025/01/08 v0.1.0 Chinese typesetting support for LuaTeX]
+
+% Load expl3 (LaTeX3 programming layer)
+\RequirePackage{expl3}
+\ExplSyntaxOn
+
+% Check if LuaTeX is being used
+\RequirePackage{ifluatex}
+\ifluatex\else
+  \PackageError{luatex_cn}{This package requires LuaTeX}{%
+    Please compile your document with LuaLaTeX instead of pdfLaTeX or XeLaTeX.}
+\fi
+
+% Package options
+\bool_new:N \g_luatexcn_vertical_bool
+\bool_new:N \g_luatexcn_traditional_bool
+\bool_new:N \g_luatexcn_simplified_bool
+
+% Default: simplified Chinese
+\bool_set_true:N \g_luatexcn_simplified_bool
+
+% Define package options
+\DeclareOption{vertical}
+  {
+    \bool_set_true:N \g_luatexcn_vertical_bool
+  }
+\DeclareOption{traditional}
+  {
+    \bool_set_true:N \g_luatexcn_traditional_bool
+    \bool_set_false:N \g_luatexcn_simplified_bool
+  }
+\DeclareOption{simplified}
+  {
+    \bool_set_true:N \g_luatexcn_simplified_bool
+    \bool_set_false:N \g_luatexcn_traditional_bool
+  }
+
+\ProcessOptions\relax
+
+% Load sub-packages based on options
+\bool_if:NT \g_luatexcn_vertical_bool
+  {
+    \RequirePackage{cn_vertical}
+  }
+
+% Placeholder for future sub-packages
+% \bool_if:NT \g_luatexcn_border_bool
+%   {
+%     \RequirePackage{cn_border}
+%   }
+
+% Main package initialization
+\PackageInfo{luatex_cn}{Chinese typesetting package loaded}
+
+\ExplSyntaxOff
+
+\endinput

@@ -1,0 +1,30 @@
+% Simple test without ctex
+\documentclass[12pt]{article}
+\makeatletter
+\def\input@path{{../../luatex-cn/}{../../cn-vertical/}}
+\makeatother
+\usepackage[vertical,simplified]{luatex_cn}
+\usepackage{fontspec}
+
+% Set a Chinese font
+\setmainfont{SimSun}
+
+\begin{document}
+
+\section{测试横排}
+
+这是一个横排的中文文本示例。本包支持中文排版和竖排功能。
+
+\section{测试竖排}
+
+\begin{vertical}
+这是竖排的中文文本示例。
+古籍排版通常使用竖排格式。
+本包提供了对竖排的良好支持。
+\end{vertical}
+
+\section{混合排版}
+
+横排和竖排可以混合使用，满足不同的排版需求。
+
+\end{document}

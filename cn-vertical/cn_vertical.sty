@@ -1,0 +1,68 @@
+% cn_vertical.sty
+% Chinese vertical typesetting package for LuaTeX
+% This is a sub-package of luatex_cn
+%
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{cn_vertical}[2025/01/08 v0.1.0 Chinese vertical typesetting for LuaTeX]
+
+% Load expl3 for consistent syntax with main package
+\RequirePackage{expl3}
+\ExplSyntaxOn
+
+% Check if LuaTeX is being used
+\RequirePackage{ifluatex}
+\ifluatex\else
+  \PackageError{cn_vertical}{This package requires LuaTeX}{%
+    Please compile your document with LuaLaTeX.}
+\fi
+
+% Package option: enable or disable vertical typesetting
+\bool_new:N \l_cnvertical_enabled_bool
+\bool_set_true:N \l_cnvertical_enabled_bool
+
+\DeclareOption{disable}
+  {
+    \bool_set_false:N \l_cnvertical_enabled_bool
+  }
+
+\ProcessOptions\relax
+
+% Define the vertical environment for Chinese vertical typesetting
+% Using "vertical" as the environment name instead of Japanese "tate"
+\bool_if:NT \l_cnvertical_enabled_bool
+  {
+    \ExplSyntaxOff
+
+    % Check if vertical environment already exists
+    \@ifundefined{vertical}{%
+      \newenvironment{vertical}
+        {%
+          \par
+          % Placeholder: vertical typesetting logic will be added later
+        }
+        {%
+          \par
+        }
+    }{%
+      \PackageWarning{cn_vertical}{vertical environment already defined, skipping}
+    }
+
+    \ExplSyntaxOn
+  }
+
+% Define user command for vertical text
+\bool_if:NT \l_cnvertical_enabled_bool
+  {
+    \cs_new_protected:Npn \cnvertical_text:n #1
+      {
+        \begin{vertical} #1 \end{vertical}
+      }
+    \cs_new_eq:NN \verticaltext \cnvertical_text:n
+  }
+
+\ExplSyntaxOff
+
+% Package information
+\PackageInfo{cn_vertical}{Chinese vertical typesetting package loaded}
+
+\endinput

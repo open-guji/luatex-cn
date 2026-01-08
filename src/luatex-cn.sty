@@ -6,6 +6,10 @@
 \ProvidesPackage{luatex-cn}[2025/01/08 v0.1.0 Chinese and vertical typesetting support for LuaTeX]
 
 % Load expl3 (LaTeX3 programming layer)
+% This package follows expl3 naming conventions:
+% - Variables: \g_luatexcn_name_type (global), \l_luatexcn_name_type (local)
+% - Functions: \luatexcn_function_name:arg_spec
+% - Lua functions: module.function_name (using underscores)
 \RequirePackage{expl3}
 \ExplSyntaxOn
 

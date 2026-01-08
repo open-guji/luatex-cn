@@ -1,5 +1,6 @@
 -- luatex-cn-vertical.lua
 -- Lua module for vertical typesetting support
+-- Naming convention: use underscores for all function and variable names
 
 luatexcn = luatexcn or {}
 luatexcn.vertical = luatexcn.vertical or {}
@@ -11,7 +12,7 @@ function luatexcn.vertical.process_node(head)
 end
 
 -- Chinese character rotation for vertical text
-function luatexcn.vertical.rotate_chinese_char(char)
+function luatexcn.vertical.rotate_char(char)
   -- Handle character rotation in vertical mode
   return char
 end

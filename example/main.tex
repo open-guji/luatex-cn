@@ -1,0 +1,41 @@
+\documentclass{article}
+\usepackage{fontspec}
+\usepackage{expl3}
+
+% --- expl3 代码块 ---
+\ExplSyntaxOn
+
+% 定义一个整数变量用于存储行高
+\int_new:N \g_ancient_grid_height_int
+\int_set:Nn \g_ancient_grid_height_int { 10 } % 默认 10 字
+
+% 定义用户接口：设置每行字数
+\NewDocumentCommand{\setgridheight}{ m }
+  {
+    \int_set:Nn \g_ancient_grid_height_int { #1 }
+    % 将 TeX 的变量值同步给 Lua
+    \lua_now:n { AncientBook.line_limit = \int_use:N \g_ancient_grid_height_int }
+  }
+
+\ExplSyntaxOff
+% --------------------
+
+\setmainfont{Source Han Serif SC}[RawFeature={+vert}] 
+\directlua{dofile("ancient_vert.lua")}
+
+\begin{document}
+\pagestyle{empty}
+\raggedright
+
+\section*{测试 1：每行 5 个字}
+\setgridheight{5}
+预发其志，先格其物。古籍版式。
+
+\vspace{10cm} % 留出空间观察
+
+\section*{测试 2：每行 12 个字}
+\setgridheight{12}
+这段文字现在应该按照每行十二个字的规格进行垂直排版。
+你可以看到，通过 expl3 我们实现了对底层 Lua 逻辑的动态控制。
+
+\end{document}

@@ -1,5 +1,6 @@
 -- luatex-cn-chinese.lua
 -- Lua module for Chinese character processing
+-- Naming convention: use underscores for all function and variable names
 
 luatexcn = luatexcn or {}
 luatexcn.chinese = luatexcn.chinese or {}

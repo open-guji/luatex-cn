@@ -10,6 +10,7 @@ LuaTeX package for Chinese character and vertical typesetting support.
 - Vertical typesetting (竖排) for classical Chinese texts
 - Lua-based advanced typesetting features
 - Support for both simplified and traditional Chinese
+- Built on expl3 (LaTeX3 programming layer) for modern, robust code
 
 ## Installation
 
@@ -36,6 +37,7 @@ make install
 ## Requirements
 
 - LuaTeX
+- expl3 (LaTeX3 programming layer) - included in modern LaTeX distributions
 - luatexja package
 - Chinese fonts (e.g., Noto Serif CJK SC/TC)
 

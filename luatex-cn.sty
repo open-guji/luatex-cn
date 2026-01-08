@@ -1,8 +1,13 @@
 % luatex-cn.sty
 % LuaTeX package for Chinese character and vertical typesetting support
+% This package uses expl3 (LaTeX3 programming layer)
 % 
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesPackage{luatex-cn}[2025/01/08 v0.1.0 Chinese and vertical typesetting support for LuaTeX]
+
+% Load expl3 (LaTeX3 programming layer)
+\RequirePackage{expl3}
+\ExplSyntaxOn
 
 % Check if LuaTeX is being used
 \RequirePackage{ifluatex}
@@ -16,14 +21,29 @@
 \RequirePackage{luatexja-fontspec}
 \RequirePackage{luatexja-otf}
 
-% Package options
-\newif\ifluatexcn@vertical
-\newif\ifluatexcn@traditional
-\newif\ifluatexcn@simplified
+% Package options using expl3 booleans
+\bool_new:N \g_luatexcn_vertical_bool
+\bool_new:N \g_luatexcn_traditional_bool
+\bool_new:N \g_luatexcn_simplified_bool
 
-\DeclareOption{vertical}{\luatexcn@verticaltrue}
-\DeclareOption{traditional}{\luatexcn@traditionaltrue}
-\DeclareOption{simplified}{\luatexcn@simplifiedtrue}
+% Default: simplified Chinese
+\bool_set_true:N \g_luatexcn_simplified_bool
+
+% Define package options
+\DeclareOption{vertical}
+  {
+    \bool_set_true:N \g_luatexcn_vertical_bool
+  }
+\DeclareOption{traditional}
+  {
+    \bool_set_true:N \g_luatexcn_traditional_bool
+    \bool_set_false:N \g_luatexcn_simplified_bool
+  }
+\DeclareOption{simplified}
+  {
+    \bool_set_true:N \g_luatexcn_simplified_bool
+    \bool_set_false:N \g_luatexcn_traditional_bool
+  }
 
 \ProcessOptions\relax
 
@@ -44,23 +64,27 @@
   end
 }
 
-% Default font settings
-\ifluatexcn@traditional
-  \setmainjfont{Noto Serif CJK TC}[
-    UprightFont = *-Regular,
-    BoldFont = *-Bold,
-  ]
-\else
-  \setmainjfont{Noto Serif CJK SC}[
-    UprightFont = *-Regular,
-    BoldFont = *-Bold,
-  ]
-\fi
+% Default font settings using expl3 conditionals
+\bool_if:NT \g_luatexcn_traditional_bool
+  {
+    \setmainjfont{Noto Serif CJK TC}[
+      UprightFont = *-Regular,
+      BoldFont = *-Bold,
+    ]
+  }
+\bool_if:NF \g_luatexcn_traditional_bool
+  {
+    \setmainjfont{Noto Serif CJK SC}[
+      UprightFont = *-Regular,
+      BoldFont = *-Bold,
+    ]
+  }
 
 % Vertical typesetting environment
-\ifluatexcn@vertical
-  \RequirePackage{tate}
-\fi
+\bool_if:NT \g_luatexcn_vertical_bool
+  {
+    \RequirePackage{tate}
+  }
 
 % Chinese punctuation spacing adjustments
 \directlua{
@@ -71,14 +95,20 @@
   end
 }
 
-% Vertical typesetting commands
-\newcommand{\verticaltext}[1]{%
-  \begin{tate}#1\end{tate}%
-}
+% Vertical typesetting commands using expl3
+\cs_new_protected:Npn \luatexcn_vertical_text:n #1
+  {
+    \begin{tate} #1 \end{tate}
+  }
+\cs_new_protected:Npn \luatexcn_chinese_text:n #1
+  {
+    #1
+  }
 
-\newcommand{\chinesetext}[1]{%
-  #1%
-}
+% User-facing commands
+\cs_new_eq:NN \verticaltext \luatexcn_vertical_text:n
+\cs_new_eq:NN \chinesetext \luatexcn_chinese_text:n
 
+\ExplSyntaxOff
 % End of package
 \endinput

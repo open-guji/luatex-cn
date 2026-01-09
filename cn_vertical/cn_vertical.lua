@@ -42,13 +42,13 @@ function cn_vertical.vertical_rtt(text, height, col_spacing, char_spacing)
         local char = utf8.char(c)
         processed_text = processed_text .. char
         
-        -- Apply spacing (kern) after each char (we can be loose about the last char)
-        if spacing_skip then
-            processed_text = processed_text .. "\\kern " .. spacing_skip .. " "
-        end
-        
-        -- If codepoint is > 128 (non-ASCII), allow break after it
+        -- If codepoint is > 128 (non-ASCII, likely CJK)
         if c > 128 then
+            -- Apply spacing (kern) after each CJK char
+            if spacing_skip then
+                processed_text = processed_text .. "\\kern " .. spacing_skip .. " "
+            end
+            -- Allow break after it
             processed_text = processed_text .. "\\allowbreak "
         end
     end

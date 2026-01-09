@@ -1,0 +1,41 @@
+\documentclass{article}
+\usepackage{fontspec}
+\setmainfont{Microsoft YaHei}
+\usepackage{cn_vertical}
+
+\begin{document}
+\parindent=0pt
+
+\section{Auto Height Test}
+
+Some text here to occupy space.
+\vspace{130pt}
+
+Below this line, the vertical text should fill the remaining space on the page.
+
+\VerticalRTT{
+    天地玄黄，宇宙洪荒。日月盈昃，辰宿列张。
+    寒来暑往，秋收冬藏。闰余成岁，律吕调阳。
+    云腾致雨，露结为霜。金生丽水，玉出昆冈。
+    剑号巨阙，珠称夜光。果珍李柰，菜重芥姜。
+    海咸河淡，鳞潜羽翔。龙师火帝，鸟官人皇。
+    （这段文字应该一直延伸到页面底部，然后自动换列）
+    天地玄黄，宇宙洪荒。日月盈昃，辰宿列张。
+    寒来暑往，秋收冬藏。闰余成岁，律吕调阳。
+    云腾致雨，露结为霜。金生丽水，玉出昆冈。
+    剑号巨阙，珠称夜光。果珍李柰，菜重芥姜。
+    海咸河淡，鳞潜羽翔。龙师火帝，鸟官人皇。
+    （这段文字应该一直延伸到页面底部，然后自动换列）
+}
+
+\newpage
+\section{Explicit Height Test (Control)}
+
+Explicit height of 100pt.
+
+\VerticalRTT[height=100pt]{
+    天地玄黄，宇宙洪荒。日月盈昃，辰宿列张。
+    寒来暑往，秋收冬藏。闰余成岁，律吕调阳。
+}
+
+\end{document}

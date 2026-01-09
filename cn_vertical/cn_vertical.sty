@@ -39,13 +39,13 @@
 \keys_define:nn { cn_vertical }
   {
     height .tl_set:N = \l__cn_vertical_height_tl,
-    height .initial:n = 300pt,
+    height .initial:n = , 
     
     spacing-col .tl_set:N = \l__cn_vertical_col_spacing_tl,
     spacing-col .initial:n = {},
     
     spacing-char .int_set:N = \l__cn_vertical_char_spacing_int,
-    spacing-char .initial:n = 0,
+    spacing-char .initial:n = 20,
   }
 
 % Internal function to call Lua
@@ -65,6 +65,7 @@
 % Syntax: \VerticalRTT[key=val]{text}
 \NewDocumentCommand{\VerticalRTT}{ O{} +m }
   {
+    \par
     \group_begin:
     \keys_set:nn { cn_vertical } { #1 }
     \__cn_vertical_run:n { #2 }

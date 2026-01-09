@@ -1,0 +1,27 @@
+\documentclass{article}
+\usepackage{fontspec}
+\setmainfont{Microsoft YaHei}
+\usepackage{cn_vertical}
+
+\begin{document}
+\parindent=0pt
+
+\section{Control: Manual Font Feature}
+Normal: 天地玄黄 \\
+\addfontfeature{LetterSpace=20}
+LetterSpace=20: 天地玄黄
+
+\section{Control: Allowbreak + LetterSpace}
+\addfontfeature{LetterSpace=20}
+With Allowbreak: 天\allowbreak 地\allowbreak 玄\allowbreak 黄
+
+\section{VerticalRTT Default (Should be 20)}
+\VerticalRTT{天地玄黄}
+
+\section{VerticalRTT Explicit 0}
+\VerticalRTT[spacing-char=0]{天地玄黄}
+
+\section{VerticalRTT Explicit 50}
+\VerticalRTT[spacing-char=50]{天地玄黄}
+
+\end{document}

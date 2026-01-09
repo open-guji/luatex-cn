@@ -17,10 +17,43 @@ function cn_vertical.vertical_rtt(text, height, col_spacing, char_spacing)
     --   Text flow: Top-to-Bottom
     --   Line progression: Right-to-Left
     
-    local vertical_height = (height and height ~= "") and height or "300pt"
+    -- Default to calculating remaining page height if not specified
+    -- \pagegoal is the target height of the current page.
+    -- \pagetotal is the accumulated height of the current page.
+    -- If \pagegoal is maxdimen (fresh page), use \textheight.
+    -- Subtract 2\baselineskip as safety margin.
+    local default_height = "\\dimexpr\\ifdim\\pagegoal=\\maxdimen\\textheight\\else\\pagegoal\\fi-\\pagetotal-2\\baselineskip\\relax"
+    
+    local vertical_height = (height and height ~= "") and height or default_height
     local c_spacing = tonumber(char_spacing) or 0
     
-    tex.print("\\par")
+    -- Preprocess text:
+    -- 2. Insert break points and spacing between characters
+    -- Heuristic: Assume characters > 128 are CJK/multibyte.
+    -- Interpret char_spacing (int) as percentage of em (classic tracking behavior).
+    local spacing_skip = nil
+    if c_spacing > 0 then
+        -- e.g. 20 -> 0.2em
+        spacing_skip = string.format("%.2fem", c_spacing / 100)
+    end
+    
+    local processed_text = ""
+    for p, c in utf8.codes(text) do
+        local char = utf8.char(c)
+        processed_text = processed_text .. char
+        
+        -- Apply spacing (kern) after each char (we can be loose about the last char)
+        if spacing_skip then
+            processed_text = processed_text .. "\\kern " .. spacing_skip .. " "
+        end
+        
+        -- If codepoint is > 128 (non-ASCII), allow break after it
+        if c > 128 then
+            processed_text = processed_text .. "\\allowbreak "
+        end
+    end
+    
+    -- tex.print("\\par") -- Moved to sty file
     -- Align to right
     tex.print("\\hbox to \\hsize{\\hfill")
     -- Use a vbox with RTT direction
@@ -32,13 +65,10 @@ function cn_vertical.vertical_rtt(text, height, col_spacing, char_spacing)
         tex.print("\\baselineskip=" .. col_spacing)
     end
     
-    -- Apply character spacing if provided
-    if c_spacing > 0 then
-        tex.print("\\addfontfeature{LetterSpace=" .. c_spacing .. "}")
-    end
+    -- Note: Manual spacing injection replaces LetterSpace feature
     
     tex.print("\\pardir RTT \\textdir RTT")
-    tex.print("\\noindent " .. text)
+    tex.print("\\noindent " .. processed_text)
     tex.print("}") -- end vbox
     tex.print("}") -- end hbox
     tex.print("\\par")

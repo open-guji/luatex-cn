@@ -1,0 +1,85 @@
+% Test dir attribute for vertical text
+% 测试使用 LuaTeX 的 dir 属性实现竖排
+\documentclass[12pt]{article}
+
+% Load Lua module with luatexbase support
+\usepackage{luatexbase}
+\directlua{dofile('../../cn_vertical/cn_vertical_dir.lua')}
+
+\usepackage{fontspec}
+\setmainfont{SimSun}
+
+% Make page smaller for easier viewing
+\usepackage[paperwidth=14cm,paperheight=20cm,margin=1cm]{geometry}
+
+% Define test commands
+\newcommand{\verticalA}[1]{%
+  \par\noindent
+  \addfontfeatures{RawFeature=+vert}%
+  \directlua{cn_vertical_dir.vertical_simple([===[#1]===])}%
+  \par
+}
+
+\newcommand{\verticalB}[1]{%
+  \par\noindent
+  \addfontfeatures{RawFeature=+vert}%
+  \directlua{cn_vertical_dir.vertical_with_localdir([===[#1]===])}%
+  \par
+}
+
+\begin{document}
+
+\section*{横排对照 (Horizontal)}
+
+这是正常横排：一二三四五六七八九十
+
+\section*{方法 1: vbox 堆叠 (不使用 dir)}
+
+说明：使用传统的 \texttt{\textbackslash vbox} 将每个字符包在 \texttt{\textbackslash hbox} 中堆叠。
+
+\verticalA{一二三四五六七八九十}
+
+\section*{方法 2: vbox + localdir (尝试 dir 属性)}
+
+说明：与方法1相同,但准备添加 dir 属性支持。
+
+\verticalB{一二三四五六七八九十}
+
+\section*{对比说明}
+
+\begin{itemize}
+\item 方法 1 和方法 2 目前效果相同
+\item 都是简单的字符从上到下排列
+\item 字符保持正立(不旋转)
+\item 符合传统竖排的汉字排列方式
+\end{itemize}
+
+\section*{关于 dir 属性的说明}
+
+LuaTeX 的 \texttt{dir} 属性主要用于控制文本流动方向:
+\begin{itemize}
+\item \texttt{TLT}: 横排从左到右
+\item \texttt{TRT}: 横排从右到左
+\item \texttt{LTL}: 纵排,每列从左到右
+\item \texttt{RTT}: 纵排,每列从右到左(传统竖排)
+\end{itemize}
+
+但是,对于简单的汉字竖排(只是字符从上到下排列),使用 \texttt{\textbackslash vbox} 堆叠已经足够,不需要复杂的 dir 属性操作。
+
+\textbf{dir 属性的真正用途}是在更复杂的场景:
+\begin{itemize}
+\item 多列竖排(从右到左排列)
+\item 处理混合文本(汉字 + 西文)
+\item 处理标点符号的位置
+\item 实现完整的页面级竖排布局
+\end{itemize}
+
+\section*{混合测试}
+
+横排文字在前
+
+\verticalA{竖排文字}
+
+横排文字在后
+
+\end{document}

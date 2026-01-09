@@ -1,0 +1,44 @@
+\documentclass{article}
+\usepackage{fontspec}
+\setmainfont{Microsoft YaHei}
+\usepackage{cn_vertical}
+
+\begin{document}
+\parindent=0pt
+
+\section{Default Layout}
+\VerticalRTT{
+    这是默认的竖排效果。
+    天地玄黄，宇宙洪荒。
+    日月盈昃，辰宿列张。
+}
+
+\section{Custom Height (150pt)}
+\VerticalRTT[height=150pt]{
+    这是高度为150pt的效果。
+    天地玄黄，宇宙洪荒。
+    日月盈昃，辰宿列张。
+}
+
+\section{Custom Column Spacing (30pt)}
+\VerticalRTT[spacing-col=30pt,height=150pt]{
+    这是列间距为30pt的效果。
+    天地玄黄，宇宙洪荒。
+    日月盈昃，辰宿列张。
+}
+
+\section{Custom Char Spacing (LetterSpace=20)}
+\VerticalRTT[spacing-char=20]{
+    这是字间距为20的效果。
+    天地玄黄，宇宙洪荒。
+    日月盈昃，辰宿列张。
+}
+
+\section{Combined Parameters}
+\VerticalRTT[height=200pt, spacing-col=40pt, spacing-char=10]{
+    这是组合参数的效果。
+    高度200pt，列间距40pt，字间距10。
+    天地玄黄，宇宙洪荒。
+}
+
+\end{document}

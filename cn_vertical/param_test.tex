@@ -1,0 +1,61 @@
+\documentclass{article}
+\usepackage{fontspec}
+\setmainfont{Microsoft YaHei}
+
+\begin{document}
+\parindent=0pt
+
+\section{Control Test}
+\par
+\hbox to \hsize{\hfill
+\vbox dir RTT {
+    \hsize=100pt
+    \pardir RTT \textdir RTT
+    \noindent
+    天地玄黄，宇宙洪荒。
+    日月盈昃，辰宿列张。
+}
+}
+\par
+
+\section{Column Spacing Test (Baselineskip)}
+\par
+\hbox to \hsize{\hfill
+\vbox dir RTT {
+    \hsize=100pt
+    \pardir RTT \textdir RTT
+    \baselineskip=30pt % Should increase space between columns
+    \noindent
+    天地玄黄，宇宙洪荒。
+    日月盈昃，辰宿列张。
+}
+}
+\par
+
+\section{Char Spacing Test (LetterSpace)}
+\par
+\hbox to \hsize{\hfill
+\vbox dir RTT {
+    \hsize=100pt
+    \pardir RTT \textdir RTT
+    \addfontfeature{LetterSpace=20} % Should increase space between chars
+    \noindent
+    天地玄黄，宇宙洪荒。
+    日月盈昃，辰宿列张。
+}
+}
+\par
+
+\section{Char Spacing Test (Glue)}
+\par
+\hbox to \hsize{\hfill
+\vbox dir RTT {
+    \hsize=100pt
+    \pardir RTT \textdir RTT
+    \noindent
+    天\kern10pt 地\kern10pt 玄\kern10pt 黄
+}
+}
+\par
+
+\end{document}

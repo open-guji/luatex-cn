@@ -1,27 +1,47 @@
 -- cn_vertical.lua
 -- Chinese vertical typesetting module for LuaTeX
--- Simplified version using TeX-layer vbox layout
+-- Uses native LuaTeX 'dir' primitives for RTT (Right-to-Left Top-to-Bottom) layout.
 
 -- Create module namespace
 cn_vertical = cn_vertical or {}
 
--- Function to split text into vertical layout
--- Each character is wrapped in an \hbox and stacked vertically in a \vbox
-function cn_vertical.split_to_vbox(text)
-    tex.print("\\vbox{")
-    for i = 1, utf8.len(text) do
-        local offset_start = utf8.offset(text, i)
-        local offset_end = utf8.offset(text, i+1)
-        if offset_start and offset_end then
-            local char = text:sub(offset_start, offset_end - 1)
-            -- Skip spaces and newlines
-            local byte = string.byte(char)
-            if byte ~= 32 and byte ~= 10 and byte ~= 13 then
-                tex.print("\\hbox{" .. char .. "}")
-            end
-        end
+-- Function to typeset text in vertical mode with RTT direction
+-- This supports line breaking and RTL column flow.
+--
+-- @param text The text content to typeset.
+-- @param height (string) The vertical height (tex dimension), e.g. "300pt". Default "300pt".
+-- @param col_spacing (string) The dimension for baselineskip (column spacing), e.g. "20pt". Default nil (use current).
+-- @param char_spacing (number) The LetterSpace amount, e.g. 10. Default 0.
+function cn_vertical.vertical_rtt(text, height, col_spacing, char_spacing)
+    -- RTT:
+    --   Text flow: Top-to-Bottom
+    --   Line progression: Right-to-Left
+    
+    local vertical_height = (height and height ~= "") and height or "300pt"
+    local c_spacing = tonumber(char_spacing) or 0
+    
+    tex.print("\\par")
+    -- Align to right
+    tex.print("\\hbox to \\hsize{\\hfill")
+    -- Use a vbox with RTT direction
+    tex.print("\\vbox dir RTT {")
+    tex.print("\\hsize=" .. vertical_height) 
+    
+    -- Apply column spacing if provided
+    if col_spacing and col_spacing ~= "" then
+        tex.print("\\baselineskip=" .. col_spacing)
     end
-    tex.print("}")
+    
+    -- Apply character spacing if provided
+    if c_spacing > 0 then
+        tex.print("\\addfontfeature{LetterSpace=" .. c_spacing .. "}")
+    end
+    
+    tex.print("\\pardir RTT \\textdir RTT")
+    tex.print("\\noindent " .. text)
+    tex.print("}") -- end vbox
+    tex.print("}") -- end hbox
+    tex.print("\\par")
 end
 
 -- Return module

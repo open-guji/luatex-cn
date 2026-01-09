@@ -13,46 +13,70 @@
 \fi
 
 % Load the Lua module using kpse
+% Load the Lua module using kpse
+% Load the Lua module using kpse
 \directlua{
   local path = kpse.find_file('cn_vertical.lua', 'lua')
   if path then
-    texio.write_nl('Loading cn_vertical.lua from: ' .. path)
     dofile(path)
   else
     local f = io.open('cn_vertical.lua')
     if f then
       f:close()
-      texio.write_nl('Loading cn_vertical.lua from current directory')
       dofile('cn_vertical.lua')
     else
-      texio.write_nl('ERROR: Cannot find cn_vertical.lua')
       tex.error('Fatal error: cn_vertical.lua not found!')
     end
   end
-  texio.write_nl('cn_vertical: Module initialized')
 }
 
-% Define a simple command for vertical text
-\newcommand{\verticaltext}[1]{%
-  \par\noindent
-  \addfontfeatures{RawFeature=+vert}%
-  \directlua{cn_vertical.split_to_vbox([===[#1]===])}%
-  \par
-}
+% Use l3keys for key-value parameters
+\RequirePackage{xparse}
 
-% Define the vertical environment
-\newenvironment{vertical}
-  {%
-    \par\noindent
-    \addfontfeatures{RawFeature=+vert}%
-    \directlua{cn_vertical.split_to_vbox([===[%
-  }
-  {%
-    ]===])}%
-    \par
+\ExplSyntaxOn
+
+% Define keys
+\keys_define:nn { cn_vertical }
+  {
+    height .tl_set:N = \l__cn_vertical_height_tl,
+    height .initial:n = 300pt,
+    
+    spacing-col .tl_set:N = \l__cn_vertical_col_spacing_tl,
+    spacing-col .initial:n = {},
+    
+    spacing-char .int_set:N = \l__cn_vertical_char_spacing_int,
+    spacing-char .initial:n = 0,
   }
 
-% Package information
-\PackageInfo{cn_vertical}{Chinese vertical typesetting package loaded}
+% Internal function to call Lua
+\cs_new:Npn \__cn_vertical_run:n #1
+  {
+    \directlua{
+      cn_vertical.vertical_rtt(
+        "\luaescapestring{#1}", 
+        "\luaescapestring{\l__cn_vertical_height_tl}",
+        "\luaescapestring{\l__cn_vertical_col_spacing_tl}",
+        \int_use:N \l__cn_vertical_char_spacing_int
+      )
+    }
+  }
+
+% Define Main Command with Key-Value interface
+% Syntax: \VerticalRTT[key=val]{text}
+\NewDocumentCommand{\VerticalRTT}{ O{} +m }
+  {
+    \group_begin:
+    \keys_set:nn { cn_vertical } { #1 }
+    \__cn_vertical_run:n { #2 }
+    \group_end:
+  }
+
+% Alias
+\NewDocumentCommand{\vertical}{ O{} +m }
+  {
+    \VerticalRTT[#1]{#2}
+  }
+
+\ExplSyntaxOff
 
 \endinput

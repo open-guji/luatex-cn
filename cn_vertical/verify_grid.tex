@@ -5,10 +5,11 @@
 
 \begin{document}
 \parindent=0pt
+\Large
 
 \section{Grid Layout Test}
 
-Testing the new grid-based layout logic. Grid size should control the spacing.
+Testing the new grid-based layout logic.
 
 \subsection{With explicit grid size}
 
@@ -30,10 +31,20 @@ Testing the new grid-based layout logic. Grid size should control the spacing.
 
 \vspace{1cm}
 
-\subsection{Large font with default grid size}
+\subsection{乌丝栏 (Column Borders)}
 
-{\Large
-\VerticalRTT[cols=10, debug=true]{
+\VerticalRTT[cols=10, border=true]{
+    天地玄黄宇宙洪荒日月盈昃辰宿列张
+    寒来暑往秋收冬藏
+    闰余成岁律吕调阳
+}
+
+\vspace{1cm}
+
+\subsection{Small font comparison}
+
+{\normalsize
+\VerticalRTT[cols=10, border=true]{
     天地玄黄宇宙洪荒日月盈昃辰宿列张
     寒来暑往秋收冬藏
     闰余成岁律吕调阳

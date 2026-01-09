@@ -32,7 +32,7 @@ local GLUE = node.id("glue")
 -- grid_width: horizontal spacing (column width)
 -- grid_height: vertical spacing (row height)
 -- RTL layout: first character at top-right, columns flow left
-local function grid_layout_nodes(head, grid_width, grid_height, line_limit, draw_debug)
+local function grid_layout_nodes(head, grid_width, grid_height, line_limit, draw_debug, draw_border, border_padding)
     local d_head = D.todirect(head)
     local curr = d_head
 
@@ -51,13 +51,37 @@ local function grid_layout_nodes(head, grid_width, grid_height, line_limit, draw
 
     local total_cols = math.ceil(glyph_count / line_limit)
 
-    -- Cache debug conversion
+    -- Cache conversion factor
     local sp_to_bp = 0.0000152018
     local w_bp = grid_width * sp_to_bp
     local h_bp = -grid_height * sp_to_bp -- Draw down
+    local padding_bp = border_padding * sp_to_bp
+    -- Column height: full rows minus bottom padding
+    local col_height_bp = -(line_limit * grid_height + border_padding) * sp_to_bp
+
+    -- Draw border (乌丝栏) - one rectangle per column
+    if draw_border and total_cols > 0 then
+        for col = 0, total_cols - 1 do
+            local rtl_col = total_cols - 1 - col
+            local box_x = rtl_col * grid_width
+            local tx_bp = box_x * sp_to_bp
+
+            -- Column border: full height of all rows plus bottom padding
+            local literal = string.format("q 0.4 w 0 0 0 RG %.4f 0 %.4f %.4f re S Q",
+                tx_bp, w_bp, col_height_bp
+            )
+
+            local n_node = node.new("whatsit", "pdf_literal")
+            n_node.data = literal
+            n_node.mode = 0
+            local n = D.todirect(n_node)
+            d_head = D.insert_before(d_head, d_head, n)
+        end
+    end
 
     -- Second pass: position glyphs
     local count = 0
+    curr = d_head
     while curr do
         local id = D.getid(curr)
 
@@ -97,7 +121,7 @@ local function grid_layout_nodes(head, grid_width, grid_height, line_limit, draw
             D.setfield(curr, "yoffset", final_y)
 
 
-            -- Debug Grid line
+            -- Debug Grid line (per-cell boxes)
             if draw_debug then
                 local box_x = rtl_col * grid_width
                 local box_y = -row * grid_height
@@ -151,7 +175,9 @@ end
 -- grid_height: height of each grid cell (row spacing)
 -- col_limit: max chars per column (optional, calculated if nil)
 -- debug_on: valid boolean or string "true"
-function cn_vertical.make_grid_box(box_num, height, grid_width, grid_height, col_limit, debug_on)
+-- border_on: draw 乌丝栏 (column borders)
+-- border_padding: bottom padding for border
+function cn_vertical.make_grid_box(box_num, height, grid_width, grid_height, col_limit, debug_on, border_on, border_padding)
     local box = tex.box[box_num]
     if not box then return end
 
@@ -163,6 +189,7 @@ function cn_vertical.make_grid_box(box_num, height, grid_width, grid_height, col
     local g_width = to_dimen(grid_width) or 65536 * 20 -- default 20pt
     local g_height = to_dimen(grid_height) or g_width  -- default to grid_width if not set
     local h_dim = to_dimen(height) or (65536 * 300)    -- default 300pt
+    local b_padding = to_dimen(border_padding) or 0
 
     -- Calculate line limit if not provided or if 0 (based on grid_height for vertical)
     local limit = tonumber(col_limit)
@@ -171,9 +198,10 @@ function cn_vertical.make_grid_box(box_num, height, grid_width, grid_height, col
     end
 
     local is_debug = (debug_on == "true" or debug_on == true)
+    local is_border = (border_on == "true" or border_on == true)
 
     -- Process the list
-    local new_head, char_count = grid_layout_nodes(list, g_width, g_height, limit, is_debug)
+    local new_head, char_count = grid_layout_nodes(list, g_width, g_height, limit, is_debug, is_border, b_padding)
 
     -- Update the box list
     box.list = new_head

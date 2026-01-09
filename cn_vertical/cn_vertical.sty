@@ -55,6 +55,12 @@
 
     debug .bool_set:N = \l__cn_vertical_debug_bool,
     debug .initial:n = false,
+
+    border .bool_set:N = \l__cn_vertical_border_bool,
+    border .initial:n = false,
+
+    border-padding .tl_set:N = \l__cn_vertical_border_padding_tl,
+    border-padding .initial:n = {0.2em},
   }
 
 % Internal function to call Lua
@@ -71,7 +77,9 @@
         "\luaescapestring{\l__cn_vertical_grid_width_tl}",
         "\luaescapestring{\l__cn_vertical_grid_height_tl}",
         \int_use:N \l__cn_vertical_cols_int,
-        "\bool_if:NTF \l__cn_vertical_debug_bool {true} {false}"
+        "\bool_if:NTF \l__cn_vertical_debug_bool {true} {false}",
+        "\bool_if:NTF \l__cn_vertical_border_bool {true} {false}",
+        "\luaescapestring{\l__cn_vertical_border_padding_tl}"
       )
     }
     % Output the modified box (RTL layout handled internally)

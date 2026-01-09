@@ -1,6 +1,12 @@
 \documentclass{article}
 \usepackage{fontspec}
-\setmainfont{Microsoft YaHei}
+\newfontfamily\twkai{TW-Kai}[
+    RawFeature={+vert,+vrt2}, % 开启竖排字形替换（如标点旋转）
+    CharacterWidth=Full,      % 强制全角宽度
+]
+
+% 如果你想将其设为全局正文字体
+\setmainfont{TW-Kai}[RawFeature={+vert,+vrt2}]
 \usepackage{cn_vertical}
 
 \begin{document}
@@ -15,8 +21,7 @@ Testing the new grid-based layout logic.
 
 \VerticalRTT[height=300pt, grid-width=25pt, grid-height=20pt, cols=10, debug=true]{
     天地玄黄宇宙洪荒日月盈昃辰宿列张
-    寒来暑往秋收冬藏
-    闰余成岁律吕调阳
+    一二三四
 }
 
 \vspace{1cm}

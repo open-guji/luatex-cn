@@ -1,0 +1,36 @@
+% Test verticaltext command
+\documentclass[12pt]{article}
+\usepackage{cn_vertical}
+\usepackage{fontspec}
+
+\newfontfamily\twkai{TW-Kai}[
+    RawFeature={+vert,+vrt2}, % 开启竖排字形替换（如标点旋转）
+    CharacterWidth=Full,      % 强制全角宽度
+]
+
+% 如果你想将其设为全局正文字体
+\setmainfont{TW-Kai}[RawFeature={+vert,+vrt2}]
+
+% Make page smaller for easier viewing
+\usepackage[paperwidth=10cm,paperheight=15cm,margin=1cm]{geometry}
+
+\begin{document}
+
+\section*{横排测试}
+
+这是横排：天地玄黄宇宙洪荒日月盈昃辰宿列张
+
+\section*{竖排测试}
+
+
+\VerticalRTT{天地玄黄宇宙洪荒日月盈昃辰宿列张}
+
+\section*{混合}
+
+横排文字
+
+\VerticalRTT{竖排文字}
+
+横排文字
+
+\end{document}

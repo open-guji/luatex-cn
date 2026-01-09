@@ -48,7 +48,7 @@
     grid-width .initial:n = {1.5em},
 
     grid-height .tl_set:N = \l__cn_vertical_grid_height_tl,
-    grid-height .initial:n = {1.5em},
+    grid-height .initial:n = {1.2em},
 
     cols .int_set:N = \l__cn_vertical_cols_int,
     cols .initial:n = 0,
@@ -74,7 +74,7 @@
         "\bool_if:NTF \l__cn_vertical_debug_bool {true} {false}"
       )
     }
-    % Output the modified box, right-aligned
+    % Output the modified box (RTL layout handled internally)
     \hfill\box0
   }
 

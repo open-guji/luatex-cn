@@ -31,20 +31,33 @@ local GLUE = node.id("glue")
 -- internal function to layout a list of nodes on a grid
 -- grid_width: horizontal spacing (column width)
 -- grid_height: vertical spacing (row height)
+-- RTL layout: first character at top-right, columns flow left
 local function grid_layout_nodes(head, grid_width, grid_height, line_limit, draw_debug)
     local d_head = D.todirect(head)
     local curr = d_head
-    local count = 0
 
     -- Safety: ensure line_limit is at least 1 to avoid divide by zero
     if line_limit < 1 then line_limit = 20 end
+
+    -- First pass: count glyphs to determine total columns
+    local glyph_count = 0
+    local temp = d_head
+    while temp do
+        if D.getid(temp) == GLYPH then
+            glyph_count = glyph_count + 1
+        end
+        temp = D.getnext(temp)
+    end
+
+    local total_cols = math.ceil(glyph_count / line_limit)
 
     -- Cache debug conversion
     local sp_to_bp = 0.0000152018
     local w_bp = grid_width * sp_to_bp
     local h_bp = -grid_height * sp_to_bp -- Draw down
 
-
+    -- Second pass: position glyphs
+    local count = 0
     while curr do
         local id = D.getid(curr)
 
@@ -74,8 +87,11 @@ local function grid_layout_nodes(head, grid_width, grid_height, line_limit, draw
             -- 1. Vertical Positioning (Bottom Alignment)
             local final_y = -row * grid_height - grid_height + d
 
-            -- 2. Horizontal Positioning (Center Alignment)
-            local final_x = -col * grid_width + (grid_width - w) / 2
+            -- 2. Horizontal Positioning (RTL: rightmost column first)
+            -- col 0 should be at the right (x = total_cols-1 grid widths from left)
+            -- col N should be at x = (total_cols-1-N) * grid_width
+            local rtl_col = total_cols - 1 - col
+            local final_x = rtl_col * grid_width + (grid_width - w) / 2
 
             D.setfield(curr, "xoffset", final_x)
             D.setfield(curr, "yoffset", final_y)
@@ -83,7 +99,7 @@ local function grid_layout_nodes(head, grid_width, grid_height, line_limit, draw
 
             -- Debug Grid line
             if draw_debug then
-                local box_x = -col * grid_width
+                local box_x = rtl_col * grid_width
                 local box_y = -row * grid_height
 
                 local tx_bp = box_x * sp_to_bp
@@ -102,30 +118,30 @@ local function grid_layout_nodes(head, grid_width, grid_height, line_limit, draw
                 -- Insert BEFORE curr, update d_head if needed
                 d_head = D.insert_before(d_head, curr, n)
             end
-            
+
             -- 3. PDF Selection Fix (Negative Kern)
             -- Use manual linking to ensure we don't drop the rest of the list
             local k = D.new(KERN)
             D.setfield(k, "kern", -w)
-            
+
             local next_node = D.getnext(curr)
             D.setlink(curr, k)
             if next_node then
                D.setlink(k, next_node)
             end
-            
+
             count = count + 1
-            
+
             -- SKIP the new kern 'k'
             -- The loop logic `curr = D.getnext(curr)` happens at end.
             -- If we set `curr = k`, `getnext` will return the node AFTER k.
-            curr = k 
+            curr = k
         end
-        
+
         curr = D.getnext(curr)
     end
 
-    return D.tonode(d_head), count
+    return D.tonode(d_head), glyph_count
 end
 
 -- Main entry point called from TeX
@@ -146,10 +162,13 @@ function cn_vertical.make_grid_box(box_num, height, grid_width, grid_height, col
 
     local g_width = to_dimen(grid_width) or 65536 * 20 -- default 20pt
     local g_height = to_dimen(grid_height) or g_width  -- default to grid_width if not set
-    local h_dim = to_dimen(height) or (65536 * 500)
+    local h_dim = to_dimen(height) or (65536 * 300)    -- default 300pt
 
-    -- Calculate line limit if not provided (based on grid_height for vertical)
-    local limit = tonumber(col_limit) or math.floor(h_dim / g_height)
+    -- Calculate line limit if not provided or if 0 (based on grid_height for vertical)
+    local limit = tonumber(col_limit)
+    if not limit or limit <= 0 then
+        limit = math.floor(h_dim / g_height)
+    end
 
     local is_debug = (debug_on == "true" or debug_on == true)
 
@@ -163,12 +182,19 @@ function cn_vertical.make_grid_box(box_num, height, grid_width, grid_height, col
     -- Total cols = ceil(count / limit)
     local cols = math.ceil(char_count / limit)
 
+    -- Calculate actual rows used (for the last column, may be partial)
+    local actual_rows = math.min(limit, char_count)
+    if cols > 1 then
+        actual_rows = limit  -- Full columns use all rows
+    end
+
     -- Set box dimensions
     -- Width: cols * grid_width
-    -- Height: height (or calculated from rows * grid_height)
+    -- Content is positioned with negative yoffset (below baseline)
+    -- So we set height=0 and depth=actual content height
     box.width = cols * g_width
-    box.height = h_dim
-    box.depth = 0
+    box.height = 0
+    box.depth = actual_rows * g_height
 end
 
 -- Old function deprecated, kept for reference or removal

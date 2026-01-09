@@ -1,0 +1,22 @@
+\documentclass{article}
+\usepackage{fontspec}
+\setmainfont{Microsoft YaHei}
+\usepackage{cn_vertical}
+
+\begin{document}
+\parindent=0pt
+
+\section{Grid Layout Test}
+
+Testing the new grid-based layout logic. Grid size should control the spacing.
+
+\vspace{1cm}
+
+\VerticalRTT[height=300pt, grid-width=25pt, grid-height=20pt, cols=10, debug=true]{
+    天地玄黄，宇宙洪荒。
+    日月盈昃，辰宿列张。
+    寒来暑往，秋收冬藏。
+    闰余成岁，律吕调阳。
+}
+
+\end{document}

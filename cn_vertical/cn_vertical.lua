@@ -12,66 +12,169 @@ cn_vertical = cn_vertical or {}
 -- @param height (string) The vertical height (tex dimension), e.g. "300pt". Default "300pt".
 -- @param col_spacing (string) The dimension for baselineskip (column spacing), e.g. "20pt". Default nil (use current).
 -- @param char_spacing (number) The LetterSpace amount, e.g. 10. Default 0.
-function cn_vertical.vertical_rtt(text, height, col_spacing, char_spacing)
-    -- RTT:
-    --   Text flow: Top-to-Bottom
-    --   Line progression: Right-to-Left
-    
-    -- Default to calculating remaining page height if not specified
-    -- \pagegoal is the target height of the current page.
-    -- \pagetotal is the accumulated height of the current page.
-    -- If \pagegoal is maxdimen (fresh page), use \textheight.
-    -- Subtract 2\baselineskip as safety margin.
-    local default_height = "\\dimexpr\\ifdim\\pagegoal=\\maxdimen\\textheight\\else\\pagegoal\\fi-\\pagetotal-2\\baselineskip\\relax"
-    
-    local vertical_height = (height and height ~= "") and height or default_height
-    local c_spacing = tonumber(char_spacing) or 0
-    
-    -- Preprocess text:
-    -- 2. Insert break points and spacing between characters
-    -- Heuristic: Assume characters > 128 are CJK/multibyte.
-    -- Interpret char_spacing (int) as percentage of em (classic tracking behavior).
-    local spacing_skip = nil
-    if c_spacing > 0 then
-        -- e.g. 20 -> 0.2em
-        spacing_skip = string.format("%.2fem", c_spacing / 100)
-    end
-    
-    local processed_text = ""
-    for p, c in utf8.codes(text) do
-        local char = utf8.char(c)
-        processed_text = processed_text .. char
-        
-        -- If codepoint is > 128 (non-ASCII, likely CJK)
-        if c > 128 then
-            -- Apply spacing (kern) after each CJK char
-            if spacing_skip then
-                processed_text = processed_text .. "\\kern " .. spacing_skip .. " "
+-- Use node.direct for performance and lower-level access
+local D = node.direct
+local GLYPH = node.id("glyph")
+local KERN = node.id("kern")
+local HLIST = node.id("hlist")
+local VLIST = node.id("vlist")
+local WHATSIT = node.id("whatsit")
+
+-- Helper to convert TeX dimension string (e.g. "20pt") to number (scaled points)
+local function to_dimen(dim_str)
+    if not dim_str or dim_str == "" then return nil end
+    return tex.sp(dim_str)
+end
+
+local GLUE = node.id("glue")
+
+-- internal function to layout a list of nodes on a grid
+-- grid_width: horizontal spacing (column width)
+-- grid_height: vertical spacing (row height)
+local function grid_layout_nodes(head, grid_width, grid_height, line_limit, draw_debug)
+    local d_head = D.todirect(head)
+    local curr = d_head
+    local count = 0
+
+    -- Safety: ensure line_limit is at least 1 to avoid divide by zero
+    if line_limit < 1 then line_limit = 20 end
+
+    -- Cache debug conversion
+    local sp_to_bp = 0.0000152018
+    local w_bp = grid_width * sp_to_bp
+    local h_bp = -grid_height * sp_to_bp -- Draw down
+
+
+    while curr do
+        local id = D.getid(curr)
+
+        if id == GLUE then
+            -- Zero out glue to prevent "Drift" / Slanting.
+            D.setfield(curr, "width", 0)
+            D.setfield(curr, "stretch", 0)
+            D.setfield(curr, "shrink", 0)
+
+        elseif id == KERN then
+            local k_val = D.getfield(curr, "kern")
+            -- Only zero out if it's not one of OUR special kerns?
+            -- But we insert our kerns *after* the current processing point,
+            -- and skip over them. So this should only hit existing kerns.
+            if k_val ~= 0 then
+               D.setfield(curr, "kern", 0)
             end
-            -- Allow break after it
-            processed_text = processed_text .. "\\allowbreak "
+
+        elseif id == GLYPH then
+            local row = count % line_limit
+            local col = math.floor(count / line_limit)
+
+            -- Get glyph metrics
+            local d = D.getfield(curr, "depth")
+            local w = D.getfield(curr, "width")
+
+            -- 1. Vertical Positioning (Bottom Alignment)
+            local final_y = -row * grid_height - grid_height + d
+
+            -- 2. Horizontal Positioning (Center Alignment)
+            local final_x = -col * grid_width + (grid_width - w) / 2
+
+            D.setfield(curr, "xoffset", final_x)
+            D.setfield(curr, "yoffset", final_y)
+
+
+            -- Debug Grid line
+            if draw_debug then
+                local box_x = -col * grid_width
+                local box_y = -row * grid_height
+
+                local tx_bp = box_x * sp_to_bp
+                local ty_bp = box_y * sp_to_bp
+
+                local literal = string.format("q 0.5 w 0 0 1 RG 1 0 0 1 %.4f %.4f cm 0 0 %.4f %.4f re S Q",
+                    tx_bp, ty_bp, w_bp, h_bp
+                )
+
+                -- Use node.new (not direct) for pdf_literal, then convert
+                local n_node = node.new("whatsit", "pdf_literal")
+                n_node.data = literal
+                n_node.mode = 0  -- 0 = origin mode
+                local n = D.todirect(n_node)
+
+                -- Insert BEFORE curr, update d_head if needed
+                d_head = D.insert_before(d_head, curr, n)
+            end
+            
+            -- 3. PDF Selection Fix (Negative Kern)
+            -- Use manual linking to ensure we don't drop the rest of the list
+            local k = D.new(KERN)
+            D.setfield(k, "kern", -w)
+            
+            local next_node = D.getnext(curr)
+            D.setlink(curr, k)
+            if next_node then
+               D.setlink(k, next_node)
+            end
+            
+            count = count + 1
+            
+            -- SKIP the new kern 'k'
+            -- The loop logic `curr = D.getnext(curr)` happens at end.
+            -- If we set `curr = k`, `getnext` will return the node AFTER k.
+            curr = k 
         end
+        
+        curr = D.getnext(curr)
     end
-    
-    -- tex.print("\\par") -- Moved to sty file
-    -- Align to right
-    tex.print("\\hbox to \\hsize{\\hfill")
-    -- Use a vbox with RTT direction
-    tex.print("\\vbox dir RTT {")
-    tex.print("\\hsize=" .. vertical_height) 
-    
-    -- Apply column spacing if provided
-    if col_spacing and col_spacing ~= "" then
-        tex.print("\\baselineskip=" .. col_spacing)
-    end
-    
-    -- Note: Manual spacing injection replaces LetterSpace feature
-    
-    tex.print("\\pardir RTT \\textdir RTT")
-    tex.print("\\noindent " .. processed_text)
-    tex.print("}") -- end vbox
-    tex.print("}") -- end hbox
-    tex.print("\\par")
+
+    return D.tonode(d_head), count
+end
+
+-- Main entry point called from TeX
+-- box_num: The box register containing the raw text (usually \hbox)
+-- height: page/text height
+-- grid_width: width of each grid cell (column spacing)
+-- grid_height: height of each grid cell (row spacing)
+-- col_limit: max chars per column (optional, calculated if nil)
+-- debug_on: valid boolean or string "true"
+function cn_vertical.make_grid_box(box_num, height, grid_width, grid_height, col_limit, debug_on)
+    local box = tex.box[box_num]
+    if not box then return end
+
+    local list = box.list
+    if not list then return end
+
+    -- We assume the input box contains a flat list of chars (from strict wrapping or simple hbox)
+
+    local g_width = to_dimen(grid_width) or 65536 * 20 -- default 20pt
+    local g_height = to_dimen(grid_height) or g_width  -- default to grid_width if not set
+    local h_dim = to_dimen(height) or (65536 * 500)
+
+    -- Calculate line limit if not provided (based on grid_height for vertical)
+    local limit = tonumber(col_limit) or math.floor(h_dim / g_height)
+
+    local is_debug = (debug_on == "true" or debug_on == true)
+
+    -- Process the list
+    local new_head, char_count = grid_layout_nodes(list, g_width, g_height, limit, is_debug)
+
+    -- Update the box list
+    box.list = new_head
+
+    -- We need to resize the box to fit the new content
+    -- Total cols = ceil(count / limit)
+    local cols = math.ceil(char_count / limit)
+
+    -- Set box dimensions
+    -- Width: cols * grid_width
+    -- Height: height (or calculated from rows * grid_height)
+    box.width = cols * g_width
+    box.height = h_dim
+    box.depth = 0
+end
+
+-- Old function deprecated, kept for reference or removal
+function cn_vertical.vertical_rtt(text, height, col_spacing, char_spacing)
+    -- ... deprecated ...
+    tex.print("Error: vertical_rtt is deprecated. Use \\VerticalGrid instead.")
 end
 
 -- Return module

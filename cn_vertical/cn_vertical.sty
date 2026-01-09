@@ -44,31 +44,48 @@
     spacing-col .tl_set:N = \l__cn_vertical_col_spacing_tl,
     spacing-col .initial:n = {},
     
-    spacing-char .int_set:N = \l__cn_vertical_char_spacing_int,
-    spacing-char .initial:n = 20,
+    grid-width .tl_set:N = \l__cn_vertical_grid_width_tl,
+    grid-width .initial:n = {1.5em},
+
+    grid-height .tl_set:N = \l__cn_vertical_grid_height_tl,
+    grid-height .initial:n = {1.5em},
+
+    cols .int_set:N = \l__cn_vertical_cols_int,
+    cols .initial:n = 0,
+
+    debug .bool_set:N = \l__cn_vertical_debug_bool,
+    debug .initial:n = false,
   }
 
 % Internal function to call Lua
-\cs_new:Npn \__cn_vertical_run:n #1
+% Internal function to call Lua for Grid Layout
+\cs_new:Npn \__cn_vertical_process_grid:n #1
   {
+    % Put content into a box first
+    \setbox0=\hbox{#1}
+    % Call Lua to transform the box
     \directlua{
-      cn_vertical.vertical_rtt(
-        "\luaescapestring{#1}", 
+      cn_vertical.make_grid_box(
+        0,
         "\luaescapestring{\l__cn_vertical_height_tl}",
-        "\luaescapestring{\l__cn_vertical_col_spacing_tl}",
-        \int_use:N \l__cn_vertical_char_spacing_int
+        "\luaescapestring{\l__cn_vertical_grid_width_tl}",
+        "\luaescapestring{\l__cn_vertical_grid_height_tl}",
+        \int_use:N \l__cn_vertical_cols_int,
+        "\bool_if:NTF \l__cn_vertical_debug_bool {true} {false}"
       )
     }
+    % Output the modified box, right-aligned
+    \hfill\box0
   }
 
 % Define Main Command with Key-Value interface
 % Syntax: \VerticalRTT[key=val]{text}
 \NewDocumentCommand{\VerticalRTT}{ O{} +m }
   {
-    \par
+    \par\noindent
     \group_begin:
     \keys_set:nn { cn_vertical } { #1 }
-    \__cn_vertical_run:n { #2 }
+    \__cn_vertical_process_grid:n { #2 }
     \group_end:
   }
 

@@ -1,0 +1,13 @@
+% sikuquanshu.guji
+% Specific layout for Shiji (史记)
+
+\gujiSetup{
+    font-size = 36pt,
+    line-spacing = 36pt,
+    grid-width = 52pt,
+    grid-height = 45pt,
+    height = 600pt,
+    border = true
+}
+
+\endinput

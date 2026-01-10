@@ -67,8 +67,8 @@
 % Internal function to call Lua for Grid Layout
 \cs_new:Npn \__cn_vertical_process_grid:n #1
   {
-    % Put content into a box first
-    \setbox0=\hbox{#1}
+    % Put content into a vbox to preserve structure (paragraphs)
+    \setbox0=\vbox{\hsize=10000pt \parindent=0pt #1}
     % Call Lua to transform the box
     \directlua{
       cn_vertical.make_grid_box(

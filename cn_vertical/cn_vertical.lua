@@ -19,6 +19,7 @@ local KERN = node.id("kern")
 local HLIST = node.id("hlist")
 local VLIST = node.id("vlist")
 local WHATSIT = node.id("whatsit")
+local GLUE = node.id("glue")
 
 -- Helper to convert TeX dimension string (e.g. "20pt") to number (scaled points)
 local function to_dimen(dim_str)
@@ -26,7 +27,102 @@ local function to_dimen(dim_str)
     return tex.sp(dim_str)
 end
 
-local GLUE = node.id("glue")
+local PENALTY = node.id("penalty")
+local LOCAL_PAR = node.id("local_par")
+
+-- Helper to flatten a vlist (from vbox) into a single list of nodes,
+-- inserting penalties to mark paragraph breaks (hlist boundaries).
+local function flatten_vbox(head)
+    local d_head = D.todirect(head)
+    local result_head_d = nil
+    local result_tail_d = nil
+
+    -- Helper to append a single node to the result list
+    local function append_node(n)
+        if not n then return end
+        D.setnext(n, nil) -- Isolate the node
+        if not result_head_d then
+            result_head_d = n
+            result_tail_d = n
+        else
+            D.setlink(result_tail_d, n)
+            result_tail_d = n
+        end
+    end
+
+    local curr = d_head
+    while curr do
+        local id = D.getid(curr)
+        if id == HLIST or id == VLIST then
+            local list_head = D.getfield(curr, "list") 
+            if list_head then
+                local line_nodes = {}
+                local t = list_head
+                while t do
+                    local tid = D.getid(t)
+                    local keep = false
+                    if tid == GLYPH then
+                        keep = true
+                    elseif tid == KERN then
+                        keep = true
+                    elseif tid == GLUE then
+                        -- Only keep user-defined skips (subtype 0)
+                        -- Ignore rightskip (9), parfillskip (15), etc.
+                        local subtype = D.getsubtype(t)
+                        if subtype == 0 then
+                            keep = true
+                        end
+                    end
+                    
+                    if keep then
+                        table.insert(line_nodes, D.copy(t))
+                    end
+                    t = D.getnext(t)
+                end
+                
+                -- Trim trailing "space-like" nodes from the end of the paragraph
+                -- This removes trailing glues/kerns and space glyphs (char 32 or 12288)
+                local last = #line_nodes
+                while last > 0 do
+                    local n = line_nodes[last]
+                    local nid = D.getid(n)
+                    local is_space = false
+                    
+                    if nid == GLUE or nid == KERN then
+                        is_space = true
+                    elseif nid == GLYPH then
+                        local char = D.getfield(n, "char")
+                        if char == 32 or char == 12288 then
+                            is_space = true
+                        end
+                    end
+                    
+                    if is_space then
+                        D.free(n)
+                        table.remove(line_nodes, last)
+                        last = last - 1
+                    else
+                        break
+                    end
+                end
+                
+                -- Append cleaned nodes to global list
+                for _, n in ipairs(line_nodes) do
+                    append_node(n)
+                end
+            end
+            
+            -- Add break penalty (-10001 = force column break)
+            local p = D.new(PENALTY)
+            D.setfield(p, "penalty", -10001)
+            append_node(p)
+        end
+        
+        curr = D.getnext(curr)
+    end
+
+    return D.tonode(result_head_d)
+end
 
 -- internal function to layout a list of nodes on a grid
 -- grid_width: horizontal spacing (column width)
@@ -34,43 +130,44 @@ local GLUE = node.id("glue")
 -- RTL layout: first character at top-right, columns flow left
 local function grid_layout_nodes(head, grid_width, grid_height, line_limit, draw_debug, draw_border, border_padding)
     local d_head = D.todirect(head)
-    local curr = d_head
-
-    -- Safety: ensure line_limit is at least 1 to avoid divide by zero
+    
+    -- Safety: ensure line_limit is at least 1
     if line_limit < 1 then line_limit = 20 end
 
-    -- First pass: count glyphs to determine total columns
-    local glyph_count = 0
+    -- First pass: determine total columns by simulating the flow
+    local sim_count = 0
     local temp = d_head
     while temp do
-        if D.getid(temp) == GLYPH then
-            glyph_count = glyph_count + 1
+        local id = D.getid(temp)
+        if id == GLYPH then
+            sim_count = sim_count + 1
+        elseif id == PENALTY and D.getfield(temp, "penalty") == -10001 then
+             local rem = sim_count % line_limit
+             if rem > 0 then
+                 sim_count = sim_count + (line_limit - rem)
+             end
         end
         temp = D.getnext(temp)
     end
 
-    local total_cols = math.ceil(glyph_count / line_limit)
+    local total_cols = math.ceil(sim_count / line_limit)
+    if total_cols == 0 then total_cols = 1 end
 
-    -- Cache conversion factor
+    -- Cache conversion factor for PDF literals
     local sp_to_bp = 0.0000152018
     local w_bp = grid_width * sp_to_bp
-    local h_bp = -grid_height * sp_to_bp -- Draw down
-    local padding_bp = border_padding * sp_to_bp
-    -- Column height: full rows minus bottom padding
+    local h_bp = -grid_height * sp_to_bp 
     local col_height_bp = -(line_limit * grid_height + border_padding) * sp_to_bp
 
-    -- Draw border (乌丝栏) - one rectangle per column
+    -- Draw border (乌丝栏)
     if draw_border and total_cols > 0 then
         for col = 0, total_cols - 1 do
             local rtl_col = total_cols - 1 - col
             local box_x = rtl_col * grid_width
             local tx_bp = box_x * sp_to_bp
-
-            -- Column border: full height of all rows plus bottom padding
             local literal = string.format("q 0.4 w 0 0 0 RG %.4f 0 %.4f %.4f re S Q",
                 tx_bp, w_bp, col_height_bp
             )
-
             local n_node = node.new("whatsit", "pdf_literal")
             n_node.data = literal
             n_node.mode = 0
@@ -81,102 +178,73 @@ local function grid_layout_nodes(head, grid_width, grid_height, line_limit, draw
 
     -- Second pass: position glyphs
     local count = 0
-    curr = d_head
+    local curr = d_head
     while curr do
         local id = D.getid(curr)
 
         if id == GLUE then
-            -- Zero out glue to prevent "Drift" / Slanting.
+            -- Zero out glue to prevent layout drift
             D.setfield(curr, "width", 0)
             D.setfield(curr, "stretch", 0)
             D.setfield(curr, "shrink", 0)
 
         elseif id == KERN then
             local k_val = D.getfield(curr, "kern")
-            -- Only zero out if it's not one of OUR special kerns?
-            -- But we insert our kerns *after* the current processing point,
-            -- and skip over them. So this should only hit existing kerns.
-            if k_val ~= 0 then
-               D.setfield(curr, "kern", 0)
+            if k_val ~= 0 then D.setfield(curr, "kern", 0) end
+
+        elseif id == PENALTY and D.getfield(curr, "penalty") == -10001 then
+            -- Handle forced column break
+            local rem = count % line_limit
+            if rem > 0 then
+                count = count + (line_limit - rem)
             end
 
         elseif id == GLYPH then
             local row = count % line_limit
             local col = math.floor(count / line_limit)
 
-            -- Get glyph metrics
             local d = D.getfield(curr, "depth")
             local w = D.getfield(curr, "width")
 
-            -- 1. Vertical Positioning (Bottom Alignment)
-            local final_y = -row * grid_height - grid_height + d
-
-            -- 2. Horizontal Positioning (RTL: rightmost column first)
-            -- col 0 should be at the right (x = total_cols-1 grid widths from left)
-            -- col N should be at x = (total_cols-1-N) * grid_width
+            -- RTL Vertical Positioning
             local rtl_col = total_cols - 1 - col
             local final_x = rtl_col * grid_width + (grid_width - w) / 2
+            local final_y = -row * grid_height - grid_height + d
 
             D.setfield(curr, "xoffset", final_x)
             D.setfield(curr, "yoffset", final_y)
 
-
-            -- Debug Grid line (per-cell boxes)
+            -- Debug Grid
             if draw_debug then
-                local box_x = rtl_col * grid_width
-                local box_y = -row * grid_height
-
-                local tx_bp = box_x * sp_to_bp
-                local ty_bp = box_y * sp_to_bp
-
+                local tx_bp = (rtl_col * grid_width) * sp_to_bp
+                local ty_bp = (-row * grid_height) * sp_to_bp
                 local literal = string.format("q 0.5 w 0 0 1 RG 1 0 0 1 %.4f %.4f cm 0 0 %.4f %.4f re S Q",
                     tx_bp, ty_bp, w_bp, h_bp
                 )
-
-                -- Use node.new (not direct) for pdf_literal, then convert
                 local n_node = node.new("whatsit", "pdf_literal")
                 n_node.data = literal
-                n_node.mode = 0  -- 0 = origin mode
-                local n = D.todirect(n_node)
-
-                -- Insert BEFORE curr, update d_head if needed
-                d_head = D.insert_before(d_head, curr, n)
+                n_node.mode = 0
+                d_head = D.insert_before(d_head, curr, D.todirect(n_node))
             end
 
-            -- 3. PDF Selection Fix (Negative Kern)
-            -- Use manual linking to ensure we don't drop the rest of the list
+            -- PDF Selection Fix
             local k = D.new(KERN)
             D.setfield(k, "kern", -w)
-
             local next_node = D.getnext(curr)
             D.setlink(curr, k)
-            if next_node then
-               D.setlink(k, next_node)
-            end
-
+            if next_node then D.setlink(k, next_node) end
+            
             count = count + 1
-
-            -- SKIP the new kern 'k'
-            -- The loop logic `curr = D.getnext(curr)` happens at end.
-            -- If we set `curr = k`, `getnext` will return the node AFTER k.
-            curr = k
+            curr = k -- Skip the kern
         end
 
         curr = D.getnext(curr)
     end
 
-    return D.tonode(d_head), glyph_count
+    return D.tonode(d_head), count
 end
 
 -- Main entry point called from TeX
--- box_num: The box register containing the raw text (usually \hbox)
--- height: page/text height
--- grid_width: width of each grid cell (column spacing)
--- grid_height: height of each grid cell (row spacing)
--- col_limit: max chars per column (optional, calculated if nil)
--- debug_on: valid boolean or string "true"
--- border_on: draw 乌丝栏 (column borders)
--- border_padding: bottom padding for border
 function cn_vertical.make_grid_box(box_num, height, grid_width, grid_height, col_limit, debug_on, border_on, border_padding)
     local box = tex.box[box_num]
     if not box then return end
@@ -184,14 +252,16 @@ function cn_vertical.make_grid_box(box_num, height, grid_width, grid_height, col
     local list = box.list
     if not list then return end
 
-    -- We assume the input box contains a flat list of chars (from strict wrapping or simple hbox)
+    -- If captured as VBOX, flatten it first
+    if box.id == 1 then
+        list = flatten_vbox(list)
+    end
 
-    local g_width = to_dimen(grid_width) or 65536 * 20 -- default 20pt
-    local g_height = to_dimen(grid_height) or g_width  -- default to grid_width if not set
-    local h_dim = to_dimen(height) or (65536 * 300)    -- default 300pt
+    local g_width = to_dimen(grid_width) or (65536 * 20)
+    local g_height = to_dimen(grid_height) or g_width
+    local h_dim = to_dimen(height) or (65536 * 300)
     local b_padding = to_dimen(border_padding) or 0
 
-    -- Calculate line limit if not provided or if 0 (based on grid_height for vertical)
     local limit = tonumber(col_limit)
     if not limit or limit <= 0 then
         limit = math.floor(h_dim / g_height)
@@ -201,28 +271,21 @@ function cn_vertical.make_grid_box(box_num, height, grid_width, grid_height, col
     local is_border = (border_on == "true" or border_on == true)
 
     -- Process the list
-    local new_head, char_count = grid_layout_nodes(list, g_width, g_height, limit, is_debug, is_border, b_padding)
+    local new_head, final_count = grid_layout_nodes(list, g_width, g_height, limit, is_debug, is_border, b_padding)
 
-    -- Update the box list
-    box.list = new_head
+    -- Create a NEW HLIST box for the result
+    local cols = math.ceil(final_count / limit)
+    if cols == 0 then cols = 1 end
+    local actual_rows = math.min(limit, final_count)
+    if cols > 1 then actual_rows = limit end
 
-    -- We need to resize the box to fit the new content
-    -- Total cols = ceil(count / limit)
-    local cols = math.ceil(char_count / limit)
-
-    -- Calculate actual rows used (for the last column, may be partial)
-    local actual_rows = math.min(limit, char_count)
-    if cols > 1 then
-        actual_rows = limit  -- Full columns use all rows
-    end
-
-    -- Set box dimensions
-    -- Width: cols * grid_width
-    -- Content is positioned with negative yoffset (below baseline)
-    -- So we set height=0 and depth=actual content height
-    box.width = cols * g_width
-    box.height = 0
-    box.depth = actual_rows * g_height
+    local new_box = node.new("hlist")
+    new_box.list = new_head
+    new_box.width = cols * g_width
+    new_box.height = 0
+    new_box.depth = actual_rows * g_height
+    
+    tex.box[box_num] = new_box
 end
 
 -- Old function deprecated, kept for reference or removal

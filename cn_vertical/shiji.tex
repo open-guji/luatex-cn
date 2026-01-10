@@ -1,0 +1,26 @@
+\documentclass{article}
+\usepackage{fontspec}
+\newfontfamily\twkai{TW-Kai}[
+    RawFeature={+vert,+vrt2}, % 开启竖排字形替换（如标点旋转）
+    CharacterWidth=Full,      % 强制全角宽度
+]
+
+% 如果你想将其设为全局正文字体
+\setmainfont{TW-Kai}[RawFeature={+vert,+vrt2}]
+\usepackage{cn_vertical}
+
+\begin{document}
+\parindent=0pt
+\Large
+
+\VerticalRTT[height=400pt, grid-width=25pt, grid-height=20pt, cols=10, debug=true]{
+    钦定四库全书  史部一
+
+    史记目录  正史类
+    
+    汉
+
+    本纪一十二
+}
+
+\end{document}

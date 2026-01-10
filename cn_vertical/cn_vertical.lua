@@ -23,8 +23,14 @@ local GLUE = node.id("glue")
 
 -- Helper to convert TeX dimension string (e.g. "20pt") to number (scaled points)
 local function to_dimen(dim_str)
-    if not dim_str or dim_str == "" then return nil end
-    return tex.sp(dim_str)
+    if not dim_str or dim_str == "" or dim_str == "0" or dim_str == "0pt" then return nil end
+    local ok, res = pcall(tex.sp, dim_str)
+    if ok then 
+        if res == 0 then return nil end
+        return res 
+    else 
+        return nil 
+    end
 end
 
 local PENALTY = node.id("penalty")

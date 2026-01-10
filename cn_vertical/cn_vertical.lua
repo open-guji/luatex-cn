@@ -280,6 +280,7 @@ function cn_vertical.make_grid_box(box_num, height, grid_width, grid_height, col
     if cols > 1 then actual_rows = limit end
 
     local new_box = node.new("hlist")
+    new_box.dir = "TLT"
     new_box.list = new_head
     new_box.width = cols * g_width
     new_box.height = 0

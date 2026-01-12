@@ -56,11 +56,6 @@ local function flatten_vbox(head)
         end
     end
 
-    local function is_cjk(char)
-        if not char then return false end
-        return (char >= 0x2E80) -- Simple heuristic for CJK-like characters
-    end
-
     local curr = d_head
     while curr do
         local id = D.getid(curr)
@@ -69,41 +64,19 @@ local function flatten_vbox(head)
             if list_head then
                 local line_nodes = {}
                 local t = list_head
-                local prev_was_cjk = false
-
                 while t do
                     local tid = D.getid(t)
                     local keep = false
                     
                     if tid == GLYPH then
                         keep = true
-                        local ch = D.getfield(t, "char")
-                        prev_was_cjk = is_cjk(ch)
                     elseif tid == KERN then
                         keep = true
-                        -- Kerns don't reset CJK status usually, but let's say they separate words?
-                        -- Assume Kern implies non-space connection, preserve CJK status? 
-                        -- No, if suffix kern comes, it belongs to previous char. 
-                        -- Keep prev_was_cjk as is.
-                        
                     elseif tid == GLUE then
                         -- Keep userskip (0), spaceskip (13), xspaceskip (14)
                         local subtype = D.getsubtype(t)
-                        
-                        if subtype == 0 then
-                            -- Userskip (e.g. \hskip, \quad), always keep
-                            keep = true
-                            prev_was_cjk = false
-                        elseif subtype == 13 or subtype == 14 then
-                            -- Check if we should swallow this space (natural space or \ )
-                            if prev_was_cjk then
-                                keep = false
-                                -- Reset CJK status so we don't swallow subsequent spaces (e.g. \ \ \)
-                                prev_was_cjk = false 
-                            else
-                                keep = true
-                                prev_was_cjk = false 
-                            end
+                        if subtype == 0 or subtype == 13 or subtype == 14 then
+                           keep = true
                         end
                     end
                     

@@ -16,21 +16,67 @@
 \newluatexattribute\cnverticalindent
 \newluatexattribute\cnverticalrightindent
 
-% Load the Lua module using kpse
-% Load the Lua module using kpse
-% Load the Lua module using kpse
+% Load the Lua module using kpse and setup package.path for require()
 \directlua{
-  local path = kpse.find_file('cn_vertical.lua', 'lua')
-  if path then
-    dofile(path)
-  else
-    local f = io.open('cn_vertical.lua')
-    if f then
-      f:close()
-      dofile('cn_vertical.lua')
-    else
-      tex.error('Fatal error: cn_vertical.lua not found!')
+  -- Configure Lua module search path to support require()
+  -- This allows cn_vertical.lua to load its submodules using require()
+  local function setup_lua_path()
+    -- Add TEXMF tree script paths
+    local texmf_scripts = kpse.expand_path('$TEXMFHOME') .. '/scripts/?.lua;' ..
+                         kpse.expand_path('$TEXMFDIST') .. '/scripts/?.lua'
+    package.path = package.path .. ';' .. texmf_scripts
+
+    -- Add current working directory
+    package.path = package.path .. ';./?.lua'
+
+    -- Find cn_vertical.lua using kpse and add its directory to package.path
+    -- This is critical for require() to find the submodules
+    local cn_vert_path = kpse.find_file('cn_vertical.lua', 'lua')
+    if cn_vert_path then
+      -- Extract directory from full path
+      -- Handle both Unix (/) and Windows (backslash) path separators
+      -- Normalize path by replacing backslashes with forward slashes
+      cn_vert_path = cn_vert_path:gsub('\\', '/')
+      local dir = cn_vert_path:match('(.*/)')
+      if dir then
+        package.path = package.path .. ';' .. dir .. '?.lua'
+      end
     end
+  end
+
+  -- Setup the path first
+  setup_lua_path()
+
+  -- Debug: print package.path
+  -- texio.write_nl('term and log', 'DEBUG: package.path = ' .. package.path)
+
+  -- Load the main module using require (which will auto-load submodules)
+  -- require() provides better module caching than dofile()
+  local ok, result = pcall(require, 'cn_vertical')
+  if not ok then
+    texio.write_nl('term and log', 'WARNING: require failed with error: ' .. tostring(result))
+    texio.write_nl('term and log', 'Falling back to dofile...')
+    -- Fallback: try direct dofile for backward compatibility
+    local path = kpse.find_file('cn_vertical.lua', 'lua')
+    if path then
+      dofile(path)
+    else
+      local f = io.open('cn_vertical.lua')
+      if f then
+        f:close()
+        dofile('cn_vertical.lua')
+      else
+        tex.error('Fatal error: cn_vertical.lua not found! Error: ' .. tostring(result))
+      end
+    end
+  else
+    -- SUCCESS: require() returned the module
+    -- But we need to ensure cn_vertical is set as a global variable
+    -- In case it's not already set by the module itself
+    if not cn_vertical then
+      cn_vertical = result
+    end
+    texio.write_nl('term and log', 'SUCCESS: cn_vertical loaded via require()')
   end
 }
 

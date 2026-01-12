@@ -1,12 +1,31 @@
 % sikuquanshu.guji
-% Specific layout for Shiji (史记)
+% Siku Quanshu Standard Layout (Four Treasuries)
+% Format: 8 columns x 21 chars per page (merged spread) + center column
+% Total 17 columns.
+
+% Standard Dimensions (approximate Siku Quanshu Da Kai Ben):
+% Paper: 420mm x 315mm (Spread)
+% Margins: Top 50mm, Bottom 40mm, Left 25mm, Right 25mm.
+% Content Area: 370mm x 225mm.
+
+% Grid Calculation:
+% Width: 370mm / 17 cols ≈ 21.76mm ≈ 61.7pt
+% Height: 225mm / 21 chars ≈ 10.71mm ≈ 30.4pt
 
 \gujiSetup{
-    font-size = 36pt,
-    line-spacing = 36pt,
-    grid-width = 52pt,
-    grid-height = 45pt,
-    height = 600pt,
+    % Page Geometry (Siku Quanshu Exact - Spread)
+    paper-width = 1136pt,   % 40cm
+    paper-height = 894.6pt, % 31.5cm
+    margin-top = 148pt,     % ~5.2cm
+    margin-bottom = 114pt,  % ~4.0cm
+    margin-left = 106pt,    % ~3.7cm
+    margin-right = 106pt,   % ~3.7cm
+    % Grid Configuration (17 cols x 21 chars)
+    grid-width = 54.3pt,    % 15.3cm / 8 cols
+    grid-height = 30.15pt,  % 22.3cm / 21 chars
+    font-size = 28pt,
+    line-spacing = 30.15pt,
+    height = 634pt,         % ~22.3cm
     border = true
 }
 

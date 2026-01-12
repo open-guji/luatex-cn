@@ -56,6 +56,11 @@ local function flatten_vbox(head)
         end
     end
 
+    local function is_cjk(char)
+        if not char then return false end
+        return (char >= 0x2E80) -- Simple heuristic for CJK-like characters
+    end
+
     local curr = d_head
     while curr do
         local id = D.getid(curr)
@@ -64,19 +69,41 @@ local function flatten_vbox(head)
             if list_head then
                 local line_nodes = {}
                 local t = list_head
+                local prev_was_cjk = false
+
                 while t do
                     local tid = D.getid(t)
                     local keep = false
+                    
                     if tid == GLYPH then
                         keep = true
+                        local ch = D.getfield(t, "char")
+                        prev_was_cjk = is_cjk(ch)
                     elseif tid == KERN then
                         keep = true
+                        -- Kerns don't reset CJK status usually, but let's say they separate words?
+                        -- Assume Kern implies non-space connection, preserve CJK status? 
+                        -- No, if suffix kern comes, it belongs to previous char. 
+                        -- Keep prev_was_cjk as is.
+                        
                     elseif tid == GLUE then
-                        -- Only keep user-defined skips (subtype 0)
-                        -- Ignore rightskip (9), parfillskip (15), etc.
+                        -- Keep userskip (0), spaceskip (13), xspaceskip (14)
                         local subtype = D.getsubtype(t)
+                        
                         if subtype == 0 then
+                            -- Userskip (e.g. \hskip, \quad), always keep
                             keep = true
+                            prev_was_cjk = false
+                        elseif subtype == 13 or subtype == 14 then
+                            -- Check if we should swallow this space (natural space or \ )
+                            if prev_was_cjk then
+                                keep = false
+                                -- Reset CJK status so we don't swallow subsequent spaces (e.g. \ \ \)
+                                prev_was_cjk = false 
+                            else
+                                keep = true
+                                prev_was_cjk = false 
+                            end
                         end
                     end
                     
@@ -87,7 +114,6 @@ local function flatten_vbox(head)
                 end
                 
                 -- Trim trailing "space-like" nodes from the end of the paragraph
-                -- This removes trailing glues/kerns and space glyphs (char 32 or 12288)
                 local last = #line_nodes
                 while last > 0 do
                     local n = line_nodes[last]
@@ -147,7 +173,13 @@ local function grid_layout_nodes(head, grid_width, grid_height, line_limit, draw
         local id = D.getid(temp)
         if id == GLYPH then
             sim_count = sim_count + 1
-        elseif id == PENALTY and D.getfield(temp, "penalty") == -10001 then
+        elseif id == GLUE then
+             -- Count spaces as grid cells if they have width
+             local w = D.getfield(temp, "width")
+             if w > 0 then
+                 sim_count = sim_count + 1
+             end
+        elseif id == PENALTY and D.getfield(temp, "penalty") <= -10000 then
              local rem = sim_count % line_limit
              if rem > 0 then
                  sim_count = sim_count + (line_limit - rem)
@@ -189,7 +221,12 @@ local function grid_layout_nodes(head, grid_width, grid_height, line_limit, draw
         local id = D.getid(curr)
 
         if id == GLUE then
-            -- Zero out glue to prevent layout drift
+            local w = D.getfield(curr, "width")
+            if w > 0 then
+                -- It's a space, treat it as an empty grid cell
+                count = count + 1
+            end
+            -- Zero out glue width so it doesn't affect absolute positioning of subsequent nodes physically
             D.setfield(curr, "width", 0)
             D.setfield(curr, "stretch", 0)
             D.setfield(curr, "shrink", 0)
@@ -198,8 +235,8 @@ local function grid_layout_nodes(head, grid_width, grid_height, line_limit, draw
             local k_val = D.getfield(curr, "kern")
             if k_val ~= 0 then D.setfield(curr, "kern", 0) end
 
-        elseif id == PENALTY and D.getfield(curr, "penalty") == -10001 then
-            -- Handle forced column break
+        elseif id == PENALTY and D.getfield(curr, "penalty") <= -10000 then
+            -- Handle forced column/page break
             local rem = count % line_limit
             if rem > 0 then
                 count = count + (line_limit - rem)

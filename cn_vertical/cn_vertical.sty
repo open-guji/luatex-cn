@@ -12,6 +12,10 @@
     Please compile your document with LuaLaTeX.}
 \fi
 
+\RequirePackage{luatexbase}
+\newluatexattribute\cnverticalindent
+\newluatexattribute\cnverticalrightindent
+
 % Load the Lua module using kpse
 % Load the Lua module using kpse
 % Load the Lua module using kpse
@@ -61,6 +65,9 @@
 
     border-padding .tl_set:N = \l__cn_vertical_border_padding_tl,
     border-padding .initial:n = {0.2em},
+
+    vertical-align .tl_set:N = \l__cn_vertical_valign_tl,
+    vertical-align .initial:n = {center},
   }
 
 % Internal function to call Lua
@@ -79,7 +86,8 @@
         \int_use:N \l__cn_vertical_cols_int,
         "\bool_if:NTF \l__cn_vertical_debug_bool {true} {false}",
         "\bool_if:NTF \l__cn_vertical_border_bool {true} {false}",
-        "\luaescapestring{\l__cn_vertical_border_padding_tl}"
+        "\luaescapestring{\l__cn_vertical_border_padding_tl}",
+        "\luaescapestring{\l__cn_vertical_valign_tl}"
       )
     }
     % Output the modified box (RTL layout handled internally)

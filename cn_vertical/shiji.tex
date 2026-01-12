@@ -1,0 +1,51 @@
+\documentclass{guji}
+\usepackage{enumitem} % For better list control if needed
+
+% Define a custom template for another style (simulating another book)
+\defineGujiTemplate{compact}{
+    font-size = 24pt,
+    line-spacing = 30pt,
+    grid-width = 40pt,
+    grid-height = 35pt,
+    height = 500pt
+}
+
+\begin{document}
+\begin{guji-content}[template=sikuquanshu, debug=true]
+欽定四庫全書\ \ \ \ \ 史部一
+\begin{itemize}[leftmargin=1em, label={}]
+    \item 史記目錄 正史類
+    \item % 这里必须有一个 \item 来承接内层的列表
+    \begin{itemize}[leftmargin=1em, label={}]
+        \item 漢\ \ \ 太\ \ \ 史\ \ \ 令司馬遷 撰
+        \item 本紀一十二
+        \item 年表一十
+        \item 八書八
+        \item 世家三十
+        \item 列傳七十\ \ 共一百三十卷
+    \end{itemize}
+\end{itemize}
+本紀
+
+史記卷一
+\begin{itemize}[label={}]
+    \item 本紀第一
+    \item \begin{itemize}[label={}]
+        \item 五帝
+    \end{itemize}
+\end{itemize}
+
+史記卷二
+\begin{itemize}[label={}]
+    \item 本紀第二
+    \item \begin{itemize}[label={}]
+        \item 夏
+    \end{itemize}
+\end{itemize}
+
+史記卷三
+
+\end{guji-content}
+
+
+\end{document}

@@ -67,6 +67,9 @@
     debug .bool_set:N = \l_guji_debug_bool,
     debug .initial:n = false,
 
+    vertical-align .tl_set:N = \l_guji_valign_tl,
+    vertical-align .initial:n = center,
+
     template .code:n = {
       \InputIfFileExists{#1.guji}{}{
         % Fallback to checking defined templates in guji / templates namespace
@@ -160,7 +163,8 @@
       {
         height = \l_guji_height_tl,
         grid-width = \l_guji_grid_width_tl,
-        grid-height = \l_guji_grid_height_tl
+        grid-height = \l_guji_grid_height_tl,
+        vertical-align = \l_guji_valign_tl
       }
     \__cn_vertical_process_grid:n { \BODY }
     \group_end:

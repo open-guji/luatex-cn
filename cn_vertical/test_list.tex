@@ -1,0 +1,16 @@
+\documentclass{guji}
+\usepackage{enumitem} % For better list control if needed
+\begin{document}
+\begin{guji-content}[template=sikuquanshu, debug=true]
+正常文本。
+\begin{itemize}[leftmargin=1em, rightmargin=1em,label={}]
+    \item 项目一。这是测试。
+    \item 项目二。这是一个很长的项目，用于测试换行后的悬挂缩进效果。如果缩进逻辑正确，这一整段文字在所有列中都应该向下偏移，而不是顶格书写。
+    \item \begin{itemize}[leftmargin=1em,rightmargin=1em,label={}]
+        \item 子项目一。
+        \item 子项目二。
+    \end{itemize}
+\end{itemize}
+正常文本结束。
+\end{guji-content}
+\end{document}

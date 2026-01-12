@@ -22,10 +22,10 @@
     margin-right = 106pt,   % ~3.7cm
     % Grid Configuration (17 cols x 21 chars)
     grid-width = 54.3pt,    % 15.3cm / 8 cols
-    grid-height = 30.15pt,  % 22.3cm / 21 chars
+    grid-height = 30.1pt,   % User preferred rounded height
     font-size = 28pt,
-    line-spacing = 30.15pt,
-    height = 634pt,         % ~22.3cm
+    line-spacing = 30.1pt,
+    height = 632pt,         % Default approx, will be auto-corrected
     border = true
 }
 

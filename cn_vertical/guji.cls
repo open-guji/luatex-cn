@@ -155,7 +155,52 @@
     \fontsize{\l_guji_font_size_tl}{\l_guji_line_spacing_tl}\selectfont
     \bool_if:NTF \l_guji_border_bool { \keys_set:nn { cn_vertical } { border=true } } { \keys_set:nn { cn_vertical } { border=false } }
     \bool_if:NTF \l_guji_debug_bool { \keys_set:nn { cn_vertical } { debug=true } } { \keys_set:nn { cn_vertical } { debug=false } }
+    % Zero out vertical skips for exact grid layout
+    \setlength{\topskip}{0pt}
+    \setlength{\parskip}{0pt}
+    \setlength{\partopsep}{0pt}
     
+    % --- Auto-Correction Logic ---
+    % Calculate exact fit for grid to avoid blank pages and overflow
+    % 1. Get available space from defined margins
+    \dim_set:Nn \l_tmpa_dim { \l_guji_paper_height_tl }
+    \dim_sub:Nn \l_tmpa_dim { \l_guji_margin_top_tl }
+    \dim_sub:Nn \l_tmpa_dim { \l_guji_margin_bottom_tl }
+    % \l_tmpa_dim is now Available Height
+
+    % 2. Calculate border overhead if border is enabled
+    % Border adds: border_padding at bottom
+    % Also reserve small space for border line width (approximately 0.4bp ≈ 0.56pt)
+    \dim_set:Nn \l_tmpb_dim { 0pt }
+    \bool_if:NT \l_guji_border_bool {
+      % Get border-padding from cn_vertical defaults (0.2em typically)
+      % For safety, reserve approximately 1pt extra for border overhead
+      \dim_set:Nn \l_tmpb_dim { 1pt }
+    }
+    \dim_sub:Nn \l_tmpa_dim { \l_tmpb_dim }
+    % \l_tmpa_dim is now Available Height minus border overhead
+
+    % 3. Calculate max rows fitting in this space using FLOOR (向下取整)
+    % Use integer division for floor operation instead of dim_ratio (which rounds)
+    % Convert dimensions to sp (scaled points) for integer division
+    \int_set:Nn \l_tmpa_int { \dim_to_decimal_in_sp:n { \l_tmpa_dim } }
+    \int_set:Nn \l_tmpb_int { \dim_to_decimal_in_sp:n { \l_guji_grid_height_tl } }
+    % Floor division: rows = floor(available_height / grid_height)
+    \int_set:Nn \l_tmpa_int { \l_tmpa_int / \l_tmpb_int }
+
+    % 4. Calculate Used Height = Rows * GridHeight
+    % Store in l_guji_height_tl directly (as a dimension expression)
+    \tl_set:Nx \l_guji_height_tl { \dim_eval:n { \l_guji_grid_height_tl * \l_tmpa_int } }
+
+    % 5. Calculate Remainder = Available - Used
+    % Apply Remainder and BorderOverhead to Top Margin (Push grid down slightly)
+    \tl_set:Nx \l_guji_margin_top_tl {
+      \dim_eval:n { \l_guji_margin_top_tl + \l_tmpa_dim - \l_guji_height_tl + \l_tmpb_dim }
+    }
+
+    % Log for debugging
+    \iow_term:x { Guji~Auto-Layout:~Rows=\int_use:N \l_tmpa_int,~UsedHeight=\l_guji_height_tl,~BorderOverhead=\dim_use:N \l_tmpb_dim }
+
     % Update geometry for this environment
     \__guji_apply_geometry:
 

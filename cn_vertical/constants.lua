@@ -33,6 +33,7 @@ constants.ATTR_INDENT = luatexbase.attributes.cnverticalindent or luatexbase.new
 constants.ATTR_RIGHT_INDENT = luatexbase.attributes.cnverticalrightindent or luatexbase.new_attribute("cnverticalrightindent")
 constants.ATTR_TEXTBOX_WIDTH = luatexbase.attributes.cnverticaltextboxwidth or luatexbase.new_attribute("cnverticaltextboxwidth")
 constants.ATTR_TEXTBOX_HEIGHT = luatexbase.attributes.cnverticaltextboxheight or luatexbase.new_attribute("cnverticaltextboxheight")
+constants.ATTR_TEXTBOX_DISTRIBUTE = luatexbase.attributes.cnverticaltextboxdistribute or luatexbase.new_attribute("cnverticaltextboxdistribute")
 
 --- Convert TeX dimension string to scaled points
 -- @param dim_str (string) TeX dimension string (e.g., "20pt", "1.5em")
@@ -42,6 +43,9 @@ local function to_dimen(dim_str)
     if not dim_str or dim_str == "" or dim_str == "0" or dim_str == "0pt" then
         return nil
     end
+    -- Strip curly braces if present
+    dim_str = tostring(dim_str):gsub("^%s*{", ""):gsub("}%s*$", "")
+
     local ok, res = pcall(tex.sp, dim_str)
     if ok then
         if res == 0 then return nil end

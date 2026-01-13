@@ -16,18 +16,14 @@
 local constants = package.loaded['constants'] or require('constants')
 local D = constants.D
 
---- Calculate grid positions for nodes
--- Performs first-pass layout simulation to determine (col, row) coordinates for each node.
--- Handles column wrapping, hanging indents, and left/right indentation.
---
--- @param head (node) Head of flattened node list
--- @param grid_height (number) Grid row height in scaled points
--- @param line_limit (number) Maximum rows per column
--- @param n_column (number) Number of columns per page/section (defines Banxin gap)
 -- @param page_columns (number) Total columns before a page break
+-- @param params (table) Optional parameters:
+--   - distribute (boolean) If true, distribute nodes evenly in columns
 -- @return (table, number) layout_map (node_ptr -> {page, col, row}), total_pages
-local function calculate_grid_positions(head, grid_height, line_limit, n_column, page_columns)
+local function calculate_grid_positions(head, grid_height, line_limit, n_column, page_columns, params)
     local d_head = D.todirect(head)
+    params = params or {}
+    local distribute = params.distribute
 
     if line_limit < 1 then line_limit = 20 end
 
@@ -42,6 +38,9 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
     local cur_column_indent = 0
     local layout_map = {}
     
+    -- Buffer for distribution mode
+    local col_buffer = {}
+
     -- Occupancy map: occupancy[page][col][row] = true
     local occupancy = {}
 
@@ -90,6 +89,35 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
         end
     end
 
+    local function flush_buffer()
+        if #col_buffer == 0 then return end
+        
+        local N = #col_buffer
+        local H = line_limit -- For inner layout, line_limit is total rows
+        
+        for i, entry in ipairs(col_buffer) do
+            local row
+            if distribute and N > 1 and N < H then
+                -- Evenly distribute: Row = round((i-1) * (H-1)/(N-1))
+                row = math.floor((i-1) * (H-1) / (N-1) + 0.5)
+            else
+                row = entry.relative_row
+            end
+            
+            -- Re-check Banxin/Occupancy for the calculated row if needed?
+            -- Actually, distribution is mostly for textboxes where occupancy is simpler.
+            layout_map[entry.node] = {
+                page = entry.page, 
+                col = entry.col, 
+                row = row,
+                is_block = entry.is_block,
+                width = entry.width,
+                height = entry.height
+            }
+        end
+        col_buffer = {}
+    end
+
     local t = d_head
     skip_banxin_and_occupied()
 
@@ -118,6 +146,7 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
 
         -- Check wrapping BEFORE placing
         if cur_row >= effective_limit then
+            flush_buffer()
             cur_col = cur_col + 1
             cur_row = 0
             if cur_col >= p_cols then
@@ -131,9 +160,8 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
 
         if tb_w > 0 and tb_h > 0 then
             -- Handle Textbox Block
-            -- 1. Check if it fits in current column height
             if cur_row + tb_h > effective_limit then
-                -- Wrap to next column
+                flush_buffer()
                 cur_col = cur_col + 1
                 cur_row = 0
                 if cur_col >= p_cols then
@@ -143,7 +171,6 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
                 skip_banxin_and_occupied()
             end
             
-            -- 2. Check if it overlaps with Banxin (if width > 1)
             local fits_width = true
             for c = cur_col, cur_col + tb_w - 1 do
                 if is_banxin_col(c) or (c >= p_cols) then
@@ -153,7 +180,7 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
             end
             
             if not fits_width then
-                -- Move to next available column start
+                flush_buffer()
                 cur_col = cur_col + 1
                 cur_row = 0
                 if cur_col >= p_cols then
@@ -163,33 +190,30 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
                 skip_banxin_and_occupied()
             end
 
-            -- 3. Mark all cells as occupied
             for c = cur_col, cur_col + tb_w - 1 do
                 for r = cur_row, cur_row + tb_h - 1 do
                     mark_occupied(cur_page, c, r)
                 end
             end
 
-            -- 4. Assign position
-            layout_map[t] = {page=cur_page, col=cur_col, row=cur_row, is_block=true, width=tb_w, height=tb_h}
-            
-            -- 5. Move cursor
+            table.insert(col_buffer, {node=t, page=cur_page, col=cur_col, relative_row=cur_row, is_block=true, width=tb_w, height=tb_h})
+            cur_row = cur_row + tb_h
             skip_banxin_and_occupied()
 
         elseif id == constants.GLYPH then
-            layout_map[t] = {page=cur_page, col=cur_col, row=cur_row}
+            table.insert(col_buffer, {node=t, page=cur_page, col=cur_col, relative_row=cur_row})
             cur_row = cur_row + 1
             skip_banxin_and_occupied()
         elseif id == constants.GLUE then
              local subtype = D.getsubtype(t)
              local w = D.getfield(t, "width")
              if w > 0 and (subtype == 13 or subtype == 14) then
-                 -- Assign position to glue so it's not discarded by render.lua
-                 layout_map[t] = {page=cur_page, col=cur_col, row=cur_row}
+                 table.insert(col_buffer, {node=t, page=cur_page, col=cur_col, relative_row=cur_row})
                  cur_row = cur_row + 1
                  skip_banxin_and_occupied()
              end
         elseif id == constants.PENALTY and D.getfield(t, "penalty") <= -10000 then
+             flush_buffer()
              if cur_row > 0 then
                  cur_col = cur_col + 1
                  cur_row = 0
@@ -204,6 +228,8 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
 
         t = D.getnext(t)
     end
+    
+    flush_buffer()
 
     local total_pages = cur_page + 1
 

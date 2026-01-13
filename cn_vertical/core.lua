@@ -35,7 +35,11 @@ if texio and texio.write_nl then
     texio.write_nl("  flatten = " .. tostring(flatten))
 end
 
-function cn_vertical.verticalize_inner_box(box_num, w_cols, h_rows, g_w_str, g_h_str, v_align)
+-- @param v_align (string) Vertical alignment: "top", "center", "bottom"
+-- @param distribute (string) "true" or "false"
+-- @param debug (string) "true" or "false"
+-- @param border (string) "true" or "false"
+function cn_vertical.verticalize_inner_box(box_num, w_cols, h_rows, g_w_str, g_h_str, v_align, distribute, debug, border)
     local box = tex.box[box_num]
     if not box then return end
 
@@ -46,9 +50,10 @@ function cn_vertical.verticalize_inner_box(box_num, w_cols, h_rows, g_w_str, g_h
         grid_height = g_h_str,
         col_limit = tonumber(h_rows) or 1,
         page_columns = tonumber(w_cols) or 1,
-        border_on = "false",
-        debug_on = "false",
+        border_on = (border == "true"),
+        debug_on = (debug == "true"),
         vertical_align = v_align or "center",
+        distribute = (distribute == "true"),
         height = g_h_str -- Give enough height for the rows
     }
 
@@ -129,7 +134,9 @@ function cn_vertical.prepare_grid(box_num, params)
     end
 
     -- 4. Pipeline Stage 2: Calculate grid layout
-    local layout_map, total_pages = layout.calculate_grid_positions(list, g_height, limit, b_interval, p_cols)
+    local layout_map, total_pages = layout.calculate_grid_positions(list, g_height, limit, b_interval, p_cols, {
+        distribute = params.distribute
+    })
 
     -- 5. Pipeline Stage 3: Apply positions and render
     -- Build rendering params

@@ -17,6 +17,7 @@ local constants = package.loaded['constants'] or require('constants')
 local D = constants.D
 local utils = package.loaded['utils'] or require('utils')
 local border = package.loaded['border'] or require('border')
+local banxin = package.loaded['banxin'] or require('banxin')
 local background = package.loaded['background'] or require('background')
 
 -- Conversion factor from scaled points to PDF big points
@@ -140,7 +141,44 @@ local function apply_positions(head, layout_map, params)
             local inner_width = p_total_cols * grid_width + border_thickness
             local inner_height = line_limit * grid_height + b_padding_top + b_padding_bottom + border_thickness
 
-            -- Draw borders using border module
+            -- Determine which columns are banxin columns
+            local banxin_cols = {}
+            if interval > 0 then
+                for col = 0, p_total_cols - 1 do
+                    if (col % (interval + 1)) == interval then
+                        banxin_cols[col] = true
+                    end
+                end
+            end
+
+            -- Draw banxin columns using banxin module
+            if draw_border and p_total_cols > 0 and interval > 0 then
+                local half_thickness = math.floor(border_thickness / 2)
+                for col = 0, p_total_cols - 1 do
+                    if banxin_cols[col] then
+                        local rtl_col = p_total_cols - 1 - col
+                        local banxin_x = rtl_col * grid_width + half_thickness + shift_x
+                        local banxin_y = -(half_thickness + outer_shift)
+                        local banxin_height = line_limit * grid_height + b_padding_top + b_padding_bottom
+
+                        p_head = banxin.draw_banxin_column(p_head, {
+                            x = banxin_x,
+                            y = banxin_y,
+                            width = grid_width,
+                            height = banxin_height,
+                            border_thickness = border_thickness,
+                            color_str = b_rgb_str,
+                            section1_ratio = params.banxin_s1_ratio or 0.28,
+                            section2_ratio = params.banxin_s2_ratio or 0.56,
+                            section3_ratio = params.banxin_s3_ratio or 0.16,
+                            banxin_text = params.banxin_text or "",
+                            shift_y = shift_y,
+                        })
+                    end
+                end
+            end
+
+            -- Draw regular column borders using border module (skip banxin columns)
             if draw_border and p_total_cols > 0 then
                 p_head = border.draw_column_borders(p_head, {
                     total_cols = p_total_cols,
@@ -151,15 +189,9 @@ local function apply_positions(head, layout_map, params)
                     b_padding_top = b_padding_top,
                     b_padding_bottom = b_padding_bottom,
                     shift_x = shift_x,
-                    shift_y = shift_y,
                     outer_shift = outer_shift,
                     border_rgb_str = b_rgb_str,
-                    n_column = n_column,
-                    banxin_enabled = (interval > 0),
-                    banxin_s1_ratio = params.banxin_s1_ratio,
-                    banxin_s2_ratio = params.banxin_s2_ratio,
-                    banxin_s3_ratio = params.banxin_s3_ratio,
-                    banxin_text = params.banxin_text,
+                    banxin_cols = banxin_cols,
                 })
             end
 
@@ -237,10 +269,11 @@ local function apply_positions(head, layout_map, params)
                     D.setfield(curr, "stretch", 0)
                     D.setfield(curr, "shrink", 0)
                 elseif id == constants.KERN then
-                    local p_prev = layout_map[curr] -- Wait, we didn't store kerns in map
-                    -- Actually we should just zero them out if they are not our injected negative kerns
-                    -- But our injected negative kerns are not in the loop yet because we use next_curr
-                    D.setfield(curr, "kern", 0)
+                    -- Skip explicit kerns (subtype 1) - these are protected (e.g., from banxin module)
+                    local subtype = D.getfield(curr, "subtype")
+                    if subtype ~= 1 then
+                        D.setfield(curr, "kern", 0)
+                    end
                 end
                 curr = next_curr
             end

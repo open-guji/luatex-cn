@@ -116,7 +116,8 @@ function cn_vertical.prepare_grid(box_num, params)
         margin_right = m_right,
         banxin_s1_ratio = tonumber(params.banxin_s1_ratio) or 0.28,
         banxin_s2_ratio = tonumber(params.banxin_s2_ratio) or 0.56,
-        banxin_s3_ratio = tonumber(params.banxin_s3_ratio) or 0.16
+        banxin_s3_ratio = tonumber(params.banxin_s3_ratio) or 0.16,
+        banxin_text = params.banxin_text or ""
     }
     local rendered_pages = render.apply_positions(list, layout_map, r_params)
 

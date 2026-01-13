@@ -6,9 +6,13 @@
 --
 -- Module: banxin
 -- Purpose: Draw the Banxin (center column/版心) with section dividers
--- Dependencies: none
--- Version: 0.1.0
+-- Dependencies: constants
+-- Version: 0.2.0
 -- Date: 2026-01-13
+
+-- Load dependencies
+local constants = package.loaded['constants'] or require('constants')
+local D = constants.D
 
 -- Conversion factor from scaled points to PDF big points
 local sp_to_bp = 0.0000152018
@@ -37,6 +41,7 @@ local sp_to_bp = 0.0000152018
 --   - border_thickness (number) Border line thickness in scaled points
 --   - banxin_text (string) Optional text to display in section 1 (鱼尾文字)
 --   - font_size (number) Font size in scaled points for banxin text
+--   - shift_y (number) Vertical shift for positioning (includes padding and outer border)
 -- @return (table) Table with:
 --   - literals: Array of PDF literal strings for lines
 --   - text_nodes: Array of text node data for section 1 text
@@ -52,6 +57,7 @@ local function draw_banxin(params)
     local b_thickness = params.border_thickness or 26214 -- 0.4pt default
     local banxin_text = params.banxin_text or ""
     local font_size = params.font_size or 655360 -- 10pt default
+    local shift_y = params.shift_y or 0
 
     -- Calculate section heights
     local section1_height = total_height * r1
@@ -92,8 +98,8 @@ local function draw_banxin(params)
     table.insert(literals, div2_line)
 
     -- Process banxin text for section 1
-    -- Note: Text rendering needs to be done via glyph nodes in render.lua
-    -- We just store the character data here
+    -- Characters are arranged vertically from top to bottom
+    -- Each character occupies an equal-height cell within section 1
     if banxin_text and banxin_text ~= "" then
         -- Convert text to UTF-8 characters array
         local chars = {}
@@ -103,23 +109,24 @@ local function draw_banxin(params)
 
         local num_chars = #chars
         if num_chars > 0 then
-            -- Calculate character height to fit all characters in section1
-            local char_height = section1_height / num_chars
-            -- Calculate font size: 90% of char_height to leave some margin
-            local actual_font_size = char_height * 0.9
+            -- Divide section 1 into equal cells for each character
+            local cell_height = section1_height / num_chars
 
             -- Position characters vertically in section 1
             for i, char in ipairs(chars) do
-                -- Calculate Y position for this character
-                -- Center each character in its allocated space
-                local char_y = y - (i - 0.5) * char_height
+                -- Calculate the row position (0-indexed from top)
+                local row = i - 1
 
-                -- Store text node data
+                -- Store text node data with grid-like positioning
+                -- These will be positioned similar to main text glyphs
                 table.insert(text_nodes, {
                     char = char,
-                    x = x + width / 2,  -- Center horizontally in the column
-                    y = char_y,
-                    font_size = actual_font_size
+                    row = row,              -- Row index in the character grid
+                    cell_height = cell_height,  -- Height of each cell
+                    x = x,                  -- Left edge of banxin column
+                    y_top = y,             -- Top edge of section 1
+                    width = width,          -- Width of banxin column
+                    shift_y = shift_y,      -- Vertical shift for positioning
                 })
             end
         end
@@ -131,9 +138,162 @@ local function draw_banxin(params)
     }
 end
 
+--- Create glyph nodes for banxin text
+-- This function takes the text_nodes data and creates actual glyph nodes
+-- with proper positioning
+-- @param text_nodes (table) Array of text node data from draw_banxin
+-- @return (node) A single linked node chain ready to be inserted
+local function create_text_glyphs(text_nodes)
+    if #text_nodes == 0 then
+        return nil
+    end
+
+    local head = nil
+    local tail = nil
+
+    for _, text_data in ipairs(text_nodes) do
+        -- Create glyph node
+        local glyph = node.new(node.id("glyph"))
+        glyph.char = utf8.codepoint(text_data.char)
+        glyph.font = font.current()
+        glyph.lang = 0
+
+        -- Get glyph dimensions
+        local glyph_direct = D.todirect(glyph)
+        local g_width = D.getfield(glyph_direct, "width") or 0
+        local g_height = D.getfield(glyph_direct, "height") or 0
+        local g_depth = D.getfield(glyph_direct, "depth") or 0
+
+        -- Calculate horizontal position
+        -- Center the character horizontally in the banxin column
+        local x_offset = text_data.x + (text_data.width - g_width) / 2
+
+        -- Calculate vertical position
+        -- y_top is the top edge of section 1
+        -- Characters are positioned vertically, centered in their cells
+        local char_total_height = g_height + g_depth
+        local y_offset = text_data.y_top - text_data.row * text_data.cell_height
+                         - (text_data.cell_height + char_total_height) / 2
+                         + g_depth - text_data.shift_y
+
+        -- Set glyph position using xoffset and yoffset
+        D.setfield(glyph_direct, "xoffset", x_offset)
+        D.setfield(glyph_direct, "yoffset", y_offset)
+
+        -- Create negative kern to cancel out the glyph width
+        -- This makes all glyphs visually stack at the same horizontal position
+        -- Use subtype 1 (explicit kern) to mark this kern as protected from zeroing
+        local kern = D.new(constants.KERN)
+        D.setfield(kern, "subtype", 1)  -- Mark as explicit/protected kern
+        D.setfield(kern, "kern", -g_width)
+
+        -- Link glyph to its kern
+        D.setlink(glyph_direct, kern)
+
+        -- Build the chain
+        if head == nil then
+            head = glyph_direct
+            tail = kern
+        else
+            D.setlink(tail, glyph_direct)
+            tail = kern
+        end
+    end
+
+    return head
+end
+
+--- Draw complete banxin column including border, dividers, and text
+-- This is the main entry point for drawing a banxin column
+-- @param p_head (node) Direct node head
+-- @param params (table) Parameters:
+--   - x: X position of column left edge (sp)
+--   - y: Y position of column top edge (sp)
+--   - width: Column width (sp)
+--   - height: Column height (sp)
+--   - border_thickness: Border line thickness (sp)
+--   - color_str: RGB color string
+--   - section1_ratio: Section 1 height ratio
+--   - section2_ratio: Section 2 height ratio
+--   - section3_ratio: Section 3 height ratio
+--   - banxin_text: Text to display in section 1
+--   - shift_y: Vertical shift for text positioning (sp)
+-- @return (node) Updated head
+local function draw_banxin_column(p_head, params)
+    local x = params.x
+    local y = params.y
+    local width = params.width
+    local height = params.height
+    local border_thickness = params.border_thickness
+    local color_str = params.color_str or "0 0 0"
+    local shift_y = params.shift_y or 0
+
+    local sp_to_bp = 0.0000152018
+    local b_thickness_bp = border_thickness * sp_to_bp
+
+    -- Draw column border (rectangle)
+    local x_bp = x * sp_to_bp
+    local y_bp = y * sp_to_bp
+    local width_bp = width * sp_to_bp
+    local height_bp = -height * sp_to_bp  -- Negative because Y goes downward
+
+    local border_literal = string.format(
+        "q %.2f w %s RG %.4f %.4f %.4f %.4f re S Q",
+        b_thickness_bp, color_str, x_bp, y_bp, width_bp, height_bp
+    )
+    local border_node = node.new("whatsit", "pdf_literal")
+    border_node.data = border_literal
+    border_node.mode = 0
+    p_head = D.insert_before(p_head, p_head, D.todirect(border_node))
+
+    -- Draw banxin dividers and text
+    local banxin_params = {
+        x = x,
+        y = y,
+        width = width,
+        total_height = height,
+        section1_ratio = params.section1_ratio or 0.28,
+        section2_ratio = params.section2_ratio or 0.56,
+        section3_ratio = params.section3_ratio or 0.16,
+        color_str = color_str,
+        border_thickness = border_thickness,
+        banxin_text = params.banxin_text or "",
+        font_size = params.font_size or height / 20,  -- Reasonable default
+        shift_y = shift_y,
+    }
+    local banxin_result = draw_banxin(banxin_params)
+
+    -- Insert dividing lines
+    for _, lit in ipairs(banxin_result.literals) do
+        local lit_node = node.new("whatsit", "pdf_literal")
+        lit_node.data = lit
+        lit_node.mode = 0
+        p_head = D.insert_before(p_head, p_head, D.todirect(lit_node))
+    end
+
+    -- Insert text glyphs as a linked chain
+    if banxin_result.text_nodes and #banxin_result.text_nodes > 0 then
+        local glyph_chain = create_text_glyphs(banxin_result.text_nodes)
+        if glyph_chain then
+            -- Find the tail of the glyph chain
+            local chain_tail = glyph_chain
+            while D.getnext(chain_tail) do
+                chain_tail = D.getnext(chain_tail)
+            end
+            -- Insert the entire chain at the beginning
+            D.setlink(chain_tail, p_head)
+            p_head = glyph_chain
+        end
+    end
+
+    return p_head
+end
+
 -- Create module table
 local banxin = {
     draw_banxin = draw_banxin,
+    create_text_glyphs = create_text_glyphs,
+    draw_banxin_column = draw_banxin_column,
 }
 
 -- Register module in package.loaded for require() compatibility

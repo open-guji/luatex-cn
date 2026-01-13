@@ -35,7 +35,7 @@ if texio and texio.write_nl then
     texio.write_nl("  flatten = " .. tostring(flatten))
 end
 
-function cn_vertical.verticalize_inner_box(box_num, w_cols, h_rows, g_w_str, g_h_str)
+function cn_vertical.verticalize_inner_box(box_num, w_cols, h_rows, g_w_str, g_h_str, v_align)
     local box = tex.box[box_num]
     if not box then return end
 
@@ -48,7 +48,7 @@ function cn_vertical.verticalize_inner_box(box_num, w_cols, h_rows, g_w_str, g_h
         page_columns = tonumber(w_cols) or 1,
         border_on = "false",
         debug_on = "false",
-        vertical_align = "top",
+        vertical_align = v_align or "center",
         height = g_h_str -- Give enough height for the rows
     }
 

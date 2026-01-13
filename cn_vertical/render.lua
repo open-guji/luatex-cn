@@ -264,8 +264,10 @@ local function apply_positions(head, layout_map, params)
                         else
                             -- For HLIST/VLIST (Blocks), we use Kern (X) and Shift (Y)
                             -- xoffset/yoffset are NOT supported for blocks.
-                            local rtl_col = p_total_cols - 1 - col
-                            local final_x = rtl_col * grid_width + half_thickness + shift_x
+                            -- RTL column calculation for blocks:
+                            -- Left edge of a block covering cols [col, col+width-1]
+                            local rtl_col_left = p_total_cols - (pos.col + (pos.width or 1))
+                            local final_x = rtl_col_left * grid_width + half_thickness + shift_x
                             
                             -- Top edge of the box should be at -row*grid_height - shift_y
                             -- In TLT box, baseline is at 0. Shift moves it down.
@@ -288,8 +290,8 @@ local function apply_positions(head, layout_map, params)
                         end
 
                         if draw_debug then
-                            local rtl_col = p_total_cols - 1 - col
-                            local tx_bp = (rtl_col * grid_width + half_thickness + shift_x) * sp_to_bp
+                            local rtl_col_l = p_total_cols - (pos.col + (pos.width or 1))
+                            local tx_bp = (rtl_col_l * grid_width + half_thickness + shift_x) * sp_to_bp
                             local ty_bp = (-row * grid_height - shift_y) * sp_to_bp
                             local dbg_w = w_bp
                             local dbg_h = h_bp

@@ -1,0 +1,100 @@
+\documentclass{article}
+\usepackage[paperwidth=150mm, paperheight=100mm, margin=5mm]{geometry}
+\usepackage{xcolor}
+\usepackage{cn_vertical}
+\usepackage{fontspec}
+
+\setmainfont{SimSun}
+
+\definecolor{mybg}{RGB}{250, 240, 230} % Linen color
+
+\begin{document}
+
+\section*{Color Customization Test}
+
+Testing red borders and linen background.
+
+\VerticalRTT[
+  height=60mm,
+  grid-width=1.5em,
+  grid-height=1.2em,
+  n-column=4,
+  border=true,
+  outer-border=true,
+  border-color=red,
+  background-color=mybg
+]{
+  这段文字应该排在红色边框内，
+  背景应该是浅米色的（Linen）。
+  测试颜色功能的正常运作。
+}
+
+\newpage
+
+Testing blue borders and no background.
+
+\VerticalRTT[
+  height=60mm,
+  grid-width=1.5em,
+  grid-height=1.2em,
+  n-column=4,
+  border=true,
+  outer-border=true,
+  border-color=blue
+]{
+  没有设置背景色，
+  边框应该是蓝色的。
+}
+
+\newpage
+
+Testing numeric RGB (0.6 0.1 0.1) borders and (0.9,0.9,0.8) background.
+
+\VerticalRTT[
+  height=60mm,
+  grid-width=1.5em,
+  grid-height=1.2em,
+  n-column=4,
+  border=true,
+  border-color={0.6 0.1 0.1},
+  background-color={0.9,0.9,0.8}
+]{
+  这段文字应该排在深红色边框内，
+  背景应该是淡黄色的。
+  这里使用了直接输入的 RGB 数值。
+}
+
+\newpage
+
+Testing 0-255 RGB (225, 185, 130) background.
+
+\VerticalRTT[
+  height=60mm,
+  grid-width=1.5em,
+  grid-height=1.2em,
+  n-column=4,
+  border=true,
+  border-color={100 0 0},
+  background-color={225, 185, 130}
+]{
+  这段文字的背景应该是 (225, 185, 130)，
+  系统会自动将 0-255 转换为 0-1。
+}
+
+\newpage
+
+Testing font color (0.2 0.5 0.2) text.
+
+\VerticalRTT[
+  height=60mm,
+  grid-width=1.5em,
+  grid-height=1.2em,
+  n-column=4,
+  border=true,
+  font-color={0.2 0.5 0.2}
+]{
+  这段文字应该是绿色的。
+  我们直接设置了 font-color 参数。
+}
+
+\end{document}

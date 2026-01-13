@@ -91,6 +91,15 @@
     n-column .int_set:N = \l_guji_n_column_int,
     n-column .initial:n = 8,
 
+    border-color .tl_set:N = \l_guji_border_color_tl,
+    border-color .initial:n = {black},
+
+    background-color .tl_set:N = \l_guji_background_color_tl,
+    background-color .initial:n = {},
+
+    font-color .tl_set:N = \l_guji_font_color_tl,
+    font-color .initial:n = {black},
+
     template .code:n = {
       \InputIfFileExists{#1.guji}{}{
         % Fallback to checking defined templates in guji / templates namespace
@@ -257,7 +266,16 @@
         border-padding-bottom = \l_guji_border_padding_bottom_tl,
         outer-border-thickness = \l_guji_outer_border_thickness_tl,
         outer-border-sep = \l_guji_outer_border_sep_tl,
-        n-column = \int_use:N \l_guji_n_column_int
+        n-column = \int_use:N \l_guji_n_column_int,
+        border-color = { \l_guji_border_color_tl },
+        background-color = { \l_guji_background_color_tl },
+        font-color = { \l_guji_font_color_tl },
+        paper-width = \l_guji_paper_width_tl,
+        paper-height = \l_guji_paper_height_tl,
+        margin-top = \l_guji_margin_top_tl,
+        margin-bottom = \l_guji_margin_bottom_tl,
+        margin-left = \l_guji_margin_left_tl,
+        margin-right = \l_guji_margin_right_tl
       }
     \nointerlineskip
     \__cn_vertical_process_grid:n { \BODY }

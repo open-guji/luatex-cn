@@ -14,6 +14,7 @@
 
 % Load luatexbase for attributes
 \RequirePackage{luatexbase}
+\RequirePackage{xcolor}
 \newluatexattribute\cnverticalindent
 \newluatexattribute\cnverticalrightindent
 
@@ -112,7 +113,38 @@
 
     page-columns .tl_set:N = \l__cn_vertical_page_columns_tl,
     page-columns .initial:n = {},
+
+    border-color .tl_set:N = \l__cn_vertical_border_color_tl,
+    border-color .initial:n = {black},
+
+    background-color .tl_set:N = \l__cn_vertical_background_color_tl,
+    background-color .initial:n = {},
+
+    font-color .tl_set:N = \l__cn_vertical_font_color_tl,
+    font-color .initial:n = {},
+
+    paper-width .tl_set:N = \l__cn_vertical_paper_width_tl,
+    paper-width .initial:n = {0pt},
+
+    paper-height .tl_set:N = \l__cn_vertical_paper_height_tl,
+    paper-height .initial:n = {0pt},
+
+    margin-top .tl_set:N = \l__cn_vertical_margin_top_tl,
+    margin-top .initial:n = {0pt},
+
+    margin-bottom .tl_set:N = \l__cn_vertical_margin_bottom_tl,
+    margin-bottom .initial:n = {0pt},
+
+    margin-left .tl_set:N = \l__cn_vertical_margin_left_tl,
+    margin-left .initial:n = {0pt},
+
+    margin-right .tl_set:N = \l__cn_vertical_margin_right_tl,
+    margin-right .initial:n = {0pt},
   }
+
+\tl_new:N \l__cn_vertical_border_rgb_tl
+\tl_new:N \l__cn_vertical_background_rgb_tl
+\tl_new:N \l__cn_vertical_font_rgb_tl
 
 % Internal function to call Lua for Grid Layout
 \cs_new:Npn \__cn_vertical_process_grid:n #1
@@ -121,25 +153,95 @@
     \setbox0=\vbox{\hsize=10000pt \parindent=0pt #1}
     % Call Lua to transform the box
     \setlength{\topskip}{0pt}
+    
+    % Support direct RGB input (e.g. 0.1 0.2 0.3 or 0.1,0.2,0.3 or 100,50,0)
+    \tl_if_in:NnTF \l__cn_vertical_border_color_tl { , }
+      { \tl_set_eq:NN \l__cn_vertical_border_rgb_tl \l__cn_vertical_border_color_tl }
+      {
+        \tl_if_in:NnTF \l__cn_vertical_border_color_tl { ~ }
+          { \tl_set_eq:NN \l__cn_vertical_border_rgb_tl \l__cn_vertical_border_color_tl }
+          {
+             % Try extraction, but wrap in safety
+             \cs_if_exist:cTF { \string color @ \l__cn_vertical_border_color_tl }
+             {
+               \exp_args:NV \extractcolorspec \l__cn_vertical_border_color_tl \l_tmpa_tl
+               \exp_args:NNx \convertcolorspec \l_tmpa_tl {rgb} \l_tmpb_tl
+               \tl_set:Nx \l__cn_vertical_border_rgb_tl { \l_tmpb_tl }
+             }
+             { \tl_set_eq:NN \l__cn_vertical_border_rgb_tl \l__cn_vertical_border_color_tl }
+          }
+      }
+    \tl_replace_all:Nnn \l__cn_vertical_border_rgb_tl { , } { ~ }
+
+    \tl_if_empty:NTF \l__cn_vertical_background_color_tl
+      { \tl_set:Nn \l__cn_vertical_background_rgb_tl { nil } }
+      {
+        \tl_if_in:NnTF \l__cn_vertical_background_color_tl { , }
+          { \tl_set_eq:NN \l__cn_vertical_background_rgb_tl \l__cn_vertical_background_color_tl }
+          {
+            \tl_if_in:NnTF \l__cn_vertical_background_color_tl { ~ }
+              { \tl_set_eq:NN \l__cn_vertical_background_rgb_tl \l__cn_vertical_background_color_tl }
+              {
+                 \cs_if_exist:cTF { \string color @ \l__cn_vertical_background_color_tl }
+                 {
+                   \exp_args:NV \extractcolorspec \l__cn_vertical_background_color_tl \l_tmpa_tl
+                   \exp_args:NNx \convertcolorspec \l_tmpa_tl {rgb} \l_tmpb_tl
+                   \tl_set:Nx \l__cn_vertical_background_rgb_tl { \l_tmpb_tl }
+                 }
+                 { \tl_set_eq:NN \l__cn_vertical_background_rgb_tl \l__cn_vertical_background_color_tl }
+              }
+          }
+      }
+    \tl_replace_all:Nnn \l__cn_vertical_background_rgb_tl { , } { ~ }
+
+    \tl_if_empty:NTF \l__cn_vertical_font_color_tl
+      { \tl_set:Nn \l__cn_vertical_font_rgb_tl { nil } }
+      {
+        \tl_if_in:NnTF \l__cn_vertical_font_color_tl { , }
+          { \tl_set_eq:NN \l__cn_vertical_font_rgb_tl \l__cn_vertical_font_color_tl }
+          {
+            \tl_if_in:NnTF \l__cn_vertical_font_color_tl { ~ }
+              { \tl_set_eq:NN \l__cn_vertical_font_rgb_tl \l__cn_vertical_font_color_tl }
+              {
+                 \cs_if_exist:cTF { \string color @ \l__cn_vertical_font_color_tl }
+                 {
+                   \exp_args:NV \extractcolorspec \l__cn_vertical_font_color_tl \l_tmpa_tl
+                   \exp_args:NNx \convertcolorspec \l_tmpa_tl {rgb} \l_tmpb_tl
+                   \tl_set:Nx \l__cn_vertical_font_rgb_tl { \l_tmpb_tl }
+                 }
+                 { \tl_set_eq:NN \l__cn_vertical_font_rgb_tl \l__cn_vertical_font_color_tl }
+              }
+          }
+      }
+    \tl_replace_all:Nnn \l__cn_vertical_font_rgb_tl { , } { ~ }
+
     \directlua{
-      cn_vertical.process_from_tex(
-        0,
-        "\luaescapestring{\l__cn_vertical_height_tl}",
-        "\luaescapestring{\l__cn_vertical_grid_width_tl}",
-        "\luaescapestring{\l__cn_vertical_grid_height_tl}",
-        \int_use:N \l__cn_vertical_cols_int,
-        "\bool_if:NTF \l__cn_vertical_debug_bool {true} {false}",
-        "\bool_if:NTF \l__cn_vertical_border_bool {true} {false}",
-        "\luaescapestring{\l__cn_vertical_border_padding_top_tl}",
-        "\luaescapestring{\l__cn_vertical_border_padding_bottom_tl}",
-        "\luaescapestring{\l__cn_vertical_valign_tl}",
-        "\luaescapestring{\l__cn_vertical_border_thickness_tl}",
-        "\bool_if:NTF \l__cn_vertical_outer_border_bool {true} {false}",
-        "\luaescapestring{\l__cn_vertical_outer_border_thickness_tl}",
-        "\luaescapestring{\l__cn_vertical_outer_border_sep_tl}",
-        \int_use:N \l__cn_vertical_n_column_int,
-        "\luaescapestring{\l__cn_vertical_page_columns_tl}"
-      )
+      cn_vertical.process_from_tex(0, {
+        height = [=[\luaescapestring{\l__cn_vertical_height_tl}]=],
+        grid_width = [=[\luaescapestring{\l__cn_vertical_grid_width_tl}]=],
+        grid_height = [=[\luaescapestring{\l__cn_vertical_grid_height_tl}]=],
+        col_limit = \int_use:N \l__cn_vertical_cols_int,
+        debug_on = [=[\bool_if:NTF \l__cn_vertical_debug_bool {true} {false}]=],
+        border_on = [=[\bool_if:NTF \l__cn_vertical_border_bool {true} {false}]=],
+        border_padding_top = [=[\luaescapestring{\l__cn_vertical_border_padding_top_tl}]=],
+        border_padding_bottom = [=[\luaescapestring{\l__cn_vertical_border_padding_bottom_tl}]=],
+        vertical_align = [=[\luaescapestring{\l__cn_vertical_valign_tl}]=],
+        border_thickness = [=[\luaescapestring{\l__cn_vertical_border_thickness_tl}]=],
+        outer_border_on = [=[\bool_if:NTF \l__cn_vertical_outer_border_bool {true} {false}]=],
+        outer_border_thickness = [=[\luaescapestring{\l__cn_vertical_outer_border_thickness_tl}]=],
+        outer_border_sep = [=[\luaescapestring{\l__cn_vertical_outer_border_sep_tl}]=],
+        n_column = \int_use:N \l__cn_vertical_n_column_int,
+        page_columns = [=[\luaescapestring{\l__cn_vertical_page_columns_tl}]=],
+        border_color = [=[\l__cn_vertical_border_rgb_tl]=],
+        background_color = [=[\l__cn_vertical_background_rgb_tl]=],
+        font_color = [=[\l__cn_vertical_font_rgb_tl]=],
+        paper_width = [=[\luaescapestring{\l__cn_vertical_paper_width_tl}]=],
+        paper_height = [=[\luaescapestring{\l__cn_vertical_paper_height_tl}]=],
+        margin_top = [=[\luaescapestring{\l__cn_vertical_margin_top_tl}]=],
+        margin_bottom = [=[\luaescapestring{\l__cn_vertical_margin_bottom_tl}]=],
+        margin_left = [=[\luaescapestring{\l__cn_vertical_margin_left_tl}]=],
+        margin_right = [=[\luaescapestring{\l__cn_vertical_margin_right_tl}]=]
+      })
     }
   }
 

@@ -5,8 +5,6 @@
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesPackage{cn_vertical}[2026/01/12 v0.3.0 Chinese vertical typesetting for LuaTeX (Modularized)]
 
-\typeout{==== cn_vertical.sty v0.3.0 (Modularized) is being loaded ====}
-
 % Check if LuaTeX is being used
 \RequirePackage{ifluatex}
 \ifluatex\else
@@ -14,71 +12,47 @@
     Please compile your document with LuaLaTeX.}
 \fi
 
+% Load luatexbase for attributes
 \RequirePackage{luatexbase}
 \newluatexattribute\cnverticalindent
 \newluatexattribute\cnverticalrightindent
 
-\typeout{==== BEFORE DIRECTLUA BLOCK ====}
+% Load the Lua modules
+% Split into multiple directlua blocks for better error reporting
 
-% Load the Lua modules using dofile with proper package.loaded sync
+% Clear cache
 \directlua{
-  -- FORCE CLEAR CACHE (Crucial for development)
-  package.loaded["cn_vertical"] = nil
-  package.loaded["cn_vertical_constants"] = nil
-  package.loaded["cn_vertical_flatten"] = nil
-  package.loaded["cn_vertical_layout"] = nil
-  package.loaded["cn_vertical_render"] = nil
-
-  -- Simple helper to load and register one module
-  local function load_one(modname, filename)
-    local path = kpse.find_file(filename, "lua")
-    if not path then path = filename end
-
-    local ok, result = pcall(dofile, path)
-    if not ok then
-      tex.error("Failed to load " .. filename .. ": " .. tostring(result))
-      return false
-    end
-
-    if result then
-      package.loaded[modname] = result
-    end
-    return true
-  end
-
-  -- Load each module explicitly
-  if not load_one("cn_vertical_constants", "cn_vertical_constants.lua") then
-    tex.error("Cannot load cn_vertical_constants.lua")
-  end
-
-  if not load_one("cn_vertical_flatten", "cn_vertical_flatten.lua") then
-    tex.error("Cannot load cn_vertical_flatten.lua")
-  end
-
-  if not load_one("cn_vertical_layout", "cn_vertical_layout.lua") then
-    tex.error("Cannot load cn_vertical_layout.lua")
-  end
-
-  if not load_one("cn_vertical_render", "cn_vertical_render.lua") then
-    tex.error("Cannot load cn_vertical_render.lua")
-  end
-
-  if not load_one("cn_vertical", "cn_vertical_main.lua") then
-    tex.error("Cannot load cn_vertical_main.lua")
-  end
-
-  -- Final check: make sure cn_vertical global is set
-  if not cn_vertical then
-    -- Try to get from package.loaded
-    cn_vertical = package.loaded["cn_vertical"]
-  end
-
-  if not cn_vertical or not cn_vertical.make_grid_box then
-    tex.error("FAILED! cn_vertical=" .. tostring(cn_vertical) .. " package.loaded=" .. tostring(package.loaded["cn_vertical"]))
-  end
+  package.loaded["constants"] = nil
+  package.loaded["flatten"] = nil
+  package.loaded["layout"] = nil
+  package.loaded["render"] = nil
+  package.loaded["core"] = nil
 }
 
-\typeout{==== AFTER DIRECTLUA BLOCK ====}
+% Load constants
+\directlua{
+  cn_vertical_constants = dofile("constants.lua")
+}
+
+% Load flatten
+\directlua{
+  cn_vertical_flatten = dofile("flatten.lua")
+}
+
+% Load layout
+\directlua{
+  cn_vertical_layout = dofile("layout.lua")
+}
+
+% Load render
+\directlua{
+  cn_vertical_render = dofile("render.lua")
+}
+
+% Load main module
+\directlua{
+  cn_vertical = dofile("core.lua")
+}
 
 % Use l3keys for key-value parameters
 \RequirePackage{xparse}

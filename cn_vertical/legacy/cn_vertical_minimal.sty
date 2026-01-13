@@ -1,0 +1,146 @@
+% cn_vertical_minimal.sty
+% Minimal version - Step by step testing
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{cn_vertical_minimal}[2026/01/12 v0.1 Minimal Test]
+
+\typeout{==== Loading cn_vertical_minimal ====}
+
+% Check LuaTeX
+\RequirePackage{ifluatex}
+\ifluatex\else
+  \PackageError{cn_vertical_minimal}{Requires LuaTeX}{}
+\fi
+
+% Load luatexbase for attributes
+\RequirePackage{luatexbase}
+\newluatexattribute\cnverticalindent
+\newluatexattribute\cnverticalrightindent
+
+\typeout{==== Step 1: Loading Lua code directly ====}
+
+\directlua{texio.write_nl("==== DEBUG 1: First directlua block ====")}
+
+% Clear cache
+\directlua{
+  texio.write_nl("DEBUG 2: Clearing cache")
+  package.loaded["cn_vertical_constants"] = nil
+  texio.write_nl("DEBUG 2: Cache cleared")
+}
+
+% Load constants
+\directlua{
+  texio.write_nl("DEBUG 3: Loading constants...")
+  cn_vertical_constants = dofile("cn_vertical_constants.lua")
+  texio.write_nl("DEBUG 3: constants loaded, type = " .. type(cn_vertical_constants or "nil"))
+}
+
+% Load flatten
+\directlua{
+  texio.write_nl("DEBUG 3b: Loading flatten...")
+  cn_vertical_flatten = dofile("cn_vertical_flatten.lua")
+  texio.write_nl("DEBUG 3b: flatten loaded, type = " .. type(cn_vertical_flatten or "nil"))
+}
+
+% Load layout
+\directlua{
+  texio.write_nl("DEBUG 3c: Loading layout...")
+  cn_vertical_layout = dofile("cn_vertical_layout.lua")
+  texio.write_nl("DEBUG 3c: layout loaded, type = " .. type(cn_vertical_layout or "nil"))
+}
+
+% Load render
+\directlua{
+  texio.write_nl("DEBUG 3d: Loading render...")
+  cn_vertical_render = dofile("cn_vertical_render.lua")
+  texio.write_nl("DEBUG 3d: render loaded, type = " .. type(cn_vertical_render or "nil"))
+}
+
+% Load main module
+\directlua{
+  texio.write_nl("DEBUG 3e: Loading main...")
+  cn_vertical = dofile("cn_vertical_main.lua")
+  texio.write_nl("DEBUG 3e: main loaded, type = " .. type(cn_vertical or "nil"))
+}
+
+% Check result
+\directlua{
+  texio.write_nl("DEBUG 4: Checking result")
+  if cn_vertical_constants then
+    texio.write_nl("SUCCESS: cn_vertical_constants exists")
+    if cn_vertical_constants.GLYPH then
+      texio.write_nl("  GLYPH = " .. tostring(cn_vertical_constants.GLYPH))
+    end
+  else
+    texio.write_nl("ERROR: cn_vertical_constants is nil")
+  end
+}
+
+\typeout{==== Step 2: Testing modules are loaded ====}
+
+% Test constants
+\directlua{
+  if cn_vertical_constants then
+    texio.write_nl("SUCCESS: cn_vertical_constants module loaded")
+    texio.write_nl("  - GLYPH = " .. tostring(cn_vertical_constants.GLYPH))
+    texio.write_nl("  - to_dimen = " .. tostring(cn_vertical_constants.to_dimen))
+  else
+    texio.write_nl("ERROR: cn_vertical_constants is nil!")
+  end
+}
+
+% Test flatten
+\directlua{
+  if cn_vertical_flatten then
+    texio.write_nl("SUCCESS: cn_vertical_flatten module loaded")
+    texio.write_nl("  - flatten_vbox = " .. tostring(cn_vertical_flatten.flatten_vbox))
+  else
+    texio.write_nl("ERROR: cn_vertical_flatten is nil!")
+  end
+}
+
+% Test layout
+\directlua{
+  if cn_vertical_layout then
+    texio.write_nl("SUCCESS: cn_vertical_layout module loaded")
+    texio.write_nl("  - calculate_grid_positions = " .. tostring(cn_vertical_layout.calculate_grid_positions))
+  else
+    texio.write_nl("ERROR: cn_vertical_layout is nil!")
+  end
+}
+
+% Test render
+\directlua{
+  if cn_vertical_render then
+    texio.write_nl("SUCCESS: cn_vertical_render module loaded")
+    texio.write_nl("  - apply_positions = " .. tostring(cn_vertical_render.apply_positions))
+  else
+    texio.write_nl("ERROR: cn_vertical_render is nil!")
+  end
+}
+
+% Test main module
+\directlua{
+  if cn_vertical then
+    texio.write_nl("SUCCESS: cn_vertical (main) module loaded")
+    texio.write_nl("  - make_grid_box = " .. tostring(cn_vertical.make_grid_box))
+  else
+    texio.write_nl("ERROR: cn_vertical is nil!")
+  end
+}
+
+\typeout{==== Step 3: Defining test command with make_grid_box ====}
+
+% Real test command using make_grid_box
+\newcommand{\VerticalTest}[1]{%
+  \par\noindent
+  \setbox0=\vbox{\hsize=10000pt \parindent=0pt #1}%
+  \directlua{
+    cn_vertical.make_grid_box(0, "200pt", "40pt", "40pt", 0, "false", "true", "0.2em", "center")
+  }%
+  \noindent\hfill\box0
+}
+
+\typeout{==== cn_vertical_minimal loaded successfully ====}
+
+
+\endinput

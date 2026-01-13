@@ -13,7 +13,7 @@
 
 -- Load dependencies
 -- Check if already loaded via dofile (package.loaded set manually)
-local constants = package.loaded['cn_vertical_constants'] or require('cn_vertical_constants')
+local constants = package.loaded['constants'] or require('constants')
 local D = constants.D
 
 --- Calculate grid positions for nodes
@@ -115,7 +115,7 @@ local layout = {
 }
 
 -- Register module in package.loaded for require() compatibility
-package.loaded['cn_vertical_layout'] = layout
+package.loaded['layout'] = layout
 
 -- Return module exports
 return layout

@@ -13,7 +13,7 @@
 
 -- Load dependencies
 -- Check if already loaded via dofile (package.loaded set manually)
-local constants = package.loaded['cn_vertical_constants'] or require('cn_vertical_constants')
+local constants = package.loaded['constants'] or require('constants')
 local D = constants.D
 
 -- Conversion factor from scaled points to PDF big points
@@ -44,12 +44,24 @@ local function apply_positions(head, layout_map, grid_width, grid_height, total_
 
     -- Draw column borders (if enabled)
     if draw_border and total_cols > 0 then
+        local border_thickness = 26214 -- 0.4pt in sp
+        local half_thickness = 13107   -- 0.2pt in sp
+        
         for col = 0, total_cols - 1 do
             local rtl_col = total_cols - 1 - col
             local box_x = rtl_col * grid_width
+            
+            -- x coordinate: rtl_col * grid_width
+            -- width: grid_width
+            -- height: from top (y= -half_thickness) to bottom (y= -(line_limit * grid_height + border_padding + half_thickness))
+            
             local tx_bp = box_x * sp_to_bp
-            local literal = string.format("q 0.4 w 0 0 0 RG %.4f 0 %.4f %.4f re S Q",
-                tx_bp, w_bp, col_height_bp
+            local ty_bp = -half_thickness * sp_to_bp
+            local tw_bp = grid_width * sp_to_bp
+            local th_bp = -(line_limit * grid_height + border_padding) * sp_to_bp
+            
+            local literal = string.format("q 0.4 w 0 0 0 RG %.4f %.4f %.4f %.4f re S Q",
+                tx_bp, ty_bp, tw_bp, th_bp
             )
             local n_node = node.new("whatsit", "pdf_literal")
             n_node.data = literal
@@ -135,7 +147,7 @@ local render = {
 }
 
 -- Register module in package.loaded for require() compatibility
-package.loaded['cn_vertical_render'] = render
+package.loaded['render'] = render
 
 -- Return module exports
 return render

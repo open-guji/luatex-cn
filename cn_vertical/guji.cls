@@ -170,30 +170,29 @@
 
     % 2. Calculate border overhead if border is enabled
     % Border adds: border_padding at bottom
-    % Also reserve small space for border line width (approximately 0.4bp ≈ 0.56pt)
+    % Also reserve small space for border line width (approximately 0.4pt)
     \dim_set:Nn \l_tmpb_dim { 0pt }
     \bool_if:NT \l_guji_border_bool {
-      % Get border-padding from cn_vertical defaults (0.2em typically)
-      % For safety, reserve approximately 1pt extra for border overhead
-      \dim_set:Nn \l_tmpb_dim { 1pt }
+      % Standard border-padding is 0.2em. We'll use a fixed value or calculate from em.
+      % Here we use a safe estimate matching the default border-padding in cn_vertical.
+      % Note: 0.2em @ 36pt = 7.2pt.
+      % We add 0.4pt for line width and 0.2pt for safety margin.
+      \dim_set:Nn \l_tmpb_dim { 0.2em + 0.6pt }
     }
     \dim_sub:Nn \l_tmpa_dim { \l_tmpb_dim }
     % \l_tmpa_dim is now Available Height minus border overhead
 
-    % 3. Calculate max rows fitting in this space using FLOOR (向下取整)
-    % Use integer division for floor operation instead of dim_ratio (which rounds)
-    % Convert dimensions to sp (scaled points) for integer division
+    % 3. Calculate max rows fitting in this space using FLOOR
+    % Convert dimensions to sp for integer division
     \int_set:Nn \l_tmpa_int { \dim_to_decimal_in_sp:n { \l_tmpa_dim } }
     \int_set:Nn \l_tmpb_int { \dim_to_decimal_in_sp:n { \l_guji_grid_height_tl } }
-    % Floor division: rows = floor(available_height / grid_height)
     \int_set:Nn \l_tmpa_int { \l_tmpa_int / \l_tmpb_int }
 
     % 4. Calculate Used Height = Rows * GridHeight
-    % Store in l_guji_height_tl directly (as a dimension expression)
     \tl_set:Nx \l_guji_height_tl { \dim_eval:n { \l_guji_grid_height_tl * \l_tmpa_int } }
 
     % 5. Calculate Remainder = Available - Used
-    % Apply Remainder and BorderOverhead to Top Margin (Push grid down slightly)
+    % Apply Remainder and BorderOverhead to Top Margin
     \tl_set:Nx \l_guji_margin_top_tl {
       \dim_eval:n { \l_guji_margin_top_tl + \l_tmpa_dim - \l_guji_height_tl + \l_tmpb_dim }
     }

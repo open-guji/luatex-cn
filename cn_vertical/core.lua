@@ -10,8 +10,8 @@
 
 -- Debug: Output status at module load time
 if texio and texio.write_nl then
-    texio.write_nl("cn_vertical.lua: Starting to load...")
-    texio.write_nl("  package.loaded['cn_vertical_constants'] = " .. tostring(package.loaded['cn_vertical_constants']))
+    texio.write_nl("core.lua: Starting to load...")
+    texio.write_nl("  package.loaded['constants'] = " .. tostring(package.loaded['constants']))
 end
 
 -- Create module namespace - MUST use _G to ensure global scope
@@ -20,13 +20,13 @@ local cn_vertical = _G.cn_vertical
 
 -- Load submodules using Lua's require mechanism
 -- Check if already loaded via dofile (package.loaded set manually by each module)
-local constants = package.loaded['cn_vertical_constants'] or require('cn_vertical_constants')
-local flatten = package.loaded['cn_vertical_flatten'] or require('cn_vertical_flatten')
-local layout = package.loaded['cn_vertical_layout'] or require('cn_vertical_layout')
-local render = package.loaded['cn_vertical_render'] or require('cn_vertical_render')
+local constants = package.loaded['constants'] or require('constants')
+local flatten = package.loaded['flatten'] or require('flatten')
+local layout = package.loaded['layout'] or require('layout')
+local render = package.loaded['render'] or require('render')
 
 if texio and texio.write_nl then
-    texio.write_nl("cn_vertical.lua: Submodules loaded successfully")
+    texio.write_nl("core.lua: Submodules loaded successfully")
     texio.write_nl("  constants = " .. tostring(constants))
     texio.write_nl("  flatten = " .. tostring(flatten))
 end
@@ -97,15 +97,18 @@ function cn_vertical.make_grid_box(box_num, height, grid_width, grid_height, col
     -- 6. Create new HLIST box for the result
     local cols = total_cols
     if cols == 0 then cols = 1 end
-    local actual_rows = math.min(limit, total_cols * limit)
-    if cols > 1 then actual_rows = limit end
+    
+    -- Calculate precise box dimensions to avoid page overflow
+    -- height covers upper border half, depth covers lower border half + padding
+    local border_thickness = 26214 -- 0.4pt in sp
+    local half_thickness = 13107   -- 0.2pt in sp
 
     local new_box = node.new("hlist")
     new_box.dir = "TLT"
     new_box.list = new_head
     new_box.width = cols * g_width
-    new_box.height = 0
-    new_box.depth = actual_rows * g_height
+    new_box.height = half_thickness
+    new_box.depth = limit * g_height + b_padding + half_thickness
 
     tex.box[box_num] = new_box
 end

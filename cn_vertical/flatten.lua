@@ -13,7 +13,7 @@
 
 -- Load dependencies
 -- Check if already loaded via dofile (package.loaded set manually)
-local constants = package.loaded['cn_vertical_constants'] or require('cn_vertical_constants')
+local constants = package.loaded['constants'] or require('constants')
 local D = constants.D
 
 --- Flatten a vlist (from vbox) into a single list of nodes
@@ -167,7 +167,7 @@ local flatten = {
 }
 
 -- Register module in package.loaded for require() compatibility
-package.loaded['cn_vertical_flatten'] = flatten
+package.loaded['flatten'] = flatten
 
 -- Return module exports
 return flatten

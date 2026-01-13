@@ -53,12 +53,6 @@ function cn_vertical.make_grid_box(box_num, height, grid_width, grid_height, col
     local box = tex.box[box_num]
     if not box then return end
 
-    -- 2. Parse and validate parameters
-    local g_width = constants.to_dimen(grid_width) or (65536 * 20)
-
-    local list = box.list
-    if not list then return end
-
     local g_height = constants.to_dimen(grid_height) or g_width
 
     -- Use grid_height (char height) as approximate char width for indent calculation
@@ -107,8 +101,8 @@ function cn_vertical.make_grid_box(box_num, height, grid_width, grid_height, col
     new_box.dir = "TLT"
     new_box.list = new_head
     new_box.width = cols * g_width
-    new_box.height = half_thickness
-    new_box.depth = limit * g_height + b_padding + half_thickness
+    new_box.height = limit * g_height + b_padding + border_thickness
+    new_box.depth = 0
 
     tex.box[box_num] = new_box
 end

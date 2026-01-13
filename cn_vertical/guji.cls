@@ -104,6 +104,7 @@
         right=\l_guji_margin_right_tl,
         footskip=15mm
       }
+      \setlength{\topskip}{0pt}
     \fi
   }
 
@@ -163,45 +164,60 @@
     % --- Auto-Correction Logic ---
     % Calculate exact fit for grid to avoid blank pages and overflow
     % 1. Get available space from defined margins
+    \dim_new:N \l_tmpc_dim
+    \dim_new:N \l_tmpd_dim
     \dim_set:Nn \l_tmpa_dim { \l_guji_paper_height_tl }
     \dim_sub:Nn \l_tmpa_dim { \l_guji_margin_top_tl }
     \dim_sub:Nn \l_tmpa_dim { \l_guji_margin_bottom_tl }
     % \l_tmpa_dim is now Available Height
 
     % 2. Calculate border overhead if border is enabled
-    % Border adds: border_padding at bottom
-    % Also reserve small space for border line width (approximately 0.4pt)
+    % Standard border-padding is 0.2em. We'll use a fixed value or calculate from em.
+    % Note: 0.2em @ 36pt = 7.2pt.
     \dim_set:Nn \l_tmpb_dim { 0pt }
     \bool_if:NT \l_guji_border_bool {
-      % Standard border-padding is 0.2em. We'll use a fixed value or calculate from em.
-      % Here we use a safe estimate matching the default border-padding in cn_vertical.
-      % Note: 0.2em @ 36pt = 7.2pt.
-      % We add 0.4pt for line width and 0.2pt for safety margin.
-      \dim_set:Nn \l_tmpb_dim { 0.2em + 0.6pt }
+      % We add 0.4pt for line width and 0.4pt for safety margin.
+      \dim_set:Nn \l_tmpb_dim { 0.2em + 0.8pt }
     }
     \dim_sub:Nn \l_tmpa_dim { \l_tmpb_dim }
     % \l_tmpa_dim is now Available Height minus border overhead
 
     % 3. Calculate max rows fitting in this space using FLOOR
-    % Convert dimensions to sp for integer division
     \int_set:Nn \l_tmpa_int { \dim_to_decimal_in_sp:n { \l_tmpa_dim } }
     \int_set:Nn \l_tmpb_int { \dim_to_decimal_in_sp:n { \l_guji_grid_height_tl } }
     \int_set:Nn \l_tmpa_int { \l_tmpa_int / \l_tmpb_int }
 
-    % 4. Calculate Used Height = Rows * GridHeight
-    \tl_set:Nx \l_guji_height_tl { \dim_eval:n { \l_guji_grid_height_tl * \l_tmpa_int } }
+    % 4. Calculate heights
+    % UsedHeight = Rows * GridHeight (This is the height passed to cn_vertical)
+    \dim_set:Nn \l_tmpc_dim { \l_guji_grid_height_tl * \l_tmpa_int }
+    \tl_set:Nx \l_guji_height_tl { \dim_use:N \l_tmpc_dim } 
+    
+    % TotalHeight = UsedHeight + BorderOverhead + Safety (This is the \textheight)
+    \dim_set:Nn \l_tmpd_dim { \l_tmpc_dim + \l_tmpb_dim + 2pt }
 
-    % 5. Calculate Remainder = Available - Used
-    % Apply Remainder and BorderOverhead to Top Margin
+    % 5. Adjust Margins
+    % We adjust top margin to preserve the bottom margin
     \tl_set:Nx \l_guji_margin_top_tl {
-      \dim_eval:n { \l_guji_margin_top_tl + \l_tmpa_dim - \l_guji_height_tl + \l_tmpb_dim }
+      \dim_eval:n { \l_guji_paper_height_tl - \l_guji_margin_bottom_tl - \l_tmpd_dim }
     }
 
     % Log for debugging
-    \iow_term:x { Guji~Auto-Layout:~Rows=\int_use:N \l_tmpa_int,~UsedHeight=\l_guji_height_tl,~BorderOverhead=\dim_use:N \l_tmpb_dim }
+    \iow_term:x { Guji~Auto-Layout:~Rows=\int_use:N \l_tmpa_int,~TextHeight=\dim_use:N \l_tmpd_dim,~TopMargin=\l_guji_margin_top_tl }
 
     % Update geometry for this environment
     \__guji_apply_geometry:
+    
+    % Zap all vertical spacing
+    \setlength{\topskip}{0pt}
+    \setlength{\parskip}{0pt}
+    \setlength{\partopsep}{0pt}
+    \setlength{\topsep}{0pt}
+    \setlength{\itemsep}{0pt}
+    \setlength{\parsep}{0pt}
+    \setlength{\baselineskip}{0pt}
+    \setlength{\lineskip}{0pt}
+    \setlength{\lineskiplimit}{0pt}
+    \parindent=0pt
 
     \keys_set:nn { cn_vertical }
       {
@@ -210,6 +226,7 @@
         grid-height = \l_guji_grid_height_tl,
         vertical-align = \l_guji_valign_tl
       }
+    \nointerlineskip
     \__cn_vertical_process_grid:n { \BODY }
     \group_end:
     \clearpage

@@ -80,10 +80,10 @@
     vertical-align .initial:n = center,
 
     border-padding-top .tl_set:N = \l_guji_border_padding_top_tl,
-    border-padding-top .initial:n = 0.1em,
+    border-padding-top .initial:n = 0.2em,
 
     border-padding-bottom .tl_set:N = \l_guji_border_padding_bottom_tl,
-    border-padding-bottom .initial:n = 0.1em,
+    border-padding-bottom .initial:n = 0.2em,
 
     border-thickness .tl_set:N = \l_guji_border_thickness_tl,
     border-thickness .initial:n = 0.5pt,
@@ -189,12 +189,11 @@
     % \l_tmpa_dim is now Available Height
 
     % 2. Calculate border overhead if border is enabled
-    % Standard border-padding is 0.2em. We'll use a fixed value or calculate from em.
-    % Note: 0.2em @ 36pt = 7.2pt.
+    % We now have top and bottom padding. Default is 0.1em each.
     \dim_set:Nn \l_tmpb_dim { 0pt }
     \bool_if:NT \l_guji_border_bool {
-      % We add border-thickness for line width and 0.4pt for safety margin.
-      \dim_set:Nn \l_tmpb_dim { 0.2em + \l_guji_border_thickness_tl + 0.4pt }
+      % Standard column border overhead = top padding + bottom padding + thickness + safety
+      \dim_set:Nn \l_tmpb_dim { \l_guji_border_padding_top_tl + \l_guji_border_padding_bottom_tl + \l_guji_border_thickness_tl + 0.4pt }
     }
     % --- NEW: Add extra overhead for outer-border ---
     \bool_if:NT \l_guji_outer_border_bool {
@@ -251,9 +250,10 @@
         grid-height = \l_guji_grid_height_tl,
         vertical-align = \l_guji_valign_tl,
         border-thickness = \l_guji_border_thickness_tl,
+        border-padding-top = \l_guji_border_padding_top_tl,
+        border-padding-bottom = \l_guji_border_padding_bottom_tl,
         outer-border-thickness = \l_guji_outer_border_thickness_tl,
-        outer-border-sep = \l_guji_outer_border_sep_tl,
-        border-padding = 0.2em
+        outer-border-sep = \l_guji_outer_border_sep_tl
       }
     \nointerlineskip
     \__cn_vertical_process_grid:n { \BODY }

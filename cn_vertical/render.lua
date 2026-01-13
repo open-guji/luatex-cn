@@ -15,6 +15,7 @@
 -- Check if already loaded via dofile (package.loaded set manually)
 local constants = package.loaded['constants'] or require('constants')
 local D = constants.D
+local banxin = package.loaded['banxin'] or require('banxin')
 
 -- Conversion factor from scaled points to PDF big points
 local sp_to_bp = 0.0000152018
@@ -169,6 +170,31 @@ local function apply_positions(head, layout_map, params)
                     n_node.data = literal
                     n_node.mode = 0
                     p_head = D.insert_before(p_head, p_head, D.todirect(n_node))
+                    
+                    -- Draw banxin dividers for banxin columns
+                    if is_banxin_col(col) then
+                        local banxin_x = rtl_col * grid_width + half_thickness + shift_x
+                        local banxin_y = -(half_thickness + outer_shift)
+                        local banxin_height = line_limit * grid_height + b_padding_top + b_padding_bottom
+                        local banxin_params = {
+                            x = banxin_x,
+                            y = banxin_y,
+                            width = grid_width,
+                            total_height = banxin_height,
+                            section1_ratio = params.banxin_s1_ratio or 0.28,
+                            section2_ratio = params.banxin_s2_ratio or 0.56,
+                            section3_ratio = params.banxin_s3_ratio or 0.16,
+                            color_str = b_rgb_str,
+                            border_thickness = border_thickness
+                        }
+                        local banxin_literals = banxin.draw_banxin(banxin_params)
+                        for _, lit in ipairs(banxin_literals) do
+                            local bn = node.new("whatsit", "pdf_literal")
+                            bn.data = lit
+                            bn.mode = 0
+                            p_head = D.insert_before(p_head, p_head, D.todirect(bn))
+                        end
+                    end
                 end
             end
 

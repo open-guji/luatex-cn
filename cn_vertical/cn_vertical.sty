@@ -27,6 +27,7 @@
   package.loaded["flatten"] = nil
   package.loaded["layout"] = nil
   package.loaded["render"] = nil
+  package.loaded["banxin"] = nil
   package.loaded["core"] = nil
 }
 
@@ -50,6 +51,11 @@
   cn_vertical_render = dofile("render.lua")
 }
 
+% Load banxin
+\directlua{
+  cn_vertical_banxin = dofile("banxin.lua")
+}
+
 % Load main module
 \directlua{
   cn_vertical = dofile("core.lua")
@@ -59,6 +65,10 @@
 \RequirePackage{xparse}
 
 \ExplSyntaxOn
+
+\tl_new:N \l_cnv_banxin_one_tl
+\tl_new:N \l_cnv_banxin_two_tl
+\tl_new:N \l_cnv_banxin_three_tl
 
 % Define keys
 \keys_define:nn { cn_vertical }
@@ -140,6 +150,16 @@
 
     margin-right .tl_set:N = \l__cn_vertical_margin_right_tl,
     margin-right .initial:n = {0pt},
+
+    % Banxin (版心) configuration
+    banxin-section1-ratio .tl_set:N = \l_cnv_banxin_one_tl,
+    banxin-section1-ratio .initial:n = {0.28},
+
+    banxin-section2-ratio .tl_set:N = \l_cnv_banxin_two_tl,
+    banxin-section2-ratio .initial:n = {0.56},
+
+    banxin-section3-ratio .tl_set:N = \l_cnv_banxin_three_tl,
+    banxin-section3-ratio .initial:n = {0.16},
   }
 
 \tl_new:N \l__cn_vertical_border_rgb_tl
@@ -240,7 +260,10 @@
         margin_top = [=[\luaescapestring{\l__cn_vertical_margin_top_tl}]=],
         margin_bottom = [=[\luaescapestring{\l__cn_vertical_margin_bottom_tl}]=],
         margin_left = [=[\luaescapestring{\l__cn_vertical_margin_left_tl}]=],
-        margin_right = [=[\luaescapestring{\l__cn_vertical_margin_right_tl}]=]
+        margin_right = [=[\luaescapestring{\l__cn_vertical_margin_right_tl}]=],
+        banxin_s1_ratio = [=[\luaescapestring{\l_cnv_banxin_one_tl}]=],
+        banxin_s2_ratio = [=[\luaescapestring{\l_cnv_banxin_two_tl}]=],
+        banxin_s3_ratio = [=[\luaescapestring{\l_cnv_banxin_three_tl}]=]
       })
     }
   }

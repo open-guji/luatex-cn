@@ -1,0 +1,35 @@
+﻿% guji.cls
+% A LaTeX document class for ancient Chinese book typesetting.
+% Developed for LuaTeX
+
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesClass{guji}[2026/01/10 v0.3.0 Ancient Chinese Book Class (Template Support)]
+
+% 1. Options Handling
+\DeclareOption*{\PassOptionsToClass{\CurrentOption}{article}}
+\ProcessOptions\relax
+\LoadClass{article}
+
+% 2. Core Dependencies
+\RequirePackage{geometry}
+\RequirePackage{fontspec}
+\RequirePackage{environ}
+\RequirePackage{cn_vertical}
+\RequirePackage{expl3}
+\RequirePackage{xparse}
+
+% 3. Page Geometry - Will be applied dynamically via template
+% Default values stored in key-value system below
+
+% 4. Key-Value Configuration System (expl3)
+\ExplSyntaxOn
+
+\tl_new:N \l_guji_banxin_s1_tl
+\tl_new:N \l_guji_banxin_s2_tl
+\tl_new:N \l_guji_banxin_s3_tl
+
+\keys_define:nn { guji }
+  {
+    % Page geometry settings (can be overridden by templates)
+    paper-width .tl_set:N = \l_guji_paper_width_tl,
+    paper-width .initial:n = 1136pt,

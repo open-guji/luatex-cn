@@ -14,9 +14,9 @@
 \RequirePackage{geometry}
 \RequirePackage{fontspec}
 \RequirePackage{environ}
-\RequirePackage{cn_vertical}
 \RequirePackage{expl3}
 \RequirePackage{xparse}
+\RequirePackage{cn_vertical}
 
 % 3. Page Geometry - Will be applied dynamically via template
 % Default values stored in key-value system below
@@ -99,6 +99,16 @@
 
     font-color .tl_set:N = \l_guji_font_color_tl,
     font-color .initial:n = {black},
+
+    % Banxin (版心) section ratios
+    banxin-section1-ratio .tl_set:N = \l_guji_banxin_sone_tl,
+    banxin-section1-ratio .initial:n = {0.28},
+
+    banxin-section2-ratio .tl_set:N = \l_guji_banxin_stwo_tl,
+    banxin-section2-ratio .initial:n = {0.56},
+
+    banxin-section3-ratio .tl_set:N = \l_guji_banxin_sthree_tl,
+    banxin-section3-ratio .initial:n = {0.16},
 
     template .code:n = {
       \InputIfFileExists{#1.guji}{}{
@@ -275,7 +285,10 @@
         margin-top = \l_guji_margin_top_tl,
         margin-bottom = \l_guji_margin_bottom_tl,
         margin-left = \l_guji_margin_left_tl,
-        margin-right = \l_guji_margin_right_tl
+        margin-right = \l_guji_margin_right_tl,
+        banxin-section1-ratio = \l_guji_banxin_sone_tl,
+        banxin-section2-ratio = \l_guji_banxin_stwo_tl,
+        banxin-section3-ratio = \l_guji_banxin_sthree_tl
       }
     \nointerlineskip
     \__cn_vertical_process_grid:n { \BODY }

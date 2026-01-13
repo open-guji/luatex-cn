@@ -64,14 +64,29 @@
     border .bool_set:N = \l_guji_border_bool,
     border .initial:n = true,
 
+    outer-border .bool_set:N = \l_guji_outer_border_bool,
+    outer-border .initial:n = false,
+
+    outer-border-thickness .tl_set:N = \l_guji_outer_border_thickness_tl,
+    outer-border-thickness .initial:n = 3pt,
+
+    outer-border-sep .tl_set:N = \l_guji_outer_border_sep_tl,
+    outer-border-sep .initial:n = 2pt,
+
     debug .bool_set:N = \l_guji_debug_bool,
     debug .initial:n = false,
 
     vertical-align .tl_set:N = \l_guji_valign_tl,
     vertical-align .initial:n = center,
 
+    border-padding-top .tl_set:N = \l_guji_border_padding_top_tl,
+    border-padding-top .initial:n = 0.1em,
+
+    border-padding-bottom .tl_set:N = \l_guji_border_padding_bottom_tl,
+    border-padding-bottom .initial:n = 0.1em,
+
     border-thickness .tl_set:N = \l_guji_border_thickness_tl,
-    border-thickness .initial:n = 0.4pt,
+    border-thickness .initial:n = 0.5pt,
 
     template .code:n = {
       \InputIfFileExists{#1.guji}{}{
@@ -158,6 +173,7 @@
     \keys_set:nn { guji } { #1 }
     \fontsize{\l_guji_font_size_tl}{\l_guji_line_spacing_tl}\selectfont
     \bool_if:NTF \l_guji_border_bool { \keys_set:nn { cn_vertical } { border=true } } { \keys_set:nn { cn_vertical } { border=false } }
+    \bool_if:NTF \l_guji_outer_border_bool { \keys_set:nn { cn_vertical } { outer-border=true } } { \keys_set:nn { cn_vertical } { outer-border=false } }
     \bool_if:NTF \l_guji_debug_bool { \keys_set:nn { cn_vertical } { debug=true } } { \keys_set:nn { cn_vertical } { debug=false } }
     % Zero out vertical skips for exact grid layout
     \setlength{\topskip}{0pt}
@@ -167,8 +183,6 @@
     % --- Auto-Correction Logic ---
     % Calculate exact fit for grid to avoid blank pages and overflow
     % 1. Get available space from defined margins
-    \dim_new:N \l_tmpc_dim
-    \dim_new:N \l_tmpd_dim
     \dim_set:Nn \l_tmpa_dim { \l_guji_paper_height_tl }
     \dim_sub:Nn \l_tmpa_dim { \l_guji_margin_top_tl }
     \dim_sub:Nn \l_tmpa_dim { \l_guji_margin_bottom_tl }
@@ -182,6 +196,12 @@
       % We add border-thickness for line width and 0.4pt for safety margin.
       \dim_set:Nn \l_tmpb_dim { 0.2em + \l_guji_border_thickness_tl + 0.4pt }
     }
+    % --- NEW: Add extra overhead for outer-border ---
+    \bool_if:NT \l_guji_outer_border_bool {
+      % We added internal padding (sep) + thickness.
+      % The overhead is (sep + thickness) * 2.
+      \dim_add:Nn \l_tmpb_dim { (\l_guji_outer_border_sep_tl + \l_guji_outer_border_thickness_tl) * 2 }
+    }
     \dim_sub:Nn \l_tmpa_dim { \l_tmpb_dim }
     % \l_tmpa_dim is now Available Height minus border overhead
 
@@ -192,20 +212,22 @@
 
     % 4. Calculate heights
     % UsedHeight = Rows * GridHeight (This is the height passed to cn_vertical)
-    \dim_set:Nn \l_tmpc_dim { \l_guji_grid_height_tl * \l_tmpa_int }
-    \tl_set:Nx \l_guji_height_tl { \dim_use:N \l_tmpc_dim } 
+    % We use \l_tmpa_dim to store the result
+    \dim_set:Nn \l_tmpa_dim { \l_guji_grid_height_tl * \l_tmpa_int }
+    \tl_set:Nx \l_guji_height_tl { \dim_use:N \l_tmpa_dim } 
     
     % TotalHeight = UsedHeight + BorderOverhead + Safety (This is the \textheight)
-    \dim_set:Nn \l_tmpd_dim { \l_tmpc_dim + \l_tmpb_dim + 2pt }
+    % We use \l_tmpb_dim to store the result
+    \dim_set:Nn \l_tmpb_dim { \l_tmpa_dim + \l_tmpb_dim + 2pt }
 
     % 5. Adjust Margins
     % We adjust top margin to preserve the bottom margin
     \tl_set:Nx \l_guji_margin_top_tl {
-      \dim_eval:n { \l_guji_paper_height_tl - \l_guji_margin_bottom_tl - \l_tmpd_dim }
+      \dim_eval:n { \l_guji_paper_height_tl - \l_guji_margin_bottom_tl - \l_tmpb_dim }
     }
 
     % Log for debugging
-    \iow_term:x { Guji~Auto-Layout:~Rows=\int_use:N \l_tmpa_int,~TextHeight=\dim_use:N \l_tmpd_dim,~TopMargin=\l_guji_margin_top_tl }
+    \iow_term:x { Guji~Auto-Layout:~Rows=\int_use:N \l_tmpa_int,~TextHeight=\dim_use:N \l_tmpb_dim,~TopMargin=\l_guji_margin_top_tl }
 
     % Update geometry for this environment
     \__guji_apply_geometry:
@@ -229,6 +251,8 @@
         grid-height = \l_guji_grid_height_tl,
         vertical-align = \l_guji_valign_tl,
         border-thickness = \l_guji_border_thickness_tl,
+        outer-border-thickness = \l_guji_outer_border_thickness_tl,
+        outer-border-sep = \l_guji_outer_border_sep_tl,
         border-padding = 0.2em
       }
     \nointerlineskip

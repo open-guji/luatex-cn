@@ -26,7 +26,8 @@
     font-size = 28pt,
     line-spacing = 30.1pt,
     height = 632pt,         % Default approx, will be auto-corrected
-    border = true
+    border = true,
+    outer-border = true
 }
 
 \endinput

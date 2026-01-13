@@ -83,8 +83,23 @@
     border .bool_set:N = \l__cn_vertical_border_bool,
     border .initial:n = false,
 
-    border-padding .tl_set:N = \l__cn_vertical_border_padding_tl,
-    border-padding .initial:n = {0.2em},
+    outer-border .bool_set:N = \l__cn_vertical_outer_border_bool,
+    outer-border .initial:n = false,
+
+    outer-border-thickness .tl_set:N = \l__cn_vertical_outer_border_thickness_tl,
+    outer-border-thickness .initial:n = {2pt},
+
+    outer-border-sep .tl_set:N = \l__cn_vertical_outer_border_sep_tl,
+    outer-border-sep .initial:n = {2pt},
+
+    border-padding-top .tl_set:N = \l__cn_vertical_border_padding_top_tl,
+    border-padding-top .initial:n = {0.1em},
+
+    border-padding-bottom .tl_set:N = \l__cn_vertical_border_padding_bottom_tl,
+    border-padding-bottom .initial:n = {0.1em},
+
+    % Keep for backward compatibility
+    border-padding .tl_set:N = \l__cn_vertical_border_padding_bottom_tl,
 
     border-thickness .tl_set:N = \l__cn_vertical_border_thickness_tl,
     border-thickness .initial:n = {0.4pt},
@@ -108,9 +123,13 @@
         \int_use:N \l__cn_vertical_cols_int,
         "\bool_if:NTF \l__cn_vertical_debug_bool {true} {false}",
         "\bool_if:NTF \l__cn_vertical_border_bool {true} {false}",
-        "\luaescapestring{\l__cn_vertical_border_padding_tl}",
+        "\luaescapestring{\l__cn_vertical_border_padding_top_tl}",
+        "\luaescapestring{\l__cn_vertical_border_padding_bottom_tl}",
         "\luaescapestring{\l__cn_vertical_valign_tl}",
-        "\luaescapestring{\l__cn_vertical_border_thickness_tl}"
+        "\luaescapestring{\l__cn_vertical_border_thickness_tl}",
+        "\bool_if:NTF \l__cn_vertical_outer_border_bool {true} {false}",
+        "\luaescapestring{\l__cn_vertical_outer_border_thickness_tl}",
+        "\luaescapestring{\l__cn_vertical_outer_border_sep_tl}"
       )
     }
     % Output the modified box (RTL layout handled internally)

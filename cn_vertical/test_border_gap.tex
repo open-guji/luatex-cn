@@ -1,0 +1,29 @@
+\documentclass{guji}
+
+\begin{document}
+
+\begin{guji-content}[
+    outer-border=true, 
+    border=true, 
+    outer-border-thickness=3pt, 
+    border-thickness=0.5pt,
+    outer-border-sep=2pt
+]
+測外邊框與內邊框之間的固定間距。
+目前設置外框 3pt，內框 0.5pt，間距 2pt。
+不論粗細如何調整，間距應保持固定。
+\end{guji-content}
+
+\begin{guji-content}[
+    outer-border=true, 
+    border=true, 
+    outer-border-thickness=5pt, 
+    border-thickness=2pt,
+    outer-border-sep=2pt
+]
+這是第二個測試，使用了更粗的邊框。
+設置外框 5pt，內框 2pt，間距依然是 2pt。
+視覺上應該能看到外框與內框之間的空隙寬度沒有變化。
+\end{guji-content}
+
+\end{document}

@@ -48,7 +48,10 @@ end
 -- @param border_on (string|boolean) Enable column borders ("true"/true)
 -- @param border_padding (string) Border bottom padding (TeX dimension string)
 -- @param vertical_align (string) Vertical alignment: "top", "center", or "bottom"
-function cn_vertical.make_grid_box(box_num, height, grid_width, grid_height, col_limit, debug_on, border_on, border_padding, vertical_align, border_thickness)
+-- @param border_thickness (string) Thickness of column borders (TeX dimension string)
+-- @param outer_border_on (string|boolean) Enable outer border ("true"/true)
+-- @param outer_border_thickness (string) Thickness of outer border (TeX dimension string)
+function cn_vertical.make_grid_box(box_num, height, grid_width, grid_height, col_limit, debug_on, border_on, border_padding, vertical_align, border_thickness, outer_border_on, outer_border_thickness, outer_border_sep)
     -- 1. Get box from TeX
     local box = tex.box[box_num]
     if not box then return end
@@ -64,6 +67,8 @@ function cn_vertical.make_grid_box(box_num, height, grid_width, grid_height, col
     local h_dim = constants.to_dimen(height) or (65536 * 300)
     local b_padding = constants.to_dimen(border_padding) or 0
     local b_thickness = constants.to_dimen(border_thickness) or 26214 -- 0.4pt
+    local ob_thickness = constants.to_dimen(outer_border_thickness) or (65536 * 2) -- 2pt default
+    local ob_sep = constants.to_dimen(outer_border_sep) or (65536 * 2) -- 2pt default
 
     local limit = tonumber(col_limit)
     if not limit or limit <= 0 then
@@ -72,6 +77,11 @@ function cn_vertical.make_grid_box(box_num, height, grid_width, grid_height, col
 
     local is_debug = (debug_on == "true" or debug_on == true)
     local is_border = (border_on == "true" or border_on == true)
+    local is_outer_border = (outer_border_on == "true" or outer_border_on == true)
+
+    if texio and texio.write_nl then
+        texio.write_nl(string.format("core.lua: make_grid_box. is_outer_border=%s, border_on=%s, ob_thick=%d, ob_sep=%d", tostring(is_outer_border), tostring(is_border), ob_thickness, ob_sep))
+    end
 
     -- Parse vertical alignment (default: center)
     local valign = vertical_align or "center"
@@ -89,18 +99,23 @@ function cn_vertical.make_grid_box(box_num, height, grid_width, grid_height, col
     local layout_map, total_cols = layout.calculate_grid_positions(list, g_height, limit)
 
     -- 5. Pipeline Stage 3: Apply positions and render
-    local new_head = render.apply_positions(list, layout_map, g_width, g_height, total_cols, valign, is_debug, is_border, b_padding, limit, b_thickness)
+    local new_head = render.apply_positions(list, layout_map, g_width, g_height, total_cols, valign, is_debug, is_border, b_padding, limit, b_thickness, is_outer_border, ob_thickness, ob_sep)
 
     -- 6. Create new HLIST box for the result
     local cols = total_cols
     if cols == 0 then cols = 1 end
     
+    -- Padding for the outer border (MUST match render.lua logic)
+    -- Inner content width = total_cols * grid_width + b_thickness
+    -- Total expansion = (ob_thickness + ob_sep) on both sides if outer_border is on
+    local shift = is_outer_border and (ob_thickness + ob_sep) or 0
+
     local new_box = node.new("hlist")
     new_box.dir = "TLT"
     new_box.list = new_head
-    new_box.width = cols * g_width + b_thickness
-    new_box.height = limit * g_height + b_padding + b_thickness
-    new_box.depth = 0
+    new_box.width = cols * g_width + b_thickness + shift * 2
+    new_box.height = shift -- Top margin
+    new_box.depth = limit * g_height + b_padding + b_thickness + shift -- Bottom margin
 
     tex.box[box_num] = new_box
 end

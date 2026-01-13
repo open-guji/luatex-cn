@@ -3,18 +3,23 @@
 \begin{document}
 
 \begin{guji-content}[template=sikuquanshu, debug=true]
-    这是一个分布测试：\GridTextbox[width=2, height=3, distribute=true]{二乘三格}文本框之后继续排列。
-    
-    再次测试均匀分3格放2字\GridTextbox[height=3, distribute=true]{一二}测试文本继续。
-    
-    再次测试均匀分布7格放5字\GridTextbox[height=7, distribute=true]{一二三四五}测试文本继续。
-
-\begin{itemize}[leftmargin=1em, label={}]
-    \item 第一层
-    \item \begin{itemize}[leftmargin=1em, label={}]
-        \item \GridTextbox[height=4, distribute=true]{一二三}其他文本
+    开始列表测试
+    \begin{itemize}[leftmargin=1em, label={}]
+        \item 第一层
+        \item \begin{itemize}[leftmargin=1em, label={}]
+            \item \GridTextbox[height=4, distribute=true]{一二三}其他文本
+            \item 第二层
+        \end{itemize}
     \end{itemize}
-\end{itemize}
+    \par
+    \par
+    \par
+    这是一个分布测试：\GridTextbox[width=2, height=3, distribute=true]{二乘三格}文本框之后继续排列。
+    \par
+    再次测试均匀分3格放2字\GridTextbox[height=3, distribute=true]{一二}测试文本继续。
+    \par
+    测试均匀分布7格放5字\GridTextbox[height=7, distribute=true]{一二三四五}测试文本继续。
+
 \end{guji-content}
 
 \end{document}

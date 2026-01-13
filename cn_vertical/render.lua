@@ -232,13 +232,18 @@ local function apply_positions(head, layout_map, params)
                 local next_curr = D.getnext(curr)
                 local id = D.getid(curr)
                 if id == constants.GLYPH or id == constants.HLIST or id == constants.VLIST then
-                    local pos = layout_map[curr]
-                    if pos then
-                        local col = pos.col
-                        local row = pos.row
-                        local d = D.getfield(curr, "depth") or 0
-                        local h = D.getfield(curr, "height") or 0
-                        local w = D.getfield(curr, "width") or 0
+                        local pos = layout_map[curr]
+                        if pos then
+                            local col = pos.col
+                            local row = pos.row
+                            local d = D.getfield(curr, "depth") or 0
+                            local h = D.getfield(curr, "height") or 0
+                            local w = D.getfield(curr, "width") or 0
+
+                            if texio and texio.write_nl and draw_debug then
+                                local type_str = (id == constants.GLYPH and "GLYPH" or "BLOCK")
+                                texio.write_nl("  [render] Node=" .. tostring(curr) .. " " .. type_str .. " at p=" .. (pos.page or 0) .. " c=" .. col .. " r=" .. row .. " w=" .. (pos.width or 0) .. " h=" .. (pos.height or 0))
+                            end
                         
                         if id == constants.GLYPH then
                             -- Use unified position calculation for glyphs (centering)
@@ -299,7 +304,8 @@ local function apply_positions(head, layout_map, params)
                                 dbg_w = pos.width * grid_width * sp_to_bp
                                 dbg_h = -pos.height * grid_height * sp_to_bp
                             end
-                            local literal = string.format("q 0.5 w 0 0 1 RG 1 0 0 1 %.4f %.4f cm 0 0 %.4f %.4f re S Q", tx_bp, ty_bp, dbg_w, dbg_h)
+                            local color_str = pos.is_block and "1 0 0 RG" or "0 0 1 RG"
+                            local literal = string.format("q 0.5 w %s 1 0 0 1 %.4f %.4f cm 0 0 %.4f %.4f re S Q", color_str, tx_bp, ty_bp, dbg_w, dbg_h)
                             local nn = node.new("whatsit", "pdf_literal")
                             nn.data = literal
                             nn.mode = 0

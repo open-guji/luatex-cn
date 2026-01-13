@@ -33,6 +33,9 @@ local function flatten_vbox(head, grid_width, char_width)
     -- @param n (direct node) Node to append
     local function append_node(n)
         if not n then return end
+        if texio and texio.write_nl then
+            texio.write_nl("  [flatten] Appending Node=" .. tostring(n) .. " tid=" .. (D.getid(n) or "?"))
+        end
         D.setnext(n, nil)
         if not result_head_d then
             result_head_d = n
@@ -44,37 +47,85 @@ local function flatten_vbox(head, grid_width, char_width)
     end
 
     --- Recursive node collector
-    -- Traverses nested boxes and collects valid nodes
-    --
-    -- @param n_head (direct node) Head of node list to collect
-    -- @param indent_level (number) Left indent level in characters
-    -- @param right_indent_level (number) Right indent level in characters
-    local function collect_nodes(n_head, indent_level, right_indent_level)
+    -- @param n_head (direct node) Head of node list to collect (WILL BE CONSUMED)
+    -- @param indent_lvl (number) Current indent
+    -- @param r_indent_lvl (number) Current right indent
+    -- @return (boolean) True if any visible content (glyphs/textboxes) was collected
+    local function collect_nodes(n_head, indent_lvl, r_indent_lvl)
         local t = n_head
+        local running_indent = indent_lvl
+        local running_r_indent = r_indent_lvl
+        local has_content = false
+
         while t do
             local tid = D.getid(t)
 
-            if tid == constants.HLIST or tid == constants.VLIST then
-                -- Check if this inner box is a Grid Textbox
-                local tb_w = D.get_attribute(t, constants.ATTR_TEXTBOX_WIDTH) or 0
-                local tb_h = D.get_attribute(t, constants.ATTR_TEXTBOX_HEIGHT) or 0
+            -- Check for Textbox Block attribute
+            local tb_w = D.get_attribute(t, constants.ATTR_TEXTBOX_WIDTH) or 0
+            local tb_h = D.get_attribute(t, constants.ATTR_TEXTBOX_HEIGHT) or 0
 
-                if tb_w > 0 and tb_h > 0 then
-                    -- This is a textbox block. Do NOT flatten its content.
-                    local copy = D.copy(t)
-                    append_node(copy)
-                else
-                    -- Recurse into boxes
-                    local inner = D.getfield(t, "list")
-                    collect_nodes(inner, indent_level, right_indent_level)
+            if tb_w > 0 and tb_h > 0 then
+                local copy = D.copy(t)
+                -- Apply running indent (inherited from previous lines if needed)
+                if running_indent > 0 then D.set_attribute(copy, constants.ATTR_INDENT, running_indent) end
+                if running_r_indent > 0 then D.set_attribute(copy, constants.ATTR_RIGHT_INDENT, running_r_indent) end
+                append_node(copy)
+                has_content = true
+            elseif tid == constants.HLIST or tid == constants.VLIST then
+                -- Check for line-level indentation
+                local inner = D.getfield(t, "list")
+                local box_indent = running_indent
+                local box_r_indent = running_r_indent
+
+                -- Detect Shift on any box
+                local shift = D.getfield(t, "shift") or 0
+                if shift > 0 then
+                    box_indent = math.max(box_indent, math.floor(shift / char_width + 0.5))
+                end
+
+                if tid == constants.HLIST then
+                    -- Check for leftskip inside HLIST
+                    local s = inner
+                    while s do
+                        local sid = D.getid(s)
+                        if sid == constants.GLYPH then break end
+                        if sid == constants.GLUE and D.getsubtype(s) == 8 then -- leftskip
+                            local w = D.getfield(s, "width")
+                            if w > 0 then
+                                box_indent = math.max(box_indent, math.floor(w / char_width + 0.5))
+                            end
+                            break
+                        end
+                        s = D.getnext(s)
+                    end
+                end
+
+                -- UPDATE running indent for siblings? 
+                -- Only if this box seems to be a line (HLIST) or a significant block.
+                if box_indent > running_indent then running_indent = box_indent end
+
+                -- Recurse
+                local inner_has_content = collect_nodes(inner, box_indent, box_r_indent)
+                if inner_has_content then has_content = true end
+                
+                -- IMPORTANT: Only add penalty for HLIST lines that are part of 
+                -- the main vertical flow, i.e., at the second recursion level.
+                -- For simplicity, let's just add it if this HLIST had content.
+                if tid == constants.HLIST and inner_has_content then
+                    if texio and texio.write_nl then
+                        texio.write_nl("  [flatten] Adding Column Break after Line=" .. tostring(t))
+                    end
+                    local p = D.new(constants.PENALTY)
+                    D.setfield(p, "penalty", -10001)
+                    append_node(p)
                 end
             else
                 local keep = false
                 if tid == constants.GLYPH or tid == constants.KERN then
                     keep = true
+                    if tid == constants.GLYPH then has_content = true end
                 elseif tid == constants.GLUE then
                     local subtype = D.getsubtype(t)
-                    -- Keep userskip (0), spaceskip (13), xspaceskip (14)
                     if subtype == 0 or subtype == 13 or subtype == 14 then
                        keep = true
                     end
@@ -84,15 +135,9 @@ local function flatten_vbox(head, grid_width, char_width)
 
                 if keep then
                     local copy = D.copy(t)
-                    if indent_level > 0 then
-                        D.set_attribute(copy, constants.ATTR_INDENT, indent_level)
-                    end
-                    if right_indent_level > 0 then
-                        D.set_attribute(copy, constants.ATTR_RIGHT_INDENT, right_indent_level)
-                    end
+                    if running_indent > 0 then D.set_attribute(copy, constants.ATTR_INDENT, running_indent) end
+                    if running_r_indent > 0 then D.set_attribute(copy, constants.ATTR_RIGHT_INDENT, running_r_indent) end
                     
-                    -- CRITICAL: Do NOT let individual glyphs inherit the textbox attribute!
-                    -- This prevents the "scattered blocks" issue.
                     D.set_attribute(copy, constants.ATTR_TEXTBOX_WIDTH, 0)
                     D.set_attribute(copy, constants.ATTR_TEXTBOX_HEIGHT, 0)
                     
@@ -101,72 +146,10 @@ local function flatten_vbox(head, grid_width, char_width)
             end
             t = D.getnext(t)
         end
+        return has_content
     end
 
-    -- Main loop: traverse vlist
-    local curr = d_head
-    while curr do
-        local id = D.getid(curr)
-        if id == constants.HLIST or id == constants.VLIST then
-            -- Check if this box is a Grid Textbox
-            local tb_w = D.get_attribute(curr, constants.ATTR_TEXTBOX_WIDTH) or 0
-            local tb_h = D.get_attribute(curr, constants.ATTR_TEXTBOX_HEIGHT) or 0
-            
-            if tb_w > 0 and tb_h > 0 then
-                -- This is a textbox block. Do NOT flatten its content.
-                local copy = D.copy(curr)
-                append_node(copy)
-            else
-                -- Traditional line handling or nested box flattening
-                if id == constants.HLIST then
-                    local line_head = D.getfield(curr, "list")
-                    local indent = 0
-                    local right_indent = 0
-
-                    local shift = D.getfield(curr, "shift") or 0
-                    if shift > 0 then
-                        indent = math.floor(shift / char_width + 0.5)
-                    end
-
-                    local t_scan = line_head
-                    while t_scan do
-                        local tid = D.getid(t_scan)
-                        if tid == constants.GLYPH then break end
-                        if tid == constants.GLUE and D.getsubtype(t_scan) == 8 then -- leftskip
-                            local w = D.getfield(t_scan, "width")
-                            if w > 0 and indent == 0 then
-                                indent = math.floor(w / char_width + 0.5)
-                            end
-                            break
-                        end
-                        t_scan = D.getnext(t_scan)
-                    end
-
-                    t_scan = line_head
-                    while t_scan do
-                        if D.getid(t_scan) == constants.GLUE and D.getsubtype(t_scan) == 9 then -- rightskip
-                             local w = D.getfield(t_scan, "width")
-                             if w > 0 then
-                                 right_indent = math.floor((w / char_width) + 0.5)
-                             end
-                        end
-                        t_scan = D.getnext(t_scan)
-                    end
-
-                    collect_nodes(line_head, indent, right_indent)
-
-                    local p = D.new(constants.PENALTY)
-                    D.setfield(p, "penalty", -10001)
-                    append_node(p)
-                else -- VLIST
-                     local inner = D.getfield(curr, "list")
-                     collect_nodes(inner, 0, 0)
-                end
-            end
-        end
-        curr = D.getnext(curr)
-    end
-
+    collect_nodes(d_head, 0, 0)
     return D.tonode(result_head_d)
 end
 

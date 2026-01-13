@@ -317,29 +317,27 @@
   {
     \group_begin:
     \keys_set:nn { cn_vertical / textbox } { #1 }
-    \vbox{
-      \setluatexattribute\cnverticaltextboxwidth{\l__cn_vertical_textbox_width_int}
-      \setluatexattribute\cnverticaltextboxheight{\l__cn_vertical_textbox_height_int}
-      % Capture content in a box and process it via Lua for inner verticality
-      \setbox0=\vbox{
-        \setluatexattribute\cnverticaltextboxwidth{0}
-        \setluatexattribute\cnverticaltextboxheight{0}
-        % Inner line length should be the grid height of the block
-        \hsize=\dim_eval:n { \l__cn_vertical_grid_height_tl * \int_use:N \l__cn_vertical_textbox_height_int }
-        #2
-      }
-      \directlua{cn_vertical.verticalize_inner_box(0, 
-        \int_use:N \l__cn_vertical_textbox_width_int, 
-        \int_use:N \l__cn_vertical_textbox_height_int, 
-        "\dim_to_decimal:n { \l__cn_vertical_grid_width_tl } pt", 
-        "\dim_to_decimal:n { \l__cn_vertical_grid_height_tl } pt", 
-        "\luaescapestring{\tl_use:N \l__cn_vertical_valign_tl}", 
-        "\bool_if:NTF \l__cn_vertical_textbox_distribute_bool {true}{false}",
-        "\bool_if:NTF \l__cn_vertical_debug_bool {true}{false}",
-        "\bool_if:NTF \l__cn_vertical_border_bool {true}{false}"
-      )}
-      \box0
+    \setluatexattribute\cnverticaltextboxwidth{\l__cn_vertical_textbox_width_int}
+    \setluatexattribute\cnverticaltextboxheight{\l__cn_vertical_textbox_height_int}
+    % Capture content in a box and process it via Lua for inner verticality
+    \setbox0=\vbox{
+      \setluatexattribute\cnverticaltextboxwidth{0}
+      \setluatexattribute\cnverticaltextboxheight{0}
+      % Inner line length should be the grid height of the block
+      \hsize=\dim_eval:n { \l__cn_vertical_grid_height_tl * \int_use:N \l__cn_vertical_textbox_height_int }
+      #2
     }
+    \directlua{cn_vertical.verticalize_inner_box(0, 
+      \int_use:N \l__cn_vertical_textbox_width_int, 
+      \int_use:N \l__cn_vertical_textbox_height_int, 
+      "\dim_to_decimal:n { \l__cn_vertical_grid_width_tl } pt", 
+      "\dim_to_decimal:n { \l__cn_vertical_grid_height_tl } pt", 
+      "\luaescapestring{\tl_use:N \l__cn_vertical_valign_tl}", 
+      "\bool_if:NTF \l__cn_vertical_textbox_distribute_bool {true}{false}",
+      "\bool_if:NTF \l__cn_vertical_debug_bool {true}{false}",
+      "\bool_if:NTF \l__cn_vertical_border_bool {true}{false}"
+    )}
+    \box0
     \group_end:
   }
 

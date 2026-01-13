@@ -132,12 +132,10 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
             tb_h = D.get_attribute(t, constants.ATTR_TEXTBOX_HEIGHT) or 0
         end
 
-        -- Hanging indent logic (only for regular glyphs/glue)
-        if tb_w == 0 then
-            if cur_row < indent then cur_row = indent end
-            if indent > cur_column_indent then cur_column_indent = indent end
-            if cur_row < cur_column_indent then cur_row = cur_column_indent end
-        end
+        -- Hanging indent logic (applied to both glyphs and blocks)
+        if cur_row < indent then cur_row = indent end
+        if indent > cur_column_indent then cur_column_indent = indent end
+        if cur_row < cur_column_indent then cur_row = cur_column_indent end
 
         local effective_limit = line_limit - r_indent
         if effective_limit < indent + 1 then effective_limit = indent + 1 end
@@ -161,7 +159,7 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
             if cur_row + tb_h > effective_limit then
                 flush_buffer()
                 cur_col = cur_col + 1
-                cur_row = 0
+                cur_row = indent
                 if cur_col >= p_cols then
                     cur_col = 0
                     cur_page = cur_page + 1

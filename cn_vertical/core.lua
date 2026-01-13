@@ -189,6 +189,16 @@ function cn_vertical.prepare_grid(box_num, params)
         _G.cn_vertical_pending_pages[i] = new_box
     end
 
+    if is_debug and texio and texio.write_nl then
+        texio.write_nl("--- [core] Layout Map Summary ---")
+        for n, pos in pairs(layout_map) do
+            local tb_w = D.get_attribute(n, constants.ATTR_TEXTBOX_WIDTH) or 0
+            if tb_w > 0 then
+                texio.write_nl("  [layout_map] Block Node=" .. tostring(n) .. " at p=" .. (pos.page or 0) .. " c=" .. pos.col .. " r=" .. pos.row .. " w=" .. (pos.width or 0) .. " h=" .. (pos.height or 0))
+            end
+        end
+    end
+
     return #_G.cn_vertical_pending_pages
 end
 

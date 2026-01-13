@@ -18,7 +18,7 @@ local sp_to_bp = 0.0000152018
 --
 -- Section layout (top to bottom):
 -- ┌─────────────┐
--- │  Section 1  │  (e.g., 65.8mm / 6.14cm)
+-- │  Section 1  │  (e.g., 65.8mm / 6.14cm) - Contains Banxin text (鱼尾文字)
 -- ├─────────────┤  ← dividing line 1
 -- │  Section 2  │  (e.g., 131.2mm / 12.25cm)
 -- ├─────────────┤  ← dividing line 2
@@ -35,7 +35,11 @@ local sp_to_bp = 0.0000152018
 --   - section3_ratio (number) Ratio for section 3 height (e.g., 0.16)
 --   - color_str (string) RGB color string (e.g., "0.7 0.4 0.3")
 --   - border_thickness (number) Border line thickness in scaled points
--- @return (table) Array of PDF literal strings to draw
+--   - banxin_text (string) Optional text to display in section 1 (鱼尾文字)
+--   - font_size (number) Font size in scaled points for banxin text
+-- @return (table) Table with:
+--   - literals: Array of PDF literal strings for lines
+--   - text_nodes: Array of text node data for section 1 text
 local function draw_banxin(params)
     local x = params.x or 0
     local y = params.y or 0
@@ -46,13 +50,16 @@ local function draw_banxin(params)
     local r3 = params.section3_ratio or 0.16  -- 36.2 / 233.2 ≈ 0.16
     local color_str = params.color_str or "0 0 0"
     local b_thickness = params.border_thickness or 26214 -- 0.4pt default
-    
+    local banxin_text = params.banxin_text or ""
+    local font_size = params.font_size or 655360 -- 10pt default
+
     -- Calculate section heights
     local section1_height = total_height * r1
     local section2_height = total_height * r2
     local section3_height = total_height * r3
-    
+
     local literals = {}
+    local text_nodes = {}
     
     -- Convert to big points
     local x_bp = x * sp_to_bp
@@ -83,8 +90,45 @@ local function draw_banxin(params)
         x_bp + width_bp, div2_y_bp
     )
     table.insert(literals, div2_line)
-    
-    return literals
+
+    -- Process banxin text for section 1
+    -- Note: Text rendering needs to be done via glyph nodes in render.lua
+    -- We just store the character data here
+    if banxin_text and banxin_text ~= "" then
+        -- Convert text to UTF-8 characters array
+        local chars = {}
+        for char in banxin_text:gmatch("[%z\1-\127\194-\244][\128-\191]*") do
+            table.insert(chars, char)
+        end
+
+        local num_chars = #chars
+        if num_chars > 0 then
+            -- Calculate character height to fit all characters in section1
+            local char_height = section1_height / num_chars
+            -- Calculate font size: 90% of char_height to leave some margin
+            local actual_font_size = char_height * 0.9
+
+            -- Position characters vertically in section 1
+            for i, char in ipairs(chars) do
+                -- Calculate Y position for this character
+                -- Center each character in its allocated space
+                local char_y = y - (i - 0.5) * char_height
+
+                -- Store text node data
+                table.insert(text_nodes, {
+                    char = char,
+                    x = x + width / 2,  -- Center horizontally in the column
+                    y = char_y,
+                    font_size = actual_font_size
+                })
+            end
+        end
+    end
+
+    return {
+        literals = literals,
+        text_nodes = text_nodes
+    }
 end
 
 -- Create module table

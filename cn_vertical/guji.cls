@@ -24,6 +24,10 @@
 % 4. Key-Value Configuration System (expl3)
 \ExplSyntaxOn
 
+% Storage for Banxin (鱼尾) text
+\tl_new:N \l_guji_banxin_text_tl
+\tl_set:Nn \l_guji_banxin_text_tl {}
+
 \keys_define:nn { guji }
   {
     % Page geometry settings (can be overridden by templates)
@@ -170,6 +174,12 @@
     \__guji_apply_geometry:
   }
 
+% Command to set Banxin (鱼尾) text
+\NewDocumentCommand{\setBanxinText}{ m }
+  {
+    \tl_set:Nn \l_guji_banxin_text_tl { #1 }
+  }
+
 % Command to define templates
 \NewDocumentCommand{\defineGujiTemplate}{ m +m }
   {
@@ -288,7 +298,8 @@
         margin-right = \l_guji_margin_right_tl,
         banxin-section1-ratio = \l_guji_banxin_sone_tl,
         banxin-section2-ratio = \l_guji_banxin_stwo_tl,
-        banxin-section3-ratio = \l_guji_banxin_sthree_tl
+        banxin-section3-ratio = \l_guji_banxin_sthree_tl,
+        banxin-text = \l_guji_banxin_text_tl
       }
     \nointerlineskip
     \__cn_vertical_process_grid:n { \BODY }

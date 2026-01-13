@@ -185,14 +185,54 @@ local function apply_positions(head, layout_map, params)
                             section2_ratio = params.banxin_s2_ratio or 0.56,
                             section3_ratio = params.banxin_s3_ratio or 0.16,
                             color_str = b_rgb_str,
-                            border_thickness = border_thickness
+                            border_thickness = border_thickness,
+                            banxin_text = params.banxin_text or "",
+                            font_size = grid_height -- Use grid height as base font size
                         }
-                        local banxin_literals = banxin.draw_banxin(banxin_params)
-                        for _, lit in ipairs(banxin_literals) do
+                        local banxin_result = banxin.draw_banxin(banxin_params)
+
+                        -- Insert line drawing literals
+                        for _, lit in ipairs(banxin_result.literals) do
                             local bn = node.new("whatsit", "pdf_literal")
                             bn.data = lit
                             bn.mode = 0
                             p_head = D.insert_before(p_head, p_head, D.todirect(bn))
+                        end
+
+                        -- Insert text nodes for banxin text
+                        -- We create individual glyph nodes for each character
+                        if banxin_result.text_nodes then
+                            for _, text_data in ipairs(banxin_result.text_nodes) do
+                                -- Create glyph node
+                                local glyph = node.new(node.id("glyph"))
+                                glyph.char = utf8.codepoint(text_data.char)
+                                glyph.font = font.current()
+                                glyph.lang = 0
+
+                                -- Set font size via font table if needed
+                                -- For now, we'll use the current font
+
+                                -- Create hlist to hold the glyph
+                                local hlist = node.new(node.id("hlist"))
+                                hlist.head = glyph
+                                hlist.width = 0
+                                hlist.height = text_data.font_size
+                                hlist.depth = 0
+
+                                -- Create PDF literal for positioning
+                                -- Use PDF's text matrix to position the character
+                                local x_bp = text_data.x * sp_to_bp
+                                local y_bp = text_data.y * sp_to_bp
+                                local fs_bp = text_data.font_size * sp_to_bp
+
+                                -- We'll use whatsit nodes to position via PDF
+                                -- This is a simpler approach: create the character as a node
+                                -- and let LuaTeX handle the rendering
+
+                                -- For now, insert the glyph directly
+                                -- The positioning will need refinement
+                                p_head = D.insert_before(p_head, p_head, D.todirect(hlist))
+                            end
                         end
                     end
                 end

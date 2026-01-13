@@ -160,6 +160,10 @@
 
     banxin-section3-ratio .tl_set:N = \l_cnv_banxin_three_tl,
     banxin-section3-ratio .initial:n = {0.16},
+
+    % Banxin text (鱼尾文字)
+    banxin-text .tl_set:N = \l_cnv_banxin_text_tl,
+    banxin-text .initial:n = {},
   }
 
 \tl_new:N \l__cn_vertical_border_rgb_tl
@@ -263,7 +267,8 @@
         margin_right = [=[\luaescapestring{\l__cn_vertical_margin_right_tl}]=],
         banxin_s1_ratio = [=[\luaescapestring{\l_cnv_banxin_one_tl}]=],
         banxin_s2_ratio = [=[\luaescapestring{\l_cnv_banxin_two_tl}]=],
-        banxin_s3_ratio = [=[\luaescapestring{\l_cnv_banxin_three_tl}]=]
+        banxin_s3_ratio = [=[\luaescapestring{\l_cnv_banxin_three_tl}]=],
+        banxin_text = [=[\luaescapestring{\l_cnv_banxin_text_tl}]=]
       })
     }
   }

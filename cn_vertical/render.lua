@@ -69,8 +69,9 @@ local function apply_positions(head, layout_map, params)
     -- Cached conversion factors for PDF literals
     local w_bp = grid_width * sp_to_bp
     local h_bp = -grid_height * sp_to_bp
-    local b_thickness_bp = border_thickness * sp_to_bp
-    local half_thickness = math.floor(border_thickness / 2)
+    local border_thickness_val = tonumber(border_thickness) or 0
+    local b_thickness_bp = border_thickness_val * sp_to_bp
+    local half_thickness = math.floor(border_thickness_val / 2)
     
     local ob_thickness_val = (outer_border_thickness or (65536 * 2))
     local ob_thickness_bp = ob_thickness_val * sp_to_bp
@@ -259,8 +260,7 @@ local function apply_positions(head, layout_map, params)
                             -- Add negative kern to reset horizontal cursor for TLT parent
                             local k = D.new(constants.KERN)
                             D.setfield(k, "kern", -w)
-                            D.setlink(curr, k)
-                            if next_curr then D.setlink(k, next_curr) end
+                            D.insert_after(p_head, curr, k)
                         else
                             -- For HLIST/VLIST (Blocks), we use Kern (X) and Shift (Y)
                             -- xoffset/yoffset are NOT supported for blocks.

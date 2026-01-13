@@ -306,7 +306,15 @@
     \vbox{
       \setluatexattribute\cnverticaltextboxwidth{#1}
       \setluatexattribute\cnverticaltextboxheight{#2}
-      #3
+      % Capture content in a box and process it via Lua for inner verticality
+      \setbox0=\vbox{
+        \setluatexattribute\cnverticaltextboxwidth{0}
+        \setluatexattribute\cnverticaltextboxheight{0}
+        \hsize=\l__cn_vertical_grid_height_tl % Inner height as line length
+        #3
+      }
+      \directlua{cn_vertical.verticalize_inner_box(0, #1, #2, "\l__cn_vertical_grid_width_tl", "\l__cn_vertical_grid_height_tl")}
+      \box0
     }
   }
 

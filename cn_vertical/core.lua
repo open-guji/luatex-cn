@@ -27,10 +27,54 @@ local flatten = package.loaded['flatten'] or require('flatten')
 local layout = package.loaded['layout'] or require('layout')
 local render = package.loaded['render'] or require('render')
 
+local D = node.direct
+
 if texio and texio.write_nl then
     texio.write_nl("core.lua: Submodules loaded successfully")
     texio.write_nl("  constants = " .. tostring(constants))
     texio.write_nl("  flatten = " .. tostring(flatten))
+end
+
+function cn_vertical.verticalize_inner_box(box_num, w_cols, h_rows, g_w_str, g_h_str)
+    local box = tex.box[box_num]
+    if not box then return end
+
+    -- Prepare parameters for the inner grid
+    -- We want to simulate a "page" that is exactly the size of the textbox
+    local sub_params = {
+        grid_width = g_w_str,
+        grid_height = g_h_str,
+        col_limit = tonumber(h_rows) or 1,
+        page_columns = tonumber(w_cols) or 1,
+        border_on = "false",
+        debug_on = "false",
+        vertical_align = "top",
+        height = g_h_str -- Give enough height for the rows
+    }
+
+    -- Backup current pending pages (main document)
+    local saved_pages = _G.cn_vertical_pending_pages
+    _G.cn_vertical_pending_pages = {}
+
+    if texio and texio.write_nl then
+        texio.write_nl("--- verticalize_inner_box: START (box=" .. box_num .. ", w=" .. w_cols .. ", h=" .. h_rows .. ") ---")
+    end
+
+    -- Call the main preparation pipeline
+    local total = cn_vertical.prepare_grid(box_num, sub_params)
+
+    -- Retrieve the result (should be 1 "page")
+    local res_box = _G.cn_vertical_pending_pages[1]
+
+    -- Restore main pages
+    _G.cn_vertical_pending_pages = saved_pages
+
+    if res_box then
+        -- The prepare_grid already returns an HLIST box with TLT dir.
+        -- We just need to ensure the dimensions are correct for the grid.
+        -- Actually, prepare_grid already set them.
+        tex.box[box_num] = res_box
+    end
 end
 
 --- Main entry point called from TeX

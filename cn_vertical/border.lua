@@ -1,15 +1,32 @@
--- cn_vertical_border.lua
--- Chinese vertical typesetting module for LuaTeX - Border Drawing
+-- ============================================================================
+-- border.lua - 边框绘制模块
+-- ============================================================================
 --
--- This module is part of the cn_vertical package.
--- For documentation, see cn_vertical/README.md
+-- 【模块功能】
+-- 本模块负责绘制普通列边框和外边框（版心边框由 banxin.lua 单独处理）：
+--   1. draw_column_borders: 绘制普通列的边框（跳过版心列）
+--   2. draw_outer_border: 绘制整个内容区域的外围边框
 --
--- Module: border
--- Purpose: Draw column borders and outer borders (NOT banxin - see banxin.lua)
--- Dependencies: constants, utils
--- Exports: draw_column_borders, draw_outer_border
+-- 【注意事项】
+--   • 版心列会被跳过（通过 banxin_cols 参数传入）
+--   • 使用 PDF rectangle 指令（re + S）绘制矩形边框
+--   • 边框厚度通过 linewidth (w) 控制
+--   • 颜色使用 RGB 格式（0.0-1.0，通过 utils.normalize_rgb 归一化）
+--
+-- 【整体架构】
+--   draw_column_borders(p_head, params)
+--      ├─ 遍历所有列（0 到 total_cols-1）
+--      ├─ 跳过 banxin_cols 中的列
+--      ├─ 计算 RTL 列位置（rtl_col = total_cols - 1 - col）
+--      ├─ 生成 PDF literal: "q w RG x y w h re S Q"
+--      └─ 插入到节点链最前面（使其在底层）
+--
+--   draw_outer_border(p_head, params)
+--      └─ 在整个内容区域外围绘制一个大矩形
+--
 -- Version: 0.4.0
 -- Date: 2026-01-13
+-- ============================================================================
 
 -- Load dependencies
 local constants = package.loaded['constants'] or require('constants')

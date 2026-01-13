@@ -1,15 +1,39 @@
--- cn_vertical_layout.lua
--- Chinese vertical typesetting module for LuaTeX - Grid Layout Calculation
+-- ============================================================================
+-- layout.lua - 虚拟网格布局计算（第二阶段）
+-- ============================================================================
 --
--- This module is part of the cn_vertical package.
--- For documentation, see cn_vertical/README.md
+-- 【模块功能】
+-- 本模块负责排版流水线的第二阶段，在不修改节点的情况下进行"虚拟布局模拟"：
+--   1. 遍历节点流，计算每个节点应该出现在哪一页、哪一列、第几行
+--   2. 处理自动换列、分页逻辑（当行数超过 line_limit 时）
+--   3. 避让版心（banxin）列位置，确保不在版心列放置正文内容
+--   4. 支持"分布模式"（distribute），在列内均匀分布字符（用于 textbox）
+--   5. 维护占用地图（occupancy map），防止 textbox 块与其他内容重叠
 --
--- Module: layout
--- Purpose: Calculate grid positions for each node (first pass simulation)
--- Dependencies: cn_vertical_constants
--- Exports: calculate_grid_positions function
+-- 【注意事项】
+--   • 本模块只计算位置（layout_map），不修改节点本身
+--   • 版心列由 n_column 参数控制：每 (n_column + 1) 列就是一个版心列
+--   • 右缩进（r_indent）会缩短列的有效高度（effective_limit）
+--   • Textbox 块占用多个网格单元（width × height），需要预先标记占用
+--   • Penalty≤-10000 会触发强制换列（由 flatten.lua 插入）
+--
+-- 【整体架构】
+--   输入: 一维节点流 + grid_height + line_limit + n_column + page_columns
+--      ↓
+--   calculate_grid_positions()
+--      ├─ 维护光标状态 (cur_page, cur_col, cur_row)
+--      ├─ 遍历每个节点
+--      │   ├─ 应用缩进逻辑（hanging indent）
+--      │   ├─ 检查是否需要换列/分页
+--      │   ├─ 跳过版心列和已占用位置
+--      │   └─ 记录位置到 layout_map[node] = {page, col, row}
+--      └─ Textbox 块额外标记 occupancy 地图
+--      ↓
+--   输出: layout_map (节点指针 → 坐标) + total_pages
+--
 -- Version: 0.3.0
 -- Date: 2026-01-12
+-- ============================================================================
 
 -- Load dependencies
 -- Check if already loaded via dofile (package.loaded set manually)

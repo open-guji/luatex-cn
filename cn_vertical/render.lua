@@ -1,15 +1,44 @@
--- cn_vertical_render.lua
--- Chinese vertical typesetting module for LuaTeX - Coordinate Application and Rendering
+-- ============================================================================
+-- render.lua - 坐标应用与视觉渲染（第三阶段）
+-- ============================================================================
 --
--- This module is part of the cn_vertical package.
--- For documentation, see cn_vertical/README.md
+-- 【模块功能】
+-- 本模块负责排版流水线的第三阶段，将虚拟坐标应用到实际节点并绘制视觉元素：
+--   1. 根据 layout_map 为每个节点设置 xoffset/yoffset（文字）或 kern/shift（块）
+--   2. 插入负 kern 以抵消 TLT 方向盒子的水平推进
+--   3. 调用子模块绘制边框（border.lua）、版心（banxin.lua）、背景（background.lua）
+--   4. 按页拆分节点流，生成多个独立的页面盒子
+--   5. 可选绘制调试网格（蓝色框显示字符位置，红色框显示 textbox 块）
 --
--- Module: render
--- Purpose: Apply calculated positions to nodes, draw debug grid and borders
--- Dependencies: cn_vertical_constants
--- Exports: apply_positions function
+-- 【注意事项】
+--   • Glyph 节点使用 xoffset/yoffset 定位，块级节点（HLIST/VLIST）使用 Kern+Shift
+--   • RTL 列序转换：物理列号 = total_cols - 1 - 逻辑列号
+--   • 绘制顺序严格控制：背景最底层 → 边框 → 版心 → 文字（通过 insert_before 实现）
+--   • 所有 PDF 绘图指令使用 pdf_literal 节点（mode=0，用户坐标系）
+--   • Kern 的 subtype=1 表示"显式 kern"，不会被后续清零（用于保护版心等特殊位置）
+--
+-- 【整体架构】
+--   输入: 节点流 + layout_map + 渲染参数（颜色、边框、页边距等）
+--      ↓
+--   apply_positions()
+--      ├─ 按页分组节点（遍历 layout_map，根据 page 分组）
+--      ├─ 对每一页：
+--      │   ├─ 绘制背景色（background.draw_background）
+--      │   ├─ 设置字体颜色（background.set_font_color）
+--      │   ├─ 绘制外边框（border.draw_outer_border）
+--      │   ├─ 绘制列边框（border.draw_column_borders，跳过版心列）
+--      │   ├─ 绘制版心列（banxin.draw_banxin_column，含分隔线和文字）
+--      │   ├─ 应用节点坐标
+--      │   │   ├─ Glyph: 调用 text_position.calc_grid_position()
+--      │   │   └─ Block: 使用 Kern 包裹 + Shift
+--      │   └─ 可选：绘制调试网格
+--      └─ 返回 result_pages[{head, cols}]
+--      ↓
+--   输出: 多个渲染好的页面（每页是一个 HLIST，dir=TLT）
+--
 -- Version: 0.3.0
 -- Date: 2026-01-12
+-- ============================================================================
 
 -- Load dependencies
 -- Check if already loaded via dofile (package.loaded set manually)

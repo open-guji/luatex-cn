@@ -1,15 +1,38 @@
--- cn_vertical_flatten.lua
--- Chinese vertical typesetting module for LuaTeX - VBox Flattening and Indent Detection
+-- ============================================================================
+-- flatten.lua - 盒子展平与缩进提取（第一阶段）
+-- ============================================================================
 --
--- This module is part of the cn_vertical package.
--- For documentation, see cn_vertical/README.md
+-- 【模块功能】
+-- 本模块负责排版流水线的第一阶段，将 TeX 复杂的嵌套盒子结构转化为一维节点流：
+--   1. 递归遍历 VBox/HBox，将多层嵌套展平为线性节点列表
+--   2. 自动检测并提取缩进信息（leftskip glue、box shift）
+--   3. 将缩进值转换为字符数并附加为节点属性（ATTR_INDENT）
+--   4. 在适当位置插入列中断标记（penalty -10001）
+--   5. 过滤无用节点（保留 glyph、kern、特定 glue、textbox 块）
 --
--- Module: flatten
--- Purpose: Recursively traverse VBox structure, extract nodes, detect and mark indentation
--- Dependencies: cn_vertical_constants
--- Exports: flatten_vbox function
+-- 【注意事项】
+--   • 缩进检测依赖 TeX 的 \leftskip 和 box.shift 机制，支持标准的 itemize/enumerate
+--   • "列中断"（penalty -10001）在每个 HLIST 行之后插入，用于 layout.lua 识别强制换列
+--   • Textbox 块通过属性 ATTR_TEXTBOX_WIDTH/HEIGHT 识别，会被完整保留
+--   • 右缩进（rightskip）功能已预留但未完全实现（当前只在 layout 中使用）
+--   • 节点会被复制（D.copy），原始盒子不会被修改
+--
+-- 【整体架构】
+--   输入: TeX VBox.list (嵌套的 vlist/hlist/glyph 树)
+--      ↓
+--   flatten_vbox(head, grid_width, char_width)
+--      ├─ collect_nodes() 递归遍历
+--      │   ├─ 检测 leftskip → 更新 indent
+--      │   ├─ 检测 shift → 更新 indent
+--      │   └─ 递归处理子盒子
+--      ├─ 为每个节点附加 ATTR_INDENT 属性
+--      └─ 在行尾插入 penalty -10001
+--      ↓
+--   输出: 一维节点流（glyph + kern + glue + penalty + textbox块）
+--
 -- Version: 0.3.0
 -- Date: 2026-01-12
+-- ============================================================================
 
 -- Load dependencies
 -- Check if already loaded via dofile (package.loaded set manually)
@@ -61,8 +84,12 @@ local function flatten_vbox(head, grid_width, char_width)
             local tid = D.getid(t)
 
             -- Check for Textbox Block attribute
-            local tb_w = D.get_attribute(t, constants.ATTR_TEXTBOX_WIDTH) or 0
-            local tb_h = D.get_attribute(t, constants.ATTR_TEXTBOX_HEIGHT) or 0
+            local tb_w = 0
+            local tb_h = 0
+            if tid == constants.HLIST or tid == constants.VLIST then
+                tb_w = D.get_attribute(t, constants.ATTR_TEXTBOX_WIDTH) or 0
+                tb_h = D.get_attribute(t, constants.ATTR_TEXTBOX_HEIGHT) or 0
+            end
 
             if tb_w > 0 and tb_h > 0 then
                 local copy = D.copy(t)
@@ -99,10 +126,6 @@ local function flatten_vbox(head, grid_width, char_width)
                         s = D.getnext(s)
                     end
                 end
-
-                -- UPDATE running indent for siblings? 
-                -- Only if this box seems to be a line (HLIST) or a significant block.
-                if box_indent > running_indent then running_indent = box_indent end
 
                 -- Recurse
                 local inner_has_content = collect_nodes(inner, box_indent, box_r_indent)

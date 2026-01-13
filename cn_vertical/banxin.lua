@@ -1,14 +1,35 @@
--- banxin.lua
--- Chinese vertical typesetting module for LuaTeX - Banxin (版心) Drawing
+-- ============================================================================
+-- banxin.lua - 版心（鱼尾）绘制模块
+-- ============================================================================
 --
--- This module is part of the cn_vertical package.
--- For documentation, see cn_vertical/README.md
+-- 【模块功能】
+-- 本模块负责绘制古籍排版中的"版心"（中间的分隔列），包括：
+--   1. 绘制版心列的边框（与普通列边框样式相同）
+--   2. 在版心内绘制两条水平分隔线，将版心分为三个区域
+--   3. 在版心第一区域绘制竖排文字（鱼尾文字，如书名、卷号等）
+--   4. 支持自定义三个区域的高度比例（默认 0.28:0.56:0.16）
 --
--- Module: banxin
--- Purpose: Draw the Banxin (center column/版心) with section dividers
--- Dependencies: constants
+-- 【注意事项】
+--   • 版心位置由 layout.lua 控制（每 n_column+1 列为版心）
+--   • 版心文字使用 text_position.create_vertical_text 创建，确保与正文对齐一致
+--   • 分隔线使用 PDF 的 moveto/lineto 指令（m/l/S）绘制
+--   • 版心文字的 Y 坐标需要减去 shift_y（边框/外边框的累积偏移）
+--
+-- 【整体架构】
+--   draw_banxin_column(p_head, params)
+--      ├─ 绘制版心列边框（矩形）
+--      ├─ 调用 draw_banxin() 计算分隔线位置
+--      │   ├─ section1_height = total_height × ratio1
+--      │   ├─ section2_height = total_height × ratio2
+--      │   └─ 返回两条分隔线的 PDF literal
+--      ├─ 插入分隔线节点
+--      └─ 调用 text_position.create_vertical_text() 绘制文字
+--      ↓
+--   返回更新后的节点链（p_head）
+--
 -- Version: 0.2.0
 -- Date: 2026-01-13
+-- ============================================================================
 
 -- Load dependencies
 local constants = package.loaded['constants'] or require('constants')

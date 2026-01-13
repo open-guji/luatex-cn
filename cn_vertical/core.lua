@@ -1,12 +1,39 @@
--- cn_vertical.lua
--- Chinese vertical typesetting module for LuaTeX (Refactored Entry Point)
--- Uses native LuaTeX 'dir' primitives for RTT (Right-to-Left Top-to-Bottom) layout.
+-- ============================================================================
+-- core.lua - 竖排引擎核心协调层
+-- ============================================================================
 --
--- This is the main entry point that coordinates all submodules.
--- For detailed architecture, see ARCHITECTURE.md (if available) or README.md
+-- 【模块功能】
+-- 本模块是整个 cn_vertical 竖排系统的总入口和协调中心，负责：
+--   1. 加载并组织所有子模块（flatten、layout、render 等）
+--   2. 接收来自 TeX 的盒子数据和配置参数
+--   3. 执行三阶段流水线：展平 -> 布局模拟 -> 渲染应用
+--   4. 管理多页输出，维护页面缓存（cn_vertical_pending_pages）
+--   5. 提供 textbox 内嵌排版支持（verticalize_inner_box）
+--
+-- 【注意事项】
+--   • 模块必须设置为全局变量 _G.cn_vertical，因为 TeX 从 Lua 调用时需要访问
+--   • package.loaded 机制确保子模块不会被重复加载
+--   • 多页渲染时需要临时保存 pending_pages 状态（见 verticalize_inner_box）
+--   • 本模块不直接操作节点，而是调用子模块完成具体工作
+--
+-- 【整体架构】
+--   TeX 层 (cn_vertical.sty)
+--      ↓ 调用 process_from_tex(box_num, params)
+--   core.lua (本模块)
+--      ↓ 调用 prepare_grid()
+--   ┌────────────────────────────────────┐
+--   │  Stage 1: flatten.lua              │ ← 展平嵌套盒子，提取缩进
+--   ├────────────────────────────────────┤
+--   │  Stage 2: layout.lua               │ ← 虚拟布局，计算每个节点的页/列/行
+--   ├────────────────────────────────────┤
+--   │  Stage 3: render.lua               │ ← 应用坐标，绘制边框/背景/版心
+--   └────────────────────────────────────┘
+--      ↓ 返回渲染好的页面列表
+--   load_page() → TeX 输出到 PDF
 --
 -- Version: 0.3.0 (Modularized)
 -- Date: 2026-01-12
+-- ============================================================================
 
 -- Debug: Output status at module load time
 if texio and texio.write_nl then
@@ -78,6 +105,11 @@ function cn_vertical.verticalize_inner_box(box_num, w_cols, h_rows, g_w_str, g_h
         -- The prepare_grid already returns an HLIST box with TLT dir.
         -- We just need to ensure the dimensions are correct for the grid.
         -- Actually, prepare_grid already set them.
+        
+        -- CRITICAL: Set textbox attributes so this box is recognized as a textbox block in outer layout
+        node.set_attribute(res_box, constants.ATTR_TEXTBOX_WIDTH, tonumber(w_cols) or 1)
+        node.set_attribute(res_box, constants.ATTR_TEXTBOX_HEIGHT, tonumber(h_rows) or 1)
+        
         tex.box[box_num] = res_box
     end
 end
@@ -186,6 +218,10 @@ function cn_vertical.prepare_grid(box_num, params)
         new_box.width = page_info.cols * g_width + b_thickness + outer_shift * 2
         new_box.height = 0
         new_box.depth = total_v_depth
+        -- CRITICAL: Reset textbox attributes for MAIN DOCUMENT wrapper boxes
+        -- (Inner textbox wrappers need these attributes set by verticalize_inner_box)
+        node.set_attribute(new_box, constants.ATTR_TEXTBOX_WIDTH, 0)
+        node.set_attribute(new_box, constants.ATTR_TEXTBOX_HEIGHT, 0)
         _G.cn_vertical_pending_pages[i] = new_box
     end
 

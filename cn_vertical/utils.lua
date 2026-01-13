@@ -1,15 +1,28 @@
--- cn_vertical_utils.lua
--- Chinese vertical typesetting module for LuaTeX - Utility Functions
+-- ============================================================================
+-- utils.lua - 通用工具函数库
+-- ============================================================================
 --
--- This module is part of the cn_vertical package.
--- For documentation, see cn_vertical/README.md
+-- 【模块功能】
+-- 本模块提供跨模块共享的工具函数，主要用于数据格式转换：
+--   1. normalize_rgb: 将各种 RGB 格式（0-1 或 0-255）归一化为 PDF 标准格式
+--   2. sp_to_bp: scaled points 到 PDF big points 的转换系数
 --
--- Module: utils
--- Purpose: Utility functions for color conversion and other helpers
--- Dependencies: none
--- Exports: normalize_rgb, sp_to_bp
+-- 【注意事项】
+--   • normalize_rgb 自动检测并转换 0-255 范围到 0-1 范围
+--   • 支持逗号和空格分隔的 RGB 值（"255,0,0" 或 "1.0 0 0"）
+--   • 返回的字符串格式为 "r g b"（空格分隔，保留 4 位小数）
+--   • sp_to_bp = 1/65536 = 0.0000152018（TeX 内部单位到 PDF 单位）
+--
+-- 【整体架构】
+--   normalize_rgb(rgb_str)
+--      ├─ 替换逗号为空格
+--      ├─ 提取 r、g、b 数值
+--      ├─ 如果任一值 > 1，则除以 255
+--      └─ 返回格式化字符串 "r.rrrr g.gggg b.bbbb"
+--
 -- Version: 0.3.0
 -- Date: 2026-01-12
+-- ============================================================================
 
 -- Conversion factor from scaled points to PDF big points
 local sp_to_bp = 0.0000152018

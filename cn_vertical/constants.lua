@@ -1,15 +1,28 @@
--- cn_vertical_constants.lua
--- Chinese vertical typesetting module for LuaTeX - Constants and Utilities
+-- ============================================================================
+-- constants.lua - 全局常量与工具函数库
+-- ============================================================================
 --
--- This module is part of the cn_vertical package.
--- For documentation, see cn_vertical/README.md
+-- 【模块功能】
+-- 本模块是所有子模块的共享基础设施，提供：
+--   1. 节点类型 ID 常量（GLYPH、KERN、HLIST、VLIST 等）
+--   2. 自定义属性索引（缩进、右缩进、textbox 尺寸等）
+--   3. TeX 尺寸字符串到 scaled points 的转换函数 (to_dimen)
+--   4. Node.direct 接口的快捷引用 (D)
 --
--- Module: constants
--- Purpose: Define all node type constants, custom attributes, and utility functions
--- Dependencies: node, luatexbase
--- Exports: Node type IDs, attributes, to_dimen utility
+-- 【注意事项】
+--   • 本模块必须在所有其他模块之前加载（cn_vertical.sty 确保了这一点）
+--   • 属性 ID 由 TeX 层注册（\newluatexattribute），Lua 层通过 luatexbase 访问
+--   • to_dimen 函数会过滤空字符串和 "0pt"，返回 nil 而非 0（用于区分未设置）
+--
+-- 【整体架构】
+--   constants.lua (本模块)
+--      ├─ 导出常量 → 被所有子模块引用
+--      ├─ to_dimen() → 被 core.lua 用于解析 TeX 参数
+--      └─ ATTR_* 索引 → 被 flatten/layout/render 用于读写节点属性
+--
 -- Version: 0.3.0
 -- Date: 2026-01-12
+-- ============================================================================
 
 -- Create module table
 local constants = {}

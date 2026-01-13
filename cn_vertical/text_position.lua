@@ -1,14 +1,35 @@
--- text_position.lua
--- Chinese vertical typesetting module for LuaTeX - Unified Text Positioning
+-- ============================================================================
+-- text_position.lua - 统一文字定位工具
+-- ============================================================================
 --
--- This module is part of the cn_vertical package.
--- For documentation, see cn_vertical/README.md
+-- 【模块功能】
+-- 本模块提供了文字字符在网格单元中的定位计算，被主文本和版心文本共同复用：
+--   1. position_glyph: 在指定坐标处放置单个字符，处理居中对齐
+--   2. create_vertical_text: 创建竖排文字链（用于版心鱼尾文字）
+--   3. position_glyph_in_grid: 网格坐标定位（包装 position_glyph）
+--   4. calc_grid_position: 纯坐标计算（不创建节点，用于 render.lua）
 --
--- Module: text_position
--- Purpose: Unified functions for positioning text characters in vertical layout
--- Dependencies: constants
+-- 【注意事项】
+--   • 所有定位函数都考虑了字符的 height 和 depth，保证基线对齐正确
+--   • xoffset/yoffset 是 LuaTeX 的 glyph 专用字段，block 节点不支持
+--   • 每个字符后会插入负 kern（-width），用于抵消 TLT 盒子的水平推进
+--   • Kern 的 subtype=1（显式 kern），防止被 render.lua 清零
+--   • vertical_align 支持 top/center/bottom 三种模式
+--
+-- 【整体架构】
+--   公共接口:
+--      ├─ calc_grid_position(col, row, dims, params)
+--      │     → 返回 (x_offset, y_offset)，用于 render.lua 直接设置
+--      ├─ position_glyph(glyph, x, y, params)
+--      │     → 设置 glyph.xoffset/yoffset，返回 (glyph, kern)
+--      ├─ create_vertical_text(text, params)
+--      │     → 创建完整的字符链（用于版心）
+--      └─ position_glyph_in_grid(glyph, col, row, params)
+--            → 网格坐标包装器
+--
 -- Version: 0.1.0
 -- Date: 2026-01-13
+-- ============================================================================
 
 -- Load dependencies
 local constants = package.loaded['constants'] or require('constants')

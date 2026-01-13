@@ -1,15 +1,24 @@
--- cn_vertical_background.lua
--- Chinese vertical typesetting module for LuaTeX - Background and Color Drawing
+-- ============================================================================
+-- background.lua - 背景色与字体颜色模块
+-- ============================================================================
 --
--- This module is part of the cn_vertical package.
--- For documentation, see cn_vertical/README.md
+-- 【模块功能】
+-- 本模块负责设置页面背景色和全局字体颜色：
+--   1. draw_background: 绘制背景色矩形（可选覆盖整个页面或仅内容区）
+--   2. set_font_color: 设置后续所有文字的填充颜色
 --
--- Module: background
--- Purpose: Draw background color and set font color
--- Dependencies: constants, utils
--- Exports: draw_background, set_font_color
--- Version: 0.3.0
--- Date: 2026-01-12
+-- 【注意事项】
+--   • 背景色优先使用 paper_width/height（覆盖整页），否则使用 inner_width/height
+--   • 使用 PDF fill 指令（rg + re + f），与边框的 stroke（RG + S）不同
+--   • 背景必须在最底层绘制（通过 insert_before 最早插入）
+--   • 字体颜色使用小写 "rg"（填充色），边框使用大写 "RG"（描边色）
+--
+-- 【整体架构】
+--   draw_background(p_head, params)
+--      ├─ 如果有 paper_width/height，计算覆盖整页的矩形
+--      ├─ 否则使用 inner_width/height + outer_shift
+--      ├─ 生成 PDF literal: "q 0 w rgb rg x y w h re f Q"
+--      └─ 插入到节点链最前面（确保在最底层）\n--\n--   set_font_color(p_head, font_rgb_str)\n--      └─ 生成 PDF literal: "rgb rg"（设置填充色）\n--\n-- Version: 0.3.0\n-- Date: 2026-01-12\n-- ============================================================================
 
 -- Load dependencies
 local constants = package.loaded['constants'] or require('constants')

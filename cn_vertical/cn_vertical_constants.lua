@@ -51,5 +51,8 @@ end
 
 constants.to_dimen = to_dimen
 
+-- Register module in package.loaded for require() compatibility
+package.loaded['cn_vertical_constants'] = constants
+
 -- Return module
 return constants

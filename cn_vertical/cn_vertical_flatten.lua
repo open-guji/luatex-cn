@@ -12,7 +12,8 @@
 -- Date: 2026-01-12
 
 -- Load dependencies
-local constants = require('cn_vertical_constants')
+-- Check if already loaded via dofile (package.loaded set manually)
+local constants = package.loaded['cn_vertical_constants'] or require('cn_vertical_constants')
 local D = constants.D
 
 --- Flatten a vlist (from vbox) into a single list of nodes
@@ -160,7 +161,13 @@ local function flatten_vbox(head, grid_width, char_width)
     return D.tonode(result_head_d)
 end
 
--- Return module exports
-return {
+-- Create module table
+local flatten = {
     flatten_vbox = flatten_vbox,
 }
+
+-- Register module in package.loaded for require() compatibility
+package.loaded['cn_vertical_flatten'] = flatten
+
+-- Return module exports
+return flatten

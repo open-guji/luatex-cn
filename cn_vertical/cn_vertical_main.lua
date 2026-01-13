@@ -8,14 +8,28 @@
 -- Version: 0.3.0 (Modularized)
 -- Date: 2026-01-12
 
--- Create module namespace
-cn_vertical = cn_vertical or {}
+-- Debug: Output status at module load time
+if texio and texio.write_nl then
+    texio.write_nl("cn_vertical.lua: Starting to load...")
+    texio.write_nl("  package.loaded['cn_vertical_constants'] = " .. tostring(package.loaded['cn_vertical_constants']))
+end
+
+-- Create module namespace - MUST use _G to ensure global scope
+_G.cn_vertical = _G.cn_vertical or {}
+local cn_vertical = _G.cn_vertical
 
 -- Load submodules using Lua's require mechanism
-local constants = require('cn_vertical_constants')
-local flatten = require('cn_vertical_flatten')
-local layout = require('cn_vertical_layout')
-local render = require('cn_vertical_render')
+-- Check if already loaded via dofile (package.loaded set manually by each module)
+local constants = package.loaded['cn_vertical_constants'] or require('cn_vertical_constants')
+local flatten = package.loaded['cn_vertical_flatten'] or require('cn_vertical_flatten')
+local layout = package.loaded['cn_vertical_layout'] or require('cn_vertical_layout')
+local render = package.loaded['cn_vertical_render'] or require('cn_vertical_render')
+
+if texio and texio.write_nl then
+    texio.write_nl("cn_vertical.lua: Submodules loaded successfully")
+    texio.write_nl("  constants = " .. tostring(constants))
+    texio.write_nl("  flatten = " .. tostring(flatten))
+end
 
 --- Main entry point called from TeX
 -- Coordinates the entire vertical typesetting pipeline:
@@ -95,6 +109,9 @@ function cn_vertical.make_grid_box(box_num, height, grid_width, grid_height, col
 
     tex.box[box_num] = new_box
 end
+
+-- CRITICAL: Update global variable with the local one that has the function
+_G.cn_vertical = cn_vertical
 
 -- Return module
 return cn_vertical

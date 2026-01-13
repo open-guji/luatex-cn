@@ -12,7 +12,8 @@
 -- Date: 2026-01-12
 
 -- Load dependencies
-local constants = require('cn_vertical_constants')
+-- Check if already loaded via dofile (package.loaded set manually)
+local constants = package.loaded['cn_vertical_constants'] or require('cn_vertical_constants')
 local D = constants.D
 
 -- Conversion factor from scaled points to PDF big points
@@ -128,7 +129,13 @@ local function apply_positions(head, layout_map, grid_width, grid_height, total_
     return D.tonode(d_head)
 end
 
--- Return module exports
-return {
+-- Create module table
+local render = {
     apply_positions = apply_positions,
 }
+
+-- Register module in package.loaded for require() compatibility
+package.loaded['cn_vertical_render'] = render
+
+-- Return module exports
+return render

@@ -1,0 +1,23 @@
+\documentclass{article}
+\usepackage{fontspec}
+\usepackage{cn_vertical}
+
+\setmainfont{TW-Kai}[
+    RawFeature={+vert,+vrt2},
+    CharacterWidth=Full
+]
+
+\begin{document}
+
+\directlua{
+  texio.write_nl("==== DEBUG: Checking cn_vertical ====")
+  texio.write_nl("cn_vertical type: " .. type(cn_vertical))
+  if cn_vertical then
+    texio.write_nl("cn_vertical.make_grid_box type: " .. type(cn_vertical.make_grid_box))
+  end
+  texio.write_nl("====================================")
+}
+
+Test document.
+
+\end{document}

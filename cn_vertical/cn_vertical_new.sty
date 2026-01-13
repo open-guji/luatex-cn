@@ -1,9 +1,11 @@
 % cn_vertical.sty
-% Chinese vertical typesetting package for LuaTeX  
+% Chinese vertical typesetting package for LuaTeX
 % This is a sub-package of luatex_cn
 %
 \NeedsTeXFormat{LaTeX2e}
-\ProvidesPackage{cn_vertical}[2025/01/08 v0.2.0 Chinese vertical typesetting for LuaTeX]
+\ProvidesPackage{cn_vertical}[2026/01/12 v0.3.0 Chinese vertical typesetting for LuaTeX (Modularized)]
+
+\typeout{==== cn_vertical.sty v0.3.0 (Modularized) is being loaded ====}
 
 % Check if LuaTeX is being used
 \RequirePackage{ifluatex}
@@ -16,69 +18,67 @@
 \newluatexattribute\cnverticalindent
 \newluatexattribute\cnverticalrightindent
 
-% Load the Lua module using kpse and setup package.path for require()
+\typeout{==== BEFORE DIRECTLUA BLOCK ====}
+
+% Load the Lua modules using dofile with proper package.loaded sync
 \directlua{
-  -- Configure Lua module search path to support require()
-  -- This allows cn_vertical.lua to load its submodules using require()
-  local function setup_lua_path()
-    -- Add TEXMF tree script paths
-    local texmf_scripts = kpse.expand_path('$TEXMFHOME') .. '/scripts/?.lua;' ..
-                         kpse.expand_path('$TEXMFDIST') .. '/scripts/?.lua'
-    package.path = package.path .. ';' .. texmf_scripts
+  -- FORCE CLEAR CACHE (Crucial for development)
+  package.loaded["cn_vertical"] = nil
+  package.loaded["cn_vertical_constants"] = nil
+  package.loaded["cn_vertical_flatten"] = nil
+  package.loaded["cn_vertical_layout"] = nil
+  package.loaded["cn_vertical_render"] = nil
 
-    -- Add current working directory
-    package.path = package.path .. ';./?.lua'
+  -- Simple helper to load and register one module
+  local function load_one(modname, filename)
+    local path = kpse.find_file(filename, "lua")
+    if not path then path = filename end
 
-    -- Find cn_vertical.lua using kpse and add its directory to package.path
-    -- This is critical for require() to find the submodules
-    local cn_vert_path = kpse.find_file('cn_vertical.lua', 'lua')
-    if cn_vert_path then
-      -- Extract directory from full path
-      -- Handle both Unix (/) and Windows (backslash) path separators
-      -- Normalize path by replacing backslashes with forward slashes
-      cn_vert_path = cn_vert_path:gsub('\\', '/')
-      local dir = cn_vert_path:match('(.*/)')
-      if dir then
-        package.path = package.path .. ';' .. dir .. '?.lua'
-      end
+    local ok, result = pcall(dofile, path)
+    if not ok then
+      tex.error("Failed to load " .. filename .. ": " .. tostring(result))
+      return false
     end
+
+    if result then
+      package.loaded[modname] = result
+    end
+    return true
   end
 
-  -- Setup the path first
-  setup_lua_path()
+  -- Load each module explicitly
+  if not load_one("cn_vertical_constants", "cn_vertical_constants.lua") then
+    tex.error("Cannot load cn_vertical_constants.lua")
+  end
 
-  -- Debug: print package.path
-  -- texio.write_nl('term and log', 'DEBUG: package.path = ' .. package.path)
+  if not load_one("cn_vertical_flatten", "cn_vertical_flatten.lua") then
+    tex.error("Cannot load cn_vertical_flatten.lua")
+  end
 
-  -- Load the main module using require (which will auto-load submodules)
-  -- require() provides better module caching than dofile()
-  local ok, result = pcall(require, 'cn_vertical')
-  if not ok then
-    texio.write_nl('term and log', 'WARNING: require failed with error: ' .. tostring(result))
-    texio.write_nl('term and log', 'Falling back to dofile...')
-    -- Fallback: try direct dofile for backward compatibility
-    local path = kpse.find_file('cn_vertical.lua', 'lua')
-    if path then
-      dofile(path)
-    else
-      local f = io.open('cn_vertical.lua')
-      if f then
-        f:close()
-        dofile('cn_vertical.lua')
-      else
-        tex.error('Fatal error: cn_vertical.lua not found! Error: ' .. tostring(result))
-      end
-    end
-  else
-    -- SUCCESS: require() returned the module
-    -- But we need to ensure cn_vertical is set as a global variable
-    -- In case it's not already set by the module itself
-    if not cn_vertical then
-      cn_vertical = result
-    end
-    texio.write_nl('term and log', 'SUCCESS: cn_vertical loaded via require()')
+  if not load_one("cn_vertical_layout", "cn_vertical_layout.lua") then
+    tex.error("Cannot load cn_vertical_layout.lua")
+  end
+
+  if not load_one("cn_vertical_render", "cn_vertical_render.lua") then
+    tex.error("Cannot load cn_vertical_render.lua")
+  end
+
+  if not load_one("cn_vertical", "cn_vertical_main.lua") then
+    tex.error("Cannot load cn_vertical_main.lua")
+  end
+
+  -- Final check: make sure cn_vertical global is set
+  if not cn_vertical then
+    -- Try to get from package.loaded
+    cn_vertical = package.loaded["cn_vertical"]
+  end
+
+  if not cn_vertical or not cn_vertical.make_grid_box then
+    tex.error("FAILED! cn_vertical=" .. tostring(cn_vertical) .. " package.loaded=" .. tostring(package.loaded["cn_vertical"]))
   end
 }
+
+\typeout{==== AFTER DIRECTLUA BLOCK ====}
 
 % Use l3keys for key-value parameters
 \RequirePackage{xparse}
@@ -89,11 +89,11 @@
 \keys_define:nn { cn_vertical }
   {
     height .tl_set:N = \l__cn_vertical_height_tl,
-    height .initial:n = , 
-    
+    height .initial:n = ,
+
     spacing-col .tl_set:N = \l__cn_vertical_col_spacing_tl,
     spacing-col .initial:n = {},
-    
+
     grid-width .tl_set:N = \l__cn_vertical_grid_width_tl,
     grid-width .initial:n = {1.5em},
 
@@ -116,7 +116,6 @@
     vertical-align .initial:n = {center},
   }
 
-% Internal function to call Lua
 % Internal function to call Lua for Grid Layout
 \cs_new:Npn \__cn_vertical_process_grid:n #1
   {

@@ -13,6 +13,7 @@
 -- Load dependencies
 local constants = package.loaded['constants'] or require('constants')
 local D = constants.D
+local text_position = package.loaded['text_position'] or require('text_position')
 
 -- Conversion factor from scaled points to PDF big points
 local sp_to_bp = 0.0000152018
@@ -44,7 +45,7 @@ local sp_to_bp = 0.0000152018
 --   - shift_y (number) Vertical shift for positioning (includes padding and outer border)
 -- @return (table) Table with:
 --   - literals: Array of PDF literal strings for lines
---   - text_nodes: Array of text node data for section 1 text
+--   - section1_height: Height of section 1 (for text placement)
 local function draw_banxin(params)
     local x = params.x or 0
     local y = params.y or 0
@@ -65,7 +66,6 @@ local function draw_banxin(params)
     local section3_height = total_height * r3
 
     local literals = {}
-    local text_nodes = {}
     
     -- Convert to big points
     local x_bp = x * sp_to_bp
@@ -97,111 +97,14 @@ local function draw_banxin(params)
     )
     table.insert(literals, div2_line)
 
-    -- Process banxin text for section 1
-    -- Characters are arranged vertically from top to bottom
-    -- Each character occupies an equal-height cell within section 1
-    if banxin_text and banxin_text ~= "" then
-        -- Convert text to UTF-8 characters array
-        local chars = {}
-        for char in banxin_text:gmatch("[%z\1-\127\194-\244][\128-\191]*") do
-            table.insert(chars, char)
-        end
-
-        local num_chars = #chars
-        if num_chars > 0 then
-            -- Divide section 1 into equal cells for each character
-            local cell_height = section1_height / num_chars
-
-            -- Position characters vertically in section 1
-            for i, char in ipairs(chars) do
-                -- Calculate the row position (0-indexed from top)
-                local row = i - 1
-
-                -- Store text node data with grid-like positioning
-                -- These will be positioned similar to main text glyphs
-                table.insert(text_nodes, {
-                    char = char,
-                    row = row,              -- Row index in the character grid
-                    cell_height = cell_height,  -- Height of each cell
-                    x = x,                  -- Left edge of banxin column
-                    y_top = y,             -- Top edge of section 1
-                    width = width,          -- Width of banxin column
-                    shift_y = shift_y,      -- Vertical shift for positioning
-                })
-            end
-        end
-    end
-
+    -- Return literals and section1_height for text placement
     return {
         literals = literals,
-        text_nodes = text_nodes
+        section1_height = section1_height,
     }
 end
 
---- Create glyph nodes for banxin text
--- This function takes the text_nodes data and creates actual glyph nodes
--- with proper positioning
--- @param text_nodes (table) Array of text node data from draw_banxin
--- @return (node) A single linked node chain ready to be inserted
-local function create_text_glyphs(text_nodes)
-    if #text_nodes == 0 then
-        return nil
-    end
-
-    local head = nil
-    local tail = nil
-
-    for _, text_data in ipairs(text_nodes) do
-        -- Create glyph node
-        local glyph = node.new(node.id("glyph"))
-        glyph.char = utf8.codepoint(text_data.char)
-        glyph.font = font.current()
-        glyph.lang = 0
-
-        -- Get glyph dimensions
-        local glyph_direct = D.todirect(glyph)
-        local g_width = D.getfield(glyph_direct, "width") or 0
-        local g_height = D.getfield(glyph_direct, "height") or 0
-        local g_depth = D.getfield(glyph_direct, "depth") or 0
-
-        -- Calculate horizontal position
-        -- Center the character horizontally in the banxin column
-        local x_offset = text_data.x + (text_data.width - g_width) / 2
-
-        -- Calculate vertical position
-        -- y_top is the top edge of section 1
-        -- Characters are positioned vertically, centered in their cells
-        local char_total_height = g_height + g_depth
-        local y_offset = text_data.y_top - text_data.row * text_data.cell_height
-                         - (text_data.cell_height + char_total_height) / 2
-                         + g_depth - text_data.shift_y
-
-        -- Set glyph position using xoffset and yoffset
-        D.setfield(glyph_direct, "xoffset", x_offset)
-        D.setfield(glyph_direct, "yoffset", y_offset)
-
-        -- Create negative kern to cancel out the glyph width
-        -- This makes all glyphs visually stack at the same horizontal position
-        -- Use subtype 1 (explicit kern) to mark this kern as protected from zeroing
-        local kern = D.new(constants.KERN)
-        D.setfield(kern, "subtype", 1)  -- Mark as explicit/protected kern
-        D.setfield(kern, "kern", -g_width)
-
-        -- Link glyph to its kern
-        D.setlink(glyph_direct, kern)
-
-        -- Build the chain
-        if head == nil then
-            head = glyph_direct
-            tail = kern
-        else
-            D.setlink(tail, glyph_direct)
-            tail = kern
-        end
-    end
-
-    return head
-end
+-- Note: create_text_glyphs has been replaced by text_position.create_vertical_text
 
 --- Draw complete banxin column including border, dividers, and text
 -- This is the main entry point for drawing a banxin column
@@ -271,9 +174,17 @@ local function draw_banxin_column(p_head, params)
         p_head = D.insert_before(p_head, p_head, D.todirect(lit_node))
     end
 
-    -- Insert text glyphs as a linked chain
-    if banxin_result.text_nodes and #banxin_result.text_nodes > 0 then
-        local glyph_chain = create_text_glyphs(banxin_result.text_nodes)
+    -- Insert text using unified text_position module
+    local banxin_text = params.banxin_text or ""
+    if banxin_text ~= "" then
+        local glyph_chain = text_position.create_vertical_text(banxin_text, {
+            x = x,
+            y_top = y - shift_y,  -- Apply shift_y here
+            width = width,
+            height = banxin_result.section1_height,
+            v_align = "center",
+            h_align = "center",
+        })
         if glyph_chain then
             -- Find the tail of the glyph chain
             local chain_tail = glyph_chain
@@ -292,8 +203,8 @@ end
 -- Create module table
 local banxin = {
     draw_banxin = draw_banxin,
-    create_text_glyphs = create_text_glyphs,
     draw_banxin_column = draw_banxin_column,
+    -- Note: Text positioning is now handled by text_position module
 }
 
 -- Register module in package.loaded for require() compatibility

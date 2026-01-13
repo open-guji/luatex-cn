@@ -19,6 +19,7 @@ local utils = package.loaded['utils'] or require('utils')
 local border = package.loaded['border'] or require('border')
 local banxin = package.loaded['banxin'] or require('banxin')
 local background = package.loaded['background'] or require('background')
+local text_position = package.loaded['text_position'] or require('text_position')
 
 -- Conversion factor from scaled points to PDF big points
 local sp_to_bp = utils.sp_to_bp
@@ -237,17 +238,21 @@ local function apply_positions(head, layout_map, params)
                         local d = D.getfield(curr, "depth")
                         local h = D.getfield(curr, "height")
                         local w = D.getfield(curr, "width")
-                        local rtl_col = p_total_cols - 1 - col
-                        local final_x = rtl_col * grid_width + (grid_width - w) / 2 + half_thickness + shift_x
-                        local final_y
-                        if vertical_align == "top" then
-                            final_y = -row * grid_height - h - shift_y
-                        elseif vertical_align == "center" then
-                            local char_total_height = h + d
-                            final_y = -row * grid_height - (grid_height + char_total_height) / 2 + d - shift_y
-                        else
-                            final_y = -row * grid_height - grid_height + d - shift_y
-                        end
+                        
+                        -- Use unified position calculation from text_position module
+                        local final_x, final_y = text_position.calc_grid_position(col, row, 
+                            { width = w, height = h, depth = d },
+                            {
+                                grid_width = grid_width,
+                                grid_height = grid_height,
+                                total_cols = p_total_cols,
+                                shift_x = shift_x,
+                                shift_y = shift_y,
+                                v_align = vertical_align,
+                                half_thickness = half_thickness,
+                            }
+                        )
+                        
                         D.setfield(curr, "xoffset", final_x)
                         D.setfield(curr, "yoffset", final_y)
                         local k = D.new(constants.KERN)
@@ -255,6 +260,7 @@ local function apply_positions(head, layout_map, params)
                         D.setlink(curr, k)
                         if next_curr then D.setlink(k, next_curr) end
                         if draw_debug then
+                            local rtl_col = p_total_cols - 1 - col
                             local tx_bp = (rtl_col * grid_width + half_thickness + shift_x) * sp_to_bp
                             local ty_bp = (-row * grid_height - shift_y) * sp_to_bp
                             local literal = string.format("q 0.5 w 0 0 1 RG 1 0 0 1 %.4f %.4f cm 0 0 %.4f %.4f re S Q", tx_bp, ty_bp, w_bp, h_bp)

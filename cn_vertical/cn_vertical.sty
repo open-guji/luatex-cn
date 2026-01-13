@@ -28,6 +28,7 @@
   package.loaded["layout"] = nil
   package.loaded["render"] = nil
   package.loaded["banxin"] = nil
+  package.loaded["text_position"] = nil
   package.loaded["core"] = nil
 }
 
@@ -44,6 +45,11 @@
 % Load layout
 \directlua{
   cn_vertical_layout = dofile("layout.lua")
+}
+
+% Load text_position (unified text positioning)
+\directlua{
+  cn_vertical_text_position = dofile("text_position.lua")
 }
 
 % Load render

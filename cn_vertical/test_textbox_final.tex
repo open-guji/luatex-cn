@@ -7,7 +7,14 @@
     
     再次测试均匀分3格放2字\GridTextbox[height=3, distribute=true]{一二}测试文本继续。
     
-    再次测试均匀分布7格放4字\GridTextbox[height=7, distribute=true]{一二三四五}测试文本继续。
+    再次测试均匀分布7格放5字\GridTextbox[height=7, distribute=true]{一二三四五}测试文本继续。
+
+\begin{itemize}[leftmargin=1em, label={}]
+    \item 第一层
+    \item \begin{itemize}[leftmargin=1em, label={}]
+        \item \GridTextbox[height=4, distribute=true]{一二三}其他文本
+    \end{itemize}
+\end{itemize}
 \end{guji-content}
 
 \end{document}

@@ -98,14 +98,12 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
         for i, entry in ipairs(col_buffer) do
             local row
             if distribute and N > 1 and N < H then
-                -- Evenly distribute: Row = round((i-1) * (H-1)/(N-1))
-                row = math.floor((i-1) * (H-1) / (N-1) + 0.5)
+                -- Evenly distribute with sub-grid precision: Row = (i-1) * (H-1)/(N-1)
+                row = (i-1) * (H-1) / (N-1)
             else
                 row = entry.relative_row
             end
             
-            -- Re-check Banxin/Occupancy for the calculated row if needed?
-            -- Actually, distribution is mostly for textboxes where occupancy is simpler.
             layout_map[entry.node] = {
                 page = entry.page, 
                 col = entry.col, 

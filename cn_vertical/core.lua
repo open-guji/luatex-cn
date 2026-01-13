@@ -88,9 +88,8 @@ function cn_vertical.verticalize_inner_box(box_num, w_cols, h_rows, g_w_str, g_h
         page_columns = tonumber(w_cols) or 1,
         border_on = (border == "true"),
         debug_on = (debug == "true") or _G.cn_vertical.debug.enabled,
-        vertical_align = v_align or "center",
+        v_align = v_align or "center",
         distribute = (distribute == "true"),
-        border_padding_top = "2pt", -- Add slight top margin within textbox
         height = g_h_str -- Give enough height for the rows
     }
 
@@ -215,7 +214,9 @@ function cn_vertical.prepare_grid(box_num, params)
         banxin_s1_ratio = tonumber(params.banxin_s1_ratio) or 0.28,
         banxin_s2_ratio = tonumber(params.banxin_s2_ratio) or 0.56,
         banxin_s3_ratio = tonumber(params.banxin_s3_ratio) or 0.16,
-        banxin_text = params.banxin_text or ""
+        banxin_text = params.banxin_text or "",
+        banxin_padding_top = constants.to_dimen(params.banxin_padding_top) or (65536 * 2), -- 2pt default
+        banxin_padding_bottom = constants.to_dimen(params.banxin_padding_bottom) or 0,
     }
     local rendered_pages = render.apply_positions(list, layout_map, r_params)
 

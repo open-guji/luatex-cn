@@ -69,8 +69,8 @@
     % Gap between outer border and inner content
     outer-border-sep = 2pt,
     % Padding inside column border (top and bottom)
-    border-padding-top = 10pt,
-    border-padding-bottom = 2.8pt,
+    border-padding-top = 5pt,
+    border-padding-bottom = 5pt,
     
     % ==========================================================================
     % Grid Configuration (17 cols x 21 chars)

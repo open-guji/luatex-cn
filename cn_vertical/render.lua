@@ -111,7 +111,7 @@ local function apply_positions(head, layout_map, params)
     -- Global shift for all inner content
     local outer_shift = draw_outer_border and (ob_thickness_val + ob_sep_val) or 0
     local shift_x = outer_shift
-    local shift_y = outer_shift + b_padding_top
+    local shift_y = outer_shift + border_thickness_val + b_padding_top
     
     local interval = tonumber(n_column) or 0
     local p_cols = tonumber(page_columns) or (2 * interval + 1)
@@ -194,6 +194,10 @@ local function apply_positions(head, layout_map, params)
                         local banxin_y = -(half_thickness + outer_shift)
                         local banxin_height = line_limit * grid_height + b_padding_top + b_padding_bottom
 
+                        -- Use banxin-specific padding (独立的版心间距设置)
+                        local bx_padding_top = params.banxin_padding_top or 0
+                        local bx_padding_bottom = params.banxin_padding_bottom or 0
+                        
                         p_head = banxin.draw_banxin_column(p_head, {
                             x = banxin_x,
                             y = banxin_y,
@@ -207,6 +211,8 @@ local function apply_positions(head, layout_map, params)
                             banxin_text = params.banxin_text or "",
                             shift_y = shift_y,
                             vertical_align = vertical_align,
+                            b_padding_top = bx_padding_top,
+                            b_padding_bottom = bx_padding_bottom,
                         })
                     end
                 end

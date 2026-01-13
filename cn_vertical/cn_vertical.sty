@@ -189,6 +189,13 @@
     % Banxin text (鱼尾文字)
     banxin-text .tl_set:N = \l_cnv_banxin_text_tl,
     banxin-text .initial:n = {},
+
+    % Banxin padding (版心独立的间距设置)
+    banxin-padding-top .tl_set:N = \l_cnv_banxin_padding_top_tl,
+    banxin-padding-top .initial:n = {2pt},
+
+    banxin-padding-bottom .tl_set:N = \l_cnv_banxin_padding_bottom_tl,
+    banxin-padding-bottom .initial:n = {10pt},
   }
 
 \tl_new:N \l__cn_vertical_border_rgb_tl
@@ -293,7 +300,9 @@
         banxin_s1_ratio = [=[\luaescapestring{\l_cnv_banxin_one_tl}]=],
         banxin_s2_ratio = [=[\luaescapestring{\l_cnv_banxin_two_tl}]=],
         banxin_s3_ratio = [=[\luaescapestring{\l_cnv_banxin_three_tl}]=],
-        banxin_text = [=[\luaescapestring{\l_cnv_banxin_text_tl}]=]
+        banxin_text = [=[\luaescapestring{\l_cnv_banxin_text_tl}]=],
+        banxin_padding_top = [=[\luaescapestring{\l_cnv_banxin_padding_top_tl}]=],
+        banxin_padding_bottom = [=[\luaescapestring{\l_cnv_banxin_padding_bottom_tl}]=]
       })
     }
   }

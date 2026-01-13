@@ -106,6 +106,9 @@
 
     vertical-align .tl_set:N = \l__cn_vertical_valign_tl,
     vertical-align .initial:n = {center},
+
+    n-column .int_set:N = \l__cn_vertical_n_column_int,
+    n-column .initial:n = 8,
   }
 
 % Internal function to call Lua for Grid Layout
@@ -129,13 +132,14 @@
         "\luaescapestring{\l__cn_vertical_border_thickness_tl}",
         "\bool_if:NTF \l__cn_vertical_outer_border_bool {true} {false}",
         "\luaescapestring{\l__cn_vertical_outer_border_thickness_tl}",
-        "\luaescapestring{\l__cn_vertical_outer_border_sep_tl}"
+        "\luaescapestring{\l__cn_vertical_outer_border_sep_tl}",
+        \int_use:N \l__cn_vertical_n_column_int
       )
     }
     % Output the modified box (RTL layout handled internally)
     % Force zero topskip and no extra interline space
     \setlength{\topskip}{0pt}
-    \nointerlineskip
+    \par\nointerlineskip
     \noindent\hfill\smash{\box0}
   }
 

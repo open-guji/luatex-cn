@@ -23,26 +23,39 @@ local D = constants.D
 -- @param head (node) Head of flattened node list
 -- @param grid_height (number) Grid row height in scaled points
 -- @param line_limit (number) Maximum rows per column
+-- @param n_column (number) Number of columns per page/section (defines Banxin gap)
 -- @return (table, number) layout_map (node_ptr -> {col, row}), total_cols
-local function calculate_grid_positions(head, grid_height, line_limit)
+local function calculate_grid_positions(head, grid_height, line_limit, n_column)
     local d_head = D.todirect(head)
 
     if line_limit < 1 then line_limit = 20 end
 
-    -- Stateful cursor layout
-    -- We track max column used to determine width
-    local simulated_max_col = 0
+    local interval = tonumber(n_column) or 0
 
+    -- Stateful cursor layout
     local cur_col = 0
     local cur_row = 0
-
-    -- Track current column's indent (for hanging indent within same column)
+    local simulated_max_col = 0
     local cur_column_indent = 0
-
-    -- Store (node_ptr -> {col, row}) mapping
     local layout_map = {}
 
+    local function is_banxin_col(col)
+        if interval <= 0 then return false end
+        -- Banxin is the (interval+1)-th column (0-indexed: index == interval)
+        return (col % (interval + 1)) == interval
+    end
+
+    local function skip_banxin()
+        while is_banxin_col(cur_col) do
+            cur_col = cur_col + 1
+        end
+    end
+
     local t = d_head
+
+    -- Initial check for first column (index 0)
+    skip_banxin()
+
     while t do
         local id = D.getid(t)
         local indent = D.get_attribute(t, constants.ATTR_INDENT) or 0
@@ -75,6 +88,9 @@ local function calculate_grid_positions(head, grid_height, line_limit)
             cur_column_indent = indent
             -- Re-apply top indent for new column
             if cur_row < indent then cur_row = indent end
+
+            -- Skip Banxin column
+            skip_banxin()
         end
 
         if id == constants.GLYPH then
@@ -98,6 +114,7 @@ local function calculate_grid_positions(head, grid_height, line_limit)
                  cur_col = cur_col + 1
                  cur_row = 0
                  cur_column_indent = 0 -- Reset column indent for next column
+                 skip_banxin()
              end
         end
 

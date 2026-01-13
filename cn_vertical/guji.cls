@@ -88,6 +88,9 @@
     border-thickness .tl_set:N = \l_guji_border_thickness_tl,
     border-thickness .initial:n = 0.5pt,
 
+    n-column .int_set:N = \l_guji_n_column_int,
+    n-column .initial:n = 8,
+
     template .code:n = {
       \InputIfFileExists{#1.guji}{}{
         % Fallback to checking defined templates in guji / templates namespace
@@ -253,7 +256,8 @@
         border-padding-top = \l_guji_border_padding_top_tl,
         border-padding-bottom = \l_guji_border_padding_bottom_tl,
         outer-border-thickness = \l_guji_outer_border_thickness_tl,
-        outer-border-sep = \l_guji_outer_border_sep_tl
+        outer-border-sep = \l_guji_outer_border_sep_tl,
+        n-column = \int_use:N \l_guji_n_column_int
       }
     \nointerlineskip
     \__cn_vertical_process_grid:n { \BODY }

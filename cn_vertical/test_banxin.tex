@@ -1,0 +1,71 @@
+\documentclass{article}
+\usepackage[paperwidth=200mm, paperheight=150mm, margin=10mm]{geometry}
+\usepackage{cn_vertical}
+\usepackage{fontspec}
+
+\setmainfont{SimSun} % Ensure a Chinese font is available
+
+\begin{document}
+
+\section*{Banxin (Middle Column) Test}
+
+Testing Banxin interval = 8 (9th column should be empty).
+
+\VerticalRTT[
+  height=100mm,
+  grid-width=1.5em,
+  grid-height=1.2em,
+  n-column=8,
+  border=true,
+  outer-border=true,
+  debug=true
+]{
+  一二三四五六七八九十
+
+  一二三四五六七八九十
+
+  一二三四五六七八九十
+
+  一二三四五六七八九十
+
+  一二三四五六七八九十
+
+  一二三四五六七八九十
+
+  一二三四五六七八九十
+
+  一二三四五六七八九十
+
+  一二三四五六七八九十
+
+  一二三四五六七八九十
+
+  一二三四五六七八九十
+
+  一二三四五六七八九十
+
+  一二三四五六七八九十
+  一二三四五六七八九十
+  一二三四五六七八九十
+  一二三四五六七八九十
+}
+
+\newpage
+
+Testing Banxin interval = 4 (5th column should be empty).
+
+\VerticalRTT[
+  height=80mm,
+  grid-width=1.5em,
+  grid-height=1.2em,
+  n-column=4,
+  border=true,
+  outer-border=true
+]{
+  这是第一列的内容。这是第二列的内容。这是第三列的内容。这是第四列的内容。
+  这是应该跳过的第五列。但内容应该出现在第六列。
+  继续填充一些文字以观察效果。
+  这些文字应该分布在不同的列中，每隔四列就有一个空列。
+}
+
+\end{document}

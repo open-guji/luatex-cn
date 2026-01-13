@@ -34,8 +34,9 @@ local sp_to_bp = 0.0000152018
 -- @param b_padding_top (number) Extra padding at top of border in scaled points
 -- @param b_padding_bottom (number) Extra padding at bottom of border in scaled points
 -- @param line_limit (number) Maximum rows per column
+-- @param n_column (number) Number of columns per page (defines Banxin gap)
 -- @return (node) Modified node list head
-local function apply_positions(head, layout_map, grid_width, grid_height, total_cols, vertical_align, draw_debug, draw_border, b_padding_top, b_padding_bottom, line_limit, border_thickness, draw_outer_border, outer_border_thickness, outer_border_sep)
+local function apply_positions(head, layout_map, grid_width, grid_height, total_cols, vertical_align, draw_debug, draw_border, b_padding_top, b_padding_bottom, line_limit, border_thickness, draw_outer_border, outer_border_thickness, outer_border_sep, n_column)
     local d_head = D.todirect(head)
 
     -- Cached conversion factors for PDF literals
@@ -54,6 +55,12 @@ local function apply_positions(head, layout_map, grid_width, grid_height, total_
     local outer_shift = draw_outer_border and (ob_thickness + ob_sep) or 0
     local shift_x = outer_shift
     local shift_y = outer_shift + b_padding_top
+    
+    local interval = tonumber(n_column) or 0
+    local function is_banxin_col(col)
+        if interval <= 0 then return false end
+        return (col % (interval + 1)) == interval
+    end
 
     -- Draw outer border (if enabled)
     if draw_outer_border and total_cols > 0 then
@@ -79,9 +86,13 @@ local function apply_positions(head, layout_map, grid_width, grid_height, total_
     if draw_border and total_cols > 0 then
         for col = 0, total_cols - 1 do
             local rtl_col = total_cols - 1 - col
-            local box_x = rtl_col * grid_width
             
-            local tx_bp = (box_x + half_thickness + shift_x) * sp_to_bp
+            -- Optional: We might want to draw something different for Banxin column
+            -- For now, let's keep drawing the border box but it will be empty
+            -- Or if requested, we could skip it. The user said "空出一列", 
+            -- which usually implies the frame still exists in Guji layout.
+            
+            local tx_bp = (rtl_col * grid_width + half_thickness + shift_x) * sp_to_bp
             local ty_bp = -(half_thickness + outer_shift) * sp_to_bp
             local tw_bp = grid_width * sp_to_bp
             local th_bp = -(line_limit * grid_height + b_padding_top + b_padding_bottom) * sp_to_bp

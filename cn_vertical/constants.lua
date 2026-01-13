@@ -31,6 +31,8 @@ constants.LOCAL_PAR = node.id("local_par")
 -- Note: Attributes are registered in cn_vertical.sty via \newluatexattribute
 constants.ATTR_INDENT = luatexbase.attributes.cnverticalindent or luatexbase.new_attribute("cnverticalindent")
 constants.ATTR_RIGHT_INDENT = luatexbase.attributes.cnverticalrightindent or luatexbase.new_attribute("cnverticalrightindent")
+constants.ATTR_TEXTBOX_WIDTH = luatexbase.attributes.cnverticaltextboxwidth or luatexbase.new_attribute("cnverticaltextboxwidth")
+constants.ATTR_TEXTBOX_HEIGHT = luatexbase.attributes.cnverticaltextboxheight or luatexbase.new_attribute("cnverticaltextboxheight")
 
 --- Convert TeX dimension string to scaled points
 -- @param dim_str (string) TeX dimension string (e.g., "20pt", "1.5em")

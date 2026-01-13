@@ -230,44 +230,78 @@ local function apply_positions(head, layout_map, params)
             while curr do
                 local next_curr = D.getnext(curr)
                 local id = D.getid(curr)
-                if id == constants.GLYPH then
+                if id == constants.GLYPH or id == constants.HLIST or id == constants.VLIST then
                     local pos = layout_map[curr]
                     if pos then
                         local col = pos.col
                         local row = pos.row
-                        local d = D.getfield(curr, "depth")
-                        local h = D.getfield(curr, "height")
-                        local w = D.getfield(curr, "width")
+                        local d = D.getfield(curr, "depth") or 0
+                        local h = D.getfield(curr, "height") or 0
+                        local w = D.getfield(curr, "width") or 0
                         
-                        -- Use unified position calculation from text_position module
-                        local final_x, final_y = text_position.calc_grid_position(col, row, 
-                            { width = w, height = h, depth = d },
-                            {
-                                grid_width = grid_width,
-                                grid_height = grid_height,
-                                total_cols = p_total_cols,
-                                shift_x = shift_x,
-                                shift_y = shift_y,
-                                v_align = vertical_align,
-                                half_thickness = half_thickness,
-                            }
-                        )
-                        
-                        D.setfield(curr, "xoffset", final_x)
-                        D.setfield(curr, "yoffset", final_y)
-                        local k = D.new(constants.KERN)
-                        D.setfield(k, "kern", -w)
-                        D.setlink(curr, k)
-                        if next_curr then D.setlink(k, next_curr) end
+                        if id == constants.GLYPH then
+                            -- Use unified position calculation for glyphs (centering)
+                            local final_x, final_y = text_position.calc_grid_position(col, row, 
+                                { width = w, height = h, depth = d },
+                                {
+                                    grid_width = grid_width,
+                                    grid_height = grid_height,
+                                    total_cols = p_total_cols,
+                                    shift_x = shift_x,
+                                    shift_y = shift_y,
+                                    v_align = vertical_align,
+                                    half_thickness = half_thickness,
+                                }
+                            )
+                            D.setfield(curr, "xoffset", final_x)
+                            D.setfield(curr, "yoffset", final_y)
+                            
+                            -- Add negative kern to reset horizontal cursor for TLT parent
+                            local k = D.new(constants.KERN)
+                            D.setfield(k, "kern", -w)
+                            D.setlink(curr, k)
+                            if next_curr then D.setlink(k, next_curr) end
+                        else
+                            -- For HLIST/VLIST (Blocks), we use Kern (X) and Shift (Y)
+                            -- xoffset/yoffset are NOT supported for blocks.
+                            local rtl_col = p_total_cols - 1 - col
+                            local final_x = rtl_col * grid_width + half_thickness + shift_x
+                            
+                            -- Top edge of the box should be at -row*grid_height - shift_y
+                            -- In TLT box, baseline is at 0. Shift moves it down.
+                            -- Baseline should be at -final_y + h
+                            local final_y_top = -row * grid_height - shift_y
+                            D.setfield(curr, "shift", -final_y_top + h)
+                            
+                            -- Position horizontally using Kern Wrap
+                            local k_pre = D.new(constants.KERN)
+                            D.setfield(k_pre, "kern", final_x)
+                            
+                            local k_post = D.new(constants.KERN)
+                            -- Reset cursor to 0 for next node
+                            D.setfield(k_post, "kern", -(final_x + w))
+                            
+                            -- Insert into list and update page head if needed
+                            p_head = D.insert_before(p_head, curr, k_pre)
+                            D.insert_after(p_head, curr, k_post)
+                            -- next_curr remains the same (it's after k_post now)
+                        end
+
                         if draw_debug then
                             local rtl_col = p_total_cols - 1 - col
                             local tx_bp = (rtl_col * grid_width + half_thickness + shift_x) * sp_to_bp
                             local ty_bp = (-row * grid_height - shift_y) * sp_to_bp
-                            local literal = string.format("q 0.5 w 0 0 1 RG 1 0 0 1 %.4f %.4f cm 0 0 %.4f %.4f re S Q", tx_bp, ty_bp, w_bp, h_bp)
+                            local dbg_w = w_bp
+                            local dbg_h = h_bp
+                            if pos.is_block then
+                                dbg_w = pos.width * grid_width * sp_to_bp
+                                dbg_h = -pos.height * grid_height * sp_to_bp
+                            end
+                            local literal = string.format("q 0.5 w 0 0 1 RG 1 0 0 1 %.4f %.4f cm 0 0 %.4f %.4f re S Q", tx_bp, ty_bp, dbg_w, dbg_h)
                             local nn = node.new("whatsit", "pdf_literal")
                             nn.data = literal
                             nn.mode = 0
-                            D.insert_before(p_head, curr, D.todirect(nn))
+                            p_head = D.insert_before(p_head, curr, D.todirect(nn))
                         end
                     end
                 elseif id == constants.GLUE then

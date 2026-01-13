@@ -1,0 +1,15 @@
+\documentclass{guji}
+\usepackage{enumitem} % For better list control if needed
+\begin{document}
+
+\begin{guji-content}[template=sikuquanshu, debug=true]
+    这是一个测试文本，\GridTextbox[2][3]{
+        二乘三格
+    }
+    文本框之后继续排列。
+    
+    
+    再次测试一个单格的文本框：\GridTextbox[1][3]{一二}测试文本继续，看看流式排布是否正常。
+\end{guji-content}
+
+\end{document}

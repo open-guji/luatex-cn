@@ -39,103 +39,166 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
     local cur_page = 0
     local cur_col = 0
     local cur_row = 0
-    local simulated_max_col = 0
     local cur_column_indent = 0
     local layout_map = {}
+    
+    -- Occupancy map: occupancy[page][col][row] = true
+    local occupancy = {}
 
     local function is_banxin_col(col)
         if interval <= 0 then return false end
-        -- Banxin is the (interval+1)-th column (0-indexed: index == interval)
         return (col % (interval + 1)) == interval
     end
 
-    local function skip_banxin()
-        while is_banxin_col(cur_col) do
-            cur_col = cur_col + 1
-            if cur_col >= p_cols then
-                cur_col = 0
-                cur_page = cur_page + 1
+    local function is_occupied(p, c, r)
+        if not occupancy[p] then return false end
+        if not occupancy[p][c] then return false end
+        return occupancy[p][c][r] == true
+    end
+
+    local function mark_occupied(p, c, r)
+        if not occupancy[p] then occupancy[p] = {} end
+        if not occupancy[p][c] then occupancy[p][c] = {} end
+        occupancy[p][c][r] = true
+    end
+
+    local function skip_banxin_and_occupied()
+        local changed = true
+        while changed do
+            changed = false
+            -- Skip Banxin
+            while is_banxin_col(cur_col) do
+                cur_col = cur_col + 1
+                if cur_col >= p_cols then
+                    cur_col = 0
+                    cur_page = cur_page + 1
+                end
+                changed = true
+            end
+            -- Skip Occupied
+            if is_occupied(cur_page, cur_col, cur_row) then
+                cur_row = cur_row + 1
+                if cur_row >= line_limit then
+                    cur_row = 0
+                    cur_col = cur_col + 1
+                    changed = true
+                else
+                    -- Check again if new row is banxin or occupied
+                    changed = true
+                end
             end
         end
     end
 
     local t = d_head
-
-    -- Initial check for first column (index 0)
-    skip_banxin()
+    skip_banxin_and_occupied()
 
     while t do
         local id = D.getid(t)
         local indent = D.get_attribute(t, constants.ATTR_INDENT) or 0
         local r_indent = D.get_attribute(t, constants.ATTR_RIGHT_INDENT) or 0
-
-        -- Hanging indent logic (Top indent)
-        -- Apply indent if it's higher than current position
-        if cur_row < indent then
-            cur_row = indent
-        end
-        -- Track the column's base indent for hanging
-        if indent > cur_column_indent then
-            cur_column_indent = indent
-        end
-        -- Ensure we maintain at least the column_indent
-        if cur_row < cur_column_indent then
-            cur_row = cur_column_indent
+        
+        -- Textbox attributes; ONLY treat HLIST/VLIST as blocks
+        local tb_w = 0
+        local tb_h = 0
+        if id == constants.HLIST or id == constants.VLIST then
+            tb_w = D.get_attribute(t, constants.ATTR_TEXTBOX_WIDTH) or 0
+            tb_h = D.get_attribute(t, constants.ATTR_TEXTBOX_HEIGHT) or 0
         end
 
-        -- Calculate effective row limit for this node
+        -- Hanging indent logic (only for regular glyphs/glue)
+        if tb_w == 0 then
+            if cur_row < indent then cur_row = indent end
+            if indent > cur_column_indent then cur_column_indent = indent end
+            if cur_row < cur_column_indent then cur_row = cur_column_indent end
+        end
+
         local effective_limit = line_limit - r_indent
-        if effective_limit < indent + 1 then effective_limit = indent + 1 end -- Safety
+        if effective_limit < indent + 1 then effective_limit = indent + 1 end
 
         -- Check wrapping BEFORE placing
-        -- If current row is already beyond limit (e.g. slight overflow), we should wrap.
         if cur_row >= effective_limit then
             cur_col = cur_col + 1
             cur_row = 0
-            
-            -- Check page break
             if cur_col >= p_cols then
                 cur_col = 0
                 cur_page = cur_page + 1
             end
-
-            -- Reset column indent for new column
             cur_column_indent = indent
-            -- Re-apply top indent for new column
             if cur_row < indent then cur_row = indent end
-
-            -- Skip Banxin column
-            skip_banxin()
+            skip_banxin_and_occupied()
         end
 
-        if id == constants.GLYPH then
+        if tb_w > 0 and tb_h > 0 then
+            -- Handle Textbox Block
+            -- 1. Check if it fits in current column height
+            if cur_row + tb_h > effective_limit then
+                -- Wrap to next column
+                cur_col = cur_col + 1
+                cur_row = 0
+                if cur_col >= p_cols then
+                    cur_col = 0
+                    cur_page = cur_page + 1
+                end
+                skip_banxin_and_occupied()
+            end
+            
+            -- 2. Check if it overlaps with Banxin (if width > 1)
+            local fits_width = true
+            for c = cur_col, cur_col + tb_w - 1 do
+                if is_banxin_col(c) or (c >= p_cols) then
+                    fits_width = false
+                    break
+                end
+            end
+            
+            if not fits_width then
+                -- Move to next available column start
+                cur_col = cur_col + 1
+                cur_row = 0
+                if cur_col >= p_cols then
+                    cur_col = 0
+                    cur_page = cur_page + 1
+                end
+                skip_banxin_and_occupied()
+            end
+
+            -- 3. Mark all cells as occupied
+            for c = cur_col, cur_col + tb_w - 1 do
+                for r = cur_row, cur_row + tb_h - 1 do
+                    mark_occupied(cur_page, c, r)
+                end
+            end
+
+            -- 4. Assign position
+            layout_map[t] = {page=cur_page, col=cur_col, row=cur_row, is_block=true, width=tb_w, height=tb_h}
+            
+            -- 5. Move cursor
+            skip_banxin_and_occupied()
+
+        elseif id == constants.GLYPH then
             layout_map[t] = {page=cur_page, col=cur_col, row=cur_row}
             cur_row = cur_row + 1
+            skip_banxin_and_occupied()
         elseif id == constants.GLUE then
-             -- In vertical layout, glue represents horizontal space in the original layout
-             -- We convert it to vertical offset, but it should not increment row like a glyph
-             -- Only spaceskip and xspaceskip should advance position
              local subtype = D.getsubtype(t)
              local w = D.getfield(t, "width")
-             -- Only advance for actual inter-word spaces (spaceskip=13, xspaceskip=14)
-             -- NOT for userskip (0) which might be structural spacing
              if w > 0 and (subtype == 13 or subtype == 14) then
+                 -- Assign position to glue so it's not discarded by render.lua
+                 layout_map[t] = {page=cur_page, col=cur_col, row=cur_row}
                  cur_row = cur_row + 1
+                 skip_banxin_and_occupied()
              end
         elseif id == constants.PENALTY and D.getfield(t, "penalty") <= -10000 then
-             -- Forced break
              if cur_row > 0 then
                  cur_col = cur_col + 1
                  cur_row = 0
-                 
-                 -- Check page break
                  if cur_col >= p_cols then
                      cur_col = 0
                      cur_page = cur_page + 1
                  end
-
-                 cur_column_indent = 0 -- Reset column indent for next column
-                 skip_banxin()
+                 cur_column_indent = 0
+                 skip_banxin_and_occupied()
              end
         end
 

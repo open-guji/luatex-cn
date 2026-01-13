@@ -55,9 +55,19 @@ local function flatten_vbox(head, grid_width, char_width)
             local tid = D.getid(t)
 
             if tid == constants.HLIST or tid == constants.VLIST then
-                -- Recurse into boxes
-                local inner = D.getfield(t, "list")
-                collect_nodes(inner, indent_level, right_indent_level)
+                -- Check if this inner box is a Grid Textbox
+                local tb_w = D.get_attribute(t, constants.ATTR_TEXTBOX_WIDTH) or 0
+                local tb_h = D.get_attribute(t, constants.ATTR_TEXTBOX_HEIGHT) or 0
+
+                if tb_w > 0 and tb_h > 0 then
+                    -- This is a textbox block. Do NOT flatten its content.
+                    local copy = D.copy(t)
+                    append_node(copy)
+                else
+                    -- Recurse into boxes
+                    local inner = D.getfield(t, "list")
+                    collect_nodes(inner, indent_level, right_indent_level)
+                end
             else
                 local keep = false
                 if tid == constants.GLYPH or tid == constants.KERN then
@@ -80,6 +90,12 @@ local function flatten_vbox(head, grid_width, char_width)
                     if right_indent_level > 0 then
                         D.set_attribute(copy, constants.ATTR_RIGHT_INDENT, right_indent_level)
                     end
+                    
+                    -- CRITICAL: Do NOT let individual glyphs inherit the textbox attribute!
+                    -- This prevents the "scattered blocks" issue.
+                    D.set_attribute(copy, constants.ATTR_TEXTBOX_WIDTH, 0)
+                    D.set_attribute(copy, constants.ATTR_TEXTBOX_HEIGHT, 0)
+                    
                     append_node(copy)
                 end
             end
@@ -91,69 +107,62 @@ local function flatten_vbox(head, grid_width, char_width)
     local curr = d_head
     while curr do
         local id = D.getid(curr)
-        if id == constants.HLIST then
-            -- This looks like a line. Check for leftskip (indent)
-            local line_head = D.getfield(curr, "list")
-            local indent = 0
-            local right_indent = 0
+        if id == constants.HLIST or id == constants.VLIST then
+            -- Check if this box is a Grid Textbox
+            local tb_w = D.get_attribute(curr, constants.ATTR_TEXTBOX_WIDTH) or 0
+            local tb_h = D.get_attribute(curr, constants.ATTR_TEXTBOX_HEIGHT) or 0
+            
+            if tb_w > 0 and tb_h > 0 then
+                -- This is a textbox block. Do NOT flatten its content.
+                local copy = D.copy(curr)
+                append_node(copy)
+            else
+                -- Traditional line handling or nested box flattening
+                if id == constants.HLIST then
+                    local line_head = D.getfield(curr, "list")
+                    local indent = 0
+                    local right_indent = 0
 
-            -- Check HLIST itself for indent (shift field)
-            -- This is where LaTeX stores indentation for list items
-            local shift = D.getfield(curr, "shift") or 0
-            if shift > 0 then
-                -- Use char_width instead of grid_width for indent calculation
-                -- This correctly handles nested lists where indent is in em units
-                indent = math.floor(shift / char_width + 0.5)
-            end
-
-            -- Also check for leftskip glue (fallback for other indent methods)
-            local t_scan = line_head
-            while t_scan do
-                local tid = D.getid(t_scan)
-                if tid == constants.GLYPH then
-                    -- Content started (glyph), stop looking
-                    break
-                elseif tid == constants.GLUE and D.getsubtype(t_scan) == 8 then -- leftskip
-                    local w = D.getfield(t_scan, "width")
-                    if w > 0 and indent == 0 then
-                        -- Only use leftskip if we haven't already found shift-based indent
-                        indent = math.floor(w / char_width + 0.5)
+                    local shift = D.getfield(curr, "shift") or 0
+                    if shift > 0 then
+                        indent = math.floor(shift / char_width + 0.5)
                     end
-                    break
+
+                    local t_scan = line_head
+                    while t_scan do
+                        local tid = D.getid(t_scan)
+                        if tid == constants.GLYPH then break end
+                        if tid == constants.GLUE and D.getsubtype(t_scan) == 8 then -- leftskip
+                            local w = D.getfield(t_scan, "width")
+                            if w > 0 and indent == 0 then
+                                indent = math.floor(w / char_width + 0.5)
+                            end
+                            break
+                        end
+                        t_scan = D.getnext(t_scan)
+                    end
+
+                    t_scan = line_head
+                    while t_scan do
+                        if D.getid(t_scan) == constants.GLUE and D.getsubtype(t_scan) == 9 then -- rightskip
+                             local w = D.getfield(t_scan, "width")
+                             if w > 0 then
+                                 right_indent = math.floor((w / char_width) + 0.5)
+                             end
+                        end
+                        t_scan = D.getnext(t_scan)
+                    end
+
+                    collect_nodes(line_head, indent, right_indent)
+
+                    local p = D.new(constants.PENALTY)
+                    D.setfield(p, "penalty", -10001)
+                    append_node(p)
+                else -- VLIST
+                     local inner = D.getfield(curr, "list")
+                     collect_nodes(inner, 0, 0)
                 end
-                t_scan = D.getnext(t_scan)
             end
-
-            -- Detect Right Indent (Rightskip) - scan entire list
-            -- Note: LaTeX itemize doesn't always generate rightskip glue
-            -- Instead, it may adjust line width. So rightmargin might not be detectable here.
-            t_scan = line_head
-            while t_scan do
-                if D.getid(t_scan) == constants.GLUE and D.getsubtype(t_scan) == 9 then -- rightskip
-                     local w = D.getfield(t_scan, "width")
-                     if w > 0 then
-                         right_indent = math.floor((w / char_width) + 0.5)
-                     end
-                end
-                t_scan = D.getnext(t_scan)
-            end
-
-            -- Collect content of this line, applying indent
-            collect_nodes(line_head, indent, right_indent)
-
-            -- Add break penalty (-10001 = column break)
-            -- This forces EVERY LINE to start a new column.
-            -- This is standard for ancient books where lines are columns.
-            local p = D.new(constants.PENALTY)
-            D.setfield(p, "penalty", -10001)
-            append_node(p)
-
-        elseif id == constants.VLIST then
-             -- Recurse or treat as line?
-             -- Treat as container.
-             local inner = D.getfield(curr, "list")
-             -- Flatten recursively
-             collect_nodes(inner, 0, 0)
         end
         curr = D.getnext(curr)
     end

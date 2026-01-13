@@ -17,6 +17,8 @@
 \RequirePackage{xcolor}
 \newluatexattribute\cnverticalindent
 \newluatexattribute\cnverticalrightindent
+\newluatexattribute\cnverticaltextboxwidth
+\newluatexattribute\cnverticaltextboxheight
 
 % Load the Lua modules
 % Split into multiple directlua blocks for better error reporting
@@ -294,6 +296,18 @@
 \NewDocumentCommand{\vertical}{ O{} +m }
   {
     \VerticalRTT[#1]{#2}
+  }
+
+% Grid Textbox Command
+% Syntax: \GridTextbox[width][height]{content}
+% width and height are in grid units (integers)
+\NewDocumentCommand{\GridTextbox}{ O{1} O{1} +m }
+  {
+    \vbox{
+      \setluatexattribute\cnverticaltextboxwidth{#1}
+      \setluatexattribute\cnverticaltextboxheight{#2}
+      #3
+    }
   }
 
 \ExplSyntaxOff

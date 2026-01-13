@@ -113,6 +113,9 @@
     banxin-section3-ratio .tl_set:N = \l_guji_banxin_sthree_tl,
     banxin-section3-ratio .initial:n = {0.16},
 
+    banxin-text .tl_set:N = \l_guji_banxin_text_tl,
+    banxin-text .initial:n = {},
+
     template .code:n = {
       \InputIfFileExists{#1.guji}{}{
         % Fallback to checking defined templates in guji / templates namespace

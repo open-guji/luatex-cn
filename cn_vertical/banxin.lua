@@ -207,7 +207,7 @@ local function draw_banxin_column(p_head, params)
             y_top = y - half_thickness,  -- Start exactly at inner border (zero top margin)
             width = width,
             height = adj_height,
-            v_align = "top",             -- Align text to the top
+            v_align = params.vertical_align or "top", -- Inherit alignment from document
             h_align = "center",
         })
         if glyph_chain then

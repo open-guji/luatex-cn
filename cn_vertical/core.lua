@@ -90,6 +90,7 @@ function cn_vertical.verticalize_inner_box(box_num, w_cols, h_rows, g_w_str, g_h
         debug_on = (debug == "true") or _G.cn_vertical.debug.enabled,
         vertical_align = v_align or "center",
         distribute = (distribute == "true"),
+        border_padding_top = "2pt", -- Add slight top margin within textbox
         height = g_h_str -- Give enough height for the rows
     }
 

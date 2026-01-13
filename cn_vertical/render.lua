@@ -206,6 +206,7 @@ local function apply_positions(head, layout_map, params)
                             section3_ratio = params.banxin_s3_ratio or 0.16,
                             banxin_text = params.banxin_text or "",
                             shift_y = shift_y,
+                            vertical_align = vertical_align,
                         })
                     end
                 end

@@ -199,12 +199,15 @@ local function draw_banxin_column(p_head, params)
     -- Insert text using unified text_position module
     local banxin_text = params.banxin_text or ""
     if banxin_text ~= "" then
+        local half_thickness = math.floor(border_thickness / 2)
+        local adj_height = banxin_result.section1_height - border_thickness - 10 * 65536
+        
         local glyph_chain = text_position.create_vertical_text(banxin_text, {
             x = x,
-            y_top = y - shift_y,  -- Apply shift_y here
+            y_top = y - half_thickness,  -- Start exactly at inner border (zero top margin)
             width = width,
-            height = banxin_result.section1_height,
-            v_align = "center",
+            height = adj_height,
+            v_align = "top",             -- Align text to the top
             h_align = "center",
         })
         if glyph_chain then

@@ -37,11 +37,6 @@
 -- Date: 2026-01-12
 -- ============================================================================
 
--- Debug: Output status at module load time
-if texio and texio.write_nl then
-    texio.write_nl("core.lua: Starting to load...")
-end
-
 -- Global state for pending pages
 _G.cn_vertical_pending_pages = {}
 
@@ -59,10 +54,6 @@ local layout = package.loaded['layout'] or require('layout')
 local render = package.loaded['render'] or require('render')
 
 local D = node.direct
-
-if texio and texio.write_nl then
-    texio.write_nl("core.lua: Submodules loaded successfully")
-end
 
 -- @param v_align (string) Vertical alignment: "top", "center", "bottom"
 -- @param distribute (string) "true" or "false"

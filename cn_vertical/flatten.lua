@@ -40,6 +40,7 @@
 -- Check if already loaded via dofile (package.loaded set manually)
 local constants = package.loaded['constants'] or require('constants')
 local D = constants.D
+local utils = package.loaded['utils'] or require('utils')
 
 --- Flatten a vlist (from vbox) into a single list of nodes
 -- Extracts indentation from line starts and applies it as attributes.
@@ -58,9 +59,9 @@ local function flatten_vbox(head, grid_width, char_width)
     -- @param n (direct node) Node to append
     local function append_node(n)
         if not n then return end
-        if texio and texio.write_nl then
-            texio.write_nl("  [flatten] Appending Node=" .. tostring(n) .. " tid=" .. (D.getid(n) or "?"))
-        end
+        -- if utils and utils.debug_log then
+        --     utils.debug_log("  [flatten] Appending Node=" .. tostring(n) .. " tid=" .. (D.getid(n) or "?"))
+        -- end
         D.setnext(n, nil)
         if not result_head_d then
             result_head_d = n
@@ -136,8 +137,8 @@ local function flatten_vbox(head, grid_width, char_width)
                 -- the main vertical flow, i.e., at the second recursion level.
                 -- For simplicity, let's just add it if this HLIST had content.
                 if tid == constants.HLIST and inner_has_content then
-                    if texio and texio.write_nl then
-                        texio.write_nl("  [flatten] Adding Column Break after Line=" .. tostring(t))
+                    if utils and utils.debug_log then
+                        utils.debug_log("  [flatten] Adding Column Break after Line=" .. tostring(t))
                     end
                     local p = D.new(constants.PENALTY)
                     D.setfield(p, "penalty", -10001)

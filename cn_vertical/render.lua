@@ -271,10 +271,10 @@ local function apply_positions(head, layout_map, params)
                             local h = D.getfield(curr, "height") or 0
                             local w = D.getfield(curr, "width") or 0
 
-                            if draw_debug then
-                                local type_str = (id == constants.GLYPH and "GLYPH" or "BLOCK")
-                                utils.debug_log("  [render] Node=" .. tostring(curr) .. " " .. type_str .. " at p=" .. (pos.page or 0) .. " c=" .. col .. " r=" .. row .. " w=" .. (pos.width or 0) .. " h=" .. (pos.height or 0))
-                            end
+                            -- if draw_debug then
+                            --     local type_str = (id == constants.GLYPH and "GLYPH" or "BLOCK")
+                            --     utils.debug_log("  [render] Node=" .. tostring(curr) .. " " .. type_str .. " at p=" .. (pos.page or 0) .. " c=" .. col .. " r=" .. row .. " w=" .. (pos.width or 0) .. " h=" .. (pos.height or 0))
+                            -- end
                         
                         if id == constants.GLYPH then
                             -- Use unified position calculation for glyphs (centering)

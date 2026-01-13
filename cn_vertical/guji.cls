@@ -77,8 +77,7 @@
     outer-border-sep .tl_set:N = \l_guji_outer_border_sep_tl,
     outer-border-sep .initial:n = 2pt,
 
-    debug .bool_set:N = \l_guji_debug_bool,
-    debug .initial:n = false,
+    debug .bool_gset:N = \g_cnv_debug_bool,
 
     vertical-align .tl_set:N = \l_guji_valign_tl,
     vertical-align .initial:n = center,
@@ -206,7 +205,7 @@
     \fontsize{\l_guji_font_size_tl}{\l_guji_line_spacing_tl}\selectfont
     \bool_if:NTF \l_guji_border_bool { \keys_set:nn { cn_vertical } { border=true } } { \keys_set:nn { cn_vertical } { border=false } }
     \bool_if:NTF \l_guji_outer_border_bool { \keys_set:nn { cn_vertical } { outer-border=true } } { \keys_set:nn { cn_vertical } { outer-border=false } }
-    \bool_if:NTF \l_guji_debug_bool { \keys_set:nn { cn_vertical } { debug=true } } { \keys_set:nn { cn_vertical } { debug=false } }
+    % global debug flag \g_cnv_debug_bool is already set by keys_set:nn { guji } { #1 } above
     % Zero out vertical skips for exact grid layout
     \setlength{\topskip}{0pt}
     \setlength{\parskip}{0pt}

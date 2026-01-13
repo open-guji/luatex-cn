@@ -16,6 +16,8 @@
 --   • 绘制顺序严格控制：背景最底层 → 边框 → 版心 → 文字（通过 insert_before 实现）
 --   • 所有 PDF 绘图指令使用 pdf_literal 节点（mode=0，用户坐标系）
 --   • Kern 的 subtype=1 表示"显式 kern"，不会被后续清零（用于保护版心等特殊位置）
+--   • 【重要】如果 xoffset/yoffset 计算错误（如 0 或 超出页面范围），文字将不可见
+--   • 【重要】PDF literal 语法错误（如缺少 q/Q 对，或非法颜色值）会破坏整页渲染
 --
 -- 【整体架构】
 --   输入: 节点流 + layout_map + 渲染参数（颜色、边框、页边距等）
@@ -269,9 +271,9 @@ local function apply_positions(head, layout_map, params)
                             local h = D.getfield(curr, "height") or 0
                             local w = D.getfield(curr, "width") or 0
 
-                            if texio and texio.write_nl and draw_debug then
+                            if draw_debug then
                                 local type_str = (id == constants.GLYPH and "GLYPH" or "BLOCK")
-                                texio.write_nl("  [render] Node=" .. tostring(curr) .. " " .. type_str .. " at p=" .. (pos.page or 0) .. " c=" .. col .. " r=" .. row .. " w=" .. (pos.width or 0) .. " h=" .. (pos.height or 0))
+                                utils.debug_log("  [render] Node=" .. tostring(curr) .. " " .. type_str .. " at p=" .. (pos.page or 0) .. " c=" .. col .. " r=" .. row .. " w=" .. (pos.width or 0) .. " h=" .. (pos.height or 0))
                             end
                         
                         if id == constants.GLYPH then
@@ -324,21 +326,31 @@ local function apply_positions(head, layout_map, params)
                         end
 
                         if draw_debug then
-                            local rtl_col_l = p_total_cols - (pos.col + (pos.width or 1))
-                            local tx_bp = (rtl_col_l * grid_width + half_thickness + shift_x) * sp_to_bp
-                            local ty_bp = (-row * grid_height - shift_y) * sp_to_bp
-                            local dbg_w = w_bp
-                            local dbg_h = h_bp
+                            local show_me = false
+                            local color_str = "0 0 1 RG" -- Default blue for grid
                             if pos.is_block then
-                                dbg_w = pos.width * grid_width * sp_to_bp
-                                dbg_h = -pos.height * grid_height * sp_to_bp
+                                if _G.cn_vertical.debug.show_boxes then
+                                    show_me = true
+                                    color_str = "1 0 0 RG" -- Red for boxes
+                                end
+                            else
+                                if _G.cn_vertical.debug.show_grid then
+                                    show_me = true
+                                end
                             end
-                            local color_str = pos.is_block and "1 0 0 RG" or "0 0 1 RG"
-                            local literal = string.format("q 0.5 w %s 1 0 0 1 %.4f %.4f cm 0 0 %.4f %.4f re S Q", color_str, tx_bp, ty_bp, dbg_w, dbg_h)
-                            local nn = node.new("whatsit", "pdf_literal")
-                            nn.data = literal
-                            nn.mode = 0
-                            p_head = D.insert_before(p_head, curr, D.todirect(nn))
+                            
+                            if show_me then
+                                local rtl_col_l = p_total_cols - (pos.col + (pos.width or 1))
+                                local tx_sp = (rtl_col_l * grid_width + half_thickness + shift_x)
+                                local ty_sp = (-row * grid_height - shift_y)
+                                local tw_sp = grid_width
+                                local th_sp = -grid_height
+                                if pos.is_block then
+                                    tw_sp = pos.width * grid_width
+                                    th_sp = -pos.height * grid_height
+                                end
+                                p_head = utils.draw_debug_rect(p_head, curr, tx_sp, ty_sp, tw_sp, th_sp, color_str)
+                            end
                         end
                     end
                 elseif id == constants.GLUE then

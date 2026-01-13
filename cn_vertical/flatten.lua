@@ -13,6 +13,8 @@
 -- 【注意事项】
 --   • 缩进检测依赖 TeX 的 \leftskip 和 box.shift 机制，支持标准的 itemize/enumerate
 --   • "列中断"（penalty -10001）在每个 HLIST 行之后插入，用于 layout.lua 识别强制换列
+--   • 重点：展平算法高度依赖 TeX 的段落构建，若节点在垂直模式输出（如列表开头的 Textbox），
+--     其缩进属性（leftskip）将无法被检测。因此 TeX 端必须确保进入水平模式（如使用 \leavevmode）。
 --   • Textbox 块通过属性 ATTR_TEXTBOX_WIDTH/HEIGHT 识别，会被完整保留
 --   • 右缩进（rightskip）功能已预留但未完全实现（当前只在 layout 中使用）
 --   • 节点会被复制（D.copy），原始盒子不会被修改
@@ -117,8 +119,7 @@ local function flatten_vbox(head, grid_width, char_width)
                         local sid = D.getid(s)
                         if sid == constants.GLYPH then break end
                         if sid == constants.GLUE and D.getsubtype(s) == 8 then -- leftskip
-                            local w = D.getfield(s, "width")
-                            if w > 0 then
+                            if st == 8 then -- leftskip
                                 box_indent = math.max(box_indent, math.floor(w / char_width + 0.5))
                             end
                             break

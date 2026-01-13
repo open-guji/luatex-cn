@@ -27,6 +27,7 @@
 % Clear cache
 \directlua{
   package.loaded["constants"] = nil
+  package.loaded["utils"] = nil
   package.loaded["flatten"] = nil
   package.loaded["layout"] = nil
   package.loaded["render"] = nil
@@ -79,6 +80,22 @@
 \tl_new:N \l_cnv_banxin_two_tl
 \tl_new:N \l_cnv_banxin_three_tl
 
+\bool_new:N \g_cnv_debug_bool
+\bool_set_false:N \g_cnv_debug_bool
+
+\NewDocumentCommand{\cnvdebugon}{}{\bool_set_true:N \g_cnv_debug_bool}
+\NewDocumentCommand{\cnvdebugoff}{}{\bool_set_false:N \g_cnv_debug_bool}
+
+% Aliases for global debug control
+\NewDocumentCommand{\GujiDebugOn}{}{
+  \bool_set_true:N \g_cnv_debug_bool
+  \directlua{cn_vertical.debug.enabled = true}
+}
+\NewDocumentCommand{\GujiDebugOff}{}{
+  \bool_set_false:N \g_cnv_debug_bool
+  \directlua{cn_vertical.debug.enabled = false}
+}
+
 % Define keys
 \keys_define:nn { cn_vertical }
   {
@@ -97,8 +114,7 @@
     cols .int_set:N = \l__cn_vertical_cols_int,
     cols .initial:n = 0,
 
-    debug .bool_set:N = \l__cn_vertical_debug_bool,
-    debug .initial:n = false,
+    debug .bool_gset:N = \g_cnv_debug_bool,
 
     border .bool_set:N = \l__cn_vertical_border_bool,
     border .initial:n = false,
@@ -254,7 +270,7 @@
         grid_width = [=[\luaescapestring{\l__cn_vertical_grid_width_tl}]=],
         grid_height = [=[\luaescapestring{\l__cn_vertical_grid_height_tl}]=],
         col_limit = \int_use:N \l__cn_vertical_cols_int,
-        debug_on = [=[\bool_if:NTF \l__cn_vertical_debug_bool {true} {false}]=],
+        debug_on = [=[\bool_if:NTF \g_cnv_debug_bool {true} {false}]=],
         border_on = [=[\bool_if:NTF \l__cn_vertical_border_bool {true} {false}]=],
         border_padding_top = [=[\luaescapestring{\l__cn_vertical_border_padding_top_tl}]=],
         border_padding_bottom = [=[\luaescapestring{\l__cn_vertical_border_padding_bottom_tl}]=],
@@ -299,25 +315,36 @@
     \VerticalRTT[#1]{#2}
   }
 
-% Grid Textbox Command
-% Syntax: \GridTextbox[width][height]{content}
-% width and height are in grid units (integers)
+% Grid Textbox Command (Simplified for Single Column)
+% Syntax: \GridTextbox[height=N, distribute=true/false]{content}
+% height is in grid units (integers), width is always 1
 % Key-value interface for \GridTextbox
+\bool_new:N \l__cn_vertical_textbox_border_bool
+\bool_new:N \l__cn_vertical_textbox_debug_bool
+\tl_new:N \l__cn_vertical_textbox_valign_tl
+
 \keys_define:nn { cn_vertical / textbox }
   {
-    width .int_set:N = \l__cn_vertical_textbox_width_int,
-    width .initial:n = 1,
     height .int_set:N = \l__cn_vertical_textbox_height_int,
     height .initial:n = 1,
     distribute .bool_set:N = \l__cn_vertical_textbox_distribute_bool,
     distribute .initial:n = false,
+    border .bool_set:N = \l__cn_vertical_textbox_border_bool,
+    border .initial:n = false,
+    debug .bool_set:N = \l__cn_vertical_textbox_debug_bool,
+    debug .initial:n = false,
+    vertical-align .tl_set:N = \l__cn_vertical_textbox_valign_tl,
+    vertical-align .initial:n = {center},
   }
 
 \NewDocumentCommand{\GridTextbox}{ O{} +m }
   {
     \group_begin:
+    % Inherit debug setting from global environment
+    \bool_set_eq:NN \l__cn_vertical_textbox_debug_bool \g_cnv_debug_bool
     \keys_set:nn { cn_vertical / textbox } { #1 }
-    \setluatexattribute\cnverticaltextboxwidth{\l__cn_vertical_textbox_width_int}
+    % Width is always 1 for single-column mode
+    \setluatexattribute\cnverticaltextboxwidth{1}
     \setluatexattribute\cnverticaltextboxheight{\l__cn_vertical_textbox_height_int}
     % Capture content in a box and process it via Lua for inner verticality
     \setbox0=\vbox{
@@ -328,18 +355,18 @@
       #2
     }
     \directlua{cn_vertical.verticalize_inner_box(0, 
-      \int_use:N \l__cn_vertical_textbox_width_int, 
+      1, 
       \int_use:N \l__cn_vertical_textbox_height_int, 
       "\dim_to_decimal:n { \l__cn_vertical_grid_width_tl } pt", 
       "\dim_to_decimal:n { \l__cn_vertical_grid_height_tl } pt", 
-      "\luaescapestring{\tl_use:N \l__cn_vertical_valign_tl}", 
+      "\luaescapestring{\tl_use:N \l__cn_vertical_textbox_valign_tl}", 
       "\bool_if:NTF \l__cn_vertical_textbox_distribute_bool {true}{false}",
-      "\bool_if:NTF \l__cn_vertical_debug_bool {true}{false}",
-      "\bool_if:NTF \l__cn_vertical_border_bool {true}{false}"
+      "\bool_if:NTF \l__cn_vertical_textbox_debug_bool {true}{false}",
+      "\bool_if:NTF \l__cn_vertical_textbox_border_bool {true}{false}"
     )}
     \setluatexattribute\cnverticaltextboxwidth{0}
     \setluatexattribute\cnverticaltextboxheight{0}
-    \box0
+    \leavevmode\box0
     \group_end:
   }
 

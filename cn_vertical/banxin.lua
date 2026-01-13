@@ -34,10 +34,11 @@
 -- Load dependencies
 local constants = package.loaded['constants'] or require('constants')
 local D = constants.D
+local utils = package.loaded['utils'] or require('utils')
 local text_position = package.loaded['text_position'] or require('text_position')
 
 -- Conversion factor from scaled points to PDF big points
-local sp_to_bp = 0.0000152018
+local sp_to_bp = utils.sp_to_bp
 
 --- Draw the complete Banxin (版心) column
 -- The Banxin is divided into 3 sections with horizontal lines between them
@@ -216,6 +217,11 @@ local function draw_banxin_column(p_head, params)
             D.setlink(chain_tail, p_head)
             p_head = glyph_chain
         end
+    end
+
+    if _G.cn_vertical and _G.cn_vertical.debug and _G.cn_vertical.debug.enabled and _G.cn_vertical.debug.show_banxin then
+        -- Draw a green dashed rectangle for the banxin column area
+        p_head = utils.draw_debug_rect(p_head, nil, x, y, width, -height, "0 1 0 RG [2 2] 0 d")
     end
 
     return p_head

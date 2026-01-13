@@ -30,6 +30,16 @@ local constants = {}
 -- Node.direct interface for performance
 constants.D = node.direct
 
+-- Global debug configuration
+_G.cn_vertical = _G.cn_vertical or {}
+_G.cn_vertical.debug = {
+    enabled = false,        -- 是否开启调试模式
+    show_grid = true,      -- 显示字符格
+    show_boxes = true,     -- 显示文本框避让区
+    show_banxin = true,    -- 显示版心参考线
+    verbose_log = true     -- 是否在 .log 中输出详细坐标
+}
+
 -- Node type IDs
 constants.GLYPH = node.id("glyph")
 constants.KERN = node.id("kern")

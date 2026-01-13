@@ -14,6 +14,8 @@
 --   • 模块必须设置为全局变量 _G.cn_vertical，因为 TeX 从 Lua 调用时需要访问
 --   • package.loaded 机制确保子模块不会被重复加载
 --   • 多页渲染时需要临时保存 pending_pages 状态（见 verticalize_inner_box）
+--   • 重点：Textbox 在列表开头时必须配合 \leavevmode 使用，以确保进入水平模式并继承 \leftskip
+--   • verticalize_inner_box 会主动检测 tex.leftskip 以实现缩进在嵌套盒子间的正确传递
 --   • 本模块不直接操作节点，而是调用子模块完成具体工作
 --
 -- 【整体架构】
@@ -40,9 +42,10 @@ if texio and texio.write_nl then
     texio.write_nl("core.lua: Starting to load...")
 end
 
--- Pending pages store
+-- Global state for pending pages
 _G.cn_vertical_pending_pages = {}
 
+--- Process an inner box (like a GridTextbox)
 -- Create module namespace - MUST use _G to ensure global scope
 _G.cn_vertical = _G.cn_vertical or {}
 local cn_vertical = _G.cn_vertical
@@ -50,6 +53,7 @@ local cn_vertical = _G.cn_vertical
 -- Load submodules using Lua's require mechanism
 -- Check if already loaded via dofile (package.loaded set manually by each module)
 local constants = package.loaded['constants'] or require('constants')
+local utils = package.loaded['utils'] or require('utils')
 local flatten = package.loaded['flatten'] or require('flatten')
 local layout = package.loaded['layout'] or require('layout')
 local render = package.loaded['render'] or require('render')
@@ -58,8 +62,6 @@ local D = node.direct
 
 if texio and texio.write_nl then
     texio.write_nl("core.lua: Submodules loaded successfully")
-    texio.write_nl("  constants = " .. tostring(constants))
-    texio.write_nl("  flatten = " .. tostring(flatten))
 end
 
 -- @param v_align (string) Vertical alignment: "top", "center", "bottom"
@@ -70,6 +72,22 @@ function cn_vertical.verticalize_inner_box(box_num, w_cols, h_rows, g_w_str, g_h
     local box = tex.box[box_num]
     if not box then return end
 
+    -- Read current indent attribute directly
+    local current_indent = 0
+    local indent_attr = constants.ATTR_INDENT
+    local ci = tex.attribute[indent_attr]
+    if ci and ci > -1 then
+        current_indent = ci
+    end
+
+    -- Also check TeX leftskip (standard LaTeX list indentation)
+    local char_height = constants.to_dimen(g_h_str) or (65536 * 12)
+    local ls_width = tex.leftskip.width
+    if ls_width > 0 then
+        local ls_indent = math.floor(ls_width / char_height + 0.5)
+        current_indent = math.max(current_indent, ls_indent)
+    end
+
     -- Prepare parameters for the inner grid
     -- We want to simulate a "page" that is exactly the size of the textbox
     local sub_params = {
@@ -78,7 +96,7 @@ function cn_vertical.verticalize_inner_box(box_num, w_cols, h_rows, g_w_str, g_h
         col_limit = tonumber(h_rows) or 1,
         page_columns = tonumber(w_cols) or 1,
         border_on = (border == "true"),
-        debug_on = (debug == "true"),
+        debug_on = (debug == "true") or _G.cn_vertical.debug.enabled,
         vertical_align = v_align or "center",
         distribute = (distribute == "true"),
         height = g_h_str -- Give enough height for the rows
@@ -88,9 +106,7 @@ function cn_vertical.verticalize_inner_box(box_num, w_cols, h_rows, g_w_str, g_h
     local saved_pages = _G.cn_vertical_pending_pages
     _G.cn_vertical_pending_pages = {}
 
-    if texio and texio.write_nl then
-        texio.write_nl("--- verticalize_inner_box: START (box=" .. box_num .. ", w=" .. w_cols .. ", h=" .. h_rows .. ") ---")
-    end
+    utils.debug_log("--- verticalize_inner_box: START (box=" .. box_num .. ", w=" .. w_cols .. ", h=" .. h_rows .. ", indent=" .. tostring(current_indent) .. ", border=" .. tostring(border) .. ", debug=" .. tostring(debug) .. ") ---")
 
     -- Call the main preparation pipeline
     local total = cn_vertical.prepare_grid(box_num, sub_params)
@@ -109,6 +125,11 @@ function cn_vertical.verticalize_inner_box(box_num, w_cols, h_rows, g_w_str, g_h
         -- CRITICAL: Set textbox attributes so this box is recognized as a textbox block in outer layout
         node.set_attribute(res_box, constants.ATTR_TEXTBOX_WIDTH, tonumber(w_cols) or 1)
         node.set_attribute(res_box, constants.ATTR_TEXTBOX_HEIGHT, tonumber(h_rows) or 1)
+        
+        -- Apply indent from list environment
+        if current_indent > 0 then
+            node.set_attribute(res_box, constants.ATTR_INDENT, current_indent)
+        end
         
         tex.box[box_num] = res_box
     end
@@ -152,6 +173,8 @@ function cn_vertical.prepare_grid(box_num, params)
     end
 
     local is_debug = (params.debug_on == "true" or params.debug_on == true)
+    if is_debug then _G.cn_vertical.debug.enabled = true end
+    is_debug = _G.cn_vertical.debug.enabled
     local is_border = (params.border_on == "true" or params.border_on == true)
     local is_outer_border = (params.outer_border_on == "true" or params.outer_border_on == true)
 
@@ -225,12 +248,12 @@ function cn_vertical.prepare_grid(box_num, params)
         _G.cn_vertical_pending_pages[i] = new_box
     end
 
-    if is_debug and texio and texio.write_nl then
-        texio.write_nl("--- [core] Layout Map Summary ---")
+    if is_debug then
+        utils.debug_log("--- [core] Layout Map Summary ---")
         for n, pos in pairs(layout_map) do
             local tb_w = D.get_attribute(n, constants.ATTR_TEXTBOX_WIDTH) or 0
             if tb_w > 0 then
-                texio.write_nl("  [layout_map] Block Node=" .. tostring(n) .. " at p=" .. (pos.page or 0) .. " c=" .. pos.col .. " r=" .. pos.row .. " w=" .. (pos.width or 0) .. " h=" .. (pos.height or 0))
+                utils.debug_log("  [layout_map] Block Node=" .. tostring(n) .. " at p=" .. (pos.page or 0) .. " c=" .. pos.col .. " r=" .. pos.row .. " w=" .. (pos.width or 0) .. " h=" .. (pos.height or 0))
             end
         end
     end

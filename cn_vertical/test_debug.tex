@@ -1,0 +1,38 @@
+\documentclass{guji}
+
+\begin{document}
+
+\section{Debug Mode OFF}
+Normal vertical text:
+\VerticalRTT[border=true]{
+  这是一段普通的竖排文字，用于对比调试模式关闭时的效果。
+}
+
+\newpage
+\section{Debug Mode ON (Global)}
+\GujiDebugOn
+Vertical text with global debug:
+\VerticalRTT[border=true]{
+  开启全局调试模式后，你应该能看到每个字符的蓝色辅助框。
+  \GridTextbox[height=3, border=true]{
+    这是文本框，应该有红色辅助框。
+  }
+}
+
+\newpage
+\GujiDebugOff
+\section{Partial Debug}
+\directlua{
+  cn_vertical.debug.enabled = true
+  cn_vertical.debug.show_grid = false
+  cn_vertical.debug.show_boxes = true
+}
+Only boxes should be shown here:
+\VerticalRTT[border=true]{
+  只显示文本框的辅助线，不显示字符格。
+  \GridTextbox[height=2]{
+    红色框。
+  }
+}
+
+\end{document}

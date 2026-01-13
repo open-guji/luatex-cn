@@ -27,6 +27,29 @@
     *   **作用**: 将计算出的几何坐标应用到节点上。
     *   **重要功能**: 对文字节点（Glyph）使用 `xoffset`/`yoffset` 进行移位；对块级网格（Block）使用 Kern/Shift 组合定位。同时触发背景、边框及版心的绘制。
 
+## 常见问题排查：文字消失 (Missing Text)
+
+如果修改代码后发现生成的 PDF 中文字消失，通常由以下三个原因引起：
+
+### 1. 错误的 PDF Literal 指令（最常见）
+*   **现象**：整页内容消失，或者从某个点开始所有内容消失。
+*   **原因**：插入了非法的 PDF 语法。例如颜色指令必须是 `0 0 0 rg`，如果传入 `black rg`，PDF 渲染器会崩溃。
+*   **对策**：确保所有颜色通过 `utils.normalize_rgb` 处理。检查 `pdf_literal` 中的 `q` (save) 和 `Q` (restore) 是否成对出现。
+
+### 2. 坐标计算超出范围
+*   **现象**：文字存在于节点流中（日志可见），但 PDF 视角看不到。
+*   **原因**：`xoffset` 或 `yoffset` 的计算值使文字掉到了页面之外（例如负值或极大值）。
+*   **对策**：开启全局显示模式 `\GujiDebugOn`。如果开启后能看到蓝色/红色辅助框但看不到文字，说明是坐标偏移问题。
+
+### 3. 被背景色遮挡（层级问题）
+*   **现象**：背景色正常显示，但文字被覆盖。
+*   **原因**：背景矩形在文字节点之后插入，由于 PDF 的"画家模型"，后画的内容会覆盖先画的内容。
+*   **对策**：检查 `render.lua` 中的绘制顺序，确保 `draw_background` 使用 `insert_before` 插入到链表的头部。
+
+### 4. 字体缺失
+*   **现象**：日志显示 `Missing character: There is no ... in font ...`。
+*   **原因**：使用了不支持中文的 LaTeX 类（如 `article`）且未配置 `fontspec`，或者指定的字体文件不存在。
+*   **对策**：始终使用 `\documentclass{guji}`。
 ### 4. 视觉元素绘制模块
 *   **[text_position.lua](file:///c:/Users/lisdp/workspace/luatex-cn/cn_vertical/text_position.lua)**: 复用的文字定位工具，处理字符在该网格单元内的居中及垂直堆叠逻辑。
 *   **[banxin.lua](file:///c:/Users/lisdp/workspace/luatex-cn/cn_vertical/banxin.lua)**: 专门负责“版心”（鱼尾）区域的绘制，包括横向分隔线和特定的竖排文字。

@@ -10,15 +10,24 @@
 -- 【注意事项】
 --   • 背景色优先使用 paper_width/height（覆盖整页），否则使用 inner_width/height
 --   • 使用 PDF fill 指令（rg + re + f），与边框的 stroke（RG + S）不同
---   • 背景必须在最底层绘制（通过 insert_before 最早插入）
---   • 字体颜色使用小写 "rg"（填充色），边框使用大写 "RG"（描边色）
+--   • 背景必须在最底层绘制（通过 insert_before 到 p_head 前面插入）
+--   • 字体颜色使用小写 "rg"（填充色），必须经过 normalize_rgb 转换为数字格式
+--   • 【重要】如果由于逻辑错误导致背景在文字之后绘制，文字将被完全覆盖（不可见）
+--   • 【重要】非法 RGB 字符串（如 "blue"）会导致 pdf_literal 解析失败，从而使页面内容消失
 --
 -- 【整体架构】
 --   draw_background(p_head, params)
 --      ├─ 如果有 paper_width/height，计算覆盖整页的矩形
 --      ├─ 否则使用 inner_width/height + outer_shift
 --      ├─ 生成 PDF literal: "q 0 w rgb rg x y w h re f Q"
---      └─ 插入到节点链最前面（确保在最底层）\n--\n--   set_font_color(p_head, font_rgb_str)\n--      └─ 生成 PDF literal: "rgb rg"（设置填充色）\n--\n-- Version: 0.3.0\n-- Date: 2026-01-12\n-- ============================================================================
+--      └─ 插入到节点链最前面（确保在最底层）
+--
+--   set_font_color(p_head, font_rgb_str)
+--      └─ 生成 PDF literal: "rgb rg"（设置填充色）
+--
+-- Version: 0.3.1
+-- Date: 2026-01-13
+-- ============================================================================
 
 -- Load dependencies
 local constants = package.loaded['constants'] or require('constants')

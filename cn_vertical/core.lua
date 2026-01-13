@@ -11,8 +11,10 @@
 -- Debug: Output status at module load time
 if texio and texio.write_nl then
     texio.write_nl("core.lua: Starting to load...")
-    texio.write_nl("  package.loaded['constants'] = " .. tostring(package.loaded['constants']))
 end
+
+-- Pending pages store
+_G.cn_vertical_pending_pages = {}
 
 -- Create module namespace - MUST use _G to ensure global scope
 _G.cn_vertical = _G.cn_vertical or {}
@@ -54,7 +56,9 @@ end
 -- @param outer_border_thickness (string) Outer border thickness
 -- @param outer_border_sep (string) Gap between outer and inner borders
 -- @param n_column (number) Number of columns per page
-function cn_vertical.make_grid_box(box_num, height, grid_width, grid_height, col_limit, debug_on, border_on, border_padding_top, border_padding_bottom, vertical_align, border_thickness, outer_border_on, outer_border_thickness, outer_border_sep, n_column)
+-- @param page_columns (number) Total columns per page
+-- @return (number) Total pages generated
+function cn_vertical.prepare_grid(box_num, height, grid_width, grid_height, col_limit, debug_on, border_on, border_padding_top, border_padding_bottom, vertical_align, border_thickness, outer_border_on, outer_border_thickness, outer_border_sep, n_column, page_columns)
     -- 1. Get box from TeX
     local box = tex.box[box_num]
     if not box then return end
@@ -73,7 +77,8 @@ function cn_vertical.make_grid_box(box_num, height, grid_width, grid_height, col
     local b_thickness = constants.to_dimen(border_thickness) or 26214 -- 0.4pt
     local ob_thickness = constants.to_dimen(outer_border_thickness) or (65536 * 2) -- 2pt default
     local ob_sep = constants.to_dimen(outer_border_sep) or (65536 * 2) -- 2pt default
-    local b_interval = tonumber(n_column) or 8
+    local b_interval = tonumber(string.match(tostring(n_column), "[%d%.]+")) or 8
+    local p_cols = tonumber(string.match(tostring(page_columns), "[%d%.]+")) or (2 * b_interval + 1)
 
     local limit = tonumber(col_limit)
     if not limit or limit <= 0 then
@@ -85,7 +90,7 @@ function cn_vertical.make_grid_box(box_num, height, grid_width, grid_height, col
     local is_outer_border = (outer_border_on == "true" or outer_border_on == true)
 
     if texio and texio.write_nl then
-        texio.write_nl(string.format("core.lua: make_grid_box. is_outer_border=%s, border_on=%s, padding_top=%d, padding_bottom=%d, n_column=%d", tostring(is_outer_border), tostring(is_border), b_padding_top, b_padding_bottom, b_interval))
+        texio.write_nl(string.format("core.lua: prepare_grid. is_outer_border=%s, border_on=%s, padding_top=%d, padding_bottom=%d, n_column=%d, page_columns=%d", tostring(is_outer_border), tostring(is_border), b_padding_top, b_padding_bottom, b_interval, p_cols))
     end
 
     -- Parse vertical alignment (default: center)
@@ -101,31 +106,56 @@ function cn_vertical.make_grid_box(box_num, height, grid_width, grid_height, col
     end
 
     -- 4. Pipeline Stage 2: Calculate grid layout
-    local layout_map, total_cols = layout.calculate_grid_positions(list, g_height, limit, b_interval)
+    local layout_map, total_pages = layout.calculate_grid_positions(list, g_height, limit, b_interval, p_cols)
 
     -- 5. Pipeline Stage 3: Apply positions and render
-    local new_head = render.apply_positions(list, layout_map, g_width, g_height, total_cols, valign, is_debug, is_border, b_padding_top, b_padding_bottom, limit, b_thickness, is_outer_border, ob_thickness, ob_sep, b_interval)
+    local rendered_pages = render.apply_positions(list, layout_map, g_width, g_height, total_pages, valign, is_debug, is_border, b_padding_top, b_padding_bottom, limit, b_thickness, is_outer_border, ob_thickness, ob_sep, b_interval, p_cols)
 
-    -- 6. Create new HLIST box for the result
-    local cols = total_cols
-    if cols == 0 then cols = 1 end
+    -- 6. Store pages and return count
+    _G.cn_vertical_pending_pages = {}
     
-    -- Expansion for the outer border
     local outer_shift = is_outer_border and (ob_thickness + ob_sep) or 0
-
-    -- Calculate total vertical extent
-    -- Total Height = Outer Shift + Top Padding + Characters Height + Bottom Padding + Border Thickness + Outer Shift
     local char_grid_height = limit * g_height
     local total_v_depth = char_grid_height + b_padding_top + b_padding_bottom + b_thickness + outer_shift * 2
 
-    local new_box = node.new("hlist")
-    new_box.dir = "TLT"
-    new_box.list = new_head
-    new_box.width = cols * g_width + b_thickness + outer_shift * 2
-    new_box.height = 0 -- Keep baseline at the top edge of the outer border
-    new_box.depth = total_v_depth
+    for i, page_info in ipairs(rendered_pages) do
+        local new_box = node.new("hlist")
+        new_box.dir = "TLT"
+        new_box.list = page_info.head
+        new_box.width = page_info.cols * g_width + b_thickness + outer_shift * 2
+        new_box.height = 0
+        new_box.depth = total_v_depth
+        _G.cn_vertical_pending_pages[i] = new_box
+    end
 
-    tex.box[box_num] = new_box
+    return #_G.cn_vertical_pending_pages
+end
+
+--- Load a prepared page into a TeX box register
+-- @param box_num (number) TeX box register
+-- @param index (number) Page index (0-based from TeX loop)
+function cn_vertical.load_page(box_num, index)
+    local box = _G.cn_vertical_pending_pages[index + 1]
+    if box then
+        tex.box[box_num] = box
+        -- Clear from storage to avoid memory leaks if called multiple times
+        -- Actually, we might need it for re-rendering, so keep it for now
+        -- Or clear it on the last page.
+    end
+end
+
+--- Interface for TeX to call to process and output pages
+function cn_vertical.process_from_tex(box_num, height, grid_width, grid_height, col_limit, debug_on, border_on, border_padding_top, border_padding_bottom, vertical_align, border_thickness, outer_border_on, outer_border_thickness, outer_border_sep, n_column, page_columns)
+    local total_pages = cn_vertical.prepare_grid(box_num, height, grid_width, grid_height, col_limit, debug_on, border_on, border_padding_top, border_padding_bottom, vertical_align, border_thickness, outer_border_on, outer_border_thickness, outer_border_sep, n_column, page_columns)
+    
+    for i = 0, total_pages - 1 do
+        tex.print(string.format("\\directlua{cn_vertical.load_page(%d, %d)}", box_num, i))
+        tex.print("\\par\\nointerlineskip")
+        tex.print(string.format("\\noindent\\hfill\\smash{\\box % d}", box_num))
+        if i < total_pages - 1 then
+            tex.print("\\newpage")
+        end
+    end
 end
 
 -- CRITICAL: Update global variable with the local one that has the function

@@ -109,6 +109,9 @@
 
     n-column .int_set:N = \l__cn_vertical_n_column_int,
     n-column .initial:n = 8,
+
+    page-columns .tl_set:N = \l__cn_vertical_page_columns_tl,
+    page-columns .initial:n = {},
   }
 
 % Internal function to call Lua for Grid Layout
@@ -117,8 +120,9 @@
     % Put content into a vbox to preserve structure (paragraphs)
     \setbox0=\vbox{\hsize=10000pt \parindent=0pt #1}
     % Call Lua to transform the box
+    \setlength{\topskip}{0pt}
     \directlua{
-      cn_vertical.make_grid_box(
+      cn_vertical.process_from_tex(
         0,
         "\luaescapestring{\l__cn_vertical_height_tl}",
         "\luaescapestring{\l__cn_vertical_grid_width_tl}",
@@ -133,14 +137,10 @@
         "\bool_if:NTF \l__cn_vertical_outer_border_bool {true} {false}",
         "\luaescapestring{\l__cn_vertical_outer_border_thickness_tl}",
         "\luaescapestring{\l__cn_vertical_outer_border_sep_tl}",
-        \int_use:N \l__cn_vertical_n_column_int
+        \int_use:N \l__cn_vertical_n_column_int,
+        "\luaescapestring{\l__cn_vertical_page_columns_tl}"
       )
     }
-    % Output the modified box (RTL layout handled internally)
-    % Force zero topskip and no extra interline space
-    \setlength{\topskip}{0pt}
-    \par\nointerlineskip
-    \noindent\hfill\smash{\box0}
   }
 
 % Define Main Command with Key-Value interface

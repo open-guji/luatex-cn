@@ -24,15 +24,19 @@ local D = constants.D
 -- @param grid_height (number) Grid row height in scaled points
 -- @param line_limit (number) Maximum rows per column
 -- @param n_column (number) Number of columns per page/section (defines Banxin gap)
--- @return (table, number) layout_map (node_ptr -> {col, row}), total_cols
-local function calculate_grid_positions(head, grid_height, line_limit, n_column)
+-- @param page_columns (number) Total columns before a page break
+-- @return (table, number) layout_map (node_ptr -> {page, col, row}), total_pages
+local function calculate_grid_positions(head, grid_height, line_limit, n_column, page_columns)
     local d_head = D.todirect(head)
 
     if line_limit < 1 then line_limit = 20 end
 
     local interval = tonumber(n_column) or 0
+    local p_cols = tonumber(page_columns) or (2 * interval + 1)
+    if p_cols <= 0 then p_cols = 10000 end -- Safety
 
     -- Stateful cursor layout
+    local cur_page = 0
     local cur_col = 0
     local cur_row = 0
     local simulated_max_col = 0
@@ -48,6 +52,10 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column)
     local function skip_banxin()
         while is_banxin_col(cur_col) do
             cur_col = cur_col + 1
+            if cur_col >= p_cols then
+                cur_col = 0
+                cur_page = cur_page + 1
+            end
         end
     end
 
@@ -84,6 +92,13 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column)
         if cur_row >= effective_limit then
             cur_col = cur_col + 1
             cur_row = 0
+            
+            -- Check page break
+            if cur_col >= p_cols then
+                cur_col = 0
+                cur_page = cur_page + 1
+            end
+
             -- Reset column indent for new column
             cur_column_indent = indent
             -- Re-apply top indent for new column
@@ -94,8 +109,7 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column)
         end
 
         if id == constants.GLYPH then
-            layout_map[t] = {col=cur_col, row=cur_row}
-            if cur_col > simulated_max_col then simulated_max_col = cur_col end
+            layout_map[t] = {page=cur_page, col=cur_col, row=cur_row}
             cur_row = cur_row + 1
         elseif id == constants.GLUE then
              -- In vertical layout, glue represents horizontal space in the original layout
@@ -113,6 +127,13 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column)
              if cur_row > 0 then
                  cur_col = cur_col + 1
                  cur_row = 0
+                 
+                 -- Check page break
+                 if cur_col >= p_cols then
+                     cur_col = 0
+                     cur_page = cur_page + 1
+                 end
+
                  cur_column_indent = 0 -- Reset column indent for next column
                  skip_banxin()
              end
@@ -121,9 +142,9 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column)
         t = D.getnext(t)
     end
 
-    local total_cols = simulated_max_col + 1
+    local total_pages = cur_page + 1
 
-    return layout_map, total_cols
+    return layout_map, total_pages
 end
 
 -- Create module table

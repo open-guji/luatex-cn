@@ -70,6 +70,9 @@
     vertical-align .tl_set:N = \l_guji_valign_tl,
     vertical-align .initial:n = center,
 
+    border-thickness .tl_set:N = \l_guji_border_thickness_tl,
+    border-thickness .initial:n = 0.4pt,
+
     template .code:n = {
       \InputIfFileExists{#1.guji}{}{
         % Fallback to checking defined templates in guji / templates namespace
@@ -176,8 +179,8 @@
     % Note: 0.2em @ 36pt = 7.2pt.
     \dim_set:Nn \l_tmpb_dim { 0pt }
     \bool_if:NT \l_guji_border_bool {
-      % We add 0.4pt for line width and 0.4pt for safety margin.
-      \dim_set:Nn \l_tmpb_dim { 0.2em + 0.8pt }
+      % We add border-thickness for line width and 0.4pt for safety margin.
+      \dim_set:Nn \l_tmpb_dim { 0.2em + \l_guji_border_thickness_tl + 0.4pt }
     }
     \dim_sub:Nn \l_tmpa_dim { \l_tmpb_dim }
     % \l_tmpa_dim is now Available Height minus border overhead
@@ -224,7 +227,9 @@
         height = \l_guji_height_tl,
         grid-width = \l_guji_grid_width_tl,
         grid-height = \l_guji_grid_height_tl,
-        vertical-align = \l_guji_valign_tl
+        vertical-align = \l_guji_valign_tl,
+        border-thickness = \l_guji_border_thickness_tl,
+        border-padding = 0.2em
       }
     \nointerlineskip
     \__cn_vertical_process_grid:n { \BODY }

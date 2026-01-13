@@ -34,19 +34,18 @@ local sp_to_bp = 0.0000152018
 -- @param border_padding (number) Extra padding at bottom of border in scaled points
 -- @param line_limit (number) Maximum rows per column
 -- @return (node) Modified node list head
-local function apply_positions(head, layout_map, grid_width, grid_height, total_cols, vertical_align, draw_debug, draw_border, border_padding, line_limit)
+local function apply_positions(head, layout_map, grid_width, grid_height, total_cols, vertical_align, draw_debug, draw_border, border_padding, line_limit, border_thickness)
     local d_head = D.todirect(head)
 
     -- Cached conversion factors for PDF literals
     local w_bp = grid_width * sp_to_bp
     local h_bp = -grid_height * sp_to_bp
     local col_height_bp = -(line_limit * grid_height + border_padding) * sp_to_bp
+    local b_thickness_bp = border_thickness * sp_to_bp
+    local half_thickness = math.floor(border_thickness / 2)
 
     -- Draw column borders (if enabled)
     if draw_border and total_cols > 0 then
-        local border_thickness = 26214 -- 0.4pt in sp
-        local half_thickness = 13107   -- 0.2pt in sp
-        
         for col = 0, total_cols - 1 do
             local rtl_col = total_cols - 1 - col
             local box_x = rtl_col * grid_width
@@ -55,13 +54,13 @@ local function apply_positions(head, layout_map, grid_width, grid_height, total_
             -- width: grid_width
             -- height: from top (y= -half_thickness) to bottom (y= -(line_limit * grid_height + border_padding + half_thickness))
             
-            local tx_bp = box_x * sp_to_bp
+            local tx_bp = (box_x + half_thickness) * sp_to_bp
             local ty_bp = -half_thickness * sp_to_bp
             local tw_bp = grid_width * sp_to_bp
             local th_bp = -(line_limit * grid_height + border_padding) * sp_to_bp
             
-            local literal = string.format("q 0.4 w 0 0 0 RG %.4f %.4f %.4f %.4f re S Q",
-                tx_bp, ty_bp, tw_bp, th_bp
+            local literal = string.format("q %.2f w 0 0 0 RG %.4f %.4f %.4f %.4f re S Q",
+                b_thickness_bp, tx_bp, ty_bp, tw_bp, th_bp
             )
             local n_node = node.new("whatsit", "pdf_literal")
             n_node.data = literal
@@ -87,7 +86,7 @@ local function apply_positions(head, layout_map, grid_width, grid_height, total_
                 local w = D.getfield(t, "width")
 
                 local rtl_col = total_cols - 1 - col
-                local final_x = rtl_col * grid_width + (grid_width - w) / 2
+                local final_x = rtl_col * grid_width + (grid_width - w) / 2 + half_thickness
 
                 -- Calculate vertical position based on alignment
                 local final_y
@@ -114,7 +113,7 @@ local function apply_positions(head, layout_map, grid_width, grid_height, total_
 
                 -- Draw debug grid
                 if draw_debug then
-                     local tx_bp = (rtl_col * grid_width) * sp_to_bp
+                     local tx_bp = (rtl_col * grid_width + half_thickness) * sp_to_bp
                      local ty_bp = (-row * grid_height) * sp_to_bp
                      local literal = string.format("q 0.5 w 0 0 1 RG 1 0 0 1 %.4f %.4f cm 0 0 %.4f %.4f re S Q",
                          tx_bp, ty_bp, w_bp, h_bp

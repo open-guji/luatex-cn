@@ -43,6 +43,7 @@
 
 # AI related
 progress/
+.antigravity
 .claudeignore
 .clauderules
 .claude/

@@ -219,9 +219,15 @@ local function draw_banxin_column(p_head, params)
         end
     end
 
-    if _G.cn_vertical and _G.cn_vertical.debug and _G.cn_vertical.debug.enabled and _G.cn_vertical.debug.show_banxin then
-        -- Draw a green dashed rectangle for the banxin column area
-        p_head = utils.draw_debug_rect(p_head, nil, x, y, width, -height, "0 1 0 RG [2 2] 0 d")
+    if _G.cn_vertical and _G.cn_vertical.debug and _G.cn_vertical.debug.enabled then
+        if _G.cn_vertical.debug.show_banxin then
+            -- Draw a green dashed rectangle for the banxin column area
+            p_head = utils.draw_debug_rect(p_head, nil, x, y, width, -height, "0 1 0 RG [2 2] 0 d")
+        end
+        if _G.cn_vertical.debug.show_boxes then
+            -- Draw a red rectangle for the banxin column block
+            p_head = utils.draw_debug_rect(p_head, nil, x, y, width, -height, "1 0 0 RG")
+        end
     end
 
     return p_head

@@ -141,6 +141,8 @@ local function create_vertical_text(text, params)
     -- Calculate cell height
     local cell_height = height / num_cells
 
+    local u = package.loaded['utils'] or require('utils')
+
     local head = nil
     local tail = nil
 
@@ -172,6 +174,15 @@ local function create_vertical_text(text, params)
         else
             D.setlink(tail, glyph_direct)
             tail = kern
+        end
+
+        -- --- DEBUG: Draw blue box around each character ---
+        if _G.cn_vertical and _G.cn_vertical.debug and _G.cn_vertical.debug.enabled and _G.cn_vertical.debug.show_grid then
+            local u = package.loaded['utils'] or require('utils')
+            if u and u.draw_debug_rect then
+                -- Add debug box before the glyph so it's behind the text
+                head = u.draw_debug_rect(head, glyph_direct, x, cell_y, width, -cell_height, "0 0 1 RG")
+            end
         end
     end
 

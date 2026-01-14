@@ -319,14 +319,25 @@ local function draw_banxin_column(p_head, params)
                 for i, sub_text in ipairs(parts) do
                     local c = i - 1 -- Column index (first part is rightmost)
                     local sub_x = x + (n_cols - 1 - c) * col_width
-                    
+
+                    -- Determine horizontal alignment for multi-column layout:
+                    -- Right column (first part) aligns right, left column (last part) aligns left
+                    local col_h_align = "center"
+                    if n_cols > 1 then
+                        if i == 1 then
+                            col_h_align = "right"  -- Rightmost column: align right
+                        elseif i == #parts then
+                            col_h_align = "left"   -- Leftmost column: align left
+                        end
+                    end
+
                     local chapter_chain = text_position.create_vertical_text(sub_text, {
                         x = sub_x,
                         y_top = chapter_y_top,
                         width = col_width,
                         height = title_height,
                         v_align = "center",
-                        h_align = "center",
+                        h_align = col_h_align,
                         font_size = title_font_size,
                         font_scale = font_scale,
                     })

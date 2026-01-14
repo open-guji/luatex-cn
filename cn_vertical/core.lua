@@ -114,7 +114,9 @@ function cn_vertical.verticalize_inner_box(box_num, w_cols, h_rows, g_w_str, g_h
         -- Actually, prepare_grid already set them.
         
         -- CRITICAL: Set textbox attributes so this box is recognized as a textbox block in outer layout
-        node.set_attribute(res_box, constants.ATTR_TEXTBOX_WIDTH, tonumber(w_cols) or 1)
+        -- NOTE: Width is always 1 for outer layout - the textbox occupies 1 outer grid column
+        -- regardless of how many inner columns it has. w_cols is for internal layout only.
+        node.set_attribute(res_box, constants.ATTR_TEXTBOX_WIDTH, 1)
         node.set_attribute(res_box, constants.ATTR_TEXTBOX_HEIGHT, tonumber(h_rows) or 1)
         
         -- Apply indent from list environment

@@ -349,11 +349,21 @@
 \bool_new:N \l__cn_vertical_textbox_border_bool
 \bool_new:N \l__cn_vertical_textbox_debug_bool
 \tl_new:N \l__cn_vertical_textbox_valign_tl
+\tl_new:N \l__cn_vertical_textbox_inner_gw_tl
+\tl_new:N \l__cn_vertical_textbox_inner_gh_tl
+\dim_new:N \l__cn_vertical_textbox_inner_gw_dim
+\dim_new:N \l__cn_vertical_textbox_inner_gh_dim
 
 \keys_define:nn { cn_vertical / textbox }
   {
     height .int_set:N = \l__cn_vertical_textbox_height_int,
     height .initial:n = 1,
+    inner-cols .int_set:N = \l__cn_vertical_textbox_inner_cols_int,
+    inner-cols .initial:n = 1,
+    inner-grid-width .tl_set:N = \l__cn_vertical_textbox_inner_gw_tl,
+    inner-grid-width .initial:n = {},
+    inner-grid-height .tl_set:N = \l__cn_vertical_textbox_inner_gh_tl,
+    inner-grid-height .initial:n = {},
     distribute .bool_set:N = \l__cn_vertical_textbox_distribute_bool,
     distribute .initial:n = false,
     border .bool_set:N = \l__cn_vertical_textbox_border_bool,
@@ -370,22 +380,33 @@
     % Inherit debug setting from global environment
     \bool_set_eq:NN \l__cn_vertical_textbox_debug_bool \g_cnv_debug_bool
     \keys_set:nn { cn_vertical / textbox } { #1 }
-    % Width is always 1 for single-column mode
+    % Width is always 1 for outer layout (textbox occupies 1 column externally)
     \setluatexattribute\cnverticaltextboxwidth{1}
     \setluatexattribute\cnverticaltextboxheight{\l__cn_vertical_textbox_height_int}
+    
+    % Calculate inner grid dimensions (hybrid approach)
+    % If inner-grid-width not specified, auto-calculate: outer_width / inner_cols
+    \tl_if_empty:NTF \l__cn_vertical_textbox_inner_gw_tl
+      { \dim_set:Nn \l__cn_vertical_textbox_inner_gw_dim { \l__cn_vertical_grid_width_tl / \l__cn_vertical_textbox_inner_cols_int } }
+      { \dim_set:Nn \l__cn_vertical_textbox_inner_gw_dim { \l__cn_vertical_textbox_inner_gw_tl } }
+    % If inner-grid-height not specified, use outer grid-height
+    \tl_if_empty:NTF \l__cn_vertical_textbox_inner_gh_tl
+      { \dim_set:Nn \l__cn_vertical_textbox_inner_gh_dim { \l__cn_vertical_grid_height_tl } }
+      { \dim_set:Nn \l__cn_vertical_textbox_inner_gh_dim { \l__cn_vertical_textbox_inner_gh_tl } }
+    
     % Capture content in a box and process it via Lua for inner verticality
     \setbox0=\vbox{
       \setluatexattribute\cnverticaltextboxwidth{0}
       \setluatexattribute\cnverticaltextboxheight{0}
       % Inner line length should be the grid height of the block
-      \hsize=\dim_eval:n { \l__cn_vertical_grid_height_tl * \int_use:N \l__cn_vertical_textbox_height_int }
+      \hsize=\dim_eval:n { \l__cn_vertical_textbox_inner_gh_dim * \int_use:N \l__cn_vertical_textbox_height_int }
       #2
     }
     \directlua{cn_vertical.verticalize_inner_box(0, 
-      1, 
+      \int_use:N \l__cn_vertical_textbox_inner_cols_int, 
       \int_use:N \l__cn_vertical_textbox_height_int, 
-      "\dim_to_decimal:n { \l__cn_vertical_grid_width_tl } pt", 
-      "\dim_to_decimal:n { \l__cn_vertical_grid_height_tl } pt", 
+      "\dim_to_decimal:n { \l__cn_vertical_textbox_inner_gw_dim } pt", 
+      "\dim_to_decimal:n { \l__cn_vertical_textbox_inner_gh_dim } pt", 
       "\luaescapestring{\tl_use:N \l__cn_vertical_textbox_valign_tl}", 
       "\bool_if:NTF \l__cn_vertical_textbox_distribute_bool {true}{false}",
       "\bool_if:NTF \l__cn_vertical_textbox_debug_bool {true}{false}",

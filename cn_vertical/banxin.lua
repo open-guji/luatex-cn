@@ -123,13 +123,14 @@ local function draw_banxin(params)
     -- Draw upper yuwei (上鱼尾) in section 2
     -- The yuwei fills the entire column width and is placed at the top of section 2
     local yuwei_x = x                 -- Left edge of column
-    local yuwei_y = div1_y            -- Just below the first dividing line
+    local yuwei_gap = 65536 * 3.7      -- 10pt gap from dividing lines
+    local yuwei_y = div1_y - yuwei_gap  -- 10pt below the first dividing line
     
     -- Yuwei dimensions:
     -- edge_height: height of the side edges (shorter)
     -- notch_height: distance from top to V-tip (longer, includes the V portion)
-    local edge_h = width * 0.5   
-    local notch_h = width * 0.3  
+    local edge_h = width * 0.39   
+    local notch_h = width * 0.17  
     
     -- Upper yuwei (上鱼尾) - notch at bottom, opening downward
     local upper_yuwei = yuwei.draw_yuwei({
@@ -141,12 +142,14 @@ local function draw_banxin(params)
         style = "black",
         direction = 1,                -- Notch at bottom (上鱼尾)
         color_str = color_str,
+        extra_line = true,            -- Draw extra line below V-tip
+        border_thickness = b_thickness, -- Use same thickness as border
     })
     table.insert(literals, upper_yuwei)
     
     -- Lower yuwei (下鱼尾) - notch at top, opening upward (mirror of upper)
-    -- Positioned at the bottom of section 2, just above the second dividing line
-    local lower_yuwei_y = div2_y + notch_h  -- Position so V-tip aligns with div2
+    -- Positioned at the bottom of section 2, 10pt above the second dividing line
+    local lower_yuwei_y = div2_y + notch_h + yuwei_gap  -- 10pt above div2
     local lower_yuwei = yuwei.draw_yuwei({
         x = yuwei_x,
         y = lower_yuwei_y,
@@ -156,6 +159,8 @@ local function draw_banxin(params)
         style = "black",
         direction = -1,               -- Notch at top (下鱼尾)
         color_str = color_str,
+        extra_line = true,            -- Draw extra line above V-tip
+        border_thickness = b_thickness, -- Use same thickness as border
     })
     table.insert(literals, lower_yuwei)
 

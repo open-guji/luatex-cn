@@ -77,6 +77,9 @@ local sp_to_bp = utils.sp_to_bp
 --   - style (string) "black" (filled) or "white"/"hollow" (stroked)
 --   - color_str (string) RGB color string (e.g., "0 0 0")
 --   - line_width (number) Optional line width for hollow style (default 0.8bp)
+--   - extra_line (bool) If true, draw an additional horizontal line at the V-tip
+--   - line_gap (number) Gap between V-tip and extra line (default 4pt = 65536*4 sp)
+--   - border_thickness (number) Thickness of the extra line (default 0.4pt)
 -- @return (string) PDF literal string
 local function draw_yuwei(params)
     local x = params.x or 0
@@ -88,6 +91,9 @@ local function draw_yuwei(params)
     local direction = params.direction or 1
     local color_str = params.color_str or "0 0 0"
     local line_width = params.line_width or 0.8
+    local extra_line = params.extra_line or false
+    local line_gap = params.line_gap or (65536 * 4)  -- 4pt default
+    local border_thickness = params.border_thickness or (65536 * 0.4)  -- 0.4pt default
     
     -- Calculate dimensions in bp
     local w_bp = width * sp_to_bp
@@ -163,6 +169,41 @@ local function draw_yuwei(params)
                 x_bp, y_bp - notch_h_bp + edge_h_bp
             )
         end
+    end
+    
+    -- Draw extra V-shaped line if requested (parallels the yuwei notch)
+    if extra_line then
+        local gap_bp = line_gap * sp_to_bp
+        local thickness_bp = border_thickness * sp_to_bp
+        local extra_line_path
+        
+        if direction == 1 then
+            -- 上鱼尾: V-line below the yuwei's V-notch
+            -- The V-line starts at edge_height + gap, and its tip is at notch_height + gap
+            local v_left_y = y_bp - edge_h_bp - gap_bp
+            local v_tip_y = y_bp - notch_h_bp - gap_bp
+            local v_right_y = y_bp - edge_h_bp - gap_bp
+            extra_line_path = string.format(
+                "q %.2f w %s RG %.4f %.4f m %.4f %.4f l %.4f %.4f l S Q",
+                thickness_bp, color_str,
+                x_bp, v_left_y,                    -- Left point
+                x_bp + half_w, v_tip_y,            -- V-tip (center bottom)
+                x_bp + w_bp, v_right_y             -- Right point
+            )
+        else
+            -- 下鱼尾: V-line above the yuwei's V-notch (inverted)
+            local v_left_y = y_bp - notch_h_bp + edge_h_bp + gap_bp
+            local v_tip_y = y_bp + gap_bp
+            local v_right_y = y_bp - notch_h_bp + edge_h_bp + gap_bp
+            extra_line_path = string.format(
+                "q %.2f w %s RG %.4f %.4f m %.4f %.4f l %.4f %.4f l S Q",
+                thickness_bp, color_str,
+                x_bp, v_left_y,                    -- Left point
+                x_bp + half_w, v_tip_y,            -- V-tip (center top)
+                x_bp + w_bp, v_right_y             -- Right point
+            )
+        end
+        path = path .. " " .. extra_line_path
     end
     
     return path

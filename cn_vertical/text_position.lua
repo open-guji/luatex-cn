@@ -55,10 +55,18 @@ local function position_glyph(glyph_direct, x, y, params)
     local h_align = params.h_align or "center"
     local v_align = params.v_align or "center"
 
-    -- Get glyph dimensions
+    -- Get glyph dimensions (robustly)
     local g_width = D.getfield(glyph_direct, "width") or 0
     local g_height = D.getfield(glyph_direct, "height") or 0
     local g_depth = D.getfield(glyph_direct, "depth") or 0
+
+    -- If width is 0, try to guess or use a fallback for centering
+    if g_width <= 0 then
+        local f_data = font.getfont(D.getfield(glyph_direct, "font"))
+        if f_data and f_data.size then
+            g_width = f_data.size -- Assume square for CJK if unknown
+        end
+    end
 
     -- Calculate horizontal offset based on alignment
     local x_offset
@@ -84,11 +92,18 @@ local function position_glyph(glyph_direct, x, y, params)
     -- Apply offsets
     D.setfield(glyph_direct, "xoffset", x_offset)
     D.setfield(glyph_direct, "yoffset", y_offset)
+    
+    -- --- Trace Logging ---
+    if _G.cn_vertical and _G.cn_vertical.debug and _G.cn_vertical.debug.verbose_log then
+        local u = package.loaded['utils'] or require('utils')
+        u.debug_log(string.format("[GlyphPos] char=%d x=%.2f cw=%.2f gw=%.2f -> xoff=%.2f yoff=%.2f", 
+            D.getfield(glyph_direct, "char"), x/(65536), cell_width/(65536), g_width/(65536), x_offset/(65536), y_offset/(65536)))
+    end
 
     -- Create protected negative kern (subtype 1 = explicit kern, won't be zeroed)
     local kern = D.new(constants.KERN)
     D.setfield(kern, "subtype", 1)
-    D.setfield(kern, "kern", -g_width)
+    D.setfield(kern, "kern", -D.getfield(glyph_direct, "width"))
 
     -- Link glyph to kern
     D.setlink(glyph_direct, kern)
@@ -176,6 +191,17 @@ local function create_vertical_text(text, params)
         glyph.lang = 0
 
         local glyph_direct = D.todirect(glyph)
+
+        -- CRITICAL: Fetch glyph dimensions from font data
+        -- Newly created nodes have 0 dimensions until processed.
+        local f_data = font.getfont(font_id)
+        local cp = utf8.codepoint(char)
+        if f_data and f_data.characters and f_data.characters[cp] then
+            local char_data = f_data.characters[cp]
+            D.setfield(glyph_direct, "width", char_data.width or 0)
+            D.setfield(glyph_direct, "height", char_data.height or 0)
+            D.setfield(glyph_direct, "depth", char_data.depth or 0)
+        end
 
         -- Calculate cell position (0-indexed row)
         local row = i - 1

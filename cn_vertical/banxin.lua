@@ -297,69 +297,44 @@ local function draw_banxin_column(p_head, params)
         local available_height = section2_h - upper_yuwei_total - lower_yuwei_total - chapter_top_margin
         
         if available_height > 0 then
-            local n_cols = params.chapter_title_cols or 1
-            if n_cols <= 1 then
-                -- Single column (original behavior)
-                local chapter_chain = text_position.create_vertical_text(chapter_title, {
-                    x = x,
-                    y_top = chapter_y_top,
-                    width = width,
-                    height = available_height,
-                    v_align = "top",
-                    h_align = "center",
-                })
-                if chapter_chain then
-                    local chain_tail = chapter_chain
-                    while D.getnext(chain_tail) do chain_tail = D.getnext(chain_tail) end
-                    D.setlink(chain_tail, p_head)
-                    p_head = chapter_chain
-                end
-            else
-                -- Multiple columns
-                local chars = {}
-                for char in chapter_title:gmatch("[%z\1-\127\194-\244][\128-\191]*") do
-                    table.insert(chars, char)
-                end
-                
-                local chars_per_col = math.ceil(#chars / n_cols)
+            -- Manual splitting by newline or TeX style \\
+            local raw_title = (chapter_title or ""):gsub("\\\\", "\n")
+            local parts = {}
+            for s in raw_title:gmatch("[^\n]+") do
+                table.insert(parts, s)
+            end
+            
+            if #parts > 0 then
+                local n_cols = math.max(#parts, params.chapter_title_cols or 1)
                 local col_width = width / n_cols
                 
                 -- Title height and font size
                 local title_height = constants.to_dimen(params.chapter_title_grid_height) or available_height
                 local title_font_size = params.chapter_title_font_size
                 local font_scale = nil
-                if not title_font_size or title_font_size == "" then
-                    font_scale = 0.85 -- Default scale if no specific size
+                if (not title_font_size or title_font_size == "") and n_cols > 1 then
+                    font_scale = 0.85
                 end
 
-                for c = 0, n_cols - 1 do
-                    local start_idx = c * chars_per_col + 1
-                    local end_idx = math.min((c + 1) * chars_per_col, #chars)
-                    local sub_text = ""
-                    for i = start_idx, end_idx do
-                        sub_text = sub_text .. chars[i]
-                    end
+                for i, sub_text in ipairs(parts) do
+                    local c = i - 1 -- Column index (first part is rightmost)
+                    local sub_x = x + (n_cols - 1 - c) * col_width
                     
-                    if sub_text ~= "" then
-                        -- RTL layout for sub-columns within the banxin area
-                        local sub_x = x + (n_cols - 1 - c) * col_width
-                        
-                        local chapter_chain = text_position.create_vertical_text(sub_text, {
-                            x = sub_x,
-                            y_top = chapter_y_top,
-                            width = col_width,
-                            height = title_height,
-                            v_align = "top",
-                            h_align = "center",
-                            font_size = title_font_size,
-                            font_scale = font_scale,
-                        })
-                        if chapter_chain then
-                            local chain_tail = chapter_chain
-                            while D.getnext(chain_tail) do chain_tail = D.getnext(chain_tail) end
-                            D.setlink(chain_tail, p_head)
-                            p_head = chapter_chain
-                        end
+                    local chapter_chain = text_position.create_vertical_text(sub_text, {
+                        x = sub_x,
+                        y_top = chapter_y_top,
+                        width = col_width,
+                        height = title_height,
+                        v_align = "center",
+                        h_align = "center",
+                        font_size = title_font_size,
+                        font_scale = font_scale,
+                    })
+                    if chapter_chain then
+                        local chain_tail = chapter_chain
+                        while D.getnext(chain_tail) do chain_tail = D.getnext(chain_tail) end
+                        D.setlink(chain_tail, p_head)
+                        p_head = chapter_chain
                     end
                 end
             end

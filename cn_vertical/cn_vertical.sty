@@ -104,7 +104,7 @@
 % Aliases for global debug control
 \NewDocumentCommand{\GujiDebugOn}{}{
   \bool_set_true:N \g_cnv_debug_bool
-  \directlua{cn_vertical.debug.enabled = true}
+  \directlua{cn_vertical.debug.enabled = true; cn_vertical.debug.verbose_log = true}
 }
 \NewDocumentCommand{\GujiDebugOff}{}{
   \bool_set_false:N \g_cnv_debug_bool

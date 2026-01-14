@@ -132,6 +132,8 @@ local function flatten_vbox(head, grid_width, char_width)
                         local sid = D.getid(s)
                         if sid == constants.GLYPH then break end
                         if sid == constants.GLUE and D.getsubtype(s) == 8 then -- leftskip
+                            local st = D.getsubtype(s)
+                            local w = D.getfield(s, "width")
                             if st == 8 then -- leftskip
                                 box_indent = math.max(box_indent, math.floor(w / char_width + 0.5))
                             end

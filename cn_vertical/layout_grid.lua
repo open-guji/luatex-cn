@@ -53,6 +53,7 @@
 -- Check if already loaded via dofile (package.loaded set manually)
 local constants = package.loaded['base_constants'] or require('base_constants')
 local D = constants.D
+local utils = package.loaded['base_utils'] or require('base_utils')
 
 -- @param page_columns (number) Total columns before a page break
 -- @param params (table) Optional parameters:
@@ -193,6 +194,75 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
             skip_banxin_and_occupied()
         end
 
+        local is_jiazhu = D.get_attribute(t, constants.ATTR_JIAZHU) == 1
+        if is_jiazhu then
+            flush_buffer()
+            -- Collect Jiazhu sequence
+            local j_nodes = {}
+            local temp_t = t
+            while temp_t and D.get_attribute(temp_t, constants.ATTR_JIAZHU) == 1 do
+                local tid = D.getid(temp_t)
+                if tid == constants.GLYPH then
+                    table.insert(j_nodes, temp_t)
+                end
+                temp_t = D.getnext(temp_t)
+            end
+
+            -- Ensure we have at least 1 row available
+            if effective_limit - cur_row < 1 then
+                cur_col = cur_col + 1
+                cur_row = 0
+                if cur_col >= p_cols then
+                    cur_col = 0
+                    cur_page = cur_page + 1
+                end
+                skip_banxin_and_occupied()
+            end
+
+            -- Process via core_textflow
+            local textflow = package.loaded['core_textflow'] or require('core_textflow')
+            local chunks = textflow.process_jiazhu_sequence(j_nodes, effective_limit - cur_row, effective_limit)
+
+            for i, chunk in ipairs(chunks) do
+                -- If not the first chunk, move to next column
+                if i > 1 then
+                    cur_col = cur_col + 1
+                    cur_row = 0
+                    if cur_col >= p_cols then
+                        cur_col = 0
+                        cur_page = cur_page + 1
+                    end
+                    skip_banxin_and_occupied()
+                end
+
+                -- Record positions
+                for _, node_info in ipairs(chunk.nodes) do
+                    layout_map[node_info.node] = {
+                        page = cur_page,
+                        col = cur_col,
+                        row = cur_row + node_info.relative_row,
+                        sub_col = node_info.sub_col
+                    }
+                end
+                
+                cur_row = cur_row + chunk.rows_used
+                
+                -- Check if we need to wrap after this chunk
+                if chunk.is_full_column or cur_row >= effective_limit then
+                    cur_col = cur_col + 1
+                    cur_row = 0
+                    if cur_col >= p_cols then
+                        cur_col = 0
+                        cur_page = cur_page + 1
+                    end
+                    skip_banxin_and_occupied()
+                end
+            end
+            
+            t = temp_t
+            goto continue
+        end
+
         if tb_w > 0 and tb_h > 0 then
             -- Handle Textbox Block
             if cur_row + tb_h > effective_limit then
@@ -262,6 +332,7 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
         end
 
         t = D.getnext(t)
+        ::continue::
     end
     
     flush_buffer()

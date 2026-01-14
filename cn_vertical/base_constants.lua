@@ -71,6 +71,10 @@ constants.ATTR_TEXTBOX_WIDTH = luatexbase.attributes.cnverticaltextboxwidth or l
 constants.ATTR_TEXTBOX_HEIGHT = luatexbase.attributes.cnverticaltextboxheight or luatexbase.new_attribute("cnverticaltextboxheight")
 constants.ATTR_TEXTBOX_DISTRIBUTE = luatexbase.attributes.cnverticaltextboxdistribute or luatexbase.new_attribute("cnverticaltextboxdistribute")
 
+-- Attributes for Jiazhu (Interlinear Note)
+constants.ATTR_JIAZHU = luatexbase.attributes.cnverticaljiazhu or luatexbase.new_attribute("cnverticaljiazhu")
+constants.ATTR_JIAZHU_SUB = luatexbase.attributes.cnverticaljiazhusub or luatexbase.new_attribute("cnverticaljiazhusub")
+
 --- Convert TeX dimension string to scaled points
 -- @param dim_str (string) TeX dimension string (e.g., "20pt", "1.5em")
 -- @return (number|nil) Dimension in scaled points, or nil if invalid/zero

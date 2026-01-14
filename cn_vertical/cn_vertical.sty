@@ -23,6 +23,8 @@
 \newluatexattribute\cnverticaltextboxwidth
 \newluatexattribute\cnverticaltextboxheight
 \newluatexattribute\cnverticaltextboxdistribute
+\newluatexattribute\cnverticaljiazhu
+\newluatexattribute\cnverticaljiazhusub
 
 % Load the Lua modules
 % Split into multiple directlua blocks for better error reporting
@@ -52,6 +54,7 @@
   package.loaded["render_yuwei"] = nil
   package.loaded["core_main"] = nil
   package.loaded["core_textbox"] = nil
+  package.loaded["core_textflow"] = nil
 }
 
 % Load base_constants
@@ -107,6 +110,11 @@
 % Load core_textbox (内嵌文本框支持)
 \directlua{
   cn_vertical_textbox = require('core_textbox')
+}
+
+% Load core_textflow (夹注双行小注逻辑)
+\directlua{
+  cn_vertical_textflow = require('core_textflow')
 }
 
 % Load main module (core_main)
@@ -486,6 +494,20 @@
       { \GridTextbox[height=#1]{} }
       { \GridTextbox[#1]{} }
   }
+
+% Jiazhu Command (双行小注/夹注)
+% Syntax: \jiazhu{content}
+\makeatletter
+\NewDocumentCommand{\jiazhu}{ +m }
+  {
+    \group_begin:
+    % Font size is 50% of parent
+    \fontsize{\fp_eval:n { 0.5 * \f@size } pt}{\fp_eval:n { 0.5 * \f@size } pt}\selectfont
+    \setluatexattribute\cnverticaljiazhu{1}
+    #1
+    \group_end:
+  }
+\makeatother
 
 \ExplSyntaxOff
 

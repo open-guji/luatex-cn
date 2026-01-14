@@ -1,0 +1,21 @@
+\documentclass{guji}
+
+\gujiSetup{
+  template=sikuquanshu,
+  book-name={夹注重测},
+  chapter-title={卷一·测试},
+  debug=true,
+}
+
+\begin{document}
+
+\begin{guji-content}
+黃帝者\jiazhu{少典之子}，姓公孫\jiazhu{案公孫为姓}，名曰軒轅\jiazhu{居軒轅之丘因以为名}。
+
+天下熙熙\jiazhu{司馬遷云：天下熙熙，皆为利来；天下攘攘，皆为利往。此乃人性之常也。然君子忧道不忧贫，在乎本心之诚耳。}，皆为利来。
+
+此处测试一个非常长的夹注，看它是否能够正常地跨列排版：\jiazhu{这是一个长注的开始。我们希望它在排满当前列后，能够自动地转到下一列，并且在下一列继续进行双行平分。这种排版方式对于中文古籍来说至关重要，因为它既节省了空间，又保持了正文的连贯性。现在我们继续增加一些文字，以确保它真的跨列了。文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字。}正文继续。
+
+\end{guji-content}
+
+\end{document}

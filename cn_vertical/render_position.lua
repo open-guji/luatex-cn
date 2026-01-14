@@ -326,10 +326,23 @@ local function calc_grid_position(col, row, glyph_dims, params)
 
     -- Calculate RTL column position
     local rtl_col = total_cols - 1 - col
+    local sub_col = params.sub_col or 0
 
     -- Calculate X offset based on horizontal alignment
     local x_offset
-    if h_align == "left" then
+    if sub_col > 0 then
+        -- Jiazhu (dual-column note) logic
+        local sub_width = grid_width / 2
+        local inner_padding = sub_width * 0.05 -- 5% internal padding
+        
+        if sub_col == 1 then
+            -- Right sub-column (先行): Right-aligned within the right half
+            x_offset = rtl_col * grid_width + sub_width + (sub_width - w) - inner_padding + half_thickness + shift_x
+        else
+            -- Left sub-column (后行): Left-aligned within the left half
+            x_offset = rtl_col * grid_width + inner_padding + half_thickness + shift_x
+        end
+    elseif h_align == "left" then
         x_offset = rtl_col * grid_width + half_thickness + shift_x
     elseif h_align == "right" then
         x_offset = rtl_col * grid_width + (grid_width - w) + half_thickness + shift_x

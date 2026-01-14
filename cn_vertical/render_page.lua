@@ -87,6 +87,7 @@ local function handle_glyph_node(curr, p_head, pos, params, ctx)
             v_align = vertical_align,
             h_align = h_align,
             half_thickness = ctx.half_thickness,
+            sub_col = pos.sub_col,
         }
     )
     D.setfield(curr, "xoffset", final_x)
@@ -141,6 +142,14 @@ local function handle_debug_drawing(curr, p_head, pos, ctx)
         local ty_sp = (-pos.row * ctx.grid_height - ctx.shift_y)
         local tw_sp = ctx.grid_width
         local th_sp = -ctx.grid_height
+        
+        if pos.sub_col and pos.sub_col > 0 then
+            tw_sp = ctx.grid_width / 2
+            if pos.sub_col == 1 then
+                tx_sp = tx_sp + tw_sp
+            end
+        end
+
         if pos.is_block then
             tw_sp = pos.width * ctx.grid_width
             th_sp = -pos.height * ctx.grid_height

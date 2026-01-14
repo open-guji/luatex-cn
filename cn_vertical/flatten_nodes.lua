@@ -1,8 +1,10 @@
 -- ============================================================================
--- flatten.lua - 盒子展平与缩进提取（第一阶段）
+-- flatten_nodes.lua - 盒子展平与缩进提取（第一阶段）
 -- ============================================================================
+-- 文件名: flatten_nodes.lua (原 flatten.lua)
+-- 层级: 第一阶段 - 展平层 (Stage 1: Flatten Layer)
 --
--- 【模块功能】
+-- 【模块功能 / Module Purpose】
 -- 本模块负责排版流水线的第一阶段，将 TeX 复杂的嵌套盒子结构转化为一维节点流：
 --   1. 递归遍历 VBox/HBox，将多层嵌套展平为线性节点列表
 --   2. 自动检测并提取缩进信息（leftskip glue、box shift）
@@ -10,16 +12,26 @@
 --   4. 在适当位置插入列中断标记（penalty -10001）
 --   5. 过滤无用节点（保留 glyph、kern、特定 glue、textbox 块）
 --
+-- 【术语对照 / Terminology】
+--   flatten         - 展平（将嵌套结构转为线性结构）
+--   indent          - 缩进（首行或悬挂缩进）
+--   leftskip        - 左侧跳过（TeX 的段落左缩进机制）
+--   shift           - 盒子偏移（box.shift 属性）
+--   penalty         - 惩罚值（用于控制换行/换列）
+--   column break    - 列中断（-10001 触发强制换列）
+--   running_indent  - 当前累积缩进（随遍历更新）
+--   has_content     - 是否有可见内容（字形或文本框）
+--
 -- 【注意事项】
 --   • 缩进检测依赖 TeX 的 \leftskip 和 box.shift 机制，支持标准的 itemize/enumerate
---   • "列中断"（penalty -10001）在每个 HLIST 行之后插入，用于 layout.lua 识别强制换列
+--   • "列中断"（penalty -10001）在每个 HLIST 行之后插入，用于 layout_grid.lua 识别强制换列
 --   • 重点：展平算法高度依赖 TeX 的段落构建，若节点在垂直模式输出（如列表开头的 Textbox），
---     其缩进属性（leftskip）将无法被检测。因此 TeX 端必须确保进入水平模式（如使用 \leavevmode）。
+--     其缩进属性（leftskip）将无法被检测。因此 TeX 端必须确保进入水平模式（如使用 \leavevmode）
 --   • Textbox 块通过属性 ATTR_TEXTBOX_WIDTH/HEIGHT 识别，会被完整保留
 --   • 右缩进（rightskip）功能已预留但未完全实现（当前只在 layout 中使用）
 --   • 节点会被复制（D.copy），原始盒子不会被修改
 --
--- 【整体架构】
+-- 【整体架构 / Architecture】
 --   输入: TeX VBox.list (嵌套的 vlist/hlist/glyph 树)
 --      ↓
 --   flatten_vbox(head, grid_width, char_width)
@@ -32,8 +44,8 @@
 --      ↓
 --   输出: 一维节点流（glyph + kern + glue + penalty + textbox块）
 --
--- Version: 0.3.0
--- Date: 2026-01-12
+-- Version: 0.4.0
+-- Date: 2026-01-13
 -- ============================================================================
 
 -- Load dependencies
@@ -184,7 +196,8 @@ local flatten = {
 }
 
 -- Register module in package.loaded for require() compatibility
-package.loaded['flatten'] = flatten
+-- 注册模块到 package.loaded，同时保留旧名称以兼容现有代码
+package.loaded['flatten_nodes'] = flatten
 
 -- Return module exports
 return flatten

@@ -1,8 +1,10 @@
 -- ============================================================================
--- border.lua - 边框绘制模块
+-- render_border.lua - 边框绘制模块
 -- ============================================================================
+-- 文件名: render_border.lua (原 border.lua)
+-- 层级: 第三阶段 - 渲染层 (Stage 3: Render Layer)
 --
--- 【模块功能】
+-- 【模块功能 / Module Purpose】
 -- 本模块负责绘制普通列边框和外边框（版心边框由 banxin.lua 单独处理）：
 --   1. draw_column_borders: 绘制普通列的边框（跳过版心列）
 --   2. draw_outer_border: 绘制整个内容区域的外围边框
@@ -129,7 +131,8 @@ local border = {
 }
 
 -- Register module in package.loaded for require() compatibility
-package.loaded['border'] = border
+-- 注册模块到 package.loaded，同时保留旧名称以兼容现有代码
+package.loaded['render_border'] = border
 
 -- Return module exports
 return border

@@ -1,13 +1,21 @@
 -- ============================================================================
--- textbox.lua - 文本框（GridTextbox）处理模块
+-- core_textbox.lua - 文本框（GridTextbox）处理模块
 -- ============================================================================
+-- 文件名: core_textbox.lua (原 textbox.lua)
+-- 层级: 协调层 (Core/Coordinator Layer)
 --
--- 【模块功能】
+-- 【模块功能 / Module Purpose】
 -- 本模块负责处理"内嵌文本框"（GridTextbox）的竖排逻辑。其核心功能包括：
 --   1. 接收 TeX 传递的盒子（hlist/vlist）
 --   2. 将其视为一个"微型页面"，根据网格参数重新进行布局
 --   3. 应用特殊的属性（ATTR_TEXTBOX_WIDTH/HEIGHT），使其能被外部布局识别
 --   4. 处理缩进继承（从列表环境等继承 \leftskip）
+--
+-- 【术语对照 / Terminology】
+--   process_inner_box   - 处理内嵌盒子（主入口函数）
+--   GridTextbox         - 网格文本框（TeX 层的环境名称）
+--   ATTR_TEXTBOX_*      - 文本框尺寸属性（宽度/高度，以网格数计）
+--   distribute          - 分布模式（在列内均匀分布字符）
 --
 -- 【主要功能函数】
 --   process_inner_box(box_num, params)
@@ -19,7 +27,7 @@
 --   • 如果 distribute=true，内部字符会均匀分布在可用的网格中
 --   • 文本框的 baseline 处理需要配合 TeX 层的 \leavevmode 使用
 --
--- Version: 0.3.0
+-- Version: 0.4.0
 -- Date: 2026-01-13
 -- ============================================================================
 
@@ -126,7 +134,9 @@ function textbox.process_inner_box(box_num, params)
     end
 end
 
--- 注册模块供 require 使用
-package.loaded['textbox'] = textbox
+-- Register module in package.loaded for require() compatibility
+-- 注册模块到 package.loaded，同时保留旧名称以兼容现有代码
+package.loaded['core_textbox'] = textbox
+package.loaded['textbox'] = textbox  -- 兼容旧名称
 
 return textbox

@@ -1,27 +1,40 @@
 -- ============================================================================
--- constants.lua - 全局常量与工具函数库
+-- base_constants.lua - 基础常量与工具函数库
 -- ============================================================================
+-- 文件名: base_constants.lua (原 constants.lua)
+-- 层级: 基础层 (Base Layer)
 --
--- 【模块功能】
+-- 【模块功能 / Module Purpose】
 -- 本模块是所有子模块的共享基础设施，提供：
 --   1. 节点类型 ID 常量（GLYPH、KERN、HLIST、VLIST 等）
 --   2. 自定义属性索引（缩进、右缩进、textbox 尺寸等）
 --   3. TeX 尺寸字符串到 scaled points 的转换函数 (to_dimen)
 --   4. Node.direct 接口的快捷引用 (D)
 --
+-- 【术语对照 / Terminology】
+--   scaled points (sp)  - TeX 内部单位，1pt = 65536sp
+--   GLYPH               - 字形节点（glyph node）
+--   KERN                - 字距节点（kerning node）
+--   HLIST               - 水平列表（horizontal list）
+--   VLIST               - 垂直列表（vertical list）
+--   GLUE                - 胶水/弹性空白（glue）
+--   PENALTY             - 惩罚节点（penalty，用于换行/分页控制）
+--   ATTR_INDENT         - 缩进属性（indent attribute）
+--   ATTR_TEXTBOX_*      - 文本框属性（textbox attributes）
+--
 -- 【注意事项】
 --   • 本模块必须在所有其他模块之前加载（cn_vertical.sty 确保了这一点）
 --   • 属性 ID 由 TeX 层注册（\newluatexattribute），Lua 层通过 luatexbase 访问
 --   • to_dimen 函数会过滤空字符串和 "0pt"，返回 nil 而非 0（用于区分未设置）
 --
--- 【整体架构】
---   constants.lua (本模块)
+-- 【整体架构 / Architecture】
+--   base_constants.lua (本模块)
 --      ├─ 导出常量 → 被所有子模块引用
---      ├─ to_dimen() → 被 core.lua 用于解析 TeX 参数
+--      ├─ to_dimen() → 被 core_main.lua 用于解析 TeX 参数
 --      └─ ATTR_* 索引 → 被 flatten/layout/render 用于读写节点属性
 --
--- Version: 0.3.0
--- Date: 2026-01-12
+-- Version: 0.4.0
+-- Date: 2026-01-13
 -- ============================================================================
 
 -- Create module table
@@ -81,7 +94,9 @@ end
 constants.to_dimen = to_dimen
 
 -- Register module in package.loaded for require() compatibility
-package.loaded['constants'] = constants
+-- 注册模块到 package.loaded，同时保留旧名称以兼容现有代码
+package.loaded['base_constants'] = constants
+package.loaded['constants'] = constants  -- 兼容旧名称
 
 -- Return module
 return constants

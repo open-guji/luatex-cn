@@ -1,28 +1,40 @@
 -- ============================================================================
--- utils.lua - 通用工具函数库
+-- base_utils.lua - 通用工具函数库
 -- ============================================================================
+-- 文件名: base_utils.lua (原 utils.lua)
+-- 层级: 基础层 (Base Layer)
 --
--- 【模块功能】
+-- 【模块功能 / Module Purpose】
 -- 本模块提供跨模块共享的工具函数，主要用于数据格式转换：
 --   1. normalize_rgb: 将各种 RGB 格式（0-1 或 0-255）归一化为 PDF 标准格式
 --   2. sp_to_bp: scaled points 到 PDF big points 的转换系数
+--   3. debug_log: 调试日志输出到 .log 文件
+--   4. draw_debug_rect: 绘制调试用的矩形边框
+--
+-- 【术语对照 / Terminology】
+--   sp_to_bp            - scaled points 转 big points 系数（1bp = 65536sp）
+--   normalize_rgb       - RGB 颜色归一化（统一为 PDF 可用格式 "r g b"）
+--   pdf_literal         - PDF 直写节点（直接写入底层 PDF 指令）
+--   rg/RG               - PDF 填充色/描边色指令（小写=fill，大写=stroke）
+--   whatsit             - TeX 特殊节点类型（用于嵌入非标准内容）
 --
 -- 【注意事项】
 --   • normalize_rgb 自动检测并转换 0-255 范围到 0-1 范围
 --   • 支持逗号和空格分隔的 RGB 值（"255,0,0" 或 "1.0 0 0"）
 --   • 返回的字符串格式为 "r g b"（空格分隔，保留 4 位小数）
---   • 【重要】PDF 颜色指令必须是纯数字（如 "0 0 0 rg"），直接传入 "black" 会导致 PDF 渲染错误使文字消失
---   • sp_to_bp = 1/65536 = 0.0000152018（TeX 内部单位到 PDF 单位）
+--   • 【重要】PDF 颜色指令必须是纯数字（如 "0 0 0 rg"），
+--     直接传入 "black" 会导致 PDF 渲染错误使文字消失
+--   • sp_to_bp = 1/65536 ≈ 0.0000152018（TeX 内部单位到 PDF 单位）
 --
--- 【整体架构】
+-- 【整体架构 / Architecture】
 --   normalize_rgb(rgb_str)
 --      ├─ 替换逗号为空格
 --      ├─ 提取 r、g、b 数值
 --      ├─ 如果任一值 > 1，则除以 255
 --      └─ 返回格式化字符串 "r.rrrr g.gggg b.bbbb"
 --
--- Version: 0.3.0
--- Date: 2026-01-12
+-- Version: 0.4.0
+-- Date: 2026-01-13
 -- ============================================================================
 
 -- Conversion factor from scaled points to PDF big points
@@ -119,16 +131,42 @@ local function draw_debug_rect(head, anchor, x_sp, y_sp, w_sp, h_sp, color_cmd)
     end
 end
 
+--- Create a PDF literal node with the given data
+--- 创建 PDF 直写节点（pdf_literal whatsit）
+--- @param literal_str string PDF literal string (e.g., "q 0.5 w 0 0 0 RG ... Q")
+--- @param mode number Optional mode (default 0: origin at current position)
+--- @return node Direct node (pdf_literal whatsit)
+local function create_pdf_literal(literal_str, mode)
+    local n_node = node.new("whatsit", "pdf_literal")
+    n_node.data = literal_str
+    n_node.mode = mode or 0
+    return n_node
+end
+
+--- Insert a PDF literal node before the head of a node list (direct API version)
+--- 在节点链头部插入 PDF 直写节点（使用 direct API）
+--- @param head node Direct node head
+--- @param literal_str string PDF literal string
+--- @return node Updated head (direct node)
+local function insert_pdf_literal(head, literal_str)
+    local n_node = create_pdf_literal(literal_str)
+    return node.direct.insert_before(head, head, node.direct.todirect(n_node))
+end
+
 -- Create module table
+-- 模块导出表
 local utils = {
     normalize_rgb = normalize_rgb,
     sp_to_bp = sp_to_bp,
     debug_log = debug_log,
     draw_debug_rect = draw_debug_rect,
+    create_pdf_literal = create_pdf_literal,
+    insert_pdf_literal = insert_pdf_literal,
 }
 
 -- Register module in package.loaded for require() compatibility
-package.loaded['utils'] = utils
+-- 注册模块到 package.loaded，同时保留旧名称以兼容现有代码
+package.loaded['base_utils'] = utils
 
 -- Return module exports
 return utils

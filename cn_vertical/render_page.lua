@@ -1,15 +1,27 @@
 -- ============================================================================
--- render.lua - 坐标应用与视觉渲染（第三阶段）
+-- render_page.lua - 坐标应用与视觉渲染（第三阶段主模块）
 -- ============================================================================
+-- 文件名: render_page.lua (原 render.lua)
+-- 层级: 第三阶段 - 渲染层 (Stage 3: Render Layer)
 --
--- 【模块功能】
+-- 【模块功能 / Module Purpose】
 -- 本模块负责排版流水线的第三阶段，将虚拟坐标应用到实际节点并绘制视觉元素：
 --   1. 根据 layout_map 为每个节点设置 xoffset/yoffset（文字）或 kern/shift（块）
 --   2. 插入负 kern 以抵消 TLT 方向盒子的水平推进
---   3. 调用子模块绘制边框（border.lua）、版心（banxin.lua）、背景（background.lua）
+--   3. 调用子模块绘制边框、版心、背景
 --   4. 文本框（Textbox）块由其内部逻辑渲染好后，在此模块仅作为整体块进行定位
 --   5. 按页拆分节点流，生成多个独立的页面盒子
 --   6. 可选绘制调试网格（蓝色框显示字符位置，红色框显示 textbox 块）
+--
+-- 【术语对照 / Terminology】
+--   apply_positions   - 应用坐标位置（将虚拟坐标转为实际节点属性）
+--   xoffset/yoffset   - 字形偏移（glyph 专用定位属性）
+--   kern              - 字距调整（用于水平定位块级节点）
+--   shift             - 盒子垂直偏移（box.shift 属性）
+--   RTL               - 从右到左（Right-To-Left，竖排时列序）
+--   page_nodes        - 页面节点分组（按页分组的节点列表）
+--   p_head            - 页面头节点（当前页的节点链头部）
+--   outer_shift       - 外边框偏移（外边框厚度+间距）
 --
 -- 【注意事项】
 --   • Glyph 节点使用 xoffset/yoffset 定位，块级节点（HLIST/VLIST）使用 Kern+Shift
@@ -20,27 +32,27 @@
 --   • 【重要】如果 xoffset/yoffset 计算错误（如 0 或 超出页面范围），文字将不可见
 --   • 【重要】PDF literal 语法错误（如缺少 q/Q 对，或非法颜色值）会破坏整页渲染
 --
--- 【整体架构】
+-- 【整体架构 / Architecture】
 --   输入: 节点流 + layout_map + 渲染参数（颜色、边框、页边距等）
 --      ↓
 --   apply_positions()
 --      ├─ 按页分组节点（遍历 layout_map，根据 page 分组）
 --      ├─ 对每一页：
---      │   ├─ 绘制背景色（background.draw_background）
---      │   ├─ 设置字体颜色（background.set_font_color）
---      │   ├─ 绘制外边框（border.draw_outer_border）
---      │   ├─ 绘制列边框（border.draw_column_borders，跳过版心列）
---      │   ├─ 绘制版心列（banxin.draw_banxin_column，含分隔线和文字）
+--      │   ├─ 绘制背景色（render_background.draw_background）
+--      │   ├─ 设置字体颜色（render_background.set_font_color）
+--      │   ├─ 绘制外边框（render_border.draw_outer_border）
+--      │   ├─ 绘制列边框（render_border.draw_column_borders，跳过版心列）
+--      │   ├─ 绘制版心列（render_banxin.draw_banxin_column，含分隔线和文字）
 --      │   ├─ 应用节点坐标
---      │   │   ├─ Glyph: 调用 text_position.calc_grid_position()
+--      │   │   ├─ Glyph: 调用 render_position.calc_grid_position()
 --      │   │   └─ Block: 使用 Kern 包裹 + Shift
 --      │   └─ 可选：绘制调试网格
 --      └─ 返回 result_pages[{head, cols}]
 --      ↓
 --   输出: 多个渲染好的页面（每页是一个 HLIST，dir=TLT）
 --
--- Version: 0.3.0
--- Date: 2026-01-12
+-- Version: 0.4.0
+-- Date: 2026-01-13
 -- ============================================================================
 
 -- Load dependencies
@@ -400,7 +412,8 @@ local render = {
 }
 
 -- Register module in package.loaded for require() compatibility
-package.loaded['render'] = render
+-- 注册模块到 package.loaded，同时保留旧名称以兼容现有代码
+package.loaded['render_page'] = render
 
 -- Return module exports
 return render

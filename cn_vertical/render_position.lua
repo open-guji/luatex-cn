@@ -1,8 +1,10 @@
 -- ============================================================================
--- text_position.lua - 统一文字定位工具
+-- render_position.lua - 统一文字定位工具
 -- ============================================================================
+-- 文件名: render_position.lua (原 text_position.lua)
+-- 层级: 第三阶段 - 渲染层 (Stage 3: Render Layer)
 --
--- 【模块功能】
+-- 【模块功能 / Module Purpose】
 -- 本模块提供了文字字符在网格单元中的定位计算，被主文本和版心文本共同复用：
 --   1. position_glyph: 在指定坐标处放置单个字符，处理居中对齐
 --   2. create_vertical_text: 创建竖排文字链（用于版心鱼尾文字）
@@ -358,7 +360,9 @@ local text_position = {
 }
 
 -- Register module in package.loaded for require() compatibility
-package.loaded['text_position'] = text_position
+-- 注册模块到 package.loaded，同时保留旧名称以兼容现有代码
+package.loaded['render_position'] = text_position
+package.loaded['text_position'] = text_position  -- 兼容旧名称
 
 -- Return module exports
 return text_position

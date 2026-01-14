@@ -1,8 +1,10 @@
 -- ============================================================================
--- yuwei.lua - 鱼尾（Fish Tail）绘制模块
+-- render_yuwei.lua - 鱼尾（Fish Tail）绘制模块
 -- ============================================================================
+-- 文件名: render_yuwei.lua (原 yuwei.lua)
+-- 层级: 第三阶段 - 渲染层 (Stage 3: Render Layer)
 --
--- 【模块功能】
+-- 【模块功能 / Module Purpose】
 -- 本模块负责绘制古籍版刻中的"鱼尾"装饰符号：
 --   1. 支持实心鱼尾（black）：填充的燕尾形状
 --   2. 支持空心鱼尾（white/hollow）：仅描边的轮廓
@@ -232,7 +234,9 @@ local yuwei = {
 }
 
 -- Register module in package.loaded for require() compatibility
-package.loaded['yuwei'] = yuwei
+-- 注册模块到 package.loaded，同时保留旧名称以兼容现有代码
+package.loaded['render_yuwei'] = yuwei
+package.loaded['yuwei'] = yuwei  -- 兼容旧名称
 
 -- Return module exports
 return yuwei

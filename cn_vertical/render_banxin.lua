@@ -1,8 +1,10 @@
 -- ============================================================================
--- banxin.lua - 版心（鱼尾）绘制模块
+-- render_banxin.lua - 版心（鱼尾）绘制模块
 -- ============================================================================
+-- 文件名: render_banxin.lua (原 banxin.lua)
+-- 层级: 第三阶段 - 渲染层 (Stage 3: Render Layer)
 --
--- 【模块功能】
+-- 【模块功能 / Module Purpose】
 -- 本模块负责绘制古籍排版中的"版心"（中间的分隔列），包括：
 --   1. 绘制版心列的边框（与普通列边框样式相同）
 --   2. 在版心内绘制两条水平分隔线，将版心分为三个区域
@@ -375,7 +377,8 @@ local banxin = {
 }
 
 -- Register module in package.loaded for require() compatibility
-package.loaded['banxin'] = banxin
+-- 注册模块到 package.loaded，同时保留旧名称以兼容现有代码
+package.loaded['render_banxin'] = banxin
 
 -- Return module exports
 return banxin

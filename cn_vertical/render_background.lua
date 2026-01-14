@@ -1,8 +1,10 @@
 -- ============================================================================
--- background.lua - 背景色与字体颜色模块
+-- render_background.lua - 背景色与字体颜色模块
 -- ============================================================================
+-- 文件名: render_background.lua (原 background.lua)
+-- 层级: 第三阶段 - 渲染层 (Stage 3: Render Layer)
 --
--- 【模块功能】
+-- 【模块功能 / Module Purpose】
 -- 本模块负责设置页面背景色和全局字体颜色：
 --   1. draw_background: 绘制背景色矩形（可选覆盖整个页面或仅内容区）
 --   2. set_font_color: 设置后续所有文字的填充颜色
@@ -116,7 +118,9 @@ local background = {
 }
 
 -- Register module in package.loaded for require() compatibility
-package.loaded['background'] = background
+-- 注册模块到 package.loaded，同时保留旧名称以兼容现有代码
+package.loaded['render_background'] = background
+package.loaded['background'] = background  -- 兼容旧名称
 
 -- Return module exports
 return background

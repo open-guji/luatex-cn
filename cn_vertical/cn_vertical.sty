@@ -102,9 +102,9 @@
 
 \ExplSyntaxOn
 
-\tl_new:N \l_cnv_banxin_one_tl
-\tl_new:N \l_cnv_banxin_two_tl
-\tl_new:N \l_cnv_banxin_three_tl
+\tl_new:N \l_cnv_banxin_upper_tl
+\tl_new:N \l_cnv_banxin_middle_tl
+\tl_new:N \l_cnv_banxin_lower_tl
 
 \bool_new:N \g_cnv_debug_bool
 \bool_set_false:N \g_cnv_debug_bool
@@ -203,14 +203,14 @@
     margin-right .initial:n = {0pt},
 
     % Banxin (版心) configuration
-    banxin-section1-ratio .tl_set:N = \l_cnv_banxin_one_tl,
-    banxin-section1-ratio .initial:n = {0.28},
+    banxin-upper-ratio .tl_set:N = \l_cnv_banxin_upper_tl,
+    banxin-upper-ratio .initial:n = {0.28},
 
-    banxin-section2-ratio .tl_set:N = \l_cnv_banxin_two_tl,
-    banxin-section2-ratio .initial:n = {0.56},
+    banxin-middle-ratio .tl_set:N = \l_cnv_banxin_middle_tl,
+    banxin-middle-ratio .initial:n = {0.56},
 
-    banxin-section3-ratio .tl_set:N = \l_cnv_banxin_three_tl,
-    banxin-section3-ratio .initial:n = {0.16},
+    banxin-lower-ratio .tl_set:N = \l_cnv_banxin_lower_tl,
+    banxin-lower-ratio .initial:n = {0.16},
 
     % Book Name (formerly Banxin text)
     book-name .tl_set:N = \l_cnv_book_name_tl,
@@ -339,9 +339,9 @@
         margin_bottom = [=[\luaescapestring{\l__cn_vertical_margin_bottom_tl}]=],
         margin_left = [=[\luaescapestring{\l__cn_vertical_margin_left_tl}]=],
         margin_right = [=[\luaescapestring{\l__cn_vertical_margin_right_tl}]=],
-        banxin_s1_ratio = [=[\luaescapestring{\l_cnv_banxin_one_tl}]=],
-        banxin_s2_ratio = [=[\luaescapestring{\l_cnv_banxin_two_tl}]=],
-        banxin_s3_ratio = [=[\luaescapestring{\l_cnv_banxin_three_tl}]=],
+        banxin_upper_ratio = [=[\luaescapestring{\l_cnv_banxin_upper_tl}]=],
+        banxin_middle_ratio = [=[\luaescapestring{\l_cnv_banxin_middle_tl}]=],
+        banxin_lower_ratio = [=[\luaescapestring{\l_cnv_banxin_lower_tl}]=],
         book_name = [=[\luaescapestring{\l_cnv_book_name_tl}]=],
         banxin_padding_top = [=[\luaescapestring{\l_cnv_banxin_padding_top_tl}]=],
         banxin_padding_bottom = [=[\luaescapestring{\l_cnv_banxin_padding_bottom_tl}]=],

@@ -19,8 +19,8 @@
 --   draw_banxin_column(p_head, params)
 --      ├─ 绘制版心列边框（矩形）
 --      ├─ 调用 draw_banxin() 计算分隔线位置
---      │   ├─ section1_height = total_height × ratio1
---      │   ├─ section2_height = total_height × ratio2
+--      │   ├─ upper_height = total_height × upper_ratio
+--      │   ├─ middle_height = total_height × middle_ratio
 --      │   └─ 返回两条分隔线的 PDF literal
 --      ├─ 插入分隔线节点
 --      └─ 调用 text_position.create_vertical_text() 绘制文字
@@ -46,11 +46,11 @@ local sp_to_bp = utils.sp_to_bp
 --
 -- Section layout (top to bottom):
 -- ┌─────────────┐
--- │  Section 1  │  (e.g., 65.8mm / 6.14cm) - Contains Banxin text (鱼尾文字)
+-- │    Upper    │  (e.g., 65.8mm / 6.14cm) - Contains Banxin text (鱼尾文字)
 -- ├─────────────┤  ← dividing line 1
--- │  Section 2  │  (e.g., 131.2mm / 12.25cm)
+-- │   Middle    │  (e.g., 131.2mm / 12.25cm)
 -- ├─────────────┤  ← dividing line 2
--- │  Section 3  │  (e.g., 36.2mm / 3.38cm)
+-- │    Lower    │  (e.g., 36.2mm / 3.38cm)
 -- └─────────────┘
 --
 -- @param params (table) Parameters for drawing:
@@ -58,9 +58,9 @@ local sp_to_bp = utils.sp_to_bp
 --   - y (number) Y position in scaled points (top edge, going negative downward)
 --   - width (number) Width in scaled points
 --   - total_height (number) Total height in scaled points
---   - section1_ratio (number) Ratio for section 1 height (e.g., 0.28)
---   - section2_ratio (number) Ratio for section 2 height (e.g., 0.56)
---   - section3_ratio (number) Ratio for section 3 height (e.g., 0.16)
+--   - upper_ratio (number) Ratio for upper section height (e.g., 0.28)
+--   - middle_ratio (number) Ratio for middle section height (e.g., 0.56)
+--   - lower_ratio (number) Ratio for lower section height (e.g., 0.16)
 --   - color_str (string) RGB color string (e.g., "0.7 0.4 0.3")
 --   - border_thickness (number) Border line thickness in scaled points
 --   - book_name (string) Optional text to display in section 1 (書名文字)
@@ -74,9 +74,9 @@ local function draw_banxin(params)
     local y = params.y or 0
     local width = params.width or 0
     local total_height = params.total_height or 0
-    local r1 = params.section1_ratio or 0.28  -- 65.8 / 233.2 ≈ 0.28
-    local r2 = params.section2_ratio or 0.56  -- 131.2 / 233.2 ≈ 0.56
-    local r3 = params.section3_ratio or 0.16  -- 36.2 / 233.2 ≈ 0.16
+    local r1 = params.upper_ratio or 0.28  -- 65.8 / 233.2 ≈ 0.28
+    local r2 = params.middle_ratio or 0.56 -- 131.2 / 233.2 ≈ 0.56
+    local r3 = params.lower_ratio or 0.16  -- 36.2 / 233.2 ≈ 0.16
     local color_str = params.color_str or "0 0 0"
     local b_thickness = params.border_thickness or 26214 -- 0.4pt default
     local book_name = params.book_name or ""
@@ -84,9 +84,9 @@ local function draw_banxin(params)
     local shift_y = params.shift_y or 0
 
     -- Calculate section heights
-    local section1_height = total_height * r1
-    local section2_height = total_height * r2
-    local section3_height = total_height * r3
+    local upper_height = total_height * r1
+    local middle_height = total_height * r2
+    local lower_height = total_height * r3
 
     local literals = {}
     
@@ -97,12 +97,12 @@ local function draw_banxin(params)
     local b_thickness_bp = b_thickness * sp_to_bp
     
     -- Calculate Y positions for dividing lines (y is at top, going negative)
-    local div1_y = y - section1_height
-    local div2_y = div1_y - section2_height
+    local div1_y = y - upper_height
+    local div2_y = div1_y - middle_height
     local div1_y_bp = div1_y * sp_to_bp
     local div2_y_bp = div2_y * sp_to_bp
     
-    -- Draw first horizontal dividing line (between section 1 and 2)
+    -- Draw first horizontal dividing line (between upper and middle)
     local div1_line = string.format(
         "q %.2f w %s RG %.4f %.4f m %.4f %.4f l S Q",
         b_thickness_bp, color_str,
@@ -111,7 +111,7 @@ local function draw_banxin(params)
     )
     table.insert(literals, div1_line)
     
-    -- Draw second horizontal dividing line (between section 2 and 3)
+    -- Draw second horizontal dividing line (between middle and lower)
     local div2_line = string.format(
         "q %.2f w %s RG %.4f %.4f m %.4f %.4f l S Q",
         b_thickness_bp, color_str,
@@ -164,10 +164,10 @@ local function draw_banxin(params)
     })
     table.insert(literals, lower_yuwei)
 
-    -- Return literals and section1_height for text placement
+    -- Return literals and upper_height for text placement
     return {
         literals = literals,
-        section1_height = section1_height,
+        upper_height = upper_height,
     }
 end
 
@@ -183,9 +183,9 @@ end
 --   - height: Column height (sp)
 --   - border_thickness: Border line thickness (sp)
 --   - color_str: RGB color string
---   - section1_ratio: Section 1 height ratio
---   - section2_ratio: Section 2 height ratio
---   - section3_ratio: Section 3 height ratio
+--   - upper_ratio: Upper section height ratio
+--   - middle_ratio: Middle section height ratio
+--   - lower_ratio: Lower section height ratio
 --   - book_name: Text to display in section 1
 --   - shift_y: Vertical shift for text positioning (sp)
 -- @return (node) Updated head
@@ -222,9 +222,9 @@ local function draw_banxin_column(p_head, params)
         y = y,
         width = width,
         total_height = height,
-        section1_ratio = params.section1_ratio or 0.28,
-        section2_ratio = params.section2_ratio or 0.56,
-        section3_ratio = params.section3_ratio or 0.16,
+        upper_ratio = params.upper_ratio or 0.28,
+        middle_ratio = params.middle_ratio or 0.56,
+        lower_ratio = params.lower_ratio or 0.16,
         color_str = color_str,
         border_thickness = border_thickness,
         book_name = params.book_name or "",
@@ -248,8 +248,8 @@ local function draw_banxin_column(p_head, params)
         local b_padding_bottom = params.b_padding_bottom or 0
         local half_thickness = math.floor(border_thickness / 2)
         
-        -- Available height in section 1 after subtracting padding and borders
-        local adj_height = banxin_result.section1_height - border_thickness - b_padding_top - b_padding_bottom 
+        -- Available height in upper section after subtracting padding and borders
+        local adj_height = banxin_result.upper_height - border_thickness - b_padding_top - b_padding_bottom 
         
         local glyph_chain = text_position.create_vertical_text(book_name, {
             x = x,
@@ -277,9 +277,9 @@ local function draw_banxin_column(p_head, params)
         local b_padding_top = params.b_padding_top or 0
         local chapter_top_margin = params.chapter_title_top_margin or (65536 * 40) -- 20pt default
         
-        -- Section 2 boundaries
-        local section1_h = banxin_result.section1_height
-        local section2_h = height * (params.section2_ratio or 0.56)
+        -- Middle section boundaries
+        local upper_h = banxin_result.upper_height
+        local middle_h = height * (params.middle_ratio or 0.56)
         
         -- Yuwei dimensions (same as in draw_banxin)
         local edge_h = width * 0.39
@@ -288,13 +288,13 @@ local function draw_banxin_column(p_head, params)
         local upper_yuwei_total = yuwei_gap + edge_h + notch_h
         local lower_yuwei_total = yuwei_gap + edge_h + notch_h
         
-        -- Available space for chapter title in section 2
-        -- Y position: starts below section 1, below upper yuwei, below top margin
-        local section2_y_top = y - section1_h
-        local chapter_y_top = section2_y_top - upper_yuwei_total - chapter_top_margin
+        -- Available space for chapter title in middle section
+        -- Y position: starts below upper section, below upper yuwei, below top margin
+        local middle_y_top = y - upper_h
+        local chapter_y_top = middle_y_top - upper_yuwei_total - chapter_top_margin
         
-        -- Available height: section 2 height minus upper yuwei, lower yuwei, and margins
-        local available_height = section2_h - upper_yuwei_total - lower_yuwei_total - chapter_top_margin
+        -- Available height: middle section height minus upper yuwei, lower yuwei, and margins
+        local available_height = middle_h - upper_yuwei_total - lower_yuwei_total - chapter_top_margin
         
         if available_height > 0 then
             -- Manual splitting by newline or TeX style \\

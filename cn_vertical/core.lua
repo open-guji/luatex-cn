@@ -148,9 +148,9 @@ function cn_vertical.prepare_grid(box_num, params)
         margin_bottom = m_bottom,
         margin_left = m_left,
         margin_right = m_right,
-        banxin_s1_ratio = tonumber(params.banxin_s1_ratio) or 0.28,
-        banxin_s2_ratio = tonumber(params.banxin_s2_ratio) or 0.56,
-        banxin_s3_ratio = tonumber(params.banxin_s3_ratio) or 0.16,
+        banxin_upper_ratio = tonumber(params.banxin_upper_ratio) or 0.28,
+        banxin_middle_ratio = tonumber(params.banxin_middle_ratio) or 0.56,
+        banxin_lower_ratio = tonumber(params.banxin_lower_ratio) or 0.16,
         book_name = params.book_name or "",
         banxin_padding_top = constants.to_dimen(params.banxin_padding_top) or (65536 * 2), -- 2pt default
         banxin_padding_bottom = constants.to_dimen(params.banxin_padding_bottom) or 0,

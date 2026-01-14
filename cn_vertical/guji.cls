@@ -108,14 +108,14 @@
     font-color .initial:n = {black},
 
     % Banxin (版心) section ratios
-    banxin-section1-ratio .tl_set:N = \l_guji_banxin_sone_tl,
-    banxin-section1-ratio .initial:n = {0.28},
+    banxin-upper-ratio .tl_set:N = \l_guji_banxin_upper_tl,
+    banxin-upper-ratio .initial:n = {0.28},
 
-    banxin-section2-ratio .tl_set:N = \l_guji_banxin_stwo_tl,
-    banxin-section2-ratio .initial:n = {0.56},
+    banxin-middle-ratio .tl_set:N = \l_guji_banxin_middle_tl,
+    banxin-middle-ratio .initial:n = {0.56},
 
-    banxin-section3-ratio .tl_set:N = \l_guji_banxin_sthree_tl,
-    banxin-section3-ratio .initial:n = {0.16},
+    banxin-lower-ratio .tl_set:N = \l_guji_banxin_lower_tl,
+    banxin-lower-ratio .initial:n = {0.16},
 
     book-name .tl_set:N = \l_guji_book_name_tl,
     book-name .initial:n = {},
@@ -324,9 +324,9 @@
         margin-bottom = \l_guji_margin_bottom_tl,
         margin-left = \l_guji_margin_left_tl,
         margin-right = \l_guji_margin_right_tl,
-        banxin-section1-ratio = \l_guji_banxin_sone_tl,
-        banxin-section2-ratio = \l_guji_banxin_stwo_tl,
-        banxin-section3-ratio = \l_guji_banxin_sthree_tl,
+        banxin-upper-ratio = \l_guji_banxin_upper_tl,
+        banxin-middle-ratio = \l_guji_banxin_middle_tl,
+        banxin-lower-ratio = \l_guji_banxin_lower_tl,
         book-name = \l_guji_book_name_tl,
         chapter-title = \l_guji_chapter_title_tl,
         chapter-title-top-margin = \l_guji_chapter_title_top_margin_tl,

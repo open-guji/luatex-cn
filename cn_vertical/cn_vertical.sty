@@ -15,6 +15,9 @@
 % Load luatexbase for attributes
 \RequirePackage{luatexbase}
 \RequirePackage{xcolor}
+\RequirePackage{enumitem}
+% 设置 itemize 默认样式：空标签 + 紧凑间距（符合古籍排版风格）
+\setlist[itemize]{label={}, nosep}
 \newluatexattribute\cnverticalindent
 \newluatexattribute\cnverticalrightindent
 \newluatexattribute\cnverticaltextboxwidth

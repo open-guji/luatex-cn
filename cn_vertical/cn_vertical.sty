@@ -40,61 +40,78 @@
 
 % Clear cache
 \directlua{
-  package.loaded["constants"] = nil
-  package.loaded["utils"] = nil
-  package.loaded["flatten"] = nil
-  package.loaded["layout"] = nil
-  package.loaded["render"] = nil
-  package.loaded["textbox"] = nil
-  package.loaded["banxin"] = nil
-  package.loaded["yuwei"] = nil
-  package.loaded["text_position"] = nil
-  package.loaded["core"] = nil
+  package.loaded["base_constants"] = nil
+  package.loaded["base_utils"] = nil
+  package.loaded["flatten_nodes"] = nil
+  package.loaded["layout_grid"] = nil
+  package.loaded["render_page"] = nil
+  package.loaded["render_border"] = nil
+  package.loaded["render_banxin"] = nil
+  package.loaded["render_background"] = nil
+  package.loaded["render_position"] = nil
+  package.loaded["render_yuwei"] = nil
+  package.loaded["core_main"] = nil
+  package.loaded["core_textbox"] = nil
 }
 
-% Load constants
+% Load base_constants
 \directlua{
-  cn_vertical_constants = dofile("constants.lua")
+  cn_vertical_constants = require('base_constants')
 }
 
-% Load flatten
+% Load base_utils
 \directlua{
-  cn_vertical_flatten = dofile("flatten.lua")
+  cn_vertical_utils = require('base_utils')
 }
 
-% Load layout
+% Load flatten_nodes
 \directlua{
-  cn_vertical_layout = dofile("layout.lua")
+  cn_vertical_flatten = require('flatten_nodes')
 }
 
-% Load text_position (unified text positioning)
+% Load layout_grid
 \directlua{
-  cn_vertical_text_position = dofile("text_position.lua")
+  cn_vertical_layout = require('layout_grid')
 }
 
-% Load render
+% Load render_position (unified text positioning)
 \directlua{
-  cn_vertical_render = dofile("render.lua")
+  cn_vertical_text_position = require('render_position')
 }
 
-% Load textbox (内嵌文本框支持)
+% Load render_page
 \directlua{
-  cn_vertical_textbox = dofile("textbox.lua")
+  cn_vertical_render = require('render_page')
 }
 
-% Load yuwei (鱼尾 fish tail decorations)
+% Load render_border
 \directlua{
-  cn_vertical_yuwei = dofile("yuwei.lua")
+  cn_vertical_border = require('render_border')
 }
 
-% Load banxin
+% Load render_background
 \directlua{
-  cn_vertical_banxin = dofile("banxin.lua")
+  cn_vertical_background = require('render_background')
 }
 
-% Load main module
+% Load render_yuwei (鱼尾 fish tail decorations)
 \directlua{
-  cn_vertical = dofile("core.lua")
+  cn_vertical_yuwei = require('render_yuwei')
+}
+
+% Load render_banxin
+\directlua{
+  cn_vertical_banxin = require('render_banxin')
+}
+
+% Load core_textbox (内嵌文本框支持)
+\directlua{
+  cn_vertical_textbox = require('core_textbox')
+}
+
+% Load main module (core_main)
+\directlua{
+  cn_vertical = require('core_main')
 }
 
 % Use l3keys for key-value parameters

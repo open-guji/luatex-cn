@@ -165,7 +165,7 @@ local utils = {
 }
 
 -- Register module in package.loaded for require() compatibility
--- 注册模块到 package.loaded，同时保留旧名称以兼容现有代码
+-- 注册模块到 package.loaded
 package.loaded['base_utils'] = utils
 
 -- Return module exports

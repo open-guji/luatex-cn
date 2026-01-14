@@ -31,9 +31,9 @@
 -- ============================================================================
 
 -- Load dependencies
-local constants = package.loaded['constants'] or require('constants')
+local constants = package.loaded['base_constants'] or require('base_constants')
 local D = constants.D
-local utils = package.loaded['utils'] or require('utils')
+local utils = package.loaded['base_utils'] or require('base_utils')
 
 --- Draw column borders (regular columns only, NOT banxin columns)
 -- Banxin columns should be drawn separately using banxin.draw_banxin_column
@@ -131,7 +131,7 @@ local border = {
 }
 
 -- Register module in package.loaded for require() compatibility
--- 注册模块到 package.loaded，同时保留旧名称以兼容现有代码
+-- 注册模块到 package.loaded
 package.loaded['render_border'] = border
 
 -- Return module exports

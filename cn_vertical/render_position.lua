@@ -34,7 +34,7 @@
 -- ============================================================================
 
 -- Load dependencies
-local constants = package.loaded['constants'] or require('constants')
+local constants = package.loaded['base_constants'] or require('base_constants')
 local D = constants.D
 
 --- Position a single glyph node at the specified coordinates
@@ -97,7 +97,7 @@ local function position_glyph(glyph_direct, x, y, params)
 
     -- --- Trace Logging ---
     if _G.cn_vertical and _G.cn_vertical.debug and _G.cn_vertical.debug.verbose_log then
-        local u = package.loaded['utils'] or require('utils')
+        local u = package.loaded['base_utils'] or require('base_utils')
         u.debug_log(string.format("[GlyphPos] char=%d x=%.2f cw=%.2f gw=%.2f -> xoff=%.2f yoff=%.2f",
             D.getfield(glyph_direct, "char"), x/(65536), cell_width/(65536), g_width/(65536), x_offset/(65536), y_offset/(65536)))
     end
@@ -185,7 +185,7 @@ local function create_vertical_text(text, params)
     -- Calculate cell height
     local cell_height = height / num_cells
 
-    local u = package.loaded['utils'] or require('utils')
+    local u = package.loaded['base_utils'] or require('base_utils')
 
     local head = nil
     local tail = nil
@@ -245,7 +245,7 @@ local function create_vertical_text(text, params)
 
         -- --- DEBUG: Draw blue box around each character ---
         if _G.cn_vertical and _G.cn_vertical.debug and _G.cn_vertical.debug.enabled and _G.cn_vertical.debug.show_grid then
-            local u = package.loaded['utils'] or require('utils')
+            local u = package.loaded['base_utils'] or require('base_utils')
             if u and u.draw_debug_rect then
                 -- Add debug box before the glyph so it's behind the text
                 head = u.draw_debug_rect(head, glyph_direct, x, cell_y, width, -cell_height, "0 0 1 RG")
@@ -360,9 +360,8 @@ local text_position = {
 }
 
 -- Register module in package.loaded for require() compatibility
--- 注册模块到 package.loaded，同时保留旧名称以兼容现有代码
+-- 注册模块到 package.loaded
 package.loaded['render_position'] = text_position
-package.loaded['text_position'] = text_position  -- 兼容旧名称
 
 -- Return module exports
 return text_position

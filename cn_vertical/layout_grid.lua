@@ -51,7 +51,7 @@
 
 -- Load dependencies
 -- Check if already loaded via dofile (package.loaded set manually)
-local constants = package.loaded['constants'] or require('constants')
+local constants = package.loaded['base_constants'] or require('base_constants')
 local D = constants.D
 
 -- @param page_columns (number) Total columns before a page break
@@ -277,7 +277,7 @@ local layout = {
 }
 
 -- Register module in package.loaded for require() compatibility
--- 注册模块到 package.loaded，同时保留旧名称以兼容现有代码
+-- 注册模块到 package.loaded
 package.loaded['layout_grid'] = layout
 
 -- Return module exports

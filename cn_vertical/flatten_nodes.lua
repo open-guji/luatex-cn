@@ -50,9 +50,9 @@
 
 -- Load dependencies
 -- Check if already loaded via dofile (package.loaded set manually)
-local constants = package.loaded['constants'] or require('constants')
+local constants = package.loaded['base_constants'] or require('base_constants')
 local D = constants.D
-local utils = package.loaded['utils'] or require('utils')
+local utils = package.loaded['base_utils'] or require('base_utils')
 
 --- Flatten a vlist (from vbox) into a single list of nodes
 -- Extracts indentation from line starts and applies it as attributes.
@@ -196,7 +196,7 @@ local flatten = {
 }
 
 -- Register module in package.loaded for require() compatibility
--- 注册模块到 package.loaded，同时保留旧名称以兼容现有代码
+-- 注册模块到 package.loaded
 package.loaded['flatten_nodes'] = flatten
 
 -- Return module exports

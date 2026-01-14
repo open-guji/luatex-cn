@@ -32,9 +32,9 @@
 -- ============================================================================
 
 -- Load dependencies
-local constants = package.loaded['constants'] or require('constants')
+local constants = package.loaded['base_constants'] or require('base_constants')
 local D = constants.D
-local utils = package.loaded['utils'] or require('utils')
+local utils = package.loaded['base_utils'] or require('base_utils')
 
 --- Draw background color rectangle
 -- @param p_head (node) Direct node head
@@ -118,9 +118,8 @@ local background = {
 }
 
 -- Register module in package.loaded for require() compatibility
--- 注册模块到 package.loaded，同时保留旧名称以兼容现有代码
+-- 注册模块到 package.loaded
 package.loaded['render_background'] = background
-package.loaded['background'] = background  -- 兼容旧名称
 
 -- Return module exports
 return background

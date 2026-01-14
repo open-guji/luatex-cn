@@ -31,8 +31,8 @@
 -- Date: 2026-01-13
 -- ============================================================================
 
-local constants = package.loaded['constants'] or require('constants')
-local utils = package.loaded['utils'] or require('utils')
+local constants = package.loaded['base_constants'] or require('base_constants')
+local utils = package.loaded['base_utils'] or require('base_utils')
 local D = node.direct
 
 local textbox = {}
@@ -135,8 +135,7 @@ function textbox.process_inner_box(box_num, params)
 end
 
 -- Register module in package.loaded for require() compatibility
--- 注册模块到 package.loaded，同时保留旧名称以兼容现有代码
+-- 注册模块到 package.loaded
 package.loaded['core_textbox'] = textbox
-package.loaded['textbox'] = textbox  -- 兼容旧名称
 
 return textbox

@@ -63,13 +63,13 @@ cn_vertical.debug = cn_vertical.debug or {
 }
 
 -- Load submodules using Lua's require mechanism
--- Check if already loaded via dofile (package.loaded set manually by each module)
-local constants = package.loaded['constants'] or require('constants')
-local utils = package.loaded['utils'] or require('utils')
-local flatten = package.loaded['flatten'] or require('flatten')
-local layout = package.loaded['layout'] or require('layout')
-local render = package.loaded['render'] or require('render')
-local textbox = package.loaded['textbox'] or require('textbox')
+-- 加载子模块
+local constants = package.loaded['base_constants'] or require('base_constants')
+local utils = package.loaded['base_utils'] or require('base_utils')
+local flatten = package.loaded['flatten_nodes'] or require('flatten_nodes')
+local layout = package.loaded['layout_grid'] or require('layout_grid')
+local render = package.loaded['render_page'] or require('render_page')
+local textbox = package.loaded['core_textbox'] or require('core_textbox')
 
 local D = node.direct
 

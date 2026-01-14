@@ -38,8 +38,8 @@
 -- ============================================================================
 
 -- Load dependencies
-local constants = package.loaded['constants'] or require('constants')
-local utils = package.loaded['utils'] or require('utils')
+local constants = package.loaded['base_constants'] or require('base_constants')
+local utils = package.loaded['base_utils'] or require('base_utils')
 
 -- Conversion factor from scaled points to PDF big points
 local sp_to_bp = utils.sp_to_bp
@@ -234,9 +234,8 @@ local yuwei = {
 }
 
 -- Register module in package.loaded for require() compatibility
--- 注册模块到 package.loaded，同时保留旧名称以兼容现有代码
+-- 注册模块到 package.loaded
 package.loaded['render_yuwei'] = yuwei
-package.loaded['yuwei'] = yuwei  -- 兼容旧名称
 
 -- Return module exports
 return yuwei

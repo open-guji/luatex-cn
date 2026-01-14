@@ -57,13 +57,13 @@
 
 -- Load dependencies
 -- Check if already loaded via dofile (package.loaded set manually)
-local constants = package.loaded['constants'] or require('constants')
+local constants = package.loaded['base_constants'] or require('base_constants')
 local D = constants.D
-local utils = package.loaded['utils'] or require('utils')
-local border = package.loaded['border'] or require('border')
-local banxin = package.loaded['banxin'] or require('banxin')
-local background = package.loaded['background'] or require('background')
-local text_position = package.loaded['text_position'] or require('text_position')
+local utils = package.loaded['base_utils'] or require('base_utils')
+local border = package.loaded['render_border'] or require('render_border')
+local banxin = package.loaded['render_banxin'] or require('render_banxin')
+local background = package.loaded['render_background'] or require('render_background')
+local text_position = package.loaded['render_position'] or require('render_position')
 
 -- Conversion factor from scaled points to PDF big points
 local sp_to_bp = utils.sp_to_bp
@@ -412,7 +412,7 @@ local render = {
 }
 
 -- Register module in package.loaded for require() compatibility
--- 注册模块到 package.loaded，同时保留旧名称以兼容现有代码
+-- 注册模块到 package.loaded
 package.loaded['render_page'] = render
 
 -- Return module exports

@@ -34,11 +34,11 @@
 -- ============================================================================
 
 -- Load dependencies
-local constants = package.loaded['constants'] or require('constants')
+local constants = package.loaded['base_constants'] or require('base_constants')
 local D = constants.D
-local utils = package.loaded['utils'] or require('utils')
-local text_position = package.loaded['text_position'] or require('text_position')
-local yuwei = package.loaded['yuwei'] or require('yuwei')
+local utils = package.loaded['base_utils'] or require('base_utils')
+local text_position = package.loaded['render_position'] or require('render_position')
+local yuwei = package.loaded['render_yuwei'] or require('render_yuwei')
 
 -- Conversion factor from scaled points to PDF big points
 local sp_to_bp = utils.sp_to_bp
@@ -377,7 +377,7 @@ local banxin = {
 }
 
 -- Register module in package.loaded for require() compatibility
--- 注册模块到 package.loaded，同时保留旧名称以兼容现有代码
+-- 注册模块到 package.loaded
 package.loaded['render_banxin'] = banxin
 
 -- Return module exports

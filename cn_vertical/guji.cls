@@ -127,6 +127,9 @@
     chapter-title-top-margin .tl_set:N = \l_guji_chapter_title_top_margin_tl,
     chapter-title-top-margin .initial:n = {20pt},
 
+    chapter-title-cols .int_set:N = \l_guji_chapter_title_cols_int,
+    chapter-title-cols .initial:n = 2,
+
     template .code:n = {
       \InputIfFileExists{#1.guji}{}{
         % Fallback to checking defined templates in guji / templates namespace
@@ -320,7 +323,8 @@
         banxin-section3-ratio = \l_guji_banxin_sthree_tl,
         book-name = \l_guji_book_name_tl,
         chapter-title = \l_guji_chapter_title_tl,
-        chapter-title-top-margin = \l_guji_chapter_title_top_margin_tl
+        chapter-title-top-margin = \l_guji_chapter_title_top_margin_tl,
+        chapter-title-cols = \int_use:N \l_guji_chapter_title_cols_int
       }
     \nointerlineskip
     \__cn_vertical_process_grid:n { \BODY }

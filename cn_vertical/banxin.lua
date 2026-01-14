@@ -297,23 +297,61 @@ local function draw_banxin_column(p_head, params)
         local available_height = section2_h - upper_yuwei_total - lower_yuwei_total - chapter_top_margin
         
         if available_height > 0 then
-            local chapter_chain = text_position.create_vertical_text(chapter_title, {
-                x = x,
-                y_top = chapter_y_top,
-                width = width,
-                height = available_height,
-                v_align = "top", -- Chapter title aligned to top of available space
-                h_align = "center",
-            })
-            if chapter_chain then
-                -- Find the tail of the chapter chain
-                local chain_tail = chapter_chain
-                while D.getnext(chain_tail) do
-                    chain_tail = D.getnext(chain_tail)
+            local n_cols = params.chapter_title_cols or 1
+            if n_cols <= 1 then
+                -- Single column (original behavior)
+                local chapter_chain = text_position.create_vertical_text(chapter_title, {
+                    x = x,
+                    y_top = chapter_y_top,
+                    width = width,
+                    height = available_height,
+                    v_align = "top",
+                    h_align = "center",
+                })
+                if chapter_chain then
+                    local chain_tail = chapter_chain
+                    while D.getnext(chain_tail) do chain_tail = D.getnext(chain_tail) end
+                    D.setlink(chain_tail, p_head)
+                    p_head = chapter_chain
                 end
-                -- Insert the entire chain at the beginning
-                D.setlink(chain_tail, p_head)
-                p_head = chapter_chain
+            else
+                -- Multiple columns
+                local chars = {}
+                for char in chapter_title:gmatch("[%z\1-\127\194-\244][\128-\191]*") do
+                    table.insert(chars, char)
+                end
+                
+                local chars_per_col = math.ceil(#chars / n_cols)
+                local col_width = width / n_cols
+                
+                for c = 0, n_cols - 1 do
+                    local start_idx = c * chars_per_col + 1
+                    local end_idx = math.min((c + 1) * chars_per_col, #chars)
+                    local sub_text = ""
+                    for i = start_idx, end_idx do
+                        sub_text = sub_text .. chars[i]
+                    end
+                    
+                    if sub_text ~= "" then
+                        -- RTL layout for sub-columns within the banxin area
+                        local sub_x = x + (n_cols - 1 - c) * col_width
+                        
+                        local chapter_chain = text_position.create_vertical_text(sub_text, {
+                            x = sub_x,
+                            y_top = chapter_y_top,
+                            width = col_width,
+                            height = available_height,
+                            v_align = "top",
+                            h_align = "center",
+                        })
+                        if chapter_chain then
+                            local chain_tail = chapter_chain
+                            while D.getnext(chain_tail) do chain_tail = D.getnext(chain_tail) end
+                            D.setlink(chain_tail, p_head)
+                            p_head = chapter_chain
+                        end
+                    end
+                end
             end
         end
     end

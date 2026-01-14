@@ -216,6 +216,7 @@ local function apply_positions(head, layout_map, params)
                             b_padding_bottom = bx_padding_bottom,
                             chapter_title = params.chapter_title or "",
                             chapter_title_top_margin = params.chapter_title_top_margin or (65536 * 20),
+                            chapter_title_cols = params.chapter_title_cols or 2,
                         })
                     end
                 end

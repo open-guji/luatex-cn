@@ -226,6 +226,7 @@ local function apply_positions(head, layout_map, params)
                             vertical_align = vertical_align,
                             b_padding_top = bx_padding_top,
                             b_padding_bottom = bx_padding_bottom,
+                            lower_yuwei = params.lower_yuwei,
                             chapter_title = params.chapter_title or "",
                             chapter_title_top_margin = params.chapter_title_top_margin or (65536 * 20),
                             chapter_title_cols = params.chapter_title_cols or 2,

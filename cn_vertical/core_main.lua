@@ -165,6 +165,7 @@ function cn_vertical.prepare_grid(box_num, params)
         book_name = params.book_name or "",
         banxin_padding_top = constants.to_dimen(params.banxin_padding_top) or (65536 * 2), -- 2pt default
         banxin_padding_bottom = constants.to_dimen(params.banxin_padding_bottom) or 0,
+        lower_yuwei = (params.lower_yuwei == "true" or params.lower_yuwei == true),
         chapter_title = params.chapter_title or "",
         chapter_title_top_margin = constants.to_dimen(params.chapter_title_top_margin) or (65536 * 20), -- 20pt default
         chapter_title_cols = tonumber(params.chapter_title_cols) or 1,

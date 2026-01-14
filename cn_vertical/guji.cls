@@ -136,6 +136,10 @@
     chapter-title-grid-height .tl_set:N = \l_guji_chapter_title_grid_height_tl,
     chapter-title-grid-height .initial:n = {50pt},
 
+    % Lower Yuwei (下鱼尾) - optional decoration
+    lower-yuwei .bool_set:N = \l_guji_lower_yuwei_bool,
+    lower-yuwei .initial:n = true,
+
     template .code:n = {
       \InputIfFileExists{#1.guji}{}{
         % Fallback to checking defined templates in guji / templates namespace
@@ -328,6 +332,7 @@
         banxin-middle-ratio = \l_guji_banxin_middle_tl,
         banxin-lower-ratio = \l_guji_banxin_lower_tl,
         book-name = \l_guji_book_name_tl,
+        lower-yuwei = \bool_if:NTF \l_guji_lower_yuwei_bool { true } { false },
         chapter-title = \l_guji_chapter_title_tl,
         chapter-title-top-margin = \l_guji_chapter_title_top_margin_tl,
         chapter-title-cols = \int_use:N \l_guji_chapter_title_cols_int,

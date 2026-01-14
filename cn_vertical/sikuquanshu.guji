@@ -94,6 +94,8 @@
     banxin-lower-ratio = 0.155,  % 36.2 / 233.2
 
     chapter-title-top-margin = 50pt,
+
+    lower-yuwei = false,
     
     % ==========================================================================
     % Typography

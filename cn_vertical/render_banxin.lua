@@ -84,6 +84,8 @@ local function draw_banxin(params)
     local book_name = params.book_name or ""
     local font_size = params.font_size or 655360 -- 10pt default
     local shift_y = params.shift_y or 0
+    local lower_yuwei_enabled = params.lower_yuwei
+    if lower_yuwei_enabled == nil then lower_yuwei_enabled = true end  -- Default to true
 
     -- Calculate section heights
     local upper_height = total_height * r1
@@ -151,20 +153,23 @@ local function draw_banxin(params)
     
     -- Lower yuwei (下鱼尾) - notch at top, opening upward (mirror of upper)
     -- Positioned at the bottom of section 2, 10pt above the second dividing line
-    local lower_yuwei_y = div2_y + notch_h + yuwei_gap  -- 10pt above div2
-    local lower_yuwei = yuwei.draw_yuwei({
-        x = yuwei_x,
-        y = lower_yuwei_y,
-        width = width,
-        edge_height = edge_h,
-        notch_height = notch_h,
-        style = "black",
-        direction = -1,               -- Notch at top (下鱼尾)
-        color_str = color_str,
-        extra_line = true,            -- Draw extra line above V-tip
-        border_thickness = b_thickness, -- Use same thickness as border
-    })
-    table.insert(literals, lower_yuwei)
+    -- Only draw if enabled
+    if lower_yuwei_enabled then
+        local lower_yuwei_y = div2_y + notch_h + yuwei_gap  -- 10pt above div2
+        local lower_yuwei = yuwei.draw_yuwei({
+            x = yuwei_x,
+            y = lower_yuwei_y,
+            width = width,
+            edge_height = edge_h,
+            notch_height = notch_h,
+            style = "black",
+            direction = -1,               -- Notch at top (下鱼尾)
+            color_str = color_str,
+            extra_line = true,            -- Draw extra line above V-tip
+            border_thickness = b_thickness, -- Use same thickness as border
+        })
+        table.insert(literals, lower_yuwei)
+    end
 
     -- Return literals and upper_height for text placement
     return {
@@ -232,6 +237,7 @@ local function draw_banxin_column(p_head, params)
         book_name = params.book_name or "",
         font_size = params.font_size or height / 20,  -- Reasonable default
         shift_y = shift_y,
+        lower_yuwei = params.lower_yuwei,
     }
     local banxin_result = draw_banxin(banxin_params)
 

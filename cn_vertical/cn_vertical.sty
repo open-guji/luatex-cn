@@ -240,6 +240,10 @@
     banxin-padding-bottom .tl_set:N = \l_cnv_banxin_padding_bottom_tl,
     banxin-padding-bottom .initial:n = {10pt},
 
+    % Lower Yuwei (下鱼尾) - optional decoration
+    lower-yuwei .bool_set:N = \l_cnv_lower_yuwei_bool,
+    lower-yuwei .initial:n = true,
+
     % Chapter title (章节标题) - displayed in section 2 of banxin
     chapter-title .tl_set:N = \l_cnv_chapter_title_tl,
     chapter-title .initial:n = {},
@@ -362,6 +366,7 @@
         book_name = [=[\luaescapestring{\l_cnv_book_name_tl}]=],
         banxin_padding_top = [=[\luaescapestring{\l_cnv_banxin_padding_top_tl}]=],
         banxin_padding_bottom = [=[\luaescapestring{\l_cnv_banxin_padding_bottom_tl}]=],
+        lower_yuwei = [=[\bool_if:NTF \l_cnv_lower_yuwei_bool {true} {false}]=],
         chapter_title = [=[\luaescapestring{\l_cnv_chapter_title_tl}]=],
         chapter_title_top_margin = [=[\luaescapestring{\l_cnv_chapter_title_top_margin_tl}]=],
         chapter_title_cols = \int_use:N \l_cnv_chapter_title_cols_int,

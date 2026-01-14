@@ -99,6 +99,13 @@ function cn_vertical.prepare_grid(box_num, params)
     -- Use grid_height (char height) as approximate char width for indent calculation
     local char_width = g_height
 
+    local p_width = constants.to_dimen(params.paper_width) or 0
+    local p_height = constants.to_dimen(params.paper_height) or 0
+    local m_top = constants.to_dimen(params.margin_top) or 0
+    local m_bottom = constants.to_dimen(params.margin_bottom) or 0
+    local m_left = constants.to_dimen(params.margin_left) or 0
+    local m_right = constants.to_dimen(params.margin_right) or 0
+
     local h_dim = constants.to_dimen(params.height) or (65536 * 300)
     local b_padding_top = constants.to_dimen(params.border_padding_top) or 0
     local b_padding_bottom = constants.to_dimen(params.border_padding_bottom) or 0
@@ -108,16 +115,22 @@ function cn_vertical.prepare_grid(box_num, params)
     local b_interval = tonumber(params.n_column) or 8
     local p_cols = tonumber(params.page_columns) or (2 * b_interval + 1)
 
-    local p_width = constants.to_dimen(params.paper_width) or 0
-    local p_height = constants.to_dimen(params.paper_height) or 0
-    local m_top = constants.to_dimen(params.margin_top) or 0
-    local m_bottom = constants.to_dimen(params.margin_bottom) or 0
-    local m_left = constants.to_dimen(params.margin_left) or 0
-    local m_right = constants.to_dimen(params.margin_right) or 0
-
     local limit = tonumber(params.col_limit)
     if not limit or limit <= 0 then
         limit = math.floor(h_dim / g_height)
+    end
+
+    local is_textbox = (params.is_textbox == true)
+    local half_thickness = math.floor(b_thickness / 2)
+    local border_w = p_cols * g_width + 2 * half_thickness
+    local shift_x = (not is_textbox) and ((p_width - border_w) / 2) or 0
+    local shift_y = 0
+    
+    if is_textbox then
+        m_top = 0
+        m_bottom = 0
+        m_left = 0
+        m_right = 0
     end
 
     local is_debug = (params.debug_on == "true" or params.debug_on == true)

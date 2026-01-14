@@ -294,99 +294,103 @@ local function apply_positions(head, layout_map, params)
                         if pos then
                             local col = pos.col
                             local row = pos.row
-                            local d = D.getfield(curr, "depth") or 0
-                            local h = D.getfield(curr, "height") or 0
-                            local w = D.getfield(curr, "width") or 0
-
-                            -- if draw_debug then
-                            --     local type_str = (id == constants.GLYPH and "GLYPH" or "BLOCK")
-                            --     utils.debug_log("  [render] Node=" .. tostring(curr) .. " " .. type_str .. " at p=" .. (pos.page or 0) .. " c=" .. col .. " r=" .. row .. " w=" .. (pos.width or 0) .. " h=" .. (pos.height or 0))
-                            -- end
-                        
-                        if id == constants.GLYPH then
-                            -- Determine horizontal alignment for this column
-                            local h_align = "center"
-                            if params.column_aligns and params.column_aligns[col] then
-                                h_align = params.column_aligns[col]
-                            end
-
-                            -- Use unified position calculation for glyphs (centering/alignment)
-                            local final_x, final_y = text_position.calc_grid_position(col, row, 
-                                { width = w, height = h, depth = d },
-                                {
-                                    grid_width = grid_width,
-                                    grid_height = grid_height,
-                                    total_cols = p_total_cols,
-                                    shift_x = shift_x,
-                                    shift_y = shift_y,
-                                    v_align = vertical_align,
-                                    h_align = h_align,
-                                    half_thickness = half_thickness,
-                                }
-                            )
-                            D.setfield(curr, "xoffset", final_x)
-                            D.setfield(curr, "yoffset", final_y)
                             
-                            -- Add negative kern to reset horizontal cursor for TLT parent
-                            local k = D.new(constants.KERN)
-                            D.setfield(k, "kern", -w)
-                            D.insert_after(p_head, curr, k)
-                        else
-                            -- For HLIST/VLIST (Blocks), we use Kern (X) and Shift (Y)
-                            -- xoffset/yoffset are NOT supported for blocks.
-                            -- RTL column calculation for blocks:
-                            -- Left edge of a block covering cols [col, col+width-1]
-                            local rtl_col_left = p_total_cols - (pos.col + (pos.width or 1))
-                            local final_x = rtl_col_left * grid_width + half_thickness + shift_x
-                            
-                            -- Top edge of the box should be at -row*grid_height - shift_y
-                            -- In TLT box, baseline is at 0. Shift moves it down.
-                            -- Baseline should be at -final_y + h
-                            local final_y_top = -row * grid_height - shift_y
-                            D.setfield(curr, "shift", -final_y_top + h)
-                            
-                            -- Position horizontally using Kern Wrap
-                            local k_pre = D.new(constants.KERN)
-                            D.setfield(k_pre, "kern", final_x)
-                            
-                            local k_post = D.new(constants.KERN)
-                            -- Reset cursor to 0 for next node
-                            D.setfield(k_post, "kern", -(final_x + w))
-                            
-                            -- Insert into list and update page head if needed
-                            p_head = D.insert_before(p_head, curr, k_pre)
-                            D.insert_after(p_head, curr, k_post)
-                            -- next_curr remains the same (it's after k_post now)
-                        end
-
-                        if draw_debug then
-                            local show_me = false
-                            local color_str = "0 0 1 RG" -- Default blue for grid
-                            if pos.is_block then
-                                if _G.cn_vertical.debug.show_boxes then
-                                    show_me = true
-                                    color_str = "1 0 0 RG" -- Red for boxes
+                            -- Skip nodes with invalid coordinates (often phantom boxes or out-of-bounds nodes)
+                            if (not col or col < 0) then
+                                if draw_debug then
+                                    utils.debug_log(string.format("  [render] SKIP Node=%s ID=%d (invalid col=%s)", tostring(curr), id, tostring(col)))
                                 end
+                                -- Skip to next node
                             else
-                                if _G.cn_vertical.debug.show_grid then
-                                    show_me = true
+                                local d = D.getfield(curr, "depth") or 0
+                                local h = D.getfield(curr, "height") or 0
+                                local w = D.getfield(curr, "width") or 0
+                        
+                                if id == constants.GLYPH then
+                                    -- Determine horizontal alignment for this column
+                                    local h_align = "center"
+                                    if params.column_aligns and params.column_aligns[col] then
+                                        h_align = params.column_aligns[col]
+                                    end
+
+                                    -- Use unified position calculation for glyphs (centering/alignment)
+                                    local final_x, final_y = text_position.calc_grid_position(col, row, 
+                                        { width = w, height = h, depth = d },
+                                        {
+                                            grid_width = grid_width,
+                                            grid_height = grid_height,
+                                            total_cols = p_total_cols,
+                                            shift_x = shift_x,
+                                            shift_y = shift_y,
+                                            v_align = vertical_align,
+                                            h_align = h_align,
+                                            half_thickness = half_thickness,
+                                        }
+                                    )
+                                    D.setfield(curr, "xoffset", final_x)
+                                    D.setfield(curr, "yoffset", final_y)
+                                    
+                                    -- Add negative kern to reset horizontal cursor for TLT parent
+                                    local k = D.new(constants.KERN)
+                                    D.setfield(k, "kern", -w)
+                                    D.insert_after(p_head, curr, k)
+                                else
+                                    -- For HLIST/VLIST (Blocks), we use Kern (X) and Shift (Y)
+                                    -- xoffset/yoffset are NOT supported for blocks.
+                                    -- RTL column calculation for blocks:
+                                    -- Left edge of a block covering cols [col, col+width-1]
+                                    local rtl_col_left = p_total_cols - (pos.col + (pos.width or 1))
+                                    local final_x = rtl_col_left * grid_width + half_thickness + shift_x
+                                    
+                                    -- Top edge of the box should be at -row*grid_height - shift_y
+                                    -- In TLT box, baseline is at 0. Shift moves it down.
+                                    -- Baseline should be at -final_y + h
+                                    local final_y_top = -row * grid_height - shift_y
+                                    D.setfield(curr, "shift", -final_y_top + h)
+                                    
+                                    -- Position horizontally using Kern Wrap
+                                    local k_pre = D.new(constants.KERN)
+                                    D.setfield(k_pre, "kern", final_x)
+                                    
+                                    local k_post = D.new(constants.KERN)
+                                    -- Reset cursor to 0 for next node
+                                    D.setfield(k_post, "kern", -(final_x + w))
+                                    
+                                    -- Insert into list and update page head if needed
+                                    p_head = D.insert_before(p_head, curr, k_pre)
+                                    D.insert_after(p_head, curr, k_post)
+                                    -- next_curr remains the same (it's after k_post now)
                                 end
-                            end
-                            
-                            if show_me then
-                                local rtl_col_l = p_total_cols - (pos.col + (pos.width or 1))
-                                local tx_sp = (rtl_col_l * grid_width + half_thickness + shift_x)
-                                local ty_sp = (-row * grid_height - shift_y)
-                                local tw_sp = grid_width
-                                local th_sp = -grid_height
-                                if pos.is_block then
-                                    tw_sp = pos.width * grid_width
-                                    th_sp = -pos.height * grid_height
+
+                                if draw_debug then
+                                    local show_me = false
+                                    local color_str = "0 0 1 RG" -- Default blue for grid
+                                    if pos.is_block then
+                                        if _G.cn_vertical.debug.show_boxes then
+                                            show_me = true
+                                            color_str = "1 0 0 RG" -- Red for boxes
+                                        end
+                                    else
+                                        if _G.cn_vertical.debug.show_grid then
+                                            show_me = true
+                                        end
+                                    end
+                                    
+                                    if show_me then
+                                        local rtl_col_l = p_total_cols - (pos.col + (pos.width or 1))
+                                        local tx_sp = (rtl_col_l * grid_width + half_thickness + shift_x)
+                                        local ty_sp = (-row * grid_height - shift_y)
+                                        local tw_sp = grid_width
+                                        local th_sp = -grid_height
+                                        if pos.is_block then
+                                            tw_sp = pos.width * grid_width
+                                            th_sp = -pos.height * grid_height
+                                        end
+                                        p_head = utils.draw_debug_rect(p_head, curr, tx_sp, ty_sp, tw_sp, th_sp, color_str)
+                                    end
                                 end
-                                p_head = utils.draw_debug_rect(p_head, curr, tx_sp, ty_sp, tw_sp, th_sp, color_str)
-                            end
-                        end
-                    end
+                            end -- end of else (valid col)
+                        end -- end of if pos
                 elseif id == constants.GLUE then
                     D.setfield(curr, "width", 0)
                     D.setfield(curr, "stretch", 0)

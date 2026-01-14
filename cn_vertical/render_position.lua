@@ -334,13 +334,42 @@ local function calc_grid_position(col, row, glyph_dims, params)
         -- Jiazhu (dual-column note) logic
         local sub_width = grid_width / 2
         local inner_padding = sub_width * 0.05 -- 5% internal padding
-        
-        if sub_col == 1 then
-            -- Right sub-column (先行): Right-aligned within the right half
-            x_offset = rtl_col * grid_width + sub_width + (sub_width - w) - inner_padding + half_thickness + shift_x
+        local jiazhu_align = params.jiazhu_align or "outward"
+
+        -- Determine alignment for each sub-column based on jiazhu_align setting
+        -- sub_col == 1: Right sub-column (先行, displayed on right side in RTL)
+        -- sub_col == 2: Left sub-column (后行, displayed on left side in RTL)
+        local col_align
+        if jiazhu_align == "outward" then
+            -- Default: right col right-aligned, left col left-aligned (向外对齐)
+            col_align = (sub_col == 1) and "right" or "left"
+        elseif jiazhu_align == "inward" then
+            -- Opposite: right col left-aligned, left col right-aligned (向内对齐)
+            col_align = (sub_col == 1) and "left" or "right"
+        elseif jiazhu_align == "center" then
+            col_align = "center"
+        elseif jiazhu_align == "left" then
+            col_align = "left"
+        elseif jiazhu_align == "right" then
+            col_align = "right"
         else
-            -- Left sub-column (后行): Left-aligned within the left half
-            x_offset = rtl_col * grid_width + inner_padding + half_thickness + shift_x
+            -- Fallback to outward
+            col_align = (sub_col == 1) and "right" or "left"
+        end
+
+        -- Calculate base x position for the sub-column
+        local sub_base_x = rtl_col * grid_width + half_thickness + shift_x
+        if sub_col == 1 then
+            sub_base_x = sub_base_x + sub_width  -- Right half
+        end
+
+        -- Apply alignment within the sub-column
+        if col_align == "right" then
+            x_offset = sub_base_x + (sub_width - w) - inner_padding
+        elseif col_align == "left" then
+            x_offset = sub_base_x + inner_padding
+        else -- center
+            x_offset = sub_base_x + (sub_width - w) / 2
         end
     elseif h_align == "left" then
         x_offset = rtl_col * grid_width + half_thickness + shift_x

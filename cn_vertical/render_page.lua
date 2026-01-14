@@ -88,6 +88,7 @@ local function handle_glyph_node(curr, p_head, pos, params, ctx)
             h_align = h_align,
             half_thickness = ctx.half_thickness,
             sub_col = pos.sub_col,
+            jiazhu_align = ctx.jiazhu_align,
         }
     )
     D.setfield(curr, "xoffset", final_x)
@@ -367,6 +368,7 @@ local function apply_positions(head, layout_map, params)
                 grid_width = grid_width, grid_height = grid_height,
                 p_total_cols = p_total_cols, shift_x = shift_x, shift_y = shift_y,
                 half_thickness = half_thickness,
+                jiazhu_align = params.jiazhu_align or "outward",
             }
             p_head = process_page_nodes(p_head, layout_map, params, ctx)
             

@@ -102,7 +102,14 @@
     font-size = 28pt,
     line-spacing = 28.5pt,
     vertical-align = center,
-    
+
+    % Jiazhu (dual-column notes) alignment
+    % Options: outward (default), inward, center, left, right
+    % - outward: left col left-aligned, right col right-aligned (向外对齐)
+    % - inward: left col right-aligned, right col left-aligned (向内对齐)
+    % - center/left/right: both columns use the same alignment
+    jiazhu-align = outward,
+
     % ==========================================================================
     % Colors (RGB 0-255 format)
     % ==========================================================================

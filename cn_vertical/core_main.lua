@@ -208,6 +208,7 @@ function cn_vertical.prepare_grid(box_num, params)
         column_aligns = params.column_aligns,
         start_page_number = start_page,
         jiazhu_font_size = params.jiazhu_font_size,
+        jiazhu_align = params.jiazhu_align or "outward",
     }
 
     if is_debug then

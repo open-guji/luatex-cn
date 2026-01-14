@@ -236,6 +236,10 @@
     jiazhu-font-size .tl_set:N = \l__cn_vertical_jiazhu_size_tl,
     jiazhu-font-size .initial:n = {},
 
+    % Jiazhu alignment: outward (default), inward, center, left, right
+    jiazhu-align .tl_set:N = \l__cn_vertical_jiazhu_align_tl,
+    jiazhu-align .initial:n = {outward},
+
     % Banxin (版心) configuration
     banxin-upper-ratio .tl_set:N = \l_cnv_banxin_upper_tl,
     banxin-upper-ratio .initial:n = {0.28},
@@ -389,7 +393,8 @@
         chapter_title_cols = \int_use:N \l_cnv_chapter_title_cols_int,
         chapter_title_font_size = [=[\luaescapestring{\l_cnv_chapter_title_font_size_tl}]=],
         chapter_title_grid_height = [=[\luaescapestring{\l_cnv_chapter_title_grid_height_tl}]=],
-        jiazhu_font_size = [=[\luaescapestring{\l__cn_vertical_jiazhu_size_tl}]=]
+        jiazhu_font_size = [=[\luaescapestring{\l__cn_vertical_jiazhu_size_tl}]=],
+        jiazhu_align = [=[\luaescapestring{\l__cn_vertical_jiazhu_align_tl}]=]
       })
     }
   }

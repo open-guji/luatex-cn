@@ -389,7 +389,7 @@
     \tl_if_empty:NTF \l__cn_vertical_textbox_inner_gw_tl
       { \dim_set:Nn \l__cn_vertical_textbox_inner_gw_dim { \l__cn_vertical_grid_width_tl / \l__cn_vertical_textbox_inner_cols_int } }
       { \dim_set:Nn \l__cn_vertical_textbox_inner_gw_dim { \l__cn_vertical_textbox_inner_gw_tl } }
-    % If inner-grid-height not specified, use outer grid-height
+    % If inner-grid-height not specified, user outer grid-height directly (for alignment)
     \tl_if_empty:NTF \l__cn_vertical_textbox_inner_gh_tl
       { \dim_set:Nn \l__cn_vertical_textbox_inner_gh_dim { \l__cn_vertical_grid_height_tl } }
       { \dim_set:Nn \l__cn_vertical_textbox_inner_gh_dim { \l__cn_vertical_textbox_inner_gh_tl } }
@@ -398,6 +398,8 @@
     \setbox0=\vbox{
       \setluatexattribute\cnverticaltextboxwidth{0}
       \setluatexattribute\cnverticaltextboxheight{0}
+      % Scale font size to match the inner grid width
+      \fontsize{\l__cn_vertical_textbox_inner_gw_dim}{\l__cn_vertical_textbox_inner_gw_dim}\selectfont
       % Inner line length should be the grid height of the block
       \hsize=\dim_eval:n { \l__cn_vertical_textbox_inner_gh_dim * \int_use:N \l__cn_vertical_textbox_height_int }
       #2

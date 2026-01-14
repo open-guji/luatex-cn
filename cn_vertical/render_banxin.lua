@@ -378,18 +378,22 @@ local function draw_banxin_column(p_head, params)
             local yuwei_gap = 65536 * 3.7
             local lower_yuwei_total = params.lower_yuwei and (yuwei_gap + edge_h + notch_h) or 0
             
+            -- Margin settings for page number (版心页码边距)
+            local page_right_margin = 65536 * 2   -- 2pt small right margin
+            local page_bottom_margin = 65536 * 15 -- 15pt medium bottom margin
+            
             -- Available bottom-right position
             -- y_top for the vertical text block should be just above the lower yuwei or divider
-            local page_y_top = middle_y_bottom + lower_yuwei_total + (65536 * 10) -- 10pt above yuwei/divider
+            local page_y_top = middle_y_bottom + lower_yuwei_total + page_bottom_margin
             
             -- Use a small font size and compact height
             -- "字体比较小" -> 9pt
             local page_font_size = "9pt"
             
             local page_chain = text_position.create_vertical_text(page_str, {
-                x = x,
+                x = x,  -- Add right margin (move left edge inward)
                 y_top = page_y_top + (65536 * 20), -- Offset for the container
-                width = width,
+                width = width - page_right_margin,  -- Reduce width to account for margin
                 height = (65536 * 30), -- Container height
                 v_align = "bottom",
                 h_align = "right",

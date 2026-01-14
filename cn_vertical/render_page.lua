@@ -98,7 +98,7 @@ local function handle_glyph_node(curr, p_head, pos, params, ctx)
         local font_id = D.getfield(curr, "font") or 0
         local font_data = font.getfont(font_id)
         local font_size = font_data and font_data.size or 0
-        utils.debug_log(string.format("  [render] GLYPH char=%d [c:%d, r:%d, s:%s] xoff=%.2f yoff=%.2f w=%.2f h=%.2f fsize=%.2f",
+        utils.debug_log(string.format("  [render] GLYPH char=%d [c:%.0f, r:%.2f, s:%s] xoff=%.2f yoff=%.2f w=%.2f h=%.2f fsize=%.2f",
             D.getfield(curr, "char"), pos.col, pos.row, tostring(pos.sub_col), final_x/65536, final_y/65536, w/65536, h/65536, font_size/65536))
     end
     

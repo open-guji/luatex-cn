@@ -1,0 +1,97 @@
+\documentclass{guji}
+\usepackage{enumitem} % For better list control if needed
+
+% Define a custom template for another style (simulating another book)
+\defineGujiTemplate{compact}{
+    font-size = 24pt,
+    line-spacing = 30pt,
+    grid-width = 40pt,
+    grid-height = 35pt,
+    height = 500pt
+}
+
+% Set Book Name (formerly Banxin text) - appears in section 1 of the center column
+\setBookName{欽定四庫全書}
+
+% Set Chapter Title - appears in section 2 of the center column (between yuwei)
+\setChapterTitle{史記\\目錄}
+
+\begin{document}
+\begin{guji-content}[template=sikuquanshu]
+欽定四庫全書\EmptyBox[5]史部一
+\begin{itemize}
+    \item 史記目錄 正史類
+    \item % 这里必须有一个 \item 来承接内层的列表
+    \begin{itemize}
+        \item \GridTextbox[height=12, box-align=fill]{漢太史令}司馬遷 撰
+        \item 本紀一十二
+        \item 年表一十
+        \item 八書八
+        \item 世家三十
+        \item 列傳七十\EmptyBox[2]共一百三十卷
+    \end{itemize}
+\end{itemize}
+本紀
+
+史記卷一
+\begin{itemize}
+    \item 本紀第一
+    \item \begin{itemize}
+        \item 五帝
+    \end{itemize}
+\end{itemize}
+
+史記卷二
+\begin{itemize}
+    \item 本紀第二
+    \item \begin{itemize}
+        \item 夏
+    \end{itemize}
+\end{itemize}
+
+史記卷三
+\begin{itemize}
+    \item 本紀第三
+    \item \begin{itemize}
+        \item 殷
+    \end{itemize}
+\end{itemize}
+
+史記卷四
+\begin{itemize}
+    \item 本紀第四
+    \item \begin{itemize}
+        \item 周
+    \end{itemize}
+\end{itemize}
+
+史記卷五
+\begin{itemize}
+    \item 本紀第五
+    \item \begin{itemize}
+        \item 秦昭襄王
+        \item 莊襄王
+    \end{itemize}
+\end{itemize}
+
+史記卷六
+\begin{itemize}
+    \item 本紀第六
+    \item \begin{itemize}
+        \item 秦始皇帝
+        \item 二世皇帝
+    \end{itemize}
+\end{itemize}
+
+史記卷七
+\begin{itemize}
+    \item 本紀第七
+    \item \begin{itemize}
+        \item 項羽
+    \end{itemize}
+\end{itemize}
+
+\end{guji-content}
+
+
+\end{document}

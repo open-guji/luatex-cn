@@ -399,6 +399,8 @@
     box-align .initial:n = {top},
     border .bool_set:N = \l__cn_vertical_textbox_border_bool,
     border .initial:n = false,
+    column-align .tl_set:N = \l__cn_vertical_textbox_col_align_tl,
+    column-align .initial:n = {},
     debug .bool_set:N = \l__cn_vertical_textbox_debug_bool,
     debug .initial:n = false,
     vertical-align .tl_set:N = \l__cn_vertical_textbox_box_align_tl,
@@ -444,9 +446,10 @@
       grid_width = "\dim_to_decimal:n { \l__cn_vertical_textbox_inner_gw_dim } pt", 
       grid_height = "\dim_to_decimal:n { \l__cn_vertical_textbox_inner_gh_dim } pt", 
       box_align = "\luaescapestring{\tl_use:N \l__cn_vertical_textbox_box_align_tl}", 
+      column_aligns = "\luaescapestring{\tl_use:N \l__cn_vertical_textbox_col_align_tl}",
       debug = "\bool_if:NTF \l__cn_vertical_textbox_debug_bool {true}{false}",
       border = "\bool_if:NTF \l__cn_vertical_textbox_border_bool {true}{false}"
-    })}
+    })}/
     \setluatexattribute\cnverticaltextboxwidth{0}
     \setluatexattribute\cnverticaltextboxheight{0}
     \leavevmode\box0

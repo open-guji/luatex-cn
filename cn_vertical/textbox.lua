@@ -59,6 +59,18 @@ function textbox.process_inner_box(box_num, params)
     end
 
     -- 2. 准备子网格布局参数
+    -- 解析列对齐方式 (例如 "right,left")
+    local col_aligns = {}
+    if params.column_aligns then
+        local idx = 0
+        for align in string.gmatch(params.column_aligns, '([^,]+)') do
+            -- Trim whitespace
+            align = align:gsub("^%s*(.-)%s*$", "%1")
+            col_aligns[idx] = align
+            idx = idx + 1
+        end
+    end
+
     -- 我们将文本框模拟为一个恰好等于其尺寸的"页面"
     local ba = params.box_align or "top"
     local sub_params = {
@@ -70,7 +82,8 @@ function textbox.process_inner_box(box_num, params)
         debug_on = (params.debug == "true" or params.debug == true) or (_G.cn_vertical and _G.cn_vertical.debug and _G.cn_vertical.debug.enabled),
         v_align = (ba == "bottom") and "bottom" or "top",
         distribute = (ba == "fill"),
-        height = params.grid_height -- 给定足够的高度
+        height = params.grid_height, -- 给定足够的高度
+        column_aligns = col_aligns
     }
 
     -- 3. 执行核心排版流水线

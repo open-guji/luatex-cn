@@ -315,6 +315,7 @@ local function calc_grid_position(col, row, glyph_dims, params)
     local shift_x = params.shift_x or 0
     local shift_y = params.shift_y or 0
     local v_align = params.v_align or "center"
+    local h_align = params.h_align or "center"
     local half_thickness = params.half_thickness or 0
 
     local w = glyph_dims.width or 0
@@ -324,8 +325,15 @@ local function calc_grid_position(col, row, glyph_dims, params)
     -- Calculate RTL column position
     local rtl_col = total_cols - 1 - col
 
-    -- Calculate X offset (horizontally centered in cell)
-    local x_offset = rtl_col * grid_width + (grid_width - w) / 2 + half_thickness + shift_x
+    -- Calculate X offset based on horizontal alignment
+    local x_offset
+    if h_align == "left" then
+        x_offset = rtl_col * grid_width + half_thickness + shift_x
+    elseif h_align == "right" then
+        x_offset = rtl_col * grid_width + (grid_width - w) + half_thickness + shift_x
+    else -- center
+        x_offset = rtl_col * grid_width + (grid_width - w) / 2 + half_thickness + shift_x
+    end
 
     -- Calculate Y offset based on vertical alignment
     local y_offset

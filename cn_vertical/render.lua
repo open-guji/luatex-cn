@@ -290,7 +290,13 @@ local function apply_positions(head, layout_map, params)
                             -- end
                         
                         if id == constants.GLYPH then
-                            -- Use unified position calculation for glyphs (centering)
+                            -- Determine horizontal alignment for this column
+                            local h_align = "center"
+                            if params.column_aligns and params.column_aligns[col] then
+                                h_align = params.column_aligns[col]
+                            end
+
+                            -- Use unified position calculation for glyphs (centering/alignment)
                             local final_x, final_y = text_position.calc_grid_position(col, row, 
                                 { width = w, height = h, depth = d },
                                 {
@@ -300,6 +306,7 @@ local function apply_positions(head, layout_map, params)
                                     shift_x = shift_x,
                                     shift_y = shift_y,
                                     v_align = vertical_align,
+                                    h_align = h_align,
                                     half_thickness = half_thickness,
                                 }
                             )

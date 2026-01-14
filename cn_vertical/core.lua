@@ -44,6 +44,12 @@ _G.cn_vertical_pending_pages = {}
 -- Create module namespace - MUST use _G to ensure global scope
 _G.cn_vertical = _G.cn_vertical or {}
 local cn_vertical = _G.cn_vertical
+cn_vertical.debug = cn_vertical.debug or {
+    enabled = false,
+    verbose_log = false,
+    show_grid = true,
+    show_boxes = true
+}
 
 -- Load submodules using Lua's require mechanism
 -- Check if already loaded via dofile (package.loaded set manually by each module)

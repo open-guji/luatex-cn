@@ -55,10 +55,10 @@ local function position_glyph(glyph_direct, x, y, params)
     local h_align = params.h_align or "center"
     local v_align = params.v_align or "center"
 
-    -- Get glyph dimensions (robustly)
-    local g_width = D.getfield(glyph_direct, "width") or 0
-    local g_height = D.getfield(glyph_direct, "height") or 0
-    local g_depth = D.getfield(glyph_direct, "depth") or 0
+    -- Get glyph dimensions
+    local g_width = params.g_width or D.getfield(glyph_direct, "width") or 0
+    local g_height = params.g_height or D.getfield(glyph_direct, "height") or 0
+    local g_depth = params.g_depth or D.getfield(glyph_direct, "depth") or 0
 
     -- If width is 0, try to guess or use a fallback for centering
     if g_width <= 0 then
@@ -153,12 +153,15 @@ local function create_vertical_text(text, params)
     local font_id = params.font_id or font.current()
     local shift_y = params.shift_y or 0
     
+    local font_scale_factor = 1.0
+
     -- Handle font size if provided
     if params.font_size then
         local fs = constants.to_dimen(params.font_size)
         if fs and fs > 0 then
             local current_font_data = font.getfont(font_id)
             if current_font_data then
+                font_scale_factor = fs / current_font_data.size
                 local new_font_data = {}
                 for k,v in pairs(current_font_data) do new_font_data[k] = v end
                 new_font_data.size = fs
@@ -166,6 +169,7 @@ local function create_vertical_text(text, params)
             end
         end
     elseif params.font_scale then
+        font_scale_factor = params.font_scale
         local current_font_data = font.getfont(font_id)
         if current_font_data then
             local new_font_data = {}
@@ -196,11 +200,21 @@ local function create_vertical_text(text, params)
         -- Newly created nodes have 0 dimensions until processed.
         local f_data = font.getfont(font_id)
         local cp = utf8.codepoint(char)
+        
+        -- Default dimensions if not in font (fallback to square em)
+        local gw = (f_data and f_data.size) or (65536 * 10)
+        local gh = gw * 0.8
+        local gd = gw * 0.2
+
         if f_data and f_data.characters and f_data.characters[cp] then
             local char_data = f_data.characters[cp]
-            D.setfield(glyph_direct, "width", char_data.width or 0)
-            D.setfield(glyph_direct, "height", char_data.height or 0)
-            D.setfield(glyph_direct, "depth", char_data.depth or 0)
+            -- Use font_scale_factor because characters table might not be scaled in Lua table
+            gw = (char_data.width or 0) * font_scale_factor
+            gh = (char_data.height or 0) * font_scale_factor
+            gd = (char_data.depth or 0) * font_scale_factor
+            D.setfield(glyph_direct, "width", math.floor(gw + 0.5))
+            D.setfield(glyph_direct, "height", math.floor(gh + 0.5))
+            D.setfield(glyph_direct, "depth", math.floor(gd + 0.5))
         end
 
         -- Calculate cell position (0-indexed row)
@@ -213,6 +227,9 @@ local function create_vertical_text(text, params)
             cell_height = cell_height,
             h_align = h_align,
             v_align = v_align,
+            g_width = math.floor(gw + 0.5),
+            g_height = math.floor(gh + 0.5),
+            g_depth = math.floor(gd + 0.5),
         })
 
         -- Build the chain

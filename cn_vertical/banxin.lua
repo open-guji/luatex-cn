@@ -275,7 +275,7 @@ local function draw_banxin_column(p_head, params)
     local chapter_title = params.chapter_title or ""
     if chapter_title ~= "" then
         local b_padding_top = params.b_padding_top or 0
-        local chapter_top_margin = params.chapter_title_top_margin or (65536 * 20) -- 20pt default
+        local chapter_top_margin = params.chapter_title_top_margin or (65536 * 40) -- 20pt default
         
         -- Section 2 boundaries
         local section1_h = banxin_result.section1_height
@@ -313,7 +313,7 @@ local function draw_banxin_column(p_head, params)
                 local title_font_size = params.chapter_title_font_size
                 local font_scale = nil
                 if (not title_font_size or title_font_size == "") and n_cols > 1 then
-                    font_scale = 0.85
+                    font_scale = 0.7 -- Reduced scale to ensure centering is visible
                 end
 
                 for i, sub_text in ipairs(parts) do

@@ -125,7 +125,7 @@
     chapter-title .initial:n = {},
 
     chapter-title-top-margin .tl_set:N = \l_guji_chapter_title_top_margin_tl,
-    chapter-title-top-margin .initial:n = {20pt},
+    chapter-title-top-margin .initial:n = {40pt},
 
     chapter-title-cols .int_set:N = \l_guji_chapter_title_cols_int,
     chapter-title-cols .initial:n = 2,

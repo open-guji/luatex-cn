@@ -27,6 +27,17 @@
 % Load the Lua modules
 % Split into multiple directlua blocks for better error reporting
 
+% Initialise Lua Namespace
+\directlua{
+  _G.cn_vertical = _G.cn_vertical or {}
+  _G.cn_vertical.debug = _G.cn_vertical.debug or {
+      enabled = false,
+      verbose_log = false,
+      show_grid = true,
+      show_boxes = true
+  }
+}
+
 % Clear cache
 \directlua{
   package.loaded["constants"] = nil

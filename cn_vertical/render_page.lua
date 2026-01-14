@@ -51,12 +51,11 @@
 --      ↓
 --   输出: 多个渲染好的页面（每页是一个 HLIST，dir=TLT）
 --
--- Version: 0.4.0
+-- Version: 0.4.1 (Refactored)
 -- Date: 2026-01-13
 -- ============================================================================
 
 -- Load dependencies
--- Check if already loaded via dofile (package.loaded set manually)
 local constants = package.loaded['base_constants'] or require('base_constants')
 local D = constants.D
 local utils = package.loaded['base_utils'] or require('base_utils')
@@ -65,28 +64,137 @@ local banxin = package.loaded['render_banxin'] or require('render_banxin')
 local background = package.loaded['render_background'] or require('render_background')
 local text_position = package.loaded['render_position'] or require('render_position')
 
--- Conversion factor from scaled points to PDF big points
-local sp_to_bp = utils.sp_to_bp
+-- Helper: Handle individual glyph positioning
+local function handle_glyph_node(curr, p_head, pos, params, ctx)
+    local vertical_align = params.vertical_align
+    local d = D.getfield(curr, "depth") or 0
+    local h = D.getfield(curr, "height") or 0
+    local w = D.getfield(curr, "width") or 0
+
+    local h_align = "center"
+    if params.column_aligns and params.column_aligns[pos.col] then
+        h_align = params.column_aligns[pos.col]
+    end
+
+    local final_x, final_y = text_position.calc_grid_position(pos.col, pos.row, 
+        { width = w, height = h, depth = d },
+        {
+            grid_width = ctx.grid_width,
+            grid_height = ctx.grid_height,
+            total_cols = ctx.p_total_cols,
+            shift_x = ctx.shift_x,
+            shift_y = ctx.shift_y,
+            v_align = vertical_align,
+            h_align = h_align,
+            half_thickness = ctx.half_thickness,
+        }
+    )
+    D.setfield(curr, "xoffset", final_x)
+    D.setfield(curr, "yoffset", final_y)
+    
+    local k = D.new(constants.KERN)
+    D.setfield(k, "kern", -w)
+    D.insert_after(p_head, curr, k)
+    return p_head
+end
+
+-- Helper: Handle HLIST/VLIST (Blocks) positioning
+local function handle_block_node(curr, p_head, pos, ctx)
+    local h = D.getfield(curr, "height") or 0
+    local w = D.getfield(curr, "width") or 0
+
+    local rtl_col_left = ctx.p_total_cols - (pos.col + (pos.width or 1))
+    local final_x = rtl_col_left * ctx.grid_width + ctx.half_thickness + ctx.shift_x
+    
+    local final_y_top = -pos.row * ctx.grid_height - ctx.shift_y
+    D.setfield(curr, "shift", -final_y_top + h)
+    
+    local k_pre = D.new(constants.KERN)
+    D.setfield(k_pre, "kern", final_x)
+    
+    local k_post = D.new(constants.KERN)
+    D.setfield(k_post, "kern", -(final_x + w))
+    
+    p_head = D.insert_before(p_head, curr, k_pre)
+    D.insert_after(p_head, curr, k_post)
+    return p_head
+end
+
+-- Helper: Draw debug grids/boxes
+local function handle_debug_drawing(curr, p_head, pos, ctx)
+    local show_me = false
+    local color_str = "0 0 1 RG"
+    if pos.is_block then
+        if _G.cn_vertical.debug.show_boxes then
+            show_me = true
+            color_str = "1 0 0 RG"
+        end
+    else
+        if _G.cn_vertical.debug.show_grid then
+            show_me = true
+        end
+    end
+    
+    if show_me then
+        local rtl_col_l = ctx.p_total_cols - (pos.col + (pos.width or 1))
+        local tx_sp = (rtl_col_l * ctx.grid_width + ctx.half_thickness + ctx.shift_x)
+        local ty_sp = (-pos.row * ctx.grid_height - ctx.shift_y)
+        local tw_sp = ctx.grid_width
+        local th_sp = -ctx.grid_height
+        if pos.is_block then
+            tw_sp = pos.width * ctx.grid_width
+            th_sp = -pos.height * ctx.grid_height
+        end
+        return utils.draw_debug_rect(p_head, curr, tx_sp, ty_sp, tw_sp, th_sp, color_str)
+    end
+    return p_head
+end
+
+-- Helper: Process all nodes for a single page
+local function process_page_nodes(p_head, layout_map, params, ctx)
+    local curr = p_head
+    while curr do
+        local next_curr = D.getnext(curr)
+        local id = D.getid(curr)
+        
+        if id == constants.GLYPH or id == constants.HLIST or id == constants.VLIST then
+            local pos = layout_map[curr]
+            if pos then
+                if not pos.col or pos.col < 0 then
+                    if params.draw_debug then
+                        utils.debug_log(string.format("  [render] SKIP Node=%s ID=%d (invalid col=%s)", tostring(curr), id, tostring(pos.col)))
+                    end
+                else
+                    if id == constants.GLYPH then
+                        p_head = handle_glyph_node(curr, p_head, pos, params, ctx)
+                    else
+                        p_head = handle_block_node(curr, p_head, pos, ctx)
+                    end
+
+                    if params.draw_debug then
+                        p_head = handle_debug_drawing(curr, p_head, pos, ctx)
+                    end
+                end
+            end
+        elseif id == constants.GLUE then
+            D.setfield(curr, "width", 0)
+            D.setfield(curr, "stretch", 0)
+            D.setfield(curr, "shrink", 0)
+        elseif id == constants.KERN then
+            local subtype = D.getfield(curr, "subtype")
+            if subtype ~= 1 then
+                D.setfield(curr, "kern", 0)
+            end
+        end
+        curr = next_curr
+    end
+    return p_head
+end
 
 --- Apply grid positions to nodes and render visual aids
--- Performs second-pass coordinate application, sets xoffset/yoffset for each glyph,
--- inserts negative kerns to fix PDF text selection, and draws debug grid/borders.
---
 -- @param head (node) Head of node list
 -- @param layout_map (table) Mapping from node pointer to {col, row}
--- @param grid_width (number) Grid column width in scaled points
--- @param grid_height (number) Grid row height in scaled points
--- @param total_cols (number) Total number of columns
--- @param vertical_align (string) Vertical alignment: "top", "center", or "bottom"
--- @param draw_debug (boolean) Whether to draw blue debug grid
--- @param draw_border (boolean) Whether to draw black column borders
--- @param b_padding_top (number) Extra padding at top of border in scaled points
--- @param b_padding_bottom (number) Extra padding at bottom of border in scaled points
--- @param line_limit (number) Maximum rows per column
--- @param n_column (number) Number of columns per page
--- @param page_columns (number) Total columns before a page break
--- @param border_rgb (string) RGB color for borders (e.g., "0 0 0")
--- @param bg_rgb (string) RGB color for background (e.g., "1 1 1")
+-- @param params (table) Rendering parameters
 -- @return (table) Array of page info {head, cols}
 local function apply_positions(head, layout_map, params)
     local d_head = D.todirect(head)
@@ -110,26 +218,17 @@ local function apply_positions(head, layout_map, params)
     local bg_rgb = params.bg_rgb
     local font_rgb = params.font_rgb
 
-    -- Cached conversion factors for PDF literals
-    local w_bp = grid_width * sp_to_bp
-    local h_bp = -grid_height * sp_to_bp
-    local border_thickness_val = tonumber(border_thickness) or 0
-    local b_thickness_bp = border_thickness_val * sp_to_bp
-    local half_thickness = math.floor(border_thickness_val / 2)
-    
+    local half_thickness = math.floor(border_thickness / 2)
     local ob_thickness_val = (outer_border_thickness or (65536 * 2))
-    local ob_thickness_bp = ob_thickness_val * sp_to_bp
     local ob_sep_val = (outer_border_sep or (65536 * 2))
     
-    -- Global shift for all inner content
     local outer_shift = draw_outer_border and (ob_thickness_val + ob_sep_val) or 0
     local shift_x = outer_shift
-    local shift_y = outer_shift + border_thickness_val + b_padding_top
+    local shift_y = outer_shift + border_thickness + b_padding_top
     
     local interval = tonumber(n_column) or 0
     local p_cols = tonumber(page_columns) or (2 * interval + 1)
 
-    -- Normalize colors using utils module
     local b_rgb_str = utils.normalize_rgb(border_rgb) or "0.0000 0.0000 0.0000"
     local background_rgb_str = utils.normalize_rgb(bg_rgb)
     local text_rgb_str = utils.normalize_rgb(font_rgb)
@@ -143,31 +242,18 @@ local function apply_positions(head, layout_map, params)
     local t = d_head
     while t do
         local next_node = D.getnext(t)
-        local id = D.getid(t)
-        
-        -- Detach node from stream
+        local pos = layout_map[t]
         D.setnext(t, nil)
         
-        local pos = layout_map[t]
         if pos then
             local p = pos.page or 0
-            local col = pos.col
-            
             if page_nodes[p] then
-                if not page_nodes[p].head then
-                    page_nodes[p].head = t
-                else
-                    D.setnext(page_nodes[p].tail, t)
-                end
+                if not page_nodes[p].head then page_nodes[p].head = t
+                else D.setnext(page_nodes[p].tail, t) end
                 page_nodes[p].tail = t
-                if col > page_nodes[p].max_col then page_nodes[p].max_col = col end
+                if pos.col > page_nodes[p].max_col then page_nodes[p].max_col = pos.col end
             end
-        else
-            -- If node has no position (e.g. glue that was zeroed), discard it
-            -- or we could attach it to page 0. Let's discard to be safe.
-            -- node.flush_node(D.tonode(t))
         end
-        
         t = next_node
     end
 
@@ -176,234 +262,89 @@ local function apply_positions(head, layout_map, params)
     -- Process each page
     for p = 0, total_pages - 1 do
         local p_head = page_nodes[p].head
-        if not p_head then
-            -- Create empty head if needed?
-        else
+        if p_head then
             local p_max_col = page_nodes[p].max_col
             local p_total_cols = p_max_col + 1
-            -- Ensure we have at least the minimum number of columns for a page if border is on
             if draw_border and p_total_cols < p_cols then p_total_cols = p_cols end
 
             local inner_width = p_total_cols * grid_width + border_thickness
             local inner_height = line_limit * grid_height + b_padding_top + b_padding_bottom + border_thickness
 
-            -- Determine which columns are banxin columns
             local banxin_cols = {}
             if interval > 0 then
                 for col = 0, p_total_cols - 1 do
-                    if (col % (interval + 1)) == interval then
-                        banxin_cols[col] = true
-                    end
+                    if (col % (interval + 1)) == interval then banxin_cols[col] = true end
                 end
             end
 
-            -- Draw banxin columns using banxin module
-            if draw_border and p_total_cols > 0 and interval > 0 then
-                local half_thickness = math.floor(border_thickness / 2)
-                for col = 0, p_total_cols - 1 do
-                    if banxin_cols[col] then
-                        local rtl_col = p_total_cols - 1 - col
-                        local banxin_x = rtl_col * grid_width + half_thickness + shift_x
-                        local banxin_y = -(half_thickness + outer_shift)
-                        local banxin_height = line_limit * grid_height + b_padding_top + b_padding_bottom
-
-                        -- Use banxin-specific padding (独立的版心间距设置)
-                        local bx_padding_top = params.banxin_padding_top or 0
-                        local bx_padding_bottom = params.banxin_padding_bottom or 0
-                        
-                        p_head = banxin.draw_banxin_column(p_head, {
-                            x = banxin_x,
-                            y = banxin_y,
-                            width = grid_width,
-                            height = banxin_height,
-                            border_thickness = border_thickness,
-                            color_str = b_rgb_str,
-                            upper_ratio = params.banxin_upper_ratio or 0.28,
-                            middle_ratio = params.banxin_middle_ratio or 0.56,
-                            lower_ratio = params.banxin_lower_ratio or 0.16,
-                            book_name = params.book_name or "",
-                            shift_y = shift_y,
-                            vertical_align = vertical_align,
-                            b_padding_top = bx_padding_top,
-                            b_padding_bottom = bx_padding_bottom,
-                            lower_yuwei = params.lower_yuwei,
-                            chapter_title = params.chapter_title or "",
-                            chapter_title_top_margin = params.chapter_title_top_margin or (65536 * 20),
-                            chapter_title_cols = params.chapter_title_cols or 2,
-                            chapter_title_font_size = params.chapter_title_font_size,
-                            chapter_title_grid_height = params.chapter_title_grid_height,
-                            page_number = (params.start_page_number or 1) + p,
-                        })
-                    end
-                end
-            end
-
-            -- Draw regular column borders using border module (skip banxin columns)
+            -- Borders & Banxin
             if draw_border and p_total_cols > 0 then
+                -- Banxin columns
+                if interval > 0 then
+                    for col = 0, p_total_cols - 1 do
+                        if banxin_cols[col] then
+                            local rtl_col = p_total_cols - 1 - col
+                            local banxin_x = rtl_col * grid_width + half_thickness + shift_x
+                            local banxin_y = -(half_thickness + outer_shift)
+                            local banxin_height = line_limit * grid_height + b_padding_top + b_padding_bottom
+                            
+                            p_head = banxin.draw_banxin_column(p_head, {
+                                x = banxin_x, y = banxin_y, width = grid_width, height = banxin_height,
+                                border_thickness = border_thickness, color_str = b_rgb_str,
+                                upper_ratio = params.banxin_upper_ratio or 0.28,
+                                middle_ratio = params.banxin_middle_ratio or 0.56,
+                                lower_ratio = params.banxin_lower_ratio or 0.16,
+                                book_name = params.book_name or "", shift_y = shift_y,
+                                vertical_align = vertical_align,
+                                b_padding_top = params.banxin_padding_top or 0,
+                                b_padding_bottom = params.banxin_padding_bottom or 0,
+                                lower_yuwei = params.lower_yuwei,
+                                chapter_title = params.chapter_title or "",
+                                chapter_title_top_margin = params.chapter_title_top_margin or (65536 * 20),
+                                chapter_title_cols = params.chapter_title_cols or 2,
+                                chapter_title_font_size = params.chapter_title_font_size,
+                                chapter_title_grid_height = params.chapter_title_grid_height,
+                                page_number = (params.start_page_number or 1) + p,
+                            })
+                        end
+                    end
+                end
+
+                -- Column borders
                 p_head = border.draw_column_borders(p_head, {
-                    total_cols = p_total_cols,
-                    grid_width = grid_width,
-                    grid_height = grid_height,
-                    line_limit = line_limit,
-                    border_thickness = border_thickness,
-                    b_padding_top = b_padding_top,
-                    b_padding_bottom = b_padding_bottom,
-                    shift_x = shift_x,
-                    outer_shift = outer_shift,
-                    border_rgb_str = b_rgb_str,
-                    banxin_cols = banxin_cols,
+                    total_cols = p_total_cols, grid_width = grid_width, grid_height = grid_height,
+                    line_limit = line_limit, border_thickness = border_thickness,
+                    b_padding_top = b_padding_top, b_padding_bottom = b_padding_bottom,
+                    shift_x = shift_x, outer_shift = outer_shift,
+                    border_rgb_str = b_rgb_str, banxin_cols = banxin_cols,
                 })
             end
 
-            -- Draw outer border using border module
+            -- Outer border
             if draw_outer_border and p_total_cols > 0 then
                 p_head = border.draw_outer_border(p_head, {
-                    inner_width = inner_width,
-                    inner_height = inner_height,
-                    outer_border_thickness = ob_thickness_val,
-                    outer_border_sep = ob_sep_val,
+                    inner_width = inner_width, inner_height = inner_height,
+                    outer_border_thickness = ob_thickness_val, outer_border_sep = ob_sep_val,
                     border_rgb_str = b_rgb_str,
                 })
             end
 
-            -- --- BOTTOM LAYER (Drawn first) ---
-            -- Insert these last so they become the first in the stream
-
-            -- Set Font Color using background module
+            -- Colors & Background
             p_head = background.set_font_color(p_head, text_rgb_str)
-
-            -- Draw background color using background module
             p_head = background.draw_background(p_head, {
-                bg_rgb_str = background_rgb_str,
-                paper_width = params.paper_width,
-                paper_height = params.paper_height,
-                margin_left = params.margin_left,
-                margin_top = params.margin_top,
-                inner_width = inner_width,
-                inner_height = inner_height,
-                outer_shift = outer_shift,
+                bg_rgb_str = background_rgb_str, paper_width = params.paper_width,
+                paper_height = params.paper_height, margin_left = params.margin_left,
+                margin_top = params.margin_top, inner_width = inner_width,
+                inner_height = inner_height, outer_shift = outer_shift,
             })
 
-            -- Apply positions to glyphs on this page
-            local curr = p_head
-            while curr do
-                local next_curr = D.getnext(curr)
-                local id = D.getid(curr)
-                if id == constants.GLYPH or id == constants.HLIST or id == constants.VLIST then
-                        local pos = layout_map[curr]
-                        if pos then
-                            local col = pos.col
-                            local row = pos.row
-                            
-                            -- Skip nodes with invalid coordinates (often phantom boxes or out-of-bounds nodes)
-                            if (not col or col < 0) then
-                                if draw_debug then
-                                    utils.debug_log(string.format("  [render] SKIP Node=%s ID=%d (invalid col=%s)", tostring(curr), id, tostring(col)))
-                                end
-                                -- Skip to next node
-                            else
-                                local d = D.getfield(curr, "depth") or 0
-                                local h = D.getfield(curr, "height") or 0
-                                local w = D.getfield(curr, "width") or 0
-                        
-                                if id == constants.GLYPH then
-                                    -- Determine horizontal alignment for this column
-                                    local h_align = "center"
-                                    if params.column_aligns and params.column_aligns[col] then
-                                        h_align = params.column_aligns[col]
-                                    end
-
-                                    -- Use unified position calculation for glyphs (centering/alignment)
-                                    local final_x, final_y = text_position.calc_grid_position(col, row, 
-                                        { width = w, height = h, depth = d },
-                                        {
-                                            grid_width = grid_width,
-                                            grid_height = grid_height,
-                                            total_cols = p_total_cols,
-                                            shift_x = shift_x,
-                                            shift_y = shift_y,
-                                            v_align = vertical_align,
-                                            h_align = h_align,
-                                            half_thickness = half_thickness,
-                                        }
-                                    )
-                                    D.setfield(curr, "xoffset", final_x)
-                                    D.setfield(curr, "yoffset", final_y)
-                                    
-                                    -- Add negative kern to reset horizontal cursor for TLT parent
-                                    local k = D.new(constants.KERN)
-                                    D.setfield(k, "kern", -w)
-                                    D.insert_after(p_head, curr, k)
-                                else
-                                    -- For HLIST/VLIST (Blocks), we use Kern (X) and Shift (Y)
-                                    -- xoffset/yoffset are NOT supported for blocks.
-                                    -- RTL column calculation for blocks:
-                                    -- Left edge of a block covering cols [col, col+width-1]
-                                    local rtl_col_left = p_total_cols - (pos.col + (pos.width or 1))
-                                    local final_x = rtl_col_left * grid_width + half_thickness + shift_x
-                                    
-                                    -- Top edge of the box should be at -row*grid_height - shift_y
-                                    -- In TLT box, baseline is at 0. Shift moves it down.
-                                    -- Baseline should be at -final_y + h
-                                    local final_y_top = -row * grid_height - shift_y
-                                    D.setfield(curr, "shift", -final_y_top + h)
-                                    
-                                    -- Position horizontally using Kern Wrap
-                                    local k_pre = D.new(constants.KERN)
-                                    D.setfield(k_pre, "kern", final_x)
-                                    
-                                    local k_post = D.new(constants.KERN)
-                                    -- Reset cursor to 0 for next node
-                                    D.setfield(k_post, "kern", -(final_x + w))
-                                    
-                                    -- Insert into list and update page head if needed
-                                    p_head = D.insert_before(p_head, curr, k_pre)
-                                    D.insert_after(p_head, curr, k_post)
-                                    -- next_curr remains the same (it's after k_post now)
-                                end
-
-                                if draw_debug then
-                                    local show_me = false
-                                    local color_str = "0 0 1 RG" -- Default blue for grid
-                                    if pos.is_block then
-                                        if _G.cn_vertical.debug.show_boxes then
-                                            show_me = true
-                                            color_str = "1 0 0 RG" -- Red for boxes
-                                        end
-                                    else
-                                        if _G.cn_vertical.debug.show_grid then
-                                            show_me = true
-                                        end
-                                    end
-                                    
-                                    if show_me then
-                                        local rtl_col_l = p_total_cols - (pos.col + (pos.width or 1))
-                                        local tx_sp = (rtl_col_l * grid_width + half_thickness + shift_x)
-                                        local ty_sp = (-row * grid_height - shift_y)
-                                        local tw_sp = grid_width
-                                        local th_sp = -grid_height
-                                        if pos.is_block then
-                                            tw_sp = pos.width * grid_width
-                                            th_sp = -pos.height * grid_height
-                                        end
-                                        p_head = utils.draw_debug_rect(p_head, curr, tx_sp, ty_sp, tw_sp, th_sp, color_str)
-                                    end
-                                end
-                            end -- end of else (valid col)
-                        end -- end of if pos
-                elseif id == constants.GLUE then
-                    D.setfield(curr, "width", 0)
-                    D.setfield(curr, "stretch", 0)
-                    D.setfield(curr, "shrink", 0)
-                elseif id == constants.KERN then
-                    -- Skip explicit kerns (subtype 1) - these are protected (e.g., from banxin module)
-                    local subtype = D.getfield(curr, "subtype")
-                    if subtype ~= 1 then
-                        D.setfield(curr, "kern", 0)
-                    end
-                end
-                curr = next_curr
-            end
+            -- Node positions
+            local ctx = {
+                grid_width = grid_width, grid_height = grid_height,
+                p_total_cols = p_total_cols, shift_x = shift_x, shift_y = shift_y,
+                half_thickness = half_thickness,
+            }
+            p_head = process_page_nodes(p_head, layout_map, params, ctx)
             
             result_pages[p+1] = { head = D.tonode(p_head), cols = p_total_cols }
         end
@@ -417,9 +358,6 @@ local render = {
     apply_positions = apply_positions,
 }
 
--- Register module in package.loaded for require() compatibility
--- 注册模块到 package.loaded
+-- Register module
 package.loaded['render_page'] = render
-
--- Return module exports
 return render

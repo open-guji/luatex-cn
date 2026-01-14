@@ -93,6 +93,14 @@ local function handle_glyph_node(curr, p_head, pos, params, ctx)
     D.setfield(curr, "xoffset", final_x)
     D.setfield(curr, "yoffset", final_y)
     
+    if params.draw_debug then
+        local font_id = D.getfield(curr, "font") or 0
+        local font_data = font.getfont(font_id)
+        local font_size = font_data and font_data.size or 0
+        utils.debug_log(string.format("  [render] GLYPH char=%d [c:%d, r:%d, s:%s] xoff=%.2f yoff=%.2f w=%.2f h=%.2f fsize=%.2f",
+            D.getfield(curr, "char"), pos.col, pos.row, tostring(pos.sub_col), final_x/65536, final_y/65536, w/65536, h/65536, font_size/65536))
+    end
+    
     local k = D.new(constants.KERN)
     D.setfield(k, "kern", -w)
     D.insert_after(p_head, curr, k)
@@ -184,6 +192,13 @@ local function process_page_nodes(p_head, layout_map, params, ctx)
                         p_head = handle_debug_drawing(curr, p_head, pos, ctx)
                     end
                 end
+            elseif params.draw_debug then
+                -- CRITICAL DEBUG: If it has Jiazhu attribute but no pos, it's a bug!
+                local has_jiazhu = (D.get_attribute(curr, constants.ATTR_JIAZHU) == 1)
+                if has_jiazhu then
+                    utils.debug_log(string.format("  [render] DISCARDED JIAZHU NODE=%s (not in layout_map!) char=%s", 
+                        tostring(curr), (id == constants.GLYPH and tostring(D.getfield(curr, "char")) or "N/A")))
+                end
             end
         elseif id == constants.GLUE then
             D.setfield(curr, "width", 0)
@@ -253,7 +268,7 @@ local function apply_positions(head, layout_map, params)
         local next_node = D.getnext(t)
         local pos = layout_map[t]
         D.setnext(t, nil)
-        
+
         if pos then
             local p = pos.page or 0
             if page_nodes[p] then

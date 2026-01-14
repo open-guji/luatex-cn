@@ -233,8 +233,8 @@
     margin-right .tl_set:N = \l__cn_vertical_margin_right_tl,
     margin-right .initial:n = {0pt},
 
-    jiazhu-size .tl_set:N = \l__cn_vertical_jiazhu_size_tl,
-    jiazhu-size .initial:n = {0.7},
+    jiazhu-font-size .tl_set:N = \l__cn_vertical_jiazhu_size_tl,
+    jiazhu-font-size .initial:n = {},
 
     % Banxin (版心) configuration
     banxin-upper-ratio .tl_set:N = \l_cnv_banxin_upper_tl,
@@ -389,7 +389,7 @@
         chapter_title_cols = \int_use:N \l_cnv_chapter_title_cols_int,
         chapter_title_font_size = [=[\luaescapestring{\l_cnv_chapter_title_font_size_tl}]=],
         chapter_title_grid_height = [=[\luaescapestring{\l_cnv_chapter_title_grid_height_tl}]=],
-        jiazhu_size = [=[\luaescapestring{\l__cn_vertical_jiazhu_size_tl}]=]
+        jiazhu_font_size = [=[\luaescapestring{\l__cn_vertical_jiazhu_size_tl}]=]
       })
     }
   }
@@ -511,21 +511,24 @@
 \NewDocumentCommand{\jiazhu}{ +m }
   {
     \group_begin:
+    
+    % Get jiazhu font size: default to 70% of current font size, user can override with explicit size (must include unit like "14pt")
+    % Expand the tl first to check if it's really blank
+    \tl_set:Nx \l_tmpb_tl { \l__cn_vertical_jiazhu_size_tl }
+    \tl_if_empty:NTF \l_tmpb_tl
+      {
+        % Default: 0.7 * current font size
+        \tl_set:Nx \l_tmpa_tl { \fp_eval:n { 0.7 * \f@size } pt }
+      }
+      {
+        % User specified size (must include unit like "14pt")
+        \tl_set_eq:NN \l_tmpa_tl \l_tmpb_tl
+      }
+    \fontsize{\l_tmpa_tl}{\l_tmpa_tl}\selectfont
+    
+    % CRITICAL: Set jiazhu attribute AFTER selectfont (selectfont clears attributes!)
     \setluatexattribute\cnverticaljiazhu{1}
     
-    \tl_if_empty:NTF \l__cn_vertical_jiazhu_size_tl
-      { \tl_set:Nn \l_tmpa_tl { 0.7 } }
-      { \tl_set_eq:NN \l_tmpa_tl \l__cn_vertical_jiazhu_size_tl }
-
-    \iow_term:x { [Guji-Debug]~Jiazhu-size:~\l_tmpa_tl,~\f@size }
-
-    \regex_match:nnTF { ^[0-9\.]+$ } { \l_tmpa_tl }
-      {
-        \fontsize{\fp_eval:n { \l_tmpa_tl * \f@size } pt}{\fp_eval:n { \l_tmpa_tl * \f@size } pt}\selectfont
-      }
-      {
-        \fontsize{\l_tmpa_tl}{\l_tmpa_tl}\selectfont
-      }
     #1
     \group_end:
   }

@@ -158,9 +158,14 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
     local t = d_head
     skip_banxin_and_occupied()
 
+    local node_count = 0
     while t do
         ::start_of_loop::
         local id = D.getid(t)
+        if node_count < 200 and utils and utils.debug_log then
+            utils.debug_log(string.format("  [layout] Node=%s ID=%d [p:%d, c:%d, r:%d]", tostring(t), id, cur_page, cur_col, cur_row))
+        end
+        node_count = node_count + 1
         local indent = D.get_attribute(t, constants.ATTR_INDENT) or 0
         local r_indent = D.get_attribute(t, constants.ATTR_RIGHT_INDENT) or 0
         
@@ -197,6 +202,9 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
 
         local is_jiazhu = D.get_attribute(t, constants.ATTR_JIAZHU) == 1
         if is_jiazhu then
+            if utils and utils.debug_log then
+                utils.debug_log(string.format("  [layout] JIAZHU DETECTED: node=%s", tostring(t)))
+            end
             flush_buffer()
             -- Collect Jiazhu sequence
             local j_nodes = {}
@@ -207,6 +215,9 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
                     table.insert(j_nodes, temp_t)
                 end
                 temp_t = D.getnext(temp_t)
+            end
+            if utils and utils.debug_log then
+                utils.debug_log(string.format("  [layout] Collected %d jiazhu glyphs", #j_nodes))
             end
 
             -- Ensure we have at least 2 rows available before starting a Jiazhu sequence
@@ -332,7 +343,13 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
 
     local total_pages = cur_page + 1
 
-    return layout_map, total_pages
+    if utils and utils.debug_log then
+        local map_count = 0
+        for _ in pairs(layout_map) do map_count = map_count + 1 end
+        utils.debug_log(string.format("[layout] Layout map built. Total entries: %d, Total pages: %d", map_count, cur_page + 1))
+    end
+
+    return layout_map, cur_page + 1
 end
 
 -- Create module table

@@ -70,7 +70,7 @@
     height .initial:n = 600pt,
 
     jiazhu-font-size .tl_set:N = \l_guji_jiazhu_font_size_tl,
-    jiazhu-font-size .initial:n = {0.7},
+    jiazhu-font-size .initial:n = {},
 
     border .bool_set:N = \l_guji_border_bool,
     border .initial:n = true,
@@ -350,7 +350,7 @@
         chapter-title-cols = \int_use:N \l_guji_chapter_title_cols_int,
         chapter-title-font-size = \l_guji_chapter_title_font_size_tl,
         chapter-title-grid-height = \l_guji_chapter_title_grid_height_tl,
-        jiazhu-size = \l_guji_jiazhu_font_size_tl
+        jiazhu-font-size = \l_guji_jiazhu_font_size_tl
       }
     \nointerlineskip
     \__cn_vertical_process_grid:n { \BODY }

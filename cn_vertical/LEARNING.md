@@ -349,3 +349,196 @@ cn_vertical.sty
 - `expl3` 的 `keys_set:nn` 对布尔值校验非常严格。
 - 在构建参数列表时，如果涉及布尔逻辑，应在外部处理好逻辑后再传递字面值，或者使用 `\keys_set:nx`（需谨慎处理其他参数的扩展）。
 - 保持接口的一致性比底层实现的"简洁"更重要。尽管这看起来多写了几行代码，但它保证了 `\gujiSetup` 接口的统一和稳定。
+
+---
+
+## 10. \selectfont 清除 LuaTeX 属性
+
+### 问题描述
+夹注（jiazhu）文字完全消失，虽然 `\jiazhu` 命令被调用（能看到 debug 输出），但渲染时检测不到 jiazhu 属性。
+
+### 根本原因
+**`\selectfont` 命令会清除当前活动的所有 LuaTeX 属性！**
+
+在 commit acf4b5d 中，`\setluatexattribute` 被错误地移到了 `\selectfont` **之前**：
+
+```latex
+% ❌ 错误做法（导致属性丢失）
+\NewDocumentCommand{\jiazhu}{ +m }
+  {
+    \group_begin:
+    \setluatexattribute\cnverticaljiazhu{1}  % ← 属性设置
+    \fontsize{...}{...}\selectfont          % ← selectfont 清除了属性！
+    #1  % ← 此时属性已经丢失
+    \group_end:
+  }
+```
+
+### 调试过程
+1. **现象**：PDF 中夹注文字不显示
+2. **初步排查**：以为是属性保留问题，在 `flatten_nodes.lua` 中添加了属性复制代码
+3. **深入调试**：添加 debug 日志，发现 `[flatten] Found JIAZHU` 根本没有输出
+4. **关键发现**：属性在 TeX 层就已经丢失，根本没有到达 Lua
+5. **对比历史**：检查 commit cc9cee4（工作版本）vs acf4b5d（损坏版本），发现 `\setluatexattribute` 的位置被改变了
+
+### 解决方案
+**属性必须在字体选择之后设置**：
+
+```latex
+% ✅ 正确做法
+\NewDocumentCommand{\jiazhu}{ +m }
+  {
+    \group_begin:
+    
+    % 1. 先进行字体缩放
+    \fontsize{...}{...}\selectfont
+    
+    % 2. CRITICAL: 在 selectfont 之后设置属性
+    \setluatexattribute\cnverticaljiazhu{1}
+    
+    % 3. 现在渲染内容，属性有效
+    #1
+    \group_end:
+  }
+```
+
+### 教训
+1. **`\selectfont` 是一个"破坏性"操作**，会重置字体相关的许多状态，包括 LuaTeX 属性
+2. **属性设置的时机至关重要**：
+   - ✅ 在 `\selectfont` **之后**设置 = 属性生效
+   - ❌ 在 `\selectfont` **之前**设置 = 属性丢失
+3. **调试属性问题的方法**：
+   - 在 Lua 的 flatten 阶段加 debug：`D.get_attribute(node, ATTR_XXX)`
+   - 在 layout 阶段加 debug：检查属性是否存在
+   - 从底层往上查，确定属性在哪一层丢失
+4. **Git 比对的重要性**：
+   - 当功能突然损坏时，对比上一个工作版本
+   - 查找细微的改动（如本次的代码顺序调整）
+5. **文档化边界条件**：像 `\selectfont` 这种会清除属性的命令应该在代码注释中明确标注
+
+### 相关代码位置
+- 修复位置：`cn_vertical.sty` 第 530 行
+- 影响模块：所有依赖 `\jiazhu` 命令的功能
+- 提交记录：acf4b5d 引入bug，本次修复
+
+---
+
+## 11. LaTeX3 `\fontsize` 与正则表达式匹配问题
+
+### 问题描述
+夹注（jiazhu）字符在 PDF 中不显示，虽然节点存在于布局映射中，调试日志显示字符被正确定位，但字体大小只有 0.70pt（应该是 19.6pt）。
+
+### 调试过程
+1. **现象**：夹注区域空白，普通字符正常显示
+2. **初步排查**：检查节点复制、布局计算，均正常
+3. **关键发现**：在 render 阶段输出字形尺寸：
+   ```
+   [render] GLYPH char=40643 [c:0, r:0] w=28.00 h=21.00 fsize=28.00  # 正常字符
+   [render] GLYPH char=23569 [c:0, r:3] w=0.70 h=0.50 fsize=0.70     # 夹注字符！
+   ```
+4. **定位问题**：字体大小是 0.70pt 而不是 19.6pt（28 × 0.7）
+
+### 根本原因
+
+**LaTeX3 的 `\regex_match:nnTF` 对于简单数值字符串的匹配有问题。**
+
+原代码试图用正则表达式检测 jiazhu-size 参数是否是纯数字（缩放因子）：
+
+```latex
+% ❌ 问题代码
+\regex_match:nnTF { ^[0-9\.]+$ } { \l_tmpa_tl }  % "0.7" 却不匹配！
+  {
+    % 缩放因子逻辑（从未执行）
+    \fontsize{\fp_eval:n { 0.7 * 28 } pt}...
+  }
+  {
+    % 直接使用值（错误地执行了这个分支）
+    \fontsize{0.7}{0.7}\selectfont  % 创建了 0.7pt 的字体！
+  }
+```
+
+正则表达式 `^[0-9\.]+$` 在 LaTeX3 中可能因为 catcode 或其他原因无法匹配 "0.7" 这样的字符串。
+
+### 解决方案
+
+**简化设计：移除缩放因子支持，要求显式指定字体大小（带单位）**：
+
+```latex
+% ✅ 正确做法：默认计算，用户可覆盖
+\tl_if_empty:NTF \l__cn_vertical_jiazhu_size_tl
+  {
+    % 默认：当前字体的 70%
+    \tl_set:Nx \l_tmpa_tl { \fp_eval:n { 0.7 * \f@size } pt }
+  }
+  {
+    % 用户指定（必须带单位如 "14pt"）
+    \tl_set_eq:NN \l_tmpa_tl \l__cn_vertical_jiazhu_size_tl
+  }
+\fontsize{\l_tmpa_tl}{\l_tmpa_tl}\selectfont
+```
+
+**设计决策**：
+- 不再支持缩放因子（如 "0.7"），必须使用完整的尺寸值（如 "14pt"）
+- 默认值在代码中计算（0.7 × 当前字体），而非在参数声明中
+- 参数名从 `jiazhu-size` 改为 `jiazhu-font-size`，更明确
+
+### 教训
+1. **简单设计优于灵活设计**：
+   - 支持两种格式（缩放因子和绝对尺寸）增加了复杂性
+   - 用户使用时也更容易混淆
+   - 强制使用带单位的值更加明确
+2. **调试字体问题时检查尺寸**：
+   - 在 Lua 层打印 `font.getfont(id).size`
+   - 比较正常字符和问题字符的字体 ID 和尺寸
+3. **默认值的位置**：
+   - 复杂的默认值（需要计算）应该在使用处计算
+   - 简单的默认值才应该在参数声明中设置
+4. **参数命名要明确**：
+   - `jiazhu-font-size` 比 `jiazhu-size` 更清晰
+   - 用户一眼就知道需要提供字体大小值
+
+### 相关代码位置
+- 修复位置：`cn_vertical.sty` 第 515-525 行
+- 参数名：`jiazhu-font-size`（从 `jiazhu-size` 重命名）
+- 影响功能：夹注（jiazhu）字体大小设置
+
+---
+
+## 12. LaTeX3 Keys 传递空值导致 `\tl_if_empty:NTF` 失败
+
+### 问题描述
+在修复 #11 后，夹注字符再次消失。调试发现 `\l__cn_vertical_jiazhu_size_tl` 被 `\tl_if_empty:NTF` 判定为"非空"，即使它看起来是空的。
+
+### 原因分析
+问题出现在 `guji.cls` 向 `cn_vertical.sty` 传递参数的方式：
+
+```latex
+% guji.cls
+\cnvSetup{
+    jiazhu-font-size = \l_guji_jiazhu_font_size_tl  % 传递空 tl
+}
+```
+
+当 `\l_guji_jiazhu_font_size_tl` 为空时，expl3 keys 系统仍然会"设置"目标变量，但可能会留下不可见的内容（如空的分组 `{}`）。`\tl_if_empty:NTF` 检查的是 token 级别的空，而不是"看起来空"。
+
+### 解决方案
+先展开变量再检查：
+
+```latex
+% 错误 - 直接检查可能失败
+\tl_if_empty:NTF \l__cn_vertical_jiazhu_size_tl { default } { use }
+
+% 正确 - 先展开再检查
+\tl_set:Nx \l_tmpb_tl { \l__cn_vertical_jiazhu_size_tl }
+\tl_if_empty:NTF \l_tmpb_tl { default } { use }
+```
+
+### 教训
+1. **LaTeX3 的 `\tl_if_empty:NTF` 是严格的 token 检查**：
+   - 空分组 `{}` 不等于真正的空
+   - keys 系统传递空值时可能留下不可见 token
+2. **调试时打印带分隔符的内容**：
+   - `\iow_term:x { value: |\the_var| }` 可以看到边界
+3. **跨模块传递可选参数时要小心**：
+   - 从一个 cls/sty 传递到另一个时，空值处理需要特别注意
+   - 考虑在接收方做展开检查

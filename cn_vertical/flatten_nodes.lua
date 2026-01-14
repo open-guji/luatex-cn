@@ -176,6 +176,16 @@ local function flatten_vbox(head, grid_width, char_width)
                     local copy = D.copy(t)
                     if running_indent > 0 then D.set_attribute(copy, constants.ATTR_INDENT, running_indent) end
                     if running_r_indent > 0 then D.set_attribute(copy, constants.ATTR_RIGHT_INDENT, running_r_indent) end
+
+                    -- CRITICAL: Preserve jiazhu attributes (they are set by \jiazhu command)
+                    local jiazhu_attr = D.get_attribute(t, constants.ATTR_JIAZHU)
+                    if jiazhu_attr then
+                        D.set_attribute(copy, constants.ATTR_JIAZHU, jiazhu_attr)
+                    end
+                    local jiazhu_sub_attr = D.get_attribute(t, constants.ATTR_JIAZHU_SUB)
+                    if jiazhu_sub_attr then
+                        D.set_attribute(copy, constants.ATTR_JIAZHU_SUB, jiazhu_sub_attr)
+                    end
                     
                     D.set_attribute(copy, constants.ATTR_TEXTBOX_WIDTH, 0)
                     D.set_attribute(copy, constants.ATTR_TEXTBOX_HEIGHT, 0)

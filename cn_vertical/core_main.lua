@@ -145,8 +145,17 @@ function cn_vertical.prepare_grid(box_num, params)
     end
 
     -- 3. Pipeline Stage 1: Flatten VBox (if needed)
-    if box.id == 1 then
+    if box.id == constants.VLIST then
         list = flatten.flatten_vbox(list, g_width, char_width)
+        if is_debug then
+            local count = 0
+            local temp = list
+            while temp do
+                count = count + 1
+                temp = D.getnext(temp)
+            end
+            utils.debug_log(string.format("[core] Post-flatten nodes: %d, Head: %s", count, tostring(list)))
+        end
     end
 
     -- 4. Pipeline Stage 2: Calculate grid layout
@@ -198,7 +207,7 @@ function cn_vertical.prepare_grid(box_num, params)
         chapter_title_grid_height = params.chapter_title_grid_height,
         column_aligns = params.column_aligns,
         start_page_number = start_page,
-        jiazhu_size = params.jiazhu_size or "0.7",
+        jiazhu_font_size = params.jiazhu_font_size,
     }
 
     if is_debug then

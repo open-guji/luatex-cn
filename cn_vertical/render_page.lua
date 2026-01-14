@@ -232,6 +232,7 @@ local function apply_positions(head, layout_map, params)
                             chapter_title_cols = params.chapter_title_cols or 2,
                             chapter_title_font_size = params.chapter_title_font_size,
                             chapter_title_grid_height = params.chapter_title_grid_height,
+                            page_number = (params.start_page_number or 1) + p,
                         })
                     end
                 end

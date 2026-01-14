@@ -361,6 +361,49 @@ local function draw_banxin_column(p_head, params)
         end
     end
 
+    -- Insert page number in section 2 (middle) bottom right
+    if params.page_number then
+        local page_str = utils.to_chinese_numeral(params.page_number)
+        if page_str ~= "" then
+            -- Middle section boundaries
+            local upper_h = banxin_result.upper_height
+            local middle_h = height * (params.middle_ratio or 0.56)
+            
+            -- Position at the bottom of the middle section
+            local middle_y_bottom = y - upper_h - middle_h
+            
+            -- Decoration (yuwei) bottom position
+            local edge_h = width * 0.39
+            local notch_h = width * 0.17
+            local yuwei_gap = 65536 * 3.7
+            local lower_yuwei_total = params.lower_yuwei and (yuwei_gap + edge_h + notch_h) or 0
+            
+            -- Available bottom-right position
+            -- y_top for the vertical text block should be just above the lower yuwei or divider
+            local page_y_top = middle_y_bottom + lower_yuwei_total + (65536 * 10) -- 10pt above yuwei/divider
+            
+            -- Use a small font size and compact height
+            -- "字体比较小" -> 9pt
+            local page_font_size = "9pt"
+            
+            local page_chain = text_position.create_vertical_text(page_str, {
+                x = x,
+                y_top = page_y_top + (65536 * 20), -- Offset for the container
+                width = width,
+                height = (65536 * 30), -- Container height
+                v_align = "bottom",
+                h_align = "right",
+                font_size = page_font_size,
+            })
+            if page_chain then
+                local chain_tail = page_chain
+                while D.getnext(chain_tail) do chain_tail = D.getnext(chain_tail) end
+                D.setlink(chain_tail, p_head)
+                p_head = page_chain
+            end
+        end
+    end
+
     if _G.cn_vertical and _G.cn_vertical.debug and _G.cn_vertical.debug.enabled then
         if _G.cn_vertical.debug.show_banxin then
             -- Draw a green dashed rectangle for the banxin column area

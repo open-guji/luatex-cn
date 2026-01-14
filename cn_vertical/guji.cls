@@ -121,8 +121,10 @@
     book-name .initial:n = {},
 
     % Chapter title (章节标题) - displayed in section 2 of banxin
-    chapter-title .tl_set:N = \l_guji_chapter_title_tl,
-    chapter-title .initial:n = {},
+    chapter-title .code:n = {
+      \tl_set:Nn \l_guji_chapter_title_tl { #1 }
+      \ResetPageNumber
+    },
 
     chapter-title-top-margin .tl_set:N = \l_guji_chapter_title_top_margin_tl,
     chapter-title-top-margin .initial:n = {40pt},
@@ -206,10 +208,17 @@
     \tl_set:Nn \l_guji_book_name_tl { #1 }
   }
 
+% Command to reset page number to 1
+\NewDocumentCommand{\ResetPageNumber}{ }
+  {
+    \directlua{cn_vertical.reset_page_number()}
+  }
+
 % Command to set Chapter Title (章节标题)
 \NewDocumentCommand{\setChapterTitle}{ m }
   {
     \tl_set:Nn \l_guji_chapter_title_tl { #1 }
+    \ResetPageNumber
   }
 
 % Command to define templates

@@ -153,6 +153,43 @@ local function insert_pdf_literal(head, literal_str)
     return node.direct.insert_before(head, head, node.direct.todirect(n_node))
 end
 
+--- Convert an integer to a traditional Chinese numeral string
+--- Example: 1 -> "一", 10 -> "十", 21 -> "二十一"
+--- @param n number The number to convert
+--- @return string The Chinese numeral string
+local function to_chinese_numeral(n)
+    if not n or n <= 0 then return "" end
+    local digits = {"一", "二", "三", "四", "五", "六", "七", "八", "九"}
+    if n < 10 then
+        return digits[n]
+    elseif n == 10 then
+        return "十"
+    elseif n < 20 then
+        return "十" .. digits[n - 10]
+    elseif n < 100 then
+        local tens = math.floor(n / 10)
+        local ones = n % 10
+        local s = digits[tens] .. "十"
+        if ones > 0 then
+            s = s .. digits[ones]
+        end
+        return s
+    else
+        -- Simple support up to 999 for now
+        local hundreds = math.floor(n / 100)
+        local rest = n % 100
+        local s = digits[hundreds] .. "百"
+        if rest > 0 then
+            if rest < 10 then
+                s = s .. "零" .. digits[rest]
+            else
+                s = s .. to_chinese_numeral(rest)
+            end
+        end
+        return s
+    end
+end
+
 -- Create module table
 -- 模块导出表
 local utils = {
@@ -162,6 +199,7 @@ local utils = {
     draw_debug_rect = draw_debug_rect,
     create_pdf_literal = create_pdf_literal,
     insert_pdf_literal = insert_pdf_literal,
+    to_chinese_numeral = to_chinese_numeral,
 }
 
 -- Register module in package.loaded for require() compatibility

@@ -55,12 +55,21 @@ _G.cn_vertical_pending_pages = {}
 -- Create module namespace - MUST use _G to ensure global scope
 _G.cn_vertical = _G.cn_vertical or {}
 local cn_vertical = _G.cn_vertical
+
+-- Initialize global page number
+cn_vertical.current_page_number = cn_vertical.current_page_number or 1
+
 cn_vertical.debug = cn_vertical.debug or {
     enabled = false,
     verbose_log = false,
     show_grid = true,
     show_boxes = true
 }
+
+--- Reset the global page number to 1
+function cn_vertical.reset_page_number()
+    cn_vertical.current_page_number = 1
+end
 
 -- Load submodules using Lua's require mechanism
 -- 加载子模块
@@ -172,8 +181,23 @@ function cn_vertical.prepare_grid(box_num, params)
         chapter_title_font_size = params.chapter_title_font_size,
         chapter_title_grid_height = params.chapter_title_grid_height,
         column_aligns = params.column_aligns,
+        start_page_number = _G.cn_vertical.current_page_number,
     }
+
+    if is_debug then
+        utils.debug_log(string.format("[core] Calling apply_positions with start_page=%d", _G.cn_vertical.current_page_number))
+    end
+
     local rendered_pages = render.apply_positions(list, layout_map, r_params)
+
+    -- Update global page number after processing all pages
+    local old_page_num = _G.cn_vertical.current_page_number
+    _G.cn_vertical.current_page_number = old_page_num + #rendered_pages
+
+    if is_debug then
+        utils.debug_log(string.format("[core] Finished apply_positions. Pages: %d. Global page number: %d -> %d", 
+            #rendered_pages, old_page_num, _G.cn_vertical.current_page_number))
+    end
 
     -- 6. Store pages and return count
     _G.cn_vertical_pending_pages = {}

@@ -36,6 +36,7 @@ local constants = package.loaded['constants'] or require('constants')
 local D = constants.D
 local utils = package.loaded['utils'] or require('utils')
 local text_position = package.loaded['text_position'] or require('text_position')
+local yuwei = package.loaded['yuwei'] or require('yuwei')
 
 -- Conversion factor from scaled points to PDF big points
 local sp_to_bp = utils.sp_to_bp
@@ -118,6 +119,45 @@ local function draw_banxin(params)
         x_bp + width_bp, div2_y_bp
     )
     table.insert(literals, div2_line)
+
+    -- Draw upper yuwei (上鱼尾) in section 2
+    -- The yuwei fills the entire column width and is placed at the top of section 2
+    local yuwei_x = x                 -- Left edge of column
+    local yuwei_y = div1_y            -- Just below the first dividing line
+    
+    -- Yuwei dimensions:
+    -- edge_height: height of the side edges (shorter)
+    -- notch_height: distance from top to V-tip (longer, includes the V portion)
+    local edge_h = width * 0.5   
+    local notch_h = width * 0.3  
+    
+    -- Upper yuwei (上鱼尾) - notch at bottom, opening downward
+    local upper_yuwei = yuwei.draw_yuwei({
+        x = yuwei_x,
+        y = yuwei_y,
+        width = width,
+        edge_height = edge_h,
+        notch_height = notch_h,
+        style = "black",
+        direction = 1,                -- Notch at bottom (上鱼尾)
+        color_str = color_str,
+    })
+    table.insert(literals, upper_yuwei)
+    
+    -- Lower yuwei (下鱼尾) - notch at top, opening upward (mirror of upper)
+    -- Positioned at the bottom of section 2, just above the second dividing line
+    local lower_yuwei_y = div2_y + notch_h  -- Position so V-tip aligns with div2
+    local lower_yuwei = yuwei.draw_yuwei({
+        x = yuwei_x,
+        y = lower_yuwei_y,
+        width = width,
+        edge_height = edge_h,
+        notch_height = notch_h,
+        style = "black",
+        direction = -1,               -- Notch at top (下鱼尾)
+        color_str = color_str,
+    })
+    table.insert(literals, lower_yuwei)
 
     -- Return literals and section1_height for text placement
     return {

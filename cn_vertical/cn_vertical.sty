@@ -430,6 +430,15 @@
     \group_end:
   }
 
+% Empty Box Command (Shorthand for empty GridTextbox)
+% Syntax: \EmptyBox[height=N, ...] or \EmptyBox[N]
+\NewDocumentCommand{\EmptyBox}{ O{} }
+  {
+    \regex_match:nnTF { ^\d+$ } { #1 }
+      { \GridTextbox[height=#1]{} }
+      { \GridTextbox[#1]{} }
+  }
+
 \ExplSyntaxOff
 
 \endinput

@@ -238,6 +238,7 @@
     \fontsize{\l_guji_font_size_tl}{\l_guji_line_spacing_tl}\selectfont
     \bool_if:NTF \l_guji_border_bool { \keys_set:nn { cn_vertical } { border=true } } { \keys_set:nn { cn_vertical } { border=false } }
     \bool_if:NTF \l_guji_outer_border_bool { \keys_set:nn { cn_vertical } { outer-border=true } } { \keys_set:nn { cn_vertical } { outer-border=false } }
+    \bool_if:NTF \l_guji_lower_yuwei_bool { \keys_set:nn { cn_vertical } { lower-yuwei=true } } { \keys_set:nn { cn_vertical } { lower-yuwei=false } }
     % global debug flag \g_cnv_debug_bool is already set by keys_set:nn { guji } { #1 } above
     % Zero out vertical skips for exact grid layout
     \setlength{\topskip}{0pt}
@@ -332,7 +333,6 @@
         banxin-middle-ratio = \l_guji_banxin_middle_tl,
         banxin-lower-ratio = \l_guji_banxin_lower_tl,
         book-name = \l_guji_book_name_tl,
-        lower-yuwei = \bool_if:NTF \l_guji_lower_yuwei_bool { true } { false },
         chapter-title = \l_guji_chapter_title_tl,
         chapter-title-top-margin = \l_guji_chapter_title_top_margin_tl,
         chapter-title-cols = \int_use:N \l_guji_chapter_title_cols_int,

@@ -321,4 +321,31 @@ cn_vertical.sty
 
 ---
 
-*最后更新：2026-01-13*
+## 9. LaTeX expl3 boolean 键的传递问题
+
+### 问题描述
+在 `guji.cls` 中将参数传递给 `cn_vertical.sty` 时，报错：
+`! LaTeX Error: Key 'cn_vertical/lower-yuwei' accepts boolean values only.`
+
+### 错误原因
+在 `\keys_set:nn` 中，如果给 `.bool_set:N` 类型的键传递一个命令（如 `\bool_if:NTF ...`），它不会自动扩展该命令，而是直接检查 token 是否为 `true` 或 `false`。由于接收到的是命令 token 而非字面值，导致报错。
+
+### 解决方案
+在调用 `\keys_set:nn` 之前，先用 `\bool_if:NTF` 进行判断，然后传递字面值：
+
+```latex
+% ❌ 错误做法
+\keys_set:nn { cn_vertical } {
+    lower-yuwei = \bool_if:NTF \l_guji_lower_yuwei_bool { true } { false }
+}
+
+% ✅ 正确做法
+\bool_if:NTF \l_guji_lower_yuwei_bool 
+  { \keys_set:nn { cn_vertical } { lower-yuwei = true } }
+  { \keys_set:nn { cn_vertical } { lower-yuwei = false } }
+```
+
+### 教训
+- `expl3` 的 `keys_set:nn` 对布尔值校验非常严格。
+- 在构建参数列表时，如果涉及布尔逻辑，应在外部处理好逻辑后再传递字面值，或者使用 `\keys_set:nx`（需谨慎处理其他参数的扩展）。
+- 保持接口的一致性比底层实现的"简洁"更重要。尽管这看起来多写了几行代码，但它保证了 `\gujiSetup` 接口的统一和稳定。

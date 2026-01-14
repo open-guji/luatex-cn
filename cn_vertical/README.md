@@ -91,5 +91,84 @@ graph TD
     将“数据提取、位置模拟、实际着色”分为三个独立步骤。这种模块化设计使得添加新功能（如支持脚注或更复杂的图文绕排）变得更加清晰。
 4.  **底层 PDF 直绘**: 
     边框、版心线和背景色通过 `pdf_literal` 直接写入 PDF 指令（`re`, `m`, `l`, `S`, `f`），而非使用 TeX 的 Rule。这保证了在极细线宽和复杂重叠场景下的最佳性能和渲染精度。
-5.  **统一文字定位 (Unified Positioning)**: 
+5.  **统一文字定位 (Unified Positioning)**:
     Banxin 中的文字与主文本文字共用一套 `text_position.lua` 逻辑，确保了全书字符在网格中的对齐一致性（包括偏置处理和负 Kern 抵消）。
+
+---
+
+## 常见问题排查：动态字体缩放后字形尺寸获取失败
+
+### 问题现象
+当使用 `font_scale` 参数缩放字体时，字形的水平对齐（如 `h_align="right"`）出现严重偏移，文字超出预期边界。
+
+### 根本原因
+在 LuaTeX 中，使用 `font.define()` 动态定义新字体后，`font.getfont(new_font_id)` 会返回 `nil`。这是因为 `font.define()` 返回的是一个新的字体 ID，但该字体的元数据（包括 `characters` 表）并未被 LuaTeX 内部缓存到可通过 `font.getfont()` 访问的位置。
+
+**调试输出示例**：
+```
+[DEBUG font] cp=U+53F2 NOT FOUND in font, using default gw=10.00pt, f_data=false, chars=nil
+```
+这里 `f_data=false` 说明 `font.getfont()` 返回了 `nil`。
+
+### 错误的代码逻辑
+```lua
+-- 创建缩放字体
+font_id = font.define(new_font_data)
+
+-- 后续获取字形尺寸时
+local f_data = font.getfont(font_id)  -- 返回 nil！
+if f_data and f_data.characters and f_data.characters[cp] then
+    gw = char_data.width  -- 永远不会执行
+end
+-- 回退到默认值 10pt，导致对齐计算错误
+```
+
+### 正确的解决方案
+在调用 `font.define()` 之前，保存原始字体数据的引用，后续从原始数据获取字符尺寸，再乘以 `font_scale_factor`：
+
+```lua
+local base_font_data = font.getfont(font_id)  -- 在缩放前保存
+local font_scale_factor = params.font_scale or 1.0
+
+-- 创建缩放字体用于渲染
+if params.font_scale then
+    local new_font_data = {}
+    for k,v in pairs(base_font_data) do new_font_data[k] = v end
+    new_font_data.size = math.floor(base_font_data.size * params.font_scale + 0.5)
+    font_id = font.define(new_font_data)
+end
+
+-- 获取字形尺寸时使用 base_font_data
+if base_font_data and base_font_data.characters and base_font_data.characters[cp] then
+    gw = base_font_data.characters[cp].width * font_scale_factor
+end
+```
+
+### 与字体类型的关系
+此问题与字体类型（TrueType、OpenType、Type1 等）**无关**。它是 LuaTeX 的 `font.define()` / `font.getfont()` API 行为导致的：
+- `font.getfont()` 只能访问通过 TeX 端（如 `\font` 命令或 fontspec）加载的字体
+- 通过 `font.define()` 在 Lua 端动态创建的字体，其元数据不会被自动注册到 `font.getfont()` 可访问的缓存中
+
+因此，只要使用 `font.define()` 动态创建缩放字体，无论原始字体是什么类型，都会遇到这个问题。解决方案是**始终保留对原始字体数据的引用**。
+
+### 字体兼容性说明
+当前实现依赖 LuaTeX 统一的字体数据结构，该结构对所有字体类型（TrueType、OpenType、Type1 等）都是一致的：
+
+```lua
+font_data = {
+    size = <scaled points>,      -- 字体大小
+    characters = {               -- 字符表
+        [codepoint] = {
+            width = <sp>,        -- 字符宽度
+            height = <sp>,       -- 字符高度（基线以上）
+            depth = <sp>,        -- 字符深度（基线以下）
+        },
+        ...
+    },
+}
+```
+
+代码通过以下方式确保字体兼容性：
+1. **使用标准字段**：只依赖 `size`、`characters`、`width`、`height`、`depth` 这些所有字体都有的标准字段
+2. **提供合理的回退值**：当字符数据缺失时，使用字体大小作为默认宽度（适用于等宽 CJK 字符）
+3. **不依赖字体特定字段**：不使用 `units_per_em`、`type` 等可能因字体格式而异的字段

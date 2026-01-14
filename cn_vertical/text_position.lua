@@ -92,11 +92,11 @@ local function position_glyph(glyph_direct, x, y, params)
     -- Apply offsets
     D.setfield(glyph_direct, "xoffset", x_offset)
     D.setfield(glyph_direct, "yoffset", y_offset)
-    
+
     -- --- Trace Logging ---
     if _G.cn_vertical and _G.cn_vertical.debug and _G.cn_vertical.debug.verbose_log then
         local u = package.loaded['utils'] or require('utils')
-        u.debug_log(string.format("[GlyphPos] char=%d x=%.2f cw=%.2f gw=%.2f -> xoff=%.2f yoff=%.2f", 
+        u.debug_log(string.format("[GlyphPos] char=%d x=%.2f cw=%.2f gw=%.2f -> xoff=%.2f yoff=%.2f",
             D.getfield(glyph_direct, "char"), x/(65536), cell_width/(65536), g_width/(65536), x_offset/(65536), y_offset/(65536)))
     end
 
@@ -154,6 +154,7 @@ local function create_vertical_text(text, params)
     local shift_y = params.shift_y or 0
     
     local font_scale_factor = 1.0
+    local base_font_data = font.getfont(font_id) -- Save original font data for character lookups
 
     -- Handle font size if provided
     if params.font_size then
@@ -196,22 +197,21 @@ local function create_vertical_text(text, params)
 
         local glyph_direct = D.todirect(glyph)
 
-        -- CRITICAL: Fetch glyph dimensions from font data
-        -- Newly created nodes have 0 dimensions until processed.
-        local f_data = font.getfont(font_id)
+        -- CRITICAL: Fetch glyph dimensions from base font data (before scaling)
+        -- Then apply font_scale_factor to get actual dimensions
         local cp = utf8.codepoint(char)
-        
+
         -- Default dimensions if not in font (fallback to square em)
-        local gw = (f_data and f_data.size) or (65536 * 10)
+        local gw = (base_font_data and base_font_data.size or (65536 * 10)) * font_scale_factor
         local gh = gw * 0.8
         local gd = gw * 0.2
 
-        if f_data and f_data.characters and f_data.characters[cp] then
-            local char_data = f_data.characters[cp]
-            -- Use font_scale_factor because characters table might not be scaled in Lua table
-            gw = (char_data.width or 0) * font_scale_factor
-            gh = (char_data.height or 0) * font_scale_factor
-            gd = (char_data.depth or 0) * font_scale_factor
+        if base_font_data and base_font_data.characters and base_font_data.characters[cp] then
+            local char_data = base_font_data.characters[cp]
+            -- Base font character dimensions need to be scaled by font_scale_factor
+            gw = (char_data.width or gw) * font_scale_factor
+            gh = (char_data.height or gh) * font_scale_factor
+            gd = (char_data.depth or gd) * font_scale_factor
             D.setfield(glyph_direct, "width", math.floor(gw + 0.5))
             D.setfield(glyph_direct, "height", math.floor(gh + 0.5))
             D.setfield(glyph_direct, "depth", math.floor(gd + 0.5))

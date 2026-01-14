@@ -321,13 +321,14 @@ local function draw_banxin_column(p_head, params)
                     local sub_x = x + (n_cols - 1 - c) * col_width
 
                     -- Determine horizontal alignment for multi-column layout:
-                    -- Right column (first part) aligns right, left column (last part) aligns left
+                    -- Right column (first part) aligns right (toward outer edge)
+                    -- Left column (last part) aligns left (toward outer edge)
                     local col_h_align = "center"
                     if n_cols > 1 then
                         if i == 1 then
-                            col_h_align = "right"  -- Rightmost column: align right
+                            col_h_align = "right"  -- Rightmost column: align right (toward outer edge)
                         elseif i == #parts then
-                            col_h_align = "left"   -- Leftmost column: align left
+                            col_h_align = "left"   -- Leftmost column: align left (toward outer edge)
                         end
                     end
 

@@ -8,14 +8,14 @@
 --   2. 接收来自 TeX 的盒子数据和配置参数
 --   3. 执行三阶段流水线：展平 -> 布局模拟 -> 渲染应用
 --   4. 管理多页输出，维护页面缓存（cn_vertical_pending_pages）
---   5. 提供 textbox 内嵌排版支持（verticalize_inner_box）
+--   5. 处理内嵌文本框（见 textbox.lua）
 --
 -- 【注意事项】
 --   • 模块必须设置为全局变量 _G.cn_vertical，因为 TeX 从 Lua 调用时需要访问
 --   • package.loaded 机制确保子模块不会被重复加载
 --   • 多页渲染时需要临时保存 pending_pages 状态（见 verticalize_inner_box）
 --   • 重点：Textbox 在列表开头时必须配合 \leavevmode 使用，以确保进入水平模式并继承 \leftskip
---   • verticalize_inner_box 会主动检测 tex.leftskip 以实现缩进在嵌套盒子间的正确传递
+--   • Textbox 逻辑已移至 textbox.lua
 --   • 本模块不直接操作节点，而是调用子模块完成具体工作
 --
 -- 【整体架构】
@@ -52,81 +52,10 @@ local utils = package.loaded['utils'] or require('utils')
 local flatten = package.loaded['flatten'] or require('flatten')
 local layout = package.loaded['layout'] or require('layout')
 local render = package.loaded['render'] or require('render')
+local textbox = package.loaded['textbox'] or require('textbox')
 
 local D = node.direct
 
--- @param v_align (string) Vertical alignment: "top", "center", "bottom"
--- @param distribute (string) "true" or "false"
--- @param debug (string) "true" or "false"
--- @param border (string) "true" or "false"
-function cn_vertical.verticalize_inner_box(box_num, w_cols, h_rows, g_w_str, g_h_str, v_align, distribute, debug, border)
-    local box = tex.box[box_num]
-    if not box then return end
-
-    -- Read current indent attribute directly
-    local current_indent = 0
-    local indent_attr = constants.ATTR_INDENT
-    local ci = tex.attribute[indent_attr]
-    if ci and ci > -1 then
-        current_indent = ci
-    end
-
-    -- Also check TeX leftskip (standard LaTeX list indentation)
-    local char_height = constants.to_dimen(g_h_str) or (65536 * 12)
-    local ls_width = tex.leftskip.width
-    if ls_width > 0 then
-        local ls_indent = math.floor(ls_width / char_height + 0.5)
-        current_indent = math.max(current_indent, ls_indent)
-    end
-
-    -- Prepare parameters for the inner grid
-    -- We want to simulate a "page" that is exactly the size of the textbox
-    local sub_params = {
-        grid_width = g_w_str,
-        grid_height = g_h_str,
-        col_limit = tonumber(h_rows) or 1,
-        page_columns = tonumber(w_cols) or 1,
-        border_on = (border == "true"),
-        debug_on = (debug == "true") or _G.cn_vertical.debug.enabled,
-        v_align = v_align or "center",
-        distribute = (distribute == "true"),
-        height = g_h_str -- Give enough height for the rows
-    }
-
-    -- Backup current pending pages (main document)
-    local saved_pages = _G.cn_vertical_pending_pages
-    _G.cn_vertical_pending_pages = {}
-
-    utils.debug_log("--- verticalize_inner_box: START (box=" .. box_num .. ", w=" .. w_cols .. ", h=" .. h_rows .. ", indent=" .. tostring(current_indent) .. ", border=" .. tostring(border) .. ", debug=" .. tostring(debug) .. ") ---")
-
-    -- Call the main preparation pipeline
-    local total = cn_vertical.prepare_grid(box_num, sub_params)
-
-    -- Retrieve the result (should be 1 "page")
-    local res_box = _G.cn_vertical_pending_pages[1]
-
-    -- Restore main pages
-    _G.cn_vertical_pending_pages = saved_pages
-
-    if res_box then
-        -- The prepare_grid already returns an HLIST box with TLT dir.
-        -- We just need to ensure the dimensions are correct for the grid.
-        -- Actually, prepare_grid already set them.
-        
-        -- CRITICAL: Set textbox attributes so this box is recognized as a textbox block in outer layout
-        -- NOTE: Width is always 1 for outer layout - the textbox occupies 1 outer grid column
-        -- regardless of how many inner columns it has. w_cols is for internal layout only.
-        node.set_attribute(res_box, constants.ATTR_TEXTBOX_WIDTH, 1)
-        node.set_attribute(res_box, constants.ATTR_TEXTBOX_HEIGHT, tonumber(h_rows) or 1)
-        
-        -- Apply indent from list environment
-        if current_indent > 0 then
-            node.set_attribute(res_box, constants.ATTR_INDENT, current_indent)
-        end
-        
-        tex.box[box_num] = res_box
-    end
-end
 
 --- Main entry point called from TeX
 -- @param box_num (number) TeX box register number

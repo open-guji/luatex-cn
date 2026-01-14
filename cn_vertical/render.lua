@@ -7,8 +7,9 @@
 --   1. 根据 layout_map 为每个节点设置 xoffset/yoffset（文字）或 kern/shift（块）
 --   2. 插入负 kern 以抵消 TLT 方向盒子的水平推进
 --   3. 调用子模块绘制边框（border.lua）、版心（banxin.lua）、背景（background.lua）
---   4. 按页拆分节点流，生成多个独立的页面盒子
---   5. 可选绘制调试网格（蓝色框显示字符位置，红色框显示 textbox 块）
+--   4. 文本框（Textbox）块由其内部逻辑渲染好后，在此模块仅作为整体块进行定位
+--   5. 按页拆分节点流，生成多个独立的页面盒子
+--   6. 可选绘制调试网格（蓝色框显示字符位置，红色框显示 textbox 块）
 --
 -- 【注意事项】
 --   • Glyph 节点使用 xoffset/yoffset 定位，块级节点（HLIST/VLIST）使用 Kern+Shift

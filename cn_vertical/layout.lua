@@ -14,7 +14,8 @@
 --   • 本模块只计算位置（layout_map），不修改节点本身
 --   • 版心列由 n_column 参数控制：每 (n_column + 1) 列就是一个版心列
 --   • 右缩进（r_indent）会缩短列的有效高度（effective_limit）
---   • Textbox 块占用多个网格单元（width × height），需要预先标记占用
+--   • Textbox 块（由 textbox.lua 处理生成）占用多个网格单元（width × height）
+--   • Textbox 在外部布局中始终表现为一个 width=1 的块，高度由其内容决定
 --   • Penalty≤-10000 会触发强制换列（由 flatten.lua 插入）
 --
 -- 【整体架构】
@@ -149,6 +150,7 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
         local r_indent = D.get_attribute(t, constants.ATTR_RIGHT_INDENT) or 0
         
         -- Textbox attributes; ONLY treat HLIST/VLIST as blocks
+        -- 这些属性由 textbox.lua 在 verticalize_inner_box 阶段设置
         local tb_w = 0
         local tb_h = 0
         if id == constants.HLIST or id == constants.VLIST then

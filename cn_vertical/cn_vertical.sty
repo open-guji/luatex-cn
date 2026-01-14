@@ -34,6 +34,7 @@
   package.loaded["flatten"] = nil
   package.loaded["layout"] = nil
   package.loaded["render"] = nil
+  package.loaded["textbox"] = nil
   package.loaded["banxin"] = nil
   package.loaded["yuwei"] = nil
   package.loaded["text_position"] = nil
@@ -63,6 +64,11 @@
 % Load render
 \directlua{
   cn_vertical_render = dofile("render.lua")
+}
+
+% Load textbox (内嵌文本框支持)
+\directlua{
+  cn_vertical_textbox = dofile("textbox.lua")
 }
 
 % Load yuwei (鱼尾 fish tail decorations)
@@ -408,16 +414,16 @@
       \hsize=\dim_eval:n { \l__cn_vertical_textbox_inner_gh_dim * \int_use:N \l__cn_vertical_textbox_height_int }
       #2
     }
-    \directlua{cn_vertical.verticalize_inner_box(0, 
-      \int_use:N \l__cn_vertical_textbox_inner_cols_int, 
-      \int_use:N \l__cn_vertical_textbox_height_int, 
-      "\dim_to_decimal:n { \l__cn_vertical_textbox_inner_gw_dim } pt", 
-      "\dim_to_decimal:n { \l__cn_vertical_textbox_inner_gh_dim } pt", 
-      "\luaescapestring{\tl_use:N \l__cn_vertical_textbox_valign_tl}", 
-      "\bool_if:NTF \l__cn_vertical_textbox_distribute_bool {true}{false}",
-      "\bool_if:NTF \l__cn_vertical_textbox_debug_bool {true}{false}",
-      "\bool_if:NTF \l__cn_vertical_textbox_border_bool {true}{false}"
-    )}
+    \directlua{cn_vertical_textbox.process_inner_box(0, {
+      inner_cols = \int_use:N \l__cn_vertical_textbox_inner_cols_int, 
+      h_rows = \int_use:N \l__cn_vertical_textbox_height_int, 
+      grid_width = "\dim_to_decimal:n { \l__cn_vertical_textbox_inner_gw_dim } pt", 
+      grid_height = "\dim_to_decimal:n { \l__cn_vertical_textbox_inner_gh_dim } pt", 
+      v_align = "\luaescapestring{\tl_use:N \l__cn_vertical_textbox_valign_tl}", 
+      distribute = "\bool_if:NTF \l__cn_vertical_textbox_distribute_bool {true}{false}",
+      debug = "\bool_if:NTF \l__cn_vertical_textbox_debug_bool {true}{false}",
+      border = "\bool_if:NTF \l__cn_vertical_textbox_border_bool {true}{false}"
+    })}
     \setluatexattribute\cnverticaltextboxwidth{0}
     \setluatexattribute\cnverticaltextboxheight{0}
     \leavevmode\box0

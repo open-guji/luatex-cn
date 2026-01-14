@@ -158,6 +158,9 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
     local t = d_head
     skip_banxin_and_occupied()
 
+    -- Block tracking for First Indent
+    local block_start_cols = {} -- map[block_id] -> {page=p, col=c}
+
     local node_count = 0
     while t do
         ::start_of_loop::
@@ -166,7 +169,30 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
             utils.debug_log(string.format("  [layout] Node=%s ID=%d [p:%d, c:%d, r:%d]", tostring(t), id, cur_page, cur_col, cur_row))
         end
         node_count = node_count + 1
-        local indent = D.get_attribute(t, constants.ATTR_INDENT) or 0
+        
+        -- Advanced Indentation Logic
+        local block_id = D.get_attribute(t, constants.ATTR_BLOCK_ID)
+        local base_indent = D.get_attribute(t, constants.ATTR_INDENT) or 0         -- Acts as Hanging Indent (default)
+        local first_indent = D.get_attribute(t, constants.ATTR_FIRST_INDENT) or -1 -- Acts as First Line Indent
+        
+        local current_indent = base_indent
+        
+        -- If we are in a block, determine if this is the first column of the block
+        if block_id and block_id > 0 and first_indent >= 0 then
+            if not block_start_cols[block_id] then
+                -- Register start of block
+                block_start_cols[block_id] = {page=cur_page, col=cur_col}
+            end
+            
+            local start_info = block_start_cols[block_id]
+            if cur_page == start_info.page and cur_col == start_info.col then
+                current_indent = first_indent
+            else
+                current_indent = base_indent
+            end
+        end
+        
+        local indent = current_indent
         local r_indent = D.get_attribute(t, constants.ATTR_RIGHT_INDENT) or 0
         
         -- Textbox attributes; ONLY treat HLIST/VLIST as blocks
@@ -178,7 +204,7 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
             tb_h = D.get_attribute(t, constants.ATTR_TEXTBOX_HEIGHT) or 0
         end
 
-        -- Hanging indent logic (applied to both glyphs and blocks)
+        -- Indent logic applying to current position
         if cur_row < indent then cur_row = indent end
         if indent > cur_column_indent then cur_column_indent = indent end
         if cur_row < cur_column_indent then cur_row = cur_column_indent end
@@ -195,8 +221,27 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
                 cur_col = 0
                 cur_page = cur_page + 1
             end
+            
+            -- Re-evaluate indentation for new column
+            -- Keep logic consistent with above
+             if block_id and block_id > 0 and first_indent >= 0 then
+                -- Check if this NEW column is still the start (unlikely unless block just started at column break)
+                 if not block_start_cols[block_id] then
+                    block_start_cols[block_id] = {page=cur_page, col=cur_col}
+                end
+                local start_info = block_start_cols[block_id]
+                if cur_page == start_info.page and cur_col == start_info.col then
+                    indent = first_indent
+                else
+                    indent = base_indent
+                end
+            else
+                indent = base_indent
+            end
+            
             cur_column_indent = indent
             if cur_row < indent then cur_row = indent end
+            skip_banxin_and_occupied()
             skip_banxin_and_occupied()
         end
 

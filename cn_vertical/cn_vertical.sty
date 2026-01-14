@@ -551,12 +551,20 @@
 \NewDocumentCommand{\Space}{ O{1em} }{\hspace{#1}}
 
 % GridParagraph Environment
-% Supports block indentation (top indent in vertical) and bottom indent
-% Syntax: \begin{GridParagraph}[indent=3, bottom-indent=1] ... \end{GridParagraph}
+% Supports block indentation with first-line/hanging indent differentiation
+% Syntax: \begin{GridParagraph}[indent=2, first-indent=0, bottom-indent=1]
+\newluatexattribute\cnverticalblockid
+\newluatexattribute\cnverticalfirstindent
+
+\newcounter{cnverticalblockid}
+\setcounter{cnverticalblockid}{0}
+
 \keys_define:nn { cn_vertical / paragraph }
   {
     indent .int_set:N = \l__cn_vertical_para_indent_int,
     indent .initial:n = 0,
+    first-indent .int_set:N = \l__cn_vertical_para_first_indent_int,
+    first-indent .initial:n = -1, % -1 means use indent value
     bottom-indent .int_set:N = \l__cn_vertical_para_bottom_indent_int,
     bottom-indent .initial:n = 0,
   }
@@ -564,8 +572,21 @@
 \NewDocumentEnvironment{GridParagraph}{ O{} }
   {
     \par
+    \stepcounter{cnverticalblockid}
     \keys_set:nn { cn_vertical / paragraph } { #1 }
+    
+    % Set Block ID
+    \setluatexattribute\cnverticalblockid{\value{cnverticalblockid}}
+    
+    % Set Base Indent (also serves as Hanging Indent)
     \setluatexattribute\cnverticalindent{\l__cn_vertical_para_indent_int}
+    
+    % Set First Indent
+    \int_compare:nNnTF \l__cn_vertical_para_first_indent_int = {-1}
+      { \setluatexattribute\cnverticalfirstindent{\l__cn_vertical_para_indent_int} }
+      { \setluatexattribute\cnverticalfirstindent{\l__cn_vertical_para_first_indent_int} }
+      
+    % Set Bottom Indent
     \setluatexattribute\cnverticalrightindent{\l__cn_vertical_para_bottom_indent_int}
   }
   {

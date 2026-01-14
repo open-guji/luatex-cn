@@ -24,9 +24,9 @@
 % 4. Key-Value Configuration System (expl3)
 \ExplSyntaxOn
 
-% Storage for Banxin (鱼尾) text
-\tl_new:N \l_guji_banxin_text_tl
-\tl_set:Nn \l_guji_banxin_text_tl {}
+% Storage for Book Name (formerly Banxin text)
+\tl_new:N \l_guji_book_name_tl
+\tl_set:Nn \l_guji_book_name_tl {}
 
 % Storage for Chapter Title (章节标题)
 \tl_new:N \l_guji_chapter_title_tl
@@ -117,8 +117,8 @@
     banxin-section3-ratio .tl_set:N = \l_guji_banxin_sthree_tl,
     banxin-section3-ratio .initial:n = {0.16},
 
-    banxin-text .tl_set:N = \l_guji_banxin_text_tl,
-    banxin-text .initial:n = {},
+    book-name .tl_set:N = \l_guji_book_name_tl,
+    book-name .initial:n = {},
 
     % Chapter title (章节标题) - displayed in section 2 of banxin
     chapter-title .tl_set:N = \l_guji_chapter_title_tl,
@@ -187,8 +187,8 @@
     \__guji_apply_geometry:
   }
 
-% Command to set Banxin (鱼尾) text
-\NewDocumentCommand{\setBanxinText}{ m }
+% Command to set Book Name
+\NewDocumentCommand{\setBookName}{ m }
   {
     \tl_set:Nn \l_guji_banxin_text_tl { #1 }
   }
@@ -318,7 +318,7 @@
         banxin-section1-ratio = \l_guji_banxin_sone_tl,
         banxin-section2-ratio = \l_guji_banxin_stwo_tl,
         banxin-section3-ratio = \l_guji_banxin_sthree_tl,
-        banxin-text = \l_guji_banxin_text_tl,
+        book-name = \l_guji_book_name_tl,
         chapter-title = \l_guji_chapter_title_tl,
         chapter-title-top-margin = \l_guji_chapter_title_top_margin_tl
       }

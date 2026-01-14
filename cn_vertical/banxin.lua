@@ -63,7 +63,7 @@ local sp_to_bp = utils.sp_to_bp
 --   - section3_ratio (number) Ratio for section 3 height (e.g., 0.16)
 --   - color_str (string) RGB color string (e.g., "0.7 0.4 0.3")
 --   - border_thickness (number) Border line thickness in scaled points
---   - banxin_text (string) Optional text to display in section 1 (鱼尾文字)
+--   - book_name (string) Optional text to display in section 1 (書名文字)
 --   - font_size (number) Font size in scaled points for banxin text
 --   - shift_y (number) Vertical shift for positioning (includes padding and outer border)
 -- @return (table) Table with:
@@ -79,7 +79,7 @@ local function draw_banxin(params)
     local r3 = params.section3_ratio or 0.16  -- 36.2 / 233.2 ≈ 0.16
     local color_str = params.color_str or "0 0 0"
     local b_thickness = params.border_thickness or 26214 -- 0.4pt default
-    local banxin_text = params.banxin_text or ""
+    local book_name = params.book_name or ""
     local font_size = params.font_size or 655360 -- 10pt default
     local shift_y = params.shift_y or 0
 
@@ -186,7 +186,7 @@ end
 --   - section1_ratio: Section 1 height ratio
 --   - section2_ratio: Section 2 height ratio
 --   - section3_ratio: Section 3 height ratio
---   - banxin_text: Text to display in section 1
+--   - book_name: Text to display in section 1
 --   - shift_y: Vertical shift for text positioning (sp)
 -- @return (node) Updated head
 local function draw_banxin_column(p_head, params)
@@ -227,7 +227,7 @@ local function draw_banxin_column(p_head, params)
         section3_ratio = params.section3_ratio or 0.16,
         color_str = color_str,
         border_thickness = border_thickness,
-        banxin_text = params.banxin_text or "",
+        book_name = params.book_name or "",
         font_size = params.font_size or height / 20,  -- Reasonable default
         shift_y = shift_y,
     }
@@ -242,8 +242,8 @@ local function draw_banxin_column(p_head, params)
     end
 
     -- Insert text using unified text_position module
-    local banxin_text = params.banxin_text or ""
-    if banxin_text ~= "" then
+    local book_name = params.book_name or ""
+    if book_name ~= "" then
         local b_padding_top = params.b_padding_top or 0
         local b_padding_bottom = params.b_padding_bottom or 0
         local half_thickness = math.floor(border_thickness / 2)
@@ -251,7 +251,7 @@ local function draw_banxin_column(p_head, params)
         -- Available height in section 1 after subtracting padding and borders
         local adj_height = banxin_result.section1_height - border_thickness - b_padding_top - b_padding_bottom 
         
-        local glyph_chain = text_position.create_vertical_text(banxin_text, {
+        local glyph_chain = text_position.create_vertical_text(book_name, {
             x = x,
             y_top = y - border_thickness - b_padding_top, -- Match main text shift
             width = width,

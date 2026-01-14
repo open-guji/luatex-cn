@@ -209,7 +209,7 @@ local function apply_positions(head, layout_map, params)
                             section1_ratio = params.banxin_s1_ratio or 0.28,
                             section2_ratio = params.banxin_s2_ratio or 0.56,
                             section3_ratio = params.banxin_s3_ratio or 0.16,
-                            banxin_text = params.banxin_text or "",
+                            book_name = params.book_name or "",
                             shift_y = shift_y,
                             vertical_align = vertical_align,
                             b_padding_top = bx_padding_top,

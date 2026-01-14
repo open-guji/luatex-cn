@@ -324,6 +324,14 @@ local function draw_banxin_column(p_head, params)
                 local chars_per_col = math.ceil(#chars / n_cols)
                 local col_width = width / n_cols
                 
+                -- Title height and font size
+                local title_height = constants.to_dimen(params.chapter_title_grid_height) or available_height
+                local title_font_size = params.chapter_title_font_size
+                local font_scale = nil
+                if not title_font_size or title_font_size == "" then
+                    font_scale = 0.85 -- Default scale if no specific size
+                end
+
                 for c = 0, n_cols - 1 do
                     local start_idx = c * chars_per_col + 1
                     local end_idx = math.min((c + 1) * chars_per_col, #chars)
@@ -340,9 +348,11 @@ local function draw_banxin_column(p_head, params)
                             x = sub_x,
                             y_top = chapter_y_top,
                             width = col_width,
-                            height = available_height,
+                            height = title_height,
                             v_align = "top",
                             h_align = "center",
+                            font_size = title_font_size,
+                            font_scale = font_scale,
                         })
                         if chapter_chain then
                             local chain_tail = chapter_chain

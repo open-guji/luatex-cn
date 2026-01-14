@@ -137,6 +137,28 @@ local function create_vertical_text(text, params)
     local h_align = params.h_align or "center"
     local font_id = params.font_id or font.current()
     local shift_y = params.shift_y or 0
+    
+    -- Handle font size if provided
+    if params.font_size then
+        local fs = constants.to_dimen(params.font_size)
+        if fs and fs > 0 then
+            local current_font_data = font.getfont(font_id)
+            if current_font_data then
+                local new_font_data = {}
+                for k,v in pairs(current_font_data) do new_font_data[k] = v end
+                new_font_data.size = fs
+                font_id = font.define(new_font_data)
+            end
+        end
+    elseif params.font_scale then
+        local current_font_data = font.getfont(font_id)
+        if current_font_data then
+            local new_font_data = {}
+            for k,v in pairs(current_font_data) do new_font_data[k] = v end
+            new_font_data.size = math.floor(new_font_data.size * params.font_scale + 0.5)
+            font_id = font.define(new_font_data)
+        end
+    end
 
     -- Calculate cell height
     local cell_height = height / num_cells

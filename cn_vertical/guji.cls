@@ -130,6 +130,12 @@
     chapter-title-cols .int_set:N = \l_guji_chapter_title_cols_int,
     chapter-title-cols .initial:n = 2,
 
+    chapter-title-font-size .tl_set:N = \l_guji_chapter_title_font_size_tl,
+    chapter-title-font-size .initial:n = {18pt},
+
+    chapter-title-grid-height .tl_set:N = \l_guji_chapter_title_grid_height_tl,
+    chapter-title-grid-height .initial:n = {50pt},
+
     template .code:n = {
       \InputIfFileExists{#1.guji}{}{
         % Fallback to checking defined templates in guji / templates namespace
@@ -324,7 +330,9 @@
         book-name = \l_guji_book_name_tl,
         chapter-title = \l_guji_chapter_title_tl,
         chapter-title-top-margin = \l_guji_chapter_title_top_margin_tl,
-        chapter-title-cols = \int_use:N \l_guji_chapter_title_cols_int
+        chapter-title-cols = \int_use:N \l_guji_chapter_title_cols_int,
+        chapter-title-font-size = \l_guji_chapter_title_font_size_tl,
+        chapter-title-grid-height = \l_guji_chapter_title_grid_height_tl
       }
     \nointerlineskip
     \__cn_vertical_process_grid:n { \BODY }

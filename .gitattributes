@@ -23,7 +23,6 @@
 .editorconfig text eol=lf
 
 # Binary files (do not modify)
-*.pdf binary
 *.png binary
 *.jpg binary
 *.jpeg binary

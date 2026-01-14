@@ -32,12 +32,11 @@ local textbox = {}
 --- 将一个 TeX 盒子转化为竖排网格文本框
 -- @param box_num (number) TeX 盒子寄存器编号
 -- @param params (table) 配置参数
---    - inner_cols (number): 内部子列数
---    - h_rows (number): 文本框高度（以网格为单位）
+--    - n_cols (number): 内部子列数
+--    - height (number): 文本框高度（以网格为单位）
 --    - grid_width (string/number): 内部网格宽度
 --    - grid_height (string/number): 内部网格高度
---    - v_align (string): 垂直对齐方式 ("top", "center", "bottom")
---    - distribute (boolean/string): 是否均匀分布字符
+--    - box_align (string): 盒子内部对齐方式 ("top", "bottom", "fill")
 --    - debug (boolean/string): 是否开启调试边框
 --    - border (boolean/string): 是否开启显示边框
 function textbox.process_inner_box(box_num, params)
@@ -61,15 +60,16 @@ function textbox.process_inner_box(box_num, params)
 
     -- 2. 准备子网格布局参数
     -- 我们将文本框模拟为一个恰好等于其尺寸的"页面"
+    local ba = params.box_align or "top"
     local sub_params = {
         grid_width = params.grid_width,
         grid_height = params.grid_height,
-        col_limit = tonumber(params.h_rows) or 1,
-        page_columns = tonumber(params.inner_cols) or 1,
+        col_limit = tonumber(params.height) or 1,
+        page_columns = tonumber(params.n_cols) or 1,
         border_on = (params.border == "true" or params.border == true),
         debug_on = (params.debug == "true" or params.debug == true) or (_G.cn_vertical and _G.cn_vertical.debug and _G.cn_vertical.debug.enabled),
-        v_align = params.v_align or "center",
-        distribute = (params.distribute == "true" or params.distribute == true),
+        v_align = (ba == "bottom") and "bottom" or "top",
+        distribute = (ba == "fill"),
         height = params.grid_height -- 给定足够的高度
     }
 
@@ -101,7 +101,7 @@ function textbox.process_inner_box(box_num, params)
         -- 4. 设置关键属性，使外部布局能正确识别该块
         -- 外部布局中，文本框始终占用 1 个逻辑列宽
         node.set_attribute(res_box, constants.ATTR_TEXTBOX_WIDTH, 1)
-        node.set_attribute(res_box, constants.ATTR_TEXTBOX_HEIGHT, tonumber(params.h_rows) or 1)
+        node.set_attribute(res_box, constants.ATTR_TEXTBOX_HEIGHT, tonumber(params.height) or 1)
         
         -- 应用缩进属性，确保在下一列继续时保持正确位移
         if current_indent > 0 then

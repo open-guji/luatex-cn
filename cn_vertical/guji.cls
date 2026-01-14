@@ -190,7 +190,7 @@
 % Command to set Book Name
 \NewDocumentCommand{\setBookName}{ m }
   {
-    \tl_set:Nn \l_guji_banxin_text_tl { #1 }
+    \tl_set:Nn \l_guji_book_name_tl { #1 }
   }
 
 % Command to set Chapter Title (章节标题)

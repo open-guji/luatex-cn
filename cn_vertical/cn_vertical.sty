@@ -354,7 +354,7 @@
 % Key-value interface for \GridTextbox
 \bool_new:N \l__cn_vertical_textbox_border_bool
 \bool_new:N \l__cn_vertical_textbox_debug_bool
-\tl_new:N \l__cn_vertical_textbox_valign_tl
+\tl_new:N \l__cn_vertical_textbox_box_align_tl
 \tl_new:N \l__cn_vertical_textbox_inner_gw_tl
 \tl_new:N \l__cn_vertical_textbox_inner_gh_tl
 \dim_new:N \l__cn_vertical_textbox_inner_gw_dim
@@ -364,20 +364,21 @@
   {
     height .int_set:N = \l__cn_vertical_textbox_height_int,
     height .initial:n = 1,
-    inner-cols .int_set:N = \l__cn_vertical_textbox_inner_cols_int,
-    inner-cols .initial:n = 1,
+    n-cols .int_set:N = \l__cn_vertical_textbox_n_cols_int,
+    n-cols .initial:n = 1,
     inner-grid-width .tl_set:N = \l__cn_vertical_textbox_inner_gw_tl,
     inner-grid-width .initial:n = {},
     inner-grid-height .tl_set:N = \l__cn_vertical_textbox_inner_gh_tl,
     inner-grid-height .initial:n = {},
     distribute .bool_set:N = \l__cn_vertical_textbox_distribute_bool,
     distribute .initial:n = false,
+    box-align .tl_set:N = \l__cn_vertical_textbox_box_align_tl,
+    box-align .initial:n = {top},
     border .bool_set:N = \l__cn_vertical_textbox_border_bool,
     border .initial:n = false,
     debug .bool_set:N = \l__cn_vertical_textbox_debug_bool,
     debug .initial:n = false,
-    vertical-align .tl_set:N = \l__cn_vertical_textbox_valign_tl,
-    vertical-align .initial:n = {center},
+    vertical-align .tl_set:N = \l__cn_vertical_textbox_box_align_tl,
   }
 
 \NewDocumentCommand{\GridTextbox}{ O{} +m }
@@ -391,9 +392,9 @@
     \setluatexattribute\cnverticaltextboxheight{\l__cn_vertical_textbox_height_int}
     
     % Calculate inner grid dimensions (hybrid approach)
-    % If inner-grid-width not specified, auto-calculate: outer_width / inner_cols
+    % If inner-grid-width not specified, auto-calculate: outer_width / n_cols
     \tl_if_empty:NTF \l__cn_vertical_textbox_inner_gw_tl
-      { \dim_set:Nn \l__cn_vertical_textbox_inner_gw_dim { \l__cn_vertical_grid_width_tl / \l__cn_vertical_textbox_inner_cols_int } }
+      { \dim_set:Nn \l__cn_vertical_textbox_inner_gw_dim { \l__cn_vertical_grid_width_tl / \l__cn_vertical_textbox_n_cols_int } }
       { \dim_set:Nn \l__cn_vertical_textbox_inner_gw_dim { \l__cn_vertical_textbox_inner_gw_tl } }
     % If inner-grid-height not specified, user outer grid-height directly (for alignment)
     \tl_if_empty:NTF \l__cn_vertical_textbox_inner_gh_tl
@@ -406,7 +407,7 @@
       \setluatexattribute\cnverticaltextboxheight{0}
       % Scale font size to match the inner grid width, but slightly smaller (0.85x) to avoid crowding
       % Only apply this adjustment if there are 2 or more columns
-      \int_compare:nNnT \l__cn_vertical_textbox_inner_cols_int > 1
+      \int_compare:nNnT \l__cn_vertical_textbox_n_cols_int > 1
         {
           \fontsize{\dim_eval:n { 0.85 \l__cn_vertical_textbox_inner_gw_dim }}{\l__cn_vertical_textbox_inner_gw_dim}\selectfont
         }
@@ -415,12 +416,11 @@
       #2
     }
     \directlua{cn_vertical_textbox.process_inner_box(0, {
-      inner_cols = \int_use:N \l__cn_vertical_textbox_inner_cols_int, 
-      h_rows = \int_use:N \l__cn_vertical_textbox_height_int, 
+      n_cols = \int_use:N \l__cn_vertical_textbox_n_cols_int, 
+      height = \int_use:N \l__cn_vertical_textbox_height_int, 
       grid_width = "\dim_to_decimal:n { \l__cn_vertical_textbox_inner_gw_dim } pt", 
       grid_height = "\dim_to_decimal:n { \l__cn_vertical_textbox_inner_gh_dim } pt", 
-      v_align = "\luaescapestring{\tl_use:N \l__cn_vertical_textbox_valign_tl}", 
-      distribute = "\bool_if:NTF \l__cn_vertical_textbox_distribute_bool {true}{false}",
+      box_align = "\luaescapestring{\tl_use:N \l__cn_vertical_textbox_box_align_tl}", 
       debug = "\bool_if:NTF \l__cn_vertical_textbox_debug_bool {true}{false}",
       border = "\bool_if:NTF \l__cn_vertical_textbox_border_bool {true}{false}"
     })}

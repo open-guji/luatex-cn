@@ -398,8 +398,12 @@
     \setbox0=\vbox{
       \setluatexattribute\cnverticaltextboxwidth{0}
       \setluatexattribute\cnverticaltextboxheight{0}
-      % Scale font size to match the inner grid width
-      \fontsize{\l__cn_vertical_textbox_inner_gw_dim}{\l__cn_vertical_textbox_inner_gw_dim}\selectfont
+      % Scale font size to match the inner grid width, but slightly smaller (0.85x) to avoid crowding
+      % Only apply this adjustment if there are 2 or more columns
+      \int_compare:nNnT \l__cn_vertical_textbox_inner_cols_int > 1
+        {
+          \fontsize{\dim_eval:n { 0.85 \l__cn_vertical_textbox_inner_gw_dim }}{\l__cn_vertical_textbox_inner_gw_dim}\selectfont
+        }
       % Inner line length should be the grid height of the block
       \hsize=\dim_eval:n { \l__cn_vertical_textbox_inner_gh_dim * \int_use:N \l__cn_vertical_textbox_height_int }
       #2

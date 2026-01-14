@@ -1,0 +1,22 @@
+\documentclass{article}
+\usepackage{cn_vertical}
+\usepackage{fontspec}
+\setmainfont{SimSun}
+
+\begin{document}
+
+\section*{Testing Textbox Font Sizing}
+
+Test 1: Single column textbox (should NOT be resized)
+\GridTextbox[height=5, inner-cols=1]{
+  这是一列文本框。字体大小应该保持默认，不会缩小。
+}
+
+\bigskip
+
+Test 2: Multi-column textbox (should be resized)
+\GridTextbox[height=5, inner-cols=2]{
+  这是两列文本框。字体大小应该缩小到 0.85 以适应网格。这里是更多的文本来填充两列。
+}
+
+\end{document}

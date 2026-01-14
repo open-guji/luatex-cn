@@ -198,6 +198,7 @@ function cn_vertical.prepare_grid(box_num, params)
         chapter_title_grid_height = params.chapter_title_grid_height,
         column_aligns = params.column_aligns,
         start_page_number = start_page,
+        jiazhu_size = params.jiazhu_size or "0.7",
     }
 
     if is_debug then
@@ -287,3 +288,4 @@ _G.cn_vertical = cn_vertical
 
 -- Return module
 return cn_vertical
+

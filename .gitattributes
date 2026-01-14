@@ -1,0 +1,32 @@
+# Git Attributes for luatex-cn Project
+# Ensures consistent line endings across Windows, macOS, and Linux
+
+# Auto-detect text files and normalize line endings
+* text=auto
+
+# Force LF for all source code files (normalize on commit, convert on checkout)
+*.lua text eol=lf
+*.tex text eol=lf
+*.sty text eol=lf
+*.cls text eol=lf
+*.py text eol=lf
+*.sh text eol=lf
+*.md text eol=lf
+*.yaml text eol=lf
+*.yml text eol=lf
+*.json text eol=lf
+*.guji text eol=lf
+
+# Force LF for configuration files
+.gitattributes text eol=lf
+.gitignore text eol=lf
+.editorconfig text eol=lf
+
+# Binary files (do not modify)
+*.pdf binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ttf binary
+*.otf binary

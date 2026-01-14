@@ -159,6 +159,7 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
     skip_banxin_and_occupied()
 
     while t do
+        ::start_of_loop::
         local id = D.getid(t)
         local indent = D.get_attribute(t, constants.ATTR_INDENT) or 0
         local r_indent = D.get_attribute(t, constants.ATTR_RIGHT_INDENT) or 0
@@ -208,8 +209,10 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
                 temp_t = D.getnext(temp_t)
             end
 
-            -- Ensure we have at least 1 row available
-            if effective_limit - cur_row < 1 then
+            -- Ensure we have at least 2 rows available before starting a Jiazhu sequence
+            -- This prevents "orphan" Jiazhu rows starting at the very bottom of a column.
+            if effective_limit - cur_row < 2 then
+                flush_buffer()
                 cur_col = cur_col + 1
                 cur_row = 0
                 if cur_col >= p_cols then
@@ -246,21 +249,11 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
                 end
                 
                 cur_row = cur_row + chunk.rows_used
-                
-                -- Check if we need to wrap after this chunk
-                if chunk.is_full_column or cur_row >= effective_limit then
-                    cur_col = cur_col + 1
-                    cur_row = 0
-                    if cur_col >= p_cols then
-                        cur_col = 0
-                        cur_page = cur_page + 1
-                    end
-                    skip_banxin_and_occupied()
-                end
             end
             
             t = temp_t
-            goto continue
+            if not t then break end
+            goto start_of_loop
         end
 
         if tb_w > 0 and tb_h > 0 then
@@ -310,12 +303,12 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
             cur_row = cur_row + 1
             skip_banxin_and_occupied()
         elseif id == constants.GLUE then
+             -- Skip baseline/lineskip glues in grid layout as they interfere with discrete row placement
+             -- These are especially common around font size changes (like Jiazhu)
              local subtype = D.getsubtype(t)
-             local w = D.getfield(t, "width")
-             if w > 0 and (subtype == 13 or subtype == 14) then
-                 table.insert(col_buffer, {node=t, page=cur_page, col=cur_col, relative_row=cur_row})
-                 cur_row = cur_row + 1
-                 skip_banxin_and_occupied()
+             if subtype == 0 then
+                 -- User-inserted glue? Treat as something that might take space if we want.
+                 -- For now, let's keep skipping to maintain strict grid.
              end
         elseif id == constants.PENALTY and D.getfield(t, "penalty") <= -10000 then
              flush_buffer()

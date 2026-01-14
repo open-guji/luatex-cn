@@ -44,6 +44,7 @@
 \directlua{
   package.loaded["base_constants"] = nil
   package.loaded["base_utils"] = nil
+  package.loaded["base_text_utils"] = nil
   package.loaded["flatten_nodes"] = nil
   package.loaded["layout_grid"] = nil
   package.loaded["render_page"] = nil
@@ -65,6 +66,11 @@
 % Load base_utils
 \directlua{
   cn_vertical_utils = require('base_utils')
+}
+
+% Load base_text_utils (cross-platform text normalization)
+\directlua{
+  cn_vertical_text_utils = require('base_text_utils')
 }
 
 % Load flatten_nodes
@@ -227,6 +233,9 @@
     margin-right .tl_set:N = \l__cn_vertical_margin_right_tl,
     margin-right .initial:n = {0pt},
 
+    jiazhu-size .tl_set:N = \l__cn_vertical_jiazhu_size_tl,
+    jiazhu-size .initial:n = {0.7},
+
     % Banxin (版心) configuration
     banxin-upper-ratio .tl_set:N = \l_cnv_banxin_upper_tl,
     banxin-upper-ratio .initial:n = {0.28},
@@ -379,7 +388,8 @@
         chapter_title_top_margin = [=[\luaescapestring{\l_cnv_chapter_title_top_margin_tl}]=],
         chapter_title_cols = \int_use:N \l_cnv_chapter_title_cols_int,
         chapter_title_font_size = [=[\luaescapestring{\l_cnv_chapter_title_font_size_tl}]=],
-        chapter_title_grid_height = [=[\luaescapestring{\l_cnv_chapter_title_grid_height_tl}]=]
+        chapter_title_grid_height = [=[\luaescapestring{\l_cnv_chapter_title_grid_height_tl}]=],
+        jiazhu_size = [=[\luaescapestring{\l__cn_vertical_jiazhu_size_tl}]=]
       })
     }
   }
@@ -501,9 +511,21 @@
 \NewDocumentCommand{\jiazhu}{ +m }
   {
     \group_begin:
-    % Font size is 50% of parent
-    \fontsize{\fp_eval:n { 0.5 * \f@size } pt}{\fp_eval:n { 0.5 * \f@size } pt}\selectfont
     \setluatexattribute\cnverticaljiazhu{1}
+    
+    \tl_if_empty:NTF \l__cn_vertical_jiazhu_size_tl
+      { \tl_set:Nn \l_tmpa_tl { 0.7 } }
+      { \tl_set_eq:NN \l_tmpa_tl \l__cn_vertical_jiazhu_size_tl }
+
+    \iow_term:x { [Guji-Debug]~Jiazhu-size:~\l_tmpa_tl,~\f@size }
+
+    \regex_match:nnTF { ^[0-9\.]+$ } { \l_tmpa_tl }
+      {
+        \fontsize{\fp_eval:n { \l_tmpa_tl * \f@size } pt}{\fp_eval:n { \l_tmpa_tl * \f@size } pt}\selectfont
+      }
+      {
+        \fontsize{\l_tmpa_tl}{\l_tmpa_tl}\selectfont
+      }
     #1
     \group_end:
   }

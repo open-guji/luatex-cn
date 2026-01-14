@@ -475,7 +475,12 @@
     \setbox0=\vbox{
       \setluatexattribute\cnverticaltextboxwidth{0}
       \setluatexattribute\cnverticaltextboxheight{0}
+      % Reset paragraph spacing to prevent unwanted glues in grid layout
+      \parindent=0pt
+      \parskip=0pt
+      \topskip=0pt
       % Scale font size to match the inner grid width, but slightly smaller (0.85x) to avoid crowding
+      % Only apply this adjustment if there are 2 or more columns
       % Only apply this adjustment if there are 2 or more columns
       \int_compare:nNnT \l__cn_vertical_textbox_n_cols_int > 1
         {
@@ -544,6 +549,28 @@
 % Syntax: \Space or \Space[width]
 % Default width is 1em (one grid cell)
 \NewDocumentCommand{\Space}{ O{1em} }{\hspace{#1}}
+
+% GridParagraph Environment
+% Supports block indentation (top indent in vertical) and bottom indent
+% Syntax: \begin{GridParagraph}[indent=3, bottom-indent=1] ... \end{GridParagraph}
+\keys_define:nn { cn_vertical / paragraph }
+  {
+    indent .int_set:N = \l__cn_vertical_para_indent_int,
+    indent .initial:n = 0,
+    bottom-indent .int_set:N = \l__cn_vertical_para_bottom_indent_int,
+    bottom-indent .initial:n = 0,
+  }
+
+\NewDocumentEnvironment{GridParagraph}{ O{} }
+  {
+    \par
+    \keys_set:nn { cn_vertical / paragraph } { #1 }
+    \setluatexattribute\cnverticalindent{\l__cn_vertical_para_indent_int}
+    \setluatexattribute\cnverticalrightindent{\l__cn_vertical_para_bottom_indent_int}
+  }
+  {
+    \par
+  }
 
 \ExplSyntaxOff
 

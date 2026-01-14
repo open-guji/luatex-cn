@@ -314,19 +314,82 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
             cur_row = cur_row + 1
             skip_banxin_and_occupied()
         elseif id == constants.GLUE then
-            -- Check if this glue has meaningful width (user space)
-            local glue_width = D.getfield(t, "width") or 0
-            local subtype = D.getsubtype(t)
-            -- subtype 0 = user glue (explicit space like \quad, \CJKSpace, or \hspace)
-            -- subtype 13 = parfillskip, subtype 14 = mathskip
-            -- Only user glue with positive width should occupy a grid cell
-            if subtype == 0 and glue_width > 0 then
-                -- Treat as occupying one grid cell (like a space character)
-                table.insert(col_buffer, {node=t, page=cur_page, col=cur_col, relative_row=cur_row, is_glue=true})
-                cur_row = cur_row + 1
-                skip_banxin_and_occupied()
+            -- GLUE Summation Logic:
+            -- TeX often outputs sequences of glues (positive/negative) for spacing adjustments.
+            -- We must sum them up to determine the *net* visual space.
+            -- We also skip over non-visual nodes (Penalty, Whatsit, etc.) during summation.
+            
+            local net_width = 0
+            local glue_count = 0
+            local lookahead = t
+            
+            while lookahead do
+                local lid = D.getid(lookahead)
+                if lid == constants.GLUE then
+                    local w = D.getfield(lookahead, "width") or 0
+                    local subtype = D.getsubtype(lookahead)
+                    -- We only consider subtype 0 (userskip) as potentially occupying grid,
+                    -- but we sum ALL glues to handle compensation (e.g. \parskip - \parskip).
+                    -- If we strictly filtered subtype 0, we might miss canceling glues.
+                    -- However, flatten_nodes mainly preserves subtype 0, 13, 14.
+                    net_width = net_width + w
+                    glue_count = glue_count + 1
+                    -- Advance main loop pointer 't' to skip this glue in next iteration
+                    if lookahead ~= t then
+                       -- We will handle advancement by updating t at end of block
+                    end
+                elseif lid == constants.PENALTY or lid == constants.WHATSIT or lid == constants.MARK then
+                    -- Skip non-visual nodes
+                else
+                    -- Found a visual node (Glyph, Rule, Box) or end of list
+                    break
+                end
+                lookahead = D.getnext(lookahead)
             end
-            -- Other glue types (baseline, lineskip, etc.) are skipped
+            
+            -- Only occupy grid if net width is significant
+            -- Threshold: 0.25 * grid_height (approx 10pt for 45pt grid)
+            -- This filters out small noise (5pt) and zero-sum sequences.
+            -- For horizontal user space (\Space = 1em), width is usually > 20pt.
+            -- Use passed argument 'grid_height' (ensure it's not nil)
+            local threshold = (grid_height or 655360) * 0.25
+            
+            if net_width > threshold then
+                 -- Treat as occupying one grid cell
+                 -- We associate it with the FIRST glue node 't' for positioning
+                 if utils and utils.debug_log then
+                    utils.debug_log(string.format("  [layout] GLUE SUM: val=%.2fpt > threshold, occupying grid.", net_width/65536))
+                 end
+                 table.insert(col_buffer, {node=t, page=cur_page, col=cur_col, relative_row=cur_row, is_glue=true})
+                 cur_row = cur_row + 1
+                 skip_banxin_and_occupied()
+            else
+                 if utils and utils.debug_log then
+                    utils.debug_log(string.format("  [layout] GLUE SUM: val=%.2fpt ignored (threshold %.2fpt).", net_width/65536, threshold/65536))
+                 end
+            end
+            
+            -- Fast-forward 't' to the last processed GLUE node
+            -- The lookahead loop went past the last glue.
+            -- We need to update 't' to the node BEFORE 'lookahead'.
+            -- But we also need to be careful not to break the outer loop iteration.
+            -- Outer loop uses 't = D.getnext(t)'.
+            -- So if we set 't' to the LAST processed node, the outer loop will advance to 'lookahead'.
+            
+            if glue_count > 0 then
+                -- Move t to the last node processed in the sequence
+                -- We need to find the node immediately before 'lookahead'
+                local prev = D.getprev(lookahead)
+                -- But wait, lookahead might be nil (end of list).
+                if not lookahead then
+                    -- Find tail
+                    local temp = t
+                    while D.getnext(temp) do temp = D.getnext(temp) end
+                    t = temp
+                else
+                    t = D.getprev(lookahead)
+                end
+            end
         elseif id == constants.PENALTY and D.getfield(t, "penalty") <= -10000 then
              flush_buffer()
              if cur_row > 0 then

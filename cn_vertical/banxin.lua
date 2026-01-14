@@ -271,6 +271,53 @@ local function draw_banxin_column(p_head, params)
         end
     end
 
+    -- Insert chapter title in section 2 (between yuwei decorations)
+    local chapter_title = params.chapter_title or ""
+    if chapter_title ~= "" then
+        local b_padding_top = params.b_padding_top or 0
+        local chapter_top_margin = params.chapter_title_top_margin or (65536 * 20) -- 20pt default
+        
+        -- Section 2 boundaries
+        local section1_h = banxin_result.section1_height
+        local section2_h = height * (params.section2_ratio or 0.56)
+        
+        -- Yuwei dimensions (same as in draw_banxin)
+        local edge_h = width * 0.39
+        local notch_h = width * 0.17
+        local yuwei_gap = 65536 * 3.7 -- 10pt gap from dividing lines
+        local upper_yuwei_total = yuwei_gap + edge_h + notch_h
+        local lower_yuwei_total = yuwei_gap + edge_h + notch_h
+        
+        -- Available space for chapter title in section 2
+        -- Y position: starts below section 1, below upper yuwei, below top margin
+        local section2_y_top = y - section1_h
+        local chapter_y_top = section2_y_top - upper_yuwei_total - chapter_top_margin
+        
+        -- Available height: section 2 height minus upper yuwei, lower yuwei, and margins
+        local available_height = section2_h - upper_yuwei_total - lower_yuwei_total - chapter_top_margin
+        
+        if available_height > 0 then
+            local chapter_chain = text_position.create_vertical_text(chapter_title, {
+                x = x,
+                y_top = chapter_y_top,
+                width = width,
+                height = available_height,
+                v_align = "top", -- Chapter title aligned to top of available space
+                h_align = "center",
+            })
+            if chapter_chain then
+                -- Find the tail of the chapter chain
+                local chain_tail = chapter_chain
+                while D.getnext(chain_tail) do
+                    chain_tail = D.getnext(chain_tail)
+                end
+                -- Insert the entire chain at the beginning
+                D.setlink(chain_tail, p_head)
+                p_head = chapter_chain
+            end
+        end
+    end
+
     if _G.cn_vertical and _G.cn_vertical.debug and _G.cn_vertical.debug.enabled then
         if _G.cn_vertical.debug.show_banxin then
             -- Draw a green dashed rectangle for the banxin column area

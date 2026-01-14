@@ -28,6 +28,10 @@
 \tl_new:N \l_guji_banxin_text_tl
 \tl_set:Nn \l_guji_banxin_text_tl {}
 
+% Storage for Chapter Title (章节标题)
+\tl_new:N \l_guji_chapter_title_tl
+\tl_set:Nn \l_guji_chapter_title_tl {}
+
 \keys_define:nn { guji }
   {
     % Page geometry settings (can be overridden by templates)
@@ -116,6 +120,13 @@
     banxin-text .tl_set:N = \l_guji_banxin_text_tl,
     banxin-text .initial:n = {},
 
+    % Chapter title (章节标题) - displayed in section 2 of banxin
+    chapter-title .tl_set:N = \l_guji_chapter_title_tl,
+    chapter-title .initial:n = {},
+
+    chapter-title-top-margin .tl_set:N = \l_guji_chapter_title_top_margin_tl,
+    chapter-title-top-margin .initial:n = {20pt},
+
     template .code:n = {
       \InputIfFileExists{#1.guji}{}{
         % Fallback to checking defined templates in guji / templates namespace
@@ -180,6 +191,12 @@
 \NewDocumentCommand{\setBanxinText}{ m }
   {
     \tl_set:Nn \l_guji_banxin_text_tl { #1 }
+  }
+
+% Command to set Chapter Title (章节标题)
+\NewDocumentCommand{\setChapterTitle}{ m }
+  {
+    \tl_set:Nn \l_guji_chapter_title_tl { #1 }
   }
 
 % Command to define templates
@@ -301,7 +318,9 @@
         banxin-section1-ratio = \l_guji_banxin_sone_tl,
         banxin-section2-ratio = \l_guji_banxin_stwo_tl,
         banxin-section3-ratio = \l_guji_banxin_sthree_tl,
-        banxin-text = \l_guji_banxin_text_tl
+        banxin-text = \l_guji_banxin_text_tl,
+        chapter-title = \l_guji_chapter_title_tl,
+        chapter-title-top-margin = \l_guji_chapter_title_top_margin_tl
       }
     \nointerlineskip
     \__cn_vertical_process_grid:n { \BODY }

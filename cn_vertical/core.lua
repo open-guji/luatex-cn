@@ -217,6 +217,8 @@ function cn_vertical.prepare_grid(box_num, params)
         banxin_text = params.banxin_text or "",
         banxin_padding_top = constants.to_dimen(params.banxin_padding_top) or (65536 * 2), -- 2pt default
         banxin_padding_bottom = constants.to_dimen(params.banxin_padding_bottom) or 0,
+        chapter_title = params.chapter_title or "",
+        chapter_title_top_margin = constants.to_dimen(params.chapter_title_top_margin) or (65536 * 20), -- 20pt default
     }
     local rendered_pages = render.apply_positions(list, layout_map, r_params)
 

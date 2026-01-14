@@ -202,6 +202,13 @@
 
     banxin-padding-bottom .tl_set:N = \l_cnv_banxin_padding_bottom_tl,
     banxin-padding-bottom .initial:n = {10pt},
+
+    % Chapter title (章节标题) - displayed in section 2 of banxin
+    chapter-title .tl_set:N = \l_cnv_chapter_title_tl,
+    chapter-title .initial:n = {},
+
+    chapter-title-top-margin .tl_set:N = \l_cnv_chapter_title_top_margin_tl,
+    chapter-title-top-margin .initial:n = {20pt},
   }
 
 \tl_new:N \l__cn_vertical_border_rgb_tl
@@ -308,7 +315,9 @@
         banxin_s3_ratio = [=[\luaescapestring{\l_cnv_banxin_three_tl}]=],
         banxin_text = [=[\luaescapestring{\l_cnv_banxin_text_tl}]=],
         banxin_padding_top = [=[\luaescapestring{\l_cnv_banxin_padding_top_tl}]=],
-        banxin_padding_bottom = [=[\luaescapestring{\l_cnv_banxin_padding_bottom_tl}]=]
+        banxin_padding_bottom = [=[\luaescapestring{\l_cnv_banxin_padding_bottom_tl}]=],
+        chapter_title = [=[\luaescapestring{\l_cnv_chapter_title_tl}]=],
+        chapter_title_top_margin = [=[\luaescapestring{\l_cnv_chapter_title_top_margin_tl}]=]
       })
     }
   }

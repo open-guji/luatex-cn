@@ -143,6 +143,9 @@ function cn_vertical.prepare_grid(box_num, params)
 
     -- 5. Pipeline Stage 3: Apply positions and render
     -- Build rendering params
+    local is_textbox = (params.is_textbox == true)
+    local start_page = params.start_page_number or _G.cn_vertical.current_page_number
+
     local r_params = {
         grid_width = g_width,
         grid_height = g_height,
@@ -181,22 +184,28 @@ function cn_vertical.prepare_grid(box_num, params)
         chapter_title_font_size = params.chapter_title_font_size,
         chapter_title_grid_height = params.chapter_title_grid_height,
         column_aligns = params.column_aligns,
-        start_page_number = _G.cn_vertical.current_page_number,
+        start_page_number = start_page,
     }
 
     if is_debug then
-        utils.debug_log(string.format("[core] Calling apply_positions with start_page=%d", _G.cn_vertical.current_page_number))
+        utils.debug_log(string.format("[core] Calling apply_positions with start_page=%d (is_textbox=%s)", start_page, tostring(is_textbox)))
     end
 
     local rendered_pages = render.apply_positions(list, layout_map, r_params)
 
-    -- Update global page number after processing all pages
-    local old_page_num = _G.cn_vertical.current_page_number
-    _G.cn_vertical.current_page_number = old_page_num + #rendered_pages
+    -- Update global page number ONLY if this is a main document call
+    if not is_textbox then
+        local old_page_num = _G.cn_vertical.current_page_number
+        _G.cn_vertical.current_page_number = old_page_num + #rendered_pages
 
-    if is_debug then
-        utils.debug_log(string.format("[core] Finished apply_positions. Pages: %d. Global page number: %d -> %d", 
-            #rendered_pages, old_page_num, _G.cn_vertical.current_page_number))
+        if is_debug then
+            utils.debug_log(string.format("[core] Finished apply_positions. Pages: %d. Global page number: %d -> %d", 
+                #rendered_pages, old_page_num, _G.cn_vertical.current_page_number))
+        end
+    else
+        if is_debug then
+            utils.debug_log("[core] Finished apply_positions for textbox. Global page number remains " .. tostring(_G.cn_vertical.current_page_number))
+        end
     end
 
     -- 6. Store pages and return count

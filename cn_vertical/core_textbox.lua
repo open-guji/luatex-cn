@@ -91,7 +91,8 @@ function textbox.process_inner_box(box_num, params)
         v_align = (ba == "bottom") and "bottom" or "top",
         distribute = (ba == "fill"),
         height = params.grid_height, -- 给定足够的高度
-        column_aligns = col_aligns
+        column_aligns = col_aligns,
+        is_textbox = true,
     }
 
     -- 3. 执行核心排版流水线

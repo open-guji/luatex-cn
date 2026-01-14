@@ -202,9 +202,39 @@ local function process_page_nodes(p_head, layout_map, params, ctx)
                 end
             end
         elseif id == constants.GLUE then
-            D.setfield(curr, "width", 0)
-            D.setfield(curr, "stretch", 0)
-            D.setfield(curr, "shrink", 0)
+            local pos = layout_map[curr]
+            if pos and pos.col and pos.col >= 0 then
+                -- This is a positioned space (user glue with width)
+                -- Zero out the natural glue width and insert kern for positioning
+                local glue_width = D.getfield(curr, "width") or 0
+                D.setfield(curr, "width", 0)
+                D.setfield(curr, "stretch", 0)
+                D.setfield(curr, "shrink", 0)
+                
+                -- Calculate grid position (same logic as glyph but simpler - no centering needed)
+                local rtl_col = ctx.p_total_cols - 1 - pos.col
+                local final_x = rtl_col * ctx.grid_width + ctx.half_thickness + ctx.shift_x
+                local final_y = -pos.row * ctx.grid_height - ctx.shift_y
+                
+                -- Insert kern to move to correct position, then kern back
+                local k_pre = D.new(constants.KERN)
+                D.setfield(k_pre, "kern", final_x)
+                local k_post = D.new(constants.KERN)
+                D.setfield(k_post, "kern", -final_x)
+                
+                p_head = D.insert_before(p_head, curr, k_pre)
+                D.insert_after(p_head, curr, k_post)
+                
+                if params.draw_debug then
+                    utils.debug_log(string.format("  [render] GLUE (space) positioned at [c:%d, r:%.2f]", pos.col, pos.row))
+                    p_head = handle_debug_drawing(curr, p_head, pos, ctx)
+                end
+            else
+                -- Not positioned - zero out (baseline/lineskip glue)
+                D.setfield(curr, "width", 0)
+                D.setfield(curr, "stretch", 0)
+                D.setfield(curr, "shrink", 0)
+            end
         elseif id == constants.KERN then
             local subtype = D.getfield(curr, "subtype")
             if subtype ~= 1 then

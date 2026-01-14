@@ -539,6 +539,12 @@
   }
 \makeatother
 
+% Space Command - inserts a space that occupies one grid cell in vertical layout
+% In CJK text, normal ASCII spaces are often absorbed; use this for explicit spacing
+% Syntax: \Space or \Space[width]
+% Default width is 1em (one grid cell)
+\NewDocumentCommand{\Space}{ O{1em} }{\hspace{#1}}
+
 \ExplSyntaxOff
 
 \endinput

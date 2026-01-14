@@ -314,13 +314,19 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
             cur_row = cur_row + 1
             skip_banxin_and_occupied()
         elseif id == constants.GLUE then
-             -- Skip baseline/lineskip glues in grid layout as they interfere with discrete row placement
-             -- These are especially common around font size changes (like Jiazhu)
-             local subtype = D.getsubtype(t)
-             if subtype == 0 then
-                 -- User-inserted glue? Treat as something that might take space if we want.
-                 -- For now, let's keep skipping to maintain strict grid.
-             end
+            -- Check if this glue has meaningful width (user space)
+            local glue_width = D.getfield(t, "width") or 0
+            local subtype = D.getsubtype(t)
+            -- subtype 0 = user glue (explicit space like \quad, \CJKSpace, or \hspace)
+            -- subtype 13 = parfillskip, subtype 14 = mathskip
+            -- Only user glue with positive width should occupy a grid cell
+            if subtype == 0 and glue_width > 0 then
+                -- Treat as occupying one grid cell (like a space character)
+                table.insert(col_buffer, {node=t, page=cur_page, col=cur_col, relative_row=cur_row, is_glue=true})
+                cur_row = cur_row + 1
+                skip_banxin_and_occupied()
+            end
+            -- Other glue types (baseline, lineskip, etc.) are skipped
         elseif id == constants.PENALTY and D.getfield(t, "penalty") <= -10000 then
              flush_buffer()
              if cur_row > 0 then

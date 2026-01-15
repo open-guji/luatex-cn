@@ -209,6 +209,7 @@ function vertical.prepare_grid(box_num, params)
         start_page_number = start_page,
         jiazhu_font_size = params.jiazhu_font_size,
         jiazhu_align = params.jiazhu_align or "outward",
+        font_size = constants.to_dimen(params.font_size),
         is_textbox = is_textbox,
     }
 

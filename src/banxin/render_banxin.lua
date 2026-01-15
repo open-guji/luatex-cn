@@ -1,4 +1,3 @@
--- ============================================================================
 -- render_banxin.lua - 版心（鱼尾）绘制模块
 -- ============================================================================
 -- 文件名: render_banxin.lua (原 banxin.lua)
@@ -34,11 +33,11 @@
 -- ============================================================================
 
 -- Load dependencies
-local constants = package.loaded['base_constants'] or require('base_constants')
+local constants = package.loaded['vertical.base_constants'] or require('vertical.base_constants')
 local D = constants.D
-local utils = package.loaded['base_utils'] or require('base_utils')
-local text_position = package.loaded['render_position'] or require('render_position')
-local yuwei = package.loaded['render_yuwei'] or require('render_yuwei')
+local utils = package.loaded['vertical.base_utils'] or require('vertical.base_utils')
+local text_position = package.loaded['vertical.render_position'] or require('vertical.render_position')
+local yuwei = package.loaded['banxin.render_yuwei'] or require('banxin.render_yuwei')
 
 -- Conversion factor from scaled points to PDF big points
 local sp_to_bp = utils.sp_to_bp
@@ -221,6 +220,7 @@ local function draw_banxin_column(p_head, params)
     local border_node = node.new("whatsit", "pdf_literal")
     border_node.data = border_literal
     border_node.mode = 0
+    utils.debug_log(string.format("[banxin] Border literal: %s", border_literal))
     p_head = D.insert_before(p_head, p_head, D.todirect(border_node))
 
     -- Draw banxin dividers and text
@@ -254,20 +254,50 @@ local function draw_banxin_column(p_head, params)
     if book_name ~= "" then
         local b_padding_top = params.b_padding_top or 0
         local b_padding_bottom = params.b_padding_bottom or 0
-        local half_thickness = math.floor(border_thickness / 2)
         
         -- Available height in upper section after subtracting padding and borders
         local adj_height = banxin_result.upper_height - border_thickness - b_padding_top - b_padding_bottom 
         
+        -- Calculate total text height to center it as a block
+        -- Parse UTF-8 characters to count them
+        local num_chars = 0
+        for _ in book_name:gmatch("[%z\1-\127\194-\244][\128-\191]*") do
+            num_chars = num_chars + 1
+        end
+
+        -- Get font size from params or calculate from height
+        local f_size = params.font_size
+        if not f_size or f_size <= 0 then
+            f_size = height / 20
+        end
+        
+        -- Cap font size if it's too large for the available space
+        if num_chars * f_size > adj_height then
+            f_size = adj_height / num_chars
+        end
+        
+        local total_text_height = num_chars * f_size
+        
+        -- Start Y should be centered within adj_height
+        -- Top of upper section is y - border_thickness - b_padding_top
+        local block_y_top = y - border_thickness - b_padding_top
+        local y_start = block_y_top - (adj_height - total_text_height) / 2
+
+        utils.debug_log(string.format("[banxin] BookName='%s' fsize=%.2f height=%.2f adj_h=%.2f y_start=%.2f", 
+            book_name, f_size/65536, total_text_height/65536, adj_height/65536, y_start/65536))
+
         local glyph_chain = text_position.create_vertical_text(book_name, {
             x = x,
-            y_top = y - border_thickness - b_padding_top, -- Match main text shift
+            y_top = y_start,
             width = width,
-            height = adj_height,
-            v_align = params.vertical_align or "top", -- Inherit alignment from document
+            height = total_text_height,
+            num_cells = num_chars,
+            v_align = "center",
             h_align = "center",
+            font_size = f_size,
         })
         if glyph_chain then
+            utils.debug_log("[banxin] Book name glyph chain created and centered.")
             -- Find the tail of the glyph chain
             local chain_tail = glyph_chain
             while D.getnext(chain_tail) do
@@ -431,6 +461,7 @@ local banxin = {
 
 -- Register module in package.loaded for require() compatibility
 -- 注册模块到 package.loaded
+package.loaded['banxin.render_banxin'] = banxin
 package.loaded['render_banxin'] = banxin
 
 -- Return module exports

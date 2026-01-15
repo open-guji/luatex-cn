@@ -1,4 +1,3 @@
--- ============================================================================
 -- base_utils.lua - 通用工具函数库
 -- ============================================================================
 -- 文件名: base_utils.lua (原 utils.lua)
@@ -67,8 +66,8 @@ local function normalize_rgb(s)
     local mapped = color_map[s:lower()]
     if mapped then return mapped end
 
-    -- Replace commas with spaces
-    s = s:gsub(",", " ")
+    -- Replace commas with spaces and strip braces/brackets
+    s = s:gsub(",", " "):gsub("[{}%[%]]", "")
 
     -- Extract RGB values
     local r, g, b = s:match("([%d%.]+)%s+([%d%.]+)%s+([%d%.]+)")

@@ -38,8 +38,8 @@
 -- ============================================================================
 
 -- Load dependencies
-local constants = package.loaded['base_constants'] or require('base_constants')
-local utils = package.loaded['base_utils'] or require('base_utils')
+local constants = package.loaded['vertical.base_constants'] or require('vertical.base_constants')
+local utils = package.loaded['vertical.base_utils'] or require('vertical.base_utils')
 
 -- Conversion factor from scaled points to PDF big points
 local sp_to_bp = utils.sp_to_bp
@@ -92,6 +92,10 @@ local function draw_yuwei(params)
     local style = params.style or "black"
     local direction = params.direction or 1
     local color_str = params.color_str or "0 0 0"
+    
+    if _G.vertical and _G.vertical.debug and _G.vertical.debug.verbose_log then
+        utils.debug_log(string.format("[yuwei] Drawing yuwei with style=%s, direction=%d, color=%s", tostring(style), direction, color_str))
+    end
     local line_width = params.line_width or 0.8
     local extra_line = params.extra_line or false
     local line_gap = params.line_gap or (65536 * 4)  -- 4pt default
@@ -235,6 +239,7 @@ local yuwei = {
 
 -- Register module in package.loaded for require() compatibility
 -- 注册模块到 package.loaded
+package.loaded['banxin.render_yuwei'] = yuwei
 package.loaded['render_yuwei'] = yuwei
 
 -- Return module exports

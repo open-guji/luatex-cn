@@ -59,10 +59,8 @@
   package.loaded["vertical.layout_grid"] = nil
   package.loaded["vertical.render_page"] = nil
   package.loaded["vertical.render_border"] = nil
-  package.loaded["vertical.render_banxin"] = nil
   package.loaded["vertical.render_background"] = nil
   package.loaded["vertical.render_position"] = nil
-  package.loaded["vertical.render_yuwei"] = nil
   package.loaded["vertical.core_main"] = nil
   package.loaded["vertical.core_textbox"] = nil
   package.loaded["vertical.core_textflow"] = nil
@@ -80,16 +78,9 @@
   vertical_render = require('vertical.render_page')
   vertical_border = require('vertical.render_border')
   vertical_background = require('vertical.render_background')
-  vertical_yuwei = require('vertical.render_yuwei')
-  vertical_banxin = require('vertical.render_banxin')
+  vertical_background = require('vertical.render_background')
 }
 
-% Register default fallback renderer
-\cnvLua{
-  _G.vertical.hooks.render_reserved_column = function(p_head, params)
-    return vertical_banxin.draw_banxin_column(p_head, params)
-  end
-}
 
 % Load core logic
 \cnvLua{
@@ -254,6 +245,9 @@
 
     chapter-title-grid-height .tl_set:N = \l_cnv_chapter_title_grid_height_tl,
     chapter-title-grid-height .initial:n = {},
+    
+    font-size .tl_set:N = \l__cn_vertical_font_size_tl,
+    font-size .initial:n = {12pt},
   }
 
 \tl_new:N \l__cn_vertical_border_rgb_tl
@@ -368,7 +362,8 @@
         chapter_title_font_size = [=[\luaescapestring{\l_cnv_chapter_title_font_size_tl}]=],
         chapter_title_grid_height = [=[\luaescapestring{\l_cnv_chapter_title_grid_height_tl}]=],
         jiazhu_font_size = [=[\luaescapestring{\l__cn_vertical_jiazhu_size_tl}]=],
-        jiazhu_align = [=[\luaescapestring{\l__cn_vertical_jiazhu_align_tl}]=]
+        jiazhu_align = [=[\luaescapestring{\l__cn_vertical_jiazhu_align_tl}]=],
+        font_size = [=[\luaescapestring{\l__cn_vertical_font_size_tl}]=]
       })
     }
   }
@@ -583,6 +578,6 @@
 
 \directlua{
   _G.vertical.debug.verbose_log = true
-  _G.vertical.debug.enabled = true
+  _G.vertical.debug.enabled = false
 }
 \endinput

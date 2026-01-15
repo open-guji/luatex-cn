@@ -35,24 +35,14 @@
 \RequirePackage{vertical}
 
 % Load banxin for 版心/鱼尾 features (registers hooks with vertical)
-\cnvLua{
-  local status, err = pcall(function()
-    require('banxin.banxin_main')
-  end)
-  
-  if not status then
-    local banxin_render = package.loaded['vertical.render_banxin'] or require('vertical.render_banxin')
-    
-    _G.vertical.hooks.is_reserved_column = function(col, interval)
-      if not interval or interval <= 0 then return false end
-      return math.fmod(col, interval + 1) == interval
+ \cnvLua{
+    local status, err = pcall(function()
+        require('banxin.banxin_main')
+    end)
+    if not status then
+        tex.error("Failed to load banxin: " .. tostring(err))
     end
-    
-    _G.vertical.hooks.render_reserved_column = function(p_head, params)
-      return banxin_render.draw_banxin_column(p_head, params)
-    end
-  end
-}
+ }
 
 % 3. Page Geometry - Will be applied dynamically via template
 % Default values stored in key-value system below
@@ -404,6 +394,7 @@
         chapter-title-grid-height = \l_guji_chapter_title_grid_height_tl,
         jiazhu-font-size = \l_guji_jiazhu_font_size_tl,
         jiazhu-align = \l_guji_jiazhu_align_tl,
+        font-size = \l_guji_font_size_tl,
         debug = \bool_if:NTF \g_cnv_debug_bool {true} {false}
       }
     \nointerlineskip

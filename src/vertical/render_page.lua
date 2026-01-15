@@ -1,4 +1,3 @@
--- ============================================================================
 -- render_page.lua - 坐标应用与视觉渲染（第三阶段主模块）
 -- ============================================================================
 -- 文件名: render_page.lua (原 render.lua)
@@ -291,6 +290,11 @@ local function apply_positions(head, layout_map, params)
     local b_rgb_str = utils.normalize_rgb(border_rgb) or "0.0000 0.0000 0.0000"
     local background_rgb_str = utils.normalize_rgb(bg_rgb)
     local text_rgb_str = utils.normalize_rgb(font_rgb)
+    
+    if draw_debug then
+        utils.debug_log(string.format("[render] apply_positions: border_rgb=%s -> %s, font_size=%s", 
+            tostring(border_rgb), tostring(b_rgb_str), tostring(params.font_size)))
+    end
 
     -- Group nodes by page
     local page_nodes = {}
@@ -332,10 +336,16 @@ local function apply_positions(head, layout_map, params)
 
             -- Reserved columns (via hooks - e.g., banxin)
             local reserved_cols = {}
+            if draw_debug then
+                print(string.format(">>> LUA PAGE: interval=%d, p_total_cols=%d", interval, p_total_cols))
+            end
             if interval > 0 then
                 for col = 0, p_total_cols - 1 do
                     if _G.vertical.hooks.is_reserved_column(col, interval) then
                         reserved_cols[col] = true
+                        if draw_debug then
+                            print(string.format(">>> LUA RESERVED COL: %d", col))
+                        end
                     end
                 end
             end
@@ -368,6 +378,7 @@ local function apply_positions(head, layout_map, params)
                             page_number = (params.start_page_number or 1) + p,
                             grid_width = grid_width,
                             grid_height = grid_height,
+                            font_size = params.font_size,
                         })
                     end
                 end

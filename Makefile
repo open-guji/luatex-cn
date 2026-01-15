@@ -2,27 +2,34 @@
 
 PACKAGE = luatex_cn
 TEXMF = $(shell kpsewhich -var-value TEXMFHOME)
+INSTALL_DIR = $(TEXMF)/tex/latex/$(PACKAGE)
 
-.PHONY: install clean test
+.PHONY: install clean test doc
 
 # Install the package to local texmf tree
 install:
-	@echo "Installing $(PACKAGE) to $(TEXMF)/tex/latex/$(PACKAGE)/"
-	@mkdir -p $(TEXMF)/tex/latex/$(PACKAGE)
-	@cp src/$(PACKAGE).sty $(TEXMF)/tex/latex/$(PACKAGE)/
-	@cp src/*.lua $(TEXMF)/tex/latex/$(PACKAGE)/
+	@echo "Installing $(PACKAGE) to $(INSTALL_DIR)/"
+	@mkdir -p $(INSTALL_DIR)
+	@mkdir -p $(INSTALL_DIR)/cn_vertical
+	@mkdir -p $(INSTALL_DIR)/cn_banxin
+	@mkdir -p $(INSTALL_DIR)/guji
+	@cp luatex_cn/luatex_cn.sty $(INSTALL_DIR)/
+	@cp cn_vertical/*.sty $(INSTALL_DIR)/cn_vertical/
+	@cp cn_vertical/*.lua $(INSTALL_DIR)/cn_vertical/
+	@cp cn_banxin/*.sty $(INSTALL_DIR)/cn_banxin/
+	@cp cn_banxin/*.lua $(INSTALL_DIR)/cn_banxin/
+	@cp guji/*.cls $(INSTALL_DIR)/guji/
 	@texhash
 
 # Clean build artifacts
 clean:
-	rm -f *.aux *.log *.out *.toc *.synctex.gz *.fls *.fdb_latexmk src/*.aux src/*.log src/*.out src/*.idx src/*.ilg src/*.ind
+	rm -f *.aux *.log *.out *.toc *.synctex.gz *.fls *.fdb_latexmk
+	rm -f cn_vertical/*.aux cn_vertical/*.log cn_vertical/*.out
 
-# Test compilation
-test: example.tex
-	TEXINPUTS=./src//: lualatex example.tex
+# Test compilation (compile shiji.tex in cn_vertical directory)
+test:
+	cd cn_vertical && lualatex shiji.tex
 
-# Generate documentation
-doc: src/luatex_cn.dtx
-	cd src && pdflatex luatex_cn.dtx
-	cd src && makeindex -s gind.ist luatex_cn.idx
-	cd src && pdflatex luatex_cn.dtx
+# Generate documentation (placeholder)
+doc:
+	@echo "Documentation generation not yet implemented"

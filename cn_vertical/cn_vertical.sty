@@ -171,7 +171,11 @@
     cols .int_set:N = \l__cn_vertical_cols_int,
     cols .initial:n = 0,
 
-    debug .bool_gset:N = \g_cnv_debug_bool,
+    debug .code:n = {
+      \str_if_eq:nnTF { #1 } { true }
+        { \bool_gset_true:N \g_cnv_debug_bool }
+        { \bool_gset_false:N \g_cnv_debug_bool }
+    },
 
     border .bool_set:N = \l__cn_vertical_border_bool,
     border .initial:n = false,

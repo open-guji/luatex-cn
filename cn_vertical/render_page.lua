@@ -240,6 +240,9 @@ local function process_page_nodes(p_head, layout_map, params, ctx)
             if subtype ~= 1 then
                 D.setfield(curr, "kern", 0)
             end
+        elseif id == constants.WHATSIT then
+            -- Keep WHATSIT nodes in the list for TikZ/other special content
+            -- Note: For TikZ overlay, use shipout hooks instead of inline placement
         end
         curr = next_curr
     end

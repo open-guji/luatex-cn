@@ -1,8 +1,18 @@
 \documentclass{guji}
 
 \usepackage{enumitem} % For better list control if needed
+\usepackage{tikz}
 
-
+% Image overlay using shipout hook (correct approach for TikZ overlay)
+\AddToHook{shipout/foreground}{%
+  \ifnum\value{page}=1
+    \begin{tikzpicture}[remember picture, overlay]
+      \node[anchor=north east, opacity=0.7, inner sep=0pt, xshift=-5.3cm, yshift=-6.4cm] at (current page.north east) {
+        \includegraphics[width=12.9cm]{wenyuanbaoge_yin.png}
+      };
+    \end{tikzpicture}
+  \fi
+}
 
 % Set Book Name (formerly Banxin text) - appears in section 1 of the center column
 \setBookName{欽定四庫全書}

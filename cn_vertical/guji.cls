@@ -159,7 +159,14 @@
         % Fallback to checking defined templates in guji / templates namespace
         \keys_set:nn { guji / templates } { #1 }
       }
-    }
+    },
+    
+    debug .code:n = {
+      \str_if_eq:nnTF { #1 } { true }
+        { \bool_gset_true:N \g_cnv_debug_bool }
+        { \bool_gset_false:N \g_cnv_debug_bool }
+    },
+    debug .initial:n = false
   }
 
 % 5. Logic to apply geometry
@@ -368,7 +375,8 @@
         chapter-title-font-size = \l_guji_chapter_title_font_size_tl,
         chapter-title-grid-height = \l_guji_chapter_title_grid_height_tl,
         jiazhu-font-size = \l_guji_jiazhu_font_size_tl,
-        jiazhu-align = \l_guji_jiazhu_align_tl
+        jiazhu-align = \l_guji_jiazhu_align_tl,
+        debug = \bool_if:NTF \g_cnv_debug_bool {true} {false}
       }
     \nointerlineskip
     \__cn_vertical_process_grid:n { \BODY }

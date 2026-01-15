@@ -97,6 +97,8 @@ local function flatten_vbox(head, grid_width, char_width)
 
         while t do
             local tid = D.getid(t)
+            local subtype = D.getsubtype(t)
+            -- print(string.format("[D-flatten] Node=%s ID=%d S=%d [p_indent=%d]", tostring(t), tid, subtype, indent_lvl))
 
             -- Check for Textbox Block attribute
             local tb_w = 0
@@ -163,10 +165,11 @@ local function flatten_vbox(head, grid_width, char_width)
                 if tid == constants.GLYPH or tid == constants.KERN then
                     keep = true
                     if tid == constants.GLYPH then has_content = true end
-                elseif tid == constants.GLUE then
+                elseif tid == constants.GLUE or tid == constants.WHATSIT then
                     local subtype = D.getsubtype(t)
-                    if subtype == 0 or subtype == 13 or subtype == 14 then
+                    if tid == constants.WHATSIT or subtype == 0 or subtype == 13 or subtype == 14 then
                        keep = true
+                       if tid == constants.WHATSIT then has_content = true end
                     end
                 elseif tid == constants.PENALTY then
                     keep = true

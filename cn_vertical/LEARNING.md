@@ -12,6 +12,13 @@
 4. [PDF 渲染问题](#4-pdf-渲染问题)
 5. [节点管理陷阱](#5-节点管理陷阱)
 6. [模块重构经验](#6-模块重构经验)
+7. [参数传递链路管理](#7-参数传递链路管理)
+8. [开发工作流建议](#8-开发工作流建议)
+9. [LaTeX expl3 boolean 键的传递问题](#9-latex-expl3-boolean-键的传递问题)
+10. [\\selectfont 清除 LuaTeX 属性](#10-selectfont-清除-luatex-属性)
+11. [LaTeX3 \\fontsize 与正则表达式匹配问题](#11-latex3-fontsize-与正则表达式匹配问题)
+12. [LaTeX3 Keys 传递空值导致 \\tl_if_empty:NTF 失败](#12-latex3-keys-传递空值导致-tl_if_emptyntf-失败)
+13. [TikZ WHATSIT 节点与 cn_vertical 引擎的兼容性](#13-tikz-whatsit-节点与-cn_vertical-引擎的兼容性)
 
 ---
 
@@ -542,3 +549,109 @@ cn_vertical.sty
 3. **跨模块传递可选参数时要小心**：
    - 从一个 cls/sty 传递到另一个时，空值处理需要特别注意
    - 考虑在接收方做展开检查
+
+---
+
+## 13. TikZ WHATSIT 节点与 cn_vertical 引擎的兼容性
+
+### 问题描述
+尝试将 TikZ 的 `tikzpicture` 环境（带 `remember picture, overlay`）直接放入 `guji-content` 环境中，期望引擎能正确处理并渲染图片叠加层。结果是图片完全不显示。
+
+### 调试过程
+1. **现象**：TikZ 图片在 PDF 中不可见，即使 `\includegraphics` 单独使用时正常
+2. **初步排查**：添加 WHATSIT 节点处理代码到 `flatten_nodes.lua`、`layout_grid.lua`、`render_page.lua`
+3. **深入调试**：添加详细的 `print()` 日志跟踪节点流经整个管道
+4. **关键发现**：
+   - `flatten_nodes.lua` **能看到** WHATSIT 节点（ID=8，S=29）
+   - `layout_grid.lua` **看不到** 任何 ID=8 节点
+   - `render_page.lua` **能看到** WHATSIT 节点（ID=8，S=16），但标记为 `[NOT POSITIONED]`
+
+### 根本原因
+**TikZ 的 `remember picture, overlay` 机制设计为在 `\shipout` 时处理，而非在文本流中处理。**
+
+深层技术原因：
+1. **节点复制问题**：`flatten_nodes.lua` 使用 `D.copy(t)` 创建节点副本，`layout_map` 使用副本指针作为键
+2. **嵌套结构**：TikZ 创建的 WHATSIT 节点深嵌在 HLIST 中，无法完整地通过展平-布局-渲染管道
+3. **子类型不匹配**：不同阶段看到不同子类型（S=29 vs S=16），表明节点在传递中被分裂
+4. **指针失效**：`render_page.lua` 看到的 WHATSIT 节点与 `layout_grid.lua` 定位的不是同一批节点
+
+### 解决方案
+
+**使用 `\AddToHook{shipout/foreground}` 或 `\AddToHook{shipout/background}` 钩子**：
+
+```latex
+% ✅ 正确做法：使用 shipout 钩子
+\AddToHook{shipout/foreground}{%
+  \ifnum\value{page}=1
+    \begin{tikzpicture}[remember picture, overlay]
+      \node[anchor=north east, opacity=0.7, ...] at (current page.north east) {
+        \includegraphics[width=12.9cm]{image.png}
+      };
+    \end{tikzpicture}
+  \fi
+}
+
+% ❌ 错误做法：直接放入 guji-content
+\begin{guji-content}
+  \begin{tikzpicture}[remember picture, overlay]
+    ...  % 图片不会显示
+  \end{tikzpicture}
+\end{guji-content}
+```
+
+### 保留的 WHATSIT 处理代码
+虽然 TikZ overlay 不适用，但为其他可能的 WHATSIT 用例保留了处理代码：
+
+- **`flatten_nodes.lua`**（第 168-172 行）：
+  ```lua
+  elseif tid == constants.GLUE or tid == constants.WHATSIT then
+      if tid == constants.WHATSIT or subtype == 0 or ... then
+         keep = true
+         if tid == constants.WHATSIT then has_content = true end
+      end
+  ```
+
+- **`layout_grid.lua`**（第 181-191 行）：
+  ```lua
+  if id == constants.WHATSIT then
+      layout_map[t] = { page = cur_page, col = cur_col, row = cur_row }
+      t = D.getnext(t)
+      goto start_of_loop
+  end
+  ```
+
+- **`render_page.lua`**（第 243-245 行）：
+  ```lua
+  elseif id == constants.WHATSIT then
+      -- Keep WHATSIT nodes in the list for TikZ/other special content
+      -- Note: For TikZ overlay, use shipout hooks instead
+  ```
+
+### 教训
+1. **理解工具的设计用途**：
+   - TikZ 的 `remember picture, overlay` 是专为页面级叠加设计的
+   - 它依赖 `\shipout` 回调来定位绝对坐标
+   - 不要强行将其嵌入不兼容的排版流程
+
+2. **节点指针是敏感的**：
+   - `D.copy()` 创建的副本有不同的指针地址
+   - `layout_map` 使用指针作为键，副本和原件无法匹配
+   - 复杂的节点结构在多阶段处理中容易丢失引用
+
+3. **调试 WHATSIT 节点的方法**：
+   - 使用 `print()` 而非 `utils.debug_log()`（后者依赖 debug 标志）
+   - 打印节点地址、ID 和 subtype：`print(string.format("[...] Node=%s ID=%d S=%d", tostring(t), id, subtype))`
+   - 在每个阶段（flatten/layout/render）都添加跟踪
+
+4. **正确的图片叠加方案**：
+   | 场景 | 推荐方案 |
+   |------|---------|
+   | 页面背景/水印 | `\AddToHook{shipout/background}` |
+   | 页面前景/印章 | `\AddToHook{shipout/foreground}` |
+   | 仅特定页面 | 在钩子中加 `\ifnum\value{page}=N` |
+   | 文字流中的图片 | 不使用 TikZ，直接用 `\includegraphics` 或自定义 Textbox |
+
+### 相关代码位置
+- 修复位置：`shiji.tex` 第 7-16 行
+- 受影响模块：`flatten_nodes.lua`、`layout_grid.lua`、`render_page.lua`（已添加 WHATSIT 处理，但对 TikZ overlay 无效）
+

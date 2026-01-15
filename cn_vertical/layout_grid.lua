@@ -178,6 +178,19 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
     while t do
         ::start_of_loop::
         local id = D.getid(t)
+        -- print(string.format("[D-layout-trace] Node=%s ID=%d [WHATSIT_REF=%d]", tostring(t), id, constants.WHATSIT or -1))
+        if id == constants.WHATSIT then
+            -- Position transparently at current cursor
+            layout_map[t] = {
+                page = cur_page,
+                col = cur_col,
+                row = cur_row
+            }
+            -- print(string.format("[D-layout] WHATSIT Node=%s [p:%d, c:%d, r:%d]", tostring(t), cur_page, cur_col, cur_row))
+            t = D.getnext(t)
+            goto start_of_loop
+        end
+        
         if node_count < 200 and utils and utils.debug_log then
             utils.debug_log(string.format("  [layout] Node=%s ID=%d [p:%d, c:%d, r:%d]", tostring(t), id, cur_page, cur_col, cur_row))
         end

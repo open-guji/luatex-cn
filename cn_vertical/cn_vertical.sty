@@ -34,7 +34,7 @@
   _G.cn_vertical = _G.cn_vertical or {}
   _G.cn_vertical.debug = _G.cn_vertical.debug or {
       enabled = false,
-      verbose_log = false,
+      verbose_log = true,
       show_grid = true,
       show_boxes = true
   }
@@ -71,6 +71,11 @@
 % Load base_text_utils (cross-platform text normalization)
 \directlua{
   cn_vertical_text_utils = require('base_text_utils')
+}
+
+% Load base_hooks (hook system for extensibility)
+\directlua{
+  cn_vertical_hooks = require('base_hooks')
 }
 
 % Load flatten_nodes
@@ -111,6 +116,9 @@
 % Load render_banxin
 \directlua{
   cn_vertical_banxin = require('render_banxin')
+  _G.cn_vertical.hooks.render_reserved_column = function(p_head, params)
+    return cn_vertical_banxin.draw_banxin_column(p_head, params)
+  end
 }
 
 % Load core_textbox (内嵌文本框支持)
@@ -611,4 +619,8 @@
 
 \ExplSyntaxOff
 
+\directlua{
+  _G.cn_vertical.debug.verbose_log = true
+  _G.cn_vertical.debug.enabled = true
+}
 \endinput

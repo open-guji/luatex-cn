@@ -19,6 +19,28 @@
 \RequirePackage{xparse}
 \RequirePackage{cn_vertical}
 
+% Load cn_banxin for 版心/鱼尾 features (registers hooks with cn_vertical)
+\directlua{
+  package.path = package.path .. ";./?.lua;./cn_banxin/?.lua;../cn_banxin/?.lua"
+  
+  local status, err = pcall(function()
+    require('banxin_main')
+  end)
+  
+  if not status then
+    local banxin_render = package.loaded['render_banxin'] or require('render_banxin')
+    
+    _G.cn_vertical.hooks.is_reserved_column = function(col, interval)
+      if not interval or interval <= 0 then return false end
+      return (col \% (interval + 1)) == interval
+    end
+    
+    _G.cn_vertical.hooks.render_reserved_column = function(p_head, params)
+      return banxin_render.draw_banxin_column(p_head, params)
+    end
+  end
+}
+
 % 3. Page Geometry - Will be applied dynamically via template
 % Default values stored in key-value system below
 

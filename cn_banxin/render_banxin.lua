@@ -1,3 +1,4 @@
+-- ============================================================================
 -- render_banxin.lua - 版心（鱼尾）绘制模块
 -- ============================================================================
 -- 文件名: render_banxin.lua (原 banxin.lua)
@@ -220,7 +221,6 @@ local function draw_banxin_column(p_head, params)
     local border_node = node.new("whatsit", "pdf_literal")
     border_node.data = border_literal
     border_node.mode = 0
-    utils.debug_log(string.format("[banxin] Border literal: %s", border_literal))
     p_head = D.insert_before(p_head, p_head, D.todirect(border_node))
 
     -- Draw banxin dividers and text
@@ -268,7 +268,6 @@ local function draw_banxin_column(p_head, params)
             h_align = "center",
         })
         if glyph_chain then
-            utils.debug_log("[banxin] Book name glyph chain created.")
             -- Find the tail of the glyph chain
             local chain_tail = glyph_chain
             while D.getnext(chain_tail) do

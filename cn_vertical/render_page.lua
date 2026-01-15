@@ -59,10 +59,11 @@
 local constants = package.loaded['base_constants'] or require('base_constants')
 local D = constants.D
 local utils = package.loaded['base_utils'] or require('base_utils')
+local hooks = package.loaded['base_hooks'] or require('base_hooks')
 local border = package.loaded['render_border'] or require('render_border')
-local banxin = package.loaded['render_banxin'] or require('render_banxin')
 local background = package.loaded['render_background'] or require('render_background')
 local text_position = package.loaded['render_position'] or require('render_position')
+
 
 -- Helper: Handle individual glyph positioning
 local function handle_glyph_node(curr, p_head, pos, params, ctx)
@@ -329,53 +330,57 @@ local function apply_positions(head, layout_map, params)
             local inner_width = p_total_cols * grid_width + border_thickness
             local inner_height = line_limit * grid_height + b_padding_top + b_padding_bottom + border_thickness
 
-            local banxin_cols = {}
+            -- Reserved columns (via hooks - e.g., banxin)
+            local reserved_cols = {}
             if interval > 0 then
                 for col = 0, p_total_cols - 1 do
-                    if (col % (interval + 1)) == interval then banxin_cols[col] = true end
+                    if _G.cn_vertical.hooks.is_reserved_column(col, interval) then
+                        reserved_cols[col] = true
+                    end
                 end
             end
 
-            -- Borders & Banxin
-            if draw_border and p_total_cols > 0 then
-                -- Banxin columns
-                if interval > 0 then
-                    for col = 0, p_total_cols - 1 do
-                        if banxin_cols[col] then
-                            local rtl_col = p_total_cols - 1 - col
-                            local banxin_x = rtl_col * grid_width + half_thickness + shift_x
-                            local banxin_y = -(half_thickness + outer_shift)
-                            local banxin_height = line_limit * grid_height + b_padding_top + b_padding_bottom
-                            
-                            p_head = banxin.draw_banxin_column(p_head, {
-                                x = banxin_x, y = banxin_y, width = grid_width, height = banxin_height,
-                                border_thickness = border_thickness, color_str = b_rgb_str,
-                                upper_ratio = params.banxin_upper_ratio or 0.28,
-                                middle_ratio = params.banxin_middle_ratio or 0.56,
-                                lower_ratio = params.banxin_lower_ratio or 0.16,
-                                book_name = params.book_name or "", shift_y = shift_y,
-                                vertical_align = vertical_align,
-                                b_padding_top = params.banxin_padding_top or 0,
-                                b_padding_bottom = params.banxin_padding_bottom or 0,
-                                lower_yuwei = params.lower_yuwei,
-                                chapter_title = params.chapter_title or "",
-                                chapter_title_top_margin = params.chapter_title_top_margin or (65536 * 20),
-                                chapter_title_cols = params.chapter_title_cols or 2,
-                                chapter_title_font_size = params.chapter_title_font_size,
-                                chapter_title_grid_height = params.chapter_title_grid_height,
-                                page_number = (params.start_page_number or 1) + p,
-                            })
-                        end
+            -- Borders & Reserved Columns
+            if interval > 0 then
+                for col = 0, p_total_cols - 1 do
+                    if reserved_cols[col] then
+                        local rtl_col = p_total_cols - 1 - col
+                        local reserved_x = rtl_col * grid_width + half_thickness + shift_x
+                        local reserved_y = -(half_thickness + outer_shift)
+                        local reserved_height = line_limit * grid_height + b_padding_top + b_padding_bottom
+                        
+                        p_head = _G.cn_vertical.hooks.render_reserved_column(p_head, {
+                            x = reserved_x, y = reserved_y, width = grid_width, height = reserved_height,
+                            border_thickness = border_thickness, color_str = b_rgb_str,
+                            upper_ratio = params.banxin_upper_ratio or 0.28,
+                            middle_ratio = params.banxin_middle_ratio or 0.56,
+                            lower_ratio = params.banxin_lower_ratio or 0.16,
+                            book_name = params.book_name or "", shift_y = shift_y,
+                            vertical_align = vertical_align,
+                            b_padding_top = params.banxin_padding_top or 0,
+                            b_padding_bottom = params.banxin_padding_bottom or 0,
+                            lower_yuwei = params.lower_yuwei,
+                            chapter_title = params.chapter_title or "",
+                            chapter_title_top_margin = params.chapter_title_top_margin or (65536 * 20),
+                            chapter_title_cols = params.chapter_title_cols or 2,
+                            chapter_title_font_size = params.chapter_title_font_size,
+                            chapter_title_grid_height = params.chapter_title_grid_height,
+                            page_number = (params.start_page_number or 1) + p,
+                            grid_width = grid_width,
+                            grid_height = grid_height,
+                        })
                     end
                 end
+            end
 
+            if draw_border and p_total_cols > 0 then
                 -- Column borders
                 p_head = border.draw_column_borders(p_head, {
                     total_cols = p_total_cols, grid_width = grid_width, grid_height = grid_height,
                     line_limit = line_limit, border_thickness = border_thickness,
                     b_padding_top = b_padding_top, b_padding_bottom = b_padding_bottom,
                     shift_x = shift_x, outer_shift = outer_shift,
-                    border_rgb_str = b_rgb_str, banxin_cols = banxin_cols,
+                    border_rgb_str = b_rgb_str, banxin_cols = reserved_cols,
                 })
             end
 

@@ -54,6 +54,7 @@
 local constants = package.loaded['base_constants'] or require('base_constants')
 local D = constants.D
 local utils = package.loaded['base_utils'] or require('base_utils')
+local hooks = package.loaded['base_hooks'] or require('base_hooks')
 
 -- @param page_columns (number) Total columns before a page break
 -- @param params (table) Optional parameters:
@@ -83,9 +84,10 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
     -- Occupancy map: occupancy[page][col][row] = true
     local occupancy = {}
 
-    local function is_banxin_col(col)
+    -- Use hooks to check for reserved columns (banxin, etc.)
+    local function is_reserved_col(col)
         if interval <= 0 then return false end
-        return (col % (interval + 1)) == interval
+        return _G.cn_vertical.hooks.is_reserved_column(col, interval)
     end
 
     local function is_occupied(p, c, r)
@@ -105,7 +107,7 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
         while changed do
             changed = false
             -- Skip Banxin
-            while is_banxin_col(cur_col) do
+            while is_reserved_col(cur_col) do
                 cur_col = cur_col + 1
                 if cur_col >= p_cols then
                     cur_col = 0
@@ -333,7 +335,7 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
             
             local fits_width = true
             for c = cur_col, cur_col + tb_w - 1 do
-                if is_banxin_col(c) or (c >= p_cols) then
+                if is_reserved_col(c) or (c >= p_cols) then
                     fits_width = false
                     break
                 end

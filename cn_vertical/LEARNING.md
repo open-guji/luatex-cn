@@ -19,6 +19,7 @@
 11. [LaTeX3 \\fontsize 与正则表达式匹配问题](#11-latex3-fontsize-与正则表达式匹配问题)
 12. [LaTeX3 Keys 传递空值导致 \\tl_if_empty:NTF 失败](#12-latex3-keys-传递空值导致-tl_if_emptyntf-失败)
 13. [TikZ WHATSIT 节点与 cn_vertical 引擎的兼容性](#13-tikz-whatsit-节点与-cn_vertical-引擎的兼容性)
+14. [\directlua 中的 Lua 注释与 LaTeX 线性化陷阱](#14-directlua-中的-lua-注释与-latex-线性化陷阱)
 
 ---
 

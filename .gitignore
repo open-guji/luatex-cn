@@ -37,10 +37,6 @@
 *.figlist
 *.auxlock
 
-# LaTeX output
-*.pdf
-!example.pdf
-
 # AI related
 progress/
 .antigravity

@@ -534,10 +534,22 @@
         % User specified size (must include unit like "14pt")
         \tl_set_eq:NN \l_tmpa_tl \l_tmpb_tl
       }
+    % Capture attribute values using edef to avoid register limitations
+    \edef\savedindent{\the\cnverticalindent}
+    \edef\savedblockid{\the\cnverticalblockid}
+    \edef\savedfirst{\the\cnverticalfirstindent}
+    \edef\savedright{\the\cnverticalrightindent}
+    
     \fontsize{\l_tmpa_tl}{\l_tmpa_tl}\selectfont
     
-    % CRITICAL: Set jiazhu attribute AFTER selectfont (selectfont clears attributes!)
+    % CRITICAL: Set jiazhu attribute AFTER selectfont
     \setluatexattribute\cnverticaljiazhu{1}
+
+    % Restore
+    \cnverticalindent = \savedindent\relax
+    \cnverticalblockid = \savedblockid\relax
+    \cnverticalfirstindent = \savedfirst\relax
+    \cnverticalrightindent = \savedright\relax
     
     #1
     \group_end:

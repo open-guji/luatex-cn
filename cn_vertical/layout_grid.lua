@@ -128,6 +128,19 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
         end
     end
 
+    local function get_indent_for_current_pos(block_id, base_indent, first_indent)
+        if block_id and block_id > 0 and first_indent >= 0 then
+            if not block_start_cols[block_id] then
+                block_start_cols[block_id] = {page=cur_page, col=cur_col}
+            end
+            local start_info = block_start_cols[block_id]
+            if cur_page == start_info.page and cur_col == start_info.col then
+                return first_indent
+            end
+        end
+        return base_indent
+    end
+
     local function flush_buffer()
         if #col_buffer == 0 then return end
         
@@ -177,20 +190,7 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
         
         local current_indent = base_indent
         
-        -- If we are in a block, determine if this is the first column of the block
-        if block_id and block_id > 0 and first_indent >= 0 then
-            if not block_start_cols[block_id] then
-                -- Register start of block
-                block_start_cols[block_id] = {page=cur_page, col=cur_col}
-            end
-            
-            local start_info = block_start_cols[block_id]
-            if cur_page == start_info.page and cur_col == start_info.col then
-                current_indent = first_indent
-            else
-                current_indent = base_indent
-            end
-        end
+        local current_indent = get_indent_for_current_pos(block_id, base_indent, first_indent)
         
         local indent = current_indent
         local r_indent = D.get_attribute(t, constants.ATTR_RIGHT_INDENT) or 0
@@ -222,22 +222,7 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
                 cur_page = cur_page + 1
             end
             
-            -- Re-evaluate indentation for new column
-            -- Keep logic consistent with above
-             if block_id and block_id > 0 and first_indent >= 0 then
-                -- Check if this NEW column is still the start (unlikely unless block just started at column break)
-                 if not block_start_cols[block_id] then
-                    block_start_cols[block_id] = {page=cur_page, col=cur_col}
-                end
-                local start_info = block_start_cols[block_id]
-                if cur_page == start_info.page and cur_col == start_info.col then
-                    indent = first_indent
-                else
-                    indent = base_indent
-                end
-            else
-                indent = base_indent
-            end
+            indent = get_indent_for_current_pos(block_id, base_indent, first_indent)
             
             cur_column_indent = indent
             if cur_row < indent then cur_row = indent end
@@ -279,8 +264,12 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
             end
 
             -- Process via core_textflow
+            -- Note: subsequent chunks must also account for indentation in their columns
             local textflow = package.loaded['core_textflow'] or require('core_textflow')
-            local chunks = textflow.process_jiazhu_sequence(j_nodes, effective_limit - cur_row, effective_limit)
+            local available_in_first = effective_limit - cur_row
+            local capacity_per_subsequent = line_limit - base_indent - r_indent -- Use base_indent for subsequent columns
+            
+            local chunks = textflow.process_jiazhu_sequence(j_nodes, available_in_first, capacity_per_subsequent)
 
             for i, chunk in ipairs(chunks) do
                 -- If not the first chunk, move to next column
@@ -292,6 +281,10 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
                         cur_page = cur_page + 1
                     end
                     skip_banxin_and_occupied()
+                    
+                    -- Recalculate indentation and row start for new column
+                    local chunk_indent = get_indent_for_current_pos(block_id, base_indent, first_indent)
+                    if cur_row < chunk_indent then cur_row = chunk_indent end
                 end
 
                 -- Record positions

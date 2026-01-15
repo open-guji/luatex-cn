@@ -656,3 +656,73 @@ cn_vertical.sty
 - 修复位置：`shiji.tex` 第 7-16 行
 - 受影响模块：`flatten_nodes.lua`、`layout_grid.lua`、`render_page.lua`（已添加 WHATSIT 处理，但对 TikZ overlay 无效）
 
+---
+
+## 14. \directlua 中的 Lua 注释与 LaTeX 线性化陷阱
+
+### 问题描述
+在 `cn_vertical.sty` 或 `guji.cls` 的 `\directlua` 块中添加 Lua 注释（`--`）后，注释行之后的代码全部失效，且没有任何明显的报错信息，导致功能（如钩子注册）静默失败。
+
+### 根本原因
+**LaTeX 在处理 `\directlua{...}` 时，会将多行内容"线性化"（Linearize）合并为一行再交给 Lua 引擎。**
+
+- **线性化效应**：
+  在 LaTeX 中：
+  ```latex
+  \directlua{
+    local x = 1
+    -- 这是一个注释
+    local y = 2
+  }
+  ```
+  传给 Lua 的实际字符串可能变成：
+  `local x = 1 -- 这是一个注释 local y = 2`
+  由于 Lua 的 `--` 注释会一直持续到行尾，因此整个块中 `--` 之后的内容全部变成了注释的一部分。
+
+- **特殊字符冲突**：
+  - `%` 在 LaTeX 中是注释符。在 Lua 中是取模运算符。
+  - 在 `\directlua` 中使用时，必须使用 `\%`，否则 LaTeX 会直接截断该行。
+
+### 调试过程
+1. **现象**：修改了钩子逻辑但没有任何变化。
+2. **初步怀疑**：路径不对或缓存没清理。
+3. **深入调试**：通过打印 `tostring(hook_function)` 发现地址一直是默认实现的，说明注册代码从未执行。
+4. **关键定位**：在注册代码前添加 `print("[A]")` 能输出，在注册代码后添加 `print("[B]")` 不输出。
+5. **发现元凶**：在 `[A]` 和 `[B]` 之间存在 `--` 开头的 Lua 注释。
+
+### 解决方案
+
+**最佳实践**：
+1. **避免在 `\directlua` 中使用 Lua 行注释 (`--`)**：
+   - 如果必须注释，使用 Lua 多行注释：`--[[ 注释内容 ]]--`。
+   - 更好的做法是彻底移除这些注释。
+2. **转义关键字符**：
+   - 始终使用 `\%` 进行取模运算。
+3. **保持 Lua 逻辑精简**：
+   - 复杂的逻辑应放在独立的 `.lua` 文件中。
+   - `\directlua` 只负责 `require()` 和简单的配置。
+4. **包装宏必须定义为 "Long"**：
+   - 如果使用 `\NewDocumentCommand` 定义包装宏（如 `\cnvLua`），必须使用 `+m` 而非 `m`，否则 Lua 代码块中的空行会导致 `Runaway argument` 错误。
+   ```latex
+   \NewDocumentCommand{\cnvLua}{ +m }{ \directlua{... #1 ...} }
+   ```
+5. **添加"身份验证"打印**：
+   - 在加载前后打印唯一标记，确认代码块完整执行。
+
+### 教训
+1. **静默失败是最难调试的**：如果代码没有报错但不按预期运行，优先检查它是否被"注掉"了。
+2. **环境边界意识**：始终记住 Lua 代码是包裹在 LaTeX 宏中的，它遵循 LaTeX 的读取规则。
+3. **使用 pcall 捕获加载错误**：
+   ```latex
+   \directlua{
+     local status, err = pcall(function() require('module') end)
+     if not status then print("ERROR: " .. err) end
+   }
+   ```
+   *注意：如果语法错误发生在线性化阶段，pcall 也可能无法挽救，因此保持代码块简洁是第一优先。*
+
+### 相关代码位置
+- 修复位置：`cn_vertical.sty` 和 `guji.cls`
+- 影响模块：所有通过 LaTeX 包加载的 Lua 逻辑
+- 提交记录：2026-01-15 解决版心加载问题
+

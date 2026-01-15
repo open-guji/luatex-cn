@@ -29,8 +29,18 @@
 % Load the Lua modules
 % Split into multiple directlua blocks for better error reporting
 
+% Robust Lua loader with error reporting
+\NewDocumentCommand{\cnvLua}{ +m }{%
+  \directlua{
+    local status, err = pcall(function() #1 end)
+    if not status then
+      tex.error("cn_vertical Lua error: " .. tostring(err))
+    end
+  }
+}
+
 % Initialise Lua Namespace
-\directlua{
+\cnvLua{
   _G.cn_vertical = _G.cn_vertical or {}
   _G.cn_vertical.debug = _G.cn_vertical.debug or {
       enabled = false,
@@ -41,7 +51,7 @@
 }
 
 % Clear cache
-\directlua{
+\cnvLua{
   package.loaded["base_constants"] = nil
   package.loaded["base_utils"] = nil
   package.loaded["base_text_utils"] = nil
@@ -58,81 +68,33 @@
   package.loaded["core_textflow"] = nil
 }
 
-% Load base_constants
-\directlua{
+% Load Modules
+\cnvLua{
   cn_vertical_constants = require('base_constants')
-}
-
-% Load base_utils
-\directlua{
   cn_vertical_utils = require('base_utils')
-}
-
-% Load base_text_utils (cross-platform text normalization)
-\directlua{
   cn_vertical_text_utils = require('base_text_utils')
-}
-
-% Load base_hooks (hook system for extensibility)
-\directlua{
   cn_vertical_hooks = require('base_hooks')
-}
-
-% Load flatten_nodes
-\directlua{
   cn_vertical_flatten = require('flatten_nodes')
-}
-
-% Load layout_grid
-\directlua{
   cn_vertical_layout = require('layout_grid')
-}
-
-% Load render_position (unified text positioning)
-\directlua{
   cn_vertical_text_position = require('render_position')
-}
-
-% Load render_page
-\directlua{
   cn_vertical_render = require('render_page')
-}
-
-% Load render_border
-\directlua{
   cn_vertical_border = require('render_border')
-}
-
-% Load render_background
-\directlua{
   cn_vertical_background = require('render_background')
-}
-
-% Load render_yuwei (鱼尾 fish tail decorations)
-\directlua{
   cn_vertical_yuwei = require('render_yuwei')
+  cn_vertical_banxin = require('render_banxin')
 }
 
-% Load render_banxin
-\directlua{
-  cn_vertical_banxin = require('render_banxin')
+% Register default fallback renderer
+\cnvLua{
   _G.cn_vertical.hooks.render_reserved_column = function(p_head, params)
     return cn_vertical_banxin.draw_banxin_column(p_head, params)
   end
 }
 
-% Load core_textbox (内嵌文本框支持)
-\directlua{
+% Load core logic
+\cnvLua{
   cn_vertical_textbox = require('core_textbox')
-}
-
-% Load core_textflow (夹注双行小注逻辑)
-\directlua{
   cn_vertical_textflow = require('core_textflow')
-}
-
-% Load main module (core_main)
-\directlua{
   cn_vertical = require('core_main')
 }
 

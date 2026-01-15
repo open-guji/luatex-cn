@@ -20,7 +20,7 @@
 \RequirePackage{cn_vertical}
 
 % Load cn_banxin for 版心/鱼尾 features (registers hooks with cn_vertical)
-\directlua{
+\cnvLua{
   package.path = package.path .. ";./?.lua;./cn_banxin/?.lua;../cn_banxin/?.lua"
   
   local status, err = pcall(function()
@@ -32,7 +32,7 @@
     
     _G.cn_vertical.hooks.is_reserved_column = function(col, interval)
       if not interval or interval <= 0 then return false end
-      return (col \% (interval + 1)) == interval
+      return math.fmod(col, interval + 1) == interval
     end
     
     _G.cn_vertical.hooks.render_reserved_column = function(p_head, params)

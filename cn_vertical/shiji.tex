@@ -4,7 +4,7 @@
 \usepackage{tikz}
 
 % Image overlay using shipout hook (correct approach for TikZ overlay)
-\AddToHook{shipout/foreground}{%
+\AddToHook{shipout/background}{%
   \ifnum\value{page}=1
     \begin{tikzpicture}[remember picture, overlay]
       \node[anchor=north east, opacity=0.7, inner sep=0pt, xshift=-5.3cm, yshift=-6.4cm] at (current page.north east) {

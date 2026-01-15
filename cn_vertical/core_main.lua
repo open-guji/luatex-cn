@@ -209,6 +209,7 @@ function cn_vertical.prepare_grid(box_num, params)
         start_page_number = start_page,
         jiazhu_font_size = params.jiazhu_font_size,
         jiazhu_align = params.jiazhu_align or "outward",
+        is_textbox = is_textbox,
     }
 
     if is_debug then
@@ -243,7 +244,9 @@ function cn_vertical.prepare_grid(box_num, params)
         local new_box = node.new("hlist")
         new_box.dir = "TLT"
         new_box.list = page_info.head
+        
         new_box.width = page_info.cols * g_width + b_thickness + outer_shift * 2
+
         new_box.height = 0
         new_box.depth = total_v_depth
         -- CRITICAL: Reset textbox attributes for MAIN DOCUMENT wrapper boxes

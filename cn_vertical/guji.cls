@@ -12,6 +12,7 @@
 
 % 2. Core Dependencies
 \RequirePackage{geometry}
+\RequirePackage{xcolor}
 \RequirePackage{fontspec}
 \RequirePackage{environ}
 \RequirePackage{expl3}
@@ -315,6 +316,14 @@
 
     % Update geometry for this environment
     \__guji_apply_geometry:
+    
+    % Apply background color if specified
+    \tl_if_empty:NF \l_guji_background_color_tl
+      {
+        \tl_if_in:NnTF \l_guji_background_color_tl { , }
+          { \pagecolor [RGB] { \l_guji_background_color_tl } }
+          { \pagecolor { \l_guji_background_color_tl } }
+      }
     
     % Zap all vertical spacing
     \setlength{\topskip}{0pt}

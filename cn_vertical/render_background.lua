@@ -60,6 +60,13 @@ local function draw_background(p_head, params)
     local p_height = params.paper_height or 0
     local m_left = params.margin_left or 0
     local m_top = params.margin_top or 0
+    local is_textbox = params.is_textbox or false
+
+    -- Skip background rectangle for full pages (handled by \pagecolor).
+    -- Still draw for textboxes.
+    if not is_textbox and p_width > 0 then
+        return p_head
+    end
 
     local tx_bp, ty_bp, tw_bp, th_bp
 
@@ -80,6 +87,7 @@ local function draw_background(p_head, params)
         tw_bp = (inner_width + outer_shift * 2) * sp_to_bp
         th_bp = -(inner_height + outer_shift * 2) * sp_to_bp
     end
+
 
     -- Draw filled rectangle for background
     local literal = string.format("q 0 w %s rg %.4f %.4f %.4f %.4f re f Q",

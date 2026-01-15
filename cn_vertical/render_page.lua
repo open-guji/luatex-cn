@@ -322,6 +322,7 @@ local function apply_positions(head, layout_map, params)
             local p_total_cols = p_max_col + 1
             if draw_border and p_total_cols < p_cols then p_total_cols = p_cols end
 
+
             local inner_width = p_total_cols * grid_width + border_thickness
             local inner_height = line_limit * grid_height + b_padding_top + b_padding_bottom + border_thickness
 
@@ -391,6 +392,7 @@ local function apply_positions(head, layout_map, params)
                 paper_height = params.paper_height, margin_left = params.margin_left,
                 margin_top = params.margin_top, inner_width = inner_width,
                 inner_height = inner_height, outer_shift = outer_shift,
+                is_textbox = params.is_textbox,
             })
 
             -- Node positions

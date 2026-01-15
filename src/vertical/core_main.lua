@@ -113,7 +113,21 @@ function vertical.prepare_grid(box_num, params)
     local ob_thickness = constants.to_dimen(params.outer_border_thickness) or (65536 * 2)
     local ob_sep = constants.to_dimen(params.outer_border_sep) or (65536 * 2)
     local b_interval = tonumber(params.n_column) or 8
-    local p_cols = tonumber(params.page_columns) or (2 * b_interval + 1)
+    local p_cols = tonumber(params.page_columns)
+    if not p_cols or p_cols <= 0 then
+        if p_width > 0 and g_width > 0 then
+            -- Auto-calculate columns based on paper width and margins
+            local available_width = p_width - m_left - m_right - b_thickness
+            if ob_thickness and ob_sep then
+                available_width = available_width - 2 * (ob_thickness + ob_sep)
+            end
+            p_cols = math.floor(available_width / g_width)
+            if p_cols <= 0 then p_cols = 1 end
+        else
+            -- Original fallback
+            p_cols = (2 * b_interval + 1)
+        end
+    end
 
     local limit = tonumber(params.col_limit)
     if not limit or limit <= 0 then
@@ -123,7 +137,7 @@ function vertical.prepare_grid(box_num, params)
     local is_textbox = (params.is_textbox == true)
     local half_thickness = math.floor(b_thickness / 2)
     local border_w = p_cols * g_width + 2 * half_thickness
-    local shift_x = (not is_textbox) and ((p_width - border_w) / 2) or 0
+    local shift_x = 0
     local shift_y = 0
     
     if is_textbox then
@@ -193,6 +207,8 @@ function vertical.prepare_grid(box_num, params)
         margin_bottom = m_bottom,
         margin_left = m_left,
         margin_right = m_right,
+        shift_x = shift_x,
+        shift_y = shift_y,
         banxin_upper_ratio = tonumber(params.banxin_upper_ratio) or 0.28,
         banxin_middle_ratio = tonumber(params.banxin_middle_ratio) or 0.56,
         banxin_lower_ratio = tonumber(params.banxin_lower_ratio) or 0.16,

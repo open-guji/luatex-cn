@@ -47,16 +47,16 @@
     paper-height .initial:n = 210mm,
 
     margin-top .tl_set:N = \l_cvbook_margin_top_tl,
-    margin-top .initial:n = 20mm,
+    margin-top .initial:n = 15mm,
 
     margin-bottom .tl_set:N = \l_cvbook_margin_bottom_tl,
-    margin-bottom .initial:n = 20mm,
+    margin-bottom .initial:n = 30mm,
 
     margin-left .tl_set:N = \l_cvbook_margin_left_tl,
     margin-left .initial:n = 15mm,
 
     margin-right .tl_set:N = \l_cvbook_margin_right_tl,
-    margin-right .initial:n = 15mm,
+    margin-right .initial:n = 25mm,
 
     % Grid and font settings
     font-size .tl_set:N = \l_cvbook_font_size_tl,
@@ -72,7 +72,7 @@
     grid-height .initial:n = 14pt,
 
     height .tl_set:N = \l_cvbook_height_tl,
-    height .initial:n = 170mm,
+    height .initial:n = ,
 
     % No border by default for modern books
     border .bool_set:N = \l_cvbook_border_bool,
@@ -82,7 +82,7 @@
     border-thickness .initial:n = 0.4pt,
 
     vertical-align .tl_set:N = \l_cvbook_valign_tl,
-    vertical-align .initial:n = top,
+    vertical-align .initial:n = center,
 
     n-column .int_set:N = \l_cvbook_n_column_int,
     n-column .initial:n = 0,
@@ -141,6 +141,11 @@
     \setlength{\topskip}{0pt}
     \setlength{\parskip}{0pt}
     \parindent=0pt
+
+    \tl_if_empty:NT \l_cvbook_height_tl
+      {
+        \tl_set:Nx \l_cvbook_height_tl { \dim_eval:n { \l_cvbook_paper_height_tl - \l_cvbook_margin_top_tl - \l_cvbook_margin_bottom_tl } }
+      }
 
     \keys_set:nn { vertical }
       {

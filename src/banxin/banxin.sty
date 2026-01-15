@@ -1,0 +1,139 @@
+% banxin.sty
+% Chinese classical book (古籍) banxin (版心) and yuwei (鱼尾) features
+% This is an extension package for vertical
+%
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{banxin}[2026/01/15 v1.0.0 Chinese classical book banxin/yuwei support]
+
+% Require vertical
+\RequirePackage{vertical}
+
+\ExplSyntaxOn
+
+% ============================================================================
+% Load Lua module and register hooks
+% ============================================================================
+\directlua{
+  % Load banxin main module (registers hooks)
+  banxin = require('banxin.banxin_main')
+}
+
+% ============================================================================
+% Define banxin-specific keys
+% ============================================================================
+\keys_define:nn { banxin }
+  {
+    % Banxin section ratios
+    upper-ratio .code:n = {
+      \directlua{banxin.config.upper_ratio = tonumber("\luaescapestring{#1}") or 0.28}
+    },
+    upper-ratio .initial:n = {0.28},
+
+    middle-ratio .code:n = {
+      \directlua{banxin.config.middle_ratio = tonumber("\luaescapestring{#1}") or 0.56}
+    },
+    middle-ratio .initial:n = {0.56},
+
+    lower-ratio .code:n = {
+      \directlua{banxin.config.lower_ratio = tonumber("\luaescapestring{#1}") or 0.16}
+    },
+    lower-ratio .initial:n = {0.16},
+
+    % Book name (书名, displayed in upper section)
+    book-name .code:n = {
+      \directlua{banxin.config.book_name = [=[#1]=]}
+    },
+
+    % Chapter title (章节标题, displayed in middle section)
+    chapter-title .code:n = {
+      \directlua{banxin.config.chapter_title = [=[#1]=]}
+    },
+
+    % Chapter title columns
+    chapter-title-cols .code:n = {
+      \directlua{banxin.config.chapter_title_cols = tonumber("\luaescapestring{#1}") or 1}
+    },
+    chapter-title-cols .initial:n = {1},
+
+    % Chapter title font size
+    chapter-title-font-size .code:n = {
+      \directlua{
+        local val = "\luaescapestring{#1}"
+        if val ~= "" then
+          local dimen = tex.sp(val)
+          banxin.config.chapter_title_font_size = val
+        end
+      }
+    },
+
+    % Chapter title grid height
+    chapter-title-grid-height .code:n = {
+      \directlua{
+        local val = "\luaescapestring{#1}"
+        if val ~= "" then
+          banxin.config.chapter_title_grid_height = val
+        end
+      }
+    },
+
+    % Chapter title top margin
+    chapter-title-top-margin .code:n = {
+      \directlua{
+        local val = "\luaescapestring{#1}"
+        if val ~= "" then
+          banxin.config.chapter_title_top_margin = tex.sp(val)
+        end
+      }
+    },
+
+    % Banxin padding
+    padding-top .code:n = {
+      \directlua{banxin.config.padding_top = tex.sp("\luaescapestring{#1}")}
+    },
+    padding-top .initial:n = {0pt},
+
+    padding-bottom .code:n = {
+      \directlua{banxin.config.padding_bottom = tex.sp("\luaescapestring{#1}")}
+    },
+    padding-bottom .initial:n = {0pt},
+
+    % Lower yuwei (下鱼尾)
+    lower-yuwei .code:n = {
+      \str_if_eq:nnTF { #1 } { true }
+        { \directlua{banxin.config.lower_yuwei = true} }
+        { \directlua{banxin.config.lower_yuwei = false} }
+    },
+    lower-yuwei .initial:n = {false},
+
+    % Interval (updates vertical's n-column)
+    interval .code:n = {
+      \directlua{banxin.config.interval = tonumber("\luaescapestring{#1}") or 8}
+      \keys_set:nn { vertical } { n-column = #1 }
+    },
+  }
+
+% ============================================================================
+% User commands
+% ============================================================================
+
+% Setup command
+\NewDocumentCommand{\banxinSetup}{ +m }
+  {
+    \keys_set:nn { banxin } { #1 }
+  }
+
+% Set book name
+\NewDocumentCommand{\setBookName}{ m }
+  {
+    \directlua{banxin.config.book_name = [=[#1]=]}
+  }
+
+% Set chapter title
+\NewDocumentCommand{\setChapterTitle}{ m }
+  {
+    \directlua{banxin.config.chapter_title = [=[#1]=]}
+  }
+
+\ExplSyntaxOff
+
+\endinput

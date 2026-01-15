@@ -10,25 +10,26 @@ INSTALL_DIR = $(TEXMF)/tex/latex/$(PACKAGE)
 install:
 	@echo "Installing $(PACKAGE) to $(INSTALL_DIR)/"
 	@mkdir -p $(INSTALL_DIR)
-	@mkdir -p $(INSTALL_DIR)/cn_vertical
-	@mkdir -p $(INSTALL_DIR)/cn_banxin
+	@mkdir -p $(INSTALL_DIR)/vertical
+	@mkdir -p $(INSTALL_DIR)/banxin
 	@mkdir -p $(INSTALL_DIR)/guji
-	@cp luatex_cn/luatex_cn.sty $(INSTALL_DIR)/
-	@cp cn_vertical/*.sty $(INSTALL_DIR)/cn_vertical/
-	@cp cn_vertical/*.lua $(INSTALL_DIR)/cn_vertical/
-	@cp cn_banxin/*.sty $(INSTALL_DIR)/cn_banxin/
-	@cp cn_banxin/*.lua $(INSTALL_DIR)/cn_banxin/
-	@cp guji/*.cls $(INSTALL_DIR)/guji/
+	@cp src/luatex_cn.sty $(INSTALL_DIR)/
+	@cp src/vertical/*.sty $(INSTALL_DIR)/vertical/
+	@cp src/vertical/*.lua $(INSTALL_DIR)/vertical/
+	@cp src/banxin/*.sty $(INSTALL_DIR)/banxin/
+	@cp src/banxin/*.lua $(INSTALL_DIR)/banxin/
+	@cp src/guji/*.cls $(INSTALL_DIR)/guji/
 	@texhash
 
 # Clean build artifacts
 clean:
 	rm -f *.aux *.log *.out *.toc *.synctex.gz *.fls *.fdb_latexmk
-	rm -f cn_vertical/*.aux cn_vertical/*.log cn_vertical/*.out
+	rm -f src/vertical/*.aux src/vertical/*.log src/vertical/*.out
+	rm -f example/*.aux example/*.log example/*.out
 
-# Test compilation (compile shiji.tex in cn_vertical directory)
+# Test compilation (compile shiji.tex in example directory)
 test:
-	cd cn_vertical && lualatex shiji.tex
+	cd example && lualatex shiji.tex
 
 # Generate documentation (placeholder)
 doc:

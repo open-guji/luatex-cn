@@ -1,0 +1,65 @@
+\documentclass{guji}
+
+% 测试文档：GridParagraph 缩进功能
+% 用于验证不同组合的缩进参数
+
+\begin{document}
+
+\begin{guji-content}
+
+\section{段落缩进测试}
+
+\section*{1. 基础测试}
+
+\begin{GridParagraph}
+【默认样式】这是没有任何参数的 GridParagraph。应该跟普通段落一样，每一列都是满的。如果设置了全局缩进，这里应该体现出来。测试文字测试文字测试文字测试文字测试文字。
+\end{GridParagraph}
+
+\begin{GridParagraph}[indent=2]
+【整体缩进 indent=2】此段落所有列都应当向下缩进 2 格。无论是第一列还是后续列，上方都应留出 2 格空白。
+测试文字测试文字测试文字测试文字测试文字测试文字测试文字测试文字测试文字测试文字测试文字测试文字。
+\end{GridParagraph}
+
+\section*{2. 首行缩进与悬挂缩进}
+
+\begin{GridParagraph}[first-indent=2]
+【首行缩进 first-indent=2】这是中文排版最常用的格式。
+第一列向下缩进 2 格，后续列顶格（0格）。
+注意观察第一列的起始位置。
+测试文字测试文字测试文字测试文字测试文字测试文字测试文字测试文字测试文字测试文字测试文字测试文字。
+\end{GridParagraph}
+
+\begin{GridParagraph}[indent=2, first-indent=0]
+【悬挂缩进 indent=2, first-indent=0】
+第一列顶格（0格），后续列向下缩进 2 格。
+这种格式常用于类似“条目解释”的场景，首行是标题，后面缩进。
+测试文字测试文字测试文字测试文字测试文字测试文字测试文字测试文字测试文字测试文字测试文字测试文字。
+\end{GridParagraph}
+
+\section*{3. 底部缩进与组合}
+
+\begin{GridParagraph}[bottom-indent=3]
+【底部缩进 bottom-indent=3】
+此段落每一列的底部都应当留出 3 格空白。这会导致每列容纳的字数变少，换列更加频繁。
+测试文字测试文字测试文字测试文字测试文字测试文字测试文字测试文字测试文字测试文字测试文字测试文字。
+\end{GridParagraph}
+
+\begin{GridParagraph}[first-indent=2, bottom-indent=2]
+【组合测试 first=2, bottom=2】
+首行缩进 2 格，同时每一列底部留空 2 格。
+后续列顶部顶格。
+测试文字测试文字测试文字测试文字测试文字测试文字测试文字测试文字测试文字测试文字测试文字测试文字。
+\end{GridParagraph}
+
+\begin{GridParagraph}[indent=4, first-indent=2, bottom-indent=2]
+【复杂组合 indent=4, first=2, bottom=2】
+基础缩进 4 格（用于后续列），但首行只缩进 2 格（first=2）。
+同时底部留空 2 格。
+期望效果：第一列下移2格，后续列下移4格，所有列底部空2格。
+这里插入一段很长的夹注来测试换行缩进：\jiazhu{这是一个很长的夹注，它应该在断行后遵循段落的缩进设置。由于这是第二行（或后续列），它应该遵循 base indent (4格) 而不是 first indent。如果不遵循，它可能会错误地跑到顶端（0格）。测试测试测试测试测试测试测试测试测试测试测试}
+测试文字测试文字测试文字测试文字测试文字测试文字测试文字测试文字测试文字测试文字测试文字测试文字。
+\end{GridParagraph}
+
+\end{guji-content}
+
+\end{document}

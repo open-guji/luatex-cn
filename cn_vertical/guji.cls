@@ -6,7 +6,21 @@
 \ProvidesClass{guji}[2026/01/10 v0.3.0 Ancient Chinese Book Class (Template Support)]
 
 % 1. Options Handling
-\DeclareOption*{\PassOptionsToClass{\CurrentOption}{article}}
+\RequirePackage{l3keys2e}
+\ExplSyntaxOn
+\tl_new:N \l_guji_initial_template_tl
+
+\DeclareOption*{
+  \tl_set:Nx \l_tmpa_tl { \CurrentOption }
+  \file_if_exist:nTF { \l_tmpa_tl .guji }
+    {
+      \tl_set_eq:NN \l_guji_initial_template_tl \l_tmpa_tl
+    }
+    {
+      \PassOptionsToClass{\l_tmpa_tl}{article}
+    }
+}
+\ExplSyntaxOff
 \ProcessOptions\relax
 \LoadClass{article}
 
@@ -407,6 +421,12 @@
     % Restore geometry if needed? \restoregeometry resets to preamble settings.
     \restoregeometry
 }
+
+% 9. Apply Initial Template if specified in class options
+\tl_if_empty:NF \l_guji_initial_template_tl
+  {
+    \keys_set:nx { guji } { template = \l_guji_initial_template_tl }
+  }
 
 \ExplSyntaxOff
 

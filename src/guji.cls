@@ -12,7 +12,8 @@
 
 \DeclareOption*{
   \tl_set:Nx \l_tmpa_tl { \CurrentOption }
-  \file_if_exist:nTF { \l_tmpa_tl .guji }
+  % Look for config file: configs/<name>.guji.cfg
+  \file_if_exist:nTF { configs/ \l_tmpa_tl .guji.cfg }
     {
       \tl_set_eq:NN \l_guji_initial_template_tl \l_tmpa_tl
     }
@@ -69,40 +70,40 @@
 
 \keys_define:nn { guji }
   {
-    % Page geometry settings (can be overridden by templates)
+    % Page geometry settings (set by config files)
     paper-width .tl_set:N = \l_guji_paper_width_tl,
-    paper-width .initial:n = 1136pt,
+    paper-width .initial:n = {},
 
     paper-height .tl_set:N = \l_guji_paper_height_tl,
-    paper-height .initial:n = 894.6pt,
+    paper-height .initial:n = {},
 
     margin-top .tl_set:N = \l_guji_margin_top_tl,
-    margin-top .initial:n = 148pt,
+    margin-top .initial:n = {},
 
     margin-bottom .tl_set:N = \l_guji_margin_bottom_tl,
-    margin-bottom .initial:n = 114pt,
+    margin-bottom .initial:n = {},
 
     margin-left .tl_set:N = \l_guji_margin_left_tl,
-    margin-left .initial:n = 106pt,
+    margin-left .initial:n = {},
 
     margin-right .tl_set:N = \l_guji_margin_right_tl,
-    margin-right .initial:n = 106pt,
+    margin-right .initial:n = {},
 
     % Grid and font settings
     font-size .tl_set:N = \l_guji_font_size_tl,
-    font-size .initial:n = 36pt,
+    font-size .initial:n = {},
     
     line-spacing .tl_set:N = \l_guji_line_spacing_tl,
-    line-spacing .initial:n = 36pt,
+    line-spacing .initial:n = {},
 
     grid-width .tl_set:N = \l_guji_grid_width_tl,
-    grid-width .initial:n = 52pt,
+    grid-width .initial:n = {},
 
     grid-height .tl_set:N = \l_guji_grid_height_tl,
-    grid-height .initial:n = 45pt,
+    grid-height .initial:n = {},
 
     height .tl_set:N = \l_guji_height_tl,
-    height .initial:n = 600pt,
+    height .initial:n = {},
 
     jiazhu-font-size .tl_set:N = \l_guji_jiazhu_font_size_tl,
     jiazhu-font-size .initial:n = {},
@@ -116,52 +117,52 @@
     jiazhu-align .initial:n = {outward},
 
     border .bool_set:N = \l_guji_border_bool,
-    border .initial:n = true,
+    border .initial:n = false,
 
     outer-border .bool_set:N = \l_guji_outer_border_bool,
     outer-border .initial:n = false,
 
     outer-border-thickness .tl_set:N = \l_guji_outer_border_thickness_tl,
-    outer-border-thickness .initial:n = 3pt,
+    outer-border-thickness .initial:n = {},
 
     outer-border-sep .tl_set:N = \l_guji_outer_border_sep_tl,
-    outer-border-sep .initial:n = 2pt,
+    outer-border-sep .initial:n = {},
 
     debug .bool_gset:N = \g_cnv_debug_bool,
 
     vertical-align .tl_set:N = \l_guji_valign_tl,
-    vertical-align .initial:n = center,
+    vertical-align .initial:n = {},
 
     border-padding-top .tl_set:N = \l_guji_border_padding_top_tl,
-    border-padding-top .initial:n = 0.2em,
+    border-padding-top .initial:n = {},
 
     border-padding-bottom .tl_set:N = \l_guji_border_padding_bottom_tl,
-    border-padding-bottom .initial:n = 0.2em,
+    border-padding-bottom .initial:n = {},
 
     border-thickness .tl_set:N = \l_guji_border_thickness_tl,
-    border-thickness .initial:n = 0.5pt,
+    border-thickness .initial:n = {},
 
     n-column .int_set:N = \l_guji_n_column_int,
-    n-column .initial:n = 8,
+    n-column .initial:n = 0,
 
     border-color .tl_set:N = \l_guji_border_color_tl,
-    border-color .initial:n = {black},
+    border-color .initial:n = {},
 
     background-color .tl_set:N = \l_guji_background_color_tl,
     background-color .initial:n = {},
 
     font-color .tl_set:N = \l_guji_font_color_tl,
-    font-color .initial:n = {black},
+    font-color .initial:n = {},
 
     % Banxin (版心) section ratios
     banxin-upper-ratio .tl_set:N = \l_guji_banxin_upper_tl,
-    banxin-upper-ratio .initial:n = {0.28},
+    banxin-upper-ratio .initial:n = {},
 
     banxin-middle-ratio .tl_set:N = \l_guji_banxin_middle_tl,
-    banxin-middle-ratio .initial:n = {0.56},
+    banxin-middle-ratio .initial:n = {},
 
     banxin-lower-ratio .tl_set:N = \l_guji_banxin_lower_tl,
-    banxin-lower-ratio .initial:n = {0.16},
+    banxin-lower-ratio .initial:n = {},
 
     book-name .tl_set:N = \l_guji_book_name_tl,
     book-name .initial:n = {},
@@ -173,24 +174,25 @@
     },
 
     chapter-title-top-margin .tl_set:N = \l_guji_chapter_title_top_margin_tl,
-    chapter-title-top-margin .initial:n = {40pt},
+    chapter-title-top-margin .initial:n = {},
 
     chapter-title-cols .int_set:N = \l_guji_chapter_title_cols_int,
-    chapter-title-cols .initial:n = 2,
+    chapter-title-cols .initial:n = 1,
 
     chapter-title-font-size .tl_set:N = \l_guji_chapter_title_font_size_tl,
-    chapter-title-font-size .initial:n = {18pt},
+    chapter-title-font-size .initial:n = {},
 
     chapter-title-grid-height .tl_set:N = \l_guji_chapter_title_grid_height_tl,
-    chapter-title-grid-height .initial:n = {50pt},
+    chapter-title-grid-height .initial:n = {},
 
     % Lower Yuwei (下鱼尾) - optional decoration
     lower-yuwei .bool_set:N = \l_guji_lower_yuwei_bool,
-    lower-yuwei .initial:n = true,
+    lower-yuwei .initial:n = false,
 
     template .code:n = {
-      \InputIfFileExists{#1.guji}{}{
-        % Fallback to checking defined templates in guji / templates namespace
+      % Load config file: configs/<name>.guji.cfg
+      \InputIfFileExists{configs/#1.guji.cfg}{}{
+        % Fallback to defined templates in guji / templates namespace
         \keys_set:nn { guji / templates } { #1 }
       }
     },
@@ -233,19 +235,6 @@
     \fi
   }
 
-% Initialize with defaults at end of preamble hook or immediately?
-% Geometry package should be loaded.
-% Let's apply defaults immediately so they are active.
-\geometry{
-    paperwidth=1136pt,
-    paperheight=894.6pt,
-    top=148pt,    
-    bottom=114pt, 
-    left=106pt,
-    right=106pt,
-    footskip=15mm
-}
-
 \NewDocumentCommand{\gujiSetup}{ +m }
   {
     \tl_set:Nn \l_tmpa_tl { #1 }
@@ -254,6 +243,11 @@
     % Apply geometry updates
     \__guji_apply_geometry:
   }
+
+% Load default config (after gujiSetup is defined)
+\InputIfFileExists{configs/default.guji.cfg}{}{
+  \PackageWarning{guji}{Config file configs/default.guji.cfg not found}
+}
 
 % Command to set Book Name
 \NewDocumentCommand{\setBookName}{ m }

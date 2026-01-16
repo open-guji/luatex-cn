@@ -35,7 +35,7 @@ cleanfiles = {"*.pdf", "*.zip"}
 uploadconfig = {
   pkg     = module,
   author  = "luatex-cn contributors",
-  license = "lppl1.3c",
+  license = "apache-2.0",
   summary = "Sophisticated traditional Chinese vertical typesetting and ancient book layout.",
   topic   = {"chinese", "vertical-typesetting", "ancient-books"},
 }

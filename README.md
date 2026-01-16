@@ -59,4 +59,4 @@ See `example.tex` for usage examples.
 
 ## License
 
-LPPL 1.3
+Apache License 2.0

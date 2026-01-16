@@ -407,16 +407,34 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
             -- For horizontal user space (\Space = 1em), width is usually > 20pt.
             -- Use passed argument 'grid_height' (ensure it's not nil)
             local threshold = (grid_height or 655360) * 0.25
-            
             if net_width > threshold then
-                 -- Treat as occupying one grid cell
-                 -- We associate it with the FIRST glue node 't' for positioning
+                 -- Calculate how many grid cells this net width represents
+                 local num_cells = math.floor(net_width / (grid_height or 655360) + 0.5)
+                 if num_cells < 1 then num_cells = 1 end
+
                  if utils and utils.debug_log then
-                    utils.debug_log(string.format("  [layout] GLUE SUM: val=%.2fpt > threshold, occupying grid.", net_width/65536))
+                    utils.debug_log(string.format("  [layout] GLUE SUM: val=%.2fpt, grid_h=%.2fpt, num_cells=%d", net_width/65536, (grid_height or 0)/65536, num_cells))
                  end
+
+                 -- Associate the glue with the first cell's position
                  table.insert(col_buffer, {node=t, page=cur_page, col=cur_col, relative_row=cur_row, is_glue=true})
-                 cur_row = cur_row + 1
-                 skip_banxin_and_occupied()
+                 
+                 -- Skip the required number of cells
+                 for i = 1, num_cells do
+                     cur_row = cur_row + 1
+                     -- If we exceed the column limit during skipping, wrap to next column
+                     if i < num_cells and cur_row >= effective_limit then
+                         flush_buffer()
+                         cur_col = cur_col + 1
+                         cur_row = 0
+                         if cur_col >= p_cols then
+                             cur_col = 0
+                             cur_page = cur_page + 1
+                         end
+                         skip_banxin_and_occupied()
+                     end
+                     skip_banxin_and_occupied()
+                 end
             else
                  if utils and utils.debug_log then
                     utils.debug_log(string.format("  [layout] GLUE SUM: val=%.2fpt ignored (threshold %.2fpt).", net_width/65536, threshold/65536))

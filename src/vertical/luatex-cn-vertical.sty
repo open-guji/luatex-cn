@@ -1,4 +1,4 @@
-% Copyright 2026 Open-Guji (https://github.com/open-guji)
+﻿% Copyright 2026 Open-Guji (https://github.com/open-guji)
 %
 % Licensed under the Apache License, Version 2.0 (the "License");
 % you may not use this file except in compliance with the License.
@@ -16,12 +16,12 @@
 % 这是 luatex_cn 的子包
 %
 \NeedsTeXFormat{LaTeX2e}
-\ProvidesPackage{vertical}[2026/01/15 v1.0.0 Chinese vertical typesetting for LuaTeX]
+\ProvidesPackage{luatex-cn-vertical}[2026/01/15 v1.0.0 Chinese vertical typesetting for LuaTeX]
 
 % Check if LuaTeX is being used
 \RequirePackage{ifluatex}
 \ifluatex\else
-  \PackageError{vertical}{This package requires LuaTeX}{%
+  \PackageError{luatex-cn-vertical}{This package requires LuaTeX}{%
     Please compile your document with LuaLaTeX.}
 \fi
 
@@ -65,41 +65,41 @@
 
 % Clear cache
 \cnvLua{
-  package.loaded["vertical.base_constants"] = nil
-  package.loaded["vertical.base_utils"] = nil
-  package.loaded["vertical.base_text_utils"] = nil
-  package.loaded["vertical.flatten_nodes"] = nil
-  package.loaded["vertical.layout_grid"] = nil
-  package.loaded["vertical.render_page"] = nil
-  package.loaded["vertical.render_border"] = nil
-  package.loaded["vertical.render_background"] = nil
-  package.loaded["vertical.render_position"] = nil
-  package.loaded["vertical.core_main"] = nil
-  package.loaded["vertical.core_textbox"] = nil
-  package.loaded["vertical.core_textflow"] = nil
+  package.loaded["vertical.luatex-cn-vertical-base-constants"] = nil
+  package.loaded["vertical.luatex-cn-vertical-base-utils"] = nil
+  package.loaded["vertical.luatex-cn-vertical-base-text-utils"] = nil
+  package.loaded["vertical.luatex-cn-vertical-flatten-nodes"] = nil
+  package.loaded["vertical.luatex-cn-vertical-layout-grid"] = nil
+  package.loaded["vertical.luatex-cn-vertical-render-page"] = nil
+  package.loaded["vertical.luatex-cn-vertical-render-border"] = nil
+  package.loaded["vertical.luatex-cn-vertical-render-background"] = nil
+  package.loaded["vertical.luatex-cn-vertical-render-position"] = nil
+  package.loaded["vertical.luatex-cn-vertical-core-main"] = nil
+  package.loaded["vertical.luatex-cn-vertical-core-textbox"] = nil
+  package.loaded["vertical.luatex-cn-vertical-core-textflow"] = nil
 }
 
 % Load Modules
 \cnvLua{
-  vertical_constants = require('vertical.base_constants')
-  vertical_utils = require('vertical.base_utils')
-  vertical_text_utils = require('vertical.base_text_utils')
-  vertical_hooks = require('vertical.base_hooks')
-  vertical_flatten = require('vertical.flatten_nodes')
-  vertical_layout = require('vertical.layout_grid')
-  vertical_text_position = require('vertical.render_position')
-  vertical_render = require('vertical.render_page')
-  vertical_border = require('vertical.render_border')
-  vertical_background = require('vertical.render_background')
-  vertical_background = require('vertical.render_background')
+  vertical_constants = require('vertical.luatex-cn-vertical-base-constants')
+  vertical_utils = require('vertical.luatex-cn-vertical-base-utils')
+  vertical_text_utils = require('vertical.luatex-cn-vertical-base-text-utils')
+  vertical_hooks = require('vertical.luatex-cn-vertical-base-hooks')
+  vertical_flatten = require('vertical.luatex-cn-vertical-flatten-nodes')
+  vertical_layout = require('vertical.luatex-cn-vertical-layout-grid')
+  vertical_text_position = require('vertical.luatex-cn-vertical-render-position')
+  vertical_render = require('vertical.luatex-cn-vertical-render-page')
+  vertical_border = require('vertical.luatex-cn-vertical-render-border')
+  vertical_background = require('vertical.luatex-cn-vertical-render-background')
+  vertical_background = require('vertical.luatex-cn-vertical-render-background')
 }
 
 
 % Load core logic
 \cnvLua{
-  vertical_textbox = require('vertical.core_textbox')
-  vertical_textflow = require('vertical.core_textflow')
-  vertical = require('vertical.core_main')
+  vertical_textbox = require('vertical.luatex-cn-vertical-core-textbox')
+  vertical_textflow = require('vertical.luatex-cn-vertical-core-textflow')
+  vertical = require('vertical.luatex-cn-vertical-core-main')
 }
 
 % Use l3keys for key-value parameters

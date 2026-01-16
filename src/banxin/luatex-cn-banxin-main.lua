@@ -1,4 +1,4 @@
--- Copyright 2026 Open-Guji (https://github.com/open-guji)
+﻿-- Copyright 2026 Open-Guji (https://github.com/open-guji)
 --
 -- Licensed under the Apache License, Version 2.0 (the "License");
 -- you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ _G.vertical.hooks = _G.vertical.hooks or {}
 _G.banxin = _G.banxin or {}
 
 -- 1. Load sub-modules using full namespaced paths
-local render_banxin = package.loaded['banxin.render_banxin'] or require('banxin.render_banxin')
+local render_banxin = package.loaded['banxin.render_banxin'] or require('banxin.luatex-cn-banxin-render-banxin')
 -- Note: render_banxin will itself require banxin.render_yuwei if configured correctly
 
 --- 在保留列（Reserved Column）上渲染版心内容

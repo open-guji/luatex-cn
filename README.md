@@ -26,7 +26,11 @@ make install
 推荐通过 `guji` 文档类使用本宏包：
 
 ```latex
-\documentclass{guji}
+% 推荐使用新的类名
+\documentclass{luatex-cn-guji}
+
+% 或使用旧名称（会显示弃用警告，但仍然可用）
+% \documentclass{guji}
 
 % 配置版式和字体
 \gujiSetup{
@@ -42,6 +46,8 @@ make install
 這是竖排的中文文本示例，包含夹注\jiazhu{双行小注}的功能演示。
 \end{document}
 ```
+
+> **注意**：为了符合 CTAN/TeX Live 的命名空间要求，我们将类名从 `guji` 更改为 `luatex-cn-guji`。旧名称仍然可用以保持向后兼容性，但会显示弃用警告。
 
 ## 系统要求
 

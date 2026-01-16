@@ -17,7 +17,7 @@
 % Main wrapper package that loads sub-packages and exposes unified interface
 %
 \NeedsTeXFormat{LaTeX2e}
-\ProvidesPackage{luatex_cn}[2026/01/15 v1.0.0 Chinese typesetting support for LuaTeX]
+\ProvidesPackage{luatex-cn}[2026/01/15 v1.0.0 Chinese typesetting support for LuaTeX]
 
 % Load expl3 (LaTeX3 programming layer)
 \RequirePackage{expl3}
@@ -26,7 +26,7 @@
 % Check if LuaTeX is being used
 \RequirePackage{ifluatex}
 \ifluatex\else
-  \PackageError{luatex_cn}{This package requires LuaTeX}{%
+  \PackageError{luatex-cn}{This package requires LuaTeX}{%
     Please compile your document with LuaLaTeX instead of pdfLaTeX or XeLaTeX.}
 \fi
 
@@ -63,12 +63,12 @@
 % ============================================================================
 
 % Core vertical typesetting engine (always loaded)
-\RequirePackage{vertical}
+\RequirePackage{luatex-cn-vertical}
 
 % Banxin (版心) features - optional
 \bool_if:NT \g_luatexcn_banxin_bool
   {
-    \RequirePackage{banxin}
+    \RequirePackage{luatex-cn-banxin}
   }
 
 % ============================================================================

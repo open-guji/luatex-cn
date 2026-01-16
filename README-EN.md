@@ -28,7 +28,7 @@ make install
 The recommended way to use the package is through the `guji` document class:
 
 ```latex
-\documentclass{guji}
+\documentclass{luatex-cn-guji}
 
 % Configure layout and fonts
 \gujiSetup{

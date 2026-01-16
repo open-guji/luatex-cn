@@ -1,4 +1,4 @@
--- Copyright 2026 Open-Guji (https://github.com/open-guji)
+﻿-- Copyright 2026 Open-Guji (https://github.com/open-guji)
 --
 -- Licensed under the Apache License, Version 2.0 (the "License");
 -- you may not use this file except in compliance with the License.
@@ -84,7 +84,7 @@ end
 
 -- Load submodules using Lua's require mechanism
 -- 加载子模块
-local constants = package.loaded['base_constants'] or require('base_constants')
+local constants = package.loaded['luatex-cn-vertical-base-constants'] or require('luatex-cn-vertical-base-constants')
 local utils = package.loaded['base_utils'] or require('base_utils')
 local flatten = package.loaded['flatten_nodes'] or require('flatten_nodes')
 local layout = package.loaded['layout_grid'] or require('layout_grid')

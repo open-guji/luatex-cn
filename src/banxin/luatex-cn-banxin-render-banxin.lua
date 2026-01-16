@@ -1,4 +1,4 @@
--- Copyright 2026 Open-Guji (https://github.com/open-guji)
+﻿-- Copyright 2026 Open-Guji (https://github.com/open-guji)
 --
 -- Licensed under the Apache License, Version 2.0 (the "License");
 -- you may not use this file except in compliance with the License.
@@ -44,11 +44,11 @@
 -- ============================================================================
 
 -- Load dependencies
-local constants = package.loaded['vertical.base_constants'] or require('vertical.base_constants')
+local constants = package.loaded['vertical.base_constants'] or require('vertical.luatex-cn-vertical-base-constants')
 local D = constants.D
-local utils = package.loaded['vertical.base_utils'] or require('vertical.base_utils')
-local text_position = package.loaded['vertical.render_position'] or require('vertical.render_position')
-local yuwei = package.loaded['banxin.render_yuwei'] or require('banxin.render_yuwei')
+local utils = package.loaded['vertical.base_utils'] or require('vertical.luatex-cn-vertical-base-utils')
+local text_position = package.loaded['vertical.render_position'] or require('vertical.luatex-cn-vertical-render-position')
+local yuwei = package.loaded['banxin.render_yuwei'] or require('banxin.luatex-cn-banxin-render-yuwei')
 
 -- Conversion factor from scaled points to PDF big points
 local sp_to_bp = utils.sp_to_bp

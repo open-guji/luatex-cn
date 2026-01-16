@@ -35,22 +35,22 @@ local constants = package.loaded['base_constants'] or require('base_constants')
 local D = constants.D
 local utils = package.loaded['base_utils'] or require('base_utils')
 
---- Draw column borders (regular columns only, NOT banxin columns)
--- Banxin columns should be drawn separately using banxin.draw_banxin_column
--- @param p_head (node) Direct node head
--- @param params (table) Parameters:
---   - total_cols: number of columns to draw
---   - grid_width: width of each column in sp
---   - grid_height: height of each row in sp
---   - line_limit: number of rows per column
---   - border_thickness: thickness of border in sp
---   - b_padding_top: top padding in sp
---   - b_padding_bottom: bottom padding in sp
---   - shift_x: horizontal shift in sp
---   - outer_shift: outer border shift in sp
---   - border_rgb_str: normalized RGB color string
---   - banxin_cols: optional set of column indices to skip (banxin columns)
--- @return (node) Updated head
+--- 绘制列边框（仅限普通列，不含版心列）
+-- 版心列应由 banxin.draw_banxin_column 单独绘制
+-- @param p_head (node) 节点列表头部（直接引用）
+-- @param params (table) 参数表:
+--   - total_cols: 要绘制的总列数
+--   - grid_width: 每列的宽度 (sp)
+--   - grid_height: 每行的高度 (sp)
+--   - line_limit: 每列的行数限制
+--   - border_thickness: 边框厚度 (sp)
+--   - b_padding_top: 顶部内边距 (sp)
+--   - b_padding_bottom: 底部内边距 (sp)
+--   - shift_x: 水平偏移 (sp)
+--   - outer_shift: 外边框偏移 (sp)
+--   - border_rgb_str: 归一化的 RGB 颜色字符串
+--   - banxin_cols: 可选，要跳过的列索引集合（版心列）
+-- @return (node) 更新后的头部
 local function draw_column_borders(p_head, params)
     local sp_to_bp = utils.sp_to_bp
     local total_cols = params.total_cols
@@ -90,15 +90,15 @@ local function draw_column_borders(p_head, params)
     return p_head
 end
 
---- Draw outer border around the entire content area
--- @param p_head (node) Direct node head
--- @param params (table) Parameters:
---   - inner_width: width of inner content in sp
---   - inner_height: height of inner content in sp
---   - outer_border_thickness: thickness of outer border in sp
---   - outer_border_sep: separation between inner and outer border in sp
---   - border_rgb_str: normalized RGB color string
--- @return (node) Updated head
+--- 在整个内容区域外围绘制外边框
+-- @param p_head (node) 节点列表头部（直接引用）
+-- @param params (table) 参数表:
+--   - inner_width: 内部内容宽度 (sp)
+--   - inner_height: 内部内容高度 (sp)
+--   - outer_border_thickness: 外边框厚度 (sp)
+--   - outer_border_sep: 内外边框间距 (sp)
+--   - border_rgb_str: 归一化的 RGB 颜色字符串
+-- @return (node) 更新后的头部
 local function draw_outer_border(p_head, params)
     local sp_to_bp = utils.sp_to_bp
     local inner_width = params.inner_width

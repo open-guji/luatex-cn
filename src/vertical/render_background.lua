@@ -36,18 +36,18 @@ local constants = package.loaded['base_constants'] or require('base_constants')
 local D = constants.D
 local utils = package.loaded['base_utils'] or require('base_utils')
 
---- Draw background color rectangle
--- @param p_head (node) Direct node head
--- @param params (table) Parameters:
---   - bg_rgb_str: normalized RGB color string
---   - paper_width: width of paper in sp (optional)
---   - paper_height: height of paper in sp (optional)
---   - margin_left: left margin in sp (optional)
---   - margin_top: top margin in sp (optional)
---   - inner_width: width of inner content in sp (fallback)
---   - inner_height: height of inner content in sp (fallback)
---   - outer_shift: outer border shift in sp (fallback)
--- @return (node) Updated head
+--- 绘制背景色矩形
+-- @param p_head (node) 节点列表头部（直接引用）
+-- @param params (table) 参数表:
+--   - bg_rgb_str: 归一化的 RGB 颜色字符串
+--   - paper_width: 纸张宽度 (sp, 可选)
+--   - paper_height: 纸张高度 (sp, 可选)
+--   - margin_left: 左边距 (sp, 可选)
+--   - margin_top: 上边距 (sp, 可选)
+--   - inner_width: 内部内容宽度 (sp, 备选)
+--   - inner_height: 内部内容高度 (sp, 备选)
+--   - outer_shift: 外边框偏移 (sp, 备选)
+-- @return (node) 更新后的头部
 local function draw_background(p_head, params)
     local sp_to_bp = utils.sp_to_bp
     local bg_rgb_str = params.bg_rgb_str
@@ -100,10 +100,10 @@ local function draw_background(p_head, params)
     return p_head
 end
 
---- Set font color for subsequent text
--- @param p_head (node) Direct node head
--- @param font_rgb_str (string) Normalized RGB color string
--- @return (node) Updated head
+--- 设置后续文字的字体颜色
+-- @param p_head (node) 节点列表头部（直接引用）
+-- @param font_rgb_str (string) 归一化的 RGB 颜色字符串
+-- @return (node) 更新后的头部
 local function set_font_color(p_head, font_rgb_str)
     if not font_rgb_str then
         return p_head

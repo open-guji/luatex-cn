@@ -37,19 +37,19 @@
 local constants = package.loaded['base_constants'] or require('base_constants')
 local D = constants.D
 
---- Position a single glyph node at the specified coordinates
--- This is the core function for placing a character at an exact position.
--- It sets xoffset/yoffset and creates a negative kern to stack characters.
+--- 在指定坐标处定位单个字形节点
+-- 这是在精确位置放置字符的核心函数。
+-- 它设置 xoffset/yoffset 并创建负 kern 以使字符堆叠。
 --
--- @param glyph_direct (node) Direct glyph node to position
--- @param x (number) X position in scaled points (left edge of cell)
--- @param y (number) Y position in scaled points (top edge of cell, negative downward)
--- @param params (table) Parameters:
---   - cell_width (number) Width of the cell for horizontal centering
---   - cell_height (number) Height of the cell for vertical centering
---   - h_align (string) Horizontal alignment: "left", "center", "right" (default: "center")
---   - v_align (string) Vertical alignment: "top", "center", "bottom" (default: "center")
--- @return (node, node) The glyph node and the negative kern node (both direct nodes)
+-- @param glyph_direct (node) 要定位的字形节点的直接引用
+-- @param x (number) 以 SCALED POINTS 为单位的 X 坐标（单元格左边缘）
+-- @param y (number) 以 SCALED POINTS 为单位的 Y 坐标（单元格顶边缘，向下为负）
+-- @param params (table) 参数表:
+--   - cell_width (number) 单元格宽度，用于水平居中
+--   - cell_height (number) 单元格高度，用于垂直居中
+--   - h_align (string) 水平对齐: "left", "center", "right" (默认: "center")
+--   - v_align (string) 垂直对齐: "top", "center", "bottom" (默认: "center")
+-- @return (node, node) 字形节点和负 kern 节点（均为直接节点引用）
 local function position_glyph(glyph_direct, x, y, params)
     params = params or {}
     local cell_width = params.cell_width or 0
@@ -113,22 +113,22 @@ local function position_glyph(glyph_direct, x, y, params)
     return glyph_direct, kern
 end
 
---- Create a vertical column of text characters
--- Arranges characters from top to bottom in a single column.
--- This is used for banxin text and can be used for any vertical text block.
+--- 创建竖向排列的文字链
+-- 将字符按从上到下的顺序排列在单列中。
+-- 用于版心文字，也可用于任何竖排文字块。
 --
--- @param text (string) UTF-8 text to render
--- @param params (table) Parameters:
---   - x (number) X position of the column left edge (sp)
---   - y_top (number) Y position of the column top edge (sp, negative downward)
---   - width (number) Column width for horizontal centering (sp)
---   - height (number) Total height of the text area (sp)
---   - num_cells (number) Optional: number of cells (default: number of characters)
---   - v_align (string) Vertical alignment within each cell: "top", "center", "bottom"
---   - h_align (string) Horizontal alignment within column: "left", "center", "right"
---   - font_id (number) Optional: font ID (default: current font)
---   - shift_y (number) Optional: additional Y shift (sp)
--- @return (node) Head of the linked node chain (direct node), or nil if no text
+-- @param text (string) 要渲染的 UTF-8 字符串
+-- @param params (table) 参数表:
+--   - x (number) 列左边缘的 X 坐标 (sp)
+--   - y_top (number) 列顶边缘的 Y 坐标 (sp, 向下为负)
+--   - width (number) 用于水平居中的列宽 (sp)
+--   - height (number) 文字区域的总高度 (sp)
+--   - num_cells (number) 可选：单元格数量 (默认: 字符数)
+--   - v_align (string) 每个单元格内的垂直对齐: "top", "center", "bottom"
+--   - h_align (string) 列内的水平对齐: "left", "center", "right"
+--   - font_id (number) 可选：字体 ID (默认: 当前字体)
+--   - shift_y (number) 可选：额外的 Y 轴偏移 (sp)
+-- @return (node) 链接节点链的头部（直接节点引用），若无文字则返回 nil
 local function create_vertical_text(text, params)
     if not text or text == "" then
         return nil
@@ -256,21 +256,21 @@ local function create_vertical_text(text, params)
     return head
 end
 
---- Position a glyph in a grid cell (used by main text rendering)
--- This is a convenience wrapper for positioning glyphs in a column/row grid.
+--- 在网格单元中定位字形（供主文本渲染使用）
+-- 这是一个便捷包装函数，用于在行列网格中定位字形。
 --
--- @param glyph_direct (node) Direct glyph node to position
--- @param col (number) Column index (0-indexed, RTL will be handled by caller)
--- @param row (number) Row index (0-indexed)
--- @param params (table) Parameters:
---   - grid_width (number) Width of each grid cell (sp)
---   - grid_height (number) Height of each grid cell (sp)
---   - total_cols (number) Total number of columns (for RTL calculation)
---   - shift_x (number) X shift for margins/borders (sp)
---   - shift_y (number) Y shift for margins/borders (sp)
---   - v_align (string) Vertical alignment: "top", "center", "bottom"
---   - half_thickness (number) Half of border thickness (sp)
--- @return (node, node) The glyph node and the negative kern node
+-- @param glyph_direct (node) 要定位的字形节点的直接引用
+-- @param col (number) 列索引（从 0 开始，RTL 转换由调用者处理）
+-- @param row (number) 行索引（从 0 开始）
+-- @param params (table) 参数表:
+--   - grid_width (number) 每个网格单元的宽度 (sp)
+--   - grid_height (number) 每个网格单元的高度 (sp)
+--   - total_cols (number) 总列数（用于 RTL 计算）
+--   - shift_x (number) 边距/边框的 X 轴偏移 (sp)
+--   - shift_y (number) 边距/边框的 Y 轴偏移 (sp)
+--   - v_align (string) 垂直对齐: "top", "center", "bottom"
+--   - half_thickness (number) 边框厚度的一半 (sp)
+-- @return (node, node) 字形节点和负 kern 节点
 local function position_glyph_in_grid(glyph_direct, col, row, params)
     local grid_width = params.grid_width or 0
     local grid_height = params.grid_height or 0
@@ -295,21 +295,21 @@ local function position_glyph_in_grid(glyph_direct, col, row, params)
     })
 end
 
---- Calculate grid position coordinates (pure calculation, no node manipulation)
--- This is used by render.lua for main text positioning where nodes are modified in-place.
+--- 计算网格位置坐标（纯计算，不操作节点）
+-- 供 render.lua 使用，用于主文本定位，其中节点被就地修改。
 --
--- @param col (number) Column index (0-indexed)
--- @param row (number) Row index (0-indexed)
--- @param glyph_dims (table) Glyph dimensions: width, height, depth
--- @param params (table) Parameters:
---   - grid_width (number) Width of each grid cell (sp)
---   - grid_height (number) Height of each grid cell (sp)
---   - total_cols (number) Total number of columns (for RTL calculation)
---   - shift_x (number) X shift for margins/borders (sp)
---   - shift_y (number) Y shift for margins/borders (sp)
---   - v_align (string) Vertical alignment: "top", "center", "bottom"
---   - half_thickness (number) Half of border thickness (sp)
--- @return (number, number) x_offset, y_offset for the glyph
+-- @param col (number) 列索引（从 0 开始）
+-- @param row (number) 行索引（从 0 开始）
+-- @param glyph_dims (table) 字形尺寸: width, height, depth
+-- @param params (table) 参数表:
+--   - grid_width (number) 每个网格单元的宽度 (sp)
+--   - grid_height (number) 每个网格单元的高度 (sp)
+--   - total_cols (number) 总列数（用于 RTL 计算）
+--   - shift_x (number) 边距/边框的 X 轴偏移 (sp)
+--   - shift_y (number) 边距/边框的 Y 轴偏移 (sp)
+--   - v_align (string) 垂直对齐: "top", "center", "bottom"
+--   - half_thickness (number) 边框厚度的一半 (sp)
+-- @return (number, number) 字形的 x_offset, y_offset
 local function calc_grid_position(col, row, glyph_dims, params)
     local grid_width = params.grid_width or 0
     local grid_height = params.grid_height or 0

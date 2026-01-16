@@ -44,45 +44,35 @@ local utils = package.loaded['vertical.base_utils'] or require('vertical.base_ut
 -- Conversion factor from scaled points to PDF big points
 local sp_to_bp = utils.sp_to_bp
 
---- Draw a yuwei (fish tail) decorative element
--- The yuwei is a filled rectangle with a V-shaped notch cut into it
--- 
--- Shape (direction=1, 上鱼尾 - notch at bottom):
+--- 绘制鱼尾（燕尾）装饰元素
+-- 鱼尾通常是一个带有 V 形缺口的矩形形状
+--
+-- 几何形状 (direction=1, 上鱼尾 - 缺口在底部):
 --
 --       ←───── width ─────→
 --   ┌─────────────────────────┐  ↑
---   │                         │  │ edge_height (longer side edges)
+--   │                         │  │ edge_height (侧边高度)
 --   │                         │  │
 --   └───╲               ╱───┘  ↓
 --         ╲           ╱        ↑
 --           ╲       ╱          │ (edge_height - notch_height)
 --             ╲   ╱            │
---               V              ↓ notch_height from top
+--               V              ↓ 缺口尖端位置（从顶部起算 notch_height）
 --
--- Shape (direction=-1, 下鱼尾 - notch at top):
---               ∧              ↑ notch_height from bottom
---             ╱   ╲            │
---           ╱       ╲          │
---         ╱           ╲        ↓
---   ┌───╱               ╲───┐  ↑
---   │                         │  │ edge_height
---   │                         │  │
---   └─────────────────────────┘  ↓
---
--- @param params (table) Parameters:
---   - x (number) X position of LEFT edge in scaled points
---   - y (number) Y position of TOP edge in scaled points
---   - width (number) Width in scaled points
---   - edge_height (number) Height of the side edges (the longer dimension)
---   - notch_height (number) Distance from top to V-tip (for direction=1) or bottom to V-tip (for direction=-1)
---   - direction (number) 1 = 上鱼尾 (notch at bottom), -1 = 下鱼尾 (notch at top)
---   - style (string) "black" (filled) or "white"/"hollow" (stroked)
---   - color_str (string) RGB color string (e.g., "0 0 0")
---   - line_width (number) Optional line width for hollow style (default 0.8bp)
---   - extra_line (bool) If true, draw an additional horizontal line at the V-tip
---   - line_gap (number) Gap between V-tip and extra line (default 4pt = 65536*4 sp)
---   - border_thickness (number) Thickness of the extra line (default 0.4pt)
--- @return (string) PDF literal string
+-- @param params (table) 参数表:
+--   - x (number) 左边缘 X 坐标 (sp)
+--   - y (number) 顶边缘 Y 坐标 (sp)
+--   - width (number) 宽度 (sp)
+--   - edge_height (number) 侧边高度 (sp)
+--   - notch_height (number) 从顶部到 V 尖端的距离 (direction=1) 或从底部到 V 尖端的距离 (direction=-1)
+--   - direction (number) 1 = 上鱼尾 (缺口在底部), -1 = 下鱼尾 (缺口在顶部)
+--   - style (string) "black" (实心填充) 或 "white"/"hollow" (空心描边)
+--   - color_str (string) RGB 颜色字符串 (例如 "0 0 0")
+--   - line_width (number) 可选，空心样式的线宽 (默认 0.8bp)
+--   - extra_line (bool) 是否在 V 尖端处额外绘制一条水平线
+--   - line_gap (number) 尖端与额外线条之间的间距 (默认 4pt)
+--   - border_thickness (number) 额外线条的厚度 (默认 0.4pt)
+-- @return (string) PDF literal 路径字符串
 local function draw_yuwei(params)
     local x = params.x or 0
     local y = params.y or 0
@@ -215,9 +205,9 @@ local function draw_yuwei(params)
     return path
 end
 
---- Create a PDF literal node for yuwei
--- @param params (table) Same as draw_yuwei
--- @return (node) pdf_literal whatsit node (direct)
+--- 为鱼尾创建一个 PDF literal 节点
+-- @param params (table) 与 draw_yuwei 相同
+-- @return (node) pdf_literal whatsit 节点 (直接引用)
 local function create_yuwei_node(params)
     local D = constants.D
     local literal_str = draw_yuwei(params)

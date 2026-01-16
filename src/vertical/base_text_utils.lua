@@ -1,6 +1,6 @@
--- ============================================================================
--- base_text_utils.lua - Cross-Platform Text Normalization Utilities
--- ============================================================================
+% base_text_utils.lua
+% 跨平台文本规范化工具函数库
+%
 -- 文件名: base_text_utils.lua
 -- 层级: 基础工具层 (Base Utilities Layer)
 --
@@ -21,13 +21,13 @@
 
 local text_utils = {}
 
---- Normalize line endings in text
--- Converts all line endings to Unix-style LF (\n)
--- Handles: CRLF (\r\n) → LF (\n)
---          CR (\r) → LF (\n)
+--- 规范化文本中的换行符
+-- 将所有换行符转换为 Unix 风格的 LF (\n)
+-- 处理情况：CRLF (\r\n) → LF (\n)
+--           CR (\r) → LF (\n)
 --
--- @param text (string) Input text with mixed line endings
--- @return (string) Text with normalized line endings
+-- @param text (string) 具有混合换行符的输入文本
+-- @return (string) 换行符规范化后的文本
 function text_utils.normalize_line_endings(text)
     if not text or text == "" then
         return text
@@ -42,11 +42,11 @@ function text_utils.normalize_line_endings(text)
     return text
 end
 
---- Remove UTF-8 BOM (Byte Order Mark) if present
--- Some Windows editors add BOM to UTF-8 files, which can cause issues
+--- 如果存在 UTF-8 BOM（字节顺序标记），则将其移除
+-- 某些 Windows 编辑器会在 UTF-8 文件中添加 BOM，这可能导致解析问题
 --
--- @param text (string) Input text that may contain BOM
--- @return (string) Text with BOM removed
+-- @param text (string) 可能包含 BOM 的输入文本
+-- @return (string) 移除 BOM 后的文本
 function text_utils.remove_bom(text)
     if not text or text == "" then
         return text
@@ -61,12 +61,12 @@ function text_utils.remove_bom(text)
     return text
 end
 
---- Normalize whitespace (convert all whitespace to single space)
--- Useful for cleaning up user input
+--- 规范化空白字符（将连续空白转换为单个空格）
+-- 用于清理用户输入
 --
--- @param text (string) Input text with mixed whitespace
--- @param preserve_newlines (boolean) If true, preserve line breaks
--- @return (string) Text with normalized whitespace
+-- @param text (string) 具有混合空白字符的输入文本
+-- @param preserve_newlines (boolean) 如果为 true，则保留换行符
+-- @return (string) 规范化空白后的文本
 function text_utils.normalize_whitespace(text, preserve_newlines)
     if not text or text == "" then
         return text
@@ -92,16 +92,16 @@ function text_utils.normalize_whitespace(text, preserve_newlines)
     end
 end
 
---- Full text normalization pipeline
--- Combines all normalization steps for robust text processing
+--- 全文规范化流水线
+-- 结合多个规范化步骤，用于健壮的文本处理
 --
--- @param text (string) Raw input text
--- @param options (table) Optional parameters:
---   - remove_bom (boolean) Remove UTF-8 BOM, default: true
---   - normalize_line_endings (boolean) Normalize line endings, default: true
---   - normalize_whitespace (boolean) Normalize whitespace, default: false
---   - preserve_newlines (boolean) Preserve newlines when normalizing whitespace, default: true
--- @return (string) Fully normalized text
+-- @param text (string) 原始输入文本
+-- @param options (table) 可选参数:
+--   - remove_bom (boolean) 移除 UTF-8 BOM，默认 true
+--   - normalize_line_endings (boolean) 规范化换行符，默认 true
+--   - normalize_whitespace (boolean) 规范化空白字符，默认 false
+--   - preserve_newlines (boolean) 规范化空白时保留换行，默认 true
+-- @return (string) 完全规范化后的文本
 function text_utils.normalize_text(text, options)
     if not text or text == "" then
         return text
@@ -131,11 +131,11 @@ function text_utils.normalize_text(text, options)
     return text
 end
 
---- Quick helper: Normalize for ancient book typesetting
--- Preset for vertical module: preserve structure, only fix line endings
+--- 快速助手：针对古籍排版进行规范化
+-- 预设用于竖排模块：保留结构，仅修复换行符
 --
--- @param text (string) Input text
--- @return (string) Normalized text ready for typesetting
+-- @param text (string) 输入文本
+-- @return (string) 准备好进行排版的规范化文本
 function text_utils.normalize_for_typesetting(text)
     return text_utils.normalize_text(text, {
         remove_bom = true,

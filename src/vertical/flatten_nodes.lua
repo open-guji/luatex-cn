@@ -54,21 +54,21 @@ local constants = package.loaded['base_constants'] or require('base_constants')
 local D = constants.D
 local utils = package.loaded['base_utils'] or require('base_utils')
 
---- Flatten a vlist (from vbox) into a single list of nodes
--- Extracts indentation from line starts and applies it as attributes.
--- Also cleans up nodes (keeps valid glues/glyphs).
+--- 将 vlist（来自 vbox）展平为单一节点列表
+-- 从行首提取缩进并将其应用为属性。
+-- 同时清理节点（保留有效的胶水/字形）。
 --
--- @param head (node) Head of the vlist
--- @param grid_width (number) Grid column width in scaled points
--- @param char_width (number) Character width for indent calculation (usually grid_height)
--- @return (node) Flattened node list with indent attributes
+-- @param head (node) vlist 的头部
+-- @param grid_width (number) 以 SCALED POINTS 为单位网格列宽
+-- @param char_width (number) 用于缩进计算的字符宽度（通常为 grid_height）
+-- @return (node) 带有缩进属性的展平节点列表
 local function flatten_vbox(head, grid_width, char_width)
     local d_head = D.todirect(head)
     local result_head_d = nil
     local result_tail_d = nil
 
-    --- Append a node to the result list
-    -- @param n (direct node) Node to append
+    --- 向结果列表追加一个节点
+    -- @param n (direct node) 要追加的节点
     local function append_node(n)
         if not n then return end
         -- if utils and utils.debug_log then
@@ -84,11 +84,11 @@ local function flatten_vbox(head, grid_width, char_width)
         end
     end
 
-    --- Recursive node collector
-    -- @param n_head (direct node) Head of node list to collect (WILL BE CONSUMED)
-    -- @param indent_lvl (number) Current indent
-    -- @param r_indent_lvl (number) Current right indent
-    -- @return (boolean) True if any visible content (glyphs/textboxes) was collected
+    --- 递归节点收集器
+    -- @param n_head (direct node) 要收集的节点列表头部（将被消耗）
+    -- @param indent_lvl (number) 当前缩进
+    -- @param r_indent_lvl (number) 当前右缩进
+    -- @return (boolean) 如果收集到了任何可见内容（字形/文本框），则返回 true
     local function collect_nodes(n_head, indent_lvl, r_indent_lvl)
         local t = n_head
         local running_indent = indent_lvl

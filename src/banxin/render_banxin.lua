@@ -42,34 +42,34 @@ local yuwei = package.loaded['banxin.render_yuwei'] or require('banxin.render_yu
 -- Conversion factor from scaled points to PDF big points
 local sp_to_bp = utils.sp_to_bp
 
---- Draw the complete Banxin (版心) column
--- The Banxin is divided into 3 sections with horizontal lines between them
+--- 绘制完整的版心列
+-- 版心被分为 3 个区域，区域之间有水平分隔线
 --
--- Section layout (top to bottom):
+-- 区域布局（从上到下）:
 -- ┌─────────────┐
--- │    Upper    │  (e.g., 65.8mm / 6.14cm) - Contains Banxin text (鱼尾文字)
--- ├─────────────┤  ← dividing line 1
--- │   Middle    │  (e.g., 131.2mm / 12.25cm)
--- ├─────────────┤  ← dividing line 2
--- │    Lower    │  (e.g., 36.2mm / 3.38cm)
+-- │    Upper    │  (例如 65.8mm) - 包含版心文字（鱼尾文字）
+-- ├─────────────┤  ← 分隔线 1
+-- │   Middle    │  (例如 131.2mm)
+-- ├─────────────┤  ← 分隔线 2
+-- │    Lower    │  (例如 36.2mm)
 -- └─────────────┘
 --
--- @param params (table) Parameters for drawing:
---   - x (number) X position in scaled points (left edge)
---   - y (number) Y position in scaled points (top edge, going negative downward)
---   - width (number) Width in scaled points
---   - total_height (number) Total height in scaled points
---   - upper_ratio (number) Ratio for upper section height (e.g., 0.28)
---   - middle_ratio (number) Ratio for middle section height (e.g., 0.56)
---   - lower_ratio (number) Ratio for lower section height (e.g., 0.16)
---   - color_str (string) RGB color string (e.g., "0.7 0.4 0.3")
---   - border_thickness (number) Border line thickness in scaled points
---   - book_name (string) Optional text to display in section 1 (書名文字)
---   - font_size (number) Font size in scaled points for banxin text
---   - shift_y (number) Vertical shift for positioning (includes padding and outer border)
--- @return (table) Table with:
---   - literals: Array of PDF literal strings for lines
---   - section1_height: Height of section 1 (for text placement)
+-- @param params (table) 绘制参数:
+--   - x (number) X 坐标 (sp, 左边缘)
+--   - y (number) Y 坐标 (sp, 顶边缘，向下为负)
+--   - width (number) 宽度 (sp)
+--   - total_height (number) 总高度 (sp)
+--   - upper_ratio (number) 第一区域高度比例 (例如 0.28)
+--   - middle_ratio (number) 第二区域高度比例 (例如 0.56)
+--   - lower_ratio (number) 第三区域高度比例 (例如 0.16)
+--   - color_str (string) RGB 颜色字符串 (例如 "0.7 0.4 0.3")
+--   - border_thickness (number) 边线厚度 (sp)
+--   - book_name (string) 可选，在第一区域显示的文字（书名文字）
+--   - font_size (number) 版心文字及其它信息的字体大小 (sp)
+--   - shift_y (number) 定位用的垂直偏移（含内边距和外边框）
+-- @return (table) 包含以下内容的表:
+--   - literals: 包含线条 PDF literal 字符串的数组
+--   - upper_height: 第一区域高度（用于文字定位）
 local function draw_banxin(params)
     local x = params.x or 0
     local y = params.y or 0
@@ -179,22 +179,22 @@ end
 
 -- Note: create_text_glyphs has been replaced by text_position.create_vertical_text
 
---- Draw complete banxin column including border, dividers, and text
--- This is the main entry point for drawing a banxin column
--- @param p_head (node) Direct node head
--- @param params (table) Parameters:
---   - x: X position of column left edge (sp)
---   - y: Y position of column top edge (sp)
---   - width: Column width (sp)
---   - height: Column height (sp)
---   - border_thickness: Border line thickness (sp)
---   - color_str: RGB color string
---   - upper_ratio: Upper section height ratio
---   - middle_ratio: Middle section height ratio
---   - lower_ratio: Lower section height ratio
---   - book_name: Text to display in section 1
---   - shift_y: Vertical shift for text positioning (sp)
--- @return (node) Updated head
+--- 绘制完整的版心列，包括边框、分隔线、鱼尾和文字
+-- 这是绘制版心列的主入口函数
+-- @param p_head (node) 节点列表头部（直接引用）
+-- @param params (table) 参数表:
+--   - x: 列左边缘 X 坐标 (sp)
+--   - y: 列顶边缘 Y 坐标 (sp)
+--   - width: 列宽 (sp)
+--   - height: 列高 (sp)
+--   - border_thickness: 边线厚度 (sp)
+--   - color_str: RGB 颜色字符串
+--   - upper_ratio: 第一区域高度比例
+--   - middle_ratio: 第二区域高度比例
+--   - lower_ratio: 第三区域高度比例
+--   - book_name: 第一区域显示的文字
+--   - shift_y: 文字定位用的垂直偏移 (sp)
+-- @return (node) 更新后的头部
 local function draw_banxin_column(p_head, params)
     local x = params.x
     local y = params.y

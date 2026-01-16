@@ -28,10 +28,10 @@ _G.banxin = _G.banxin or {}
 local render_banxin = package.loaded['banxin.render_banxin'] or require('banxin.render_banxin')
 -- Note: render_banxin will itself require banxin.render_yuwei if configured correctly
 
---- Render banxin content on a reserved column
--- @param p_head (node) Current page node list head
--- @param params (table) Rendering parameters from vertical engine
--- @return (node) Updated node list head
+--- 在保留列（Reserved Column）上渲染版心内容
+-- @param p_head (node) 当前页面节点列表头部
+-- @param params (table) 来自 vertical 引擎的渲染参数
+-- @return (node) 更新后的节点列表头部
 local function render_reserved_column(p_head, params)
     -- Simply forward to the drawing logic
     -- The vertical engine already passes the necessary context in 'params'

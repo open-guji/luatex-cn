@@ -64,7 +64,7 @@ local background = package.loaded['render_background'] or require('render_backgr
 local text_position = package.loaded['render_position'] or require('render_position')
 
 
--- Helper: Handle individual glyph positioning
+-- 辅助函数：处理单个字形的定位
 local function handle_glyph_node(curr, p_head, pos, params, ctx)
     local vertical_align = params.vertical_align
     local d = D.getfield(curr, "depth") or 0
@@ -108,7 +108,7 @@ local function handle_glyph_node(curr, p_head, pos, params, ctx)
     return p_head
 end
 
--- Helper: Handle HLIST/VLIST (Blocks) positioning
+-- 辅助函数：处理 HLIST/VLIST（块）的定位
 local function handle_block_node(curr, p_head, pos, ctx)
     local h = D.getfield(curr, "height") or 0
     local w = D.getfield(curr, "width") or 0
@@ -130,7 +130,7 @@ local function handle_block_node(curr, p_head, pos, ctx)
     return p_head
 end
 
--- Helper: Draw debug grids/boxes
+-- 辅助函数：绘制调试网格/框
 local function handle_debug_drawing(curr, p_head, pos, ctx)
     local show_me = false
     local color_str = "0 0 1 RG"
@@ -168,7 +168,7 @@ local function handle_debug_drawing(curr, p_head, pos, ctx)
     return p_head
 end
 
--- Helper: Process all nodes for a single page
+-- 辅助函数：处理单个页面的所有节点
 local function process_page_nodes(p_head, layout_map, params, ctx)
     local curr = p_head
     while curr do
@@ -249,11 +249,11 @@ local function process_page_nodes(p_head, layout_map, params, ctx)
     return p_head
 end
 
---- Apply grid positions to nodes and render visual aids
--- @param head (node) Head of node list
--- @param layout_map (table) Mapping from node pointer to {col, row}
--- @param params (table) Rendering parameters
--- @return (table) Array of page info {head, cols}
+--- 将网格位置应用到节点并渲染视觉辅助元素
+-- @param head (node) 节点列表头部
+-- @param layout_map (table) 从节点指针到 {col, row} 的映射
+-- @param params (table) 渲染参数
+-- @return (table) 页面信息数组 {head, cols}
 local function apply_positions(head, layout_map, params)
     local d_head = D.todirect(head)
 

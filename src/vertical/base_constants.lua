@@ -79,9 +79,9 @@ constants.ATTR_FIRST_INDENT = luatexbase.attributes.cnverticalfirstindent or lua
 constants.ATTR_JIAZHU = luatexbase.attributes.cnverticaljiazhu or luatexbase.new_attribute("cnverticaljiazhu")
 constants.ATTR_JIAZHU_SUB = luatexbase.attributes.cnverticaljiazhusub or luatexbase.new_attribute("cnverticaljiazhusub")
 
---- Convert TeX dimension string to scaled points
--- @param dim_str (string) TeX dimension string (e.g., "20pt", "1.5em")
--- @return (number|nil) Dimension in scaled points, or nil if invalid/zero
+--- 将 TeX 尺寸字符串转换为 scaled points (sp)
+-- @param dim_str (string) TeX 尺寸字符串（例如 "20pt", "1.5em"）
+-- @return (number|nil) 以 scaled points 为单位的尺寸，如果无效或为零则返回 nil
 -- @usage local sp = constants.to_dimen("20pt")
 local function to_dimen(dim_str)
     if not dim_str or dim_str == "" or dim_str == "0" or dim_str == "0pt" then

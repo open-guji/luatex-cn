@@ -39,15 +39,15 @@
 -- Conversion factor from scaled points to PDF big points
 local sp_to_bp = 0.0000152018
 
---- Normalize RGB color string
--- Converts various RGB formats to normalized 0-1 range
--- Accepts formats:
---   - "r,g,b" or "r g b" where values are 0-1 or 0-255
---   - Automatically detects and converts 0-255 range to 0-1
---   - Maps basic color names (black, white, red, etc.) to RGB
+--- 归一化 RGB 颜色字符串
+-- 将多种 RGB 格式转换为归一化的 0-1 范围
+-- 支持的格式包括：
+--   - "r,g,b" 或 "r g b"，数值范围为 0-1 或 0-255
+--   - 自动检测并转换 0-255 范围到 0-1
+--   - 将基础颜色名称（black, white, red 等）映射为 RGB
 --
--- @param s (string|nil) RGB color string
--- @return (string|nil) Normalized "r g b" string or nil
+-- @param s (string|nil) RGB 颜色字符串
+-- @return (string|nil) 归一化的 "r g b" 字符串或 nil
 local function normalize_rgb(s)
     if s == nil then return nil end
     s = tostring(s)
@@ -88,8 +88,8 @@ local function normalize_rgb(s)
     return string.format("%.4f %.4f %.4f", r, g, b)
 end
 
---- Output debug message to log if verbose_log is enabled
---- @param message string
+--- 如果开启了 verbose_log，则向日志输出调试消息
+-- @param message string 调试消息内容
 local function debug_log(message)
     if _G.vertical and _G.vertical.debug and _G.vertical.debug.verbose_log then
         if texio and texio.write_nl then
@@ -98,15 +98,15 @@ local function debug_log(message)
     end
 end
 
---- Draw a debug rectangle using PDF literals
---- @param head node Head of node list (direct)
---- @param anchor node Node to insert before (direct). If nil, prepends to head.
---- @param x_sp number X position in scaled points
---- @param y_sp number Y position in scaled points (top edge)
---- @param w_sp number Width in scaled points
---- @param h_sp number Height in scaled points (negative for downward)
---- @param color_cmd string PDF color command (e.g., "1 0 0 RG")
---- @return node Updated head
+--- 使用 PDF literal 绘制调试矩形
+-- @param head node 节点列表头部（直接引用）
+-- @param anchor node 要在其前插入的节点（直接引用）。如果为 nil，则插入到头部。
+-- @param x_sp number X 轴起始坐标 (sp)
+-- @param y_sp number Y 轴起始坐标 (sp, 顶边缘)
+-- @param w_sp number 宽度 (sp)
+-- @param h_sp number 高度 (sp, 向下为负)
+-- @param color_cmd string PDF 颜色指令（例如 "1 0 0 RG"）
+-- @return node 更新后的头部
 local function draw_debug_rect(head, anchor, x_sp, y_sp, w_sp, h_sp, color_cmd)
     local tx_bp = x_sp * sp_to_bp
     local ty_bp = y_sp * sp_to_bp
@@ -130,11 +130,10 @@ local function draw_debug_rect(head, anchor, x_sp, y_sp, w_sp, h_sp, color_cmd)
     end
 end
 
---- Create a PDF literal node with the given data
---- 创建 PDF 直写节点（pdf_literal whatsit）
---- @param literal_str string PDF literal string (e.g., "q 0.5 w 0 0 0 RG ... Q")
---- @param mode number Optional mode (default 0: origin at current position)
---- @return node Direct node (pdf_literal whatsit)
+--- 创建具有给定数据的 PDF literal 节点
+-- @param literal_str string PDF literal 字符串（例如 "q 0.5 w 0 0 0 RG ... Q"）
+-- @param mode number 可选模式（默认 0: 原点位于当前位置）
+-- @return node 直接节点引用 (pdf_literal whatsit)
 local function create_pdf_literal(literal_str, mode)
     local n_node = node.new("whatsit", "pdf_literal")
     n_node.data = literal_str
@@ -142,20 +141,19 @@ local function create_pdf_literal(literal_str, mode)
     return n_node
 end
 
---- Insert a PDF literal node before the head of a node list (direct API version)
---- 在节点链头部插入 PDF 直写节点（使用 direct API）
---- @param head node Direct node head
---- @param literal_str string PDF literal string
---- @return node Updated head (direct node)
+--- 在节点列表头部插入 PDF literal 节点
+-- @param head node 直接节点链头部
+-- @param literal_str string PDF literal 字符串
+-- @return node 更新后的头部（直接节点引用）
 local function insert_pdf_literal(head, literal_str)
     local n_node = create_pdf_literal(literal_str)
     return node.direct.insert_before(head, head, node.direct.todirect(n_node))
 end
 
---- Convert an integer to a traditional Chinese numeral string
---- Example: 1 -> "一", 10 -> "十", 21 -> "二十一"
---- @param n number The number to convert
---- @return string The Chinese numeral string
+--- 将整数转换为传统的中文数字字符串
+-- 例如：1 -> "一", 10 -> "十", 21 -> "二十一"
+-- @param n number 要转换的数字
+-- @return string 中文数字字符串
 local function to_chinese_numeral(n)
     if not n or n <= 0 then return "" end
     local digits = {"一", "二", "三", "四", "五", "六", "七", "八", "九"}

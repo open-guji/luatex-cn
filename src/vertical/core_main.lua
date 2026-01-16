@@ -115,16 +115,20 @@ function vertical.prepare_grid(box_num, params)
     local b_interval = tonumber(params.n_column) or 8
     local p_cols = tonumber(params.page_columns)
     if not p_cols or p_cols <= 0 then
-        if p_width > 0 and g_width > 0 then
+        if b_interval > 0 then
+            -- If n-column is set, we favor the symmetric structure (N + banxin + N)
+            p_cols = (2 * b_interval + 1)
+        elseif p_width > 0 and g_width > 0 then
             -- Auto-calculate columns based on paper width and margins
             local available_width = p_width - m_left - m_right - b_thickness
             if ob_thickness and ob_sep then
                 available_width = available_width - 2 * (ob_thickness + ob_sep)
             end
-            p_cols = math.floor(available_width / g_width)
+            -- Add 0.1 grid width to avoid flooring 16.999 to 16 due to precision
+            p_cols = math.floor(available_width / g_width + 0.1)
             if p_cols <= 0 then p_cols = 1 end
         else
-            -- Original fallback
+            -- Ultimate fallback
             p_cols = (2 * b_interval + 1)
         end
     end

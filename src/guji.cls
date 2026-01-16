@@ -144,6 +144,12 @@
     font-color .tl_set:N = \l_guji_font_color_tl,
     font-color .initial:n = {},
 
+    font-name .tl_set:N = \l_guji_font_name_tl,
+    font-name .initial:n = {SimSun},
+
+    font-features .tl_set:N = \l_guji_font_features_tl,
+    font-features .initial:n = {RawFeature={+vert,+vrt2}, CharacterWidth=Full},
+
     % Banxin (版心) section ratios
     banxin-upper-ratio .tl_set:N = \l_guji_banxin_upper_tl,
     banxin-upper-ratio .initial:n = {},
@@ -270,17 +276,13 @@
 % 6. Load Common Templates (if any)
 \InputIfFileExists{guji_common.def}{}{}
 
-% 7. Font Configuration
-\setmainfont{TW-Kai}[
-    RawFeature={+vert,+vrt2},
-    CharacterWidth=Full
-]
 
 % 8. High-level Interface
 \NewEnviron{guji-content}[1][]{%
     \clearpage
     \group_begin:
     \keys_set:nn { guji } { #1 }
+    \exp_args:NV \setmainfont \l_guji_font_name_tl [\l_guji_font_features_tl]
     \fontsize{\l_guji_font_size_tl}{\l_guji_line_spacing_tl}\selectfont
     \bool_if:NTF \l_guji_border_bool { \keys_set:nn { vertical } { border=true } } { \keys_set:nn { vertical } { border=false } }
     \bool_if:NTF \l_guji_outer_border_bool { \keys_set:nn { vertical } { outer-border=true } } { \keys_set:nn { vertical } { outer-border=false } }

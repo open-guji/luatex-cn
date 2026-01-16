@@ -101,6 +101,9 @@
 \bool_new:N \g_cnv_debug_bool
 \bool_set_false:N \g_cnv_debug_bool
 
+\bool_new:N \l__cn_vertical_banxin_bool
+\bool_set_false:N \l__cn_vertical_banxin_bool
+
 \NewDocumentCommand{\cnvdebugon}{}{\bool_set_true:N \g_cnv_debug_bool}
 \NewDocumentCommand{\cnvdebugoff}{}{\bool_set_false:N \g_cnv_debug_bool}
 
@@ -140,6 +143,9 @@
 
     border .bool_set:N = \l__cn_vertical_border_bool,
     border .initial:n = false,
+
+    banxin .bool_set:N = \l__cn_vertical_banxin_bool,
+    banxin .initial:n = false,
 
     outer-border .bool_set:N = \l__cn_vertical_outer_border_bool,
     outer-border .initial:n = false,
@@ -330,6 +336,7 @@
         grid_height = [=[\luaescapestring{\l__cn_vertical_grid_height_tl}]=],
         col_limit = \int_use:N \l__cn_vertical_cols_int,
         debug_on = [=[\bool_if:NTF \g_cnv_debug_bool {true} {false}]=],
+        banxin_on = [=[\bool_if:NTF \l__cn_vertical_banxin_bool {true} {false}]=],
         border_on = [=[\bool_if:NTF \l__cn_vertical_border_bool {true} {false}]=],
         border_padding_top = [=[\luaescapestring{\l__cn_vertical_border_padding_top_tl}]=],
         border_padding_bottom = [=[\luaescapestring{\l__cn_vertical_border_padding_bottom_tl}]=],
@@ -413,6 +420,7 @@
     box-align .initial:n = {top},
     border .bool_set:N = \l__cn_vertical_textbox_border_bool,
     border .initial:n = false,
+    banxin .bool_set:N = \l__cn_vertical_banxin_bool,
     column-align .tl_set:N = \l__cn_vertical_textbox_col_align_tl,
     column-align .initial:n = {},
     debug .bool_set:N = \l__cn_vertical_textbox_debug_bool,

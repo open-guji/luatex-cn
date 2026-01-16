@@ -58,6 +58,9 @@
 \tl_new:N \l_guji_chapter_title_tl
 \tl_set:Nn \l_guji_chapter_title_tl {}
 
+\bool_new:N \l_guji_banxin_bool
+\bool_set_true:N \l_guji_banxin_bool
+
 \keys_define:nn { guji }
   {
     % Page geometry settings (set by config files)
@@ -111,6 +114,9 @@
 
     outer-border .bool_set:N = \l_guji_outer_border_bool,
     outer-border .initial:n = false,
+
+    banxin .bool_set:N = \l_guji_banxin_bool,
+    banxin .initial:n = true,
 
     outer-border-thickness .tl_set:N = \l_guji_outer_border_thickness_tl,
     outer-border-thickness .initial:n = {},
@@ -245,10 +251,12 @@
   \PackageWarning{guji}{Config file configs/default.guji.cfg not found}
 }
 
-% Command to set Book Name
-\NewDocumentCommand{\setBookName}{ m }
+% Define \title and \chapter metadata commands
+% These will be wrapped by banxin.sty if loaded
+\RenewDocumentCommand{\title}{ m }
   {
     \tl_set:Nn \l_guji_book_name_tl { #1 }
+    \gdef\@title{#1}
   }
 
 % Command to reset page number to 1
@@ -257,8 +265,7 @@
     \directlua{vertical.reset_page_number()}
   }
 
-% Command to set Chapter Title (章节标题)
-\NewDocumentCommand{\setChapterTitle}{ m }
+\NewDocumentCommand{\chapter}{ m }
   {
     \tl_set:Nn \l_guji_chapter_title_tl { #1 }
     \ResetPageNumber
@@ -282,11 +289,16 @@
     \clearpage
     \group_begin:
     \keys_set:nn { guji } { #1 }
+    % Fallback: if book-name is empty but \@title is set, use \@title
+    \tl_if_empty:NT \l_guji_book_name_tl
+      {
+        \if_meaning:w \@title \@empty \else:
+          \tl_set:Nn \l_guji_book_name_tl { \@title }
+        \fi:
+      }
     \exp_args:NV \setmainfont \l_guji_font_name_tl [\l_guji_font_features_tl]
     \fontsize{\l_guji_font_size_tl}{\l_guji_line_spacing_tl}\selectfont
-    \bool_if:NTF \l_guji_border_bool { \keys_set:nn { vertical } { border=true } } { \keys_set:nn { vertical } { border=false } }
-    \bool_if:NTF \l_guji_outer_border_bool { \keys_set:nn { vertical } { outer-border=true } } { \keys_set:nn { vertical } { outer-border=false } }
-    \bool_if:NTF \l_guji_lower_yuwei_bool { \keys_set:nn { vertical } { lower-yuwei=true } } { \keys_set:nn { vertical } { lower-yuwei=false } }
+    
     % global debug flag \g_cnv_debug_bool is already set by keys_set:nn { guji } { #1 } above
     % Zero out vertical skips for exact grid layout
     \setlength{\topskip}{0pt}
@@ -364,7 +376,7 @@
     \setlength{\lineskiplimit}{0pt}
     \parindent=0pt
 
-    \keys_set:nn { vertical }
+    \keys_set:nx { vertical }
       {
         height = \l_guji_height_tl,
         grid-width = \l_guji_grid_width_tl,
@@ -397,6 +409,10 @@
         jiazhu-font-size = \l_guji_jiazhu_font_size_tl,
         jiazhu-align = \l_guji_jiazhu_align_tl,
         font-size = \l_guji_font_size_tl,
+        border = \bool_if:NTF \l_guji_border_bool {true} {false},
+        outer-border = \bool_if:NTF \l_guji_outer_border_bool {true} {false},
+        banxin = \bool_if:NTF \l_guji_banxin_bool {true} {false},
+        lower-yuwei = \bool_if:NTF \l_guji_lower_yuwei_bool {true} {false},
         debug = \bool_if:NTF \g_cnv_debug_bool {true} {false}
       }
     \nointerlineskip

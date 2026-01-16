@@ -113,10 +113,11 @@ function vertical.prepare_grid(box_num, params)
     local ob_thickness = constants.to_dimen(params.outer_border_thickness) or (65536 * 2)
     local ob_sep = constants.to_dimen(params.outer_border_sep) or (65536 * 2)
     local b_interval = tonumber(params.n_column) or 8
+    local banxin_on = (params.banxin_on == "true" or params.banxin_on == true)
     local p_cols = tonumber(params.page_columns)
     if not p_cols or p_cols <= 0 then
-        if b_interval > 0 then
-            -- If n-column is set, we favor the symmetric structure (N + banxin + N)
+        if banxin_on and b_interval > 0 then
+            -- If n-column is set AND banxin is on, we favor the symmetric structure (N + banxin + N)
             p_cols = (2 * b_interval + 1)
         elseif p_width > 0 and g_width > 0 then
             -- Auto-calculate columns based on paper width and margins
@@ -129,7 +130,11 @@ function vertical.prepare_grid(box_num, params)
             if p_cols <= 0 then p_cols = 1 end
         else
             -- Ultimate fallback
-            p_cols = (2 * b_interval + 1)
+            if banxin_on then
+                p_cols = (2 * b_interval + 1)
+            else
+                p_cols = math.max(1, b_interval)
+            end
         end
     end
 
@@ -178,7 +183,8 @@ function vertical.prepare_grid(box_num, params)
 
     -- 4. Pipeline Stage 2: Calculate grid layout
     local layout_map, total_pages = layout.calculate_grid_positions(list, g_height, limit, b_interval, p_cols, {
-        distribute = params.distribute
+        distribute = params.distribute,
+        banxin_on = banxin_on,
     })
 
     -- 5. Pipeline Stage 3: Apply positions and render
@@ -231,6 +237,7 @@ function vertical.prepare_grid(box_num, params)
         jiazhu_align = params.jiazhu_align or "outward",
         font_size = constants.to_dimen(params.font_size),
         is_textbox = is_textbox,
+        banxin_on = banxin_on,
     }
 
     if is_debug then

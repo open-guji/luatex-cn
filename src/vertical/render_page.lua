@@ -336,10 +336,11 @@ local function apply_positions(head, layout_map, params)
 
             -- Reserved columns (via hooks - e.g., banxin)
             local reserved_cols = {}
+            local banxin_on = params.banxin_on
             if draw_debug then
-                print(string.format(">>> LUA PAGE: interval=%d, p_total_cols=%d", interval, p_total_cols))
+                print(string.format(">>> LUA PAGE: interval=%d, p_total_cols=%d, banxin_on=%s", interval, p_total_cols, tostring(banxin_on)))
             end
-            if interval > 0 then
+            if banxin_on and interval > 0 then
                 for col = 0, p_total_cols - 1 do
                     if _G.vertical.hooks.is_reserved_column(col, interval) then
                         reserved_cols[col] = true
@@ -351,7 +352,7 @@ local function apply_positions(head, layout_map, params)
             end
 
             -- Borders & Reserved Columns
-            if interval > 0 then
+            if banxin_on and interval > 0 then
                 for col = 0, p_total_cols - 1 do
                     if reserved_cols[col] then
                         local rtl_col = p_total_cols - 1 - col

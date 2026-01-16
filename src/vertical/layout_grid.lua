@@ -86,6 +86,7 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
 
     -- Use hooks to check for reserved columns (banxin, etc.)
     local function is_reserved_col(col)
+        if not params.banxin_on then return false end
         if interval <= 0 then return false end
         return _G.vertical.hooks.is_reserved_column(col, interval)
     end

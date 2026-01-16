@@ -1,0 +1,72 @@
+% banxin.sty
+% Ancient Chinese Book Banxin (版心) and Yuwei (鱼尾) features
+% This is a sub-package of luatex_cn
+%
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{banxin}[2026/01/15 v1.1.0 Ancient Book Banxin Support]
+
+\RequirePackage{expl3}
+\RequirePackage{xparse}
+
+\ExplSyntaxOn
+
+% --- Compatibility Mode Logic ---
+% 1. Book Name / Title Synchronization
+\cs_if_exist:NTF \title
+  {
+    \NewCommandCopy \__banxin_orig_title \title
+    \RenewDocumentCommand \title { m }
+      {
+        \__banxin_orig_title { #1 }
+        \keys_set:nn { vertical } { book-name = { #1 } }
+      }
+  }
+  {
+    \NewDocumentCommand \title { m }
+      {
+        \gdef\@title{#1}
+        \keys_set:nn { vertical } { book-name = { #1 } }
+      }
+  }
+
+% Fallback: Sync from \@title at the start of the document if set by other means
+\AddToHook{begindocument/before}{
+  \cs_if_exist:NT \@title {
+    \tl_if_empty:NF \@title {
+      \keys_set:nn { vertical } { book-name = { \@title } }
+    }
+  }
+}
+
+% 2. Chapter Title Synchronization
+\cs_if_exist:NTF \chapter
+  {
+    \NewCommandCopy \__banxin_orig_chapter \chapter
+    \RenewDocumentCommand \chapter { s o m }
+      {
+        \IfBooleanTF {#1}
+          { \__banxin_orig_chapter* {#3} }
+          {
+            \IfNoValueTF {#2}
+              { \__banxin_orig_chapter {#3} }
+              { \__banxin_orig_chapter [#2] {#3} }
+          }
+        \keys_set:nn { vertical } { chapter-title = { #3 } }
+      }
+  }
+  {
+    \NewDocumentCommand \chapter { m }
+      {
+        \keys_set:nn { vertical } { chapter-title = { #1 } }
+      }
+  }
+
+% Setup command for banxin specific parameters
+\NewDocumentCommand{\banxinSetup}{ m }
+  {
+    \keys_set:nn { vertical } { #1 }
+  }
+
+\ExplSyntaxOff
+
+\endinput

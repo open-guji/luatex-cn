@@ -43,7 +43,7 @@
 -- ============================================================================
 
 local constants = package.loaded['luatex-cn-vertical-base-constants'] or require('luatex-cn-vertical-base-constants')
-local utils = package.loaded['base_utils'] or require('base_utils')
+local utils = package.loaded['luatex-cn-vertical-base-utils'] or require('luatex-cn-vertical-base-utils')
 local D = node.direct
 
 local textbox = {}
@@ -148,6 +148,6 @@ end
 
 -- Register module in package.loaded for require() compatibility
 -- 注册模块到 package.loaded
-package.loaded['core_textbox'] = textbox
+package.loaded['luatex-cn-vertical-core-textbox'] = textbox
 
 return textbox

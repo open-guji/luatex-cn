@@ -85,11 +85,11 @@ end
 -- Load submodules using Lua's require mechanism
 -- 加载子模块
 local constants = package.loaded['luatex-cn-vertical-base-constants'] or require('luatex-cn-vertical-base-constants')
-local utils = package.loaded['base_utils'] or require('base_utils')
-local flatten = package.loaded['flatten_nodes'] or require('flatten_nodes')
-local layout = package.loaded['layout_grid'] or require('layout_grid')
-local render = package.loaded['render_page'] or require('render_page')
-local textbox = package.loaded['core_textbox'] or require('core_textbox')
+local utils = package.loaded['luatex-cn-vertical-base-utils'] or require('luatex-cn-vertical-base-utils')
+local flatten = package.loaded['luatex-cn-vertical-flatten-nodes'] or require('luatex-cn-vertical-flatten-nodes')
+local layout = package.loaded['luatex-cn-vertical-layout-grid'] or require('luatex-cn-vertical-layout-grid')
+local render = package.loaded['luatex-cn-vertical-render-page'] or require('luatex-cn-vertical-render-page')
+local textbox = package.loaded['luatex-cn-vertical-core-textbox'] or require('luatex-cn-vertical-core-textbox')
 
 local D = node.direct
 

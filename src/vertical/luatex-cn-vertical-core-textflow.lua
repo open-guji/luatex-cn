@@ -114,6 +114,6 @@ function textflow.process_jiazhu_sequence(jiazhu_nodes, available_rows, line_lim
 end
 
 -- Register module
-package.loaded['core_textflow'] = textflow
+package.loaded['luatex-cn-vertical-core-textflow'] = textflow
 
 return textflow

@@ -1,4 +1,4 @@
--- Copyright 2026 Open-Guji (https://github.com/open-guji)
+﻿-- Copyright 2026 Open-Guji (https://github.com/open-guji)
 --
 -- Licensed under the Apache License, Version 2.0 (the "License");
 -- you may not use this file except in compliance with the License.
@@ -11,9 +11,9 @@
 -- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
-% base_text_utils.lua
-% 跨平台文本规范化工具函数库
-%
+-- base_text_utils.lua
+-- 跨平台文本规范化工具函数库
+--
 -- 文件名: base_text_utils.lua
 -- 层级: 基础工具层 (Base Utilities Layer)
 --
@@ -157,6 +157,6 @@ function text_utils.normalize_for_typesetting(text)
 end
 
 -- Register module
-package.loaded['base_text_utils'] = text_utils
+package.loaded['luatex-cn-vertical-base-text-utils'] = text_utils
 
 return text_utils

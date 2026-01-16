@@ -68,11 +68,12 @@
 -- Load dependencies
 local constants = package.loaded['luatex-cn-vertical-base-constants'] or require('luatex-cn-vertical-base-constants')
 local D = constants.D
-local utils = package.loaded['base_utils'] or require('base_utils')
-local hooks = package.loaded['base_hooks'] or require('base_hooks')
-local border = package.loaded['render_border'] or require('render_border')
-local background = package.loaded['render_background'] or require('render_background')
-local text_position = package.loaded['render_position'] or require('render_position')
+local utils = package.loaded['luatex-cn-vertical-base-utils'] or require('luatex-cn-vertical-base-utils')
+local hooks = package.loaded['luatex-cn-vertical-base-hooks'] or require('luatex-cn-vertical-base-hooks')
+local border = package.loaded['luatex-cn-vertical-render-border'] or require('luatex-cn-vertical-render-border')
+local background = package.loaded['luatex-cn-vertical-render-background'] or require('luatex-cn-vertical-render-background')
+local text_position = package.loaded['luatex-cn-vertical-render-position'] or require('luatex-cn-vertical-render-position')
+
 
 
 -- 辅助函数：处理单个字形的定位
@@ -448,5 +449,5 @@ local render = {
 }
 
 -- Register module
-package.loaded['render_page'] = render
+package.loaded['luatex-cn-vertical-render-page'] = render
 return render

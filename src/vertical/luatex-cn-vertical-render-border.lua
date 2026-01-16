@@ -44,7 +44,7 @@
 -- Load dependencies
 local constants = package.loaded['luatex-cn-vertical-base-constants'] or require('luatex-cn-vertical-base-constants')
 local D = constants.D
-local utils = package.loaded['base_utils'] or require('base_utils')
+local utils = package.loaded['luatex-cn-vertical-base-utils'] or require('luatex-cn-vertical-base-utils')
 
 --- 绘制列边框（仅限普通列，不含版心列）
 -- 版心列应由 banxin.draw_banxin_column 单独绘制
@@ -143,7 +143,7 @@ local border = {
 
 -- Register module in package.loaded for require() compatibility
 -- 注册模块到 package.loaded
-package.loaded['render_border'] = border
+package.loaded['luatex-cn-vertical-render-border'] = border
 
 -- Return module exports
 return border

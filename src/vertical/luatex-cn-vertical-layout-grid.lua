@@ -64,8 +64,8 @@
 -- Check if already loaded via dofile (package.loaded set manually)
 local constants = package.loaded['luatex-cn-vertical-base-constants'] or require('luatex-cn-vertical-base-constants')
 local D = constants.D
-local utils = package.loaded['base_utils'] or require('base_utils')
-local hooks = package.loaded['base_hooks'] or require('base_hooks')
+local utils = package.loaded['luatex-cn-vertical-base-utils'] or require('luatex-cn-vertical-base-utils')
+local hooks = package.loaded['luatex-cn-vertical-base-hooks'] or require('luatex-cn-vertical-base-hooks')
 
 -- @param page_columns (number) Total columns before a page break
 -- @param params (table) Optional parameters:
@@ -292,7 +292,7 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
 
             -- Process via core_textflow
             -- Note: subsequent chunks must also account for indentation in their columns
-            local textflow = package.loaded['core_textflow'] or require('core_textflow')
+            local textflow = package.loaded['luatex-cn-vertical-core-textflow'] or require('luatex-cn-vertical-core-textflow')
             local available_in_first = effective_limit - cur_row
             local capacity_per_subsequent = line_limit - base_indent - r_indent -- Use base_indent for subsequent columns
             
@@ -511,7 +511,7 @@ local layout = {
 
 -- Register module in package.loaded for require() compatibility
 -- 注册模块到 package.loaded
-package.loaded['layout_grid'] = layout
+package.loaded['luatex-cn-vertical-layout-grid'] = layout
 
 -- Return module exports
 return layout

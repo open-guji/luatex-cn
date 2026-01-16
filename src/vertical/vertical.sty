@@ -580,6 +580,18 @@
 
 \ExplSyntaxOff
 
+% ============================================================================
+% Command Aliases (Defined outside ExplSyntax for CJK support)
+% ============================================================================
+\NewCommandCopy{\竖排}{\VerticalRTT}
+\NewCommandCopy{\文本框}{\TextBox}
+\NewDocumentCommand{\填充文本框}{ O{1} +m }
+  {%
+    \TextBox[height=#1, box-align=fill]{#2}%
+  }
+\NewCommandCopy{\文本流}{\TextFlow}
+\NewCommandCopy{\空格}{\Space}
+
 \directlua{
   _G.vertical.debug.verbose_log = true
   _G.vertical.debug.enabled = false

@@ -60,14 +60,14 @@
 % ============================================================================
 % Interface Documentation
 % ============================================================================
-% This package exposes the following commands from sub-packages:
+% This package exposes the following commands:
 %
-% From vertical:
-%   \VerticalRTT[options]{content}  - Main vertical layout command
-%   \TextBox[options]{content}      - Grid-based textbox
+%   \Vertical[options]{content}     - Main vertical layout command (Alias: \竖排)
+%   \TextBox[options]{content}      - Grid-based textbox (Alias: \文本框)
 %   \Paragraph                      - Environment for grid paragraphs
-%   \TextFlow{content}              - Interlinear notes
-%   \Space[width]                   - Explicit spacing
+%   \TextFlow{content}              - Interlinear notes (Alias: \文本流)
+%   \Space[width]                   - Explicit spacing (Alias: \空格)
+%
 %   \cnvdebugon / \cnvdebugoff      - Debug toggle
 %   \GujiDebugOn / \GujiDebugOff    - Alias for debug toggle
 %
@@ -76,8 +76,9 @@
 %   \setBookName{name}              - Set book name for banxin
 %   \setChapterTitle{title}         - Set chapter title
 %
-% Document Class:
+% Document Class (guji):
 %   Use \documentclass{guji} for full ancient book layout
+%   Additional aliases: \JiaZhu, \夹注 (for \TextFlow)
 % ============================================================================
 
 % Version info

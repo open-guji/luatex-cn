@@ -431,6 +431,10 @@
 
 \ExplSyntaxOff
 
+% Command Aliases (CJK support)
+\NewCommandCopy{\JiaZhu}{\TextFlow}
+\NewCommandCopy{\夹注}{\TextFlow}
+
 % 8. Remove page numbers by default
 \pagestyle{empty}
 

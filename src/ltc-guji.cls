@@ -11,12 +11,13 @@
 % WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 % See the License for the specific language governing permissions and
 % limitations under the License.
-% guji.cls
+
+% ltc-guji.cls
 % A LaTeX document class for ancient Chinese book typesetting.
 % Developed for LuaTeX
 
 \NeedsTeXFormat{LaTeX2e}
-\ProvidesClass{luatex-cn-guji}[2026/01/10 v0.3.0 Ancient Chinese Book Class (Template Support)]
+\ProvidesClass{ltc-guji}[2026/01/10 v0.3.0 Ancient Chinese Book Class (Template Support)]
 
 % 1. Options Handling
 \RequirePackage{l3keys2e}

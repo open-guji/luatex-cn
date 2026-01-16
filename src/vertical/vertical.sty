@@ -428,7 +428,7 @@
     vertical-align .tl_set:N = \l__cn_vertical_textbox_box_align_tl,
   }
 
-\NewDocumentCommand{\GridTextbox}{ O{} +m }
+\NewDocumentCommand{\TextBox}{ O{} +m }
   {
     \group_begin:
     % Inherit debug setting from global environment
@@ -483,19 +483,10 @@
     \group_end:
   }
 
-% Empty Box Command (Shorthand for empty GridTextbox)
-% Syntax: \EmptyBox[height=N, ...] or \EmptyBox[N]
-\NewDocumentCommand{\EmptyBox}{ O{} }
-  {
-    \regex_match:nnTF { ^\d+$ } { #1 }
-      { \GridTextbox[height=#1]{} }
-      { \GridTextbox[#1]{} }
-  }
-
-% Jiazhu Command (双行小注/夹注)
-% Syntax: \jiazhu{content}
+% TextFlow Command (双行小注/夹注)
+% Syntax: \TextFlow{content}
 \makeatletter
-\NewDocumentCommand{\jiazhu}{ +m }
+\NewDocumentCommand{\TextFlow}{ +m }
   {
     \group_begin:
     
@@ -533,7 +524,7 @@
   }
 \makeatother
 
-% Space Command - inserts a space that occupies one grid cell in vertical layout
+% Space Command - inserts a space that occupies grid cells in vertical layout
 % In CJK text, normal ASCII spaces are often absorbed; use this for explicit spacing
 % Syntax: \Space or \Space[width]
 % Default width is 1em (one grid cell)
@@ -544,9 +535,9 @@
       { \hspace{#1} }
   }
 
-% GridParagraph Environment
+% Paragraph Environment
 % Supports block indentation with first-line/hanging indent differentiation
-% Syntax: \begin{GridParagraph}[indent=2, first-indent=0, bottom-indent=1]
+% Syntax: \begin{Paragraph}[indent=2, first-indent=0, bottom-indent=1]
 \newluatexattribute\cnverticalblockid
 \newluatexattribute\cnverticalfirstindent
 
@@ -563,7 +554,7 @@
     bottom-indent .initial:n = 0,
   }
 
-\NewDocumentEnvironment{GridParagraph}{ O{} }
+\NewDocumentEnvironment{Paragraph}{ O{} }
   {
     \par
     \stepcounter{cnverticalblockid}

@@ -27,8 +27,6 @@
 --   set_font_color(p_head, font_rgb_str)
 --      └─ 生成 PDF literal: "rgb rg"（设置填充色）
 --
--- Version: 0.3.1
--- Date: 2026-01-13
 -- ============================================================================
 
 -- Load dependencies

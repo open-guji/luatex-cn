@@ -39,6 +39,7 @@
 
 # CTAN build
 build/
+*.zip
 
 # AI related
 progress/

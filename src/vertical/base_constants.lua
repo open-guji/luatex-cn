@@ -33,8 +33,6 @@
 --      ├─ to_dimen() → 被 core_main.lua 用于解析 TeX 参数
 --      └─ ATTR_* 索引 → 被 flatten/layout/render 用于读写节点属性
 --
--- Version: 0.4.0
--- Date: 2026-01-13
 -- ============================================================================
 
 -- Create module table

@@ -44,8 +44,6 @@
 --      ↓ 返回渲染好的页面列表
 --   load_page() → TeX 输出到 PDF
 --
--- Version: 0.4.0 (Modularized)
--- Date: 2026-01-13
 -- ============================================================================
 
 -- Global state for pending pages

@@ -15,8 +15,7 @@
 --   如果夹注长度 L <= C，则进行平衡分配：右方 = ceil(L/2)，左方 = L - ceil(L/2)。
 --   如果 L > C，则填满当前列（右方 = H，左方 = H），剩余部分跨到下一列。
 --
--- Version: 0.1.0
--- Date: 2026-01-14
+--
 -- ============================================================================
 
 local constants = package.loaded['base_constants'] or require('base_constants')

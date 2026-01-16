@@ -13,8 +13,6 @@
 -- 【设计原理】
 -- banxin 作为一个可选插件，通过覆盖 vertical.hooks 接口实现其功能。
 --
--- Version: 1.1.0
--- Date: 2026-01-15
 -- ============================================================================
 
 -- Ensure vertical namespace exists (should be loaded by now)

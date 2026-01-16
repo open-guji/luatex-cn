@@ -29,8 +29,7 @@
 --      └─ position_glyph_in_grid(glyph, col, row, params)
 --            → 网格坐标包装器
 --
--- Version: 0.1.0
--- Date: 2026-01-13
+--
 -- ============================================================================
 
 -- Load dependencies

@@ -32,8 +32,6 @@
 --      ├─ 如果任一值 > 1，则除以 255
 --      └─ 返回格式化字符串 "r.rrrr g.gggg b.bbbb"
 --
--- Version: 0.4.0
--- Date: 2026-01-13
 -- ============================================================================
 
 -- Conversion factor from scaled points to PDF big points

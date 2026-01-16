@@ -27,8 +27,6 @@
 --   • 如果 distribute=true，内部字符会均匀分布在可用的网格中
 --   • 文本框的 baseline 处理需要配合 TeX 层的 \leavevmode 使用
 --
--- Version: 0.4.0
--- Date: 2026-01-13
 -- ============================================================================
 
 local constants = package.loaded['base_constants'] or require('base_constants')

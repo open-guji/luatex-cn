@@ -1,6 +1,10 @@
 # LuaTeX-CN
 
+**Version: 1.0.0** | [CTAN](https://ctan.org/pkg/luatex-cn) | [GitHub](https://github.com/open-guji/luatex-cn)
+
 LuaTeX package for sophisticated traditional Chinese vertical typesetting and ancient book layout.
+
+> **Note**: The package version is maintained in the [`VERSION`](VERSION) file.
 
 致力于基于 LuaTeX 引擎实现最纯粹、最高质量的中文古籍排版支持，完整覆盖竖排核心逻辑、版心装饰及夹注处理。
 

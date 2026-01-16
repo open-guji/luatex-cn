@@ -15,10 +15,11 @@ This work has the LPPL maintenance status `maintained'.
 The Current Maintainer of this work is the luatex-cn contributors.
 
 This work consists of the files:
-  - luatex-cn.sty
-  - luatex-cn-vertical.lua
-  - luatex-cn-chinese.lua
-  - luatex-cn.dtx
-  - example.tex
+  - src/guji.cls
+  - src/luatex_cn.sty
+  - src/vertical/*.lua
+  - src/banxin/*.lua
+  - src/configs/*.lua
   - README.md
   - INSTALL.md
+  - LICENSE

@@ -37,6 +37,9 @@
 *.figlist
 *.auxlock
 
+# CTAN build
+build/
+
 # AI related
 progress/
 .antigravity

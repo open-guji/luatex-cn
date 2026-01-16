@@ -1,16 +1,16 @@
-# luatex_cn
+# LuaTeX-CN
 
-LuaTeX package for Chinese character and vertical typesetting support.
+LuaTeX package for sophisticated traditional Chinese vertical typesetting and ancient book layout.
 
-支持中文古籍竖排，长期愿景希望基于LuaTeX完整支持中文排版。
+致力于基于 LuaTeX 引擎实现最纯粹、最高质量的中文古籍排版支持，完整覆盖竖排核心逻辑、版心装饰及夹注处理。
 
 ## Features
 
-- Chinese character typesetting support
-- Vertical typesetting (竖排) for classical Chinese texts
-- Lua-based advanced typesetting features
-- Support for both simplified and traditional Chinese
-- Built on expl3 (LaTeX3 programming layer) for modern, robust code
+- **Vertical Typesetting (竖排)**: Robust core engine for classical vertical layouts.
+- **Ancient Book Layout (古籍版式)**: Integrated support for "Banxin" (版心), "Yuwei" (鱼尾), and borders.
+- **Interlinear Notes (夹注)**: Automatic balancing and breaking for dual-column small notes.
+- **Grid-based Positioning**: Precise control over character placements via Lua-calculated layout.
+- **Modern Architecture**: Built on `expl3` and Lua code separation for maximum maintainability.
 
 ## Installation
 
@@ -23,23 +23,31 @@ make install
 
 ## Usage
 
+The recommended way to use the package is through the `guji` document class:
+
 ```latex
-\documentclass{ctexart}
-\usepackage[vertical,simplified]{luatex_cn}
+\documentclass{guji}
+
+% Configure layout and fonts
+\gujiSetup{
+  font-size = 12pt,
+  line-limit = 20,
+  page-columns = 10,
+  banxin = true,
+  book-name = {史記}
+}
 
 \begin{document}
-\begin{tate}
-这是竖排的中文文本示例。
-\end{tate}
+\chapter{五帝本紀第一}
+這是竖排的中文文本示例，包含夹注\jiazhu{双行小注}的功能演示。
 \end{document}
 ```
 
 ## Requirements
 
-- LuaTeX
-- expl3 (LaTeX3 programming layer) - included in modern LaTeX distributions
-- luatexja package
-- Chinese fonts (e.g., Noto Serif CJK SC/TC)
+- LuaTeX (TeX Live 2024+ recommended)
+- `luaotfload` and `fontspec`
+- Quality Chinese fonts (e.g., Noto Serif CJK, Source Han Serif, or specialized Kaiti fonts)
 
 ## Documentation
 

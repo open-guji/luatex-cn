@@ -20,21 +20,23 @@
 
 ## Basic Usage
 
-```latex
-\documentclass{ctexart}
-\usepackage[vertical,simplified]{luatex_cn}
+The `guji` class is the standard entry point for ancient book typesetting.
 
-\setCJKmainfont{Noto Serif CJK SC}
+```latex
+\documentclass{guji}
+
+\gujiSetup{
+  font-size = 12pt,
+  line-limit = 20,
+  page-columns = 10,
+  banxin = true
+}
 
 \begin{document}
-\section{横排文本}
-这是横排的中文文本。
-
-\section{竖排文本}
-\begin{tate}
+\chapter{正文标题}
 这是竖排的中文文本。
 古籍排版通常使用竖排格式。
-\end{tate}
+\jiazhu{双行小注} 同样受到支持。
 \end{document}
 ```
 

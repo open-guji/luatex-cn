@@ -48,18 +48,11 @@
 \RequirePackage{environ}
 \RequirePackage{expl3}
 \RequirePackage{xparse}
+\RequirePackage{luatex-cn}
 \RequirePackage{luatex-cn-vertical}
 
 % Load font auto-detection module
 \RequirePackage{luatex-cn-font-autodetect}
-
-% Apply auto-detected font at document start if user hasn't set one
-\AtBeginDocument{%
-  \cs_if_exist:NF \l__fontspec_fontname_tl
-    {
-      \ApplyAutoFont
-    }
-}
 
 % 3. Key-Value Configuration System
 \ExplSyntaxOn
@@ -97,6 +90,12 @@
 
     grid-height .tl_set:N = \l_ltc_book_grid_height_tl,
     grid-height .initial:n = 14pt,
+
+    font-name .tl_set:N = \l_ltc_book_font_name_tl,
+    font-name .initial:n = {},
+
+    font-features .tl_set:N = \l_ltc_book_font_features_tl,
+    font-features .initial:n = {},
 
     height .tl_set:N = \l_ltc_book_height_tl,
     height .initial:n = ,
@@ -158,6 +157,20 @@
     \clearpage
     \group_begin:
     \keys_set:nn { ltc_book } { #1 }
+
+    % Font selection logic
+    \tl_if_empty:NF \l_ltc_book_font_name_tl
+      {
+        \tl_if_empty:NTF \l_ltc_book_font_features_tl
+          {
+            % No features specified, use default for CJK vertical
+            \exp_args:NV \setmainfont \l_ltc_book_font_name_tl [RawFeature={+vert,+vrt2}, CharacterWidth=Full]
+          }
+          {
+            \exp_args:NV \setmainfont \l_ltc_book_font_name_tl [\l_ltc_book_font_features_tl]
+          }
+      }
+
     \fontsize{\l_ltc_book_font_size_tl}{\l_ltc_book_line_spacing_tl}\selectfont
     
     % Configure vertical module
@@ -208,5 +221,15 @@
 
 % Environment Aliases (CJK support)
 \NewEnvironmentCopy{正文}{ltc-book-content}
+
+\ExplSyntaxOn
+% Apply auto-detected font if no font-name is set
+\AtEndOfClass{
+  \tl_if_empty:NT \l_ltc_book_font_name_tl
+    {
+      \ApplyAutoFont
+    }
+}
+\ExplSyntaxOff
 
 \endinput

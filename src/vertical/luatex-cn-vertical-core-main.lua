@@ -311,26 +311,83 @@ end
 --- Load a prepared page into a TeX box register
 -- @param box_num (number) TeX box register
 -- @param index (number) Page index (0-based from TeX loop)
-function vertical.load_page(box_num, index)
+-- @param copy (boolean) If true, copy the node list instead of moving it
+function vertical.load_page(box_num, index, copy)
     local box = _G.vertical_pending_pages[index + 1]
     if box then
-        tex.box[box_num] = box
-        -- Clear from storage to avoid memory leaks if called multiple times
-        -- Actually, we might need it for re-rendering, so keep it for now
-        -- Or clear it on the last page.
+        if copy then
+            -- Copy the node list so the original is preserved
+            tex.box[box_num] = node.copy_list(box)
+        else
+            tex.box[box_num] = box
+        end
     end
 end
 
 --- Interface for TeX to call to process and output pages
 function vertical.process_from_tex(box_num, params)
     local total_pages = vertical.prepare_grid(box_num, params)
-    
-    for i = 0, total_pages - 1 do
-        tex.print(string.format("\\directlua{vertical.load_page(%d, %d)}", box_num, i))
-        tex.print("\\par\\nointerlineskip")
-        tex.print(string.format("\\noindent\\hfill\\smash{\\box%d}", box_num))
-        if i < total_pages - 1 then
+
+    -- Check if split page is enabled
+    local split_enabled = _G.splitpage and _G.splitpage.is_enabled and _G.splitpage.is_enabled()
+
+    if split_enabled then
+        -- Split page mode: output each page as two half-pages
+        local target_w = _G.splitpage.get_target_width()
+        local target_h = _G.splitpage.get_target_height()
+        local right_first = _G.splitpage.is_right_first()
+
+        -- Convert sp to pt for TeX
+        local target_w_pt = target_w / 65536
+        local target_h_pt = target_h / 65536
+
+        for i = 0, total_pages - 1 do
+            -- For split page, we need to output each page twice (left half and right half)
+            -- First, load page into box (with copy=true so we can use it twice)
+            tex.print(string.format("\\directlua{vertical.load_page(%d, %d, true)}", box_num, i))
+
+            -- Set page dimensions to half width for first half
+            tex.print(string.format("\\global\\pagewidth=%.5fpt", target_w_pt))
+            tex.print(string.format("\\global\\pageheight=%.5fpt", target_h_pt))
+
+            -- Output first half (right side if right_first)
+            tex.print("\\par\\nointerlineskip")
+            if right_first then
+                -- 右半页：将内容左移，使右半部分显示
+                tex.print(string.format("\\noindent\\kern-%.5fpt\\copy%d", target_w_pt, box_num))
+            else
+                -- 左半页：不移动
+                tex.print(string.format("\\noindent\\copy%d", box_num))
+            end
+
+            -- New page for second half
             tex.print("\\newpage")
+            tex.print(string.format("\\global\\pagewidth=%.5fpt", target_w_pt))
+            tex.print(string.format("\\global\\pageheight=%.5fpt", target_h_pt))
+
+            -- Output second half
+            tex.print("\\par\\nointerlineskip")
+            if right_first then
+                -- 左半页：不移动
+                tex.print(string.format("\\noindent\\copy%d", box_num))
+            else
+                -- 右半页：将内容左移
+                tex.print(string.format("\\noindent\\kern-%.5fpt\\copy%d", target_w_pt, box_num))
+            end
+
+            if i < total_pages - 1 then
+                tex.print("\\newpage")
+            end
+        end
+    else
+        -- Normal mode: output pages as-is
+        for i = 0, total_pages - 1 do
+            tex.print(string.format("\\directlua{vertical.load_page(%d, %d)}", box_num, i))
+            tex.print("\\par\\nointerlineskip")
+            tex.print(string.format("\\noindent\\hfill\\smash{\\box%d}", box_num))
+            if i < total_pages - 1 then
+                tex.print("\\newpage")
+            end
         end
     end
 end

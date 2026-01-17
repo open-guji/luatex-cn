@@ -61,6 +61,7 @@
 \RequirePackage{xparse}
 \RequirePackage{tikz}
 \RequirePackage{luatex-cn}
+\RequirePackage{luatex-cn-splitpage}
 
 % Load banxin for 版心/鱼尾 features (registers hooks with vertical)
  \cnvLua{
@@ -219,6 +220,13 @@
     lower-yuwei .bool_set:N = \l_guji_lower_yuwei_bool,
     lower-yuwei .initial:n = false,
 
+    % Split page (筒子页) configuration
+    split-page .bool_set:N = \l_guji_split_page_bool,
+    split-page .initial:n = true,
+
+    split-page-right-first .bool_set:N = \l_guji_split_right_first_bool,
+    split-page-right-first .initial:n = true,
+
     template .code:n = {
       % Load config file: configs/luatex-cn-guji-<name>.cfg
       \InputIfFileExists{configs/luatex-cn-guji-#1.cfg}{}{
@@ -265,6 +273,21 @@
     \fi
   }
 
+% 5b. Split page setup
+\cs_new:Npn \__guji_apply_split_page:
+  {
+    \bool_if:NT \l_guji_split_page_bool
+      {
+        \exp_args:Nx \splitpageSetup{
+          source-width = \l_guji_paper_width_tl,
+          source-height = \l_guji_paper_height_tl,
+          right-first = \bool_if:NTF \l_guji_split_right_first_bool {true} {false},
+          debug = \bool_if:NTF \g_cnv_debug_bool {true} {false}
+        }
+        \enableSplitPage
+      }
+  }
+
 \NewDocumentCommand{\gujiSetup}{ +m }
   {
     \tl_set:Nn \l_tmpa_tl { #1 }
@@ -272,6 +295,8 @@
     \keys_set:nV { guji } \l_tmpa_tl
     % Apply geometry updates
     \__guji_apply_geometry:
+    % Apply split page if enabled
+    \__guji_apply_split_page:
   }
 
 % Load default config (after gujiSetup is defined)

@@ -960,3 +960,109 @@ luatex-cn-vertical-core-main.lua
 ### 相关代码位置
 - 修复位置：`ltc-guji.cls` 中的 `\YinZhang` 命令实现。
 - 影响场景：所有启用 `split-page=true` 且带有前景叠加图案的古籍文档。
+
+---
+
+## 19. ExplSyntaxOn 环境中的 \directlua 空格问题
+
+### 问题描述
+在 `\ExplSyntaxOn` 环境中定义的命令，如果包含 `\directlua{...}` 并且 Lua 代码中有多行或空格，会导致 Lua 语法错误：
+```
+[\directlua]:1: <eof> expected near 'end'.
+```
+
+### 根本原因
+**`\ExplSyntaxOn` 会改变空格和换行的处理规则**：
+- 在 expl3 语法中，普通空格被忽略（catcode 9）
+- 换行符也被特殊处理
+- 当 `\directlua` 中的 Lua 代码包含多行时，这些换行和空格被 expl3 规则处理后，Lua 代码会被"压缩"成一行
+- 如果 Lua 代码中有 `if ... then ... end` 结构，压缩后会变成 `if ... then ... end end`（多个语句粘在一起）
+
+### 错误示例
+```latex
+\ExplSyntaxOn
+\NewDocumentCommand{\updateSplitPageStatus}{ }
+  {
+    \directlua{
+      if splitpage.is_enabled() then
+        tex.sprint("\\SplitPageEnabledtrue")
+      else
+        tex.sprint("\\SplitPageEnabledfalse")
+      end
+    }
+  }
+\ExplSyntaxOff
+```
+传给 Lua 的实际代码可能变成：
+```lua
+ifsplitpage.is_enabled()thentex.sprint("\\SplitPageEnabledtrue")elsetex.sprint("\\SplitPageEnabledfalse")end
+```
+
+### 解决方案
+
+**方案 1：将命令定义移到 `\ExplSyntaxOff` 之后**
+```latex
+\ExplSyntaxOn
+% ... 其他 expl3 代码 ...
+\ExplSyntaxOff
+
+% 在 ExplSyntaxOff 之后定义包含 \directlua 的命令
+\newcommand{\updateSplitPageStatus}{%
+  \directlua{
+    if splitpage.is_enabled() then
+      tex.sprint("\\SplitPageEnabledtrue")
+    else
+      tex.sprint("\\SplitPageEnabledfalse")
+    end
+  }%
+}
+```
+
+**方案 2：使用 expl3 的 `\lua_now:e` 或 `\lua_now:n`**
+```latex
+\ExplSyntaxOn
+\cs_new:Npn \updateSplitPageStatus
+  {
+    \lua_now:e
+      {
+        if~splitpage.is_enabled()~then~
+          tex.sprint("\\SplitPageEnabledtrue")~
+        else~
+          tex.sprint("\\SplitPageEnabledfalse")~
+        end
+      }
+  }
+\ExplSyntaxOff
+```
+注意：需要使用 `~` 代替空格。
+
+**方案 3：将 Lua 逻辑放在单独的 .lua 文件中**
+```latex
+% 在 .sty 文件中
+\directlua{require('my-module')}
+
+% 在 my-module.lua 中
+function update_split_page_status()
+    if splitpage.is_enabled() then
+        tex.sprint("\\SplitPageEnabledtrue")
+    else
+        tex.sprint("\\SplitPageEnabledfalse")
+    end
+end
+```
+
+### 教训
+1. **ExplSyntaxOn 改变 catcode**：在 expl3 环境中，空格、换行等字符的行为与普通 LaTeX 不同
+2. **\directlua 与 expl3 不兼容**：多行 Lua 代码在 expl3 环境中会被破坏
+3. **分离关注点**：
+   - expl3 代码处理 LaTeX 键值配置
+   - \directlua 命令定义放在 \ExplSyntaxOff 之后
+   - 复杂 Lua 逻辑放在单独的 .lua 文件中
+4. **调试方法**：
+   - 错误信息 `<eof> expected near 'end'` 通常表示代码被意外压缩
+   - 检查命令定义是否在 `\ExplSyntaxOn` 环境内
+   - 使用 `\show\commandname` 查看命令的实际定义
+
+### 相关代码位置
+- 修复位置：`src/splitpage/luatex-cn-splitpage.sty`
+- 影响命令：`\updateSplitPageStatus`、`\updateSplitPageSide` 等包含多行 Lua 代码的命令

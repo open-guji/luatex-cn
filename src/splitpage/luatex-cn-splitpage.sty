@@ -85,6 +85,8 @@
       })
       splitpage.enable()
     }
+    % Sync \paperwidth with target width for TikZ coordinate calculations
+    \paperwidth=\directlua{tex.sprint(splitpage.get_target_width())}sp\relax
   }
 
 % Disable split page processing
@@ -94,6 +96,45 @@
   }
 
 \ExplSyntaxOff
+
+% ============================================================================
+% Utility commands for background/foreground hooks
+% ============================================================================
+
+% Check if splitpage is enabled
+% Usage: \ifSplitPageEnabled ... \else ... \fi
+\newif\ifSplitPageEnabled
+\newcommand{\updateSplitPageStatus}{%
+  \directlua{
+    if splitpage.is_enabled() then
+      tex.sprint("\\SplitPageEnabledtrue")
+    else
+      tex.sprint("\\SplitPageEnabledfalse")
+    end
+  }%
+}
+
+% Check if current page is right page
+% Usage: \ifSplitPageRight ... \else ... \fi
+\newif\ifSplitPageRight
+\newcommand{\updateSplitPageSide}{%
+  \directlua{
+    local page = tex.count["c@page"]
+    if splitpage.is_right_page(page) then
+      tex.sprint("\\SplitPageRighttrue")
+    else
+      tex.sprint("\\SplitPageRightfalse")
+    end
+  }%
+}
+
+% Get source dimensions (original page size before splitting)
+\newcommand{\splitpageSourceWidth}{\directlua{tex.sprint(splitpage.get_source_width() .. "sp")}}
+\newcommand{\splitpageSourceHeight}{\directlua{tex.sprint(splitpage.get_source_height() .. "sp")}}
+
+% Get target dimensions (half page size after splitting)
+\newcommand{\splitpageTargetWidth}{\directlua{tex.sprint(splitpage.get_target_width() .. "sp")}}
+\newcommand{\splitpageTargetHeight}{\directlua{tex.sprint(splitpage.get_target_height() .. "sp")}}
 
 % CJK aliases
 \NewCommandCopy{\启用分页裁剪}{\enableSplitPage}

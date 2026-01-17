@@ -141,12 +141,33 @@ function splitpage.get_target_height()
     return splitpage.target_height
 end
 
+function splitpage.get_source_width()
+    return splitpage.source_width
+end
+
+function splitpage.get_source_height()
+    return splitpage.source_height
+end
+
 function splitpage.is_enabled()
     return splitpage.enabled
 end
 
 function splitpage.is_right_first()
     return splitpage.right_first
+end
+
+--- Check if current page is a right page (based on page number and right_first setting)
+-- @param page_num The current page number
+-- @return true if this is a right page, false if left page
+function splitpage.is_right_page(page_num)
+    if splitpage.right_first then
+        -- right_first: odd pages are right, even pages are left
+        return (page_num % 2) == 1
+    else
+        -- left_first: odd pages are left, even pages are right
+        return (page_num % 2) == 0
+    end
 end
 
 -- Dummy function for compatibility

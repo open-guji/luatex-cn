@@ -539,7 +539,6 @@
 
 % Environment Aliases (CJK support)
 \NewEnvironmentCopy{正文}{guji-content}
-\NewEnvironmentCopy{列表}{itemize}
 
 % 8. Remove page numbers by default
 \pagestyle{empty}

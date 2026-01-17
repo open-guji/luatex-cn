@@ -90,17 +90,6 @@
 % ============================================================================
 \NewEnvironmentCopy{列表}{itemize}
 
-% '正文' (Main Content) alias - depends on the document class
-\AddToHook{begindocument}{
-  \@ifundefined{正文}{
-    \ifcsname guji-content\endcsname
-      \NewEnvironmentCopy{正文}{guji-content}
-    \else\ifcsname ltc-book-content\endcsname
-      \NewEnvironmentCopy{正文}{ltc-book-content}
-    \fi\fi
-  }{}
-}
-
 % ============================================================================
 % Interface Documentation
 % ============================================================================

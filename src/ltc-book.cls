@@ -201,6 +201,5 @@
 
 % Environment Aliases (CJK support)
 \NewEnvironmentCopy{正文}{ltc-book-content}
-\NewEnvironmentCopy{列表}{itemize}
 
 \endinput

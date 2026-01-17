@@ -391,26 +391,23 @@
     \tl_gset_eq:NN \g_yinzhang_width_tl \l_yinzhang_width_tl
     \tl_gset_eq:NN \g_yinzhang_color_tl \l_yinzhang_color_tl
     
-    % Add hook to shipout background for specified page
-    % Note: For split-page mode, page numbers are doubled (spread 1 -> physical 1,2)
-    \AddToHook{shipout/background}{
+    % Add hook to shipout foreground for specified page
+    % Note: Using foreground ensures seal is visible after split-page cropping
+    \AddToHook{shipout/foreground}{
       \ExplSyntaxOn
       \int_compare:nNnT { \value{page} } = { \g_yinzhang_target_page_int }
         {
-          \ExplSyntaxOff
           \begin{tikzpicture}[overlay]
-            % xshift/yshift are negated: positive = distance from top-right corner
             \node[
               anchor=north~east,
               opacity=\g_yinzhang_opacity_tl,
               inner~sep=0pt,
               xshift=-\g_yinzhang_xshift_tl,
               yshift=-\g_yinzhang_yshift_tl
-            ] at (\paperwidth, 0) {
+            ]~at~(\paperwidth,~0)~{
               \includegraphics[width=\g_yinzhang_width_tl]{\g_yinzhang_image_path_tl}
             };
           \end{tikzpicture}
-          \ExplSyntaxOn
         }
       \ExplSyntaxOff
     }

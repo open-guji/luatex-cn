@@ -30,15 +30,6 @@ The recommended way to use the package is through the `ltc-guji` document class:
 ```latex
 \documentclass[四库全书]{ltc-guji}
 
-% Configure layout and fonts
-\gujiSetup{
-  font-size = 12pt,
-  line-limit = 20,
-  page-columns = 10,
-  banxin = true,
-  book-name = {史記}
-}
-
 \begin{document}
 \begin{正文}
 \chapter{五帝本紀第一}
@@ -63,6 +54,9 @@ The recommended way to use the package is through the `ltc-guji` document class:
 ## Documentation
 
 See `example.tex` for usage examples.
+
+Maintainer: Sheldon Li
+Email: sheldonli.dev@gmail.com
 
 ## License
 

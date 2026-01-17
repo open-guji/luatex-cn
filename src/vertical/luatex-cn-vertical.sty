@@ -588,6 +588,11 @@
     \setluatexattribute\cnverticalrightindent{\l__cn_vertical_para_bottom_indent_int}
   }
   {
+    % Reset indent attributes to default BEFORE \par
+    % so subsequent content won't inherit paragraph's indent
+    \setluatexattribute\cnverticalindent{0}
+    \setluatexattribute\cnverticalfirstindent{-1}
+    \setluatexattribute\cnverticalrightindent{0}
     \par
   }
 

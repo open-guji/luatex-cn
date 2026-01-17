@@ -1,0 +1,97 @@
+% luatex-cn-font-autodetect.sty
+% LaTeX package wrapper for font auto-detection
+
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{luatex-cn-font-autodetect}[2026/01/17 v0.1.0 Font Auto-Detection for Chinese]
+
+\RequirePackage{ifluatex}
+\RequirePackage{luatexbase}
+
+% Ensure we're using LuaTeX
+\ifluatex\else
+  \PackageError{luatex-cn-font-autodetect}{%
+    This package requires LuaLaTeX%
+  }{%
+    Please compile your document with lualatex.%
+  }
+\fi
+
+% Load the Lua module
+\directlua{
+  if not luatexbase then
+    luatexbase = require("luatexbase")
+  end
+  
+  -- Try to find the module using kpse
+  local lua_file = kpse.find_file("luatex-cn-font-autodetect.lua", "lua")
+  
+  if lua_file then
+    -- Found via kpse, load it directly
+    fontdetect = dofile(lua_file)
+  else
+    -- Fallback: try relative paths
+    local search_paths = {
+      "./fonts/luatex-cn-font-autodetect.lua",
+      "../src/fonts/luatex-cn-font-autodetect.lua",
+      "../../src/fonts/luatex-cn-font-autodetect.lua"
+    }
+    
+    for _, path in ipairs(search_paths) do
+      local f = io.open(path, "r")
+      if f then
+        f:close()
+        fontdetect = dofile(path)
+        break
+      end
+    end
+  end
+  
+  if not fontdetect then
+    texio.write_nl("term and log", "[Font Auto-Detect] ERROR: Could not load font detection module")
+    fontdetect = {
+      get_font_setup = function() return nil end
+    }
+  end
+}
+
+% Command to apply auto-detected font
+\newcommand{\ApplyAutoFont}{%
+  \directlua{
+    texio.write_nl("term and log", "[Font Auto-Detect] ApplyAutoFont command called")
+    
+    if not fontdetect then
+      texio.write_nl("term and log", "[Font Auto-Detect] ERROR: fontdetect module not loaded")
+      return
+    end
+    
+    local font_setup = fontdetect.get_font_setup()
+    if font_setup then
+      texio.write_nl("term and log", "[Font Auto-Detect] Applying font: " .. font_setup.name)
+      tex.print("\\string\\setmainfont{" .. font_setup.name .. "}[" .. font_setup.features .. "]")
+    else
+      texio.write_nl("term and log", "[Font Auto-Detect] No font configured, using LaTeX default")
+    end
+  }%
+}
+
+% Command to get auto-detected font name (for use in keys)
+\newcommand{\GetAutoFontName}{%
+  \directlua{
+    local font_setup = fontdetect.get_font_setup()
+    if font_setup then
+      tex.print(font_setup.name)
+    end
+  }%
+}
+
+% Command to get auto-detected font features
+\newcommand{\GetAutoFontFeatures}{%
+  \directlua{
+    local font_setup = fontdetect.get_font_setup()
+    if font_setup then
+      tex.print(font_setup.features)
+    end
+  }%
+}
+
+\endinput

@@ -59,6 +59,8 @@
 % 2. Core Dependencies
 \RequirePackage{geometry}
 \RequirePackage{xcolor}
+% fontspec is optional - users can load it in their document if needed
+% But we load it here to enable font auto-detection
 \RequirePackage{fontspec}
 \RequirePackage{environ}
 \RequirePackage{expl3}
@@ -66,6 +68,9 @@
 \RequirePackage{tikz}
 \RequirePackage{luatex-cn}
 \RequirePackage{luatex-cn-splitpage}
+
+% Load font auto-detection module
+\RequirePackage{luatex-cn-font-autodetect}
 
 % Load banxin for 版心/鱼尾 features (registers hooks with vertical)
  \cnvLua{
@@ -196,10 +201,10 @@
     font-color .initial:n = {},
 
     font-name .tl_set:N = \l_guji_font_name_tl,
-    font-name .initial:n = {SimSun},
+    font-name .initial:n = {},
 
     font-features .tl_set:N = \l_guji_font_features_tl,
-    font-features .initial:n = {RawFeature={+vert,+vrt2}, CharacterWidth=Full},
+    font-features .initial:n = {},
 
     % Banxin (版心) section ratios
     banxin-upper-ratio .tl_set:N = \l_guji_banxin_upper_tl,
@@ -438,7 +443,25 @@
     \keys_set:nn { guji } { #1 }
     % Note: book-name is set directly by \title command
     % No fallback from \@title to avoid LaTeX's default error-throwing definition
-    \exp_args:NV \setmainfont \l_guji_font_name_tl [\l_guji_font_features_tl]
+    % Font selection logic:
+    % 1. If user specified font-name, use it
+    % 2. Otherwise, use auto-detected font
+    \tl_if_empty:NTF \l_guji_font_name_tl
+      {
+        % No font-name specified, use auto-detection
+        \ApplyAutoFont
+      }
+      {
+        % User specified font-name, use it
+        \tl_if_empty:NTF \l_guji_font_features_tl
+          {
+            % No features specified, use default for CJK vertical
+            \exp_args:NV \setmainfont \l_guji_font_name_tl [RawFeature={+vert,+vrt2}, CharacterWidth=Full]
+          }
+          {
+            \exp_args:NV \setmainfont \l_guji_font_name_tl [\l_guji_font_features_tl]
+          }
+      }
     \fontsize{\l_guji_font_size_tl}{\l_guji_line_spacing_tl}\selectfont
     
     % global debug flag \g_cnv_debug_bool is already set by keys_set:nn { guji } { #1 } above

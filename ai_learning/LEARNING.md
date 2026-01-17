@@ -22,6 +22,10 @@
 14. [\directlua 中的 Lua 注释与 LaTeX 线性化陷阱](#14-directlua-中的-lua-注释与-latex-线性化陷阱)
 15. [Lua 模块阴影与参数传递链路管理](#15-lua-模块阴影与参数传递链路管理)
 16. [筒子页自动裁剪实现 (Split Page)](#16-筒子页自动裁剪实现-split-page)
+17. [竖排段落换列与内容丢失陷阱](#17-竖排段落换列与内容丢失陷阱)
+18. [分页裁剪模式下的坐标参考系陷阱](#18-分页裁剪筒子页模式下的坐标参考系陷阱)
+19. [ExplSyntaxOn 环境中的 \directlua 空格问题](#19-explsyntaxon-环境中的-directlua-空格问题)
+20. [段落环境缩进泄漏与列级缩进状态管理](#20-段落环境缩进泄漏与列级缩进状态管理)
 
 ---
 
@@ -1066,3 +1070,102 @@ end
 ### 相关代码位置
 - 修复位置：`src/splitpage/luatex-cn-splitpage.sty`
 - 影响命令：`\updateSplitPageStatus`、`\updateSplitPageSide` 等包含多行 Lua 代码的命令
+
+---
+
+## 20. 段落环境缩进泄漏与列级缩进状态管理
+
+### 问题描述
+在使用 `\begin{段落}[indent=2]...\end{段落}` 环境时，环境内的内容正确缩进了，但环境结束后的正文内容也被错误地缩进了。
+
+### 根本原因
+问题涉及两个层面：
+
+#### 原因 1：environ 包的内容收集机制
+`guji-content`（正文）环境使用 `\NewEnviron` 定义，它会在环境结束时才展开 `\BODY`。这意味着：
+- `\begin{段落}` 设置了 `cnverticalindent=2` 属性
+- `\end{段落}` 处的重置代码在 `\BODY` 展开时按顺序执行
+- 但此时所有后续内容的节点**已经被收集完毕**
+- 属性是在节点创建时附加的，重置只影响重置点之后创建的节点
+
+#### 原因 2：列级缩进状态污染
+即使通过在 `\end{段落}` 前重置属性解决了属性泄漏，还存在另一个问题：
+```lua
+-- layout_grid.lua 中的原始代码
+if cur_row < indent then cur_row = indent end
+if indent > cur_column_indent then cur_column_indent = indent end  -- 列级状态！
+if cur_row < cur_column_indent then cur_row = cur_column_indent end
+```
+`cur_column_indent` 是**列级别**的变量。一旦在某列遇到 `indent=2` 的节点，该变量被设为 2，然后该列后续所有节点（包括 `indent=0` 的正文节点）都会被强制应用这个缩进。
+
+### 解决方案
+
+#### 1. 在环境结束前重置属性
+```latex
+% luatex-cn-vertical.sty - Paragraph 环境定义
+\NewDocumentEnvironment{Paragraph}{ O{} }
+  {
+    \par
+    \stepcounter{cnverticalblockid}
+    \keys_set:nn { vertical / paragraph } { #1 }
+    \setluatexattribute\cnverticalindent{\l__cn_vertical_para_indent_int}
+    % ... 其他属性设置
+  }
+  {
+    % 在 \par 之前重置属性，确保后续内容不继承
+    \setluatexattribute\cnverticalindent{0}
+    \setluatexattribute\cnverticalfirstindent{-1}
+    \setluatexattribute\cnverticalrightindent{0}
+    \par
+  }
+```
+
+#### 2. 只对有缩进的节点应用列级跟踪
+```lua
+-- layout_grid.lua - 修改后的缩进逻辑
+-- Only apply column-level indent tracking when this node has indent > 0
+-- This prevents indent from "leaking" to non-indented content in the same column
+if indent > 0 then
+    if cur_row < indent then cur_row = indent end
+    if indent > cur_column_indent then cur_column_indent = indent end
+    if cur_row < cur_column_indent then cur_row = cur_column_indent end
+end
+```
+
+### 调试过程
+1. **添加 Lua 调试输出**：在 `layout_grid.lua` 中打印每个节点的 `raw_indent` 值
+2. **发现规律**：
+   - 段落内节点：`raw_indent=2`
+   - 段落外节点：`raw_indent=nil`（重置生效后）
+3. **定位问题**：即使属性正确，`cur_column_indent` 仍然导致后续节点被缩进
+4. **验证修复**：添加 `if indent > 0` 条件后，只有真正需要缩进的节点才参与列级状态管理
+
+### 教训
+1. **理解 environ 包的工作机制**：
+   - `\NewEnviron` 在环境结束时才展开内容
+   - 属性设置的时机很重要：必须在节点创建之前设置好
+   - 环境内的重置代码对已收集的内容无效
+
+2. **列级状态 vs 节点级属性**：
+   - LuaTeX 属性是节点级的，每个节点独立携带
+   - 布局引擎的 `cur_column_indent` 是列级状态，会影响同列所有节点
+   - 两者必须协调工作：只有属性标记为"需要缩进"的节点才应参与列级状态
+
+3. **调试属性问题的方法**：
+   ```lua
+   -- 在 layout_grid.lua 中添加调试输出
+   if node_count <= 40 then
+       texio.write_nl(string.format("[DEBUG] Node %d: raw_indent=%s",
+           node_count, tostring(D.get_attribute(t, constants.ATTR_INDENT))))
+   end
+   ```
+
+4. **分层隔离**：
+   - TeX 层负责设置和重置属性啊好
+   - Lua 层根据属性决定布局行为
+   - 两层的逻辑要相互配合，不能各自为政
+
+### 相关代码位置
+- TeX 属性重置：`src/vertical/luatex-cn-vertical.sty`（Paragraph 环境定义）
+- Lua 缩进逻辑：`src/vertical/luatex-cn-vertical-layout-grid.lua`（第 239-246 行）
+- 属性常量定义：`src/vertical/luatex-cn-vertical-base-constants.lua`

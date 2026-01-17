@@ -212,11 +212,9 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
         
         -- Advanced Indentation Logic
         local block_id = D.get_attribute(t, constants.ATTR_BLOCK_ID)
-        local base_indent = D.get_attribute(t, constants.ATTR_INDENT) or 0         -- Acts as Hanging Indent (default)
-        local first_indent = D.get_attribute(t, constants.ATTR_FIRST_INDENT) or -1 -- Acts as First Line Indent
-        
-        local current_indent = base_indent
-        
+        local base_indent = D.get_attribute(t, constants.ATTR_INDENT) or 0
+        local first_indent = D.get_attribute(t, constants.ATTR_FIRST_INDENT) or -1
+
         local current_indent = get_indent_for_current_pos(block_id, base_indent, first_indent)
         
         local indent = current_indent
@@ -232,9 +230,13 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
         end
 
         -- Indent logic applying to current position
-        if cur_row < indent then cur_row = indent end
-        if indent > cur_column_indent then cur_column_indent = indent end
-        if cur_row < cur_column_indent then cur_row = cur_column_indent end
+        -- Only apply column-level indent tracking when this node has indent > 0
+        -- This prevents indent from "leaking" to non-indented content in the same column
+        if indent > 0 then
+            if cur_row < indent then cur_row = indent end
+            if indent > cur_column_indent then cur_column_indent = indent end
+            if cur_row < cur_column_indent then cur_row = cur_column_indent end
+        end
 
         local effective_limit = line_limit - r_indent
         if effective_limit < indent + 1 then effective_limit = indent + 1 end

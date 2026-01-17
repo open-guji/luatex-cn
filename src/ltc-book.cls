@@ -42,11 +42,24 @@
 % 2. Core Dependencies
 \RequirePackage{geometry}
 \RequirePackage{xcolor}
+% fontspec is optional - users can load it in their document if needed
+% But we load it here to enable font auto-detection
 \RequirePackage{fontspec}
 \RequirePackage{environ}
 \RequirePackage{expl3}
 \RequirePackage{xparse}
 \RequirePackage{luatex-cn-vertical}
+
+% Load font auto-detection module
+\RequirePackage{luatex-cn-font-autodetect}
+
+% Apply auto-detected font at document start if user hasn't set one
+\AtBeginDocument{%
+  \cs_if_exist:NF \l__fontspec_fontname_tl
+    {
+      \ApplyAutoFont
+    }
+}
 
 % 3. Key-Value Configuration System
 \ExplSyntaxOn
@@ -190,12 +203,6 @@
   }
 
 \ExplSyntaxOff
-
-% 7. Font Configuration (use system default)
-\setmainfont{TW-Kai}[
-    RawFeature={+vert,+vrt2},
-    CharacterWidth=Full
-]
 
 \pagestyle{plain}
 

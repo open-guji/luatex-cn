@@ -85,6 +85,13 @@
 \tl_new:N \l_guji_book_name_tl
 \tl_set:Nn \l_guji_book_name_tl {}
 
+% Dimension for calculated grid-height
+\dim_new:N \l_guji_grid_height_dim
+
+% Error messages
+\msg_new:nnn { guji } { missing-grid-param }
+  { Either~n-char~or~grid-height~must~be~specified. }
+
 % Storage for Chapter Title (章节标题)
 \tl_new:N \l_guji_chapter_title_tl
 \tl_set:Nn \l_guji_chapter_title_tl {}
@@ -171,6 +178,11 @@
 
     n-column .int_set:N = \l_guji_n_column_int,
     n-column .initial:n = 0,
+
+    % Number of characters per column (e.g., 21 for Siku Quanshu)
+    % When set, grid-height and height are calculated automatically
+    n-char .int_set:N = \l_guji_n_char_int,
+    n-char .initial:n = 0,
 
     border-color .tl_set:N = \l_guji_border_color_tl,
     border-color .initial:n = {},
@@ -438,53 +450,76 @@
     \setlength{\parskip}{0pt}
     \setlength{\partopsep}{0pt}
     
-    % --- Auto-Correction Logic ---
-    % Calculate exact fit for grid to avoid blank pages and overflow
-    % 1. Get available space from defined margins
+    % --- Auto-Layout Logic ---
+    % Either n-char OR grid-height must be specified (mutually exclusive)
+    %
+    % Mode A: n-char specified (grid-height auto-calculated)
+    %   grid-height = available-height / n-char
+    %   height = available-height
+    %
+    % Mode B: grid-height specified (n-char auto-calculated, may truncate)
+    %   n-char = floor(available-height / grid-height)
+    %   height = n-char * grid-height
+
+    % 1. Calculate raw content area height
     \dim_set:Nn \l_tmpa_dim { \l_guji_paper_height_tl }
     \dim_sub:Nn \l_tmpa_dim { \l_guji_margin_top_tl }
     \dim_sub:Nn \l_tmpa_dim { \l_guji_margin_bottom_tl }
-    % \l_tmpa_dim is now Available Height
+    % \l_tmpa_dim = content-height
 
-    % 2. Calculate border overhead if border is enabled
-    % We now have top and bottom padding. Default is 0.1em each.
+    % 2. Calculate border overhead
     \dim_set:Nn \l_tmpb_dim { 0pt }
-    \bool_if:NT \l_guji_border_bool {
-      % Standard column border overhead = top padding + bottom padding + thickness + safety
-      \dim_set:Nn \l_tmpb_dim { \l_guji_border_padding_top_tl + \l_guji_border_padding_bottom_tl + \l_guji_border_thickness_tl + 0.4pt }
-    }
-    % --- NEW: Add extra overhead for outer-border ---
     \bool_if:NT \l_guji_outer_border_bool {
-      % We added internal padding (sep) + thickness.
-      % The overhead is (sep + thickness) * 2.
       \dim_add:Nn \l_tmpb_dim { (\l_guji_outer_border_sep_tl + \l_guji_outer_border_thickness_tl) * 2 }
     }
+    \bool_if:NT \l_guji_border_bool {
+      \dim_add:Nn \l_tmpb_dim { \l_guji_border_padding_top_tl + \l_guji_border_padding_bottom_tl + \l_guji_border_thickness_tl }
+    }
+    % \l_tmpb_dim = border-overhead
+
+    % 3. Calculate available height for text
     \dim_sub:Nn \l_tmpa_dim { \l_tmpb_dim }
-    % \l_tmpa_dim is now Available Height minus border overhead
+    % \l_tmpa_dim = available-height
 
-    % 3. Calculate max rows fitting in this space using FLOOR
-    \int_set:Nn \l_tmpa_int { \dim_to_decimal_in_sp:n { \l_tmpa_dim } }
-    \int_set:Nn \l_tmpb_int { \dim_to_decimal_in_sp:n { \l_guji_grid_height_tl } }
-    \int_set:Nn \l_tmpa_int { \l_tmpa_int / \l_tmpb_int }
+    % 4. Determine mode and calculate grid dimensions
+    \int_compare:nNnTF { \l_guji_n_char_int } > { 0 }
+      {
+        % Mode A: n-char specified, calculate grid-height (floor to avoid overflow)
+        % grid-height = floor(available-height / n-char)
+        \int_set:Nn \l_tmpa_int { \dim_to_decimal_in_sp:n { \l_tmpa_dim } / \l_guji_n_char_int }
+        \dim_set:Nn \l_guji_grid_height_dim { \l_tmpa_int sp }
+        \tl_set:Nx \l_guji_grid_height_tl { \dim_use:N \l_guji_grid_height_dim }
+        % height = grid-height * n-char (may be slightly less than available)
+        \dim_set:Nn \l_tmpa_dim { \l_guji_grid_height_dim * \l_guji_n_char_int }
+        \tl_set:Nx \l_guji_height_tl { \dim_use:N \l_tmpa_dim }
+        \iow_term:x { Guji~Mode~A:~n-char=\int_use:N \l_guji_n_char_int,~grid-height=\l_guji_grid_height_tl,~height=\l_guji_height_tl }
+      }
+      {
+        % Mode B: grid-height specified, calculate fitting rows
+        \tl_if_empty:NTF \l_guji_grid_height_tl
+          {
+            \msg_error:nn { guji } { missing-grid-param }
+          }
+          {
+            % Calculate max rows: floor(available-height / grid-height)
+            \int_set:Nn \l_tmpa_int { \dim_ratio:nn { \l_tmpa_dim } { \l_guji_grid_height_tl } }
+            % height = rows * grid-height
+            \dim_set:Nn \l_tmpa_dim { \l_guji_grid_height_tl * \l_tmpa_int }
+            \tl_set:Nx \l_guji_height_tl { \dim_use:N \l_tmpa_dim }
+            \iow_term:x { Guji~Mode~B:~grid-height=\l_guji_grid_height_tl,~rows=\int_use:N \l_tmpa_int,~height=\l_guji_height_tl }
+          }
+      }
 
-    % 4. Calculate heights
-    % UsedHeight = Rows * GridHeight (This is the height passed to cn_vertical)
-    % We use \l_tmpa_dim to store the result
-    \dim_set:Nn \l_tmpa_dim { \l_guji_grid_height_tl * \l_tmpa_int }
-    \tl_set:Nx \l_guji_height_tl { \dim_use:N \l_tmpa_dim } 
-    
-    % TotalHeight = UsedHeight + BorderOverhead + Safety (This is the \textheight)
-    % We use \l_tmpb_dim to store the result
+    % 5. Calculate total box height (content + border overhead + safety)
     \dim_set:Nn \l_tmpb_dim { \l_tmpa_dim + \l_tmpb_dim + 2pt }
 
-    % 5. Adjust Margins
-    % We adjust top margin to preserve the bottom margin
+    % 6. Adjust top margin to preserve bottom margin
     \tl_set:Nx \l_guji_margin_top_tl {
       \dim_eval:n { \l_guji_paper_height_tl - \l_guji_margin_bottom_tl - \l_tmpb_dim }
     }
 
-    % Log for debugging
-    \iow_term:x { Guji~Auto-Layout:~Rows=\int_use:N \l_tmpa_int,~TextHeight=\dim_use:N \l_tmpb_dim,~TopMargin=\l_guji_margin_top_tl }
+    % Log final layout
+    \iow_term:x { Guji~Layout:~TextHeight=\dim_use:N \l_tmpb_dim,~TopMargin=\l_guji_margin_top_tl }
 
     % Update geometry for this environment
     \__guji_apply_geometry:

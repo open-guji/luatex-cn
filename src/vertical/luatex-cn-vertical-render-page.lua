@@ -291,10 +291,12 @@ local function apply_positions(head, layout_map, params)
     local half_thickness = math.floor(border_thickness / 2)
     local ob_thickness_val = (outer_border_thickness or (65536 * 2))
     local ob_sep_val = (outer_border_sep or (65536 * 2))
-    
+
     local outer_shift = draw_outer_border and (ob_thickness_val + ob_sep_val) or 0
+    -- Only add border padding to shift_y when border is actually drawn
+    local border_shift = draw_border and (border_thickness + b_padding_top) or 0
     local shift_x = (params.shift_x and params.shift_x ~= 0) and params.shift_x or outer_shift
-    local shift_y = (params.shift_y and params.shift_y ~= 0) and params.shift_y or (outer_shift + border_thickness + b_padding_top)
+    local shift_y = (params.shift_y and params.shift_y ~= 0) and params.shift_y or (outer_shift + border_shift)
     
     local interval = tonumber(n_column) or 0
     local p_cols = tonumber(page_columns) or (2 * interval + 1)

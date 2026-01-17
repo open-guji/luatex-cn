@@ -93,6 +93,8 @@
 \NewDocumentCommand{\disableSplitPage}{ }
   {
     \directlua{splitpage.disable()}
+    % Restore paperwidth to source width (the full spread size)
+    \paperwidth=\l__splitpage_source_width_tl\relax
   }
 
 \ExplSyntaxOff

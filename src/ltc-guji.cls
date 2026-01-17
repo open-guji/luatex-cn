@@ -31,7 +31,9 @@
     四库全书彩色 = SiKuQuanShu-colored,
     四庫全書彩色 = SiKuQuanShu-colored,
     四库全书 = default,
-    四庫全書 = default
+    四庫全書 = default,
+    红楼梦甲戌本 = HongLouMengJiaXuBen,
+    紅樓夢甲戌本 = HongLouMengJiaXuBen
   }
 
 \DeclareOption*{
@@ -434,13 +436,8 @@
     \clearpage
     \group_begin:
     \keys_set:nn { guji } { #1 }
-    % Fallback: if book-name is empty but \@title is set, use \@title
-    \tl_if_empty:NT \l_guji_book_name_tl
-      {
-        \if_meaning:w \@title \@empty \else:
-          \tl_set:Nn \l_guji_book_name_tl { \@title }
-        \fi:
-      }
+    % Note: book-name is set directly by \title command
+    % No fallback from \@title to avoid LaTeX's default error-throwing definition
     \exp_args:NV \setmainfont \l_guji_font_name_tl [\l_guji_font_features_tl]
     \fontsize{\l_guji_font_size_tl}{\l_guji_line_spacing_tl}\selectfont
     

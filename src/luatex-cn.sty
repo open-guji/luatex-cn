@@ -85,6 +85,16 @@
 %   \cnvdebugon / \cnvdebugoff      - Debug toggle
 %   \GujiDebugOn / \GujiDebugOff    - Alias for debug toggle
 %
+% '正文' (Main Content) alias - depends on the document class
+\AddToHook{begindocument}{
+  \@ifundefined{正文}{
+    \ifcsname guji-content\endcsname
+      \NewEnvironmentCopy{正文}{guji-content}
+    \else\ifcsname ltc-book-content\endcsname
+      \NewEnvironmentCopy{正文}{ltc-book-content}
+    \fi\fi
+  }{}
+}
 % From banxin (when loaded with [banxin] option):
 %   \banxinSetup{options}           - Configure banxin settings
 %   \setBookName{name}              - Set book name for banxin

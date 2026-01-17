@@ -22,14 +22,14 @@
 % 1. Options Handling
 \RequirePackage{l3keys2e}
 \ExplSyntaxOn
-\tl_new:N \l_cvbook_initial_template_tl
+\tl_new:N \l_ltc_book_initial_template_tl
 
 \DeclareOption*{
   \tl_set:Nx \l_tmpa_tl { \CurrentOption }
-  % Look for config file: configs/<name>.cvbook.cfg
-  \file_if_exist:nTF { configs/ \l_tmpa_tl .cvbook.cfg }
+  % Look for config file: configs/<name>.ltc_book .cfg
+  \file_if_exist:nTF { configs/ \l_tmpa_tl .ltc_book .cfg }
     {
-      \tl_set_eq:NN \l_cvbook_initial_template_tl \l_tmpa_tl
+      \tl_set_eq:NN \l_ltc_book_initial_template_tl \l_tmpa_tl
     }
     {
       \PassOptionsToClass{\l_tmpa_tl}{article}
@@ -51,76 +51,76 @@
 % 3. Key-Value Configuration System
 \ExplSyntaxOn
 
-\keys_define:nn { cvbook }
+\keys_define:nn { ltc_book }
   {
     % Page geometry - modern book defaults (A5-ish)
-    paper-width .tl_set:N = \l_cvbook_paper_width_tl,
+    paper-width .tl_set:N = \l_ltc_book_paper_width_tl,
     paper-width .initial:n = 148mm,
 
-    paper-height .tl_set:N = \l_cvbook_paper_height_tl,
+    paper-height .tl_set:N = \l_ltc_book_paper_height_tl,
     paper-height .initial:n = 210mm,
 
-    margin-top .tl_set:N = \l_cvbook_margin_top_tl,
+    margin-top .tl_set:N = \l_ltc_book_margin_top_tl,
     margin-top .initial:n = 15mm,
 
-    margin-bottom .tl_set:N = \l_cvbook_margin_bottom_tl,
+    margin-bottom .tl_set:N = \l_ltc_book_margin_bottom_tl,
     margin-bottom .initial:n = 30mm,
 
-    margin-left .tl_set:N = \l_cvbook_margin_left_tl,
+    margin-left .tl_set:N = \l_ltc_book_margin_left_tl,
     margin-left .initial:n = 15mm,
 
-    margin-right .tl_set:N = \l_cvbook_margin_right_tl,
+    margin-right .tl_set:N = \l_ltc_book_margin_right_tl,
     margin-right .initial:n = 25mm,
 
     % Grid and font settings
-    font-size .tl_set:N = \l_cvbook_font_size_tl,
+    font-size .tl_set:N = \l_ltc_book_font_size_tl,
     font-size .initial:n = 12pt,
     
-    line-spacing .tl_set:N = \l_cvbook_line_spacing_tl,
+    line-spacing .tl_set:N = \l_ltc_book_line_spacing_tl,
     line-spacing .initial:n = 14pt,
 
-    grid-width .tl_set:N = \l_cvbook_grid_width_tl,
+    grid-width .tl_set:N = \l_ltc_book_grid_width_tl,
     grid-width .initial:n = 14pt,
 
-    grid-height .tl_set:N = \l_cvbook_grid_height_tl,
+    grid-height .tl_set:N = \l_ltc_book_grid_height_tl,
     grid-height .initial:n = 14pt,
 
-    height .tl_set:N = \l_cvbook_height_tl,
+    height .tl_set:N = \l_ltc_book_height_tl,
     height .initial:n = ,
 
     % No border by default for modern books
-    border .bool_set:N = \l_cvbook_border_bool,
+    border .bool_set:N = \l_ltc_book_border_bool,
     border .initial:n = false,
 
-    border-thickness .tl_set:N = \l_cvbook_border_thickness_tl,
+    border-thickness .tl_set:N = \l_ltc_book_border_thickness_tl,
     border-thickness .initial:n = 0.4pt,
 
-    vertical-align .tl_set:N = \l_cvbook_valign_tl,
+    vertical-align .tl_set:N = \l_ltc_book_valign_tl,
     vertical-align .initial:n = center,
 
-    n-column .int_set:N = \l_cvbook_n_column_int,
+    n-column .int_set:N = \l_ltc_book_n_column_int,
     n-column .initial:n = 0,
 
     debug .bool_gset:N = \g_cnv_debug_bool,
     debug .initial:n = false,
 
     template .code:n = {
-      \InputIfFileExists{configs/#1.cvbook.cfg}{}{
-        \keys_set:nn { cvbook / templates } { #1 }
+      \InputIfFileExists{configs/#1.ltc_book .cfg}{}{
+        \keys_set:nn { ltc_book / templates } { #1 }
       }
     },
   }
 
 % 4. Geometry setup
-\cs_new:Npn \__cvbook_apply_geometry:
+\cs_new:Npn \__ltc_book_apply_geometry:
   {
     \geometry{
-      paperwidth=\l_cvbook_paper_width_tl,
-      paperheight=\l_cvbook_paper_height_tl,
-      top=\l_cvbook_margin_top_tl,
-      bottom=\l_cvbook_margin_bottom_tl,
-      left=\l_cvbook_margin_left_tl,
-      right=\l_cvbook_margin_right_tl
+      paperwidth=\l_ltc_book_paper_width_tl,
+      paperheight=\l_ltc_book_paper_height_tl,
+      top=\l_ltc_book_margin_top_tl,
+      bottom=\l_ltc_book_margin_bottom_tl,
+      left=\l_ltc_book_margin_left_tl,
+      right=\l_ltc_book_margin_right_tl
     }
   }
 
@@ -134,21 +134,21 @@
   right=15mm
 }
 
-\NewDocumentCommand{\cvbookSetup}{ +m }
+\NewDocumentCommand{\ltc_bookSetup}{ +m }
   {
-    \keys_set:nn { cvbook } { #1 }
-    \__cvbook_apply_geometry:
+    \keys_set:nn { ltc_book } { #1 }
+    \__ltc_book_apply_geometry:
   }
 
 % 5. Main content environment
-\NewEnviron{cvbook-content}[1][]{%
+\NewEnviron{ltc-book-content}[1][]{%
     \clearpage
     \group_begin:
-    \keys_set:nn { cvbook } { #1 }
-    \fontsize{\l_cvbook_font_size_tl}{\l_cvbook_line_spacing_tl}\selectfont
+    \keys_set:nn { ltc_book } { #1 }
+    \fontsize{\l_ltc_book_font_size_tl}{\l_ltc_book_line_spacing_tl}\selectfont
     
     % Configure vertical module
-    \bool_if:NTF \l_cvbook_border_bool 
+    \bool_if:NTF \l_ltc_book_border_bool 
       { \keys_set:nn { vertical } { border=true } } 
       { \keys_set:nn { vertical } { border=false } }
     
@@ -156,25 +156,25 @@
     \setlength{\parskip}{0pt}
     \parindent=0pt
 
-    \tl_if_empty:NT \l_cvbook_height_tl
+    \tl_if_empty:NT \l_ltc_book_height_tl
       {
-        \tl_set:Nx \l_cvbook_height_tl { \dim_eval:n { \l_cvbook_paper_height_tl - \l_cvbook_margin_top_tl - \l_cvbook_margin_bottom_tl } }
+        \tl_set:Nx \l_ltc_book_height_tl { \dim_eval:n { \l_ltc_book_paper_height_tl - \l_ltc_book_margin_top_tl - \l_ltc_book_margin_bottom_tl } }
       }
 
     \keys_set:nn { vertical }
       {
-        height = \l_cvbook_height_tl,
-        grid-width = \l_cvbook_grid_width_tl,
-        grid-height = \l_cvbook_grid_height_tl,
-        vertical-align = \l_cvbook_valign_tl,
-        border-thickness = \l_cvbook_border_thickness_tl,
-        n-column = \int_use:N \l_cvbook_n_column_int,
-        paper-width = \l_cvbook_paper_width_tl,
-        paper-height = \l_cvbook_paper_height_tl,
-        margin-top = \l_cvbook_margin_top_tl,
-        margin-bottom = \l_cvbook_margin_bottom_tl,
-        margin-left = \l_cvbook_margin_left_tl,
-        margin-right = \l_cvbook_margin_right_tl,
+        height = \l_ltc_book_height_tl,
+        grid-width = \l_ltc_book_grid_width_tl,
+        grid-height = \l_ltc_book_grid_height_tl,
+        vertical-align = \l_ltc_book_valign_tl,
+        border-thickness = \l_ltc_book_border_thickness_tl,
+        n-column = \int_use:N \l_ltc_book_n_column_int,
+        paper-width = \l_ltc_book_paper_width_tl,
+        paper-height = \l_ltc_book_paper_height_tl,
+        margin-top = \l_ltc_book_margin_top_tl,
+        margin-bottom = \l_ltc_book_margin_bottom_tl,
+        margin-left = \l_ltc_book_margin_left_tl,
+        margin-right = \l_ltc_book_margin_right_tl,
         debug = \bool_if:NTF \g_cnv_debug_bool {true} {false}
       }
     \nointerlineskip
@@ -184,9 +184,9 @@
 }
 
 % 6. Apply initial template if specified
-\tl_if_empty:NF \l_cvbook_initial_template_tl
+\tl_if_empty:NF \l_ltc_book_initial_template_tl
   {
-    \keys_set:nx { cvbook } { template = \l_cvbook_initial_template_tl }
+    \keys_set:nx { ltc_book } { template = \l_ltc_book_initial_template_tl }
   }
 
 \ExplSyntaxOff
@@ -200,7 +200,7 @@
 \pagestyle{plain}
 
 % Environment Aliases (CJK support)
-\NewEnvironmentCopy{正文}{cvbook-content}
+\NewEnvironmentCopy{正文}{ltc-book-content}
 \NewEnvironmentCopy{列表}{itemize}
 
 \endinput

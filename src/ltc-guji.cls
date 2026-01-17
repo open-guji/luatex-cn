@@ -46,6 +46,7 @@
 \RequirePackage{environ}
 \RequirePackage{expl3}
 \RequirePackage{xparse}
+\RequirePackage{tikz}
 \RequirePackage{luatex-cn-vertical}
 
 % Load banxin for 版心/鱼尾 features (registers hooks with vertical)
@@ -294,6 +295,79 @@
       }
   }
 
+% ============================================================================
+% YinZhang (印章) Command - Add seal/stamp overlay on specified page
+% ============================================================================
+
+% Declare global variables for YinZhang
+\int_new:N \g_yinzhang_target_page_int
+\tl_new:N \g_yinzhang_image_path_tl
+\tl_new:N \g_yinzhang_opacity_tl
+\tl_new:N \g_yinzhang_xshift_tl
+\tl_new:N \g_yinzhang_yshift_tl
+\tl_new:N \g_yinzhang_width_tl
+
+\keys_define:nn { yinzhang }
+  {
+    opacity .tl_set:N = \l_yinzhang_opacity_tl,
+    opacity .initial:n = {0.7},
+    
+    xshift .tl_set:N = \l_yinzhang_xshift_tl,
+    xshift .initial:n = {-5.3cm},
+    
+    yshift .tl_set:N = \l_yinzhang_yshift_tl,
+    yshift .initial:n = {-6.4cm},
+    
+    width .tl_set:N = \l_yinzhang_width_tl,
+    width .initial:n = {12.9cm},
+    
+    page .int_set:N = \l_yinzhang_page_int,
+    page .initial:n = {1},
+  }
+
+\NewDocumentCommand{\YinZhang}{ O{} m }
+  {
+    % Set default values for each call (avoid parameter leakage)
+    \int_set:Nn \l_yinzhang_page_int { 1 }
+    \tl_set:Nn \l_yinzhang_opacity_tl { 0.7 }
+    \tl_set:Nn \l_yinzhang_xshift_tl { -5.3cm }
+    \tl_set:Nn \l_yinzhang_yshift_tl { -6.4cm }
+    \tl_set:Nn \l_yinzhang_width_tl { 12.9cm }
+    
+    % Parse options
+    \keys_set:nn { yinzhang } { #1 }
+    
+    % Store parameters globally for hook access
+    \int_gset_eq:NN \g_yinzhang_target_page_int \l_yinzhang_page_int
+    \tl_gset:Nn \g_yinzhang_image_path_tl { #2 }
+    \tl_gset_eq:NN \g_yinzhang_opacity_tl \l_yinzhang_opacity_tl
+    \tl_gset_eq:NN \g_yinzhang_xshift_tl \l_yinzhang_xshift_tl
+    \tl_gset_eq:NN \g_yinzhang_yshift_tl \l_yinzhang_yshift_tl
+    \tl_gset_eq:NN \g_yinzhang_width_tl \l_yinzhang_width_tl
+    
+    % Add hook to shipout background for specified page
+    \AddToHook{shipout/background}{
+      \ExplSyntaxOn
+      \int_compare:nNnT { \value{page} } = { \g_yinzhang_target_page_int }
+        {
+          \ExplSyntaxOff
+          \begin{tikzpicture}[overlay]
+            \node[
+              anchor=north~east,
+              opacity=\g_yinzhang_opacity_tl,
+              inner~sep=0pt,
+              xshift=\g_yinzhang_xshift_tl,
+              yshift=\g_yinzhang_yshift_tl
+            ] at (\paperwidth, 0) {
+              \includegraphics[width=\g_yinzhang_width_tl]{\g_yinzhang_image_path_tl}
+            };
+          \end{tikzpicture}
+          \ExplSyntaxOn
+        }
+      \ExplSyntaxOff
+    }
+  }
+
 % 6. Load Common Templates (if any)
 \InputIfFileExists{guji_common.def}{}{}
 
@@ -448,6 +522,11 @@
 % Command Aliases (CJK support)
 \NewCommandCopy{\JiaZhu}{\TextFlow}
 \NewCommandCopy{\夹注}{\TextFlow}
+\NewCommandCopy{\印章}{\YinZhang}
+
+% Environment Aliases (CJK support)
+\NewEnvironmentCopy{正文}{guji-content}
+\NewEnvironmentCopy{列表}{itemize}
 
 % 8. Remove page numbers by default
 \pagestyle{empty}

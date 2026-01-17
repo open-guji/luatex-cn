@@ -28,8 +28,10 @@
 % Define Template Mappings (Chinese -> English/Internal name)
 \prop_gset_from_keyval:Nn \g_guji_template_map_prop
   {
-    四库全书 = SiKuQuanShu,
-    四庫全書 = SiKuQuanShu
+    四库全书彩色 = SiKuQuanShu-colored,
+    四庫全書彩色 = SiKuQuanShu-colored,
+    四库全书 = default,
+    四庫全書 = default
   }
 
 \DeclareOption*{
@@ -344,6 +346,7 @@
 \tl_new:N \g_yinzhang_xshift_tl
 \tl_new:N \g_yinzhang_yshift_tl
 \tl_new:N \g_yinzhang_width_tl
+\tl_new:N \g_yinzhang_color_tl
 
 \keys_define:nn { yinzhang }
   {
@@ -361,6 +364,9 @@
     
     page .int_set:N = \l_yinzhang_page_int,
     page .initial:n = {1},
+    
+    color .tl_set:N = \l_yinzhang_color_tl,
+    color .initial:n = {},
   }
 
 \NewDocumentCommand{\YinZhang}{ O{} m }
@@ -371,6 +377,7 @@
     \tl_set:Nn \l_yinzhang_xshift_tl { -5.3cm }
     \tl_set:Nn \l_yinzhang_yshift_tl { -6.4cm }
     \tl_set:Nn \l_yinzhang_width_tl { 12.9cm }
+    \tl_set:Nn \l_yinzhang_color_tl { }
     
     % Parse options
     \keys_set:nn { yinzhang } { #1 }
@@ -382,23 +389,39 @@
     \tl_gset_eq:NN \g_yinzhang_xshift_tl \l_yinzhang_xshift_tl
     \tl_gset_eq:NN \g_yinzhang_yshift_tl \l_yinzhang_yshift_tl
     \tl_gset_eq:NN \g_yinzhang_width_tl \l_yinzhang_width_tl
+    \tl_gset_eq:NN \g_yinzhang_color_tl \l_yinzhang_color_tl
     
     % Add hook to shipout background for specified page
+    % Note: For split-page mode, page numbers are doubled (spread 1 -> physical 1,2)
     \AddToHook{shipout/background}{
       \ExplSyntaxOn
       \int_compare:nNnT { \value{page} } = { \g_yinzhang_target_page_int }
         {
           \ExplSyntaxOff
           \begin{tikzpicture}[overlay]
-            \node[
-              anchor=north~east,
-              opacity=\g_yinzhang_opacity_tl,
-              inner~sep=0pt,
-              xshift=\g_yinzhang_xshift_tl,
-              yshift=\g_yinzhang_yshift_tl
-            ] at (\paperwidth, 0) {
-              \includegraphics[width=\g_yinzhang_width_tl]{\g_yinzhang_image_path_tl}
-            };
+            \tl_if_empty:NTF \g_yinzhang_color_tl
+              {
+                \node[
+                  anchor=north~east,
+                  opacity=\g_yinzhang_opacity_tl,
+                  inner~sep=0pt,
+                  xshift=\g_yinzhang_xshift_tl,
+                  yshift=\g_yinzhang_yshift_tl
+                ] at (\paperwidth, 0) {
+                  \includegraphics[width=\g_yinzhang_width_tl]{\g_yinzhang_image_path_tl}
+                };
+              }
+              {
+                \node[
+                  anchor=north~east,
+                  opacity=\g_yinzhang_opacity_tl,
+                  inner~sep=0pt,
+                  xshift=\g_yinzhang_xshift_tl,
+                  yshift=\g_yinzhang_yshift_tl
+                ] at (\paperwidth, 0) {
+                  \textcolor{\g_yinzhang_color_tl}{\includegraphics[width=\g_yinzhang_width_tl]{\g_yinzhang_image_path_tl}}
+                };
+              }
           \end{tikzpicture}
           \ExplSyntaxOn
         }

@@ -6,6 +6,8 @@
 *.swp
 .buildlog/
 .history
+.gitattributes
+.editorconfig
 
 .idea
 

@@ -26,6 +26,7 @@
 18. [分页裁剪模式下的坐标参考系陷阱](#18-分页裁剪筒子页模式下的坐标参考系陷阱)
 19. [ExplSyntaxOn 环境中的 \directlua 空格问题](#19-explsyntaxon-环境中的-directlua-空格问题)
 20. [段落环境缩进泄漏与列级缩进状态管理](#20-段落环境缩进泄漏与列级缩进状态管理)
+21. [字体自动探测模块的加载与调用陷阱](#21-字体自动探测模块的加载与调用陷阱)
 
 ---
 
@@ -1169,3 +1170,164 @@ end
 - TeX 属性重置：`src/vertical/luatex-cn-vertical.sty`（Paragraph 环境定义）
 - Lua 缩进逻辑：`src/vertical/luatex-cn-vertical-layout-grid.lua`（第 239-246 行）
 - 属性常量定义：`src/vertical/luatex-cn-vertical-base-constants.lua`
+
+---
+
+## 21. 字体自动探测模块的加载与调用陷阱
+
+### 问题描述
+创建 `luatex-cn-font-autodetect.sty` 和 `.lua` 模块后，编译时报错：
+```
+[Font Auto-Detect] ERROR: fontdetect module not loaded
+```
+或
+```
+module 'fonts' not found
+```
+
+### 根本原因
+
+#### 原因 1：`\directlua` 中 Lua 代码的错误处理
+当 `\directlua` 块中的 Lua 代码抛出错误时，整个块会静默失败，后续代码不会执行。最初的实现使用了复杂的 `pcall` 嵌套，但内层错误没有被正确传递到外层，导致调试信息不完整。
+
+#### 原因 2：`require()` 非存在模块导致崩溃
+```lua
+-- ❌ 错误做法：直接 require 可能不存在的模块
+local fonts = require("fonts")  -- 如果模块不存在，直接抛出错误
+
+-- ✅ 正确做法：使用 pcall 包裹
+local ok, fonts = pcall(require, "fonts")
+if ok and fonts then
+    -- 使用 fonts
+end
+```
+
+#### 原因 3：从 Lua 向 TeX 传递命令的方式错误
+```lua
+-- ❌ 错误做法：\string 会阻止命令执行
+tex.print("\\string\\setmainfont{SimSun}")
+
+-- ❌ 错误做法：\noexpand 在这个上下文中也不起作用
+tex.sprint("\\noexpand\\setmainfont{SimSun}")
+```
+
+### 解决方案
+
+#### 1. 简化 Lua 模块加载
+```lua
+-- luatex-cn-font-autodetect.sty 中的 \directlua
+texio.write_nl("term and log", "[Font Auto-Detect] Starting")
+fontdetect = nil
+local lua_file = kpse.find_file("luatex-cn-font-autodetect.lua", "lua")
+if lua_file then
+  texio.write_nl("term and log", "[Font Auto-Detect] kpse found: " .. lua_file)
+  fontdetect = dofile(lua_file)
+else
+  -- 备用相对路径
+  local paths = {"../src/fonts/luatex-cn-font-autodetect.lua", "src/fonts/luatex-cn-font-autodetect.lua"}
+  for _, path in ipairs(paths) do
+    local f = io.open(path, "r")
+    if f then
+      f:close()
+      fontdetect = dofile(path)
+      break
+    end
+  end
+end
+if fontdetect then
+  texio.write_nl("term and log", "[Font Auto-Detect] Module ready")
+else
+  fontdetect = { get_font_setup = function() return nil end }
+end
+```
+
+#### 2. 简化字体存在性检测
+由于 LuaTeX 中可靠检测字体存在性比较困难（`fonts.names.resolve` 等 API 行为不一致），最简单的方案是信任基于操作系统的选择，让 fontspec 在实际加载时处理错误：
+
+```lua
+-- luatex-cn-font-autodetect.lua
+function fontdetect.font_exists(fontname)
+    -- 跳过字体存在性检查，信任 OS 检测
+    -- 如果字体不存在，fontspec 会给出明确的错误信息
+    return true
+end
+```
+
+#### 3. 使用 `token.set_macro` 传递参数到 TeX
+```lua
+-- Lua 部分：设置 TeX 宏
+local font_setup = fontdetect.get_font_setup()
+if font_setup then
+  token.set_macro("fontauto@fontname", font_setup.name)
+  token.set_macro("fontauto@features", font_setup.features)
+else
+  token.set_macro("fontauto@fontname", "")
+end
+```
+
+```latex
+% TeX 部分：使用宏调用 \setmainfont
+\ifx\fontauto@fontname\empty\else
+  \expandafter\setmainfont\expandafter{\fontauto@fontname}[\fontauto@features]%
+\fi
+```
+
+### 调试技巧
+
+#### 使用 `texio.write_nl` 输出调试信息
+```lua
+texio.write_nl("term and log", "[Font Auto-Detect] 调试信息")
+```
+
+#### 查看日志中的特定输出
+```bash
+# 只看特定标签的输出
+lualatex file.tex 2>&1 | grep "\[Font Auto-Detect\]"
+
+# 查看日志文件中的错误详情
+cat file.log | grep -A5 "Fatal\|error"
+```
+
+#### 常见错误信息解读
+| 错误信息 | 可能原因 |
+|---------|---------|
+| `'end' expected near <eof>` | Lua 语法错误，检查 `function/end`、`if/end` 是否配对 |
+| `module 'xxx' not found` | `require` 的模块不存在，需要用 `pcall` 包裹 |
+| `Missing character` | 字体中缺少该字符，说明字体没有正确加载 |
+
+### 文件同步问题
+
+#### 问题
+编辑 `src/` 中的文件后，测试时仍然使用旧版本。
+
+#### 原因
+TeX Live 从 `texmf` 目录加载包，而不是从开发目录。
+
+#### 调试方法
+```bash
+# 检查实际加载的文件路径
+lualatex file.tex 2>&1 | grep "luatex-cn"
+
+# 确认文件内容
+cat "c:/Users/lisdp/texmf/tex/latex/luatex-cn/fonts/luatex-cn-font-autodetect.sty"
+```
+
+### 各平台默认中文字体
+
+| 平台 | 主字体 | 黑体 | 楷体 | 仿宋 |
+|------|-------|------|------|------|
+| Windows | SimSun | SimHei | KaiTi | FangSong |
+| macOS | Songti SC | PingFang SC | Kaiti SC | STFangsong |
+| Linux (Fandol) | FandolSong | FandolHei | FandolKai | FandolFang |
+| Linux (Noto) | Noto Serif CJK SC | Noto Sans CJK SC | - | - |
+
+### 教训
+1. **Lua 代码保持简单**：在 `\directlua` 中避免复杂的嵌套 `pcall`，错误处理要直接明了
+2. **信任 fontspec**：字体存在性检测很难做到可靠，不如让 fontspec 在加载时处理错误
+3. **参数传递用 `token.set_macro`**：从 Lua 向 TeX 传递数据，使用 `token.set_macro` 设置宏，然后在 TeX 层使用该宏
+4. **注意文件同步**：开发时要确认 TeX 加载的是哪个版本的文件
+
+### 相关代码位置
+- LaTeX 接口：`src/fonts/luatex-cn-font-autodetect.sty`
+- Lua 模块：`src/fonts/luatex-cn-font-autodetect.lua`
+- 类文件集成：`src/ltc-guji.cls`（`\ApplyAutoFont` 调用）

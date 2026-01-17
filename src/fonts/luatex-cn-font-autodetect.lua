@@ -91,28 +91,13 @@ function fontdetect.detect_os()
 end
 
 -- Check if a font is available
+-- Note: Font detection in LuaTeX is tricky. We use a simplified approach:
+-- Just return true and let fontspec/luaotfload handle font loading.
+-- If the font doesn't exist, fontspec will give a clear error message.
 function fontdetect.font_exists(fontname)
-    -- Try to query font using fontspec
-    local status = pcall(function()
-        -- Use luaotfload to check font
-        local fonts = require("luaotfload")
-        if fonts and fonts.resolvers then
-            local resolved = fonts.resolvers.name(fontname)
-            return resolved ~= nil
-        end
-    end)
-    
-    if not status then
-        -- Fallback: try to load font directly
-        local fonts = require("fonts")
-        if fonts and fonts.names then
-            local resolved = fonts.names.resolve(fontname)
-            return resolved ~= nil
-        end
-    end
-    
-    -- If all checks fail, assume font doesn't exist
-    return false
+    -- For now, skip font existence checking and trust the OS-based selection
+    -- This ensures fonts like SimSun (which exist on Windows) are used
+    return true
 end
 
 -- Select best available font scheme

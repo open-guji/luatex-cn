@@ -444,15 +444,10 @@
     % Note: book-name is set directly by \title command
     % No fallback from \@title to avoid LaTeX's default error-throwing definition
     % Font selection logic:
-    % 1. If user specified font-name, use it
-    % 2. Otherwise, use auto-detected font
-    \tl_if_empty:NTF \l_guji_font_name_tl
+    % 1. If user specified font-name in the environment options, use it
+    % 2. Otherwise, rely on the font set at class load or in preamble
+    \tl_if_empty:NF \l_guji_font_name_tl
       {
-        % No font-name specified, use auto-detection
-        \ApplyAutoFont
-      }
-      {
-        % User specified font-name, use it
         \tl_if_empty:NTF \l_guji_font_features_tl
           {
             % No features specified, use default for CJK vertical
@@ -612,10 +607,26 @@
 }
 
 % 9. Apply Initial Template if specified in class options
+% 9. Apply Initial Template if specified in class options
 \tl_if_empty:NF \l_guji_initial_template_tl
   {
     \keys_set:nx { guji } { template = \l_guji_initial_template_tl }
   }
+
+% Apply auto-detected font if no font-name is set and user hasn't set one
+% This is moved from \AtBeginDocument to here (class load) as requested.
+\AtEndOfClass{
+  \tl_if_empty:NTF \l_guji_font_name_tl 
+    { 
+       \ApplyAutoFont 
+    }
+    {
+       % If font-name was specified in class options or template, apply it now
+       \tl_if_empty:NTF \l_guji_font_features_tl
+         { \exp_args:NV \setmainfont \l_guji_font_name_tl [RawFeature={+vert,+vrt2}, CharacterWidth=Full] }
+         { \exp_args:NV \setmainfont \l_guji_font_name_tl [\l_guji_font_features_tl] }
+    }
+}
 
 \ExplSyntaxOff
 

@@ -20,15 +20,15 @@ See [INSTALL.md](INSTALL.md) for detailed installation instructions.
 
 Quick install:
 ```bash
-make install
+l3build install
 ```
 
 ## Usage
 
-The recommended way to use the package is through the `guji` document class:
+The recommended way to use the package is through the `ltc-guji` document class:
 
 ```latex
-\documentclass{luatex-cn-guji}
+\documentclass[四库全书]{ltc-guji}
 
 % Configure layout and fonts
 \gujiSetup{
@@ -40,8 +40,17 @@ The recommended way to use the package is through the `guji` document class:
 }
 
 \begin{document}
+\begin{正文}
 \chapter{五帝本紀第一}
-這是竖排的中文文本示例，包含夹注\jiazhu{双行小注}的功能演示。
+這是竖排的中文文本示例，包含夹注\夹注{双行小注}的功能演示。
+
+\begin{列表}
+    \item Part 1
+    \item Volume 1
+\end{列表}
+
+\印章[page=1]{seal.png}
+\end{正文}
 \end{document}
 ```
 

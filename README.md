@@ -18,19 +18,15 @@
 
 快速安装：
 ```bash
-make install
+l3build install
 ```
 
 ## 使用方法
 
-推荐通过 `guji` 文档类使用本宏包：
+推荐通过 `ltc-guji` 文档类使用本宏包：
 
 ```latex
-% 推荐使用新的类名
-\documentclass{luatex-cn-guji}
-
-% 或使用旧名称（会显示弃用警告，但仍然可用）
-% \documentclass{guji}
+\documentclass[四库全书]{ltc-guji}
 
 % 配置版式和字体
 \gujiSetup{
@@ -42,8 +38,17 @@ make install
 }
 
 \begin{document}
+\begin{正文}
 \chapter{五帝本紀第一}
-這是竖排的中文文本示例，包含夹注\jiazhu{双行小注}的功能演示。
+這是竖排的中文文本示例，包含夹注\夹注{双行小注}的功能演示。
+
+\begin{列表}
+    \item 史部
+    \item 卷一
+\end{列表}
+
+\印章[page=1]{seal.png}
+\end{正文}
 \end{document}
 ```
 

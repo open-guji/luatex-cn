@@ -15,10 +15,10 @@
 1. Copy the package files to your local texmf tree:
    ```bash
    # Create directory
-   mkdir -p ~/texmf/tex/latex/luatex_cn
+   mkdir -p ~/texmf/tex/latex/luatex-cn
    
-   # Copy source files
-   cp -r src/* ~/texmf/tex/latex/luatex_cn/
+   # Copy source files (recursive)
+   cp -r src/* ~/texmf/tex/latex/luatex-cn/
    ```
 
 2. Update the TeX database:
@@ -26,11 +26,13 @@
    texhash
    ```
 
-### Method 2: Using Makefile
+### Method 2: Using l3build (Recommended)
 
 ```bash
-make install
+l3build install
 ```
+
+This will automatically place all files into your local `TEXMFHOME` directory.
 
 ### Method 3: Development Mode
 

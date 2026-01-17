@@ -199,4 +199,8 @@
 
 \pagestyle{plain}
 
+% Environment Aliases (CJK support)
+\NewEnvironmentCopy{正文}{cvbook-content}
+\NewEnvironmentCopy{列表}{itemize}
+
 \endinput

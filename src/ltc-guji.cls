@@ -23,9 +23,22 @@
 \RequirePackage{l3keys2e}
 \ExplSyntaxOn
 \tl_new:N \l_guji_initial_template_tl
+\prop_new:N \g_guji_template_map_prop
+
+% Define Template Mappings (Chinese -> English/Internal name)
+\prop_gset_from_keyval:Nn \g_guji_template_map_prop
+  {
+    四库全书 = SiKuQuanShu,
+    四庫全書 = SiKuQuanShu
+  }
 
 \DeclareOption*{
   \tl_set:Nx \l_tmpa_tl { \CurrentOption }
+  
+  % Try to map the option name
+  \prop_get:NVNT \g_guji_template_map_prop \l_tmpa_tl \l_tmpb_tl
+    { \tl_set_eq:NN \l_tmpa_tl \l_tmpb_tl }
+  
   % Look for config file: configs/luatex-cn-guji-<name>.cfg
   \file_if_exist:nTF { configs/luatex-cn-guji- \l_tmpa_tl .cfg }
     {
@@ -47,7 +60,7 @@
 \RequirePackage{expl3}
 \RequirePackage{xparse}
 \RequirePackage{tikz}
-\RequirePackage{luatex-cn-vertical}
+\RequirePackage{luatex-cn}
 
 % Load banxin for 版心/鱼尾 features (registers hooks with vertical)
  \cnvLua{

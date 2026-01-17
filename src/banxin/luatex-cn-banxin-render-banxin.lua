@@ -386,7 +386,7 @@ local function draw_banxin_column(p_head, params)
                         y_top = chapter_y_top,
                         width = col_width,
                         height = title_height,
-                        v_align = "center",
+                        v_align = "center",  -- Each char centered in its cell
                         h_align = col_h_align,
                         font_size = title_font_size,
                         font_scale = font_scale,

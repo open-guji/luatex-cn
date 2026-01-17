@@ -373,10 +373,10 @@
   {
     % Set default values for each call (avoid parameter leakage)
     \int_set:Nn \l_yinzhang_page_int { 1 }
-    \tl_set:Nn \l_yinzhang_opacity_tl { 0.7 }
-    \tl_set:Nn \l_yinzhang_xshift_tl { -5.3cm }
-    \tl_set:Nn \l_yinzhang_yshift_tl { -6.4cm }
-    \tl_set:Nn \l_yinzhang_width_tl { 12.9cm }
+    \tl_set:Nn \l_yinzhang_opacity_tl { 1 }
+    \tl_set:Nn \l_yinzhang_xshift_tl { 0cm }
+    \tl_set:Nn \l_yinzhang_yshift_tl { 0cm }
+    \tl_set:Nn \l_yinzhang_width_tl { 10cm }
     \tl_set:Nn \l_yinzhang_color_tl { }
     
     % Parse options
@@ -399,29 +399,16 @@
         {
           \ExplSyntaxOff
           \begin{tikzpicture}[overlay]
-            \tl_if_empty:NTF \g_yinzhang_color_tl
-              {
-                \node[
-                  anchor=north~east,
-                  opacity=\g_yinzhang_opacity_tl,
-                  inner~sep=0pt,
-                  xshift=\g_yinzhang_xshift_tl,
-                  yshift=\g_yinzhang_yshift_tl
-                ] at (\paperwidth, 0) {
-                  \includegraphics[width=\g_yinzhang_width_tl]{\g_yinzhang_image_path_tl}
-                };
-              }
-              {
-                \node[
-                  anchor=north~east,
-                  opacity=\g_yinzhang_opacity_tl,
-                  inner~sep=0pt,
-                  xshift=\g_yinzhang_xshift_tl,
-                  yshift=\g_yinzhang_yshift_tl
-                ] at (\paperwidth, 0) {
-                  \textcolor{\g_yinzhang_color_tl}{\includegraphics[width=\g_yinzhang_width_tl]{\g_yinzhang_image_path_tl}}
-                };
-              }
+            % xshift/yshift are negated: positive = distance from top-right corner
+            \node[
+              anchor=north~east,
+              opacity=\g_yinzhang_opacity_tl,
+              inner~sep=0pt,
+              xshift=-\g_yinzhang_xshift_tl,
+              yshift=-\g_yinzhang_yshift_tl
+            ] at (\paperwidth, 0) {
+              \includegraphics[width=\g_yinzhang_width_tl]{\g_yinzhang_image_path_tl}
+            };
           \end{tikzpicture}
           \ExplSyntaxOn
         }

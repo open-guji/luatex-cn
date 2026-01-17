@@ -17,7 +17,7 @@
 % Developed for LuaTeX
 
 \NeedsTeXFormat{LaTeX2e}
-\ProvidesClass{ltc-book}[2026/01/15 v1.0.0 Chinese Vertical Book Class]
+\ProvidesClass{ltc-book}[2026/01/16 v0.1.0 Chinese Vertical Book Class]
 
 % 1. Options Handling
 \RequirePackage{l3keys2e}
@@ -26,8 +26,8 @@
 
 \DeclareOption*{
   \tl_set:Nx \l_tmpa_tl { \CurrentOption }
-  % Look for config file: configs/<name>.ltc_book .cfg
-  \file_if_exist:nTF { configs/ \l_tmpa_tl .ltc_book .cfg }
+  % Look for config file: configs/<name>.ltc_book.cfg
+  \file_if_exist:nTF { configs/ \l_tmpa_tl .ltc_book.cfg }
     {
       \tl_set_eq:NN \l_ltc_book_initial_template_tl \l_tmpa_tl
     }
@@ -105,7 +105,7 @@
     debug .initial:n = false,
 
     template .code:n = {
-      \InputIfFileExists{configs/#1.ltc_book .cfg}{}{
+      \InputIfFileExists{configs/#1.ltc_book.cfg}{}{
         \keys_set:nn { ltc_book / templates } { #1 }
       }
     },

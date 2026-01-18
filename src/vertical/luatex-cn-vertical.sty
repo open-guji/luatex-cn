@@ -109,6 +109,8 @@
 \dim_new:N \l_cnv_sidenode_grid_height_dim
 \tl_new:N \l_cnv_sidenode_font_size_tl
 \tl_new:N \l_cnv_sidenode_color_tl
+\dim_new:N \l_cnv_sidenode_padding_top_dim
+\dim_new:N \l_cnv_sidenode_padding_bottom_dim
 
 \keys_define:nn { SideNode }
   {
@@ -119,6 +121,10 @@
     font-size .initial:n = 10pt,
     color .tl_set:N = \l_cnv_sidenode_color_tl,
     color .initial:n = red,
+    border-padding-top .dim_set:N = \l_cnv_sidenode_padding_top_dim,
+    border-padding-top .initial:n = 0pt,
+    border-padding-bottom .dim_set:N = \l_cnv_sidenode_padding_bottom_dim,
+    border-padding-bottom .initial:n = 0pt,
   }
 
 \NewDocumentCommand{\SideNode}{ O{} +m }{%
@@ -139,7 +145,9 @@
 
     \directlua{vertical_sidenote.register_sidenote(0, {
       yoffset = \number\l_cnv_sidenode_yoffset_dim,
-      grid_height = \number\dimen2
+      grid_height = \number\dimen2,
+      padding_top = \number\l_cnv_sidenode_padding_top_dim,
+      padding_bottom = \number\l_cnv_sidenode_padding_bottom_dim
     })}%
   \group_end:
 }
@@ -676,7 +684,6 @@
 \NewCommandCopy{\文本流}{\TextFlow}
 \NewCommandCopy{\空格}{\Space}
 \NewCommandCopy{\段落}{\Paragraph}
-\NewCommandCopy{\SideNode}{\SideNode}
 \NewCommandCopy{\SidePizhu}{\SideNode}
 \NewCommandCopy{\CePi}{\SideNode}
 \NewCommandCopy{\侧批}{\SideNode}

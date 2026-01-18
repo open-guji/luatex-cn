@@ -274,12 +274,16 @@
     sidenode-font-size .code:n = { \keys_set:nn { SideNode } { font-size = #1 } },
     sidenode-grid-height .code:n = { \keys_set:nn { SideNode } { grid-height = #1 } },
     sidenode-yoffset .code:n = { \keys_set:nn { SideNode } { yoffset = #1 } },
+    sidenode-border-padding-top .code:n = { \keys_set:nn { SideNode } { border-padding-top = #1 } },
+    sidenode-border-padding-bottom .code:n = { \keys_set:nn { SideNode } { border-padding-bottom = #1 } },
 
     % Backward compatibility aliases for sidepizhu
     sidepizhu-color .code:n = { \keys_set:nn { SideNode } { color = #1 } },
     sidepizhu-font-size .code:n = { \keys_set:nn { SideNode } { font-size = #1 } },
     sidepizhu-grid-height .code:n = { \keys_set:nn { SideNode } { grid-height = #1 } },
     sidepizhu-yoffset .code:n = { \keys_set:nn { SideNode } { yoffset = #1 } },
+    sidepizhu-border-padding-top .code:n = { \keys_set:nn { SideNode } { border-padding-top = #1 } },
+    sidepizhu-border-padding-bottom .code:n = { \keys_set:nn { SideNode } { border-padding-bottom = #1 } },
 
     template .code:n = {
       % Load config file: configs/luatex-cn-guji-<name>.cfg

@@ -348,25 +348,8 @@ local function render_sidenotes(p_head, sidenote_nodes, params, ctx)
             -- Note: pos.row is fractional main rows, so pos.row * ctx.grid_height gives absolute Y
             local final_y = -pos.row * ctx.grid_height - (effective_grid_height + char_total_height) / 2 + d - ctx.shift_y
 
-            -- Apply user y-offset from metadata
-            if item.metadata and item.metadata.yoffset then
-                -- User: Negative=Up (Increase Y), Positive=Down (Decrease Y)
-                -- Standard Cartesian: Up is +Y.
-                -- Our Y coord: 0 is top, negative is down.
-                -- Wait, user request: "如果是复数的话就要上向上。移动一点" (If negative, move UP)
-                -- Standard Cartesian: Up is +Y.
-                -- Our Page Y: Top is ~0 (or large? No, in PDF, 0 is bottom usually, but here we use relative Y from top-left logic)
-                -- Let's check `final_y` calculation: `-pos.row * grid_height`. Row 0 is top, Row 1 is below. So Y becomes more negative as we go down.
-                -- So Up = +Y direction. Down = -Y direction.
-                -- User: "Negative = Up".
-                -- So if User gives -10pt, we want to move Up (+Y).
-                -- `final_y = final_y + (-user_val)`? No.
-                -- If User = -10. We want +10 shift. `final_y - (-10) = +10`. Correct.
-                -- User: "Positive = Down".
-                -- If User = +10. We want -10 shift. `final_y - 10`. Correct.
-                -- Formula: final_y = final_y - input_y_offset
-                final_y = final_y - item.metadata.yoffset
-            end
+            -- Apply user y-offset from metadata (REMOVED: Now handled in positioning stage)
+            -- final_y = final_y - (item.metadata.yoffset or 0)
 
             D.setfield(curr, "xoffset", final_x)
             D.setfield(curr, "yoffset", final_y)

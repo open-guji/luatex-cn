@@ -185,16 +185,18 @@ function sidenote.calculate_sidenote_positions(layout_map, params)
                         local anchor_row = last_node_pos.row
                         
                         -- Determine target column for sidenote (the gap)
-                        -- Default: To the LEFT of the anchor column (visually next in RTL).
-                        -- In our grid: Col 0 is rightmost. Col 1 is left of Col 0.
-                        -- So "Side" usually means "Left Side" (Inter-column gap between C and C+1).
-                        -- We place it in gap associated with `anchor_col`. 
-                        -- Let's say Gap[i] is between Col[i] and Col[i+1].
-                        
-                        -- Start Row: Max(Anchor Row, Previous Fill + Margin)
                         local start_page = anchor_page
                         local start_col = anchor_col
-                        local start_row = anchor_row + 1
+                        
+                        -- Determine step size and yoffset in grid units
+                        local sn_grid_height = metadata.grid_height
+                        local main_grid_height = params.grid_height or (65536 * 20) -- Default fallback
+                        
+                        local yoffset_grid = (metadata.yoffset or 0) / main_grid_height
+                        local padding_top_grid = (metadata.padding_top or 0) / main_grid_height
+                        local padding_bottom_grid = (metadata.padding_bottom or 0) / main_grid_height
+
+                        local start_row = math.max(anchor_row + 1, padding_top_grid) + yoffset_grid
                         
                         -- Convert Userdata node to Direct for processing
                         local content_d = D.todirect(content)
@@ -205,9 +207,6 @@ function sidenote.calculate_sidenote_positions(layout_map, params)
                         local remaining_rows = rows_needed
                         local current_content_node = content_d
                         
-                        -- Determine step size (relative to main grid height)
-                        local sn_grid_height = metadata.grid_height
-                        local main_grid_height = params.grid_height or (65536 * 20) -- Default fallback
                         local step = 1
                         if sn_grid_height and sn_grid_height > 0 then
                             step = sn_grid_height / main_grid_height
@@ -222,10 +221,12 @@ function sidenote.calculate_sidenote_positions(layout_map, params)
                         
                         while current_content_node do
                             -- Check bounds (approximate check using floor)
-                            if math.floor(curr_r) >= line_limit then
+                            -- Wrap if current row + bottom padding exceeds line limit
+                            if curr_r + padding_bottom_grid >= line_limit then
                                 -- Wrap to next column gap
                                 curr_c = curr_c + 1
-                                curr_r = 0
+                                -- Start from top padding in the new column
+                                curr_r = padding_top_grid
                                 if curr_c >= p_cols then
                                     curr_c = 0
                                     curr_p = curr_p + 1

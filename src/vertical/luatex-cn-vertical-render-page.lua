@@ -370,8 +370,9 @@ local function apply_positions(head, layout_map, params)
                 for col = 0, p_total_cols - 1 do
                     if reserved_cols[col] then
                         local rtl_col = p_total_cols - 1 - col
-                        local reserved_x = rtl_col * grid_width + half_thickness + shift_x
-                        local reserved_y = -(half_thickness + outer_shift)
+                        local effective_half = draw_border and half_thickness or 0
+                        local reserved_x = rtl_col * grid_width + effective_half + shift_x
+                        local reserved_y = -(effective_half + outer_shift)
                         local reserved_height = line_limit * grid_height + b_padding_top + b_padding_bottom
                         
                         p_head = _G.vertical.hooks.render_reserved_column(p_head, {

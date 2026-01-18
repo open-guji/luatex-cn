@@ -95,15 +95,16 @@ constants.ATTR_JIAZHU_SUB = luatexbase.attributes.cnverticaljiazhusub or luatexb
 -- @return (number|nil) 以 scaled points 为单位的尺寸，如果无效或为零则返回 nil
 -- @usage local sp = constants.to_dimen("20pt")
 local function to_dimen(dim_str)
-    if not dim_str or dim_str == "" or dim_str == "0" or dim_str == "0pt" then
+    if not dim_str or dim_str == "" then
         return nil
     end
     -- Strip curly braces if present
     dim_str = tostring(dim_str):gsub("^%s*{", ""):gsub("}%s*$", "")
 
+    if dim_str == "" then return nil end
+
     local ok, res = pcall(tex.sp, dim_str)
     if ok then
-        if res == 0 then return nil end
         return res
     else
         return nil

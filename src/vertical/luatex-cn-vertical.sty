@@ -354,6 +354,7 @@
       }
     \tl_replace_all:Nnn \l__cn_vertical_font_rgb_tl { , } { ~ }
 
+    \typeout{DEBUG: banxin-padding-top is \l_cnv_banxin_padding_top_tl}
     \directlua{
       vertical.process_from_tex(0, {
         height = [=[\luaescapestring{\l__cn_vertical_height_tl}]=],

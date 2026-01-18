@@ -215,6 +215,9 @@ local function draw_banxin_column(p_head, params)
     local y = params.y
     local width = params.width
     local height = params.height
+    
+    utils.debug_log(string.format("[banxin] input y=%.2f height=%.2f padding_top=%.2f draw_border=%s", 
+        y/65536, height/65536, (params.b_padding_top or 0)/65536, tostring(params.draw_border)))
     local border_thickness = params.border_thickness
     local color_str = params.color_str or "0 0 0"
     local shift_y = params.shift_y or 0
@@ -275,7 +278,8 @@ local function draw_banxin_column(p_head, params)
         local b_padding_bottom = params.b_padding_bottom or 0
         
         -- Available height in upper section after subtracting padding and borders
-        local adj_height = banxin_result.upper_height - border_thickness - b_padding_top - b_padding_bottom 
+        local effective_b = params.draw_border and border_thickness or 0
+        local adj_height = banxin_result.upper_height - effective_b - b_padding_top - b_padding_bottom 
         
         -- Calculate total text height to center it as a block
         -- Parse UTF-8 characters to count them
@@ -304,7 +308,8 @@ local function draw_banxin_column(p_head, params)
         end
         
         -- Start Y calculation based on alignment
-        local block_y_top = y - border_thickness - b_padding_top
+        local effective_b = params.draw_border and border_thickness or 0
+        local block_y_top = y - effective_b - b_padding_top
         local y_start
         if params.book_name_align == "top" then
             y_start = block_y_top

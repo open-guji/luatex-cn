@@ -216,6 +216,12 @@
     book-name .tl_set:N = \l_guji_book_name_tl,
     book-name .initial:n = {},
 
+    banxin-padding-top .tl_set:N = \l_guji_banxin_padding_top_tl,
+    banxin-padding-top .initial:n = {2pt},
+
+    banxin-padding-bottom .tl_set:N = \l_guji_banxin_padding_bottom_tl,
+    banxin-padding-bottom .initial:n = {10pt},
+
     % Chapter title (章节标题) - displayed in section 2 of banxin
     chapter-title .code:n = {
       \tl_set:Nn \l_guji_chapter_title_tl { #1 }
@@ -594,6 +600,8 @@
         margin-right = \l_guji_margin_right_tl,
         banxin-upper-ratio = \l_guji_banxin_upper_tl,
         banxin-middle-ratio = \l_guji_banxin_middle_tl,
+        banxin-padding-top = \l_guji_banxin_padding_top_tl,
+        banxin-padding-bottom = \l_guji_banxin_padding_bottom_tl,
         book-name = \l_guji_book_name_tl,
         chapter-title = \l_guji_chapter_title_tl,
         chapter-title-top-margin = \l_guji_chapter_title_top_margin_tl,

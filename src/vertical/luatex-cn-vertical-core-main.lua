@@ -206,12 +206,16 @@ function vertical.prepare_grid(box_num, params)
         banxin_on = banxin_on,
     })
 
-    -- 4a. Pipeline Stage 2.5: Calculate Sidenote Layout
+    -- 4a. Pipeline Stage 2.5: Calculate Sidenote & Floating Layout
     local sidenote_map = sidenote.calculate_sidenote_positions(layout_map, {
         list = list,
         page_columns = p_cols,
         line_limit = limit,
         n_column = b_interval
+    })
+
+    local floating_map = textbox.calculate_floating_positions(layout_map, {
+        list = list
     })
 
     -- 5. Pipeline Stage 3: Apply positions and render
@@ -271,6 +275,7 @@ function vertical.prepare_grid(box_num, params)
         is_textbox = is_textbox,
         banxin_on = banxin_on,
         sidenote_map = sidenote_map, -- Pass sidenote map to render
+        floating_map = floating_map, -- Pass floating map to render
     }
 
     if is_debug then

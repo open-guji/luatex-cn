@@ -490,6 +490,11 @@
 \tl_new:N \l__cn_vertical_textbox_inner_gh_tl
 \dim_new:N \l__cn_vertical_textbox_inner_gw_dim
 \dim_new:N \l__cn_vertical_textbox_inner_gh_dim
+\bool_new:N \l__cn_vertical_textbox_floating_bool
+\tl_new:N \l__cn_vertical_textbox_x_tl
+\tl_new:N \l__cn_vertical_textbox_y_tl
+\tl_new:N \l__cn_vertical_textbox_bg_color_tl
+\tl_new:N \l__cn_vertical_textbox_font_color_tl
 
 \keys_define:nn { vertical / textbox }
   {
@@ -513,6 +518,16 @@
     debug .bool_set:N = \l__cn_vertical_textbox_debug_bool,
     debug .initial:n = false,
     vertical-align .tl_set:N = \l__cn_vertical_textbox_box_align_tl,
+    floating .bool_set:N = \l__cn_vertical_textbox_floating_bool,
+    floating .initial:n = false,
+    x .tl_set:N = \l__cn_vertical_textbox_x_tl,
+    x .initial:n = 0pt,
+    y .tl_set:N = \l__cn_vertical_textbox_y_tl,
+    y .initial:n = 0pt,
+    background-color .tl_set:N = \l__cn_vertical_textbox_bg_color_tl,
+    background-color .initial:n = {},
+    font-color .tl_set:N = \l__cn_vertical_textbox_font_color_tl,
+    font-color .initial:n = {},
   }
 
 \NewDocumentCommand{\TextBox}{ O{} +m }
@@ -562,11 +577,22 @@
       box_align = "\luaescapestring{\tl_use:N \l__cn_vertical_textbox_box_align_tl}", 
       column_aligns = "\luaescapestring{\tl_use:N \l__cn_vertical_textbox_col_align_tl}",
       debug = "\bool_if:NTF \l__cn_vertical_textbox_debug_bool {true}{false}",
-      border = "\bool_if:NTF \l__cn_vertical_textbox_border_bool {true}{false}"
+      border = "\bool_if:NTF \l__cn_vertical_textbox_border_bool {true}{false}",
+      background_color = [=[\luaescapestring{\l__cn_vertical_textbox_bg_color_tl}]=],
+      font_color = [=[\luaescapestring{\l__cn_vertical_textbox_font_color_tl}]=]
     })}
     \setluatexattribute\cnverticaltextboxwidth{0}
     \setluatexattribute\cnverticaltextboxheight{0}
-    \leavevmode\box0
+    \bool_if:NTF \l__cn_vertical_textbox_floating_bool
+      {
+        \directlua{vertical_textbox.register_floating_box(0, {
+          x = [=[\luaescapestring{\l__cn_vertical_textbox_x_tl}]=],
+          y = [=[\luaescapestring{\l__cn_vertical_textbox_y_tl}]=]
+        })}
+      }
+      {
+        \leavevmode\box0
+      }
     \group_end:
   }
 

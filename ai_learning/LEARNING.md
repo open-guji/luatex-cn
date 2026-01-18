@@ -1174,6 +1174,8 @@ end
 ---
 
 ## 21. 字体自动探测模块的加载与调用陷阱
+22. 悬浮文本框 (Floating TextBox) 的渲染位移陷阱
+23. Whatsit 锚点节点导致 PDF 后端错误的风险与处理
 
 ### 问题描述
 创建 `luatex-cn-font-autodetect.sty` 和 `.lua` 模块后，编译时报错：
@@ -1383,3 +1385,54 @@ cat "c:/Users/lisdp/texmf/tex/latex/luatex-cn/fonts/luatex-cn-font-autodetect.st
 - 处理颜色时，尽量使用 `\textcolor` 等自带作用域管理的命令，而非低级的开关式 `\color`，特别是在涉及盒子捕获（Box Capture）的场景中。
 - 在 Lua 中手动排版节点流时，必须区分"内容节点"和"控制节点"，不能盲目地对应网格位置。
 
+## 7. 悬浮文本框 (Floating TextBox) 的渲染位移陷阱
+
+### 问题
+实现悬浮文本框（Floating Mode）后，虽然框本身定位正确，但页面上所有后续内容（边框、正理文字等）都被向右“挤出”了。
+
+### 原因
+**渲染引擎的累积位移陷阱**。
+在 Lua 手动操作渲染时，为了定位悬浮框，使用了 `Kern(x) + Box` 的组合。由于 TeX 的渲染过程是连续的，插入一个非零宽度的盒子和位移 Kern 后，如果没有进行补偿，当前的物理位置会停留在该盒子的末尾。
+尽管在逻辑上我们称之为“悬浮”，但在 PDF 节点序列中，它依然占据了空间，导致后续所有内容相对于它的末尾进行排版，造成整页内容偏移。
+
+### 解决方案
+**使用零宽度叠加（Zero-width Overlay）方案**。
+在渲染悬浮框后，紧接着插入一个“负向补偿 Kern”，值等于 `-(x + box_width)`。
+```lua
+-- 1. 向右移到坐标 x
+p_head = D.insert_before(p_head, p_head, Kern(x))
+-- 2. 插入盒子
+D.insert_after(p_head, Kern(x), box)
+-- 3. CRITICAL: 补偿所有位移，回到原点
+D.insert_after(p_head, box, Kern(-(x + box_width)))
+```
+这样，悬浮框对于后续节点流来说，在水平方向上就变成了“透明”的，实现了完美的图层叠加效果。
+
+## 8. Whatsit 锚点节点导致 PDF 后端错误的风险与处理
+
+### 问题
+在排版期间作为“书签/锚点”使用的自定义 Whatsit 节点（用于追踪悬浮框所在的物理页面），在输出 PDF 时报错：`! Unidentified user defined whatsit node should be one you have r \def'ed.`
+
+### 原因
+**后端兼容性限制**。
+自定义 Whatsit 节点在 Lua 逻辑中非常有用，但如果不被 PDF 后端（Backend）识别，它们在最终 shipout 时会引发语法错误。虽然 Lua 代码知道如何处理它们，但 TeX 的文件写入引擎不知道如何将它们转换为 PDF 逻辑。
+
+### 解决方案
+**即插即用，用完即弃**。
+在渲染（Apply Positions）阶段，当 Whatsit 节点完成了它的使命（即我们已经拿到了它所在的页码和位置信息）后，必须从最终的页面节点链表中将其**删除**并**释放**。
+
+```lua
+if id == constants.WHATSIT then
+    local uid = D.getfield(curr, "user_id")
+    if uid == constants.SIDENOTE_ID or uid == constants.FLOATING_ID then
+        -- 记录位置...
+        -- 然后从渲染流中删除，防止后端报错
+        p_head = D.remove(p_head, curr)
+        node.flush_node(D.tonode(curr))
+    end
+end
+```
+
+### 教训
+- 所有用于流程控制的“虚拟节点”，在进入最终后端渲染前都应当审视其是否需要被清理。
+- 保证最终输出到 PDF 的节点链表是“干净”的，只包含标准的 Glyph, Kern, Glue, Rules 和 HList/VList。

@@ -104,6 +104,9 @@ function textbox.process_inner_box(box_num, params)
         height = params.grid_height, -- 给定足够的高度
         column_aligns = col_aligns,
         is_textbox = true,
+        border_color = params.border_color,
+        background_color = params.background_color,
+        font_color = params.font_color,
     }
 
     -- 3. 执行核心排版流水线
@@ -144,6 +147,80 @@ function textbox.process_inner_box(box_num, params)
         -- 将渲染好的盒子写回 TeX
         tex.box[box_num] = res_box
     end
+end
+
+-- Registry for floating textboxes
+textbox.floating_registry = {}
+textbox.floating_counter = 0
+
+--- Register a floating textbox from a TeX box
+-- @param box_num (number) TeX box register number
+-- @param params (table) { x = string/dim, y = string/dim }
+function textbox.register_floating_box(box_num, params)
+    local box = tex.box[box_num]
+    if not box then return end
+
+    textbox.floating_counter = textbox.floating_counter + 1
+    local id = textbox.floating_counter
+
+    -- Capture the box (already processed by process_inner_box)
+    local b = node.copy_list(box)
+    
+    textbox.floating_registry[id] = {
+        box = b,
+        x = constants.to_dimen(params.x) or 0,
+        y = constants.to_dimen(params.y) or 0
+    }
+
+    utils.debug_log(string.format("[textbox] Registered floating box ID=%d at (%s, %s)", id, tostring(params.x), tostring(params.y)))
+
+    -- Create user whatsit anchor
+    local n = node.new("whatsit", "user_defined")
+    n.user_id = constants.FLOATING_TEXTBOX_USER_ID
+    n.type = 100 -- Integer type
+    n.value = id
+
+    node.write(n)
+end
+
+--- Calculate positions for floating boxes
+-- @param layout_map (table) Main layout map
+-- @param params (table) { list = head_node }
+function textbox.calculate_floating_positions(layout_map, params)
+    local floating_map = {}
+    local list = params.list
+    if not list then return {} end
+
+    local t = D.todirect(list)
+    local last_page = 0
+    
+    while t do
+        local id = D.getid(t)
+        if id == constants.WHATSIT then
+            local uid = D.getfield(t, "user_id")
+            if uid == constants.FLOATING_TEXTBOX_USER_ID then
+                local fid = D.getfield(t, "value")
+                local item = textbox.floating_registry[fid]
+                if item then
+                    -- Use the last seen page from layout_map nodes
+                    table.insert(floating_map, {
+                        box = item.box,
+                        page = last_page,
+                        x = item.x,
+                        y = item.y
+                    })
+                    utils.debug_log(string.format("[textbox] Placed floating box %d on page %d", fid, last_page))
+                end
+            end
+        else
+            local pos = layout_map[t]
+            if pos then
+                last_page = pos.page or 0
+            end
+        end
+        t = D.getnext(t)
+    end
+    return floating_map
 end
 
 -- Register module in package.loaded for require() compatibility

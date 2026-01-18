@@ -1,0 +1,25 @@
+\documentclass{ltc-guji}
+\usepackage{luatex-cn-vertical}
+
+\禁用分页裁剪
+\begin{document}
+\begin{正文}[debug=true]
+    这是正文的第一列。我们来测试一下悬浮文本框。
+    \文本框[floating=true, x=50pt, y=100pt, height=3, border=true]{
+        这是一个悬浮的文本框。
+        坐标在 (50pt, 100pt)。
+        它不应该影响正文排版。
+    }
+    
+    这是正文的后续文字。如果一切正常，这段文字应该紧接着第一句话，
+    而不会因为上面的文本框而产生大段空白。
+    
+    再来一个悬浮框，放在版心附近。
+    \文本框[floating=true, x=200pt, y=50pt, height=2, border=true, background-color=yellow]{
+        第二个悬浮框。
+    }
+    
+    正文继续测试... 
+    这里是更多的文字，用来填充页面，观察排版效果。
+\end{正文}
+\end{document}

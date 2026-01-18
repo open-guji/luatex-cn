@@ -254,7 +254,13 @@ local function process_page_nodes(p_head, layout_map, params, ctx)
             end
         elseif id == constants.WHATSIT then
             -- Keep WHATSIT nodes in the list for TikZ/other special content
-            -- Note: For TikZ overlay, use shipout hooks instead of inline placement
+            -- but REMOVE our internal anchors (Sidenote/FloatingBox) to avoid PDF errors
+            local uid = D.getfield(curr, "user_id")
+            if uid == constants.SIDENOTE_USER_ID or uid == constants.FLOATING_TEXTBOX_USER_ID then
+                p_head = D.remove(p_head, curr)
+                -- We don't need to free it here if D.remove doesn't, but let's be safe
+                node.flush_node(D.tonode(curr))
+            end
         end
         curr = next_curr
     end
@@ -560,11 +566,7 @@ local function apply_positions(head, layout_map, params)
             p_head = process_page_nodes(p_head, layout_map, params, ctx)
             
             -- Render Sidenotes
-            print(string.format("[RENDER] sidenote_map exists: %s", tostring(params.sidenote_map ~= nil)))
             if params.sidenote_map then
-                local count = 0
-                for k, v in pairs(params.sidenote_map) do count = count + 1 end
-                print(string.format("[RENDER] sidenote_map has %d entries", count))
                 local sidenote_for_page = {}
                 -- Flatten map for this page
                 for _, sn_list in pairs(params.sidenote_map) do
@@ -574,10 +576,50 @@ local function apply_positions(head, layout_map, params)
                         end
                     end
                 end
-                print(string.format("[RENDER] sidenote_for_page (page %d) has %d nodes", p, #sidenote_for_page))
                 if #sidenote_for_page > 0 then
                     if draw_debug then utils.debug_log("[render] Drawing " .. #sidenote_for_page .. " sidenote nodes on page " .. p) end
                     p_head = render_sidenotes(p_head, sidenote_for_page, params, ctx)
+                end
+            end
+
+            -- Render Floating TextBoxes
+            if params.floating_map then
+                for _, item in ipairs(params.floating_map) do
+                    if item.page == p then
+                        local curr = D.todirect(item.box)
+                        
+                        -- Position: x, y are absolute from top-left (or whatever origin we use)
+                        -- In our system, (shift_x, shift_y) is the top-left of the border area.
+                        -- But let's assume item.x and item.y are relative to the paper origin for now, 
+                        -- or relative to the context (shift_x, shift_y).
+                        -- Given the user's "不影响正文排版", absolute positioning makes sense.
+                        
+                        -- We use Kern + Shift to position the box
+                        local h = D.getfield(curr, "height") or 0
+                        local w = D.getfield(curr, "width") or 0
+                        
+                        -- final_x starts from left
+                        local final_x = item.x
+                        -- final_y starts from top (0) going down (negative)
+                        local final_y_top = -item.y
+                        
+                        -- Apply shift to center/top align properly
+                        D.setfield(curr, "shift", -final_y_top + h)
+                        
+                        local k_pre = D.new(constants.KERN)
+                        D.setfield(k_pre, "kern", final_x)
+                        
+                        local k_post = D.new(constants.KERN)
+                        D.setfield(k_post, "kern", -(final_x + w))
+                        
+                        p_head = D.insert_before(p_head, p_head, k_pre)
+                        D.insert_after(p_head, k_pre, curr)
+                        D.insert_after(p_head, curr, k_post)
+                        
+                        if draw_debug then
+                            utils.debug_log(string.format("[render] Floating Box at x=%.2f, y=%.2f", item.x/65536, item.y/65536))
+                        end
+                    end
                 end
             end
 

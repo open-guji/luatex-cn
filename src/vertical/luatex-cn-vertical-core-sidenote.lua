@@ -249,8 +249,12 @@ function sidenote.calculate_sidenote_positions(layout_map, params)
                             -- Update occupancy
                             set_gap_filled(curr_p, curr_c, curr_r)
                             
-                            -- Increment by step (fractional row)
-                            curr_r = curr_r + step
+                            -- Only increment step for visible content nodes
+                            local nid = D.getid(current_content_node)
+                            if nid == constants.GLYPH or nid == constants.HLIST or nid == constants.VLIST or nid == constants.RULE then
+                                curr_r = curr_r + step
+                            end
+                            
                             current_content_node = D.getnext(current_content_node)
                         end
                         

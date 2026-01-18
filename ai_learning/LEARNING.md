@@ -1365,3 +1365,21 @@ cat "c:/Users/lisdp/texmf/tex/latex/luatex-cn/fonts/luatex-cn-font-autodetect.st
 ## 5. Expl3 Syntax Scope
 **问题**: 在 `.sty` 文件中使用 `expl3` 语法（如 `\keys_define:nn`）时，如果使用了 `\NewDocumentCommand` 等 LaTeX2e 接口，需要小心 `\ExplSyntaxOn` 的作用域。
 **解决**: `\NewDocumentCommand` 可以在 `\ExplSyntaxOn` 环境中定义，但如果命令内部包含非 expl3 代码（如空格敏感的传统 TeX 代码），可能需要处理。对于纯粹的 Key-Value 解析，将 `\ExplSyntaxOn` 覆盖整个定义块从 `\keys_define:nn` 到 `\NewDocumentCommand` 是安全的，也是推荐的，这样可以使用 `_` 和 `:` 字符。
+
+## 6. TeX 盒子中的颜色堆栈泄漏与不可见节点陷阱
+
+### 问题
+侧批（Sidenote）的红色泄漏到了后续的正文中，通过 `\color{red}` 设置的颜色没有被正确重置。同时，侧批文字之间出现不均匀的间隙。
+
+### 原因
+1. **颜色堆栈不平衡**: 使用 `\setbox0=\hbox{\color{red} text}` 时，`\color` 命令产生的 Color Push 节点在盒子内，但如果组的结束位置处理不当，Color Pop 节点可能生成在盒子外部（或者在 `\hbox` 构建完成之后），导致盒子内部只有 Push 没有 Pop。当 Lua 将盒子的节点列表取出并重新插入到页面流中时，颜色状态被改变但从未恢复。
+2. **不可见节点占据空间**: 在排版循环中，简单的 `node.next` 遍历会将所有节点（包括不可见的颜色 Whatsit、Glue 等）都视为占据一个"网格步长"，导致可见字符之间出现不必要的垂直间隙。
+
+### 解决方案
+1. **使用 `\textcolor` 封装**: 改用 `\textcolor{red}{text}`，强制颜色的 Push 和 Pop 操作都发生在一个分组内，确保 Pop 节点被包含在 `\hbox` 的节点列表中。
+2. **过滤不可见节点**: 在 Lua 排版逻辑中，只对可见节点（Glyph, HList, VList, Rule）增加垂直坐标步长，跳过 Whatsit 等辅助节点。
+
+### 教训
+- 处理颜色时，尽量使用 `\textcolor` 等自带作用域管理的命令，而非低级的开关式 `\color`，特别是在涉及盒子捕获（Box Capture）的场景中。
+- 在 Lua 中手动排版节点流时，必须区分"内容节点"和"控制节点"，不能盲目地对应网格位置。
+

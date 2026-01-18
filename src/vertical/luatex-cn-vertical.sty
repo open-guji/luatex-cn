@@ -131,7 +131,8 @@
       { \dimen0=\l__cn_sidepizhu_font_size_tl\relax }
     \fontsize{\dimen0}{\dimen0}\selectfont
     % Color must be inside the box to be captured in the node list
-    \setbox0=\hbox{\color{\l__cn_sidepizhu_color_tl}#2}%
+    % Use \textcolor to ensure the color stack Pop node is contained within the box list
+    \setbox0=\hbox{\textcolor{\l__cn_sidepizhu_color_tl}{#2}}%
     
     % Prepare metadata
     \dimen2=\l__cn_sidepizhu_grid_height_dim

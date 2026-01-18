@@ -231,9 +231,6 @@
     banxin-middle-ratio .tl_set:N = \l_cnv_banxin_middle_tl,
     banxin-middle-ratio .initial:n = {0.56},
 
-    banxin-lower-ratio .tl_set:N = \l_cnv_banxin_lower_tl,
-    banxin-lower-ratio .initial:n = {0.16},
-
     % Book Name (formerly Banxin text)
     book-name .tl_set:N = \l_cnv_book_name_tl,
     book-name .initial:n = {},
@@ -264,6 +261,21 @@
 
     chapter-title-grid-height .tl_set:N = \l_cnv_chapter_title_grid_height_tl,
     chapter-title-grid-height .initial:n = {},
+
+    book-name-align .tl_set:N = \l_cnv_book_name_align_tl,
+    book-name-align .initial:n = {center},
+
+    book-name-grid-height .tl_set:N = \l_cnv_book_name_grid_height_tl,
+    book-name-grid-height .initial:n = {},
+
+    upper-yuwei .bool_set:N = \l_cnv_upper_yuwei_bool,
+    upper-yuwei .initial:n = true,
+
+    banxin-divider .bool_set:N = \l_cnv_banxin_divider_bool,
+    banxin-divider .initial:n = true,
+
+    page-number-align .tl_set:N = \l_cnv_page_number_align_tl,
+    page-number-align .initial:n = {right-bottom},
     
     font-size .tl_set:N = \l__cn_vertical_font_size_tl,
     font-size .initial:n = {12pt},
@@ -371,7 +383,6 @@
         margin_right = [=[\luaescapestring{\l__cn_vertical_margin_right_tl}]=],
         banxin_upper_ratio = [=[\luaescapestring{\l_cnv_banxin_upper_tl}]=],
         banxin_middle_ratio = [=[\luaescapestring{\l_cnv_banxin_middle_tl}]=],
-        banxin_lower_ratio = [=[\luaescapestring{\l_cnv_banxin_lower_tl}]=],
         book_name = [=[\luaescapestring{\l_cnv_book_name_tl}]=],
         banxin_padding_top = [=[\luaescapestring{\l_cnv_banxin_padding_top_tl}]=],
         banxin_padding_bottom = [=[\luaescapestring{\l_cnv_banxin_padding_bottom_tl}]=],
@@ -381,6 +392,11 @@
         chapter_title_cols = \int_use:N \l_cnv_chapter_title_cols_int,
         chapter_title_font_size = [=[\luaescapestring{\l_cnv_chapter_title_font_size_tl}]=],
         chapter_title_grid_height = [=[\luaescapestring{\l_cnv_chapter_title_grid_height_tl}]=],
+        book_name_align = [=[\luaescapestring{\l_cnv_book_name_align_tl}]=],
+        book_name_grid_height = [=[\luaescapestring{\l_cnv_book_name_grid_height_tl}]=],
+        upper_yuwei = [=[\bool_if:NTF \l_cnv_upper_yuwei_bool {true} {false}]=],
+        banxin_divider = [=[\bool_if:NTF \l_cnv_banxin_divider_bool {true} {false}]=],
+        page_number_align = [=[\luaescapestring{\l_cnv_page_number_align_tl}]=],
         jiazhu_font_size = [=[\luaescapestring{\l__cn_vertical_jiazhu_size_tl}]=],
         jiazhu_align = [=[\luaescapestring{\l__cn_vertical_jiazhu_align_tl}]=],
         font_size = [=[\luaescapestring{\l__cn_vertical_font_size_tl}]=]

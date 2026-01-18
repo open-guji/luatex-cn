@@ -91,6 +91,21 @@
     grid-height .tl_set:N = \l_ltc_book_grid_height_tl,
     grid-height .initial:n = 14pt,
 
+    chapter-title-grid-height .tl_set:N = \l_ltc_book_chapter_title_grid_height_tl,
+    chapter-title-grid-height .initial:n = {},
+
+    book-name-align .tl_set:N = \l_ltc_book_book_name_align_tl,
+    book-name-align .initial:n = {center},
+
+    upper-yuwei .bool_set:N = \l_ltc_book_upper_yuwei_bool,
+    upper-yuwei .initial:n = true,
+
+    banxin-divider .bool_set:N = \l_ltc_book_banxin_divider_bool,
+    banxin-divider .initial:n = true,
+
+    page-number-align .tl_set:N = \l_ltc_book_page_number_align_tl,
+    page-number-align .initial:n = {right-bottom},
+
     font-name .tl_set:N = \l_ltc_book_font_name_tl,
     font-name .initial:n = {},
 
@@ -201,6 +216,11 @@
         margin-bottom = \l_ltc_book_margin_bottom_tl,
         margin-left = \l_ltc_book_margin_left_tl,
         margin-right = \l_ltc_book_margin_right_tl,
+        chapter-title-grid-height = \l_ltc_book_chapter_title_grid_height_tl,
+        book-name-align = \l_ltc_book_book_name_align_tl,
+        upper-yuwei = \bool_if:NTF \l_ltc_book_upper_yuwei_bool {true} {false},
+        banxin-divider = \bool_if:NTF \l_ltc_book_banxin_divider_bool {true} {false},
+        page-number-align = \l_ltc_book_page_number_align_tl,
         debug = \bool_if:NTF \g_cnv_debug_bool {true} {false}
       }
     \nointerlineskip

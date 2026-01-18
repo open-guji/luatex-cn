@@ -213,9 +213,6 @@
     banxin-middle-ratio .tl_set:N = \l_guji_banxin_middle_tl,
     banxin-middle-ratio .initial:n = {},
 
-    banxin-lower-ratio .tl_set:N = \l_guji_banxin_lower_tl,
-    banxin-lower-ratio .initial:n = {},
-
     book-name .tl_set:N = \l_guji_book_name_tl,
     book-name .initial:n = {},
 
@@ -240,6 +237,21 @@
     % Lower Yuwei (下鱼尾) - optional decoration
     lower-yuwei .bool_set:N = \l_guji_lower_yuwei_bool,
     lower-yuwei .initial:n = false,
+
+    book-name-align .tl_set:N = \l_guji_book_name_align_tl,
+    book-name-align .initial:n = {center},
+
+    book-name-grid-height .tl_set:N = \l_guji_book_name_grid_height_tl,
+    book-name-grid-height .initial:n = {},
+
+    upper-yuwei .bool_set:N = \l_guji_upper_yuwei_bool,
+    upper-yuwei .initial:n = true,
+
+    banxin-divider .bool_set:N = \l_guji_banxin_divider_bool,
+    banxin-divider .initial:n = true,
+
+    page-number-align .tl_set:N = \l_guji_page_number_align_tl,
+    page-number-align .initial:n = {right-bottom},
 
     % Split page (筒子页) configuration
     split-page .bool_set:N = \l_guji_split_page_bool,
@@ -582,7 +594,6 @@
         margin-right = \l_guji_margin_right_tl,
         banxin-upper-ratio = \l_guji_banxin_upper_tl,
         banxin-middle-ratio = \l_guji_banxin_middle_tl,
-        banxin-lower-ratio = \l_guji_banxin_lower_tl,
         book-name = \l_guji_book_name_tl,
         chapter-title = \l_guji_chapter_title_tl,
         chapter-title-top-margin = \l_guji_chapter_title_top_margin_tl,
@@ -596,6 +607,11 @@
         outer-border = \bool_if:NTF \l_guji_outer_border_bool {true} {false},
         banxin = \bool_if:NTF \l_guji_banxin_bool {true} {false},
         lower-yuwei = \bool_if:NTF \l_guji_lower_yuwei_bool {true} {false},
+        book-name-align = \l_guji_book_name_align_tl,
+        book-name-grid-height = \l_guji_book_name_grid_height_tl,
+        upper-yuwei = \bool_if:NTF \l_guji_upper_yuwei_bool {true} {false},
+        banxin-divider = \bool_if:NTF \l_guji_banxin_divider_bool {true} {false},
+        page-number-align = \l_guji_page_number_align_tl,
         debug = \bool_if:NTF \g_cnv_debug_bool {true} {false}
       }
     \nointerlineskip

@@ -387,13 +387,19 @@ local function apply_positions(head, layout_map, params)
                             lower_yuwei = params.lower_yuwei,
                             chapter_title = params.chapter_title or "",
                             chapter_title_top_margin = params.chapter_title_top_margin or (65536 * 20),
-                            chapter_title_cols = params.chapter_title_cols or 2,
+                            chapter_title_cols = params.chapter_title_cols or 1,
                             chapter_title_font_size = params.chapter_title_font_size,
                             chapter_title_grid_height = params.chapter_title_grid_height,
+                            book_name_grid_height = params.book_name_grid_height,
+                            book_name_align = params.book_name_align,
+                            upper_yuwei = params.upper_yuwei,
+                            banxin_divider = params.banxin_divider,
+                            page_number_align = params.page_number_align,
                             page_number = (params.start_page_number or 1) + p,
                             grid_width = grid_width,
                             grid_height = grid_height,
                             font_size = params.font_size,
+                            draw_border = draw_border,
                         })
                     end
                 end

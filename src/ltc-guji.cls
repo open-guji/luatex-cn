@@ -269,6 +269,11 @@
     split-page-right-first .bool_set:N = \l_guji_split_right_first_bool,
     split-page-right-first .initial:n = true,
 
+    % SidePizhu global configuration
+    sidepizhu-color .code:n = { \keys_set:nn { cv_sidepizhu } { color = #1 } },
+    sidepizhu-font-size .code:n = { \keys_set:nn { cv_sidepizhu } { font-size = #1 } },
+    sidepizhu-yoffset .code:n = { \keys_set:nn { cv_sidepizhu } { yoffset = #1 } },
+
     template .code:n = {
       % Load config file: configs/luatex-cn-guji-<name>.cfg
       \InputIfFileExists{configs/luatex-cn-guji-#1.cfg}{}{

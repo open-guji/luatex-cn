@@ -105,12 +105,16 @@
 
 % Define keys for SidePizhu
 \ExplSyntaxOn
+\dim_new:N \l__cn_sidepizhu_yoffset_dim
+\tl_new:N \l__cn_sidepizhu_font_size_tl
+\tl_new:N \l__cn_sidepizhu_color_tl
+
 \keys_define:nn { cv_sidepizhu }
   {
     yoffset .dim_set:N = \l__cn_sidepizhu_yoffset_dim,
     yoffset .initial:n = 0pt,
-    ratio .fp_set:N = \l__cn_sidepizhu_ratio_fp,
-    ratio .initial:n = 0.6,
+    font-size .tl_set:N = \l__cn_sidepizhu_font_size_tl,
+    font-size .initial:n = 10pt,
     color .tl_set:N = \l__cn_sidepizhu_color_tl,
     color .initial:n = red,
   }
@@ -120,8 +124,10 @@
   \group_begin:
     \keys_set:nn { cv_sidepizhu } { #1 }
     \color{\l__cn_sidepizhu_color_tl}%
-    \dimen0=\f@size pt\relax
-    \dimen0=\fp_to_dim:n { \l__cn_sidepizhu_ratio_fp * \dimen0 }\relax
+    % Use explicit font size
+    \tl_if_empty:NTF \l__cn_sidepizhu_font_size_tl
+      { \dimen0=\f@size pt }
+      { \dimen0=\l__cn_sidepizhu_font_size_tl\relax }
     \fontsize{\dimen0}{\dimen0}\selectfont
     \setbox0=\hbox{#2}%
     \directlua{vertical_sidenote.register_sidenote(0, {

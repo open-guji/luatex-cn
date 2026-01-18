@@ -103,17 +103,34 @@
   vertical = require('luatex-cn-vertical-core-main')
 }
 
+% Define keys for SidePizhu
+\ExplSyntaxOn
+\keys_define:nn { cv_sidepizhu }
+  {
+    yoffset .dim_set:N = \l__cn_sidepizhu_yoffset_dim,
+    yoffset .initial:n = 0pt,
+    ratio .fp_set:N = \l__cn_sidepizhu_ratio_fp,
+    ratio .initial:n = 0.6,
+    color .tl_set:N = \l__cn_sidepizhu_color_tl,
+    color .initial:n = red,
+  }
+
 % Side Pizhu Command
-\NewDocumentCommand{\SidePizhu}{ +m }{%
-  \bgroup
-  \color{red}%
-  \dimen0=\f@size pt\relax
-  \dimen0=0.6\dimen0\relax
-  \fontsize{\dimen0}{\dimen0}\selectfont
-  \setbox0=\hbox{#1}%
-  \directlua{vertical_sidenote.register_sidenote(0)}%
-  \egroup
+\NewDocumentCommand{\SidePizhu}{ O{} +m }{%
+  \group_begin:
+    \keys_set:nn { cv_sidepizhu } { #1 }
+    \color{\l__cn_sidepizhu_color_tl}%
+    \dimen0=\f@size pt\relax
+    \dimen0=\fp_to_dim:n { \l__cn_sidepizhu_ratio_fp * \dimen0 }\relax
+    \fontsize{\dimen0}{\dimen0}\selectfont
+    \setbox0=\hbox{#2}%
+    \directlua{vertical_sidenote.register_sidenote(0, {
+      yoffset = \number\l__cn_sidepizhu_yoffset_dim
+    })}%
+  \group_end:
 }
+\ExplSyntaxOff
+
 
 
 % Use l3keys for key-value parameters
@@ -418,8 +435,7 @@
         page_number_font_size = [=[\luaescapestring{\l_cnv_page_number_font_size_tl}]=],
         jiazhu_font_size = [=[\luaescapestring{\l__cn_vertical_jiazhu_size_tl}]=],
         jiazhu_align = [=[\luaescapestring{\l__cn_vertical_jiazhu_align_tl}]=],
-        font_size = [=[\luaescapestring{\l__cn_vertical_font_size_tl}]=],
-        is_textbox = true
+        font_size = [=[\luaescapestring{\l__cn_vertical_font_size_tl}]=]
       })
     }
   }

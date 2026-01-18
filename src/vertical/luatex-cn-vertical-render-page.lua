@@ -330,13 +330,33 @@ local function render_sidenotes(p_head, sidenote_nodes, params, ctx)
             local w = D.getfield(curr, "width") or 0
 
             local rtl_col = ctx.p_total_cols - 1 - pos.col
-            -- Apply sidenote offset (shift into the gap to the right)
-            local final_x = rtl_col * ctx.grid_width + ctx.half_thickness + ctx.shift_x + sidenote_x_offset
-            -- Center horizontally in the remaining space
-            final_x = final_x + (ctx.grid_width * 0.25 - w) / 2
+            -- Position on the RIGHT boundary of the column (between pos.col and pos.col-1)
+            -- Right boundary X = (rtl_col + 1) * grid_width
+            -- We center the sidenote on this boundary
+            local boundary_x = (rtl_col + 1) * ctx.grid_width + ctx.half_thickness + ctx.shift_x
+            local final_x = boundary_x - (w / 2)
 
             local char_total_height = h + d
             local final_y = -pos.row * ctx.grid_height - (ctx.grid_height + char_total_height) / 2 + d - ctx.shift_y
+
+            -- Apply user y-offset from metadata
+            if item.metadata and item.metadata.yoffset then
+                -- User: Negative=Up (Increase Y), Positive=Down (Decrease Y)
+                -- Our Y coord: 0 is top, negative is down.
+                -- Wait, user request: "如果是复数的话就要上向上。移动一点" (If negative, move UP)
+                -- Standard Cartesian: Up is +Y.
+                -- Our Page Y: Top is ~0 (or large? No, in PDF, 0 is bottom usually, but here we use relative Y from top-left logic)
+                -- Let's check `final_y` calculation: `-pos.row * grid_height`. Row 0 is top, Row 1 is below. So Y becomes more negative as we go down.
+                -- So Up = +Y direction. Down = -Y direction.
+                -- User: "Negative = Up".
+                -- So if User gives -10pt, we want to move Up (+Y).
+                -- `final_y = final_y + (-user_val)`? No.
+                -- If User = -10. We want +10 shift. `final_y - (-10) = +10`. Correct.
+                -- User: "Positive = Down".
+                -- If User = +10. We want -10 shift. `final_y - 10`. Correct.
+                -- Formula: final_y = final_y - input_y_offset
+                final_y = final_y - item.metadata.yoffset
+            end
 
             D.setfield(curr, "xoffset", final_x)
             D.setfield(curr, "yoffset", final_y)

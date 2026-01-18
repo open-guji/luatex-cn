@@ -41,7 +41,8 @@ sidenote.registry_counter = 0
 
 --- Register a sidenote from a TeX box
 -- @param box_num (number) TeX box register number containing the sidenote text
-function sidenote.register_sidenote(box_num)
+-- @param metadata (table, optional) Metadata { yoffset=number, ... }
+function sidenote.register_sidenote(box_num, metadata)
     local box = tex.box[box_num]
     if not box then
         utils.debug_log("[sidenote] register_sidenote: box is nil!")
@@ -53,15 +54,17 @@ function sidenote.register_sidenote(box_num)
 
     -- Copy the content
     local content_head = node.copy_list(box.list)
-    sidenote.registry[id] = content_head
+    sidenote.registry[id] = {
+        head = content_head,
+        metadata = metadata or {}
+    }
 
-    utils.debug_log(string.format("[sidenote] Registered sidenote ID=%d, content_head=%s", id, tostring(content_head)))
-    print(string.format("[SIDENOTE] Registered sidenote ID=%d", id))
-
+    utils.debug_log(string.format("[sidenote] Registered sidenote ID=%d, metadata=%s", id, table.serialize(metadata or {})))
+    
     -- Create user whatsit
     local n = node.new("whatsit", "user_defined")
     n.user_id = constants.SIDENOTE_USER_ID
-    n.type = 100 -- number
+    n.type = 100 -- Custom subtype
     n.value = id
 
     node.write(n)
@@ -162,9 +165,19 @@ function sidenote.calculate_sidenote_positions(layout_map, params)
             end
             if uid == constants.SIDENOTE_USER_ID then
                    local sid = D.getfield(t, "value")
-                   local content = sidenote.registry[sid] -- This is Userdata node
-                   print(string.format("[SIDENOTE] Found sidenote whatsit! sid=%s, content=%s, last_node_pos=%s",
-                       tostring(sid), tostring(content), tostring(last_node_pos)))
+                   local registry_item = sidenote.registry[sid]
+                   
+                   -- Registry item can be just head node (old format) or table {head=..., metadata=...}
+                   local content = nil
+                   local metadata = {}
+                   
+                   if type(registry_item) == "table" and registry_item.head then
+                       content = registry_item.head
+                       metadata = registry_item.metadata or {}
+                   else
+                       content = registry_item
+                   end
+                   
                    if content and last_node_pos then
                         -- Found a sidenote!
                         local anchor_page = last_node_pos.page
@@ -220,7 +233,8 @@ function sidenote.calculate_sidenote_positions(layout_map, params)
                                 node = current_content_node,
                                 page = curr_p,
                                 col = curr_c,
-                                row = curr_r
+                                row = curr_r,
+                                metadata = metadata
                             })
                             
                             set_gap_filled(curr_p, curr_c, curr_r)

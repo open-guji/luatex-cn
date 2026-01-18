@@ -1,4 +1,4 @@
-\documentclass{ltc-guji}
+\documentclass[红楼梦甲戌本]{ltc-guji}
 \禁用分页裁剪
 %\GujiDebugOn
 
@@ -8,7 +8,10 @@
 \chapter{测试侧批}
 
 这是一段测试文字。这是一段测试文字。\SidePizhu{这是一个侧批}
+这是一段测试文字。这是一段测试文字。\SidePizhu{普通侧批}
 这是一段测试文字。这是一段测试文字。这是一段测试文字。
+\SidePizhu[yoffset=10pt, color=blue]{下移变蓝}
+这是一段测试文字。\SidePizhu[yoffset=-10pt, ratio=0.4]{上移变小}
 这是一段测试文字。这是一段测试文字。这是一段测试文字。
 \SidePizhu{这是一个很长很长很长很长很长很长很长很长很长很长很长很长很长很长很长很长很长很长很长很长很长很长很长很长的侧批，它应该会换列。}
 这是一段测试文字。这是一段测试文字。这是一段测试文字。

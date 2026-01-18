@@ -1331,3 +1331,37 @@ cat "c:/Users/lisdp/texmf/tex/latex/luatex-cn/fonts/luatex-cn-font-autodetect.st
 - LaTeX 接口：`src/fonts/luatex-cn-font-autodetect.sty`
 - Lua 模块：`src/fonts/luatex-cn-font-autodetect.lua`
 - 类文件集成：`src/ltc-guji.cls`（`\ApplyAutoFont` 调用）
+
+# 侧批功能开发经验总结 (Lessons Learned)
+
+## 1. 字体大小与 TeX 原语的交互
+**问题**: 使用 `\fontsize{0.6\f@size}{...}` 导致 crash (`! Illegal unit of measure`).
+**原因**: `\f@size` 展开后是一个纯数字（如 `10.5`），而不是带单位的长度。TeX 的 `\fontsize` 期望的是长度语法。当在 `\fontsize` 内部直接与浮点数 `0.6` 拼接时，TeX 解析器无法将其识别为合法的乘法表达式。
+**解决**: 使用 TeX 寄存器进行计算。
+```latex
+\dimen0=\f@size pt
+\dimen0=0.6\dimen0
+\fontsize{\dimen0}{\dimen0}\selectfont
+```
+**教训**: 在 TeX 宏中进行数值计算时，尽量使用 `\dimexpr` 或寄存器，确保传递给原语的是合法的带有单位的值。
+
+## 2. 垂直排版中的坐标系与“列”的概念
+**问题**: 侧批渲染在页面之外或与正文重叠。
+**原因**: 
+1. **逻辑列 vs 物理列**: `luatex-cn-vertical` 中，逻辑列 0 是最右侧（阅读顺序第一列）。但在计算 PDF 坐标时，需要转换为物理坐标。
+2. **“间隙”的定义**: 逻辑列 `C` 的侧批应该位于列 `C` 的左侧（视觉左侧）。在物理坐标系中，这对应于 `(RTL_Col + 1) * Width` 的位置（即列的右边界线？不对，是列的左边界线? 也就是下一列的右边界）。
+**解决**: 
+确立了准确的锚点计算公式：
+`Anchor_X = (Physical_Col + 1) * Grid_Width`
+这将侧批定位在当前列与（视觉上）左侧列之间的分割线上。
+
+## 3. LuaTeX Whatsit 节点的检测
+**问题**: 依赖 `subtype` id 来检测 `whatsit` 节点不可靠，不同版本的 LuaTeX 可能不同。
+**解决**: 直接检查节点是否包含 `user_id` 字段并且值匹配由于 `luatexbase.new_user_whatsit` 分配的 ID（或自定义常量）。这种“鸭子类型”检测比硬编码 subtype 更健壮。
+
+## 4. 调试信息的清理
+**经验**: 在开发过程中因为看不到节点，添加了大量 `print`。确认功能正常后，必须及时清理，用 `utils.debug_log` (受控开关) 替代 `print`，否则会污染用户日志。
+
+## 5. Expl3 Syntax Scope
+**问题**: 在 `.sty` 文件中使用 `expl3` 语法（如 `\keys_define:nn`）时，如果使用了 `\NewDocumentCommand` 等 LaTeX2e 接口，需要小心 `\ExplSyntaxOn` 的作用域。
+**解决**: `\NewDocumentCommand` 可以在 `\ExplSyntaxOn` 环境中定义，但如果命令内部包含非 expl3 代码（如空格敏感的传统 TeX 代码），可能需要处理。对于纯粹的 Key-Value 解析，将 `\ExplSyntaxOn` 覆盖整个定义块从 `\keys_define:nn` 到 `\NewDocumentCommand` 是安全的，也是推荐的，这样可以使用 `_` 和 `:` 字符。

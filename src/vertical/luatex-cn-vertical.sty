@@ -103,44 +103,42 @@
   vertical = require('luatex-cn-vertical-core-main')
 }
 
-% Define keys for SidePizhu
+% Define keys for SideNode
 \ExplSyntaxOn
-\dim_new:N \l__cn_sidepizhu_yoffset_dim
-\dim_new:N \l__cn_sidepizhu_grid_height_dim
-\tl_new:N \l__cn_sidepizhu_font_size_tl
-\tl_new:N \l__cn_sidepizhu_color_tl
+\dim_new:N \l_cnv_sidenode_yoffset_dim
+\dim_new:N \l_cnv_sidenode_grid_height_dim
+\tl_new:N \l_cnv_sidenode_font_size_tl
+\tl_new:N \l_cnv_sidenode_color_tl
 
-\keys_define:nn { cv_sidepizhu }
+\keys_define:nn { SideNode }
   {
-    yoffset .dim_set:N = \l__cn_sidepizhu_yoffset_dim,
+    yoffset .dim_set:N = \l_cnv_sidenode_yoffset_dim,
     yoffset .initial:n = 0pt,
-    grid-height .dim_set:N = \l__cn_sidepizhu_grid_height_dim,
-    font-size .tl_set:N = \l__cn_sidepizhu_font_size_tl,
+    grid-height .dim_set:N = \l_cnv_sidenode_grid_height_dim,
+    font-size .tl_set:N = \l_cnv_sidenode_font_size_tl,
     font-size .initial:n = 10pt,
-    color .tl_set:N = \l__cn_sidepizhu_color_tl,
+    color .tl_set:N = \l_cnv_sidenode_color_tl,
     color .initial:n = red,
   }
 
-% Side Pizhu Command
-\NewDocumentCommand{\SidePizhu}{ O{} +m }{%
+\NewDocumentCommand{\SideNode}{ O{} +m }{%
   \group_begin:
-    \keys_set:nn { cv_sidepizhu } { #1 }
+    \keys_set:nn { SideNode } { #1 }
     % Use explicit font size
-    \tl_if_empty:NTF \l__cn_sidepizhu_font_size_tl
+    \tl_if_empty:NTF \l_cnv_sidenode_font_size_tl
       { \dimen0=\f@size pt }
-      { \dimen0=\l__cn_sidepizhu_font_size_tl\relax }
+      { \dimen0=\l_cnv_sidenode_font_size_tl\relax }
     \fontsize{\dimen0}{\dimen0}\selectfont
     % Color must be inside the box to be captured in the node list
-    % Use \textcolor to ensure the color stack Pop node is contained within the box list
-    \setbox0=\hbox{\textcolor{\l__cn_sidepizhu_color_tl}{#2}}%
+    \setbox0=\hbox{\textcolor{\l_cnv_sidenode_color_tl}{#2}}%
     
     % Prepare metadata
-    \dimen2=\l__cn_sidepizhu_grid_height_dim
+    \dimen2=\l_cnv_sidenode_grid_height_dim
     % If grid-height not set, default to font size (tight packing)
     \dim_compare:nF { \dimen2 > 0pt } { \dimen2=\dimen0 }
 
     \directlua{vertical_sidenote.register_sidenote(0, {
-      yoffset = \number\l__cn_sidepizhu_yoffset_dim,
+      yoffset = \number\l_cnv_sidenode_yoffset_dim,
       grid_height = \number\dimen2
     })}%
   \group_end:
@@ -678,6 +676,10 @@
 \NewCommandCopy{\文本流}{\TextFlow}
 \NewCommandCopy{\空格}{\Space}
 \NewCommandCopy{\段落}{\Paragraph}
+\NewCommandCopy{\SideNode}{\SideNode}
+\NewCommandCopy{\SidePizhu}{\SideNode}
+\NewCommandCopy{\CePi}{\SideNode}
+\NewCommandCopy{\侧批}{\SideNode}
 
 \directlua{
   _G.vertical.debug.verbose_log = true

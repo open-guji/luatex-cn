@@ -194,7 +194,7 @@ function sidenote.calculate_sidenote_positions(layout_map, params)
                         -- Start Row: Max(Anchor Row, Previous Fill + Margin)
                         local start_page = anchor_page
                         local start_col = anchor_col
-                        local start_row = anchor_row
+                        local start_row = anchor_row + 1
                         
                         -- Convert Userdata node to Direct for processing
                         local content_d = D.todirect(content)

@@ -276,6 +276,9 @@
 
     page-number-align .tl_set:N = \l_cnv_page_number_align_tl,
     page-number-align .initial:n = {right-bottom},
+
+    page-number-font-size .tl_set:N = \l_cnv_page_number_font_size_tl,
+    page-number-font-size .initial:n = {15pt},
     
     font-size .tl_set:N = \l__cn_vertical_font_size_tl,
     font-size .initial:n = {12pt},
@@ -398,6 +401,7 @@
         upper_yuwei = [=[\bool_if:NTF \l_cnv_upper_yuwei_bool {true} {false}]=],
         banxin_divider = [=[\bool_if:NTF \l_cnv_banxin_divider_bool {true} {false}]=],
         page_number_align = [=[\luaescapestring{\l_cnv_page_number_align_tl}]=],
+        page_number_font_size = [=[\luaescapestring{\l_cnv_page_number_font_size_tl}]=],
         jiazhu_font_size = [=[\luaescapestring{\l__cn_vertical_jiazhu_size_tl}]=],
         jiazhu_align = [=[\luaescapestring{\l__cn_vertical_jiazhu_align_tl}]=],
         font_size = [=[\luaescapestring{\l__cn_vertical_font_size_tl}]=]

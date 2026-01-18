@@ -396,6 +396,7 @@ local function apply_positions(head, layout_map, params)
                             upper_yuwei = params.upper_yuwei,
                             banxin_divider = params.banxin_divider,
                             page_number_align = params.page_number_align,
+                            page_number_font_size = params.page_number_font_size,
                             page_number = (params.start_page_number or 1) + p,
                             grid_width = grid_width,
                             grid_height = grid_height,

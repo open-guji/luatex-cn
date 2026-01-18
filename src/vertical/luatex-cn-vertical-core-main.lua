@@ -82,6 +82,12 @@ function vertical.reset_page_number()
     vertical.current_page_number = 1
 end
 
+--- Set the global page number to a specific value
+-- @param n (number) The page number to set
+function vertical.set_page_number(n)
+    vertical.current_page_number = tonumber(n) or 1
+end
+
 -- Load submodules using Lua's require mechanism
 -- 加载子模块
 local constants = package.loaded['luatex-cn-vertical-base-constants'] or require('luatex-cn-vertical-base-constants')
@@ -246,6 +252,7 @@ function vertical.prepare_grid(box_num, params)
         upper_yuwei = (params.upper_yuwei == "true" or params.upper_yuwei == true),
         banxin_divider = (params.banxin_divider == "true" or params.banxin_divider == true),
         page_number_align = params.page_number_align or "right-bottom",
+        page_number_font_size = constants.to_dimen(params.page_number_font_size),
         column_aligns = params.column_aligns,
         start_page_number = start_page,
         jiazhu_font_size = params.jiazhu_font_size,

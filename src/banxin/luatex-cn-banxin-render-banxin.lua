@@ -137,17 +137,17 @@ local function draw_banxin(params)
         table.insert(literals, div2_line)
     end
 
+    -- Yuwei dimensions:
+    -- edge_height: height of the side edges (shorter)
+    -- notch_height: distance from top to V-tip (longer, includes the V portion)
+    local edge_h = width * 0.39   
+    local notch_h = width * 0.17 
+    local yuwei_gap = 65536 * 3.7      -- 10pt gap from dividing lines
+
     -- Draw upper yuwei (上鱼尾) in section 2 (if enabled)
     if params.upper_yuwei ~= false then
         local yuwei_x = x                 -- Left edge of column
-        local yuwei_gap = 65536 * 3.7      -- 10pt gap from dividing lines
         local yuwei_y = div1_y - yuwei_gap  -- 10pt below the first dividing line
-        
-        -- Yuwei dimensions:
-        -- edge_height: height of the side edges (shorter)
-        -- notch_height: distance from top to V-tip (longer, includes the V portion)
-        local edge_h = width * 0.39   
-        local notch_h = width * 0.17  
         
         -- Upper yuwei (上鱼尾) - notch at bottom, opening downward
         local upper_yuwei = yuwei.draw_yuwei({
@@ -446,7 +446,7 @@ local function draw_banxin_column(p_head, params)
             
             -- Margin settings for page number (版心页码边距)
             local page_right_margin = 65536 * 2   -- 2pt small right margin
-            local page_bottom_margin = 65536 * 15 -- 15pt medium bottom margin
+            local page_bottom_margin = params.b_padding_bottom or (65536 * 15) -- Use config or default 15pt
             
             -- Available bottom-right position
             -- Determine y_top, alignment and orientation for page number
@@ -469,12 +469,12 @@ local function draw_banxin_column(p_head, params)
 
             local page_chain = text_position.create_vertical_text(page_str, {
                 x = x,
-                y_top = page_y_top + (params.page_number_align == "center" and 0 or (65536 * 20)), 
+                y_top = page_y_top, 
                 width = width - (params.page_number_align == "center" and 0 or page_right_margin),
                 height = (65536 * 30), -- Container height
                 v_align = p_v_align,
                 h_align = p_h_align,
-                font_size = page_font_size,
+                font_size = params.page_number_font_size or (65536 * 15),
             })
             if page_chain then
                 local chain_tail = page_chain

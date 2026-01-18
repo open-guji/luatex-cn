@@ -259,6 +259,9 @@
     page-number-align .tl_set:N = \l_guji_page_number_align_tl,
     page-number-align .initial:n = {right-bottom},
 
+    page-number-font-size .tl_set:N = \l_guji_page_number_font_size_tl,
+    page-number-font-size .initial:n = {},
+
     % Split page (筒子页) configuration
     split-page .bool_set:N = \l_guji_split_page_bool,
     split-page .initial:n = true,
@@ -356,6 +359,13 @@
   {
     \directlua{vertical.reset_page_number()}
   }
+
+% Command to set page number to arbitrary value
+\NewDocumentCommand{\SetPageNumber}{ m }
+  {
+    \directlua{vertical.set_page_number(#1)}
+  }
+\NewCommandCopy{\设置页码}{\SetPageNumber}
 
 \NewDocumentCommand{\chapter}{ m }
   {
@@ -620,6 +630,7 @@
         upper-yuwei = \bool_if:NTF \l_guji_upper_yuwei_bool {true} {false},
         banxin-divider = \bool_if:NTF \l_guji_banxin_divider_bool {true} {false},
         page-number-align = \l_guji_page_number_align_tl,
+        page-number-font-size = \l_guji_page_number_font_size_tl,
         debug = \bool_if:NTF \g_cnv_debug_bool {true} {false}
       }
     \nointerlineskip

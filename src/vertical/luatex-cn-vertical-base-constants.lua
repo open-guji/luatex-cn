@@ -98,17 +98,30 @@ local function to_dimen(dim_str)
     if not dim_str or dim_str == "" then
         return nil
     end
+
+    -- If it's already a number, return it (assume sp)
+    if type(dim_str) == "number" then
+        return dim_str
+    end
+
     -- Strip curly braces if present
     dim_str = tostring(dim_str):gsub("^%s*{", ""):gsub("}%s*$", "")
 
     if dim_str == "" then return nil end
 
+    -- Try standard tex.sp parsing (handles units like "10pt")
     local ok, res = pcall(tex.sp, dim_str)
     if ok then
         return res
-    else
-        return nil
     end
+    
+    -- Fallback: try to parse as pure number (assume sp)
+    local num = tonumber(dim_str)
+    if num then
+        return num
+    end
+    
+    return nil
 end
 
 constants.to_dimen = to_dimen

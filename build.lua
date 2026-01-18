@@ -19,14 +19,18 @@ sourcepkgdir = "src"
 docpkgdir    = "doc"
 
 -- Source files (included in the ZIP)
-sourcefiles  = {"**/*"}
+sourcefiles  = {"**/*.sty", "**/*.cls", "**/*.lua", "**/*.cfg"}
 
+-- Documentation and example files
 -- Documentation and example files
 docfiles = {
   "README.md", "README-EN.md", "LICENSE", "VERSION", "INSTALL.md",
-  "doc/**/*.pdf", "doc/**/*.tex",
-  "example-en/**/*.pdf", "example-en/**/*.tex"
+  "文档/*.pdf", "文档/*.tex",
+  "示例/**/*.pdf", "示例/**/*.tex", "示例/**/*.png", "示例/**/*.jpg"
 }
+
+-- Exclude build and output directories
+excludefiles = {"build/**/*", "out/**/*"}
 
 -- Disable automatic root installation
 installfiles = {}
@@ -45,51 +49,34 @@ function tag_hook(tagname, tagdate)
   return 0
 end
 
--- Custom CTAN hook to fix structure and remove duplication
+-- Custom CTAN hook to fix structure and translate paths
 function ctan_hook(path)
-  local staging = path:gsub("/", "\\")
-  print("Finalizing CTAN staging area at: " .. staging)
+  print("Finalizing CTAN staging area at: " .. path)
 
-  -- 1. Aggressively remove EVERY .sty, .cls, .lua, .cfg, .png from the ZIP root
-  -- These are duplicated because l3build flattens them by default
-  local extensions = {"*.sty", "*.cls", "*.lua", "*.cfg", "*.png"}
-  for _, pat in ipairs(extensions) do
-    os.execute("del /Q \"" .. staging .. "\\" .. pat .. "\" 2>nul")
-  end
+  -- We use python for robust file operations (Unicode support and recursion)
+  local cmd = "python -c \"import shutil, os, glob; " ..
+              "p = '" .. path:gsub("\\", "/") .. "'; " ..
+              "print('>>> Preserving src structure...'); " ..
+              "src_dest = os.path.join(p, 'src'); " ..
+              "if os.path.exists('src'): " ..
+              "  if os.path.exists(src_dest): shutil.rmtree(src_dest); " ..
+              "  shutil.copytree('src', src_dest); " ..
+              "  for ext in ['*.sty', '*.cls', '*.lua', '*.cfg']: " ..
+              "    for f in glob.glob(os.path.join(p, ext)): " ..
+              "      try: os.remove(f); " ..
+              "      except: pass; " ..
+              "for folder in ['文档', '示例']: " ..
+              "  if os.path.exists(folder): " ..
+              "    d = os.path.join(p, folder); " ..
+              "    if os.path.exists(d): shutil.rmtree(d); " ..
+              "    shutil.copytree(folder, d)\""
+  
+  os.execute(cmd)
 
-  -- Also remove the folders l3build might have put in the root
-  os.execute("rmdir /S /Q \"" .. staging .. "\\vertical\" 2>nul")
-  os.execute("rmdir /S /Q \"" .. staging .. "\\banxin\" 2>nul")
-  os.execute("rmdir /S /Q \"" .. staging .. "\\configs\" 2>nul")
-
-  -- 2. Ensure example-en is a root peer (move it out of doc/)
-  local ex_src = staging .. "\\doc\\example-en"
-  local ex_dest = staging .. "\\example-en"
-  if io.open(path .. "/doc/example-en", "r") then
-    print("Moving example-en to root...")
-    os.execute("mkdir \"" .. ex_dest .. "\" 2>nul")
-    os.execute("xcopy /S /E /Y /I \"" .. ex_src .. "\" \"" .. ex_dest .. "\" >nul 2>nul")
-    os.execute("rmdir /S /Q \"" .. ex_src .. "\" 2>nul")
-  end
-
-  -- 3. Fix doc/doc flattening
-  local doc_inner = staging .. "\\doc\\doc"
-  if io.open(path .. "/doc/doc", "r") then
-    os.execute("xcopy /S /E /Y /I \"" .. doc_inner .. "\" \"" .. staging .. "\\doc\" >nul 2>nul")
-    os.execute("rmdir /S /Q \"" .. doc_inner .. "\" 2>nul")
-  end
-
-  -- 4. Move root items back from doc/ to ZIP root
-  local root_files = {"README.md", "README-EN.md", "LICENSE", "VERSION", "INSTALL.md"}
-  for _, f in ipairs(root_files) do
-    if io.open(path .. "/doc/" .. f, "r") then
-      os.execute("move /Y \"" .. staging .. "\\doc\\" .. f .. "\" \"" .. staging .. "\" >nul 2>nul")
-    end
-  end
-
-  -- 5. Cleanup unwanted files from examples
-  os.execute("del /S /H /Q \"" .. ex_dest .. "\\*.aux\" 2>nul")
-  os.execute("del /S /H /Q \"" .. ex_dest .. "\\*.log\" 2>nul")
+  -- 1. Call the translation script
+  local cmd = "python scripts/ctan_post_process.py " .. path
+  print("Running path translation: " .. cmd)
+  os.execute(cmd)
 
   return 0
 end

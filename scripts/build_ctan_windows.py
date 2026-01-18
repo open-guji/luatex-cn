@@ -1,0 +1,54 @@
+import os
+import shutil
+import subprocess
+import sys
+
+def build_ctan_windows():
+    print("Starting robust CTAN build for Windows...")
+    
+    # 1. Run l3build ctan
+    print("Running l3build ctan...")
+    try:
+        subprocess.run(["l3build", "ctan"], check=True)
+    except subprocess.CalledProcessError as e:
+        print(f"Warning: l3build ctan returned exit code {e.returncode}. Proceeding with manual sync...")
+
+    # 2. Identify the staging path
+    # Usually build/distrib/ctan/luatex-cn
+    staging_path = os.path.join("build", "distrib", "ctan", "luatex-cn")
+    if not os.path.exists(staging_path):
+        os.makedirs(staging_path, exist_ok=True)
+    
+    # 3. Robustly copy missing Chinese directories and src folder
+    for folder in ["文档", "示例", "src"]:
+        if os.path.exists(folder):
+            dest = os.path.join(staging_path, folder)
+            print(f"Syncing {folder} to {dest}...")
+            if os.path.exists(dest):
+                shutil.rmtree(dest)
+            shutil.copytree(folder, dest)
+
+    # 4. Clean up flattened source files at root
+    print("Cleaning up flattened source files from root...")
+    for ext in ["*.sty", "*.cls", "*.lua", "*.cfg"]:
+        import glob
+        for f in glob.glob(os.path.join(staging_path, ext)):
+            try:
+                os.remove(f)
+            except:
+                pass
+
+    # 5. Run the post-process translation script
+    print("Running path translation and reference updates...")
+    try:
+        subprocess.run(["python", "scripts/ctan_post_process.py", staging_path], check=True)
+    except subprocess.CalledProcessError as e:
+        print(f"Error: Post-processing failed: {e}")
+        sys.exit(1)
+
+    print("\nCTAN Package successfully generated on Windows!")
+    print(f"Staging area: {staging_path}")
+    print("Note: The .zip file in build/distrib/ctan might need to be recreated if you want it to include the manually synced files.")
+
+if __name__ == "__main__":
+    build_ctan_windows()

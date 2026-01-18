@@ -1,0 +1,51 @@
+name: CTAN Packaging
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build_ctan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install TeX Live
+        uses: TeX-Live/setup-texlive-action@v3
+        with:
+          cache: true
+          packages: |
+            scheme-basic
+            l3build
+            luaotfload
+            luatex
+            ctablestack
+            fontspec
+            latex-bin
+
+      - name: Run l3build ctan
+        run: |
+          l3build ctan
+
+      - name: Prepare ctan branch content
+        run: |
+          mkdir out
+          # Copy the staging area content (which is already translated by the hook)
+          # l3build ctan puts files in build/ctan/luatex-cn
+          cp -r build/ctan/luatex-cn/* out/
+          # Copy the zip file
+          cp luatex-cn.zip out/
+
+      - name: Deploy to ctan branch
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./out
+          publish_branch: ctan
+          force_orphan: true
+          user_name: 'github-actions[bot]'
+          user_email: 'github-actions[bot]@users.noreply.github.com'
+          commit_message: "Automatic CTAN package update [skip ci]"

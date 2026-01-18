@@ -65,42 +65,56 @@
 
 % Clear cache
 \cnvLua{
-  package.loaded["vertical.luatex-cn-vertical-base-constants"] = nil
-  package.loaded["vertical.luatex-cn-vertical-base-utils"] = nil
-  package.loaded["vertical.luatex-cn-vertical-base-text-utils"] = nil
-  package.loaded["vertical.luatex-cn-vertical-flatten-nodes"] = nil
-  package.loaded["vertical.luatex-cn-vertical-layout-grid"] = nil
-  package.loaded["vertical.luatex-cn-vertical-render-page"] = nil
-  package.loaded["vertical.luatex-cn-vertical-render-border"] = nil
-  package.loaded["vertical.luatex-cn-vertical-render-background"] = nil
-  package.loaded["vertical.luatex-cn-vertical-render-position"] = nil
-  package.loaded["vertical.luatex-cn-vertical-core-main"] = nil
-  package.loaded["vertical.luatex-cn-vertical-core-textbox"] = nil
-  package.loaded["vertical.luatex-cn-vertical-core-textflow"] = nil
+  package.loaded["luatex-cn-vertical-base-constants"] = nil
+  package.loaded["luatex-cn-vertical-base-utils"] = nil
+  package.loaded["luatex-cn-vertical-base-text-utils"] = nil
+  package.loaded["luatex-cn-vertical-flatten-nodes"] = nil
+  package.loaded["luatex-cn-vertical-layout-grid"] = nil
+  package.loaded["luatex-cn-vertical-render-page"] = nil
+  package.loaded["luatex-cn-vertical-render-border"] = nil
+  package.loaded["luatex-cn-vertical-render-background"] = nil
+  package.loaded["luatex-cn-vertical-render-position"] = nil
+  package.loaded["luatex-cn-vertical-core-main"] = nil
+  package.loaded["luatex-cn-vertical-core-textbox"] = nil
+  package.loaded["luatex-cn-vertical-core-textflow"] = nil
+  package.loaded["luatex-cn-vertical-core-sidenote"] = nil
 }
 
 % Load Modules
 \cnvLua{
-  vertical_constants = require('vertical.luatex-cn-vertical-base-constants')
-  vertical_utils = require('vertical.luatex-cn-vertical-base-utils')
-  vertical_text_utils = require('vertical.luatex-cn-vertical-base-text-utils')
-  vertical_hooks = require('vertical.luatex-cn-vertical-base-hooks')
-  vertical_flatten = require('vertical.luatex-cn-vertical-flatten-nodes')
-  vertical_layout = require('vertical.luatex-cn-vertical-layout-grid')
-  vertical_text_position = require('vertical.luatex-cn-vertical-render-position')
-  vertical_render = require('vertical.luatex-cn-vertical-render-page')
-  vertical_border = require('vertical.luatex-cn-vertical-render-border')
-  vertical_background = require('vertical.luatex-cn-vertical-render-background')
-  vertical_background = require('vertical.luatex-cn-vertical-render-background')
+  vertical_constants = require('luatex-cn-vertical-base-constants')
+  vertical_utils = require('luatex-cn-vertical-base-utils')
+  vertical_text_utils = require('luatex-cn-vertical-base-text-utils')
+  vertical_hooks = require('luatex-cn-vertical-base-hooks')
+  vertical_flatten = require('luatex-cn-vertical-flatten-nodes')
+  vertical_layout = require('luatex-cn-vertical-layout-grid')
+  vertical_text_position = require('luatex-cn-vertical-render-position')
+  vertical_render = require('luatex-cn-vertical-render-page')
+  vertical_border = require('luatex-cn-vertical-render-border')
+  vertical_background = require('luatex-cn-vertical-render-background')
 }
 
 
 % Load core logic
 \cnvLua{
-  vertical_textbox = require('vertical.luatex-cn-vertical-core-textbox')
-  vertical_textflow = require('vertical.luatex-cn-vertical-core-textflow')
-  vertical = require('vertical.luatex-cn-vertical-core-main')
+  vertical_textbox = require('luatex-cn-vertical-core-textbox')
+  vertical_textflow = require('luatex-cn-vertical-core-textflow')
+  vertical_sidenote = require('luatex-cn-vertical-core-sidenote')
+  vertical = require('luatex-cn-vertical-core-main')
 }
+
+% Side Pizhu Command
+\NewDocumentCommand{\SidePizhu}{ +m }{%
+  \bgroup
+  \color{red}%
+  \dimen0=\f@size pt\relax
+  \dimen0=0.6\dimen0\relax
+  \fontsize{\dimen0}{\dimen0}\selectfont
+  \setbox0=\hbox{#1}%
+  \directlua{vertical_sidenote.register_sidenote(0)}%
+  \egroup
+}
+
 
 % Use l3keys for key-value parameters
 \RequirePackage{xparse}
@@ -404,7 +418,8 @@
         page_number_font_size = [=[\luaescapestring{\l_cnv_page_number_font_size_tl}]=],
         jiazhu_font_size = [=[\luaescapestring{\l__cn_vertical_jiazhu_size_tl}]=],
         jiazhu_align = [=[\luaescapestring{\l__cn_vertical_jiazhu_align_tl}]=],
-        font_size = [=[\luaescapestring{\l__cn_vertical_font_size_tl}]=]
+        font_size = [=[\luaescapestring{\l__cn_vertical_font_size_tl}]=],
+        is_textbox = true
       })
     }
   }

@@ -261,7 +261,107 @@ local function process_page_nodes(p_head, layout_map, params, ctx)
     return p_head
 end
 
---- 将网格位置应用到节点并渲染视觉辅助元素
+-- 辅助函数：绘制侧批 (Sidenotes)
+local function render_sidenotes(p_head, sidenote_nodes, params, ctx)
+    if not sidenote_nodes then return p_head end
+    
+    local vertical_align = params.vertical_align
+    
+    -- Sidenote visual adjustments
+    -- Shift relative to grid cell center?
+    -- "Interval is equal to column width" -> Gap width = grid_width.
+    -- We position in the gap.
+    -- Calculating gap center:
+    -- Gap between Col C and Col C+1 (Logical).
+    -- If sidenote is at Col C (logical gap index):
+    -- The gap is physically strictly between logical cols.
+    
+    -- In layout logic (sidenote.lua), we used the Gap Index.
+    -- Gap[C] is between Col C and Col C+1? No, we used standard logic.
+    -- Let's assume standard grid positioning first. 
+    -- Sidenote.lua logic: `curr_c` was incremented. It treats cols as grid slots.
+    -- So we just render at `pos.col` / `pos.row`.
+    
+    -- However, sidenotes are usually smaller and red.
+    -- We need to ensure font color is set? 
+    -- The \SidePizhu command already wraps content in \color{red}, so nodes have color attributes (if using color package) or just rely on state.
+    -- But since we inject nodes into a list where color stack might be different...
+    -- Actually, \whatsit color stack nodes are inside the list `sidenote.registry`.
+    -- So they should carry their own color.
+    
+    -- Sidenote offset: In RTL vertical layout, columns go from right (col 0) to left
+    -- The gap/margin between columns is on the RIGHT side of each column (higher x in physical coords)
+    -- We shift sidenotes by a full grid_width to place them in the inter-column gap
+    -- This effectively places the sidenote in the "gap column" to the right of the anchor column
+    local sidenote_x_offset = ctx.grid_width * 0.9
+
+    for _, item in ipairs(sidenote_nodes) do
+        local curr = item.node
+        -- Detach from old list to prevent side effects
+        D.setnext(curr, nil)
+
+        -- Insert at head of page list (simple, valid because positions are absolute)
+        -- Note: this reverses list order relative to original string if we just prepend.
+        -- But since we position absolutely, it only affects z-order.
+        if not p_head then
+            p_head = curr
+        else
+            p_head = D.insert_before(p_head, p_head, curr)
+        end
+
+        local pos = {
+            col = item.col,
+            row = item.row,
+            sidenote_offset = sidenote_x_offset,  -- Additional x offset for gap positioning
+        }
+        
+        -- Link node into list (insert at head or tail? List order matters for drawing order)
+        -- Insert at head is safer for positioning calculations if we use absolute kerns.
+        -- But background is at head. We should insert after background, or just use separate accumulator?
+        -- `p_head` is the main list.
+        
+        local id = D.getid(curr)
+
+        if id == constants.GLYPH then
+            -- For sidenotes, we need to apply the offset
+            -- Calculate position manually with offset
+            local d = D.getfield(curr, "depth") or 0
+            local h = D.getfield(curr, "height") or 0
+            local w = D.getfield(curr, "width") or 0
+
+            local rtl_col = ctx.p_total_cols - 1 - pos.col
+            -- Apply sidenote offset (shift into the gap to the right)
+            local final_x = rtl_col * ctx.grid_width + ctx.half_thickness + ctx.shift_x + sidenote_x_offset
+            -- Center horizontally in the remaining space
+            final_x = final_x + (ctx.grid_width * 0.25 - w) / 2
+
+            local char_total_height = h + d
+            local final_y = -pos.row * ctx.grid_height - (ctx.grid_height + char_total_height) / 2 + d - ctx.shift_y
+
+            D.setfield(curr, "xoffset", final_x)
+            D.setfield(curr, "yoffset", final_y)
+
+            local k = D.new(constants.KERN)
+            D.setfield(k, "kern", -w)
+            D.insert_after(p_head, curr, k)
+        elseif id == constants.HLIST or id == constants.VLIST then
+            p_head = handle_block_node(curr, p_head, pos, ctx)
+        else
+            -- Glue/Kern? Skip for sidenotes
+            if id == constants.GLUE then
+                D.setfield(curr, "width", 0)
+                D.setfield(curr, "stretch", 0)
+                D.setfield(curr, "shrink", 0)
+            end
+        end
+        
+        if params.draw_debug then
+            p_head = handle_debug_drawing(curr, p_head, pos, ctx)
+        end
+    end
+    
+    return p_head
+end
 -- @param head (node) 节点列表头部
 -- @param layout_map (table) 从节点指针到 {col, row} 的映射
 -- @param params (table) 渲染参数
@@ -445,6 +545,29 @@ local function apply_positions(head, layout_map, params)
                 jiazhu_align = params.jiazhu_align or "outward",
             }
             p_head = process_page_nodes(p_head, layout_map, params, ctx)
+            
+            -- Render Sidenotes
+            print(string.format("[RENDER] sidenote_map exists: %s", tostring(params.sidenote_map ~= nil)))
+            if params.sidenote_map then
+                local count = 0
+                for k, v in pairs(params.sidenote_map) do count = count + 1 end
+                print(string.format("[RENDER] sidenote_map has %d entries", count))
+                local sidenote_for_page = {}
+                -- Flatten map for this page
+                for _, sn_list in pairs(params.sidenote_map) do
+                    for _, node_info in ipairs(sn_list) do
+                        if node_info.page == p then
+                            table.insert(sidenote_for_page, node_info)
+                        end
+                    end
+                end
+                print(string.format("[RENDER] sidenote_for_page (page %d) has %d nodes", p, #sidenote_for_page))
+                if #sidenote_for_page > 0 then
+                    if draw_debug then utils.debug_log("[render] Drawing " .. #sidenote_for_page .. " sidenote nodes on page " .. p) end
+                    p_head = render_sidenotes(p_head, sidenote_for_page, params, ctx)
+                end
+            end
+
             
             result_pages[p+1] = { head = D.tonode(p_head), cols = p_total_cols }
         end

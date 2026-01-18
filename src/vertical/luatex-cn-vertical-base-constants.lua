@@ -90,6 +90,9 @@ constants.ATTR_FIRST_INDENT = luatexbase.attributes.cnverticalfirstindent or lua
 constants.ATTR_JIAZHU = luatexbase.attributes.cnverticaljiazhu or luatexbase.new_attribute("cnverticaljiazhu")
 constants.ATTR_JIAZHU_SUB = luatexbase.attributes.cnverticaljiazhusub or luatexbase.new_attribute("cnverticaljiazhusub")
 
+-- Constants for Side Pizhu
+constants.SIDENOTE_USER_ID = 202601
+
 --- 将 TeX 尺寸字符串转换为 scaled points (sp)
 -- @param dim_str (string) TeX 尺寸字符串（例如 "20pt", "1.5em"）
 -- @return (number|nil) 以 scaled points 为单位的尺寸，如果无效或为零则返回 nil

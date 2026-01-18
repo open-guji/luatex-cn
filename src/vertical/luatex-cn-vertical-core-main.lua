@@ -96,6 +96,8 @@ local flatten = package.loaded['luatex-cn-vertical-flatten-nodes'] or require('l
 local layout = package.loaded['luatex-cn-vertical-layout-grid'] or require('luatex-cn-vertical-layout-grid')
 local render = package.loaded['luatex-cn-vertical-render-page'] or require('luatex-cn-vertical-render-page')
 local textbox = package.loaded['luatex-cn-vertical-core-textbox'] or require('luatex-cn-vertical-core-textbox')
+local sidenote = package.loaded['luatex-cn-vertical-core-sidenote'] or require('luatex-cn-vertical-core-sidenote')
+
 
 local D = node.direct
 
@@ -204,6 +206,14 @@ function vertical.prepare_grid(box_num, params)
         banxin_on = banxin_on,
     })
 
+    -- 4a. Pipeline Stage 2.5: Calculate Sidenote Layout
+    local sidenote_map = sidenote.calculate_sidenote_positions(layout_map, {
+        list = list,
+        page_columns = p_cols,
+        line_limit = limit,
+        n_column = b_interval
+    })
+
     -- 5. Pipeline Stage 3: Apply positions and render
     -- Build rendering params
     local is_textbox = (params.is_textbox == true)
@@ -260,6 +270,7 @@ function vertical.prepare_grid(box_num, params)
         font_size = constants.to_dimen(params.font_size),
         is_textbox = is_textbox,
         banxin_on = banxin_on,
+        sidenote_map = sidenote_map, -- Pass sidenote map to render
     }
 
     if is_debug then
@@ -340,9 +351,11 @@ function vertical.process_from_tex(box_num, params)
     local total_pages = vertical.prepare_grid(box_num, params)
 
     -- Check if split page is enabled
+    -- CRITICAL: Do NOT enable split page output for textboxes (VerticalRTT, etc.)
+    local is_textbox = (params.is_textbox == true)
     local split_enabled = _G.splitpage and _G.splitpage.is_enabled and _G.splitpage.is_enabled()
-
-    if split_enabled then
+    
+    if split_enabled and not is_textbox then
         -- Split page mode: output each page as two half-pages
         local target_w = _G.splitpage.get_target_width()
         local target_h = _G.splitpage.get_target_height()
@@ -355,11 +368,20 @@ function vertical.process_from_tex(box_num, params)
         for i = 0, total_pages - 1 do
             -- For split page, we need to output each page twice (left half and right half)
             -- First, load page into box (with copy=true so we can use it twice)
-            tex.print(string.format("\\directlua{vertical.load_page(%d, %d, true)}", box_num, i))
+            local cmd_load = string.format("\\directlua{vertical.load_page(%d, %d, true)}", box_num, i)
+            local cmd_dim = string.format("\\global\\pagewidth=%.5fpt", target_w_pt)
+            local cmd_dim_h = string.format("\\global\\pageheight=%.5fpt", target_h_pt)
+            
+            if _G.vertical.debug.enabled then
+                print("[core] TeX CMD: " .. cmd_load)
+                print("[core] TeX CMD: " .. cmd_dim)
+            end
+
+            tex.print(cmd_load)
 
             -- Set page dimensions to half width for first half
-            tex.print(string.format("\\global\\pagewidth=%.5fpt", target_w_pt))
-            tex.print(string.format("\\global\\pageheight=%.5fpt", target_h_pt))
+            tex.print(cmd_dim)
+            tex.print(cmd_dim_h)
 
             -- Output first half (right side if right_first)
             tex.print("\\par\\nointerlineskip")
@@ -373,8 +395,8 @@ function vertical.process_from_tex(box_num, params)
 
             -- New page for second half
             tex.print("\\newpage")
-            tex.print(string.format("\\global\\pagewidth=%.5fpt", target_w_pt))
-            tex.print(string.format("\\global\\pageheight=%.5fpt", target_h_pt))
+            tex.print(cmd_dim)
+            tex.print(cmd_dim_h)
 
             -- Output second half
             tex.print("\\par\\nointerlineskip")

@@ -425,8 +425,8 @@ local function apply_positions(head, layout_map, params)
     local text_rgb_str = utils.normalize_rgb(font_rgb)
     
     if draw_debug then
-        utils.debug_log(string.format("[render] apply_positions: border_rgb=%s -> %s, font_size=%s", 
-            tostring(border_rgb), tostring(b_rgb_str), tostring(params.font_size)))
+        utils.debug_log(string.format("[render] apply_positions: border_rgb=%s -> %s, font_rgb=%s, font_size=%s", 
+            tostring(border_rgb), tostring(b_rgb_str), tostring(font_rgb), tostring(params.font_size)))
     end
 
     -- Group nodes by page

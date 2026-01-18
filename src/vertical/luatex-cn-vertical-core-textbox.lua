@@ -92,21 +92,29 @@ function textbox.process_inner_box(box_num, params)
 
     -- 我们将文本框模拟为一个恰好等于其尺寸的"页面"
     local ba = params.box_align or "top"
+    local n_cols = tonumber(params.n_cols) or 0
+    if n_cols <= 0 then
+        -- Auto columns: set to a large enough value to accommodate any content
+        -- without triggering a page break in the layout engine.
+        n_cols = 100
+    end
+
     local sub_params = {
+        n_cols = n_cols,
+        page_columns = n_cols,
+        col_limit = tonumber(params.height) or 6,
         grid_width = params.grid_width,
         grid_height = params.grid_height,
-        col_limit = tonumber(params.height) or 1,
-        page_columns = tonumber(params.n_cols) or 1,
-        border_on = (params.border == "true" or params.border == true),
-        debug_on = (params.debug == "true" or params.debug == true) or (_G.vertical and _G.vertical.debug and _G.vertical.debug.enabled),
-        v_align = (ba == "bottom") and "bottom" or "top",
-        distribute = (ba == "fill"),
-        height = params.grid_height, -- 给定足够的高度
+        box_align = params.box_align,
         column_aligns = col_aligns,
-        is_textbox = true,
-        border_color = params.border_color,
+        debug_on = (params.debug == "true" or params.debug == true) or (_G.vertical and _G.vertical.debug and _G.vertical.debug.enabled),
+        border_on = (params.border == "true" or params.border == true),
         background_color = params.background_color,
         font_color = params.font_color,
+        font_size = params.font_size,
+        is_textbox = true,
+        distribute = (ba == "fill"),
+        border_color = params.border_color,
     }
 
     -- 3. 执行核心排版流水线
@@ -135,8 +143,11 @@ function textbox.process_inner_box(box_num, params)
 
     if res_box then
         -- 4. 设置关键属性，使外部布局能正确识别该块
-        -- 外部布局中，文本框始终占用 1 个逻辑列宽
-        node.set_attribute(res_box, constants.ATTR_TEXTBOX_WIDTH, 1)
+        -- 获取实际渲染的列数
+        -- For textboxes, we store the ACTUAL column count as the width attribute
+        -- so that the outer layout can eventually handle wide blocks.
+        local actual_cols = node.get_attribute(res_box, constants.ATTR_TEXTBOX_WIDTH) or 1
+        node.set_attribute(res_box, constants.ATTR_TEXTBOX_WIDTH, actual_cols)
         node.set_attribute(res_box, constants.ATTR_TEXTBOX_HEIGHT, tonumber(params.height) or 1)
         
         -- 应用缩进属性，确保在下一列继续时保持正确位移

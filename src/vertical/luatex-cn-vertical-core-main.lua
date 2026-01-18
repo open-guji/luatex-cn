@@ -157,10 +157,11 @@ function vertical.prepare_grid(box_num, params)
         end
     end
 
-    local limit = tonumber(params.col_limit)
+    local limit = tonumber(params.col_limit) or tonumber(params.line_limit)
     if not limit or limit <= 0 then
         limit = math.floor(h_dim / g_height)
     end
+    if limit <= 0 then limit = 20 end
 
     local is_textbox = (params.is_textbox == true)
     local half_thickness = math.floor(b_thickness / 2)
@@ -206,16 +207,29 @@ function vertical.prepare_grid(box_num, params)
         banxin_on = banxin_on,
     })
 
-    -- 4a. Pipeline Stage 2.5: Calculate Sidenote & Floating Layout
+    -- 4a. Pipeline Stage 2.5: For textboxes, determine actual columns used
+    if is_textbox then
+        local max_col = 0
+        for _, pos in pairs(layout_map) do
+            if pos.col > max_col then
+                max_col = pos.col
+            end
+        end
+        -- Adjust p_cols to the actual number of columns used (max_col + 1)
+        p_cols = max_col + 1
+        -- Also update total_pages if it's a single-page textbox that got pushed to page 2?
+        -- No, total_pages is already correct.
+    end
+
+    local floating_map = textbox.calculate_floating_positions(layout_map, {
+        list = list
+    })
+
     local sidenote_map = sidenote.calculate_sidenote_positions(layout_map, {
         list = list,
         page_columns = p_cols,
         line_limit = limit,
         n_column = b_interval
-    })
-
-    local floating_map = textbox.calculate_floating_positions(layout_map, {
-        list = list
     })
 
     -- 5. Pipeline Stage 3: Apply positions and render
@@ -232,7 +246,8 @@ function vertical.prepare_grid(box_num, params)
         draw_border = is_border,
         b_padding_top = b_padding_top,
         b_padding_bottom = b_padding_bottom,
-        line_limit = limit,
+        col_limit = limit, -- Correct parameter name for rows per column
+        line_limit = limit, -- Backward compatibility
         border_thickness = b_thickness,
         draw_outer_border = is_outer_border,
         outer_border_thickness = ob_thickness,
@@ -242,6 +257,7 @@ function vertical.prepare_grid(box_num, params)
         border_rgb = params.border_color,
         bg_rgb = params.background_color,
         font_rgb = params.font_color,
+        font_size = params.font_size,
         paper_width = p_width,
         paper_height = p_height,
         margin_top = m_top,
@@ -315,10 +331,15 @@ function vertical.prepare_grid(box_num, params)
 
         new_box.height = 0
         new_box.depth = total_v_depth
-        -- CRITICAL: Reset textbox attributes for MAIN DOCUMENT wrapper boxes
-        -- (Inner textbox wrappers need these attributes set by verticalize_inner_box)
-        node.set_attribute(new_box, constants.ATTR_TEXTBOX_WIDTH, 0)
-        node.set_attribute(new_box, constants.ATTR_TEXTBOX_HEIGHT, 0)
+        -- For textboxes, we store the ACTUAL column count as the width attribute
+        if is_textbox then
+            node.set_attribute(new_box, constants.ATTR_TEXTBOX_WIDTH, page_info.cols)
+            node.set_attribute(new_box, constants.ATTR_TEXTBOX_HEIGHT, limit)
+        else
+            -- CRITICAL: Reset textbox attributes for MAIN DOCUMENT wrapper boxes
+            node.set_attribute(new_box, constants.ATTR_TEXTBOX_WIDTH, 0)
+            node.set_attribute(new_box, constants.ATTR_TEXTBOX_HEIGHT, 0)
+        end
         _G.vertical_pending_pages[i] = new_box
     end
 

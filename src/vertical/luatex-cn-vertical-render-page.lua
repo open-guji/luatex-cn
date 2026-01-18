@@ -295,7 +295,9 @@ local function render_sidenotes(p_head, sidenote_nodes, params, ctx)
     -- This effectively places the sidenote in the "gap column" to the right of the anchor column
     local sidenote_x_offset = ctx.grid_width * 0.9
 
-    for _, item in ipairs(sidenote_nodes) do
+    -- Iterate backwards to preserve order when using insert_before at head
+    for i = #sidenote_nodes, 1, -1 do
+        local item = sidenote_nodes[i]
         local curr = item.node
         -- Detach from old list to prevent side effects
         D.setnext(curr, nil)
@@ -337,11 +339,19 @@ local function render_sidenotes(p_head, sidenote_nodes, params, ctx)
             local final_x = boundary_x - (w / 2)
 
             local char_total_height = h + d
-            local final_y = -pos.row * ctx.grid_height - (ctx.grid_height + char_total_height) / 2 + d - ctx.shift_y
+            local effective_grid_height = ctx.grid_height
+            if item.metadata and item.metadata.grid_height then
+                effective_grid_height = tonumber(item.metadata.grid_height) or ctx.grid_height
+            end
+
+            -- Use effective_grid_height for the cell height centering
+            -- Note: pos.row is fractional main rows, so pos.row * ctx.grid_height gives absolute Y
+            local final_y = -pos.row * ctx.grid_height - (effective_grid_height + char_total_height) / 2 + d - ctx.shift_y
 
             -- Apply user y-offset from metadata
             if item.metadata and item.metadata.yoffset then
                 -- User: Negative=Up (Increase Y), Positive=Down (Decrease Y)
+                -- Standard Cartesian: Up is +Y.
                 -- Our Y coord: 0 is top, negative is down.
                 -- Wait, user request: "如果是复数的话就要上向上。移动一点" (If negative, move UP)
                 -- Standard Cartesian: Up is +Y.

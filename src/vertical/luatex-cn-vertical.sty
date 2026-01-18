@@ -106,6 +106,7 @@
 % Define keys for SidePizhu
 \ExplSyntaxOn
 \dim_new:N \l__cn_sidepizhu_yoffset_dim
+\dim_new:N \l__cn_sidepizhu_grid_height_dim
 \tl_new:N \l__cn_sidepizhu_font_size_tl
 \tl_new:N \l__cn_sidepizhu_color_tl
 
@@ -113,6 +114,7 @@
   {
     yoffset .dim_set:N = \l__cn_sidepizhu_yoffset_dim,
     yoffset .initial:n = 0pt,
+    grid-height .dim_set:N = \l__cn_sidepizhu_grid_height_dim,
     font-size .tl_set:N = \l__cn_sidepizhu_font_size_tl,
     font-size .initial:n = 10pt,
     color .tl_set:N = \l__cn_sidepizhu_color_tl,
@@ -123,15 +125,22 @@
 \NewDocumentCommand{\SidePizhu}{ O{} +m }{%
   \group_begin:
     \keys_set:nn { cv_sidepizhu } { #1 }
-    \color{\l__cn_sidepizhu_color_tl}%
     % Use explicit font size
     \tl_if_empty:NTF \l__cn_sidepizhu_font_size_tl
       { \dimen0=\f@size pt }
       { \dimen0=\l__cn_sidepizhu_font_size_tl\relax }
     \fontsize{\dimen0}{\dimen0}\selectfont
-    \setbox0=\hbox{#2}%
+    % Color must be inside the box to be captured in the node list
+    \setbox0=\hbox{\color{\l__cn_sidepizhu_color_tl}#2}%
+    
+    % Prepare metadata
+    \dimen2=\l__cn_sidepizhu_grid_height_dim
+    % If grid-height not set, default to font size (tight packing)
+    \dim_compare:nF { \dimen2 > 0pt } { \dimen2=\dimen0 }
+
     \directlua{vertical_sidenote.register_sidenote(0, {
-      yoffset = \number\l__cn_sidepizhu_yoffset_dim
+      yoffset = \number\l__cn_sidepizhu_yoffset_dim,
+      grid_height = \number\dimen2
     })}%
   \group_end:
 }

@@ -205,15 +205,24 @@ function sidenote.calculate_sidenote_positions(layout_map, params)
                         local remaining_rows = rows_needed
                         local current_content_node = content_d
                         
+                        -- Determine step size (relative to main grid height)
+                        local sn_grid_height = metadata.grid_height
+                        local main_grid_height = params.grid_height or (65536 * 20) -- Default fallback
+                        local step = 1
+                        if sn_grid_height and sn_grid_height > 0 then
+                            step = sn_grid_height / main_grid_height
+                        end 
+                        
                         local curr_p = start_page
                         local curr_c = start_col
-                        local curr_r = math.max(start_row, get_gap_filled(curr_p, curr_c) + 1)
-                        -- Small margin
-                        if curr_r > start_row then curr_r = curr_r + 1 end
+                        -- Start at max(anchor, filled). Add small margin (0.5?) if overlapping.
+                        local filled_r = get_gap_filled(curr_p, curr_c)
+                        -- Ensure we start below the filled position
+                        local curr_r = math.max(start_row, filled_r + 0.1) -- +0.1 margin
                         
                         while current_content_node do
-                            -- Check bounds
-                            if curr_r >= line_limit then
+                            -- Check bounds (approximate check using floor)
+                            if math.floor(curr_r) >= line_limit then
                                 -- Wrap to next column gap
                                 curr_c = curr_c + 1
                                 curr_r = 0
@@ -224,7 +233,7 @@ function sidenote.calculate_sidenote_positions(layout_map, params)
                                 -- Check gap usage in new column
                                 local filled = get_gap_filled(curr_p, curr_c)
                                 if curr_r <= filled then
-                                    curr_r = filled + 1
+                                    curr_r = filled + 0.1
                                 end
                             end
                             
@@ -237,9 +246,11 @@ function sidenote.calculate_sidenote_positions(layout_map, params)
                                 metadata = metadata
                             })
                             
+                            -- Update occupancy
                             set_gap_filled(curr_p, curr_c, curr_r)
                             
-                            curr_r = curr_r + 1
+                            -- Increment by step (fractional row)
+                            curr_r = curr_r + step
                             current_content_node = D.getnext(current_content_node)
                         end
                         

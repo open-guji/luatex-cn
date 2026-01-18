@@ -1396,17 +1396,28 @@ cat "c:/Users/lisdp/texmf/tex/latex/luatex-cn/fonts/luatex-cn-font-autodetect.st
 尽管在逻辑上我们称之为“悬浮”，但在 PDF 节点序列中，它依然占据了空间，导致后续所有内容相对于它的末尾进行排版，造成整页内容偏移。
 
 ### 解决方案
-**使用零宽度叠加（Zero-width Overlay）方案**。
-在渲染悬浮框后，紧接着插入一个“负向补偿 Kern”，值等于 `-(x + box_width)`。
+**使用物理全页或单页右上角作为原点**。
+
+1. **坐标系转换**：为了符合古籍从右向左的排版直觉，悬浮框采用**右上角**作为坐标原点 $(0,0)$。
+    - $X$ 轴向左增加，$Y$ 轴向下增加。
+    - **核心逻辑**：由于 TeX 的 Page Box 通常被 `geometry` 偏移了页边距（Margin），直接使用坐标会导致坐标相对于正文边框偏移。必须在 Lua 渲染层减去这些边距。
+    - 物理坐标计算公式：
+        - `rel_x = x_input - margin_right`
+        - `rel_y = y_input - margin_top`
+    - 在 `dir RTT` 容器中，`Kern(rel_x)` 即可精确定位。
+
+2. **渲染实现**：
+在渲染悬浮框后，紧接着插入一个“负向补偿 Kern”，将其宽度归零。
 ```lua
--- 1. 向右移到坐标 x
-p_head = D.insert_before(p_head, p_head, Kern(x))
+-- 1. 计算相对于容器盒子的坐标 (减去边距)
+local rel_x = item.x - params.margin_right
 -- 2. 插入盒子
-D.insert_after(p_head, Kern(x), box)
--- 3. CRITICAL: 补偿所有位移，回到原点
-D.insert_after(p_head, box, Kern(-(x + box_width)))
+p_head = D.insert_before(p_head, p_head, Kern(rel_x))
+D.insert_after(p_head, Kern(rel_x), box)
+-- 3. CRITICAL: 负向补偿，实现 Overlay
+D.insert_after(p_head, box, Kern(-(rel_x + box_width)))
 ```
-这样，悬浮框对于后续节点流来说，在水平方向上就变成了“透明”的，实现了完美的图层叠加效果。
+这样，悬浮框就变成了一个完全不占位的 Overlay 图层。
 
 ## 8. Whatsit 锚点节点导致 PDF 后端错误的风险与处理
 

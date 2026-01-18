@@ -598,13 +598,25 @@ local function apply_positions(head, layout_map, params)
                         local h = D.getfield(curr, "height") or 0
                         local w = D.getfield(curr, "width") or 0
                         
-                        -- final_x starts from left
-                        local final_x = item.x
-                        -- final_y starts from top (0) going down (negative)
-                        local final_y_top = -item.y
+                        -- Top-Right Origin (0,0) from PAPER edge
+                        -- X increases to the LEFT
+                        -- Y increases DOWNWARDS
                         
-                        -- Apply shift to center/top align properly
-                        D.setfield(curr, "shift", -final_y_top + h)
+                        -- Since the container box is usually placed at (margin_right, margin_top) by geometry,
+                        -- we must subtract these margins to get absolute paper coordinates.
+                        local m_right = params.margin_right or 0
+                        local m_top = params.margin_top or 0
+                        
+                        -- relative coordinates within the page box
+                        local rel_x = item.x - m_right
+                        local rel_y = item.y - m_top
+                        
+                        -- In dir RTT, positive Kern moves LEFT from the origin (which is at m_right).
+                        -- So Kern(rel_x) puts the box at m_right + rel_x = m_right + (x - m_right) = x from paper right edge.
+                        local final_x = rel_x
+                        
+                        -- Apply shift for Y. shift - h = rel_y  => shift = rel_y + h
+                        D.setfield(curr, "shift", rel_y + h)
                         
                         local k_pre = D.new(constants.KERN)
                         D.setfield(k_pre, "kern", final_x)
@@ -617,7 +629,8 @@ local function apply_positions(head, layout_map, params)
                         D.insert_after(p_head, curr, k_post)
                         
                         if draw_debug then
-                            utils.debug_log(string.format("[render] Floating Box at x=%.2f, y=%.2f", item.x/65536, item.y/65536))
+                            utils.debug_log(string.format("[render] Floating Box (Absolute Top-Right) at x=%.2f, y=%.2f (rel_x=%.2f, rel_y=%.2f)", 
+                                item.x/65536, item.y/65536, rel_x/65536, rel_y/65536))
                         end
                     end
                 end

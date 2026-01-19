@@ -18,8 +18,8 @@ jobs:
 
       - name: Package src directory
         run: |
-          # Create a temporary directory to avoid zipping the zip
-          zip -r luatex-cn-src-${{ github.ref_name }}.zip src/
+          cd src
+          zip -r ../luatex-cn-src-${{ github.ref_name }}.zip .
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2

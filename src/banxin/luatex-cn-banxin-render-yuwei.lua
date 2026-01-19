@@ -1,4 +1,4 @@
-﻿-- Copyright 2026 Open-Guji (https://github.com/open-guji)
+-- Copyright 2026 Open-Guji (https://github.com/open-guji)
 --
 -- Licensed under the Apache License, Version 2.0 (the "License");
 -- you may not use this file except in compliance with the License.
@@ -12,39 +12,39 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 -- ============================================================================
--- render_yuwei.lua - 鱼尾（Fish Tail）绘制模块
+-- render_yuwei.lua - ??(Fish Tail)????
 -- ============================================================================
--- 文件名: render_yuwei.lua (原 yuwei.lua)
--- 层级: 第三阶段 - 渲染层 (Stage 3: Render Layer)
+-- ???: render_yuwei.lua (? yuwei.lua)
+-- ??: ???? - ??? (Stage 3: Render Layer)
 --
--- 【模块功能 / Module Purpose】
--- 本模块负责绘制古籍版刻中的"鱼尾"装饰符号：
---   1. 支持实心鱼尾（black）：填充的燕尾形状
---   2. 支持空心鱼尾（white/hollow）：仅描边的轮廓
---   3. 支持上下两个方向：开口朝下（上鱼尾）和开口朝上（下鱼尾）
---   4. 使用贝塞尔曲线构建平滑的弧线
+-- ????? / Module Purpose?
+-- ?????????????"??"????:
+--   1. ??????(black):???????
+--   2. ??????(white/hollow):??????
+--   3. ????????:????(???)?????(???)
+--   4. ??????????????
 --
--- 【几何模型】
---   鱼尾简化为由贝塞尔曲线组成的"燕尾"形状：
+-- ??????
+--   ??????????????"??"??:
 --
---      ▲ 开口（direction=1 时朝下）
+--      ? ??(direction=1 ???)
 --     / \
---    /   \        高度 = width × 0.6
+--    /   \        ?? = width � 0.6
 --   /     \
---   ───V───       尾尖
+--   ---V---       ??
 --    width
 --
--- 【注意事项】
---   • 坐标系：y 向下为负，x 向右为正
---   • 颜色格式：需要归一化的 RGB 字符串（如 "0 0 0"）
---   • direction=1 表示上鱼尾（尾尖朝下），direction=-1 表示下鱼尾
+-- ??????
+--   � ???:y ????,x ????
+--   � ????:?????? RGB ???(? "0 0 0")
+--   � direction=1 ?????(????),direction=-1 ?????
 --
--- 【整体架构】
+-- ??????
 --   draw_yuwei(params)
---      ├─ 计算宽高比例
---      ├─ 根据 style 选择填充或描边
---      ├─ 生成贝塞尔曲线 PDF 路径
---      └─ 返回 PDF literal 字符串
+--      +- ??????
+--      +- ?? style ???????
+--      +- ??????? PDF ??
+--      +- ?? PDF literal ???
 --
 -- ============================================================================
 
@@ -55,35 +55,35 @@ local utils = package.loaded['vertical.base_utils'] or require('vertical.luatex-
 -- Conversion factor from scaled points to PDF big points
 local sp_to_bp = utils.sp_to_bp
 
---- 绘制鱼尾（燕尾）装饰元素
--- 鱼尾通常是一个带有 V 形缺口的矩形形状
+--- ????(??)????
+-- ????????? V ????????
 --
--- 几何形状 (direction=1, 上鱼尾 - 缺口在底部):
+-- ???? (direction=1, ??? - ?????):
 --
---       ←───── width ─────→
---   ┌─────────────────────────┐  ↑
---   │                         │  │ edge_height (侧边高度)
---   │                         │  │
---   └───╲               ╱───┘  ↓
---         ╲           ╱        ↑
---           ╲       ╱          │ (edge_height - notch_height)
---             ╲   ╱            │
---               V              ↓ 缺口尖端位置（从顶部起算 notch_height）
+--       ?----- width -----?
+--   +-------------------------+  ?
+--   �                         �  � edge_height (????)
+--   �                         �  �
+--   +---?               ?---+  ?
+--         ?           ?        ?
+--           ?       ?          � (edge_height - notch_height)
+--             ?   ?            �
+--               V              ? ??????(????? notch_height)
 --
--- @param params (table) 参数表:
---   - x (number) 左边缘 X 坐标 (sp)
---   - y (number) 顶边缘 Y 坐标 (sp)
---   - width (number) 宽度 (sp)
---   - edge_height (number) 侧边高度 (sp)
---   - notch_height (number) 从顶部到 V 尖端的距离 (direction=1) 或从底部到 V 尖端的距离 (direction=-1)
---   - direction (number) 1 = 上鱼尾 (缺口在底部), -1 = 下鱼尾 (缺口在顶部)
---   - style (string) "black" (实心填充) 或 "white"/"hollow" (空心描边)
---   - color_str (string) RGB 颜色字符串 (例如 "0 0 0")
---   - line_width (number) 可选，空心样式的线宽 (默认 0.8bp)
---   - extra_line (bool) 是否在 V 尖端处额外绘制一条水平线
---   - line_gap (number) 尖端与额外线条之间的间距 (默认 4pt)
---   - border_thickness (number) 额外线条的厚度 (默认 0.4pt)
--- @return (string) PDF literal 路径字符串
+-- @param params (table) ???:
+--   - x (number) ??? X ?? (sp)
+--   - y (number) ??? Y ?? (sp)
+--   - width (number) ?? (sp)
+--   - edge_height (number) ???? (sp)
+--   - notch_height (number) ???? V ????? (direction=1) ????? V ????? (direction=-1)
+--   - direction (number) 1 = ??? (?????), -1 = ??? (?????)
+--   - style (string) "black" (????) ? "white"/"hollow" (????)
+--   - color_str (string) RGB ????? (?? "0 0 0")
+--   - line_width (number) ??,??????? (?? 0.8bp)
+--   - extra_line (bool) ??? V ????????????
+--   - line_gap (number) ???????????? (?? 4pt)
+--   - border_thickness (number) ??????? (?? 0.4pt)
+-- @return (string) PDF literal ?????
 local function draw_yuwei(params)
     local x = params.x or 0
     local y = params.y or 0
@@ -115,8 +115,8 @@ local function draw_yuwei(params)
     local path
     if style == "black" then
         if direction == 1 then
-            -- 上鱼尾: V-notch cuts into shape from bottom
-            -- Path: top-left → top-right → bottom-right → V-tip → bottom-left → close
+            -- ???: V-notch cuts into shape from bottom
+            -- Path: top-left ? top-right ? bottom-right ? V-tip ? bottom-left ? close
             path = string.format(
                 "q %s rg " ..
                 "%.4f %.4f m " ..           -- Top-left
@@ -133,8 +133,8 @@ local function draw_yuwei(params)
                 x_bp, y_bp - edge_h_bp                      -- Bottom-left
             )
         else
-            -- 下鱼尾: V-notch cuts into shape from top (mirrored)
-            -- Path: bottom-left → bottom-right → top-right → V-tip → top-left → close
+            -- ???: V-notch cuts into shape from top (mirrored)
+            -- Path: bottom-left ? bottom-right ? top-right ? V-tip ? top-left ? close
             path = string.format(
                 "q %s rg " ..
                 "%.4f %.4f m " ..           -- Bottom-left
@@ -185,7 +185,7 @@ local function draw_yuwei(params)
         local extra_line_path
         
         if direction == 1 then
-            -- 上鱼尾: V-line below the yuwei's V-notch
+            -- ???: V-line below the yuwei's V-notch
             -- The V-line starts at edge_height + gap, and its tip is at notch_height + gap
             local v_left_y = y_bp - edge_h_bp - gap_bp
             local v_tip_y = y_bp - notch_h_bp - gap_bp
@@ -198,7 +198,7 @@ local function draw_yuwei(params)
                 x_bp + w_bp, v_right_y             -- Right point
             )
         else
-            -- 下鱼尾: V-line above the yuwei's V-notch (inverted)
+            -- ???: V-line above the yuwei's V-notch (inverted)
             local v_left_y = y_bp - notch_h_bp + edge_h_bp + gap_bp
             local v_tip_y = y_bp + gap_bp
             local v_right_y = y_bp - notch_h_bp + edge_h_bp + gap_bp
@@ -216,9 +216,9 @@ local function draw_yuwei(params)
     return path
 end
 
---- 为鱼尾创建一个 PDF literal 节点
--- @param params (table) 与 draw_yuwei 相同
--- @return (node) pdf_literal whatsit 节点 (直接引用)
+--- ??????? PDF literal ??
+-- @param params (table) ? draw_yuwei ??
+-- @return (node) pdf_literal whatsit ?? (????)
 local function create_yuwei_node(params)
     local D = constants.D
     local literal_str = draw_yuwei(params)
@@ -239,7 +239,7 @@ local yuwei = {
 }
 
 -- Register module in package.loaded for require() compatibility
--- 注册模块到 package.loaded
+-- ????? package.loaded
 package.loaded['banxin.render_yuwei'] = yuwei
 package.loaded['render_yuwei'] = yuwei
 

@@ -1,4 +1,4 @@
-﻿% Copyright 2026 Open-Guji (https://github.com/open-guji)
+% Copyright 2026 Open-Guji (https://github.com/open-guji)
 %
 % Licensed under the Apache License, Version 2.0 (the "License");
 % you may not use this file except in compliance with the License.
@@ -28,12 +28,12 @@
 % Define Template Mappings (Chinese -> English/Internal name)
 \prop_gset_from_keyval:Nn \g_guji_template_map_prop
   {
-    四库全书彩色 = SiKuQuanShu-colored,
-    四庫全書彩色 = SiKuQuanShu-colored,
-    四库全书 = default,
-    四庫全書 = default,
-    红楼梦甲戌本 = HongLouMengJiaXuBen,
-    紅樓夢甲戌本 = HongLouMengJiaXuBen
+    ?????? = SiKuQuanShu-colored,
+    ?????? = SiKuQuanShu-colored,
+    ???? = default,
+    ???? = default,
+    ?????? = HongLouMengJiaXuBen,
+    ?????? = HongLouMengJiaXuBen
   }
 
 \DeclareOption*{
@@ -72,7 +72,7 @@
 % Load font auto-detection module
 \RequirePackage{luatex-cn-font-autodetect}
 
-% Load banxin for 版心/鱼尾 features (registers hooks with vertical)
+% Load banxin for ??/?? features (registers hooks with vertical)
  \cnvLua{
     local status, err = pcall(function()
         require('banxin.luatex-cn-banxin-main')
@@ -99,7 +99,7 @@
 \msg_new:nnn { guji } { missing-grid-param }
   { Either~n-char~or~grid-height~must~be~specified. }
 
-% Storage for Chapter Title (章节标题)
+% Storage for Chapter Title (????)
 \tl_new:N \l_guji_chapter_title_tl
 \tl_set:Nn \l_guji_chapter_title_tl {}
 
@@ -206,7 +206,7 @@
     font-features .tl_set:N = \l_guji_font_features_tl,
     font-features .initial:n = {},
 
-    % Banxin (版心) section ratios
+    % Banxin (??) section ratios
     banxin-upper-ratio .tl_set:N = \l_guji_banxin_upper_tl,
     banxin-upper-ratio .initial:n = {},
 
@@ -222,7 +222,7 @@
     banxin-padding-bottom .tl_set:N = \l_guji_banxin_padding_bottom_tl,
     banxin-padding-bottom .initial:n = {10pt},
 
-    % Chapter title (章节标题) - displayed in section 2 of banxin
+    % Chapter title (????) - displayed in section 2 of banxin
     chapter-title .code:n = {
       \tl_set:Nn \l_guji_chapter_title_tl { #1 }
       \ResetPageNumber
@@ -240,7 +240,7 @@
     chapter-title-grid-height .tl_set:N = \l_guji_chapter_title_grid_height_tl,
     chapter-title-grid-height .initial:n = {},
 
-    % Lower Yuwei (下鱼尾) - optional decoration
+    % Lower Yuwei (???) - optional decoration
     lower-yuwei .bool_set:N = \l_guji_lower_yuwei_bool,
     lower-yuwei .initial:n = false,
 
@@ -262,7 +262,7 @@
     page-number-font-size .tl_set:N = \l_guji_page_number_font_size_tl,
     page-number-font-size .initial:n = {},
 
-    % Split page (筒子页) configuration
+    % Split page (???) configuration
     split-page .bool_set:N = \l_guji_split_page_bool,
     split-page .initial:n = true,
 
@@ -373,7 +373,7 @@
   {
     \directlua{vertical.set_page_number(#1)}
   }
-\NewCommandCopy{\设置页码}{\SetPageNumber}
+\NewCommandCopy{\????}{\SetPageNumber}
 
 \NewDocumentCommand{\chapter}{ m }
   {
@@ -391,7 +391,7 @@
   }
 
 % ============================================================================
-% YinZhang (印章) Command - Add seal/stamp overlay on specified page
+% YinZhang (??) Command - Add seal/stamp overlay on specified page
 % ============================================================================
 
 % Declare global variables for YinZhang
@@ -675,11 +675,11 @@
 
 % Command Aliases (CJK support)
 \NewCommandCopy{\JiaZhu}{\TextFlow}
-\NewCommandCopy{\夹注}{\TextFlow}
-\NewCommandCopy{\印章}{\YinZhang}
+\NewCommandCopy{\??}{\TextFlow}
+\NewCommandCopy{\??}{\YinZhang}
 
 % Environment Aliases (CJK support)
-\NewEnvironmentCopy{正文}{guji-content}
+\NewEnvironmentCopy{??}{guji-content}
 
 % 8. Remove page numbers by default
 \pagestyle{empty}

@@ -1,4 +1,4 @@
-﻿-- Copyright 2026 Open-Guji (https://github.com/open-guji)
+-- Copyright 2026 Open-Guji (https://github.com/open-guji)
 --
 -- Licensed under the Apache License, Version 2.0 (the "License");
 -- you may not use this file except in compliance with the License.
@@ -12,35 +12,35 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 -- ============================================================================
--- render_position.lua - 统一文字定位工具
+-- render_position.lua - ????????
 -- ============================================================================
--- 文件名: render_position.lua (原 text_position.lua)
--- 层级: 第三阶段 - 渲染层 (Stage 3: Render Layer)
+-- ???: render_position.lua (? text_position.lua)
+-- ??: ???? - ??? (Stage 3: Render Layer)
 --
--- 【模块功能 / Module Purpose】
--- 本模块提供了文字字符在网格单元中的定位计算，被主文本和版心文本共同复用：
---   1. position_glyph: 在指定坐标处放置单个字符，处理居中对齐
---   2. create_vertical_text: 创建竖排文字链（用于版心鱼尾文字）
---   3. position_glyph_in_grid: 网格坐标定位（包装 position_glyph）
---   4. calc_grid_position: 纯坐标计算（不创建节点，用于 render.lua）
+-- ????? / Module Purpose?
+-- ?????????????????????,?????????????:
+--   1. position_glyph: ????????????,??????
+--   2. create_vertical_text: ???????(????????)
+--   3. position_glyph_in_grid: ??????(?? position_glyph)
+--   4. calc_grid_position: ?????(?????,?? render.lua)
 --
--- 【注意事项】
---   • 所有定位函数都考虑了字符的 height 和 depth，保证基线对齐正确
---   • xoffset/yoffset 是 LuaTeX 的 glyph 专用字段，block 节点不支持
---   • 每个字符后会插入负 kern（-width），用于抵消 TLT 盒子的水平推进
---   • Kern 的 subtype=1（显式 kern），防止被 render.lua 清零
---   • vertical_align 支持 top/center/bottom 三种模式
+-- ??????
+--   � ????????????? height ? depth,????????
+--   � xoffset/yoffset ? LuaTeX ? glyph ????,block ?????
+--   � ????????? kern(-width),???? TLT ???????
+--   � Kern ? subtype=1(?? kern),??? render.lua ??
+--   � vertical_align ?? top/center/bottom ????
 --
--- 【整体架构】
---   公共接口:
---      ├─ calc_grid_position(col, row, dims, params)
---      │     → 返回 (x_offset, y_offset)，用于 render.lua 直接设置
---      ├─ position_glyph(glyph, x, y, params)
---      │     → 设置 glyph.xoffset/yoffset，返回 (glyph, kern)
---      ├─ create_vertical_text(text, params)
---      │     → 创建完整的字符链（用于版心）
---      └─ position_glyph_in_grid(glyph, col, row, params)
---            → 网格坐标包装器
+-- ??????
+--   ????:
+--      +- calc_grid_position(col, row, dims, params)
+--      �     ? ?? (x_offset, y_offset),?? render.lua ????
+--      +- position_glyph(glyph, x, y, params)
+--      �     ? ?? glyph.xoffset/yoffset,?? (glyph, kern)
+--      +- create_vertical_text(text, params)
+--      �     ? ????????(????)
+--      +- position_glyph_in_grid(glyph, col, row, params)
+--            ? ???????
 --
 --
 -- ============================================================================
@@ -49,19 +49,19 @@
 local constants = package.loaded['luatex-cn-vertical-base-constants'] or require('luatex-cn-vertical-base-constants')
 local D = constants.D
 
---- 在指定坐标处定位单个字形节点
--- 这是在精确位置放置字符的核心函数。
--- 它设置 xoffset/yoffset 并创建负 kern 以使字符堆叠。
+--- ??????????????
+-- ?????????????????
+-- ??? xoffset/yoffset ???? kern ???????
 --
--- @param glyph_direct (node) 要定位的字形节点的直接引用
--- @param x (number) 以 SCALED POINTS 为单位的 X 坐标（单元格左边缘）
--- @param y (number) 以 SCALED POINTS 为单位的 Y 坐标（单元格顶边缘，向下为负）
--- @param params (table) 参数表:
---   - cell_width (number) 单元格宽度，用于水平居中
---   - cell_height (number) 单元格高度，用于垂直居中
---   - h_align (string) 水平对齐: "left", "center", "right" (默认: "center")
---   - v_align (string) 垂直对齐: "top", "center", "bottom" (默认: "center")
--- @return (node, node) 字形节点和负 kern 节点（均为直接节点引用）
+-- @param glyph_direct (node) ?????????????
+-- @param x (number) ? SCALED POINTS ???? X ??(??????)
+-- @param y (number) ? SCALED POINTS ???? Y ??(??????,????)
+-- @param params (table) ???:
+--   - cell_width (number) ?????,??????
+--   - cell_height (number) ?????,??????
+--   - h_align (string) ????: "left", "center", "right" (??: "center")
+--   - v_align (string) ????: "top", "center", "bottom" (??: "center")
+-- @return (node, node) ?????? kern ??(????????)
 local function position_glyph(glyph_direct, x, y, params)
     params = params or {}
     local cell_width = params.cell_width or 0
@@ -125,22 +125,22 @@ local function position_glyph(glyph_direct, x, y, params)
     return glyph_direct, kern
 end
 
---- 创建竖向排列的文字链
--- 将字符按从上到下的顺序排列在单列中。
--- 用于版心文字，也可用于任何竖排文字块。
+--- ??????????
+-- ??????????????????
+-- ??????,????????????
 --
--- @param text (string) 要渲染的 UTF-8 字符串
--- @param params (table) 参数表:
---   - x (number) 列左边缘的 X 坐标 (sp)
---   - y_top (number) 列顶边缘的 Y 坐标 (sp, 向下为负)
---   - width (number) 用于水平居中的列宽 (sp)
---   - height (number) 文字区域的总高度 (sp)
---   - num_cells (number) 可选：单元格数量 (默认: 字符数)
---   - v_align (string) 每个单元格内的垂直对齐: "top", "center", "bottom"
---   - h_align (string) 列内的水平对齐: "left", "center", "right"
---   - font_id (number) 可选：字体 ID (默认: 当前字体)
---   - shift_y (number) 可选：额外的 Y 轴偏移 (sp)
--- @return (node) 链接节点链的头部（直接节点引用），若无文字则返回 nil
+-- @param text (string) ???? UTF-8 ???
+-- @param params (table) ???:
+--   - x (number) ????? X ?? (sp)
+--   - y_top (number) ????? Y ?? (sp, ????)
+--   - width (number) ????????? (sp)
+--   - height (number) ???????? (sp)
+--   - num_cells (number) ??:????? (??: ???)
+--   - v_align (string) ???????????: "top", "center", "bottom"
+--   - h_align (string) ???????: "left", "center", "right"
+--   - font_id (number) ??:?? ID (??: ????)
+--   - shift_y (number) ??:??? Y ??? (sp)
+-- @return (node) ????????(??????),??????? nil
 local function create_vertical_text(text, params)
     if not text or text == "" then
         return nil
@@ -268,21 +268,21 @@ local function create_vertical_text(text, params)
     return head
 end
 
---- 在网格单元中定位字形（供主文本渲染使用）
--- 这是一个便捷包装函数，用于在行列网格中定位字形。
+--- ??????????(????????)
+-- ??????????,?????????????
 --
--- @param glyph_direct (node) 要定位的字形节点的直接引用
--- @param col (number) 列索引（从 0 开始，RTL 转换由调用者处理）
--- @param row (number) 行索引（从 0 开始）
--- @param params (table) 参数表:
---   - grid_width (number) 每个网格单元的宽度 (sp)
---   - grid_height (number) 每个网格单元的高度 (sp)
---   - total_cols (number) 总列数（用于 RTL 计算）
---   - shift_x (number) 边距/边框的 X 轴偏移 (sp)
---   - shift_y (number) 边距/边框的 Y 轴偏移 (sp)
---   - v_align (string) 垂直对齐: "top", "center", "bottom"
---   - half_thickness (number) 边框厚度的一半 (sp)
--- @return (node, node) 字形节点和负 kern 节点
+-- @param glyph_direct (node) ?????????????
+-- @param col (number) ???(? 0 ??,RTL ????????)
+-- @param row (number) ???(? 0 ??)
+-- @param params (table) ???:
+--   - grid_width (number) ????????? (sp)
+--   - grid_height (number) ????????? (sp)
+--   - total_cols (number) ???(?? RTL ??)
+--   - shift_x (number) ??/??? X ??? (sp)
+--   - shift_y (number) ??/??? Y ??? (sp)
+--   - v_align (string) ????: "top", "center", "bottom"
+--   - half_thickness (number) ??????? (sp)
+-- @return (node, node) ?????? kern ??
 local function position_glyph_in_grid(glyph_direct, col, row, params)
     local grid_width = params.grid_width or 0
     local grid_height = params.grid_height or 0
@@ -307,21 +307,21 @@ local function position_glyph_in_grid(glyph_direct, col, row, params)
     })
 end
 
---- 计算网格位置坐标（纯计算，不操作节点）
--- 供 render.lua 使用，用于主文本定位，其中节点被就地修改。
+--- ????????(???,?????)
+-- ? render.lua ??,???????,??????????
 --
--- @param col (number) 列索引（从 0 开始）
--- @param row (number) 行索引（从 0 开始）
--- @param glyph_dims (table) 字形尺寸: width, height, depth
--- @param params (table) 参数表:
---   - grid_width (number) 每个网格单元的宽度 (sp)
---   - grid_height (number) 每个网格单元的高度 (sp)
---   - total_cols (number) 总列数（用于 RTL 计算）
---   - shift_x (number) 边距/边框的 X 轴偏移 (sp)
---   - shift_y (number) 边距/边框的 Y 轴偏移 (sp)
---   - v_align (string) 垂直对齐: "top", "center", "bottom"
---   - half_thickness (number) 边框厚度的一半 (sp)
--- @return (number, number) 字形的 x_offset, y_offset
+-- @param col (number) ???(? 0 ??)
+-- @param row (number) ???(? 0 ??)
+-- @param glyph_dims (table) ????: width, height, depth
+-- @param params (table) ???:
+--   - grid_width (number) ????????? (sp)
+--   - grid_height (number) ????????? (sp)
+--   - total_cols (number) ???(?? RTL ??)
+--   - shift_x (number) ??/??? X ??? (sp)
+--   - shift_y (number) ??/??? Y ??? (sp)
+--   - v_align (string) ????: "top", "center", "bottom"
+--   - half_thickness (number) ??????? (sp)
+-- @return (number, number) ??? x_offset, y_offset
 local function calc_grid_position(col, row, glyph_dims, params)
     local grid_width = params.grid_width or 0
     local grid_height = params.grid_height or 0
@@ -349,14 +349,14 @@ local function calc_grid_position(col, row, glyph_dims, params)
         local jiazhu_align = params.jiazhu_align or "outward"
 
         -- Determine alignment for each sub-column based on jiazhu_align setting
-        -- sub_col == 1: Right sub-column (先行, displayed on right side in RTL)
-        -- sub_col == 2: Left sub-column (后行, displayed on left side in RTL)
+        -- sub_col == 1: Right sub-column (??, displayed on right side in RTL)
+        -- sub_col == 2: Left sub-column (??, displayed on left side in RTL)
         local col_align
         if jiazhu_align == "outward" then
-            -- Default: right col right-aligned, left col left-aligned (向外对齐)
+            -- Default: right col right-aligned, left col left-aligned (????)
             col_align = (sub_col == 1) and "right" or "left"
         elseif jiazhu_align == "inward" then
-            -- Opposite: right col left-aligned, left col right-aligned (向内对齐)
+            -- Opposite: right col left-aligned, left col right-aligned (????)
             col_align = (sub_col == 1) and "left" or "right"
         elseif jiazhu_align == "center" then
             col_align = "center"
@@ -414,9 +414,8 @@ local text_position = {
 }
 
 -- Register module in package.loaded for require() compatibility
--- 注册模块到 package.loaded
+-- ????? package.loaded
 package.loaded['luatex-cn-vertical-render-position'] = text_position
 
 -- Return module exports
 return text_position
-

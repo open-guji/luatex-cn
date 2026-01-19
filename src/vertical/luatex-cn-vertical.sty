@@ -1,4 +1,4 @@
-﻿% Copyright 2026 Open-Guji (https://github.com/open-guji)
+% Copyright 2026 Open-Guji (https://github.com/open-guji)
 %
 % Licensed under the Apache License, Version 2.0 (the "License");
 % you may not use this file except in compliance with the License.
@@ -12,8 +12,8 @@
 % See the License for the specific language governing permissions and
 % limitations under the License.
 % vertical.sty
-% LuaTeX 竖排排版宏包
-% 这是 luatex_cn 的子包
+% LuaTeX ??????
+% ?? luatex_cn ???
 %
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesPackage{luatex-cn-vertical}[2026/01/18 v0.1.0 Chinese vertical typesetting for LuaTeX]
@@ -29,7 +29,7 @@
 \RequirePackage{luatexbase}
 \RequirePackage{xcolor}
 \RequirePackage{enumitem}
-% 设置 itemize 默认样式：空标签 + 紧凑间距（符合古籍排版风格）
+% ?? itemize ????:??? + ????(????????)
 \setlist[itemize]{label={}, nosep}
 \newluatexattribute\cnverticalindent
 \newluatexattribute\cnverticalrightindent
@@ -264,7 +264,7 @@
     jiazhu-align .tl_set:N = \l__cn_vertical_jiazhu_align_tl,
     jiazhu-align .initial:n = {outward},
 
-    % Banxin (版心) configuration
+    % Banxin (??) configuration
     banxin-upper-ratio .tl_set:N = \l_cnv_banxin_upper_tl,
     banxin-upper-ratio .initial:n = {0.28},
 
@@ -275,18 +275,18 @@
     book-name .tl_set:N = \l_cnv_book_name_tl,
     book-name .initial:n = {},
 
-    % Banxin padding (版心独立的间距设置)
+    % Banxin padding (?????????)
     banxin-padding-top .tl_set:N = \l_cnv_banxin_padding_top_tl,
     banxin-padding-top .initial:n = {2pt},
 
     banxin-padding-bottom .tl_set:N = \l_cnv_banxin_padding_bottom_tl,
     banxin-padding-bottom .initial:n = {10pt},
 
-    % Lower Yuwei (下鱼尾) - optional decoration
+    % Lower Yuwei (???) - optional decoration
     lower-yuwei .bool_set:N = \l_cnv_lower_yuwei_bool,
     lower-yuwei .initial:n = true,
 
-    % Chapter title (章节标题) - displayed in section 2 of banxin
+    % Chapter title (????) - displayed in section 2 of banxin
     chapter-title .tl_set:N = \l_cnv_chapter_title_tl,
     chapter-title .initial:n = {},
 
@@ -600,7 +600,7 @@
     \group_end:
   }
 
-% TextFlow Command (双行小注/夹注)
+% TextFlow Command (????/??)
 % Syntax: \TextFlow{content}
 \makeatletter
 \NewDocumentCommand{\TextFlow}{ +m }
@@ -705,17 +705,17 @@
 % ============================================================================
 % Command Aliases (Defined outside ExplSyntax for CJK support)
 % ============================================================================
-\NewCommandCopy{\竖排}{\VerticalRTT}
-\NewCommandCopy{\文本框}{\TextBox}
-\NewDocumentCommand{\填充文本框}{ O{1} +m }
+\NewCommandCopy{\??}{\VerticalRTT}
+\NewCommandCopy{\???}{\TextBox}
+\NewDocumentCommand{\?????}{ O{1} +m }
   {%
     \TextBox[height=#1, box-align=fill]{#2}%
   }
-\NewCommandCopy{\文本流}{\TextFlow}
-\NewCommandCopy{\空格}{\Space}
-\NewCommandCopy{\段落}{\Paragraph}
+\NewCommandCopy{\???}{\TextFlow}
+\NewCommandCopy{\??}{\Space}
+\NewCommandCopy{\??}{\Paragraph}
 \NewCommandCopy{\CePi}{\SideNode}
-\NewCommandCopy{\侧批}{\SideNode}
+\NewCommandCopy{\??}{\SideNode}
 
 \directlua{
   _G.vertical.debug.verbose_log = true

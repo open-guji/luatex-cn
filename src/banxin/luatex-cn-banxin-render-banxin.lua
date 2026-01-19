@@ -1,4 +1,4 @@
-﻿-- Copyright 2026 Open-Guji (https://github.com/open-guji)
+-- Copyright 2026 Open-Guji (https://github.com/open-guji)
 --
 -- Licensed under the Apache License, Version 2.0 (the "License");
 -- you may not use this file except in compliance with the License.
@@ -11,35 +11,35 @@
 -- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
--- render_banxin.lua - 版心（鱼尾）绘制模块
+-- render_banxin.lua - ??(??)????
 -- ============================================================================
--- 文件名: render_banxin.lua (原 banxin.lua)
--- 层级: 第三阶段 - 渲染层 (Stage 3: Render Layer)
+-- ???: render_banxin.lua (? banxin.lua)
+-- ??: ???? - ??? (Stage 3: Render Layer)
 --
--- 【模块功能 / Module Purpose】
--- 本模块负责绘制古籍排版中的"版心"（中间的分隔列），包括：
---   1. 绘制版心列的边框（与普通列边框样式相同）
---   2. 在版心内绘制两条水平分隔线，将版心分为三个区域
---   3. 在版心第一区域绘制竖排文字（鱼尾文字，如书名、卷号等）
---   4. 支持自定义三个区域的高度比例（默认 0.28:0.56:0.16）
+-- ????? / Module Purpose?
+-- ?????????????"??"(??????),??:
+--   1. ????????(??????????)
+--   2. ?????????????,?????????
+--   3. ?????????????(????,???????)
+--   4. ??????????????(?? 0.28:0.56:0.16)
 --
--- 【注意事项】
---   • 版心位置由 layout.lua 控制（每 n_column+1 列为版心）
---   • 版心文字使用 text_position.create_vertical_text 创建，确保与正文对齐一致
---   • 分隔线使用 PDF 的 moveto/lineto 指令（m/l/S）绘制
---   • 版心文字的 Y 坐标需要减去 shift_y（边框/外边框的累积偏移）
+-- ??????
+--   � ????? layout.lua ??(? n_column+1 ????)
+--   � ?????? text_position.create_vertical_text ??,?????????
+--   � ????? PDF ? moveto/lineto ??(m/l/S)??
+--   � ????? Y ?????? shift_y(??/????????)
 --
--- 【整体架构】
+-- ??????
 --   draw_banxin_column(p_head, params)
---      ├─ 绘制版心列边框（矩形）
---      ├─ 调用 draw_banxin() 计算分隔线位置
---      │   ├─ upper_height = total_height × upper_ratio
---      │   ├─ middle_height = total_height × middle_ratio
---      │   └─ 返回两条分隔线的 PDF literal
---      ├─ 插入分隔线节点
---      └─ 调用 text_position.create_vertical_text() 绘制文字
---      ↓
---   返回更新后的节点链（p_head）
+--      +- ???????(??)
+--      +- ?? draw_banxin() ???????
+--      �   +- upper_height = total_height � upper_ratio
+--      �   +- middle_height = total_height � middle_ratio
+--      �   +- ???????? PDF literal
+--      +- ???????
+--      +- ?? text_position.create_vertical_text() ????
+--      ?
+--   ?????????(p_head)
 --
 -- ============================================================================
 
@@ -53,41 +53,41 @@ local yuwei = package.loaded['banxin.render_yuwei'] or require('banxin.luatex-cn
 -- Conversion factor from scaled points to PDF big points
 local sp_to_bp = utils.sp_to_bp
 
---- 绘制完整的版心列
--- 版心被分为 3 个区域，区域之间有水平分隔线
+--- ????????
+-- ????? 3 ???,??????????
 --
--- 区域布局（从上到下）:
--- ┌─────────────┐
--- │    Upper    │  (例如 65.8mm) - 包含版心文字（鱼尾文字）
--- ├─────────────┤  ← 分隔线 1
--- │   Middle    │  (例如 131.2mm)
--- ├─────────────┤  ← 分隔线 2
--- │    Lower    │  (例如 36.2mm)
--- └─────────────┘
+-- ????(????):
+-- +-------------+
+-- �    Upper    �  (?? 65.8mm) - ??????(????)
+-- +-------------�  ? ??? 1
+-- �   Middle    �  (?? 131.2mm)
+-- +-------------�  ? ??? 2
+-- �    Lower    �  (?? 36.2mm)
+-- +-------------+
 --
--- @param params (table) 绘制参数:
---   - x (number) X 坐标 (sp, 左边缘)
---   - y (number) Y 坐标 (sp, 顶边缘，向下为负)
---   - width (number) 宽度 (sp)
---   - total_height (number) 总高度 (sp)
---   - upper_ratio (number) 第一区域高度比例 (例如 0.28)
---   - middle_ratio (number) 第二区域高度比例 (例如 0.56)
---   - lower_ratio (number) 第三区域高度比例 (例如 0.16)
---   - color_str (string) RGB 颜色字符串 (例如 "0.7 0.4 0.3")
---   - border_thickness (number) 边线厚度 (sp)
---   - book_name (string) 可选，在第一区域显示的文字（书名文字）
---   - font_size (number) 版心文字及其它信息的字体大小 (sp)
---   - shift_y (number) 定位用的垂直偏移（含内边距和外边框）
--- @return (table) 包含以下内容的表:
---   - literals: 包含线条 PDF literal 字符串的数组
---   - upper_height: 第一区域高度（用于文字定位）
+-- @param params (table) ????:
+--   - x (number) X ?? (sp, ???)
+--   - y (number) Y ?? (sp, ???,????)
+--   - width (number) ?? (sp)
+--   - total_height (number) ??? (sp)
+--   - upper_ratio (number) ???????? (?? 0.28)
+--   - middle_ratio (number) ???????? (?? 0.56)
+--   - lower_ratio (number) ???????? (?? 0.16)
+--   - color_str (string) RGB ????? (?? "0.7 0.4 0.3")
+--   - border_thickness (number) ???? (sp)
+--   - book_name (string) ??,??????????(????)
+--   - font_size (number) ?????????????? (sp)
+--   - shift_y (number) ????????(????????)
+-- @return (table) ????????:
+--   - literals: ???? PDF literal ??????
+--   - upper_height: ??????(??????)
 local function draw_banxin(params)
     local x = params.x or 0
     local y = params.y or 0
     local width = params.width or 0
     local total_height = params.total_height or 0
-    local r1 = params.upper_ratio or 0.28  -- 65.8 / 233.2 ≈ 0.28
-    local r2 = params.middle_ratio or 0.56 -- 131.2 / 233.2 ≈ 0.56
+    local r1 = params.upper_ratio or 0.28  -- 65.8 / 233.2 � 0.28
+    local r2 = params.middle_ratio or 0.56 -- 131.2 / 233.2 � 0.56
     local r3 = 1 - r1 - r2
     local color_str = params.color_str or "0 0 0"
     local b_thickness = params.border_thickness or 26214 -- 0.4pt default
@@ -144,12 +144,12 @@ local function draw_banxin(params)
     local notch_h = width * 0.17 
     local yuwei_gap = 65536 * 3.7      -- 10pt gap from dividing lines
 
-    -- Draw upper yuwei (上鱼尾) in section 2 (if enabled)
+    -- Draw upper yuwei (???) in section 2 (if enabled)
     if params.upper_yuwei ~= false then
         local yuwei_x = x                 -- Left edge of column
         local yuwei_y = div1_y - yuwei_gap  -- 10pt below the first dividing line
         
-        -- Upper yuwei (上鱼尾) - notch at bottom, opening downward
+        -- Upper yuwei (???) - notch at bottom, opening downward
         local upper_yuwei = yuwei.draw_yuwei({
             x = yuwei_x,
             y = yuwei_y,
@@ -157,7 +157,7 @@ local function draw_banxin(params)
             edge_height = edge_h,
             notch_height = notch_h,
             style = "black",
-            direction = 1,                -- Notch at bottom (上鱼尾)
+            direction = 1,                -- Notch at bottom (???)
             color_str = color_str,
             extra_line = true,            -- Draw extra line below V-tip
             border_thickness = b_thickness, -- Use same thickness as border
@@ -165,7 +165,7 @@ local function draw_banxin(params)
         table.insert(literals, upper_yuwei)
     end
     
-    -- Lower yuwei (下鱼尾) - notch at top, opening upward (mirror of upper)
+    -- Lower yuwei (???) - notch at top, opening upward (mirror of upper)
     -- Positioned at the bottom of section 2, 10pt above the second dividing line
     -- Only draw if enabled
     if lower_yuwei_enabled then
@@ -177,7 +177,7 @@ local function draw_banxin(params)
             edge_height = edge_h,
             notch_height = notch_h,
             style = "black",
-            direction = -1,               -- Notch at top (下鱼尾)
+            direction = -1,               -- Notch at top (???)
             color_str = color_str,
             extra_line = true,            -- Draw extra line above V-tip
             border_thickness = b_thickness, -- Use same thickness as border
@@ -194,22 +194,22 @@ end
 
 -- Note: create_text_glyphs has been replaced by text_position.create_vertical_text
 
---- 绘制完整的版心列，包括边框、分隔线、鱼尾和文字
--- 这是绘制版心列的主入口函数
--- @param p_head (node) 节点列表头部（直接引用）
--- @param params (table) 参数表:
---   - x: 列左边缘 X 坐标 (sp)
---   - y: 列顶边缘 Y 坐标 (sp)
---   - width: 列宽 (sp)
---   - height: 列高 (sp)
---   - border_thickness: 边线厚度 (sp)
---   - color_str: RGB 颜色字符串
---   - upper_ratio: 第一区域高度比例
---   - middle_ratio: 第二区域高度比例
---   - lower_ratio: 第三区域高度比例
---   - book_name: 第一区域显示的文字
---   - shift_y: 文字定位用的垂直偏移 (sp)
--- @return (node) 更新后的头部
+--- ????????,??????????????
+-- ?????????????
+-- @param p_head (node) ??????(????)
+-- @param params (table) ???:
+--   - x: ???? X ?? (sp)
+--   - y: ???? Y ?? (sp)
+--   - width: ?? (sp)
+--   - height: ?? (sp)
+--   - border_thickness: ???? (sp)
+--   - color_str: RGB ?????
+--   - upper_ratio: ????????
+--   - middle_ratio: ????????
+--   - lower_ratio: ????????
+--   - book_name: ?????????
+--   - shift_y: ?????????? (sp)
+-- @return (node) ??????
 local function draw_banxin_column(p_head, params)
     local x = params.x
     local y = params.y
@@ -444,7 +444,7 @@ local function draw_banxin_column(p_head, params)
             local upper_yuwei_total = params.upper_yuwei and (yuwei_gap + edge_h + notch_h) or 0
             local lower_yuwei_total = params.lower_yuwei and (yuwei_gap + edge_h + notch_h) or 0
             
-            -- Margin settings for page number (版心页码边距)
+            -- Margin settings for page number (??????)
             local page_right_margin = 65536 * 2   -- 2pt small right margin
             local page_bottom_margin = params.b_padding_bottom or (65536 * 15) -- Use config or default 15pt
             
@@ -507,7 +507,7 @@ local banxin = {
 }
 
 -- Register module in package.loaded for require() compatibility
--- 注册模块到 package.loaded
+-- ????? package.loaded
 package.loaded['banxin.render_banxin'] = banxin
 package.loaded['render_banxin'] = banxin
 

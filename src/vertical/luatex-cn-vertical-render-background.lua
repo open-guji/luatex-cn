@@ -1,4 +1,4 @@
-﻿-- Copyright 2026 Open-Guji (https://github.com/open-guji)
+-- Copyright 2026 Open-Guji (https://github.com/open-guji)
 --
 -- Licensed under the Apache License, Version 2.0 (the "License");
 -- you may not use this file except in compliance with the License.
@@ -12,33 +12,33 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 -- ============================================================================
--- render_background.lua - 背景色与字体颜色模块
+-- render_background.lua - ??????????
 -- ============================================================================
--- 文件名: render_background.lua (原 background.lua)
--- 层级: 第三阶段 - 渲染层 (Stage 3: Render Layer)
+-- ???: render_background.lua (? background.lua)
+-- ??: ???? - ??? (Stage 3: Render Layer)
 --
--- 【模块功能 / Module Purpose】
--- 本模块负责设置页面背景色和全局字体颜色：
---   1. draw_background: 绘制背景色矩形（可选覆盖整个页面或仅内容区）
---   2. set_font_color: 设置后续所有文字的填充颜色
+-- ????? / Module Purpose?
+-- ???????????????????:
+--   1. draw_background: ???????(?????????????)
+--   2. set_font_color: ?????????????
 --
--- 【注意事项】
---   • 背景色优先使用 paper_width/height（覆盖整页），否则使用 inner_width/height
---   • 使用 PDF fill 指令（rg + re + f），与边框的 stroke（RG + S）不同
---   • 背景必须在最底层绘制（通过 insert_before 到 p_head 前面插入）
---   • 字体颜色使用小写 "rg"（填充色），必须经过 normalize_rgb 转换为数字格式
---   • 【重要】如果由于逻辑错误导致背景在文字之后绘制，文字将被完全覆盖（不可见）
---   • 【重要】非法 RGB 字符串（如 "blue"）会导致 pdf_literal 解析失败，从而使页面内容消失
+-- ??????
+--   � ??????? paper_width/height(????),???? inner_width/height
+--   � ?? PDF fill ??(rg + re + f),???? stroke(RG + S)??
+--   � ??????????(?? insert_before ? p_head ????)
+--   � ???????? "rg"(???),???? normalize_rgb ???????
+--   � ???????????????????????,????????(???)
+--   � ?????? RGB ???(? "blue")??? pdf_literal ????,?????????
 --
--- 【整体架构】
+-- ??????
 --   draw_background(p_head, params)
---      ├─ 如果有 paper_width/height，计算覆盖整页的矩形
---      ├─ 否则使用 inner_width/height + outer_shift
---      ├─ 生成 PDF literal: "q 0 w rgb rg x y w h re f Q"
---      └─ 插入到节点链最前面（确保在最底层）
+--      +- ??? paper_width/height,?????????
+--      +- ???? inner_width/height + outer_shift
+--      +- ?? PDF literal: "q 0 w rgb rg x y w h re f Q"
+--      +- ?????????(??????)
 --
 --   set_font_color(p_head, font_rgb_str)
---      └─ 生成 PDF literal: "rgb rg"（设置填充色）
+--      +- ?? PDF literal: "rgb rg"(?????)
 --
 -- ============================================================================
 
@@ -47,18 +47,18 @@ local constants = package.loaded['luatex-cn-vertical-base-constants'] or require
 local D = constants.D
 local utils = package.loaded['luatex-cn-vertical-base-utils'] or require('luatex-cn-vertical-base-utils')
 
---- 绘制背景色矩形
--- @param p_head (node) 节点列表头部（直接引用）
--- @param params (table) 参数表:
---   - bg_rgb_str: 归一化的 RGB 颜色字符串
---   - paper_width: 纸张宽度 (sp, 可选)
---   - paper_height: 纸张高度 (sp, 可选)
---   - margin_left: 左边距 (sp, 可选)
---   - margin_top: 上边距 (sp, 可选)
---   - inner_width: 内部内容宽度 (sp, 备选)
---   - inner_height: 内部内容高度 (sp, 备选)
---   - outer_shift: 外边框偏移 (sp, 备选)
--- @return (node) 更新后的头部
+--- ???????
+-- @param p_head (node) ??????(????)
+-- @param params (table) ???:
+--   - bg_rgb_str: ???? RGB ?????
+--   - paper_width: ???? (sp, ??)
+--   - paper_height: ???? (sp, ??)
+--   - margin_left: ??? (sp, ??)
+--   - margin_top: ??? (sp, ??)
+--   - inner_width: ?????? (sp, ??)
+--   - inner_height: ?????? (sp, ??)
+--   - outer_shift: ????? (sp, ??)
+-- @return (node) ??????
 local function draw_background(p_head, params)
     local sp_to_bp = utils.sp_to_bp
     local bg_rgb_str = params.bg_rgb_str
@@ -110,10 +110,10 @@ local function draw_background(p_head, params)
     return p_head
 end
 
---- 设置后续文字的字体颜色
--- @param p_head (node) 节点列表头部（直接引用）
--- @param font_rgb_str (string) 归一化的 RGB 颜色字符串
--- @return (node) 更新后的头部
+--- ???????????
+-- @param p_head (node) ??????(????)
+-- @param font_rgb_str (string) ???? RGB ?????
+-- @return (node) ??????
 local function set_font_color(p_head, font_rgb_str)
     if not font_rgb_str then
         return p_head
@@ -136,7 +136,7 @@ local background = {
 }
 
 -- Register module in package.loaded for require() compatibility
--- 注册模块到 package.loaded
+-- ????? package.loaded
 package.loaded['luatex-cn-vertical-render-background'] = background
 
 -- Return module exports

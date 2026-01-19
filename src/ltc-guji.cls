@@ -1,4 +1,4 @@
-﻿% Copyright 2026 Open-Guji (https://github.com/open-guji)
+% Copyright 2026 Open-Guji (https://github.com/open-guji)
 %
 % Licensed under the Apache License, Version 2.0 (the "License");
 % you may not use this file except in compliance with the License.

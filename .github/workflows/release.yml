@@ -19,7 +19,7 @@ jobs:
       - name: Package src directory
         run: |
           cd src
-          zip -r ../luatex-cn-src-${{ github.ref_name }}.zip .
+          zip -r luatex-cn-src-${{ github.ref_name }}.zip .
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2

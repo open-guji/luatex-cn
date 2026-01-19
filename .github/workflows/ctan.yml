@@ -26,6 +26,10 @@ jobs:
             fontspec
             latex-bin
 
+      - name: Tag version and update dates
+        run: |
+          texlua scripts/tag_version.lua
+
       - name: Run l3build ctan
         run: |
           l3build ctan
@@ -33,11 +37,16 @@ jobs:
       - name: Prepare ctan branch content
         run: |
           mkdir out
-          # Copy the staging area content (which is already translated by the hook)
-          # l3build ctan puts files in build/ctan/luatex-cn
-          cp -r build/ctan/luatex-cn/* out/
-          # Copy the zip file
-          cp luatex-cn.zip out/
+          # l3build or our scripts should put files in build/distrib/ctan/luatex-cn
+          # or build/ctan/luatex-cn based on version
+          for d in build/distrib/ctan build/ctan; do
+            if [ -d "$d/luatex-cn" ]; then
+              cp -r $d/luatex-cn/* out/
+              # Copy the zip file (we prefer the one in the same dir)
+              find $d -name "luatex-cn.zip" -exec cp {} out/ \;
+              break
+            fi
+          done
 
       - name: Deploy to ctan branch
         uses: peaceiris/actions-gh-pages@v3

@@ -53,8 +53,14 @@ end
 function ctan_hook(path)
   print("Finalizing CTAN staging area at: " .. path)
 
+  -- Use python3 on Linux/macOS, python on Windows
+  local python_cmd = "python"
+  if os.type ~= "windows" then
+    python_cmd = "python3"
+  end
+
   -- We use python for robust file operations (Unicode support and recursion)
-  local cmd = "python -c \"import shutil, os, glob; " ..
+  local cmd = python_cmd .. " -c \"import shutil, os, glob; " ..
               "p = '" .. path:gsub("\\", "/") .. "'; " ..
               "print('>>> Preserving src structure...'); " ..
               "src_dest = os.path.join(p, 'src'); " ..
@@ -74,7 +80,7 @@ function ctan_hook(path)
   os.execute(cmd)
 
   -- 1. Call the translation script
-  local cmd = "python scripts/ctan_post_process.py " .. path
+  local cmd = python_cmd .. " scripts/ctan_post_process.py " .. path
   print("Running path translation: " .. cmd)
   os.execute(cmd)
 

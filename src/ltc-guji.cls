@@ -17,7 +17,7 @@
 % Developed for LuaTeX
 
 \NeedsTeXFormat{LaTeX2e}
-\ProvidesClass{ltc-guji}[2026/01/16 v0.1.0 Ancient Chinese Book Class (Template Support)]
+\ProvidesClass{ltc-guji}[2026/01/18 v0.1.0 Ancient Chinese Book Class (Template Support)]
 
 % 1. Options Handling
 \RequirePackage{l3keys2e}
@@ -276,14 +276,6 @@
     sidenode-yoffset .code:n = { \keys_set:nn { SideNode } { yoffset = #1 } },
     sidenode-border-padding-top .code:n = { \keys_set:nn { SideNode } { border-padding-top = #1 } },
     sidenode-border-padding-bottom .code:n = { \keys_set:nn { SideNode } { border-padding-bottom = #1 } },
-
-    % Backward compatibility aliases for sidepizhu
-    sidepizhu-color .code:n = { \keys_set:nn { SideNode } { color = #1 } },
-    sidepizhu-font-size .code:n = { \keys_set:nn { SideNode } { font-size = #1 } },
-    sidepizhu-grid-height .code:n = { \keys_set:nn { SideNode } { grid-height = #1 } },
-    sidepizhu-yoffset .code:n = { \keys_set:nn { SideNode } { yoffset = #1 } },
-    sidepizhu-border-padding-top .code:n = { \keys_set:nn { SideNode } { border-padding-top = #1 } },
-    sidepizhu-border-padding-bottom .code:n = { \keys_set:nn { SideNode } { border-padding-bottom = #1 } },
 
     template .code:n = {
       % Load config file: configs/luatex-cn-guji-<name>.cfg

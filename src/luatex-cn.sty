@@ -17,7 +17,7 @@
 % Main wrapper package that loads sub-packages and exposes unified interface
 %
 \NeedsTeXFormat{LaTeX2e}
-\ProvidesPackage{luatex-cn}[2026/01/16 v0.1.0 Chinese typesetting support for LuaTeX]
+\ProvidesPackage{luatex-cn}[2026/01/18 v0.1.0 Chinese typesetting support for LuaTeX]
 
 % Load expl3 (LaTeX3 programming layer)
 \RequirePackage{expl3}
@@ -83,7 +83,6 @@
 %   \Space[width]                   - Explicit spacing (Alias: \空格)
 %
 %   \cnvdebugon / \cnvdebugoff      - Debug toggle
-%   \GujiDebugOn / \GujiDebugOff    - Alias for debug toggle
 %
 % ============================================================================
 % CJK Aliases and Support
@@ -98,8 +97,7 @@
 %   \setBookName{name}              - Set book name for banxin
 %   \setChapterTitle{title}         - Set chapter title
 %
-% Document Class (guji):
-%   Additional aliases: \JiaZhu, \夹注 (for \TextFlow)
+%   Additional aliases: \夹注 (for \TextFlow)
 % ============================================================================
 
 % Version info (synchronized with VERSION file in project root)

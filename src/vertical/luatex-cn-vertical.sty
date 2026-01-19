@@ -16,7 +16,7 @@
 % 这是 luatex_cn 的子包
 %
 \NeedsTeXFormat{LaTeX2e}
-\ProvidesPackage{luatex-cn-vertical}[2026/01/16 v0.1.0 Chinese vertical typesetting for LuaTeX]
+\ProvidesPackage{luatex-cn-vertical}[2026/01/18 v0.1.0 Chinese vertical typesetting for LuaTeX]
 
 % Check if LuaTeX is being used
 \RequirePackage{ifluatex}
@@ -173,16 +173,6 @@
 \NewDocumentCommand{\cnvdebugon}{}{\bool_set_true:N \g_cnv_debug_bool}
 \NewDocumentCommand{\cnvdebugoff}{}{\bool_set_false:N \g_cnv_debug_bool}
 
-% Aliases for global debug control
-\NewDocumentCommand{\GujiDebugOn}{}{
-  \bool_set_true:N \g_cnv_debug_bool
-  \directlua{vertical.debug.enabled = true; vertical.debug.verbose_log = true}
-}
-\NewDocumentCommand{\GujiDebugOff}{}{
-  \bool_set_false:N \g_cnv_debug_bool
-  \directlua{vertical.debug.enabled = false}
-}
-
 % Define keys
 \keys_define:nn { vertical }
   {
@@ -227,9 +217,6 @@
 
     border-padding-bottom .tl_set:N = \l__cn_vertical_border_padding_bottom_tl,
     border-padding-bottom .initial:n = {0.1em},
-
-    % Keep for backward compatibility
-    border-padding .tl_set:N = \l__cn_vertical_border_padding_bottom_tl,
 
     border-thickness .tl_set:N = \l__cn_vertical_border_thickness_tl,
     border-thickness .initial:n = {0.4pt},
@@ -727,7 +714,6 @@
 \NewCommandCopy{\文本流}{\TextFlow}
 \NewCommandCopy{\空格}{\Space}
 \NewCommandCopy{\段落}{\Paragraph}
-\NewCommandCopy{\SidePizhu}{\SideNode}
 \NewCommandCopy{\CePi}{\SideNode}
 \NewCommandCopy{\侧批}{\SideNode}
 

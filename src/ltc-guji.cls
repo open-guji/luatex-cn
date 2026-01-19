@@ -284,11 +284,15 @@
     pizhu-grid-height .code:n = { \keys_set:nn { PiZhu } { grid-height = #1 } },
 
     template .code:n = {
-      % Load config file: configs/luatex-cn-guji-<name>.cfg
+      % Ensure standard catcodes for config files (preserve spaces)
+      \ExplSyntaxOff
       \InputIfFileExists{configs/luatex-cn-guji-#1.cfg}{}{
+        \ExplSyntaxOn
         % Fallback to defined templates in guji / templates namespace
         \keys_set:nn { guji / templates } { #1 }
+        \ExplSyntaxOff
       }
+      \ExplSyntaxOn 
     },
     
     debug .code:n = {
@@ -615,7 +619,7 @@
         n-column = \int_use:N \l_guji_n_column_int,
         border-color = { \l_guji_border_color_tl },
         background-color = { \l_guji_background_color_tl },
-        font-color = { \l_guji_font_color_tl },
+        font-color = \exp_not:V \l_guji_font_color_tl,
         paper-width = \l_guji_paper_width_tl,
         paper-height = \l_guji_paper_height_tl,
         margin-top = \l_guji_margin_top_tl,
@@ -655,11 +659,13 @@
     \restoregeometry
 }
 
+\ExplSyntaxOff
+
 % 9. Apply Initial Template if specified in class options
-% 9. Apply Initial Template if specified in class options
+\ExplSyntaxOn
 \tl_if_empty:NF \l_guji_initial_template_tl
   {
-    \keys_set:nx { guji } { template = \l_guji_initial_template_tl }
+    \keys_set:nx { guji } { template = \exp_not:V \l_guji_initial_template_tl }
   }
 
 % Apply auto-detected font if no font-name is set and user hasn't set one
@@ -676,7 +682,6 @@
          { \exp_args:NV \setmainfont \l_guji_font_name_tl [\l_guji_font_features_tl] }
     }
 }
-
 \ExplSyntaxOff
 
 % Command Aliases (CJK support)

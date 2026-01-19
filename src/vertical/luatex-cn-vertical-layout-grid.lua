@@ -202,6 +202,7 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
             }
             -- print(string.format("[D-layout] WHATSIT Node=%s [p:%d, c:%d, r:%d]", tostring(t), cur_page, cur_col, cur_row))
             t = D.getnext(t)
+            if not t then break end
             goto start_of_loop
         end
         

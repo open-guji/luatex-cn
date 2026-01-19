@@ -385,7 +385,7 @@
           { \tl_set_eq:NN \l__cn_vertical_border_rgb_tl \l__cn_vertical_border_color_tl }
           {
              % Try extraction, but wrap in safety
-             \cs_if_exist:cTF { \string color @ \l__cn_vertical_border_color_tl }
+             \cs_if_exist:cTF { color @ \l__cn_vertical_border_color_tl }
              {
                \exp_args:NV \extractcolorspec \l__cn_vertical_border_color_tl \l_tmpa_tl
                \exp_args:NNx \convertcolorspec \l_tmpa_tl {rgb} \l_tmpb_tl
@@ -405,7 +405,7 @@
             \tl_if_in:NnTF \l__cn_vertical_background_color_tl { ~ }
               { \tl_set_eq:NN \l__cn_vertical_background_rgb_tl \l__cn_vertical_background_color_tl }
               {
-                 \cs_if_exist:cTF { \string color @ \l__cn_vertical_background_color_tl }
+                 \cs_if_exist:cTF { color @ \l__cn_vertical_background_color_tl }
                  {
                    \exp_args:NV \extractcolorspec \l__cn_vertical_background_color_tl \l_tmpa_tl
                    \exp_args:NNx \convertcolorspec \l_tmpa_tl {rgb} \l_tmpb_tl
@@ -426,7 +426,7 @@
             \tl_if_in:NnTF \l__cn_vertical_font_color_tl { ~ }
               { \tl_set_eq:NN \l__cn_vertical_font_rgb_tl \l__cn_vertical_font_color_tl }
               {
-                 \cs_if_exist:cTF { \string color @ \l__cn_vertical_font_color_tl }
+                 \cs_if_exist:cTF { color @ \l__cn_vertical_font_color_tl }
                  {
                    \exp_args:NV \extractcolorspec \l__cn_vertical_font_color_tl \l_tmpa_tl
                    \exp_args:NNx \convertcolorspec \l_tmpa_tl {rgb} \l_tmpb_tl
@@ -523,6 +523,8 @@
 \tl_new:N \l__cn_vertical_textbox_y_tl
 \tl_new:N \l__cn_vertical_textbox_bg_color_tl
 \tl_new:N \l__cn_vertical_textbox_font_color_tl
+\tl_new:N \l__cn_vertical_textbox_bg_rgb_tl
+\tl_new:N \l__cn_vertical_textbox_font_rgb_tl
 \tl_new:N \l__cn_vertical_textbox_font_size_tl
 
 \keys_define:nn { vertical / textbox }
@@ -613,6 +615,48 @@
       \hsize=\dim_eval:n { \l__cn_vertical_textbox_inner_gh_dim * \int_use:N \l__cn_vertical_textbox_height_int }
       #2
     }
+    
+    % Expand variables to ensure they contain the color string, not a macro name
+    % Use o-expansion to preserve spaces (standard x-expansion strips them in ExplSyntax)
+    \tl_set:No \l__cn_vertical_textbox_bg_color_tl { \l__cn_vertical_textbox_bg_color_tl }
+    \tl_set:No \l__cn_vertical_textbox_font_color_tl { \l__cn_vertical_textbox_font_color_tl }
+
+    % Convert background color to RGB
+    \tl_if_in:NnTF \l__cn_vertical_textbox_bg_color_tl { , }
+      { \tl_set_eq:NN \l__cn_vertical_textbox_bg_rgb_tl \l__cn_vertical_textbox_bg_color_tl }
+      {
+        \tl_if_in:NnTF \l__cn_vertical_textbox_bg_color_tl { ~ }
+          { \tl_set_eq:NN \l__cn_vertical_textbox_bg_rgb_tl \l__cn_vertical_textbox_bg_color_tl }
+          {
+             \cs_if_exist:cTF { color @ \l__cn_vertical_textbox_bg_color_tl }
+             {
+               \exp_args:NV \extractcolorspec \l__cn_vertical_textbox_bg_color_tl \l_tmpa_tl
+               \exp_args:NNx \convertcolorspec \l_tmpa_tl { rgb } \l_tmpb_tl
+               \tl_set:Nx \l__cn_vertical_textbox_bg_rgb_tl { \l_tmpb_tl }
+             }
+             { \tl_set_eq:NN \l__cn_vertical_textbox_bg_rgb_tl \l__cn_vertical_textbox_bg_color_tl }
+          }
+      }
+    \tl_replace_all:Nnn \l__cn_vertical_textbox_bg_rgb_tl { , } { ~ }
+
+    % Convert font color to RGB
+    \tl_if_in:NnTF \l__cn_vertical_textbox_font_color_tl { , }
+      { \tl_set_eq:NN \l__cn_vertical_textbox_font_rgb_tl \l__cn_vertical_textbox_font_color_tl }
+      {
+        \tl_if_in:NnTF \l__cn_vertical_textbox_font_color_tl { ~ }
+          { \tl_set_eq:NN \l__cn_vertical_textbox_font_rgb_tl \l__cn_vertical_textbox_font_color_tl }
+          {
+             \cs_if_exist:cTF { color @ \l__cn_vertical_textbox_font_color_tl }
+             {
+               \exp_args:NV \extractcolorspec \l__cn_vertical_textbox_font_color_tl \l_tmpa_tl
+               \exp_args:NNx \convertcolorspec \l_tmpa_tl { rgb } \l_tmpb_tl
+               \tl_set:Nx \l__cn_vertical_textbox_font_rgb_tl { \l_tmpb_tl }
+             }
+             { \tl_set_eq:NN \l__cn_vertical_textbox_font_rgb_tl \l__cn_vertical_textbox_font_color_tl }
+          }
+      }
+    \tl_replace_all:Nnn \l__cn_vertical_textbox_font_rgb_tl { , } { ~ }
+
     \directlua{vertical_textbox.process_inner_box(0, {
       n_cols = \int_use:N \l__cn_vertical_textbox_n_cols_int, 
       height = \int_use:N \l__cn_vertical_textbox_height_int, 
@@ -622,8 +666,8 @@
       column_aligns = "\luaescapestring{\tl_use:N \l__cn_vertical_textbox_col_align_tl}",
       debug = "\bool_if:NTF \l__cn_vertical_textbox_debug_bool {true}{false}",
       border = "\bool_if:NTF \l__cn_vertical_textbox_border_bool {true}{false}",
-      background_color = [=[\luaescapestring{\l__cn_vertical_textbox_bg_color_tl}]=],
-      font_color = [=[\luaescapestring{\l__cn_vertical_textbox_font_color_tl}]=],
+      background_color = [=[\l__cn_vertical_textbox_bg_rgb_tl]=],
+      font_color = [=[\l__cn_vertical_textbox_font_rgb_tl]=],
       font_size = [=[\luaescapestring{\l__cn_vertical_textbox_font_size_tl}]=]
     })}
     \setluatexattribute\cnverticaltextboxwidth{0}

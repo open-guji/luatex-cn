@@ -27,6 +27,7 @@
 19. [ExplSyntaxOn 环境中的 \directlua 空格问题](#19-explsyntaxon-环境中的-directlua-空格问题)
 20. [段落环境缩进泄漏与列级缩进状态管理](#20-段落环境缩进泄漏与列级缩进状态管理)
 21. [字体自动探测模块的加载与调用陷阱](#21-字体自动探测模块的加载与调用陷阱)
+22. [ExplSyntaxOn 模式下的配置加载与空格丢失陷阱](#22-explsyntaxon-模式下的配置加载与空格丢失陷阱)
 
 ---
 
@@ -1447,3 +1448,50 @@ end
 ### 教训
 - 所有用于流程控制的“虚拟节点”，在进入最终后端渲染前都应当审视其是否需要被清理。
 - 保证最终输出到 PDF 的节点链表是“干净”的，只包含标准的 Glyph, Kern, Glue, Rules 和 HList/VList。
+
+---
+
+## 22. ExplSyntaxOn 模式下的配置加载与空格丢失陷阱
+
+### 问题描述
+在 `ltc-guji.cls` 中设置 `pizhu-color = 1 0 0`（红色）时，经过 `\TextBox` 的传递，最终在 PDF 中显示为黑色。调试日志显示 `font_rgb` 变成了 `100`，而非期望的 `1 0 0`。
+
+### 根本原因
+两个核心错误的叠加导致了这个问题：
+
+1.  **`ExplSyntaxOn` 破坏了配置加载**：
+    在 `ltc-guji.cls` 中，加载 `.cfg` 模板的代码位于 `ExplSyntaxOn` 块内：
+    ```latex
+    \ExplSyntaxOn
+    \InputIfFileExists{configs/luatex-cn-guji-#1.cfg}{}{}  % ❌ 空格被忽略！
+    \ExplSyntaxOff
+    ```
+    在 `expl3` 语法模式下，空格（catcode 10）会被自动忽略。这意味着 `.cfg` 文件中的 `pizhu-color = 1 0 0` 在读取时变成了 `100`。
+
+2.  **`\tl_set:Nx` 的过度展开**：
+    在 `\TextBox` 命令中，为了确保颜色变量被展开，使用了 `\tl_set:Nx`：
+    ```latex
+    \tl_set:Nx \l_tmpa_tl { \l_color_var }  % ❌ x-展开在 ExplSyntaxOn 下会剔除空格
+    ```
+    即使变量中原本包含空格，`x` 展开类型在 `ExplSyntaxOn` 下也会将其剔除。
+
+### 解决方案
+
+1.  **加载配置前退出 ExplSyntax**：
+    确保在读取外部配置文件时处于正常 catcode 模式。
+    ```latex
+    \ExplSyntaxOff
+    \InputIfFileExists{...}{...}{...}
+    \ExplSyntaxOn
+    ```
+
+2.  **使用 `o` 或 `V` 展开代替 `x` 展开**：
+    在处理包含空格的 RGB 字符串时，使用 `o` (one-level expansion) 或直接使用变量，以避免 `x` 展开带来的空格剥离副作用。
+    ```latex
+    \tl_set:No \l_tmp_tl { \l_source_tl }
+    ```
+
+### 教训
+- **`ExplSyntaxOn` 是把双刃剑**：它提供了强大的编程工具，但会静默改变 `\input` 或 `\InputIfFileExists` 加载的文件内容的解析方式。**加载用户配置文件时，永远记得先 `\ExplSyntaxOff`**。
+- **谨慎使用 `x` 展开**：对于可能包含空格的字符串数据（如 RGB 值 `1 0 0`），使用 `o` 或 `V` 展开更加安全。
+- **调试时关注字符串完整性**：如果 `1 0 0` 变成了 `100`，首先怀疑的就是 `expl3` 模式下的空格处理。

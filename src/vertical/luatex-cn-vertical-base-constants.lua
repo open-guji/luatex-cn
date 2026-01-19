@@ -1,4 +1,4 @@
--- Copyright 2026 Open-Guji (https://github.com/open-guji)
+﻿-- Copyright 2026 Open-Guji (https://github.com/open-guji)
 --
 -- Licensed under the Apache License, Version 2.0 (the "License");
 -- you may not use this file except in compliance with the License.
@@ -12,39 +12,39 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 -- ============================================================================
--- base_constants.lua - ??????????
+-- base_constants.lua - 基础常量与工具函数库
 -- ============================================================================
--- ???: base_constants.lua (? constants.lua)
--- ??: ??? (Base Layer)
+-- 文件名: base_constants.lua (原 constants.lua)
+-- 层级: 基础层 (Base Layer)
 --
--- ????? / Module Purpose?
--- ????????????????,??:
---   1. ???? ID ??(GLYPH?KERN?HLIST?VLIST ?)
---   2. ???????(???????textbox ???)
---   3. TeX ?????? scaled points ????? (to_dimen)
---   4. Node.direct ??????? (D)
+-- 【模块功能 / Module Purpose】
+-- 本模块是所有子模块的共享基础设施，提供：
+--   1. 节点类型 ID 常量（GLYPH、KERN、HLIST、VLIST 等）
+--   2. 自定义属性索引（缩进、右缩进、textbox 尺寸等）
+--   3. TeX 尺寸字符串到 scaled points 的转换函数 (to_dimen)
+--   4. Node.direct 接口的快捷引用 (D)
 --
--- ????? / Terminology?
---   scaled points (sp)  - TeX ????,1pt = 65536sp
---   GLYPH               - ????(glyph node)
---   KERN                - ????(kerning node)
---   HLIST               - ????(horizontal list)
---   VLIST               - ????(vertical list)
---   GLUE                - ??/????(glue)
---   PENALTY             - ????(penalty,????/????)
---   ATTR_INDENT         - ????(indent attribute)
---   ATTR_TEXTBOX_*      - ?????(textbox attributes)
+-- 【术语对照 / Terminology】
+--   scaled points (sp)  - TeX 内部单位，1pt = 65536sp
+--   GLYPH               - 字形节点（glyph node）
+--   KERN                - 字距节点（kerning node）
+--   HLIST               - 水平列表（horizontal list）
+--   VLIST               - 垂直列表（vertical list）
+--   GLUE                - 胶水/弹性空白（glue）
+--   PENALTY             - 惩罚节点（penalty，用于换行/分页控制）
+--   ATTR_INDENT         - 缩进属性（indent attribute）
+--   ATTR_TEXTBOX_*      - 文本框属性（textbox attributes）
 --
--- ??????
---   � ????????????????(vertical.sty ??????)
---   � ?? ID ? TeX ???(\newluatexattribute),Lua ??? luatexbase ??
---   � to_dimen ?????????? "0pt",?? nil ?? 0(???????)
+-- 【注意事项】
+--   • 本模块必须在所有其他模块之前加载（vertical.sty 确保了这一点）
+--   • 属性 ID 由 TeX 层注册（\newluatexattribute），Lua 层通过 luatexbase 访问
+--   • to_dimen 函数会过滤空字符串和 "0pt"，返回 nil 而非 0（用于区分未设置）
 --
--- ????? / Architecture?
---   base_constants.lua (???)
---      +- ???? ? ????????
---      +- to_dimen() ? ? core_main.lua ???? TeX ??
---      +- ATTR_* ?? ? ? flatten/layout/render ????????
+-- 【整体架构 / Architecture】
+--   base_constants.lua (本模块)
+--      ├─ 导出常量 → 被所有子模块引用
+--      ├─ to_dimen() → 被 core_main.lua 用于解析 TeX 参数
+--      └─ ATTR_* 索引 → 被 flatten/layout/render 用于读写节点属性
 --
 -- ============================================================================
 
@@ -57,11 +57,11 @@ constants.D = node.direct
 -- Global debug configuration
 _G.vertical = _G.vertical or {}
 _G.vertical.debug = {
-    enabled = false,        -- ????????
-    show_grid = true,      -- ?????
-    show_boxes = true,     -- ????????
-    show_banxin = true,    -- ???????
-    verbose_log = true     -- ??? .log ???????
+    enabled = false,        -- 是否开启调试模式
+    show_grid = true,      -- 显示字符格
+    show_boxes = true,     -- 显示文本框避让区
+    show_banxin = true,    -- 显示版心参考线
+    verbose_log = true     -- 是否在 .log 中输出详细坐标
 }
 
 -- Node type IDs
@@ -94,9 +94,9 @@ constants.ATTR_JIAZHU_SUB = luatexbase.attributes.cnverticaljiazhusub or luatexb
 constants.SIDENOTE_USER_ID = 202601
 constants.FLOATING_TEXTBOX_USER_ID = 202602
 
---- ? TeX ???????? scaled points (sp)
--- @param dim_str (string) TeX ?????(?? "20pt", "1.5em")
--- @return (number|nil) ? scaled points ??????,?????????? nil
+--- 将 TeX 尺寸字符串转换为 scaled points (sp)
+-- @param dim_str (string) TeX 尺寸字符串（例如 "20pt", "1.5em"）
+-- @return (number|nil) 以 scaled points 为单位的尺寸，如果无效或为零则返回 nil
 -- @usage local sp = constants.to_dimen("20pt")
 local function to_dimen(dim_str)
     if not dim_str or dim_str == "" then
@@ -131,7 +131,7 @@ end
 constants.to_dimen = to_dimen
 
 -- Register module in package.loaded for require() compatibility
--- ????? package.loaded
+-- 注册模块到 package.loaded
 package.loaded['luatex-cn-vertical-base-constants'] = constants
 
 -- Return module

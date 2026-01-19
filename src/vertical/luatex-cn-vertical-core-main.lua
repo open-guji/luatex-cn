@@ -1,4 +1,4 @@
--- Copyright 2026 Open-Guji (https://github.com/open-guji)
+﻿-- Copyright 2026 Open-Guji (https://github.com/open-guji)
 --
 -- Licensed under the Apache License, Version 2.0 (the "License");
 -- you may not use this file except in compliance with the License.
@@ -12,50 +12,50 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 -- ============================================================================
--- core_main.lua - ?????????
+-- core_main.lua - 竖排引擎核心协调层
 -- ============================================================================
--- ???: core_main.lua (? core.lua)
--- ??: ??? (Core/Coordinator Layer)
+-- 文件名: core_main.lua (原 core.lua)
+-- 层级: 协调层 (Core/Coordinator Layer)
 --
--- ????? / Module Purpose?
--- ?????? vertical ?????????????,??:
---   1. ??????????(flatten_nodes?layout_grid?render_page ?)
---   2. ???? TeX ??????????
---   3. ????????:?? -> ???? -> ????
---   4. ??????,??????(vertical_pending_pages)
---   5. ???????(? core_textbox.lua)
+-- 【模块功能 / Module Purpose】
+-- 本模块是整个 vertical 竖排系统的总入口和协调中心，负责：
+--   1. 加载并组织所有子模块（flatten_nodes、layout_grid、render_page 等）
+--   2. 接收来自 TeX 的盒子数据和配置参数
+--   3. 执行三阶段流水线：展平 -> 布局模拟 -> 渲染应用
+--   4. 管理多页输出，维护页面缓存（vertical_pending_pages）
+--   5. 处理内嵌文本框（见 core_textbox.lua）
 --
--- ????? / Terminology?
---   prepare_grid      - ????(?????,????????)
---   load_page         - ????(????????? TeX ??)
---   process_from_tex  - TeX ??(? TeX ???????)
---   pending_pages     - ???????(?????????)
---   box_num           - ????(TeX ???????)
---   g_width/g_height  - ????/??(????????)
---   b_interval        - ????(????????????)
+-- 【术语对照 / Terminology】
+--   prepare_grid      - 准备网格（主入口函数，执行三阶段流水线）
+--   load_page         - 加载页面（将渲染好的页面写回 TeX 盒子）
+--   process_from_tex  - TeX 接口（供 TeX 调用的封装函数）
+--   pending_pages     - 待处理页面缓存（多页渲染的临时存储）
+--   box_num           - 盒子编号（TeX 盒子寄存器编号）
+--   g_width/g_height  - 网格宽度/高度（单个字符格的尺寸）
+--   b_interval        - 版心间隔（每隔多少列出现一个版心列）
 --
--- ??????
---   � ??????????? _G.vertical,?? TeX ? Lua ???????
---   � package.loaded ??????????????
---   � ??????????? pending_pages ??(? core_textbox.lua)
---   � ??:Textbox ?????????? \leavevmode ??,???????????? \leftskip
---   � Textbox ????? core_textbox.lua
---   � ??????????,?????????????
+-- 【注意事项】
+--   • 模块必须设置为全局变量 _G.vertical，因为 TeX 从 Lua 调用时需要访问
+--   • package.loaded 机制确保子模块不会被重复加载
+--   • 多页渲染时需要临时保存 pending_pages 状态（见 core_textbox.lua）
+--   • 重点：Textbox 在列表开头时必须配合 \leavevmode 使用，以确保进入水平模式并继承 \leftskip
+--   • Textbox 逻辑已移至 core_textbox.lua
+--   • 本模块不直接操作节点，而是调用子模块完成具体工作
 --
--- ????? / Architecture?
---   TeX ? (vertical.sty)
---      ? ?? process_from_tex(box_num, params)
---   core_main.lua (???)
---      ? ?? prepare_grid()
---   +------------------------------------+
---   �  Stage 1: flatten_nodes.lua       � ? ??????,????
---   +------------------------------------�
---   �  Stage 2: layout_grid.lua         � ? ????,????????/?/?
---   +------------------------------------�
---   �  Stage 3: render_page.lua         � ? ????,????/??/??
---   +------------------------------------+
---      ? ??????????
---   load_page() ? TeX ??? PDF
+-- 【整体架构 / Architecture】
+--   TeX 层 (vertical.sty)
+--      ↓ 调用 process_from_tex(box_num, params)
+--   core_main.lua (本模块)
+--      ↓ 调用 prepare_grid()
+--   ┌────────────────────────────────────┐
+--   │  Stage 1: flatten_nodes.lua       │ ← 展平嵌套盒子，提取缩进
+--   ├────────────────────────────────────┤
+--   │  Stage 2: layout_grid.lua         │ ← 虚拟布局，计算每个节点的页/列/行
+--   ├────────────────────────────────────┤
+--   │  Stage 3: render_page.lua         │ ← 应用坐标，绘制边框/背景/版心
+--   └────────────────────────────────────┘
+--      ↓ 返回渲染好的页面列表
+--   load_page() → TeX 输出到 PDF
 --
 -- ============================================================================
 
@@ -89,7 +89,7 @@ function vertical.set_page_number(n)
 end
 
 -- Load submodules using Lua's require mechanism
--- ?????
+-- 加载子模块
 local constants = package.loaded['luatex-cn-vertical-base-constants'] or require('luatex-cn-vertical-base-constants')
 local utils = package.loaded['luatex-cn-vertical-base-utils'] or require('luatex-cn-vertical-base-utils')
 local flatten = package.loaded['luatex-cn-vertical-flatten-nodes'] or require('luatex-cn-vertical-flatten-nodes')
@@ -412,10 +412,10 @@ function vertical.process_from_tex(box_num, params)
             -- Output first half (right side if right_first)
             tex.print("\\par\\nointerlineskip")
             if right_first then
-                -- ???:?????,???????
+                -- 右半页：将内容左移，使右半部分显示
                 tex.print(string.format("\\noindent\\kern-%.5fpt\\copy%d", target_w_pt, box_num))
             else
-                -- ???:???
+                -- 左半页：不移动
                 tex.print(string.format("\\noindent\\copy%d", box_num))
             end
 
@@ -427,10 +427,10 @@ function vertical.process_from_tex(box_num, params)
             -- Output second half
             tex.print("\\par\\nointerlineskip")
             if right_first then
-                -- ???:???
+                -- 左半页：不移动
                 tex.print(string.format("\\noindent\\copy%d", box_num))
             else
-                -- ???:?????
+                -- 右半页：将内容左移
                 tex.print(string.format("\\noindent\\kern-%.5fpt\\copy%d", target_w_pt, box_num))
             end
 
@@ -456,3 +456,4 @@ _G.vertical = vertical
 
 -- Return module
 return vertical
+

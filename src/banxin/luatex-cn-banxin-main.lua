@@ -1,4 +1,4 @@
--- Copyright 2026 Open-Guji (https://github.com/open-guji)
+﻿-- Copyright 2026 Open-Guji (https://github.com/open-guji)
 --
 -- Licensed under the Apache License, Version 2.0 (the "License");
 -- you may not use this file except in compliance with the License.
@@ -12,19 +12,19 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 -- ============================================================================
--- banxin_main.lua - ????????(????)
+-- banxin_main.lua - 版心模块独立入口（注册钩子）
 -- ============================================================================
--- ???: banxin_main.lua
--- ??: ??? (Extension Layer) - ??????
+-- 文件名: banxin_main.lua
+-- 层级: 扩展层 (Extension Layer) - 古籍版心功能
 --
--- ????? / Module Purpose?
--- ????? banxin ??????,??:
---   1. ? vertical.hooks ??????????
---   2. ????????
---   3. ?? banxin.render_banxin ? banxin.render_yuwei ??
+-- 【模块功能 / Module Purpose】
+-- 本模块作为 banxin 包的独立入口，负责：
+--   1. 向 vertical.hooks 系统注册版心相关回调
+--   2. 管理版心配置映射
+--   3. 协调 banxin.render_banxin 和 banxin.render_yuwei 模块
 --
--- ??????
--- banxin ????????,???? vertical.hooks ????????
+-- 【设计原理】
+-- banxin 作为一个可选插件，通过覆盖 vertical.hooks 接口实现其功能。
 --
 -- ============================================================================
 
@@ -39,10 +39,10 @@ _G.banxin = _G.banxin or {}
 local render_banxin = package.loaded['banxin.render_banxin'] or require('banxin.luatex-cn-banxin-render-banxin')
 -- Note: render_banxin will itself require banxin.render_yuwei if configured correctly
 
---- ????(Reserved Column)???????
--- @param p_head (node) ??????????
--- @param params (table) ?? vertical ???????
--- @return (node) ??????????
+--- 在保留列（Reserved Column）上渲染版心内容
+-- @param p_head (node) 当前页面节点列表头部
+-- @param params (table) 来自 vertical 引擎的渲染参数
+-- @return (node) 更新后的节点列表头部
 local function render_reserved_column(p_head, params)
     -- Simply forward to the drawing logic
     -- The vertical engine already passes the necessary context in 'params'

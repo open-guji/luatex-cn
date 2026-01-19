@@ -1,4 +1,4 @@
--- Copyright 2026 Open-Guji (https://github.com/open-guji)
+﻿-- Copyright 2026 Open-Guji (https://github.com/open-guji)
 --
 -- Licensed under the Apache License, Version 2.0 (the "License");
 -- you may not use this file except in compliance with the License.
@@ -12,32 +12,32 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 -- ============================================================================
--- render_border.lua - ??????
+-- render_border.lua - 边框绘制模块
 -- ============================================================================
--- ???: render_border.lua (? border.lua)
--- ??: ???? - ??? (Stage 3: Render Layer)
+-- 文件名: render_border.lua (原 border.lua)
+-- 层级: 第三阶段 - 渲染层 (Stage 3: Render Layer)
 --
--- ????? / Module Purpose?
--- ????????????????(????? banxin.lua ????):
---   1. draw_column_borders: ????????(?????)
---   2. draw_outer_border: ?????????????
+-- 【模块功能 / Module Purpose】
+-- 本模块负责绘制普通列边框和外边框（版心边框由 banxin.lua 单独处理）：
+--   1. draw_column_borders: 绘制普通列的边框（跳过版心列）
+--   2. draw_outer_border: 绘制整个内容区域的外围边框
 --
--- ??????
---   � ???????(?? banxin_cols ????)
---   � ?? PDF rectangle ??(re + S)??????
---   � ?????? linewidth (w) ??
---   � ???? RGB ??(0.0-1.0,?? utils.normalize_rgb ???)
+-- 【注意事项】
+--   • 版心列会被跳过（通过 banxin_cols 参数传入）
+--   • 使用 PDF rectangle 指令（re + S）绘制矩形边框
+--   • 边框厚度通过 linewidth (w) 控制
+--   • 颜色使用 RGB 格式（0.0-1.0，通过 utils.normalize_rgb 归一化）
 --
--- ??????
+-- 【整体架构】
 --   draw_column_borders(p_head, params)
---      +- ?????(0 ? total_cols-1)
---      +- ?? banxin_cols ???
---      +- ?? RTL ???(rtl_col = total_cols - 1 - col)
---      +- ?? PDF literal: "q w RG x y w h re S Q"
---      +- ?????????(?????)
+--      ├─ 遍历所有列（0 到 total_cols-1）
+--      ├─ 跳过 banxin_cols 中的列
+--      ├─ 计算 RTL 列位置（rtl_col = total_cols - 1 - col）
+--      ├─ 生成 PDF literal: "q w RG x y w h re S Q"
+--      └─ 插入到节点链最前面（使其在底层）
 --
 --   draw_outer_border(p_head, params)
---      +- ????????????????
+--      └─ 在整个内容区域外围绘制一个大矩形
 --
 -- ============================================================================
 
@@ -46,22 +46,22 @@ local constants = package.loaded['luatex-cn-vertical-base-constants'] or require
 local D = constants.D
 local utils = package.loaded['luatex-cn-vertical-base-utils'] or require('luatex-cn-vertical-base-utils')
 
---- ?????(?????,?????)
--- ????? banxin.draw_banxin_column ????
--- @param p_head (node) ??????(????)
--- @param params (table) ???:
---   - total_cols: ???????
---   - grid_width: ????? (sp)
---   - grid_height: ????? (sp)
---   - line_limit: ???????
---   - border_thickness: ???? (sp)
---   - b_padding_top: ????? (sp)
---   - b_padding_bottom: ????? (sp)
---   - shift_x: ???? (sp)
---   - outer_shift: ????? (sp)
---   - border_rgb_str: ???? RGB ?????
---   - banxin_cols: ??,?????????(???)
--- @return (node) ??????
+--- 绘制列边框（仅限普通列，不含版心列）
+-- 版心列应由 banxin.draw_banxin_column 单独绘制
+-- @param p_head (node) 节点列表头部（直接引用）
+-- @param params (table) 参数表:
+--   - total_cols: 要绘制的总列数
+--   - grid_width: 每列的宽度 (sp)
+--   - grid_height: 每行的高度 (sp)
+--   - line_limit: 每列的行数限制
+--   - border_thickness: 边框厚度 (sp)
+--   - b_padding_top: 顶部内边距 (sp)
+--   - b_padding_bottom: 底部内边距 (sp)
+--   - shift_x: 水平偏移 (sp)
+--   - outer_shift: 外边框偏移 (sp)
+--   - border_rgb_str: 归一化的 RGB 颜色字符串
+--   - banxin_cols: 可选，要跳过的列索引集合（版心列）
+-- @return (node) 更新后的头部
 local function draw_column_borders(p_head, params)
     local sp_to_bp = utils.sp_to_bp
     local total_cols = params.total_cols
@@ -101,15 +101,15 @@ local function draw_column_borders(p_head, params)
     return p_head
 end
 
---- ??????????????
--- @param p_head (node) ??????(????)
--- @param params (table) ???:
---   - inner_width: ?????? (sp)
---   - inner_height: ?????? (sp)
---   - outer_border_thickness: ????? (sp)
---   - outer_border_sep: ?????? (sp)
---   - border_rgb_str: ???? RGB ?????
--- @return (node) ??????
+--- 在整个内容区域外围绘制外边框
+-- @param p_head (node) 节点列表头部（直接引用）
+-- @param params (table) 参数表:
+--   - inner_width: 内部内容宽度 (sp)
+--   - inner_height: 内部内容高度 (sp)
+--   - outer_border_thickness: 外边框厚度 (sp)
+--   - outer_border_sep: 内外边框间距 (sp)
+--   - border_rgb_str: 归一化的 RGB 颜色字符串
+-- @return (node) 更新后的头部
 local function draw_outer_border(p_head, params)
     local sp_to_bp = utils.sp_to_bp
     local inner_width = params.inner_width
@@ -142,7 +142,7 @@ local border = {
 }
 
 -- Register module in package.loaded for require() compatibility
--- ????? package.loaded
+-- 注册模块到 package.loaded
 package.loaded['luatex-cn-vertical-render-border'] = border
 
 -- Return module exports

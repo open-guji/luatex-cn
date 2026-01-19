@@ -1,4 +1,4 @@
--- Copyright 2026 Open-Guji (https://github.com/open-guji)
+﻿-- Copyright 2026 Open-Guji (https://github.com/open-guji)
 --
 -- Licensed under the Apache License, Version 2.0 (the "License");
 -- you may not use this file except in compliance with the License.
@@ -12,21 +12,21 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 -- ============================================================================
--- core_textflow.lua - ??(Jiazhu)???????
+-- core_textflow.lua - 夹注（Jiazhu）平衡与分段逻辑
 -- ============================================================================
--- ???: core_textflow.lua
--- ??: ??? (Core Layer)
+-- 文件名: core_textflow.lua
+-- 层级: 协调层 (Core Layer)
 --
--- ????? / Module Purpose?
--- ?????????(????)???:
---   1. ??????????????????(Sub-column)?
---   2. ??????(Continuous Break)??,???????????
---   3. ????? ATTR_JIAZHU_SUB ??(1: ?/??, 2: ?/??)?
+-- 【模块功能 / Module Purpose】
+-- 本模块负责处理夹注（双行小注）的逻辑：
+--   1. 将一段夹注节点平衡分配到左右两个子列（Sub-column）。
+--   2. 处理夹注跨列（Continuous Break）逻辑，根据剩余空间进行切分。
+--   3. 为节点添加 ATTR_JIAZHU_SUB 属性（1: 右/先行, 2: 左/后行）。
 --
--- ????? / Main Algorithm?
---   ?????? H,???? C = H * 2?
---   ?????? L <= C,???????:?? = ceil(L/2),?? = L - ceil(L/2)?
---   ?? L > C,??????(?? = H,?? = H),??????????
+-- 【主要算法 / Main Algorithm】
+--   设可用高度为 H，则容量为 C = H * 2。
+--   如果夹注长度 L <= C，则进行平衡分配：右方 = ceil(L/2)，左方 = L - ceil(L/2)。
+--   如果 L > C，则填满当前列（右方 = H，左方 = H），剩余部分跨到下一列。
 --
 --
 -- ============================================================================
@@ -36,10 +36,10 @@ local D = constants.D
 
 local textflow = {}
 
---- ?????????????????
--- @param jiazhu_nodes (table) ????????? (direct nodes)
--- @param available_rows (number) ??????????
--- @param line_limit (number) ????????
+--- 将一段连续的夹注节点进行分块和平衡
+-- @param jiazhu_nodes (table) 连续的夹注节点列表 (direct nodes)
+-- @param available_rows (number) 当前列剩余的可选行数
+-- @param line_limit (number) 每列的总行数限制
 -- @return (table) chunks: { {nodes_with_attr, rows_used, is_full_column}, ... }
 function textflow.process_jiazhu_sequence(jiazhu_nodes, available_rows, line_limit)
     local total_nodes = #jiazhu_nodes
@@ -59,18 +59,18 @@ function textflow.process_jiazhu_sequence(jiazhu_nodes, available_rows, line_lim
         local is_full = false
 
         if remaining <= capacity then
-            -- ?????(?)???,??????
+            -- 能够在本块（列）内排完，执行平衡算法
             chunk_size = remaining
             rows_used = math.ceil(chunk_size / 2)
         else
-            -- ???,?????(?)
+            -- 排不完，填满当前块（列）
             chunk_size = capacity
             rows_used = h
             is_full = true
         end
 
         local chunk_nodes = {}
-        -- ??????
+        -- 计算平衡界限
         local right_count = math.ceil(chunk_size / 2)
         
         for i = 0, chunk_size - 1 do
@@ -81,16 +81,16 @@ function textflow.process_jiazhu_sequence(jiazhu_nodes, available_rows, line_lim
             local relative_row
             
             if i < right_count then
-                -- ??? (??)
+                -- 右小行 (先行)
                 sub_col = 1
                 relative_row = i
             else
-                -- ??? (??)
+                -- 左小行 (后行)
                 sub_col = 2
                 relative_row = i - right_count
             end
             
-            -- ???????????
+            -- 设置属性以便渲染层识别
             D.set_attribute(n, constants.ATTR_JIAZHU_SUB, sub_col)
             
             table.insert(chunk_nodes, {

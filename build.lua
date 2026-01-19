@@ -101,3 +101,4 @@ uploadconfig = {
   summary = "Sophisticated traditional Chinese vertical typesetting and ancient book layout.",
   topic   = {"chinese", "vertical-typesetting", "ancient-books"},
 }
+

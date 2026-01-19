@@ -1,4 +1,4 @@
--- Copyright 2026 Open-Guji (https://github.com/open-guji)
+﻿-- Copyright 2026 Open-Guji (https://github.com/open-guji)
 --
 -- Licensed under the Apache License, Version 2.0 (the "License");
 -- you may not use this file except in compliance with the License.
@@ -11,57 +11,57 @@
 -- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
--- render_page.lua - ?????????(???????)
+-- render_page.lua - 坐标应用与视觉渲染（第三阶段主模块）
 -- ============================================================================
--- ???: render_page.lua (? render.lua)
--- ??: ???? - ??? (Stage 3: Render Layer)
+-- 文件名: render_page.lua (原 render.lua)
+-- 层级: 第三阶段 - 渲染层 (Stage 3: Render Layer)
 --
--- ????? / Module Purpose?
--- ???????????????,???????????????????:
---   1. ?? layout_map ??????? xoffset/yoffset(??)? kern/shift(?)
---   2. ??? kern ??? TLT ?????????
---   3. ???????????????
---   4. ???(Textbox)???????????,??????????????
---   5. ???????,???????????
---   6. ????????(?????????,????? textbox ?)
+-- 【模块功能 / Module Purpose】
+-- 本模块负责排版流水线的第三阶段，将虚拟坐标应用到实际节点并绘制视觉元素：
+--   1. 根据 layout_map 为每个节点设置 xoffset/yoffset（文字）或 kern/shift（块）
+--   2. 插入负 kern 以抵消 TLT 方向盒子的水平推进
+--   3. 调用子模块绘制边框、版心、背景
+--   4. 文本框（Textbox）块由其内部逻辑渲染好后，在此模块仅作为整体块进行定位
+--   5. 按页拆分节点流，生成多个独立的页面盒子
+--   6. 可选绘制调试网格（蓝色框显示字符位置，红色框显示 textbox 块）
 --
--- ????? / Terminology?
---   apply_positions   - ??????(?????????????)
---   xoffset/yoffset   - ????(glyph ??????)
---   kern              - ????(??????????)
---   shift             - ??????(box.shift ??)
---   RTL               - ????(Right-To-Left,?????)
---   page_nodes        - ??????(?????????)
---   p_head            - ?????(?????????)
---   outer_shift       - ?????(?????+??)
+-- 【术语对照 / Terminology】
+--   apply_positions   - 应用坐标位置（将虚拟坐标转为实际节点属性）
+--   xoffset/yoffset   - 字形偏移（glyph 专用定位属性）
+--   kern              - 字距调整（用于水平定位块级节点）
+--   shift             - 盒子垂直偏移（box.shift 属性）
+--   RTL               - 从右到左（Right-To-Left，竖排时列序）
+--   page_nodes        - 页面节点分组（按页分组的节点列表）
+--   p_head            - 页面头节点（当前页的节点链头部）
+--   outer_shift       - 外边框偏移（外边框厚度+间距）
 --
--- ??????
---   � Glyph ???? xoffset/yoffset ??,????(HLIST/VLIST)?? Kern+Shift
---   � RTL ????:???? = total_cols - 1 - ????
---   � ????????:????? ? ?? ? ?? ? ??(?? insert_before ??)
---   � ?? PDF ?????? pdf_literal ??(mode=0,?????)
---   � Kern ? subtype=1 ??"?? kern",???????(???????????)
---   � ?????? xoffset/yoffset ????(? 0 ? ??????),??????
---   � ????PDF literal ????(??? q/Q ?,??????)???????
+-- 【注意事项】
+--   • Glyph 节点使用 xoffset/yoffset 定位，块级节点（HLIST/VLIST）使用 Kern+Shift
+--   • RTL 列序转换：物理列号 = total_cols - 1 - 逻辑列号
+--   • 绘制顺序严格控制：背景最底层 → 边框 → 版心 → 文字（通过 insert_before 实现）
+--   • 所有 PDF 绘图指令使用 pdf_literal 节点（mode=0，用户坐标系）
+--   • Kern 的 subtype=1 表示"显式 kern"，不会被后续清零（用于保护版心等特殊位置）
+--   • 【重要】如果 xoffset/yoffset 计算错误（如 0 或 超出页面范围），文字将不可见
+--   • 【重要】PDF literal 语法错误（如缺少 q/Q 对，或非法颜色值）会破坏整页渲染
 --
--- ????? / Architecture?
---   ??: ??? + layout_map + ????(??????????)
---      ?
+-- 【整体架构 / Architecture】
+--   输入: 节点流 + layout_map + 渲染参数（颜色、边框、页边距等）
+--      ↓
 --   apply_positions()
---      +- ??????(?? layout_map,?? page ??)
---      +- ????:
---      �   +- ?????(render_background.draw_background)
---      �   +- ??????(render_background.set_font_color)
---      �   +- ?????(render_border.draw_outer_border)
---      �   +- ?????(render_border.draw_column_borders,?????)
---      �   +- ?????(render_banxin.draw_banxin_column,???????)
---      �   +- ??????
---      �   �   +- Glyph: ?? render_position.calc_grid_position()
---      �   �   +- Block: ?? Kern ?? + Shift
---      �   +- ??:??????
---      +- ?? result_pages[{head, cols}]
---      ?
---   ??: ????????(????? HLIST,dir=TLT)
+--      ├─ 按页分组节点（遍历 layout_map，根据 page 分组）
+--      ├─ 对每一页：
+--      │   ├─ 绘制背景色（render_background.draw_background）
+--      │   ├─ 设置字体颜色（render_background.set_font_color）
+--      │   ├─ 绘制外边框（render_border.draw_outer_border）
+--      │   ├─ 绘制列边框（render_border.draw_column_borders，跳过版心列）
+--      │   ├─ 绘制版心列（render_banxin.draw_banxin_column，含分隔线和文字）
+--      │   ├─ 应用节点坐标
+--      │   │   ├─ Glyph: 调用 render_position.calc_grid_position()
+--      │   │   └─ Block: 使用 Kern 包裹 + Shift
+--      │   └─ 可选：绘制调试网格
+--      └─ 返回 result_pages[{head, cols}]
+--      ↓
+--   输出: 多个渲染好的页面（每页是一个 HLIST，dir=TLT）
 --
 -- ============================================================================
 
@@ -76,7 +76,7 @@ local text_position = package.loaded['luatex-cn-vertical-render-position'] or re
 
 
 
--- ????:?????????
+-- 辅助函数：处理单个字形的定位
 local function handle_glyph_node(curr, p_head, pos, params, ctx)
     local vertical_align = params.vertical_align
     local d = D.getfield(curr, "depth") or 0
@@ -120,7 +120,7 @@ local function handle_glyph_node(curr, p_head, pos, params, ctx)
     return p_head
 end
 
--- ????:?? HLIST/VLIST(?)???
+-- 辅助函数：处理 HLIST/VLIST（块）的定位
 local function handle_block_node(curr, p_head, pos, ctx)
     local h = D.getfield(curr, "height") or 0
     local w = D.getfield(curr, "width") or 0
@@ -142,7 +142,7 @@ local function handle_block_node(curr, p_head, pos, ctx)
     return p_head
 end
 
--- ????:??????/?
+-- 辅助函数：绘制调试网格/框
 local function handle_debug_drawing(curr, p_head, pos, ctx)
     local show_me = false
     local color_str = "0 0 1 RG"
@@ -180,7 +180,7 @@ local function handle_debug_drawing(curr, p_head, pos, ctx)
     return p_head
 end
 
--- ????:???????????
+-- 辅助函数：处理单个页面的所有节点
 local function process_page_nodes(p_head, layout_map, params, ctx)
     local curr = p_head
     while curr do
@@ -267,7 +267,7 @@ local function process_page_nodes(p_head, layout_map, params, ctx)
     return p_head
 end
 
--- ????:???? (Sidenotes)
+-- 辅助函数：绘制侧批 (Sidenotes)
 local function render_sidenotes(p_head, sidenote_nodes, params, ctx)
     if not sidenote_nodes then return p_head end
     
@@ -381,10 +381,10 @@ local function render_sidenotes(p_head, sidenote_nodes, params, ctx)
     
     return p_head
 end
--- @param head (node) ??????
--- @param layout_map (table) ?????? {col, row} ???
--- @param params (table) ????
--- @return (table) ?????? {head, cols}
+-- @param head (node) 节点列表头部
+-- @param layout_map (table) 从节点指针到 {col, row} 的映射
+-- @param params (table) 渲染参数
+-- @return (table) 页面信息数组 {head, cols}
 local function apply_positions(head, layout_map, params)
     local d_head = D.todirect(head)
 
@@ -592,7 +592,7 @@ local function apply_positions(head, layout_map, params)
                         -- In our system, (shift_x, shift_y) is the top-left of the border area.
                         -- But let's assume item.x and item.y are relative to the paper origin for now, 
                         -- or relative to the context (shift_x, shift_y).
-                        -- Given the user's "???????", absolute positioning makes sense.
+                        -- Given the user's "不影响正文排版", absolute positioning makes sense.
                         
                         -- We use Kern + Shift to position the box
                         local h = D.getfield(curr, "height") or 0

@@ -1,4 +1,4 @@
--- Copyright 2026 Open-Guji (https://github.com/open-guji)
+﻿-- Copyright 2026 Open-Guji (https://github.com/open-guji)
 --
 -- Licensed under the Apache License, Version 2.0 (the "License");
 -- you may not use this file except in compliance with the License.
@@ -12,51 +12,51 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 -- ============================================================================
--- layout_grid.lua - ????????(????)
+-- layout_grid.lua - 虚拟网格布局计算（第二阶段）
 -- ============================================================================
--- ???: layout_grid.lua (? layout.lua)
--- ??: ???? - ??? (Stage 2: Layout Layer)
+-- 文件名: layout_grid.lua (原 layout.lua)
+-- 层级: 第二阶段 - 布局层 (Stage 2: Layout Layer)
 --
--- ????? / Module Purpose?
--- ???????????????,????????????"??????":
---   1. ?????,??????????????????????
---   2. ???????????(????? line_limit ?)
---   3. ????(banxin)???,?????????????
---   4. ??"????"(distribute),?????????(?? textbox)
---   5. ??????(occupancy map),?? textbox ????????
+-- 【模块功能 / Module Purpose】
+-- 本模块负责排版流水线的第二阶段，在不修改节点的情况下进行"虚拟布局模拟"：
+--   1. 遍历节点流，计算每个节点应该出现在哪一页、哪一列、第几行
+--   2. 处理自动换列、分页逻辑（当行数超过 line_limit 时）
+--   3. 避让版心（banxin）列位置，确保不在版心列放置正文内容
+--   4. 支持"分布模式"（distribute），在列内均匀分布字符（用于 textbox）
+--   5. 维护占用地图（occupancy map），防止 textbox 块与其他内容重叠
 --
--- ????? / Terminology?
---   layout_map        - ????(???? ? ????)
---   cur_page/col/row  - ??????(?/?/?)
---   banxin            - ??(????????)
---   occupancy         - ????(???????????)
---   line_limit        - ??????
---   page_columns      - ??????
---   effective_limit   - ??????(??????)
---   col_buffer        - ????(??????)
---   distribute        - ????(??????)
+-- 【术语对照 / Terminology】
+--   layout_map        - 布局映射（节点指针 → 坐标位置）
+--   cur_page/col/row  - 当前光标位置（页/列/行）
+--   banxin            - 版心（古籍中间的分隔列）
+--   occupancy         - 占用地图（记录已被使用的网格位置）
+--   line_limit        - 每列最大行数
+--   page_columns      - 每页最大列数
+--   effective_limit   - 有效行数限制（考虑右缩进后）
+--   col_buffer        - 列缓冲区（用于分布模式）
+--   distribute        - 分布模式（均匀分布字符）
 --
--- ??????
---   � ????????(layout_map),???????
---   � ???? n_column ????:? (n_column + 1) ????????
---   � ???(r_indent)?????????(effective_limit)
---   � Textbox ?(? core_textbox.lua ????)????????(width � height)
---   � Textbox ????????????? width=1 ??,????????
---   � Penalty=-10000 ???????(? flatten_nodes.lua ??)
+-- 【注意事项】
+--   • 本模块只计算位置（layout_map），不修改节点本身
+--   • 版心列由 n_column 参数控制：每 (n_column + 1) 列就是一个版心列
+--   • 右缩进（r_indent）会缩短列的有效高度（effective_limit）
+--   • Textbox 块（由 core_textbox.lua 处理生成）占用多个网格单元（width × height）
+--   • Textbox 在外部布局中始终表现为一个 width=1 的块，高度由其内容决定
+--   • Penalty≤-10000 会触发强制换列（由 flatten_nodes.lua 插入）
 --
--- ????? / Architecture?
---   ??: ????? + grid_height + line_limit + n_column + page_columns
---      ?
+-- 【整体架构 / Architecture】
+--   输入: 一维节点流 + grid_height + line_limit + n_column + page_columns
+--      ↓
 --   calculate_grid_positions()
---      +- ?????? (cur_page, cur_col, cur_row)
---      +- ??????
---      �   +- ??????(hanging indent)
---      �   +- ????????/??
---      �   +- ???????????
---      �   +- ????? layout_map[node] = {page, col, row}
---      +- Textbox ????? occupancy ??
---      ?
---   ??: layout_map (???? ? ??) + total_pages
+--      ├─ 维护光标状态 (cur_page, cur_col, cur_row)
+--      ├─ 遍历每个节点
+--      │   ├─ 应用缩进逻辑（hanging indent）
+--      │   ├─ 检查是否需要换列/分页
+--      │   ├─ 跳过版心列和已占用位置
+--      │   └─ 记录位置到 layout_map[node] = {page, col, row}
+--      └─ Textbox 块额外标记 occupancy 地图
+--      ↓
+--   输出: layout_map (节点指针 → 坐标) + total_pages
 --
 -- ============================================================================
 
@@ -221,7 +221,7 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
         local r_indent = D.get_attribute(t, constants.ATTR_RIGHT_INDENT) or 0
         
         -- Textbox attributes; ONLY treat HLIST/VLIST as blocks
-        -- ????? textbox.lua ? verticalize_inner_box ????
+        -- 这些属性由 textbox.lua 在 verticalize_inner_box 阶段设置
         local tb_w = 0
         local tb_h = 0
         if id == constants.HLIST or id == constants.VLIST then
@@ -470,7 +470,7 @@ local layout = {
 }
 
 -- Register module in package.loaded for require() compatibility
--- ????? package.loaded
+-- 注册模块到 package.loaded
 package.loaded['luatex-cn-vertical-layout-grid'] = layout
 
 -- Return module exports

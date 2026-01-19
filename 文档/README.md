@@ -1,5 +1,7 @@
 # LuaTeX-cn 用户手册
 
+[English Version](README-en.md)
+
 `luatex-cn` 是一个专门为 LuaTeX 设计的中文排版宏包，特别增强了对古籍垂直排版（Guji Layout）和现代竖排的支持。
 
 ---
@@ -11,38 +13,53 @@
 - **发行版**: 推荐使用 TeX Live 2024 或更高版本。
 
 ### 字体配置
-本宏包默认会尝试自动检测系统中的中文字体：
-- **Windows**: 优先选择 "SimSun", "Microsoft YaHei" 或 "NSimSun"。
-- **macOS**: 优先选择 "Songti SC", "Heiti SC"。
-- **Linux**: 优先选择 "Noto Serif CJK SC", "WenQuanYi Zen Hei"。
+本宏包不仅支持系统字体自动检测，还强烈建议用户手动指定高质量的古籍字体以支持生僻字：
+- **强烈推荐**: 使用 `\setmainfont{TW-Kai}` (全字库正楷体) 以获得最佳的兼容性和古籍视觉效果。
+- **自动检测**: 
+    - **Windows**: 优先选择 "SimSun", "Microsoft YaHei"。
+    - **macOS**: 优先选择 "Songti SC"。
 
-详细的字体手动配置方法请参考：[FONT-SETUP.md](./FONT-SETUP.md)
+详细的字体配置方法请参考：[FONT-SETUP.md](./FONT-SETUP.md)
 
 ---
 
 ## 2. 快速入门
 
 ### 古籍排版基础模板
-创建一个 `.tex` 文件，并输入以下内容：
+创建一个 `.tex` 文件，尽量模仿我们的 `史记` 示例：
 
 ```latex
-\documentclass[四库全书]{ltc-guji}
+\documentclass[四库全书彩色]{ltc-guji}
+
+\usepackage{enumitem}
+\usepackage{tikz}
+
+% 强烈建议指定字体，推荐全字库正楷
+\setmainfont{TW-Kai}
+
+\title{欽定四庫全書}
+\chapter{史記\\卷一}
 
 \begin{document}
-\gujiSetup{
-    book-name = {测试文献},
-    chapter-title = {卷之一},
-    font-size = 14pt
-}
+\begin{正文}
+欽定四庫全書
 
-这里是正文内容。你可以直接输入中文，宏包会自动处理垂直流动和分栏。
+\begin{列表}
+    \item 史記卷一
+    \item \填充文本框[12]{漢太史令}司馬遷\空格 撰
+    \item 五帝本紀第一
+\end{列表}
 
-\TextFlow{这里是双行小注，通常用于解释正文。}
+\begin{段落}[indent=3]
+这里是正文内容...
+\夹注{这里是双行夹注内容，宏包会自动处理对齐与折行。}
+\end{段落}
 
+\end{正文}
 \end{document}
 ```
 
-使用 `lualatex` 编译即可获得带有乌丝栏和版心的古籍页面。
+使用 `lualatex` 编译即可获得带有彩色网格和自动版心的页面。
 
 ---
 
@@ -73,8 +90,8 @@
 - **`\Space[长度]`**: 插入网格占位符。
 
 ### 4.2 注释系统
-- **`\TextFlow{内容}`** (别名: `\文本流`): 生成传统古籍的“夹注”（双行小字）。
-- **`\SideNode[参数]{内容}`** (别名: `\侧批`): 在版面边缘添加注释。
+- **`\TextFlow{内容}`** (别名: `\文本流`, `\夹注`): 生成传统古籍的“夹注”（双行小字）。
+- **`\SideNode[参数]{内容}`** (别名: `\侧批`, `\CePi`): 在版面边缘添加注释。
     - `yoffset`: 垂直偏移量。
     - `color`: 注释颜色（古籍常为红色）。
 

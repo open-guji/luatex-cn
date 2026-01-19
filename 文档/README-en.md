@@ -1,5 +1,7 @@
 # LuaTeX-cn User Manual
 
+[中文版](README.md)
+
 `luatex-cn` is a macro package specifically designed for LuaTeX, with enhanced support for traditional Chinese vertical layout (Guji) and modern vertical typesetting.
 
 ---
@@ -11,10 +13,11 @@
 - **Distribution**: TeX Live 2024 or higher is recommended.
 
 ### Font Configuration
-The package attempts to automatically detect Chinese fonts in your system by default:
-- **Windows**: Prefers "SimSun", "Microsoft YaHei", or "NSimSun".
-- **macOS**: Prefers "Songti SC", "Heiti SC".
-- **Linux**: Prefers "Noto Serif CJK SC", "WenQuanYi Zen Hei".
+While the package supports auto-detection, we **strongly recommend** manually specifying a high-quality font to support rare characters:
+- **Recommended**: Use `\setmainfont{TW-Kai}` (TW-Kai font) for the best compatibility and Guji aesthetics.
+- **Auto-detection**: 
+    - **Windows**: "SimSun", "Microsoft YaHei".
+    - **macOS**: "Songti SC".
 
 For detailed manual font configuration, please refer to: [FONT-SETUP.md](./FONT-SETUP.md).
 
@@ -23,26 +26,40 @@ For detailed manual font configuration, please refer to: [FONT-SETUP.md](./FONT-
 ## 2. Quick Start
 
 ### Basic Ancient Book (Guji) Template
-Create a `.tex` file with the following content:
+Create a `.tex` file, mirroring our `Shiji` example:
 
 ```latex
-\documentclass[四库全书]{ltc-guji}
+\documentclass[四库全书彩色]{ltc-guji}
+
+\usepackage{enumitem}
+\usepackage{tikz}
+
+% Strongly recommended to set a specific font
+\setmainfont{TW-Kai}
+
+\title{欽定四庫全書}
+\chapter{史記\\卷一}
 
 \begin{document}
-\gujiSetup{
-    book-name = {Test Document},
-    chapter-title = {Vol. 1},
-    font-size = 14pt
-}
+\begin{正文}
+欽定四庫全書
 
-This is the main content. You can directly input Chinese text, and the package will automatically handle vertical flow and column division.
+\begin{列表}
+    \item 史記卷一
+    \item \填充文本框[12]{漢太史令}司馬遷\空格 撰
+    \item 五帝本紀第一
+\end{列表}
 
-\TextFlow{This is interlinear small text (Jiazhu), typically used to explain the main text.}
+\begin{段落}[indent=3]
+Main text content goes here...
+\夹注{This is interlinear small text (Jiazhu). The package handles alignment automatically.}
+\end{段落}
 
+\end{正文}
 \end{document}
 ```
 
-Compile with `lualatex` to obtain a Guji-style page with grid lines and a center column (Banxin).
+Compile with `lualatex` to obtain a colorful Guji page with automatic Banxin.
 
 ---
 
@@ -73,7 +90,7 @@ Suitable for modern novels or reports. It has no grid by default and offers a mo
 - **`\Space[length]`**: Inserts a grid placeholder.
 
 ### 4.2 Annotation System
-- **`\TextFlow{content}`** (Alias: `\文本流`): Generates "Jiazhu" (double-column small text) common in ancient books.
+- **`\TextFlow{content}`** (Alias: `\文本流`, `\夹注`): Generates "Jiazhu" (double-column small text) common in ancient books.
 - **`\SideNode[params]{content}`** (Alias: `\侧批`, `\CePi`): Adds annotations to the margins.
     - `yoffset`: Vertical offset.
     - `color`: Annotation color (often red in Guji).

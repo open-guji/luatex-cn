@@ -1,6 +1,8 @@
 # LuaTeX-CN
 
-**版本: 0.1.0** | [CTAN](https://ctan.org/pkg/luatex-cn) | [GitHub](https://github.com/open-guji/luatex-cn) | [English](README-EN.md)
+[English Version](README-EN.md)
+
+**Version: 0.1.0** | [CTAN](https://ctan.org/pkg/luatex-cn) | [GitHub](https://github.com/open-guji/luatex-cn)
 
 致力于基于 LuaTeX 引擎实现最纯粹、最高质量的中文古籍排版支持，完整覆盖竖排核心逻辑、版心装饰及夹注处理。长期愿景希望完整支持中文排版。
 

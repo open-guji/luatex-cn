@@ -1,5 +1,7 @@
 # Example Directory
 
+[中文版](README.md)
+
 This directory contains several examples of the `luatex-cn` package, demonstrating features ranging from traditional Chinese book (Guji) layout to modern vertical typesetting.
 
 ## Example List

@@ -1,5 +1,7 @@
 # 示例目录
 
+[English Version](README-en.md)
+
 本目录包含 `luatex-cn` 宏包的多个使用示例，展示了从传统古籍排版到现代竖排的不同功能。
 
 ## 示例列表

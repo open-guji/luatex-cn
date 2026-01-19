@@ -22,9 +22,9 @@ Dedicated to implementing the purest, highest quality Chinese ancient book types
 详细安装说明请参阅 [INSTALL.md](INSTALL.md)。
 
 快速安装：
-```bash
-l3build install
-```
+1. **即将发布至 CTAN**，你可以直接使用 TeX 发行版自带的包管理器进行安装：
+2. 从 [GitHub Release](https://github.com/open-guji/luatex-cn/releases) 下载最新版本的 `luatex-cn-src-v*.zip`。解压到 `texmf/tex/latex/luatex-cn/`，运行 `texhash`。
+3. 下载最新版本，解压到自己正在编写的.tex文件夹中，直接编译。
 
 ## 使用方法
 
@@ -32,6 +32,8 @@ l3build install
 
 ```latex
 \documentclass[四库全书]{ltc-guji}
+% 如果不指定字体，会使用系统默认中文字体
+% \setmainfont{Noto Serif SC}
 
 \begin{document}
 \begin{正文}
@@ -43,7 +45,7 @@ l3build install
     \item 卷一
 \end{列表}
 
-\印章[page=1]{seal.png}
+% \印章[page=1]{seal.png}
 \end{正文}
 \end{document}
 ```
@@ -52,13 +54,14 @@ l3build install
 
 - LuaTeX (推荐 TeX Live 2024+)
 - `luaotfload` 和 `fontspec`
-- 选择非系统自带的中文字体需安装（例如 Noto Serif CJK、思源宋体或专门的楷体字体）
+- 选择非系统自带的中文字体需安装（例如 Noto Serif SC、 TW-Kai）
 
 ## 文档
 
 示例用法请参见 `example.tex`。
 
 联系人(contract): Sheldon Li
+
 邮件（Email）: sheldonli.dev@gmail.com
 
 ## 许可证

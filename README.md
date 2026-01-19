@@ -2,13 +2,33 @@
 
 [English Version](README-EN.md)
 
-**Version: 0.1.0** | [CTAN](https://ctan.org/pkg/luatex-cn) | [GitHub](https://github.com/open-guji/luatex-cn)
-
 致力于基于 LuaTeX 引擎实现最纯粹、最高质量的中文古籍排版支持，完整覆盖竖排核心逻辑、版心装饰及夹注处理。长期愿景希望完整支持中文排版。
 
 LuaTeX package for sophisticated traditional Chinese vertical typesetting and ancient book layout, with long-term vision to support full Chinese typography.
 
-Dedicated to implementing the purest, highest quality Chinese ancient book typesetting support based on the LuaTeX engine, fully covering vertical typesetting core logic, central column decoration, and interlinear notes processing.
+CTAN （审核中）: [v0.1.0](https://ctan.org/pkg/luatex-cn)
+
+GitHub Release: [v0.1.0](https://github.com/open-guji/luatex-cn/releases)
+
+## 展示
+
+### 1. 《史记·五帝本纪》 (朱丝栏、夹注、印章)
+演示了复杂的加注、单鱼尾版心以及馆藏印章的绝对定位。
+
+| 黑白仿真 | 彩色预览 |
+| :---: | :---: |
+| ![史记黑白](示例/首页展示/shiji-bw.png) | ![史记彩色](示例/首页展示/shiji-color.png) |
+
+> [查看源码](示例/史记五帝本纪/史记.tex) | [查看 PDF](示例/史记五帝本纪/史记.pdf)
+
+### 2. 《红楼梦·甲戌本》 (侧批、眉批)
+演示了侧批 (Sidenote)、双列小字加注以及手抄本版式。
+
+| 侧批演示 (二) | 侧批演示 (一) |
+| :---: | :---: |
+| ![红楼梦2](示例/首页展示/honglou-p3.png) | ![红楼梦1](示例/首页展示/honglou-p2.png) |
+
+> [查看源码](示例/红楼梦甲戌本/石头记.tex) | [查看 PDF](示例/红楼梦甲戌本/石头记.pdf)
 
 ## 功能特性
 

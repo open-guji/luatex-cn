@@ -1,0 +1,53 @@
+# Miscellaneous
+*.class
+*.lock
+*.log
+*.pyc
+*.swp
+.buildlog/
+.history
+.gitattributes
+.editorconfig
+
+.idea
+
+# LaTeX build artifacts
+*.aux
+*.bbl
+*.blg
+*.fdb_latexmk
+*.fls
+*.idx
+*.ilg
+*.ind
+*.lof
+*.lot
+*.out
+*.synctex.gz
+*.toc
+*.xdy
+*.glo
+*.gls
+*.glg
+*.acn
+*.acr
+*.alg
+*.bcf
+*.run.xml
+*.figlist
+*.makefile
+*.figlist
+*.auxlock
+
+# CTAN build
+build/
+*.zip
+
+# AI related
+progress/
+.antigravity
+.claudeignore
+.clauderules
+.claude/
+.agent/
+.cursorrules

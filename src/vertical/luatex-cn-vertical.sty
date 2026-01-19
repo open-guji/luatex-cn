@@ -151,6 +151,47 @@
     })}%
   \group_end:
 }
+
+% PiZhu (批注) - Floating annotation box
+\tl_new:N \l_cnv_pizhu_font_size_tl
+\tl_new:N \l_cnv_pizhu_color_tl
+\tl_new:N \l_cnv_pizhu_grid_width_tl
+\tl_new:N \l_cnv_pizhu_grid_height_tl
+\tl_new:N \l_cnv_pizhu_x_tl
+\tl_new:N \l_cnv_pizhu_y_tl
+\int_new:N \l_cnv_pizhu_height_int
+
+\keys_define:nn { PiZhu }
+  {
+    x .tl_set:N = \l_cnv_pizhu_x_tl,
+    y .tl_set:N = \l_cnv_pizhu_y_tl,
+    height .int_set:N = \l_cnv_pizhu_height_int,
+    font-size .tl_set:N = \l_cnv_pizhu_font_size_tl,
+    font-size .initial:n = {18pt},
+    color .tl_set:N = \l_cnv_pizhu_color_tl,
+    color .initial:n = {1~0~0},
+    grid-width .tl_set:N = \l_cnv_pizhu_grid_width_tl,
+    grid-width .initial:n = {20pt},
+    grid-height .tl_set:N = \l_cnv_pizhu_grid_height_tl,
+    grid-height .initial:n = {19pt},
+  }
+
+\NewDocumentCommand{\PiZhu}{ O{} +m }{%
+  \group_begin:
+    \keys_set:nn { PiZhu } { #1 }
+    \TextBox[
+      floating=true,
+      x=\l_cnv_pizhu_x_tl,
+      y=\l_cnv_pizhu_y_tl,
+      height=\l_cnv_pizhu_height_int,
+      font-color=\l_cnv_pizhu_color_tl,
+      font-size=\l_cnv_pizhu_font_size_tl,
+      grid-width=\l_cnv_pizhu_grid_width_tl,
+      grid-height=\l_cnv_pizhu_grid_height_tl
+    ]{#2}
+  \group_end:
+}
+
 \ExplSyntaxOff
 
 
@@ -716,6 +757,7 @@
 \NewCommandCopy{\段落}{\Paragraph}
 \NewCommandCopy{\CePi}{\SideNode}
 \NewCommandCopy{\侧批}{\SideNode}
+\NewCommandCopy{\批注}{\PiZhu}
 
 \directlua{
   _G.vertical.debug.verbose_log = true

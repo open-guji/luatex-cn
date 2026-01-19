@@ -277,6 +277,12 @@
     sidenode-border-padding-top .code:n = { \keys_set:nn { SideNode } { border-padding-top = #1 } },
     sidenode-border-padding-bottom .code:n = { \keys_set:nn { SideNode } { border-padding-bottom = #1 } },
 
+    % PiZhu global configuration
+    pizhu-color .code:n = { \keys_set:nn { PiZhu } { color = #1 } },
+    pizhu-font-size .code:n = { \keys_set:nn { PiZhu } { font-size = #1 } },
+    pizhu-grid-width .code:n = { \keys_set:nn { PiZhu } { grid-width = #1 } },
+    pizhu-grid-height .code:n = { \keys_set:nn { PiZhu } { grid-height = #1 } },
+
     template .code:n = {
       % Load config file: configs/luatex-cn-guji-<name>.cfg
       \InputIfFileExists{configs/luatex-cn-guji-#1.cfg}{}{

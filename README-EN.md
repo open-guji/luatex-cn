@@ -56,9 +56,10 @@ The recommended way to use the package is through the `ltc-guji` document class:
 
 ## Documentation
 
-See `example.tex` for usage examples.
+[documentation](文档/README.md) | [example](示例/README.md)
 
 Maintainer: Sheldon Li
+
 Email: sheldonli.dev@gmail.com
 
 ## License

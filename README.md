@@ -79,7 +79,7 @@ GitHub Release: [v0.1.1](https://github.com/open-guji/luatex-cn/releases)
 
 ## 文档
 
-示例用法请参见 `example.tex`。
+[用户文档](文档/README.md) | [示例用法](示例/README.md)
 
 联系人(contract): Sheldon Li
 

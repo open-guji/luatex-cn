@@ -44,11 +44,12 @@
 -- ============================================================================
 
 -- Load dependencies
-local constants = package.loaded['vertical.base_constants'] or require('vertical.luatex-cn-vertical-base-constants')
+local constants = package.loaded['luatex-cn-vertical-base-constants'] or require('luatex-cn-vertical-base-constants')
 local D = constants.D
-local utils = package.loaded['vertical.base_utils'] or require('vertical.luatex-cn-vertical-base-utils')
-local text_position = package.loaded['vertical.render_position'] or require('vertical.luatex-cn-vertical-render-position')
-local yuwei = package.loaded['banxin.render_yuwei'] or require('banxin.luatex-cn-banxin-render-yuwei')
+local utils = package.loaded['luatex-cn-vertical-base-utils'] or require('luatex-cn-vertical-base-utils')
+local text_position = package.loaded['luatex-cn-vertical-render-position'] or
+require('luatex-cn-vertical-render-position')
+local yuwei = package.loaded['luatex-cn-banxin-render-yuwei'] or require('luatex-cn-banxin-render-yuwei')
 
 -- Conversion factor from scaled points to PDF big points
 local sp_to_bp = utils.sp_to_bp
@@ -92,10 +93,10 @@ local function draw_banxin(params)
     local color_str = params.color_str or "0 0 0"
     local b_thickness = params.border_thickness or 26214 -- 0.4pt default
     local book_name = params.book_name or ""
-    local font_size = params.font_size or 655360 -- 10pt default
+    local font_size = params.font_size or 655360         -- 10pt default
     local shift_y = params.shift_y or 0
     local lower_yuwei_enabled = params.lower_yuwei
-    if lower_yuwei_enabled == nil then lower_yuwei_enabled = true end  -- Default to true
+    if lower_yuwei_enabled == nil then lower_yuwei_enabled = true end -- Default to true
 
     -- Calculate section heights
     local upper_height = total_height * r1
@@ -103,19 +104,19 @@ local function draw_banxin(params)
     local lower_height = total_height * r3
 
     local literals = {}
-    
+
     -- Convert to big points
     local x_bp = x * sp_to_bp
     local y_bp = y * sp_to_bp
     local width_bp = width * sp_to_bp
     local b_thickness_bp = b_thickness * sp_to_bp
-    
+
     -- Calculate Y positions for dividing lines (y is at top, going negative)
     local div1_y = y - upper_height
     local div2_y = div1_y - middle_height
     local div1_y_bp = div1_y * sp_to_bp
     local div2_y_bp = div2_y * sp_to_bp
-    
+
     -- Draw horizontal dividing lines (only if enabled)
     if params.banxin_divider ~= false then
         -- Draw first horizontal dividing line (between upper and middle)
@@ -126,7 +127,7 @@ local function draw_banxin(params)
             x_bp + width_bp, div1_y_bp
         )
         table.insert(literals, div1_line)
-        
+
         -- Draw second horizontal dividing line (between middle and lower)
         local div2_line = string.format(
             "q %.2f w %s RG %.4f %.4f m %.4f %.4f l S Q",
@@ -140,15 +141,15 @@ local function draw_banxin(params)
     -- Yuwei dimensions:
     -- edge_height: height of the side edges (shorter)
     -- notch_height: distance from top to V-tip (longer, includes the V portion)
-    local edge_h = width * 0.39   
-    local notch_h = width * 0.17 
-    local yuwei_gap = 65536 * 3.7      -- 10pt gap from dividing lines
+    local edge_h = width * 0.39
+    local notch_h = width * 0.17
+    local yuwei_gap = 65536 * 3.7 -- 10pt gap from dividing lines
 
+    local yuwei_x = x             -- Left edge of column
     -- Draw upper yuwei (上鱼尾) in section 2 (if enabled)
     if params.upper_yuwei ~= false then
-        local yuwei_x = x                 -- Left edge of column
-        local yuwei_y = div1_y - yuwei_gap  -- 10pt below the first dividing line
-        
+        local yuwei_y = div1_y - yuwei_gap -- 10pt below the first dividing line
+
         -- Upper yuwei (上鱼尾) - notch at bottom, opening downward
         local upper_yuwei = yuwei.draw_yuwei({
             x = yuwei_x,
@@ -157,19 +158,19 @@ local function draw_banxin(params)
             edge_height = edge_h,
             notch_height = notch_h,
             style = "black",
-            direction = 1,                -- Notch at bottom (上鱼尾)
+            direction = 1,                  -- Notch at bottom (上鱼尾)
             color_str = color_str,
-            extra_line = true,            -- Draw extra line below V-tip
+            extra_line = true,              -- Draw extra line below V-tip
             border_thickness = b_thickness, -- Use same thickness as border
         })
         table.insert(literals, upper_yuwei)
     end
-    
+
     -- Lower yuwei (下鱼尾) - notch at top, opening upward (mirror of upper)
     -- Positioned at the bottom of section 2, 10pt above the second dividing line
     -- Only draw if enabled
     if lower_yuwei_enabled then
-        local lower_yuwei_y = div2_y + notch_h + yuwei_gap  -- 10pt above div2
+        local lower_yuwei_y = div2_y + notch_h + yuwei_gap -- 10pt above div2
         local lower_yuwei = yuwei.draw_yuwei({
             x = yuwei_x,
             y = lower_yuwei_y,
@@ -177,9 +178,9 @@ local function draw_banxin(params)
             edge_height = edge_h,
             notch_height = notch_h,
             style = "black",
-            direction = -1,               -- Notch at top (下鱼尾)
+            direction = -1,                 -- Notch at top (下鱼尾)
             color_str = color_str,
-            extra_line = true,            -- Draw extra line above V-tip
+            extra_line = true,              -- Draw extra line above V-tip
             border_thickness = b_thickness, -- Use same thickness as border
         })
         table.insert(literals, lower_yuwei)
@@ -215,9 +216,9 @@ local function draw_banxin_column(p_head, params)
     local y = params.y
     local width = params.width
     local height = params.height
-    
-    utils.debug_log(string.format("[banxin] input y=%.2f height=%.2f padding_top=%.2f draw_border=%s", 
-        y/65536, height/65536, (params.b_padding_top or 0)/65536, tostring(params.draw_border)))
+
+    utils.debug_log(string.format("[banxin] input y=%.2f height=%.2f padding_top=%.2f draw_border=%s",
+        y / 65536, height / 65536, (params.b_padding_top or 0) / 65536, tostring(params.draw_border)))
     local border_thickness = params.border_thickness
     local color_str = params.color_str or "0 0 0"
     local shift_y = params.shift_y or 0
@@ -230,7 +231,7 @@ local function draw_banxin_column(p_head, params)
         local x_bp = x * sp_to_bp
         local y_bp = y * sp_to_bp
         local width_bp = width * sp_to_bp
-        local height_bp = -height * sp_to_bp  -- Negative because Y goes downward
+        local height_bp = -height * sp_to_bp -- Negative because Y goes downward
 
         local border_literal = string.format(
             "q %.2f w %s RG %.4f %.4f %.4f %.4f re S Q",
@@ -255,7 +256,7 @@ local function draw_banxin_column(p_head, params)
         color_str = color_str,
         border_thickness = border_thickness,
         book_name = params.book_name or "",
-        font_size = params.font_size or height / 20,  -- Reasonable default
+        font_size = params.font_size or height / 20, -- Reasonable default
         shift_y = shift_y,
         lower_yuwei = params.lower_yuwei,
         upper_yuwei = params.upper_yuwei,
@@ -276,11 +277,11 @@ local function draw_banxin_column(p_head, params)
     if book_name ~= "" then
         local b_padding_top = params.b_padding_top or 0
         local b_padding_bottom = params.b_padding_bottom or 0
-        
+
         -- Available height in upper section after subtracting padding and borders
         local effective_b = params.draw_border and border_thickness or 0
-        local adj_height = banxin_result.upper_height - effective_b - b_padding_top - b_padding_bottom 
-        
+        local adj_height = banxin_result.upper_height - effective_b - b_padding_top - b_padding_bottom
+
         -- Calculate total text height to center it as a block
         -- Parse UTF-8 characters to count them
         local num_chars = 0
@@ -293,7 +294,7 @@ local function draw_banxin_column(p_head, params)
         if not f_size or f_size <= 0 then
             f_size = height / 20
         end
-        
+
         -- Use book_name_grid_height if provided
         local grid_h = constants.to_dimen(params.book_name_grid_height)
         local total_text_height
@@ -306,7 +307,7 @@ local function draw_banxin_column(p_head, params)
             end
             total_text_height = num_chars * f_size
         end
-        
+
         -- Start Y calculation based on alignment
         local effective_b = params.draw_border and border_thickness or 0
         local block_y_top = y - effective_b - b_padding_top
@@ -318,8 +319,8 @@ local function draw_banxin_column(p_head, params)
             y_start = block_y_top - (adj_height - total_text_height) / 2
         end
 
-        utils.debug_log(string.format("[banxin] BookName='%s' fsize=%.2f height=%.2f adj_h=%.2f y_start=%.2f", 
-            book_name, f_size/65536, total_text_height/65536, adj_height/65536, y_start/65536))
+        utils.debug_log(string.format("[banxin] BookName='%s' fsize=%.2f height=%.2f adj_h=%.2f y_start=%.2f",
+            book_name, f_size / 65536, total_text_height / 65536, adj_height / 65536, y_start / 65536))
 
         local glyph_chain = text_position.create_vertical_text(book_name, {
             x = x,
@@ -349,26 +350,26 @@ local function draw_banxin_column(p_head, params)
     if chapter_title ~= "" then
         local b_padding_top = params.b_padding_top or 0
         local chapter_top_margin = params.chapter_title_top_margin or (65536 * 40) -- 20pt default
-        
+
         -- Middle section boundaries
         local upper_h = banxin_result.upper_height
         local middle_h = height * (params.middle_ratio or 0.56)
-        
+
         -- Yuwei dimensions (same as in draw_banxin)
         local edge_h = width * 0.39
         local notch_h = width * 0.17
         local yuwei_gap = 65536 * 3.7 -- 10pt gap from dividing lines
         local upper_yuwei_total = params.upper_yuwei ~= false and (yuwei_gap + edge_h + notch_h) or 0
         local lower_yuwei_total = params.lower_yuwei ~= false and (yuwei_gap + edge_h + notch_h) or 0
-        
+
         -- Available space for chapter title in middle section
         -- Y position: starts below upper section, below upper yuwei, below top margin
         local middle_y_top = y - upper_h
         local chapter_y_top = middle_y_top - upper_yuwei_total - chapter_top_margin
-        
+
         -- Available height: middle section height minus upper yuwei, lower yuwei, and margins
         local available_height = middle_h - upper_yuwei_total - lower_yuwei_total - chapter_top_margin
-        
+
         if available_height > 0 then
             -- Manual splitting by newline or TeX style \\
             local raw_title = (chapter_title or ""):gsub("\\\\", "\n")
@@ -376,11 +377,11 @@ local function draw_banxin_column(p_head, params)
             for s in raw_title:gmatch("[^\n]+") do
                 table.insert(parts, s)
             end
-            
+
             if #parts > 0 then
                 local n_cols = math.max(#parts, params.chapter_title_cols or 1)
                 local col_width = width / n_cols
-                
+
                 -- Title height and font size
                 local title_height = constants.to_dimen(params.chapter_title_grid_height) or available_height
                 local title_font_size = params.chapter_title_font_size
@@ -399,9 +400,9 @@ local function draw_banxin_column(p_head, params)
                     local col_h_align = "center"
                     if n_cols > 1 then
                         if i == 1 then
-                            col_h_align = "right"  -- Rightmost column: align right (toward outer edge)
+                            col_h_align = "right" -- Rightmost column: align right (toward outer edge)
                         elseif i == #parts then
-                            col_h_align = "left"   -- Leftmost column: align left (toward outer edge)
+                            col_h_align = "left"  -- Leftmost column: align left (toward outer edge)
                         end
                     end
 
@@ -410,7 +411,7 @@ local function draw_banxin_column(p_head, params)
                         y_top = chapter_y_top,
                         width = col_width,
                         height = title_height,
-                        v_align = "center",  -- Each char centered in its cell
+                        v_align = "center", -- Each char centered in its cell
                         h_align = col_h_align,
                         font_size = title_font_size,
                         font_scale = font_scale,
@@ -433,21 +434,21 @@ local function draw_banxin_column(p_head, params)
             -- Middle section boundaries
             local upper_h = banxin_result.upper_height
             local middle_h = height * (params.middle_ratio or 0.56)
-            
+
             -- Position at the bottom of the middle section
             local middle_y_bottom = y - upper_h - middle_h
-            
+
             -- Decoration (yuwei) bottom position
             local edge_h = width * 0.39
             local notch_h = width * 0.17
             local yuwei_gap = 65536 * 3.7
             local upper_yuwei_total = params.upper_yuwei and (yuwei_gap + edge_h + notch_h) or 0
             local lower_yuwei_total = params.lower_yuwei and (yuwei_gap + edge_h + notch_h) or 0
-            
+
             -- Margin settings for page number (版心页码边距)
-            local page_right_margin = 65536 * 2   -- 2pt small right margin
+            local page_right_margin = 65536 * 2                                -- 2pt small right margin
             local page_bottom_margin = params.b_padding_bottom or (65536 * 15) -- Use config or default 15pt
-            
+
             -- Available bottom-right position
             -- Determine y_top, alignment and orientation for page number
             local p_v_align = "bottom"
@@ -469,7 +470,7 @@ local function draw_banxin_column(p_head, params)
 
             local page_chain = text_position.create_vertical_text(page_str, {
                 x = x,
-                y_top = page_y_top, 
+                y_top = page_y_top,
                 width = width - (params.page_number_align == "center" and 0 or page_right_margin),
                 height = (65536 * 30), -- Container height
                 v_align = p_v_align,

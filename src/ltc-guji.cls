@@ -456,10 +456,7 @@
     \tl_gset_eq:NN \g_yinzhang_width_tl \l_yinzhang_width_tl
     \tl_gset_eq:NN \g_yinzhang_color_tl \l_yinzhang_color_tl
     
-    % Add hook to shipout foreground for specified page
-    % Note: Using foreground ensures seal is visible after split-page cropping
     \AddToHook{shipout/foreground}{
-      \ExplSyntaxOn
       \int_compare:nNnT { \value{page} } = { \g_yinzhang_target_page_int }
         {
           \begin{tikzpicture}[overlay]
@@ -474,7 +471,6 @@
             };
           \end{tikzpicture}
         }
-      \ExplSyntaxOff
     }
   }
 

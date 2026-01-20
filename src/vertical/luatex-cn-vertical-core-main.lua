@@ -168,7 +168,7 @@ function vertical.prepare_grid(box_num, params)
     local border_w = p_cols * g_width + 2 * half_thickness
     local shift_x = 0
     local shift_y = 0
-    
+
     if is_textbox then
         m_top = 0
         m_bottom = 0
@@ -246,7 +246,7 @@ function vertical.prepare_grid(box_num, params)
         draw_border = is_border,
         b_padding_top = b_padding_top,
         b_padding_bottom = b_padding_bottom,
-        col_limit = limit, -- Correct parameter name for rows per column
+        col_limit = limit,  -- Correct parameter name for rows per column
         line_limit = limit, -- Backward compatibility
         border_thickness = b_thickness,
         draw_outer_border = is_outer_border,
@@ -257,7 +257,6 @@ function vertical.prepare_grid(box_num, params)
         border_rgb = params.border_color,
         bg_rgb = params.background_color,
         font_rgb = params.font_color,
-        font_size = params.font_size,
         paper_width = p_width,
         paper_height = p_height,
         margin_top = m_top,
@@ -295,7 +294,8 @@ function vertical.prepare_grid(box_num, params)
     }
 
     if is_debug then
-        utils.debug_log(string.format("[core] Calling apply_positions with start_page=%d (is_textbox=%s)", start_page, tostring(is_textbox)))
+        utils.debug_log(string.format("[core] Calling apply_positions with start_page=%d (is_textbox=%s)", start_page,
+            tostring(is_textbox)))
     end
 
     local rendered_pages = render.apply_positions(list, layout_map, r_params)
@@ -306,18 +306,19 @@ function vertical.prepare_grid(box_num, params)
         _G.vertical.current_page_number = old_page_num + #rendered_pages
 
         if is_debug then
-            utils.debug_log(string.format("[core] Finished apply_positions. Pages: %d. Global page number: %d -> %d", 
+            utils.debug_log(string.format("[core] Finished apply_positions. Pages: %d. Global page number: %d -> %d",
                 #rendered_pages, old_page_num, _G.vertical.current_page_number))
         end
     else
         if is_debug then
-            utils.debug_log("[core] Finished apply_positions for textbox. Global page number remains " .. tostring(_G.vertical.current_page_number))
+            utils.debug_log("[core] Finished apply_positions for textbox. Global page number remains " ..
+            tostring(_G.vertical.current_page_number))
         end
     end
 
     -- 6. Store pages and return count
     _G.vertical_pending_pages = {}
-    
+
     local outer_shift = is_outer_border and (ob_thickness + ob_sep) or 0
     local char_grid_height = limit * g_height
     local total_v_depth = char_grid_height + b_padding_top + b_padding_bottom + b_thickness + outer_shift * 2
@@ -326,7 +327,7 @@ function vertical.prepare_grid(box_num, params)
         local new_box = node.new("hlist")
         new_box.dir = "TLT"
         new_box.list = page_info.head
-        
+
         new_box.width = page_info.cols * g_width + b_thickness + outer_shift * 2
 
         new_box.height = 0
@@ -348,7 +349,11 @@ function vertical.prepare_grid(box_num, params)
         for n, pos in pairs(layout_map) do
             local tb_w = D.get_attribute(n, constants.ATTR_TEXTBOX_WIDTH) or 0
             if tb_w > 0 then
-                utils.debug_log("  [layout_map] Block Node=" .. tostring(n) .. " at p=" .. (pos.page or 0) .. " c=" .. pos.col .. " r=" .. pos.row .. " w=" .. (pos.width or 0) .. " h=" .. (pos.height or 0))
+                utils.debug_log("  [layout_map] Block Node=" ..
+                tostring(n) ..
+                " at p=" ..
+                (pos.page or 0) ..
+                " c=" .. pos.col .. " r=" .. pos.row .. " w=" .. (pos.width or 0) .. " h=" .. (pos.height or 0))
             end
         end
     end
@@ -380,7 +385,7 @@ function vertical.process_from_tex(box_num, params)
     -- CRITICAL: Do NOT enable split page output for textboxes (VerticalRTT, etc.)
     local is_textbox = (params.is_textbox == true)
     local split_enabled = _G.splitpage and _G.splitpage.is_enabled and _G.splitpage.is_enabled()
-    
+
     if split_enabled and not is_textbox then
         -- Split page mode: output each page as two half-pages
         local target_w = _G.splitpage.get_target_width()
@@ -397,7 +402,7 @@ function vertical.process_from_tex(box_num, params)
             local cmd_load = string.format("\\directlua{vertical.load_page(%d, %d, true)}", box_num, i)
             local cmd_dim = string.format("\\global\\pagewidth=%.5fpt", target_w_pt)
             local cmd_dim_h = string.format("\\global\\pageheight=%.5fpt", target_h_pt)
-            
+
             if _G.vertical.debug.enabled then
                 print("[core] TeX CMD: " .. cmd_load)
                 print("[core] TeX CMD: " .. cmd_dim)
@@ -456,4 +461,3 @@ _G.vertical = vertical
 
 -- Return module
 return vertical
-

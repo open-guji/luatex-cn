@@ -1,3 +1,4 @@
+---@diagnostic disable: lowercase-global
 -- test_utils.lua - Simple testing utilities for LuaTeX-CN tests
 
 local test_utils = {}
@@ -27,24 +28,24 @@ local function get_project_root()
 end
 
 local root = get_project_root()
-package.path = root .. "src/?.lua;" 
-            .. root .. "src/vertical/?.lua;" 
-            .. root .. "src/banxin/?.lua;" 
-            .. root .. "src/fonts/?.lua;" 
-            .. root .. "src/splitpage/?.lua;" 
-            .. root .. "src/?/init.lua;" 
-            .. package.path
+package.path = root .. "src/?.lua;"
+    .. root .. "src/vertical/?.lua;"
+    .. root .. "src/banxin/?.lua;"
+    .. root .. "src/fonts/?.lua;"
+    .. root .. "src/splitpage/?.lua;"
+    .. root .. "src/?/init.lua;"
+    .. package.path
 
 -- Mock TeX/LuaTeX globals (Force override to avoid native object conflicts)
 node = {
     id = function(name) return 1 end,
     subtype = function(name) return 1 end,
-    new = function(id, subtype) 
+    new = function(id, subtype)
         if type(id) == "string" then id = 1 end
         if type(subtype) == "string" then subtype = 1 end
-        return { 
-            id = id, 
-            subtype = subtype, 
+        return {
+            id = id,
+            subtype = subtype,
             next = nil,
             width = 0,
             height = 0,
@@ -54,16 +55,22 @@ node = {
             char = 0,
             font = 0,
             kern = 0
-        } 
+        }
     end,
     setfield = function(n, f, v) if type(n) == "table" then n[f] = v end end,
-    getfield = function(n, f) if type(n) == "table" then return n[f] end return nil end,
+    getfield = function(n, f)
+        if type(n) == "table" then return n[f] end
+        return nil
+    end,
     direct = {
-        new = function(id, subtype) 
-            return { id = id, subtype = subtype, next = nil } 
+        new = function(id, subtype)
+            return { id = id, subtype = subtype, next = nil }
         end,
         setfield = function(n, f, v) if type(n) == "table" then n[f] = v end end,
-        getfield = function(n, f) if type(n) == "table" then return n[f] end return nil end,
+        getfield = function(n, f)
+            if type(n) == "table" then return n[f] end
+            return nil
+        end,
         insert_before = function(head, anchor, n)
             if not n then return head end
             n.next = anchor
@@ -71,12 +78,15 @@ node = {
         end,
         todirect = function(n) return n end,
         setlink = function(n, next_node) if type(n) == "table" then n.next = next_node end end,
-        getnext = function(n) if type(n) == "table" then return n.next end return nil end,
+        getnext = function(n)
+            if type(n) == "table" then return n.next end
+            return nil
+        end,
     }
 }
 
 texio = {
-    write_nl = function(target, s) 
+    write_nl = function(target, s)
         -- silence
     end
 }
@@ -108,7 +118,7 @@ font = {
 
 if not utf8 then
     utf8 = {
-        codepoint = function(s) 
+        codepoint = function(s)
             -- Simple UTF-8 to codepoint for common chars
             local b = string.byte(s, 1)
             if b < 128 then return b end
@@ -122,14 +132,14 @@ end
 -- Simple assertion functions
 function test_utils.assert_eq(actual, expected, message)
     if actual ~= expected then
-        error(string.format("Assertion failed: expected '%s', got '%s'. %s", 
+        error(string.format("Assertion failed: expected '%s', got '%s'. %s",
             tostring(expected), tostring(actual), message or ""), 2)
     end
 end
 
 function test_utils.assert_match(actual, pattern, message)
     if not string.match(actual, pattern) then
-        error(string.format("Assertion failed: '%s' does not match pattern '%s'. %s", 
+        error(string.format("Assertion failed: '%s' does not match pattern '%s'. %s",
             tostring(actual), tostring(pattern), message or ""), 2)
     end
 end

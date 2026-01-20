@@ -3,20 +3,40 @@
     "configurations": [
         {
             "name": "Run Current Test File",
-            "type": "lua",
+            "type": "lua-local",
             "request": "launch",
             "program": "${file}",
-            "luaExe": "texlua",
+            "runtimeExecutable": "texlua",
             "cwd": "${workspaceFolder}",
             "args": []
         },
         {
             "name": "Run All Tests",
-            "type": "lua",
+            "type": "lua-local",
             "request": "launch",
             "program": "test/run_all.lua",
-            "luaExe": "texlua",
+            "runtimeExecutable": "texlua",
             "cwd": "${workspaceFolder}"
+        },
+        {
+            "name": "Compile Current TeX File",
+            "type": "node",
+            "request": "launch",
+            "runtimeExecutable": "lualatex",
+            "args": [
+                // "--interaction=nonstopmode",
+                // "--synctex=1",
+                "${file}"
+            ],
+            "cwd": "${fileDirname}",
+            "env": {
+                "TEXINPUTS": ".;${workspaceFolder}/src//;",
+                "LUAINPUTS": ".;${workspaceFolder}/src//;"
+            },
+            "presentation": {
+                "reveal": "always",
+                "panel": "new"
+            }
         }
     ]
 }

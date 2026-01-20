@@ -73,14 +73,14 @@ local function draw_background(p_head, params)
     local m_top = params.margin_top or 0
     -- Skip background rectangle for full pages (handled by \pagecolor).
     -- Still draw for textboxes, but they should use their own inner dimensions.
-    if not is_textbox and p_width > 0 then
+    if not params.is_textbox and p_width > 0 then
         return p_head
     end
 
     local tx_bp, ty_bp, tw_bp, th_bp
 
     -- Use inner dimensions for textboxes OR if paper size is not provided/valid
-    if not is_textbox and p_width > 0 and p_height > 0 then
+    if not params.is_textbox and p_width > 0 and p_height > 0 then
         -- Background covers the entire page
         -- The origin (0,0) in our box is at (margin_left, paper_height - margin_top)
         tx_bp = -m_left * sp_to_bp

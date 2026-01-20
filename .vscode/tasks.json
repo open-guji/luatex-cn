@@ -24,6 +24,23 @@
                 "reveal": "always",
                 "panel": "new"
             }
+        },
+        {
+            "label": "Compile Current TeX File",
+            "type": "shell",
+            "command": "lualatex --interaction=nonstopmode --synctex=1 ${file}",
+            "options": {
+                "cwd": "${fileDirname}",
+                "env": {
+                    "TEXINPUTS": ".;${workspaceFolder}/src//;",
+                    "LUAINPUTS": ".;${workspaceFolder}/src//;"
+                }
+            },
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": "$gcc"
         }
     ]
 }

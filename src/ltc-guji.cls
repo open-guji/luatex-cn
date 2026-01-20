@@ -619,7 +619,7 @@
         n-column = \int_use:N \l_guji_n_column_int,
         border-color = { \l_guji_border_color_tl },
         background-color = { \l_guji_background_color_tl },
-        font-color = \exp_not:V \l_guji_font_color_tl,
+        font-color = { \l_guji_font_color_tl },
         paper-width = \l_guji_paper_width_tl,
         paper-height = \l_guji_paper_height_tl,
         margin-top = \l_guji_margin_top_tl,

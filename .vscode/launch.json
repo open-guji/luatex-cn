@@ -1,0 +1,22 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Run Current Test File",
+            "type": "lua",
+            "request": "launch",
+            "program": "${file}",
+            "luaExe": "texlua",
+            "cwd": "${workspaceFolder}",
+            "args": []
+        },
+        {
+            "name": "Run All Tests",
+            "type": "lua",
+            "request": "launch",
+            "program": "test/run_all.lua",
+            "luaExe": "texlua",
+            "cwd": "${workspaceFolder}"
+        }
+    ]
+}

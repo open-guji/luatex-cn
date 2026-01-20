@@ -1,0 +1,98 @@
+-- luatex-cn-font-autodetect-test.lua - Unit tests for font autodetetection
+local test_utils = require('test.test_utils')
+local fontdetect = require('fonts.luatex-cn-font-autodetect')
+
+-- Save original functions/values
+local org_os_type = os.type
+local org_pkg_config = package.config
+local org_io_popen = io.popen
+
+test_utils.run_test("detect_os - Windows Detection", function()
+    -- Mock Windows environment
+    os.type = "windows"
+    
+    test_utils.assert_eq(fontdetect.detect_os(), "windows", "Should detect windows via os.type")
+    
+    -- Mock via package.config
+    os.type = "unix"
+    package.config = "\\\n;\n?\n!\n-"
+    test_utils.assert_eq(fontdetect.detect_os(), "windows", "Should detect windows via package.config")
+    
+    -- Restore
+    os.type = org_os_type
+    package.config = org_pkg_config
+end)
+
+test_utils.run_test("detect_os - Mac Detection", function()
+    os.type = "unix"
+    package.config = "/\n;\n?\n!\n-"
+    
+    -- Mock io.popen to return Darwin
+    io.popen = function(cmd)
+        return {
+            read = function() return "Darwin" end,
+            close = function() end
+        }
+    end
+    
+    test_utils.assert_eq(fontdetect.detect_os(), "mac", "Should detect mac via uname")
+    
+    io.popen = org_io_popen
+end)
+
+test_utils.run_test("auto_select_scheme - Windows", function()
+    -- Force detect_os to return windows
+    local org_detect = fontdetect.detect_os
+    fontdetect.detect_os = function() return "windows" end
+    
+    local scheme = fontdetect.auto_select_scheme()
+    test_utils.assert_eq(scheme.name, "windows", "Should select windows scheme")
+    test_utils.assert_eq(scheme.fonts.main, "SimSun", "Should select SimSun for windows")
+    
+    fontdetect.detect_os = org_detect
+end)
+
+test_utils.run_test("auto_select_scheme - Mac", function()
+    local org_detect = fontdetect.detect_os
+    fontdetect.detect_os = function() return "mac" end
+    
+    local scheme = fontdetect.auto_select_scheme()
+    test_utils.assert_eq(scheme.name, "mac", "Should select mac scheme")
+    test_utils.assert_eq(scheme.fonts.main, "Songti SC", "Should select Songti SC for mac")
+    
+    fontdetect.detect_os = org_detect
+end)
+
+test_utils.run_test("auto_select_scheme - Fallback", function()
+    local org_detect = fontdetect.detect_os
+    local org_exists = fontdetect.font_exists
+    
+    fontdetect.detect_os = function() return "linux" end
+    -- Mock Fandol and Noto missing
+    fontdetect.font_exists = function(name)
+        if name == "FandolSong" or name == "Noto Serif CJK SC" then
+            return false
+        end
+        return true -- Common fonts exist
+    end
+    
+    local scheme = fontdetect.auto_select_scheme()
+    test_utils.assert_eq(scheme.name, "common", "Should fallback to common scheme")
+    
+    fontdetect.detect_os = org_detect
+    fontdetect.font_exists = org_exists
+end)
+
+test_utils.run_test("get_font_setup", function()
+    local org_detect = fontdetect.detect_os
+    fontdetect.detect_os = function() return "windows" end
+    
+    local setup = fontdetect.get_font_setup()
+    test_utils.assert_eq(setup.name, "SimSun", "setup.name mismatch")
+    test_utils.assert_eq(setup.scheme, "windows", "setup.scheme mismatch")
+    test_utils.assert_match(setup.features, "+vrt2", "setup.features missing vrt2")
+    
+    fontdetect.detect_os = org_detect
+end)
+
+print("\nAll font-autodetect tests passed!")

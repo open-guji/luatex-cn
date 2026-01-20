@@ -3,10 +3,22 @@ local test_utils = require('test.test_utils')
 local background = require('luatex-cn-vertical-render-background')
 
 test_utils.run_test("render-background - fill rect", function()
-    -- draw_background returns a string of PDF literals
-    local pdf = background.draw_background(0, 0, 100, 100, "1 0 0")
-    test_utils.assert_match(pdf, "rg", "Should contain fill color operator")
-    test_utils.assert_match(pdf, "re f", "Should contain rectangle fill operator")
+    local head = {}
+    local params = {
+        bg_rgb_str = "1 0 0",
+        inner_width = 100 * 65536,
+        inner_height = 100 * 65536,
+        outer_shift = 0,
+        is_textbox = true -- Force drawing even if paper_width is 0
+    }
+    -- draw_background returns the updated head
+    local new_head = background.draw_background(head, params)
+
+    -- The PDF literal node should be inserted before the head
+    -- In our mock, n.next = anchor, and it returns n.
+    local literal_node = new_head
+    test_utils.assert_match(literal_node.data, "rg", "Should contain fill color operator")
+    test_utils.assert_match(literal_node.data, "re f", "Should contain rectangle fill operator")
 end)
 
 print("\nAll render-background tests passed!")

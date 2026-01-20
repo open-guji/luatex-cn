@@ -48,7 +48,7 @@ local constants = package.loaded['luatex-cn-vertical-base-constants'] or require
 local D = constants.D
 local utils = package.loaded['luatex-cn-vertical-base-utils'] or require('luatex-cn-vertical-base-utils')
 local text_position = package.loaded['luatex-cn-vertical-render-position'] or
-require('luatex-cn-vertical-render-position')
+    require('luatex-cn-vertical-render-position')
 local yuwei = package.loaded['luatex-cn-banxin-render-yuwei'] or require('luatex-cn-banxin-render-yuwei')
 
 -- Conversion factor from scaled points to PDF big points

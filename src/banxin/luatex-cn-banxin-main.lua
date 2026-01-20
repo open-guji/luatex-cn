@@ -36,7 +36,7 @@ _G.vertical.hooks = _G.vertical.hooks or {}
 _G.banxin = _G.banxin or {}
 
 -- 1. Load sub-modules using full namespaced paths
-local render_banxin = package.loaded['banxin.render_banxin'] or require('banxin.luatex-cn-banxin-render-banxin')
+local render_banxin = package.loaded['luatex-cn-banxin-render-banxin'] or require('luatex-cn-banxin-render-banxin')
 -- Note: render_banxin will itself require banxin.render_yuwei if configured correctly
 
 --- 在保留列（Reserved Column）上渲染版心内容

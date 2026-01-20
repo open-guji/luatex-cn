@@ -53,9 +53,13 @@ local function update_file(filepath)
 
     if changed then
         local wf = io.open(filepath, "w")
-        wf:write(new_content)
-        wf:close()
-        print("Updated: " .. filepath)
+        if wf then
+            wf:write(new_content)
+            wf:close()
+            print("Updated: " .. filepath)
+        else
+            print("Error: Could not open file for writing: " .. filepath)
+        end
     end
 end
 

@@ -1,4 +1,4 @@
-﻿-- Copyright 2026 Open-Guji (https://github.com/open-guji)
+-- Copyright 2026 Open-Guji (https://github.com/open-guji)
 --
 -- Licensed under the Apache License, Version 2.0 (the "License");
 -- you may not use this file except in compliance with the License.
@@ -202,6 +202,7 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
             }
             -- print(string.format("[D-layout] WHATSIT Node=%s [p:%d, c:%d, r:%d]", tostring(t), cur_page, cur_col, cur_row))
             t = D.getnext(t)
+            if not t then break end
             goto start_of_loop
         end
         

@@ -1,1 +1,0 @@
-[Guji-Debug] [render] Floating Box (Absolute Top-Right) at x=200.00, y=0.00 (rel

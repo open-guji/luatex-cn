@@ -1,4 +1,4 @@
-﻿% Copyright 2026 Open-Guji (https://github.com/open-guji)
+% Copyright 2026 Open-Guji (https://github.com/open-guji)
 %
 % Licensed under the Apache License, Version 2.0 (the "License");
 % you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 % 这是 luatex_cn 的子包
 %
 \NeedsTeXFormat{LaTeX2e}
-\ProvidesPackage{luatex-cn-vertical}[2026/01/18 v0.1.0 Chinese vertical typesetting for LuaTeX]
+\ProvidesPackage{luatex-cn-vertical}[2026/01/19 v0.1.1 Chinese vertical typesetting for LuaTeX]
 
 % Check if LuaTeX is being used
 \RequirePackage{ifluatex}
@@ -151,6 +151,47 @@
     })}%
   \group_end:
 }
+
+% PiZhu (批注) - Floating annotation box
+\tl_new:N \l_cnv_pizhu_font_size_tl
+\tl_new:N \l_cnv_pizhu_color_tl
+\tl_new:N \l_cnv_pizhu_grid_width_tl
+\tl_new:N \l_cnv_pizhu_grid_height_tl
+\tl_new:N \l_cnv_pizhu_x_tl
+\tl_new:N \l_cnv_pizhu_y_tl
+\int_new:N \l_cnv_pizhu_height_int
+
+\keys_define:nn { PiZhu }
+  {
+    x .tl_set:N = \l_cnv_pizhu_x_tl,
+    y .tl_set:N = \l_cnv_pizhu_y_tl,
+    height .int_set:N = \l_cnv_pizhu_height_int,
+    font-size .tl_set:N = \l_cnv_pizhu_font_size_tl,
+    font-size .initial:n = {18pt},
+    color .tl_set:N = \l_cnv_pizhu_color_tl,
+    color .initial:n = {1~0~0},
+    grid-width .tl_set:N = \l_cnv_pizhu_grid_width_tl,
+    grid-width .initial:n = {20pt},
+    grid-height .tl_set:N = \l_cnv_pizhu_grid_height_tl,
+    grid-height .initial:n = {19pt},
+  }
+
+\NewDocumentCommand{\PiZhu}{ O{} +m }{%
+  \group_begin:
+    \keys_set:nn { PiZhu } { #1 }
+    \TextBox[
+      floating=true,
+      x=\l_cnv_pizhu_x_tl,
+      y=\l_cnv_pizhu_y_tl,
+      height=\l_cnv_pizhu_height_int,
+      font-color=\l_cnv_pizhu_color_tl,
+      font-size=\l_cnv_pizhu_font_size_tl,
+      grid-width=\l_cnv_pizhu_grid_width_tl,
+      grid-height=\l_cnv_pizhu_grid_height_tl
+    ]{#2}
+  \group_end:
+}
+
 \ExplSyntaxOff
 
 
@@ -344,7 +385,7 @@
           { \tl_set_eq:NN \l__cn_vertical_border_rgb_tl \l__cn_vertical_border_color_tl }
           {
              % Try extraction, but wrap in safety
-             \cs_if_exist:cTF { \string color @ \l__cn_vertical_border_color_tl }
+             \cs_if_exist:cTF { color @ \l__cn_vertical_border_color_tl }
              {
                \exp_args:NV \extractcolorspec \l__cn_vertical_border_color_tl \l_tmpa_tl
                \exp_args:NNx \convertcolorspec \l_tmpa_tl {rgb} \l_tmpb_tl
@@ -364,7 +405,7 @@
             \tl_if_in:NnTF \l__cn_vertical_background_color_tl { ~ }
               { \tl_set_eq:NN \l__cn_vertical_background_rgb_tl \l__cn_vertical_background_color_tl }
               {
-                 \cs_if_exist:cTF { \string color @ \l__cn_vertical_background_color_tl }
+                 \cs_if_exist:cTF { color @ \l__cn_vertical_background_color_tl }
                  {
                    \exp_args:NV \extractcolorspec \l__cn_vertical_background_color_tl \l_tmpa_tl
                    \exp_args:NNx \convertcolorspec \l_tmpa_tl {rgb} \l_tmpb_tl
@@ -385,7 +426,7 @@
             \tl_if_in:NnTF \l__cn_vertical_font_color_tl { ~ }
               { \tl_set_eq:NN \l__cn_vertical_font_rgb_tl \l__cn_vertical_font_color_tl }
               {
-                 \cs_if_exist:cTF { \string color @ \l__cn_vertical_font_color_tl }
+                 \cs_if_exist:cTF { color @ \l__cn_vertical_font_color_tl }
                  {
                    \exp_args:NV \extractcolorspec \l__cn_vertical_font_color_tl \l_tmpa_tl
                    \exp_args:NNx \convertcolorspec \l_tmpa_tl {rgb} \l_tmpb_tl
@@ -482,6 +523,8 @@
 \tl_new:N \l__cn_vertical_textbox_y_tl
 \tl_new:N \l__cn_vertical_textbox_bg_color_tl
 \tl_new:N \l__cn_vertical_textbox_font_color_tl
+\tl_new:N \l__cn_vertical_textbox_bg_rgb_tl
+\tl_new:N \l__cn_vertical_textbox_font_rgb_tl
 \tl_new:N \l__cn_vertical_textbox_font_size_tl
 
 \keys_define:nn { vertical / textbox }
@@ -572,6 +615,48 @@
       \hsize=\dim_eval:n { \l__cn_vertical_textbox_inner_gh_dim * \int_use:N \l__cn_vertical_textbox_height_int }
       #2
     }
+    
+    % Expand variables to ensure they contain the color string, not a macro name
+    % Use o-expansion to preserve spaces (standard x-expansion strips them in ExplSyntax)
+    \tl_set:No \l__cn_vertical_textbox_bg_color_tl { \l__cn_vertical_textbox_bg_color_tl }
+    \tl_set:No \l__cn_vertical_textbox_font_color_tl { \l__cn_vertical_textbox_font_color_tl }
+
+    % Convert background color to RGB
+    \tl_if_in:NnTF \l__cn_vertical_textbox_bg_color_tl { , }
+      { \tl_set_eq:NN \l__cn_vertical_textbox_bg_rgb_tl \l__cn_vertical_textbox_bg_color_tl }
+      {
+        \tl_if_in:NnTF \l__cn_vertical_textbox_bg_color_tl { ~ }
+          { \tl_set_eq:NN \l__cn_vertical_textbox_bg_rgb_tl \l__cn_vertical_textbox_bg_color_tl }
+          {
+             \cs_if_exist:cTF { color @ \l__cn_vertical_textbox_bg_color_tl }
+             {
+               \exp_args:NV \extractcolorspec \l__cn_vertical_textbox_bg_color_tl \l_tmpa_tl
+               \exp_args:NNx \convertcolorspec \l_tmpa_tl { rgb } \l_tmpb_tl
+               \tl_set:Nx \l__cn_vertical_textbox_bg_rgb_tl { \l_tmpb_tl }
+             }
+             { \tl_set_eq:NN \l__cn_vertical_textbox_bg_rgb_tl \l__cn_vertical_textbox_bg_color_tl }
+          }
+      }
+    \tl_replace_all:Nnn \l__cn_vertical_textbox_bg_rgb_tl { , } { ~ }
+
+    % Convert font color to RGB
+    \tl_if_in:NnTF \l__cn_vertical_textbox_font_color_tl { , }
+      { \tl_set_eq:NN \l__cn_vertical_textbox_font_rgb_tl \l__cn_vertical_textbox_font_color_tl }
+      {
+        \tl_if_in:NnTF \l__cn_vertical_textbox_font_color_tl { ~ }
+          { \tl_set_eq:NN \l__cn_vertical_textbox_font_rgb_tl \l__cn_vertical_textbox_font_color_tl }
+          {
+             \cs_if_exist:cTF { color @ \l__cn_vertical_textbox_font_color_tl }
+             {
+               \exp_args:NV \extractcolorspec \l__cn_vertical_textbox_font_color_tl \l_tmpa_tl
+               \exp_args:NNx \convertcolorspec \l_tmpa_tl { rgb } \l_tmpb_tl
+               \tl_set:Nx \l__cn_vertical_textbox_font_rgb_tl { \l_tmpb_tl }
+             }
+             { \tl_set_eq:NN \l__cn_vertical_textbox_font_rgb_tl \l__cn_vertical_textbox_font_color_tl }
+          }
+      }
+    \tl_replace_all:Nnn \l__cn_vertical_textbox_font_rgb_tl { , } { ~ }
+
     \directlua{vertical_textbox.process_inner_box(0, {
       n_cols = \int_use:N \l__cn_vertical_textbox_n_cols_int, 
       height = \int_use:N \l__cn_vertical_textbox_height_int, 
@@ -581,8 +666,8 @@
       column_aligns = "\luaescapestring{\tl_use:N \l__cn_vertical_textbox_col_align_tl}",
       debug = "\bool_if:NTF \l__cn_vertical_textbox_debug_bool {true}{false}",
       border = "\bool_if:NTF \l__cn_vertical_textbox_border_bool {true}{false}",
-      background_color = [=[\luaescapestring{\l__cn_vertical_textbox_bg_color_tl}]=],
-      font_color = [=[\luaescapestring{\l__cn_vertical_textbox_font_color_tl}]=],
+      background_color = [=[\l__cn_vertical_textbox_bg_rgb_tl]=],
+      font_color = [=[\l__cn_vertical_textbox_font_rgb_tl]=],
       font_size = [=[\luaescapestring{\l__cn_vertical_textbox_font_size_tl}]=]
     })}
     \setluatexattribute\cnverticaltextboxwidth{0}
@@ -716,6 +801,7 @@
 \NewCommandCopy{\段落}{\Paragraph}
 \NewCommandCopy{\CePi}{\SideNode}
 \NewCommandCopy{\侧批}{\SideNode}
+\NewCommandCopy{\批注}{\PiZhu}
 
 \directlua{
   _G.vertical.debug.verbose_log = true

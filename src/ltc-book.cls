@@ -17,7 +17,7 @@
 % Developed for LuaTeX
 
 \NeedsTeXFormat{LaTeX2e}
-\ProvidesClass{ltc-book}[2026/01/18 v0.1.0 Chinese Vertical Book Class]
+\ProvidesClass{ltc-book}[2026/01/19 v0.1.1 Chinese Vertical Book Class]
 
 % 1. Options Handling
 \RequirePackage{l3keys2e}

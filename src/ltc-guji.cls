@@ -1,4 +1,4 @@
-﻿% Copyright 2026 Open-Guji (https://github.com/open-guji)
+% Copyright 2026 Open-Guji (https://github.com/open-guji)
 %
 % Licensed under the Apache License, Version 2.0 (the "License");
 % you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 % Developed for LuaTeX
 
 \NeedsTeXFormat{LaTeX2e}
-\ProvidesClass{ltc-guji}[2026/01/18 v0.1.0 Ancient Chinese Book Class (Template Support)]
+\ProvidesClass{ltc-guji}[2026/01/19 v0.1.1 Ancient Chinese Book Class (Template Support)]
 
 % 1. Options Handling
 \RequirePackage{l3keys2e}
@@ -277,12 +277,22 @@
     sidenode-border-padding-top .code:n = { \keys_set:nn { SideNode } { border-padding-top = #1 } },
     sidenode-border-padding-bottom .code:n = { \keys_set:nn { SideNode } { border-padding-bottom = #1 } },
 
+    % PiZhu global configuration
+    pizhu-color .code:n = { \keys_set:nn { PiZhu } { color = #1 } },
+    pizhu-font-size .code:n = { \keys_set:nn { PiZhu } { font-size = #1 } },
+    pizhu-grid-width .code:n = { \keys_set:nn { PiZhu } { grid-width = #1 } },
+    pizhu-grid-height .code:n = { \keys_set:nn { PiZhu } { grid-height = #1 } },
+
     template .code:n = {
-      % Load config file: configs/luatex-cn-guji-<name>.cfg
+      % Ensure standard catcodes for config files (preserve spaces)
+      \ExplSyntaxOff
       \InputIfFileExists{configs/luatex-cn-guji-#1.cfg}{}{
+        \ExplSyntaxOn
         % Fallback to defined templates in guji / templates namespace
         \keys_set:nn { guji / templates } { #1 }
+        \ExplSyntaxOff
       }
+      \ExplSyntaxOn 
     },
     
     debug .code:n = {
@@ -649,11 +659,13 @@
     \restoregeometry
 }
 
+\ExplSyntaxOff
+
 % 9. Apply Initial Template if specified in class options
-% 9. Apply Initial Template if specified in class options
+\ExplSyntaxOn
 \tl_if_empty:NF \l_guji_initial_template_tl
   {
-    \keys_set:nx { guji } { template = \l_guji_initial_template_tl }
+    \keys_set:nx { guji } { template = \exp_not:V \l_guji_initial_template_tl }
   }
 
 % Apply auto-detected font if no font-name is set and user hasn't set one
@@ -670,7 +682,6 @@
          { \exp_args:NV \setmainfont \l_guji_font_name_tl [\l_guji_font_features_tl] }
     }
 }
-
 \ExplSyntaxOff
 
 % Command Aliases (CJK support)

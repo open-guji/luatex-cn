@@ -2,6 +2,16 @@
 
 本项目的所有重大更改都将记录在此文件中。
 
+## [0.1.1] - 2026-01-19
+
+### 修复
+- 修复了 `ltc-guji.cls` 中 RGB 颜色值因缺少保护而导致的 `! LaTeX Error: The key 'vertical/0' is unknown` 错误。
+- 修复了 CTAN 构建脚本因文件名包含中文（`首页展示`）而失败的问题。
+- 增强了 Windows 构建脚本 (`scripts/build_ctan_windows.py`)，自动检测并修复文件的 BOM 和 CRLF 编码问题。
+
+### 文档
+- 更新了 README 文档中的链接引用。
+
 ## [0.1.0] - 2026-01-18
 
 ### 主要功能

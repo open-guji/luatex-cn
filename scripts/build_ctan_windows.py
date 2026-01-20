@@ -2,9 +2,51 @@ import os
 import shutil
 import subprocess
 import sys
+import os
+
+def sanitize_project_files(directory='.', auto_fix=False):
+    """
+    检查并修复项目中的 BOM 和 CRLF 问题。
+    """
+    extensions = ('.sty', '.cls', '.lua', '.tex', '.md', '.py', '.txt')
+    exclude_dirs = {'.git', 'build', '__pycache__', '.vscode'}
+    
+    print("--- 正在检查文件编码与换行符 ---")
+    
+    for root, dirs, files in os.walk(directory):
+        dirs[:] = [d for d in dirs if d not in exclude_dirs]
+        
+        for file in files:
+            if file.endswith(extensions):
+                filepath = os.path.join(root, file)
+                
+                with open(filepath, 'rb') as f:
+                    content = f.read()
+                
+                has_bom = content.startswith(b'\xef\xbb\xbf')
+                has_crlf = b'\r\n' in content
+                
+                if has_bom or has_crlf:
+                    status = []
+                    if has_bom: status.append("BOM")
+                    if has_crlf: status.append("CRLF")
+                    
+                    print(f"发现问题 [{'/'.join(status)}]: {filepath}")
+                    
+                    if auto_fix:
+                        # 执行修复：移除BOM并将CRLF替换为LF
+                        new_content = content.replace(b'\xef\xbb\xbf', b'')
+                        new_content = new_content.replace(b'\r\n', b'\n')
+                        
+                        with open(filepath, 'wb') as f:
+                            f.write(new_content)
+                        print(f"  [√] 已自动修复")
+
+    print("--- 检查完成 ---\n")
 
 def build_ctan_windows():
     print("Starting robust CTAN build for Windows...")
+    sanitize_project_files(auto_fix=True)
     
     # 0. Tag version (update date and version in source files)
     print("Tagging version and updating dates...")

@@ -4,7 +4,7 @@
 
 致力于基于 LuaTeX 引擎实现最纯粹、最高质量的中文排版支持.长期愿景希望完整支持中文排版，包括横排/竖排，古籍/现代版式。目前主要实现古籍复刻，已完整覆盖竖排核心逻辑、版心装饰及夹注处理。
 
-LuaTeX package for Chinese charactor typesetting, covering horizontal/vertical, tranditional/mordern layout. Currently focus on Ancient Book replication. Implemented core logic of vertical typesetting, decorative elements of traditional Chinese books, and interlinear notes.
+LuaTeX package for Chinese charactor typesetting, covering horizontal/vertical, traditional/modern layout. Currently focus on Ancient Book replication. Implemented core logic of vertical typesetting, decorative elements of traditional Chinese books, and interlinear notes.
 
 CTAN （审核中/Under Review）: [v0.1.1](https://ctan.org/pkg/luatex-cn)
 

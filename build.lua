@@ -1,3 +1,4 @@
+---@diagnostic disable: lowercase-global
 -- Build script for LuaTeX-CN
 module = "luatex-cn"
 

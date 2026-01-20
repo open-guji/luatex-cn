@@ -1,7 +1,7 @@
 -- luatex-cn-banxin-render-banxin.lua - Unit tests for banxin rendering
 local test_utils = require('test.test_utils')
-local banxin = require('banxin.luatex-cn-banxin-render-banxin')
-local render_pos = require('vertical.luatex-cn-vertical-render-position')
+local banxin = require('luatex-cn-banxin-render-banxin')
+local render_pos = require('luatex-cn-vertical-render-position')
 
 -- Mock create_vertical_text to return exactly 1 node for testing node counts
 render_pos.create_vertical_text = function(text, params)

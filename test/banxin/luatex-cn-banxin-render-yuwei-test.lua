@@ -1,6 +1,6 @@
 -- luatex-cn-banxin-render-yuwei.lua - Unit tests for yuwei rendering
 local test_utils = require('test.test_utils')
-local yuwei = require('banxin.luatex-cn-banxin-render-yuwei')
+local yuwei = require('luatex-cn-banxin-render-yuwei')
 
 -- Mock sp_to_bp if needed (actually it uses utils.sp_to_bp)
 -- We need to make sure utils is loaded or mocked.

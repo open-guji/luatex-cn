@@ -3,7 +3,7 @@
     "configurations": [
         {
             "name": "Run Current Test File",
-            "type": "lua-local",
+            "type": "lua",
             "request": "launch",
             "program": "${file}",
             "runtimeExecutable": "texlua",
@@ -12,7 +12,7 @@
         },
         {
             "name": "Run All Tests",
-            "type": "lua-local",
+            "type": "lua",
             "request": "launch",
             "program": "test/run_all.lua",
             "runtimeExecutable": "texlua",
@@ -20,7 +20,7 @@
         },
         {
             "name": "Compile Current TeX File",
-            "type": "node",
+            "type": "lua",
             "request": "launch",
             "runtimeExecutable": "lualatex",
             "args": [

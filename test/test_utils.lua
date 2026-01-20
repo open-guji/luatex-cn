@@ -107,7 +107,8 @@ tex = {
         local factors = { pt = 65536, bp = 65781, mm = 186467, sp = 1 }
         return math.floor(num * (factors[unit] or 65536))
     end,
-    current = function() return 0 end
+    current = function() return 0 end,
+    box = {}
 }
 
 font = {

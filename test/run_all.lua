@@ -8,7 +8,18 @@ local tests = {
     "test/banxin/luatex-cn-banxin-main-test.lua",
     "test/fonts/luatex-cn-font-autodetect-test.lua",
     "test/splitpage/luatex-cn-splitpage-test.lua",
+    "test/vertical/luatex-cn-vertical-base-constants-test.lua",
+    "test/vertical/luatex-cn-vertical-base-hooks-test.lua",
     "test/vertical/luatex-cn-vertical-base-test.lua",
+    "test/vertical/luatex-cn-vertical-core-main-test.lua",
+    "test/vertical/luatex-cn-vertical-core-sidenote-test.lua",
+    "test/vertical/luatex-cn-vertical-core-textbox-test.lua",
+    "test/vertical/luatex-cn-vertical-core-textflow-test.lua",
+    "test/vertical/luatex-cn-vertical-flatten-nodes-test.lua",
+    "test/vertical/luatex-cn-vertical-layout-grid-test.lua",
+    "test/vertical/luatex-cn-vertical-render-background-test.lua",
+    "test/vertical/luatex-cn-vertical-render-border-test.lua",
+    "test/vertical/luatex-cn-vertical-render-page-test.lua",
     "test/vertical/luatex-cn-vertical-render-test.lua",
 }
 

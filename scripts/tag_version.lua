@@ -47,6 +47,7 @@ local function update_file(filepath)
     -- Pattern B: \newcommand{\luatexcnversion}{X.X.X}
     local patternB = "(\\newcommand{?\\luatexcnversion}?)%s*{(.-)}"
     local replacementB = "%1{" .. version .. "}"
+    local countB
     new_content, countB = new_content:gsub(patternB, replacementB)
     if countB > 0 then changed = true end
 
@@ -66,7 +67,7 @@ local function scan(dir)
     else
         cmd = 'find "' .. dir .. '" -type f'
     end
-    
+
     local handle = io.popen(cmd)
     if not handle then return end
     for line in handle:lines() do

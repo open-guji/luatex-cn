@@ -85,6 +85,10 @@ GitHub Release: [v0.1.1](https://github.com/open-guji/luatex-cn/releases)
 
 邮件（Email）: sheldonli.dev@gmail.com
 
+## 开发与测试
+
+如果你正在参与开发或希望在本地测试源码更改，请参考 [开发者指南](文档/developer_guide.md)。
+
 ## 许可证
 
 Apache License 2.0

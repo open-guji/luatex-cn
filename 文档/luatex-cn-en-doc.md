@@ -94,6 +94,12 @@ Suitable for modern novels or reports. It has no grid by default and offers a mo
 - **`\SideNode[params]{content}`** (Alias: `\侧批`, `\CePi`): Adds annotations to the margins.
     - `yoffset`: Vertical offset.
     - `color`: Annotation color (often red in Guji).
+- **`\PiZhu[params]{content}`** (Alias: `\批注`): Creates a floating annotation box that supports absolute positioning anywhere on the page.
+    - `x`, `y`: Absolute coordinates (X and Y relative to the page).
+    - `height`: Height of the annotation box (in grid lines).
+    - `font-size`: Font size for the annotation.
+    - `color`: Color of the annotation (supports RGB format, e.g., `1 0 0` for red).
+    - `grid-width`, `grid-height`: Internal grid dimensions for the annotation box.
 
 ### 4.3 Decoration and Positioning
 - **`\YinZhang[params]{image_path}`**: Inserts an absolutely positioned seal/stamp on the current page.

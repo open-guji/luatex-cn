@@ -2,17 +2,18 @@
 
 [中文版](README.md)
 
-**Version: 0.1.0** | [CTAN](https://ctan.org/pkg/luatex-cn) | [GitHub](https://github.com/open-guji/luatex-cn)
+CTAN （Under Review）: [v0.1.1](https://ctan.org/pkg/luatex-cn)
 
-LuaTeX package for sophisticated traditional Chinese vertical typesetting and ancient book layout, with long-term vision to support full Chinese typography.
+GitHub Release: [v0.1.1](https://github.com/open-guji/luatex-cn/releases)
 
-Dedicated to implementing the purest, highest quality Chinese ancient book typesetting support based on the LuaTeX engine, fully covering vertical typesetting core logic, banxin (版心) decoration, and interlinear notes (jiazhu/夹注) processing.
+LuaTeX package for Chinese charactor typesetting, covering horizontal/vertical, tranditional/mordern layout. Currently focus on Ancient Book replication. Implemented core logic of vertical typesetting, decorative elements of traditional Chinese books, and interlinear notes.
 
 ## Features
 
 - **Vertical Typesetting (竖排)**: Robust core engine for classical vertical layouts
 - **Ancient Book Layout (古籍版式)**: Integrated support for "Banxin" (版心), "Yuwei" (鱼尾), and borders
 - **Interlinear Notes (夹注)**: Automatic balancing and breaking for dual-column small notes
+- **Floating Annotations (批注/PiZhu)**: Supports floating annotation boxes with absolute positioning anywhere on the page
 - **Grid-based Positioning**: Precise control over character placements via Lua-calculated layout
 - **Modern Architecture**: Built on `expl3` and Lua code separation for maximum maintainability
 
@@ -21,9 +22,9 @@ Dedicated to implementing the purest, highest quality Chinese ancient book types
 See [INSTALL.md](INSTALL.md) for detailed installation instructions.
 
 Quick install:
-```bash
-l3build install
-```
+1. **Coming soon to CTAN**, you can install it directly via your TeX distribution's package manager.
+2. Download the latest `luatex-cn-src-v*.zip` from [GitHub Releases](https://github.com/open-guji/luatex-cn/releases). Extract it to `texmf/tex/latex/luatex-cn/` and run `texhash`.
+3. Download the latest version, extract it into your current project folder, and compile directly.
 
 ## Usage
 

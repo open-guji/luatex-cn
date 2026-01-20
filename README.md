@@ -2,13 +2,13 @@
 
 [English Version](README-EN.md)
 
-致力于基于 LuaTeX 引擎实现最纯粹、最高质量的中文古籍排版支持，完整覆盖竖排核心逻辑、版心装饰及夹注处理。长期愿景希望完整支持中文排版。
+致力于基于 LuaTeX 引擎实现最纯粹、最高质量的中文排版支持.长期愿景希望完整支持中文排版，包括横排/竖排，古籍/现代版式。目前主要实现古籍复刻，已完整覆盖竖排核心逻辑、版心装饰及夹注处理。
 
-LuaTeX package for sophisticated traditional Chinese vertical typesetting and ancient book layout, with long-term vision to support full Chinese typography.
+LuaTeX package for Chinese charactor typesetting, covering horizontal/vertical, tranditional/mordern layout. Currently focus on Ancient Book replication. Implemented core logic of vertical typesetting, decorative elements of traditional Chinese books, and interlinear notes.
 
-CTAN （审核中）: [v0.1.0](https://ctan.org/pkg/luatex-cn)
+CTAN （审核中/Under Review）: [v0.1.1](https://ctan.org/pkg/luatex-cn)
 
-GitHub Release: [v0.1.0](https://github.com/open-guji/luatex-cn/releases)
+GitHub Release: [v0.1.1](https://github.com/open-guji/luatex-cn/releases)
 
 ## 展示
 
@@ -35,6 +35,7 @@ GitHub Release: [v0.1.0](https://github.com/open-guji/luatex-cn/releases)
 - **竖排排版（竖排）**：经典竖排布局的强大核心引擎
 - **古籍版式（古籍版式）**：完整支持"版心"、"鱼尾"和边框
 - **夹注（夹注）**：双栏小注的自动平衡和分段
+- **批注（批注）**：支持在页面任意位置浮动定位的批注框
 - **基于网格的定位**：通过 Lua 计算布局精确控制字符位置，无限扩展性
 
 ## 安装

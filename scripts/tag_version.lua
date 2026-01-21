@@ -82,6 +82,6 @@ local function scan(dir)
     handle:close()
 end
 
-scan("src")
+scan("tex")
 
 print("--- Update complete ---")

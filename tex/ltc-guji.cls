@@ -17,7 +17,7 @@
 % Developed for LuaTeX
 
 \NeedsTeXFormat{LaTeX2e}
-\ProvidesClass{ltc-guji}[2026/01/19 v0.1.1 Ancient Chinese Book Class (Template Support)]
+\ProvidesClass{ltc-guji}[2026/01/21 v0.1.1 Ancient Chinese Book Class (Template Support)]
 
 % 1. Options Handling
 \RequirePackage{l3keys2e}

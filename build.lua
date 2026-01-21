@@ -4,31 +4,24 @@ module = "luatex-cn"
 
 -- Read version from VERSION file
 local version_file = io.open("VERSION", "r")
-local pkgversion
 if version_file then
-  pkgversion = version_file:read("*l"):gsub("^%s*(.-)%s*$", "%1")
   version_file:close()
-else
-  pkgversion = "1.0.0"
 end
 
 -- Location for development files
-sourcefiledir = "src"
+sourcefiledir = "tex"
 docfiledir    = "."
 
 -- Names for directories in the ZIP package
-sourcepkgdir  = "src"
+sourcepkgdir  = "tex"
 docpkgdir     = "doc"
 
 -- Source files (included in the ZIP)
 sourcefiles   = { "**/*.sty", "**/*.cls", "**/*.lua", "**/*.cfg" }
 
--- Documentation and example files
--- Documentation and example files
+-- Documentation and example files (Chinese folders copied in ctan_hook)
 docfiles      = {
-  "README.md", "README-EN.md", "LICENSE", "VERSION", "INSTALL.md",
-  "文档/*.pdf", "文档/*.tex",
-  "示例/**/*.pdf", "示例/**/*.tex", "示例/**/*.png", "示例/**/*.jpg"
+  "README.md", "README-EN.md", "LICENSE", "VERSION", "INSTALL.md"
 }
 
 -- Exclude build and output directories
@@ -42,6 +35,309 @@ checkfiles    = {}
 testfiles     = {}
 typesetfiles  = {}
 
+--------------------------------------------------------------------------------
+-- Helper functions (pure Lua, no Python dependency)
+--------------------------------------------------------------------------------
+
+-- File name translation map for CTAN (Chinese -> ASCII)
+local translation_map = {
+  ["文档"] = "doc",
+  ["示例"] = "example",
+  ["史记五帝本纪"] = "shiji-wudibenji",
+  ["史记目录"] = "shiji-mulu",
+  ["现代竖排书"] = "modern-vertical",
+  ["红楼梦甲戌本"] = "hongloumeng-jiaxuben",
+  ["史记.tex"] = "shiji.tex",
+  ["史记.pdf"] = "shiji.pdf",
+  ["文渊阁宝印.png"] = "wenyuange-seal.png",
+  ["史记目录.tex"] = "shiji-mulu.tex",
+  ["史记目录.pdf"] = "shiji-mulu.pdf",
+  ["史记-黑白.tex"] = "shiji-bw.tex",
+  ["史记-黑白.pdf"] = "shiji-bw.pdf",
+  ["测试.tex"] = "test.tex",
+  ["测试.pdf"] = "test.pdf",
+  ["石头记.tex"] = "shitouji.tex",
+  ["石头记.pdf"] = "shitouji.pdf",
+  ["首页展示"] = "homepage-showcase",
+}
+
+-- Check if string contains Chinese characters
+local function has_chinese(str)
+  for _, code in utf8.codes(str) do
+    if code >= 0x4e00 and code <= 0x9fff then
+      return true
+    end
+  end
+  return false
+end
+
+-- Get directory separator
+local function get_sep()
+  return package.config:sub(1, 1)
+end
+
+-- Join path components
+local function join_path(...)
+  local sep = get_sep()
+  local parts = { ... }
+  return table.concat(parts, sep)
+end
+
+-- Check if path exists
+local function path_exists(path)
+  local f = io.open(path, "r")
+  if f then
+    f:close()
+    return true
+  end
+  return false
+end
+
+-- Check if path is a directory
+local function is_dir(path)
+  local sep = get_sep()
+  local cmd
+  if sep == "\\" then
+    cmd = 'if exist "' .. path .. '\\*" (exit 0) else (exit 1)'
+    return os.execute(cmd) == 0
+  else
+    return os.execute('test -d "' .. path .. '"') == 0
+  end
+end
+
+-- List directory contents (with Unicode support on Windows)
+local function list_dir(path)
+  local sep = get_sep()
+  local entries = {}
+
+  if sep == "\\" then
+    -- Windows: use PowerShell with temp file for proper UTF-8 support
+    local tmp_file = os.tmpname()
+    local cmd = 'powershell -Command "[Console]::OutputEncoding = [System.Text.Encoding]::UTF8; Get-ChildItem -Name \'' .. path:gsub("\\", "\\\\") .. '\'" > "' .. tmp_file .. '" 2>nul'
+    os.execute(cmd)
+
+    local f = io.open(tmp_file, "rb")
+    if f then
+      local content = f:read("*a")
+      f:close()
+      os.remove(tmp_file)
+
+      -- Skip BOM if present
+      if content:sub(1, 3) == "\xef\xbb\xbf" then
+        content = content:sub(4)
+      end
+
+      for entry in content:gmatch("[^\r\n]+") do
+        if entry and entry ~= "" then
+          table.insert(entries, entry)
+        end
+      end
+    end
+  else
+    -- Unix: use ls command
+    local handle = io.popen('ls -1 "' .. path .. '" 2>/dev/null')
+    if handle then
+      for entry in handle:lines() do
+        if entry and entry ~= "" then
+          table.insert(entries, entry)
+        end
+      end
+      handle:close()
+    end
+  end
+
+  return entries
+end
+
+-- Remove file or directory recursively
+local function remove_path(path)
+  local sep = get_sep()
+  if sep == "\\" then
+    if is_dir(path) then
+      os.execute('rmdir /s /q "' .. path .. '" 2>nul')
+    else
+      os.execute('del /f /q "' .. path .. '" 2>nul')
+    end
+  else
+    os.execute('rm -rf "' .. path .. '"')
+  end
+end
+
+-- Copy file or directory recursively
+local function copy_path(src, dest)
+  local sep = get_sep()
+  if sep == "\\" then
+    if is_dir(src) then
+      os.execute('xcopy /e /i /q /y "' .. src .. '" "' .. dest .. '" >nul 2>&1')
+    else
+      os.execute('copy /y "' .. src .. '" "' .. dest .. '" >nul 2>&1')
+    end
+  else
+    if is_dir(src) then
+      os.execute('cp -r "' .. src .. '" "' .. dest .. '"')
+    else
+      os.execute('cp "' .. src .. '" "' .. dest .. '"')
+    end
+  end
+end
+
+-- Rename/move file or directory
+local function rename_path(old_path, new_path)
+  local sep = get_sep()
+  if sep == "\\" then
+    os.execute('move /y "' .. old_path .. '" "' .. new_path .. '" >nul 2>&1')
+  else
+    os.execute('mv "' .. old_path .. '" "' .. new_path .. '"')
+  end
+end
+
+-- Read file contents
+local function read_file(path)
+  local f = io.open(path, "rb")
+  if not f then return nil end
+  local content = f:read("*a")
+  f:close()
+  return content
+end
+
+-- Write file contents
+local function write_file(path, content)
+  local f = io.open(path, "wb")
+  if not f then return false end
+  f:write(content)
+  f:close()
+  return true
+end
+
+-- Sanitize files: remove BOM and convert CRLF to LF
+local function sanitize_file(filepath)
+  local content = read_file(filepath)
+  if not content then return end
+
+  local changed = false
+  local new_content = content
+
+  -- Remove BOM
+  if new_content:sub(1, 3) == "\xef\xbb\xbf" then
+    new_content = new_content:sub(4)
+    changed = true
+    print("  Removed BOM: " .. filepath)
+  end
+
+  -- Convert CRLF to LF
+  if new_content:find("\r\n") then
+    new_content = new_content:gsub("\r\n", "\n")
+    changed = true
+    print("  Fixed CRLF: " .. filepath)
+  end
+
+  if changed then
+    write_file(filepath, new_content)
+  end
+end
+
+-- Recursively walk directory and apply function to files
+local function walk_dir(path, fn, extensions)
+  local entries = list_dir(path)
+  for _, entry in ipairs(entries) do
+    local full_path = join_path(path, entry)
+    if is_dir(full_path) then
+      -- Skip certain directories
+      if entry ~= ".git" and entry ~= "build" and entry ~= "__pycache__" and entry ~= ".vscode" then
+        walk_dir(full_path, fn, extensions)
+      end
+    else
+      -- Check extension
+      local should_process = false
+      if extensions then
+        for _, ext in ipairs(extensions) do
+          if entry:match(ext .. "$") then
+            should_process = true
+            break
+          end
+        end
+      else
+        should_process = true
+      end
+      if should_process then
+        fn(full_path, entry)
+      end
+    end
+  end
+end
+
+-- Sanitize all project files
+local function sanitize_project_files()
+  print("--- Checking file encoding and line endings ---")
+  local extensions = { "%.sty", "%.cls", "%.lua", "%.tex", "%.md", "%.py", "%.txt" }
+  walk_dir(".", sanitize_file, extensions)
+  print("--- Check complete ---")
+end
+
+-- Update references in .tex files when renaming
+local function update_tex_references(build_dir, old_name, new_name)
+  walk_dir(build_dir, function(filepath, filename)
+    if filename:match("%.tex$") then
+      local content = read_file(filepath)
+      if content and content:find(old_name, 1, true) then
+        print("  Updating reference in " .. filepath .. ": " .. old_name .. " -> " .. new_name)
+        local new_content = content:gsub(old_name:gsub("([%.%-%+])", "%%%1"), new_name)
+        write_file(filepath, new_content)
+      end
+    end
+  end)
+end
+
+-- Recursively rename Chinese filenames to ASCII (bottom-up)
+local function translate_names(path, is_root)
+  local entries = list_dir(path)
+
+  -- First, recurse into subdirectories
+  for _, entry in ipairs(entries) do
+    local full_path = join_path(path, entry)
+    if is_dir(full_path) then
+      translate_names(full_path, false)
+    end
+  end
+
+  -- Then, process files and directories at this level
+  entries = list_dir(path)  -- Re-read after recursion
+  for _, entry in ipairs(entries) do
+    local full_path = join_path(path, entry)
+
+    -- Remove auxiliary files
+    if entry:match("%.aux$") or entry:match("%.log$") then
+      print("  Removing auxiliary file: " .. full_path)
+      remove_path(full_path)
+    elseif translation_map[entry] then
+      local new_name = translation_map[entry]
+      local new_path = join_path(path, new_name)
+
+      print("  Renaming: " .. entry .. " -> " .. new_name)
+
+      -- Update references in .tex files if it's a non-.tex file
+      if not entry:match("%.tex$") and not is_dir(full_path) then
+        update_tex_references(is_root and path or path:match("^(.+)[/\\]") or path, entry, new_name)
+      end
+
+      -- Remove destination if exists
+      if path_exists(new_path) or is_dir(new_path) then
+        remove_path(new_path)
+      end
+
+      rename_path(full_path, new_path)
+    elseif has_chinese(entry) then
+      print("CRITICAL ERROR: Chinese characters found in filename '" .. entry .. "' at " .. full_path)
+      print("Please add this filename to the translation_map in build.lua")
+      os.exit(1)
+    end
+  end
+end
+
+--------------------------------------------------------------------------------
+-- l3build hooks and custom targets
+--------------------------------------------------------------------------------
+
 -- Custom tagging function
 function tag_hook(tagname, tagdate)
   local formatted_date = tagdate:gsub("-", "/")
@@ -51,43 +347,157 @@ function tag_hook(tagname, tagdate)
   return 0
 end
 
--- Custom CTAN hook to fix structure and translate paths
-function ctan_hook(path)
-  print("Finalizing CTAN staging area at: " .. path)
+-- Pre-build hook: sanitize files and tag version
+function checkinit_hook()
+  sanitize_project_files()
+  os.execute("texlua scripts/tag_version.lua")
+  return 0
+end
 
-  -- Use python3 on Linux/macOS, python on Windows
-  local python_cmd = "python"
-  if os.type ~= "windows" then
-    python_cmd = "python3"
+-- Post-process the CTAN staging area
+local function post_process_ctan(staging_path)
+  print("\n=== Post-processing CTAN staging area ===")
+  print("Path: " .. staging_path)
+
+  -- 1. Preserve tex directory structure (copy from source, not from flattened)
+  print("\n>>> Preserving tex structure...")
+  local tex_dest = join_path(staging_path, "tex")
+  if is_dir("tex") then
+    if is_dir(tex_dest) then
+      remove_path(tex_dest)
+    end
+    copy_path("tex", tex_dest)
+
+    -- Remove flattened source files at root
+    print(">>> Cleaning flattened source files from root...")
+    local entries = list_dir(staging_path)
+    for _, entry in ipairs(entries) do
+      if entry:match("%.sty$") or entry:match("%.cls$") or entry:match("%.lua$") or entry:match("%.cfg$") then
+        local file_path = join_path(staging_path, entry)
+        if not is_dir(file_path) then
+          print("  Removing: " .. entry)
+          remove_path(file_path)
+        end
+      end
+    end
   end
 
-  -- We use python for robust file operations (Unicode support and recursion)
-  local cmd = python_cmd .. " -c \"import shutil, os, glob; " ..
-      "p = '" .. path:gsub("\\", "/") .. "'; " ..
-      "print('>>> Preserving src structure...'); " ..
-      "src_dest = os.path.join(p, 'src'); " ..
-      "if os.path.exists('src'): " ..
-      "  if os.path.exists(src_dest): shutil.rmtree(src_dest); " ..
-      "  shutil.copytree('src', src_dest); " ..
-      "  for ext in ['*.sty', '*.cls', '*.lua', '*.cfg']: " ..
-      "    for f in glob.glob(os.path.join(p, ext)): " ..
-      "      try: os.remove(f); " ..
-      "      except: pass; " ..
-      "for folder in ['文档', '示例']: " ..
-      "  if os.path.exists(folder): " ..
-      "    d = os.path.join(p, folder); " ..
-      "    if os.path.exists(d): shutil.rmtree(d); " ..
-      "    shutil.copytree(folder, d)\""
+  -- 2. Copy Chinese documentation folders
+  print("\n>>> Copying documentation folders...")
+  for _, folder in ipairs({ "文档", "示例" }) do
+    if is_dir(folder) then
+      local dest = join_path(staging_path, folder)
+      if is_dir(dest) then
+        remove_path(dest)
+      end
+      print("  Copying " .. folder .. " -> " .. dest)
+      copy_path(folder, dest)
+    end
+  end
 
-  os.execute(cmd)
+  -- 3. Translate Chinese filenames to ASCII
+  print("\n>>> Translating Chinese filenames...")
+  translate_names(staging_path, true)
 
-  -- 1. Call the translation script
-  local ctan_cmd = python_cmd .. " scripts/ctan_post_process.py " .. path
-  print("Running path translation: " .. ctan_cmd)
-  os.execute(ctan_cmd)
+  print("\n=== Post-processing complete ===\n")
+end
+
+-- Custom CTAN build function (call via: texlua build.lua ctan)
+local function ctan_custom()
+  print("\n========================================")
+  print("  LuaTeX-CN Custom CTAN Build")
+  print("========================================\n")
+
+  -- Step 1: Sanitize files
+  sanitize_project_files()
+
+  -- Step 2: Tag version
+  print("\n>>> Tagging version...")
+  os.execute("texlua scripts/tag_version.lua")
+
+  -- Step 3: Run standard l3build unpack
+  print("\n>>> Running l3build unpack...")
+  os.execute("l3build unpack")
+
+  -- Step 4: Create staging directory
+  local ctan_dir = join_path("build", "distrib", "ctan")
+  local staging_path = join_path(ctan_dir, module)
+
+  print("\n>>> Creating staging directory: " .. staging_path)
+  -- Create parent directories
+  local sep = get_sep()
+  if sep == "\\" then
+    os.execute('mkdir "' .. ctan_dir .. '" 2>nul')
+  else
+    os.execute('mkdir -p "' .. ctan_dir .. '"')
+  end
+
+  if is_dir(staging_path) then
+    remove_path(staging_path)
+  end
+  if sep == "\\" then
+    os.execute('mkdir "' .. staging_path .. '"')
+  else
+    os.execute('mkdir -p "' .. staging_path .. '"')
+  end
+
+  -- Step 5: Copy doc files
+  print("\n>>> Copying documentation files...")
+  for _, doc in ipairs(docfiles) do
+    if path_exists(doc) then
+      print("  Copying: " .. doc)
+      copy_path(doc, join_path(staging_path, doc))
+    end
+  end
+
+  -- Step 6: Post-process (copy tex folder, Chinese folders, translate names)
+  post_process_ctan(staging_path)
+
+  -- Step 7: Create final zip
+  print("\n>>> Creating CTAN archive...")
+  local zip_name = module .. "-ctan.zip"
+  local zip_path = join_path(ctan_dir, zip_name)
+
+  -- Remove old zip if exists
+  if path_exists(zip_path) then
+    remove_path(zip_path)
+  end
+
+  -- Create zip (platform-specific)
+  if sep == "\\" then
+    -- Windows: use PowerShell
+    local ps_cmd = 'powershell -Command "Compress-Archive -Path \'' .. staging_path .. '\' -DestinationPath \'' .. zip_path .. '\' -Force"'
+    os.execute(ps_cmd)
+  else
+    -- Unix: use zip command
+    os.execute('cd "' .. ctan_dir .. '" && zip -r "' .. zip_name .. '" "' .. module .. '"')
+  end
+
+  -- Also copy to project root for convenience
+  local root_zip = module .. "-ctan.zip"
+  if path_exists(root_zip) then
+    remove_path(root_zip)
+  end
+  copy_path(zip_path, root_zip)
+
+  print("\n========================================")
+  print("  CTAN Package Build Complete!")
+  print("========================================")
+  print("Staging area: " .. staging_path)
+  print("Archive: " .. root_zip)
+  print("")
 
   return 0
 end
+
+-- If called directly with "ctan" argument, run our custom build
+if arg and arg[1] == "ctan" then
+  os.exit(ctan_custom())
+end
+
+--------------------------------------------------------------------------------
+-- Configuration
+--------------------------------------------------------------------------------
 
 -- Typesetting configuration
 typesetexe = "lualatex"

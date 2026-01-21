@@ -549,7 +549,7 @@
         % height = grid-height * n-char (may be slightly less than available)
         \dim_set:Nn \l_tmpa_dim { \l_guji_grid_height_dim * \l_guji_n_char_int }
         \tl_set:Nx \l_guji_height_tl { \dim_use:N \l_tmpa_dim }
-        \iow_term:x { Guji~Mode~A:~n-char=\int_use:N \l_guji_n_char_int,~grid-height=\l_guji_grid_height_tl,~height=\l_guji_height_tl }
+        \bool_if:NT \g_cnv_debug_bool { \iow_term:x { Guji~Mode~A:~n-char=\int_use:N \l_guji_n_char_int,~grid-height=\l_guji_grid_height_tl,~height=\l_guji_height_tl } }
       }
       {
         % Mode B: grid-height specified, calculate fitting rows
@@ -563,7 +563,7 @@
             % height = rows * grid-height
             \dim_set:Nn \l_tmpa_dim { \l_guji_grid_height_tl * \l_tmpa_int }
             \tl_set:Nx \l_guji_height_tl { \dim_use:N \l_tmpa_dim }
-            \iow_term:x { Guji~Mode~B:~grid-height=\l_guji_grid_height_tl,~rows=\int_use:N \l_tmpa_int,~height=\l_guji_height_tl }
+            \bool_if:NT \g_cnv_debug_bool { \iow_term:x { Guji~Mode~B:~grid-height=\l_guji_grid_height_tl,~rows=\int_use:N \l_tmpa_int,~height=\l_guji_height_tl } }
           }
       }
 
@@ -576,7 +576,7 @@
     }
 
     % Log final layout
-    \iow_term:x { Guji~Layout:~TextHeight=\dim_use:N \l_tmpb_dim,~TopMargin=\l_guji_margin_top_tl }
+    \bool_if:NT \g_cnv_debug_bool { \iow_term:x { Guji~Layout:~TextHeight=\dim_use:N \l_tmpb_dim,~TopMargin=\l_guji_margin_top_tl } }
 
     % Update geometry for this environment
     \__guji_apply_geometry:

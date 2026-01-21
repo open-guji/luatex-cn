@@ -67,18 +67,18 @@
 
 -- Load dependencies
 local constants = package.loaded['vertical.luatex-cn-vertical-base-constants'] or
-require('vertical.luatex-cn-vertical-base-constants')
+    require('vertical.luatex-cn-vertical-base-constants')
 local D = constants.D
 local utils = package.loaded['vertical.luatex-cn-vertical-base-utils'] or
-require('vertical.luatex-cn-vertical-base-utils')
+    require('vertical.luatex-cn-vertical-base-utils')
 local hooks = package.loaded['vertical.luatex-cn-vertical-base-hooks'] or
-require('vertical.luatex-cn-vertical-base-hooks')
+    require('vertical.luatex-cn-vertical-base-hooks')
 local border = package.loaded['vertical.luatex-cn-vertical-render-border'] or
-require('vertical.luatex-cn-vertical-render-border')
+    require('vertical.luatex-cn-vertical-render-border')
 local background = package.loaded['vertical.luatex-cn-vertical-render-background'] or
-require('vertical.luatex-cn-vertical-render-background')
+    require('vertical.luatex-cn-vertical-render-background')
 local text_position = package.loaded['vertical.luatex-cn-vertical-render-position'] or
-require('vertical.luatex-cn-vertical-render-position')
+    require('vertical.luatex-cn-vertical-render-position')
 
 
 
@@ -363,7 +363,7 @@ local function render_sidenotes(p_head, sidenote_nodes, params, ctx)
             -- Use effective_grid_height for the cell height centering
             -- Note: pos.row is fractional main rows, so pos.row * ctx.grid_height gives absolute Y
             local final_y = -pos.row * ctx.grid_height - (effective_grid_height + char_total_height) / 2 + d -
-            ctx.shift_y
+                ctx.shift_y
 
             -- Apply user y-offset from metadata (REMOVED: Now handled in positioning stage)
             -- final_y = final_y - (item.metadata.yoffset or 0)
@@ -485,7 +485,8 @@ local function apply_positions(head, layout_map, params)
             local reserved_cols = {}
             local banxin_on = params.banxin_on
             if draw_debug then
-                print(string.format(">>> LUA PAGE: interval=%d, p_total_cols=%d, banxin_on=%s", interval, p_total_cols,
+                utils.debug_log(string.format(">>> LUA PAGE: interval=%d, p_total_cols=%d, banxin_on=%s", interval,
+                    p_total_cols,
                     tostring(banxin_on)))
             end
             if banxin_on and interval > 0 then
@@ -493,7 +494,7 @@ local function apply_positions(head, layout_map, params)
                     if _G.vertical.hooks.is_reserved_column(col, interval) then
                         reserved_cols[col] = true
                         if draw_debug then
-                            print(string.format(">>> LUA RESERVED COL: %d", col))
+                            utils.debug_log(string.format(">>> LUA RESERVED COL: %d", col))
                         end
                     end
                 end
@@ -612,8 +613,10 @@ local function apply_positions(head, layout_map, params)
                     end
                 end
                 if #sidenote_for_page > 0 then
-                    if draw_debug then utils.debug_log("[render] Drawing " ..
-                        #sidenote_for_page .. " sidenote nodes on page " .. p) end
+                    if draw_debug then
+                        utils.debug_log("[render] Drawing " ..
+                            #sidenote_for_page .. " sidenote nodes on page " .. p)
+                    end
                     p_head = render_sidenotes(p_head, sidenote_for_page, params, ctx)
                 end
             end

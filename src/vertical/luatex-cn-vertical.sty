@@ -57,7 +57,7 @@
   _G.vertical = _G.vertical or {}
   _G.vertical.debug = _G.vertical.debug or {
       enabled = false,
-      verbose_log = true,
+      verbose_log = false,
       show_grid = true,
       show_boxes = true
   }
@@ -438,7 +438,7 @@
       }
     \tl_replace_all:Nnn \l__cn_vertical_font_rgb_tl { , } { ~ }
 
-    \typeout{DEBUG: banxin-padding-top is \l_cnv_banxin_padding_top_tl}
+    \bool_if:NT \g_cnv_debug_bool { \typeout{DEBUG: banxin-padding-top is \l_cnv_banxin_padding_top_tl} }
     \directlua{
       vertical.process_from_tex(0, {
         height = [=[\luaescapestring{\l__cn_vertical_height_tl}]=],
@@ -803,8 +803,5 @@
 \NewCommandCopy{\侧批}{\SideNode}
 \NewCommandCopy{\批注}{\PiZhu}
 
-\directlua{
-  _G.vertical.debug.verbose_log = true
-  _G.vertical.debug.enabled = false
-}
+
 \endinput

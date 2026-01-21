@@ -101,9 +101,9 @@ local layout = package.loaded['vertical.luatex-cn-vertical-layout-grid'] or
 local render = package.loaded['vertical.luatex-cn-vertical-render-page'] or
     require('vertical.luatex-cn-vertical-render-page')
 local textbox = package.loaded['vertical.luatex-cn-vertical-core-textbox'] or
-require('vertical.luatex-cn-vertical-core-textbox')
+    require('vertical.luatex-cn-vertical-core-textbox')
 local sidenote = package.loaded['vertical.luatex-cn-vertical-core-sidenote'] or
-require('vertical.luatex-cn-vertical-core-sidenote')
+    require('vertical.luatex-cn-vertical-core-sidenote')
 
 
 local D = node.direct
@@ -411,8 +411,8 @@ function vertical.process_from_tex(box_num, params)
             local cmd_dim_h = string.format("\\global\\pageheight=%.5fpt", target_h_pt)
 
             if _G.vertical.debug.enabled then
-                print("[core] TeX CMD: " .. cmd_load)
-                print("[core] TeX CMD: " .. cmd_dim)
+                utils.debug_log("[core] TeX CMD: " .. cmd_load)
+                utils.debug_log("[core] TeX CMD: " .. cmd_dim)
             end
 
             tex.print(cmd_load)

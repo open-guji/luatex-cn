@@ -61,7 +61,7 @@ _G.vertical.debug = {
     show_grid = true,   -- 显示字符格
     show_boxes = true,  -- 显示文本框避让区
     show_banxin = true, -- 显示版心参考线
-    verbose_log = true  -- 是否在 .log 中输出详细坐标
+    verbose_log = false -- 是否在 .log 中输出详细坐标
 }
 
 -- Node type IDs
@@ -78,18 +78,18 @@ constants.LOCAL_PAR = node.id("local_par")
 -- Note: Attributes are registered in vertical.sty via \newluatexattribute
 constants.ATTR_INDENT = luatexbase.attributes.cnverticalindent or luatexbase.new_attribute("cnverticalindent")
 constants.ATTR_RIGHT_INDENT = luatexbase.attributes.cnverticalrightindent or
-luatexbase.new_attribute("cnverticalrightindent")
+    luatexbase.new_attribute("cnverticalrightindent")
 constants.ATTR_TEXTBOX_WIDTH = luatexbase.attributes.cnverticaltextboxwidth or
-luatexbase.new_attribute("cnverticaltextboxwidth")
+    luatexbase.new_attribute("cnverticaltextboxwidth")
 constants.ATTR_TEXTBOX_HEIGHT = luatexbase.attributes.cnverticaltextboxheight or
-luatexbase.new_attribute("cnverticaltextboxheight")
+    luatexbase.new_attribute("cnverticaltextboxheight")
 constants.ATTR_TEXTBOX_DISTRIBUTE = luatexbase.attributes.cnverticaltextboxdistribute or
-luatexbase.new_attribute("cnverticaltextboxdistribute")
+    luatexbase.new_attribute("cnverticaltextboxdistribute")
 
 -- Block Indentation Attributes
 constants.ATTR_BLOCK_ID = luatexbase.attributes.cnverticalblockid or luatexbase.new_attribute("cnverticalblockid")
 constants.ATTR_FIRST_INDENT = luatexbase.attributes.cnverticalfirstindent or
-luatexbase.new_attribute("cnverticalfirstindent")
+    luatexbase.new_attribute("cnverticalfirstindent")
 
 -- Attributes for Jiazhu (Interlinear Note)
 constants.ATTR_JIAZHU = luatexbase.attributes.cnverticaljiazhu or luatexbase.new_attribute("cnverticaljiazhu")

@@ -94,7 +94,6 @@ function sidenote.calculate_sidenote_positions(layout_map, params)
 
     utils.debug_log(string.format("[sidenote] calculate_sidenote_positions: registry has %d entries",
         sidenote.registry_counter))
-    print(string.format("[SIDENOTE] calculate_sidenote_positions: registry has %d entries", sidenote.registry_counter))
 
     -- 1. Find all sidenote anchors and their positions
     -- We iterate the layout_map to find the nodes that *precede* a Sidenote Whatsit
@@ -169,14 +168,11 @@ function sidenote.calculate_sidenote_positions(layout_map, params)
         local id = D.getid(t)
 
         if id == constants.WHATSIT then
-            local subtype = D.getsubtype(t)
-            print(string.format("[SIDENOTE] Found WHATSIT subtype=%d", subtype))
-            -- Check user_defined (subtype may vary by LuaTeX version, try multiple)
-            -- In LuaTeX 1.x, user_defined is typically subtype 8 or we can check field existence
+            -- utils.debug_log(string.format("[sidenote] Found WHATSIT subtype=%d", subtype))
             local uid = D.getfield(t, "user_id")
-            if uid then
-                print(string.format("[SIDENOTE] WHATSIT has user_id=%s", tostring(uid)))
-            end
+            -- if uid then
+            --     utils.debug_log(string.format("[sidenote] WHATSIT has user_id=%s", tostring(uid)))
+            -- end
             if uid == constants.SIDENOTE_USER_ID then
                 local sid = D.getfield(t, "value")
                 local registry_item = sidenote.registry[sid]
@@ -274,7 +270,7 @@ function sidenote.calculate_sidenote_positions(layout_map, params)
                     end
 
                     sidenote_map[sid] = placed_nodes
-                    print(string.format("[SIDENOTE] Placed sidenote sid=%d with %d nodes", sid, #placed_nodes))
+                    utils.debug_log(string.format("[sidenote] Placed sidenote sid=%d with %d nodes", sid, #placed_nodes))
                 end
             end
         else

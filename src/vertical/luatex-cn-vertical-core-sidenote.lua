@@ -28,8 +28,10 @@
 --
 -- ============================================================================
 
-local constants = package.loaded['luatex-cn-vertical-base-constants'] or require('luatex-cn-vertical-base-constants')
-local utils = package.loaded['luatex-cn-vertical-base-utils'] or require('luatex-cn-vertical-base-utils')
+local constants = package.loaded['vertical.luatex-cn-vertical-base-constants'] or
+    require('vertical.luatex-cn-vertical-base-constants')
+local utils = package.loaded['vertical.luatex-cn-vertical-base-utils'] or
+    require('vertical.luatex-cn-vertical-base-utils')
 local D = node.direct
 
 local sidenote = {}
@@ -202,7 +204,7 @@ function sidenote.calculate_sidenote_positions(layout_map, params)
 
                     -- Determine step size and yoffset in grid units
                     local sn_grid_height = metadata.grid_height
-                    local main_grid_height = params.grid_height or (65536 * 20)     -- Default fallback
+                    local main_grid_height = params.grid_height or (65536 * 20) -- Default fallback
 
                     local yoffset_grid = (metadata.yoffset or 0) / main_grid_height
                     local padding_top_grid = (metadata.padding_top or 0) / main_grid_height
@@ -229,7 +231,7 @@ function sidenote.calculate_sidenote_positions(layout_map, params)
                     -- Start at max(anchor, filled). Add small margin (0.5?) if overlapping.
                     local filled_r = get_gap_filled(curr_p, curr_c)
                     -- Ensure we start below the filled position
-                    local curr_r = math.max(start_row, filled_r + 0.1)     -- +0.1 margin
+                    local curr_r = math.max(start_row, filled_r + 0.1) -- +0.1 margin
 
                     while current_content_node do
                         -- Check bounds (approximate check using floor)
@@ -287,5 +289,5 @@ function sidenote.calculate_sidenote_positions(layout_map, params)
     return sidenote_map
 end
 
-package.loaded['luatex-cn-vertical-core-sidenote'] = sidenote
+package.loaded['vertical.luatex-cn-vertical-core-sidenote'] = sidenote
 return sidenote

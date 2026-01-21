@@ -46,7 +46,8 @@
 -- ============================================================================
 
 -- Load dependencies
-local constants = package.loaded['luatex-cn-vertical-base-constants'] or require('luatex-cn-vertical-base-constants')
+local constants = package.loaded['vertical.luatex-cn-vertical-base-constants'] or
+    require('vertical.luatex-cn-vertical-base-constants')
 local D = constants.D
 
 --- 在指定坐标处定位单个字形节点
@@ -109,9 +110,11 @@ local function position_glyph(glyph_direct, x, y, params)
 
     -- --- Trace Logging ---
     if _G.vertical and _G.vertical.debug and _G.vertical.debug.verbose_log then
-        local u = package.loaded['luatex-cn-vertical-base-utils'] or require('luatex-cn-vertical-base-utils')
+        local u = package.loaded['vertical.luatex-cn-vertical-base-utils'] or
+            require('vertical.luatex-cn-vertical-base-utils')
         u.debug_log(string.format("[GlyphPos] char=%d x=%.2f cw=%.2f gw=%.2f -> xoff=%.2f yoff=%.2f",
-            D.getfield(glyph_direct, "char"), x/(65536), cell_width/(65536), g_width/(65536), x_offset/(65536), y_offset/(65536)))
+            D.getfield(glyph_direct, "char"), x / (65536), cell_width / (65536), g_width / (65536), x_offset / (65536),
+            y_offset / (65536)))
     end
 
     -- Create protected negative kern (subtype 1 = explicit kern, won't be zeroed)
@@ -166,7 +169,7 @@ local function create_vertical_text(text, params)
     local h_align = params.h_align or "center"
     local font_id = params.font_id or font.current()
     local shift_y = params.shift_y or 0
-    
+
     local font_scale_factor = 1.0
     local base_font_data = font.getfont(font_id) -- Save original font data for character lookups
 
@@ -178,7 +181,7 @@ local function create_vertical_text(text, params)
             if current_font_data then
                 font_scale_factor = fs / current_font_data.size
                 local new_font_data = {}
-                for k,v in pairs(current_font_data) do new_font_data[k] = v end
+                for k, v in pairs(current_font_data) do new_font_data[k] = v end
                 new_font_data.size = fs
                 font_id = font.define(new_font_data)
             end
@@ -188,7 +191,7 @@ local function create_vertical_text(text, params)
         local current_font_data = font.getfont(font_id)
         if current_font_data then
             local new_font_data = {}
-            for k,v in pairs(current_font_data) do new_font_data[k] = v end
+            for k, v in pairs(current_font_data) do new_font_data[k] = v end
             new_font_data.size = math.floor(new_font_data.size * params.font_scale + 0.5)
             font_id = font.define(new_font_data)
         end
@@ -197,7 +200,8 @@ local function create_vertical_text(text, params)
     -- Calculate cell height
     local cell_height = height / num_cells
 
-    local u = package.loaded['luatex-cn-vertical-base-utils'] or require('luatex-cn-vertical-base-utils')
+    local u = package.loaded['vertical.luatex-cn-vertical-base-utils'] or
+    require('vertical.luatex-cn-vertical-base-utils')
 
     local head = nil
     local tail = nil
@@ -257,7 +261,8 @@ local function create_vertical_text(text, params)
 
         -- --- DEBUG: Draw blue box around each character ---
         if _G.vertical and _G.vertical.debug and _G.vertical.debug.enabled and _G.vertical.debug.show_grid then
-            local u = package.loaded['luatex-cn-vertical-base-utils'] or require('luatex-cn-vertical-base-utils')
+            local u = package.loaded['vertical.luatex-cn-vertical-base-utils'] or
+                require('vertical.luatex-cn-vertical-base-utils')
             if u and u.draw_debug_rect then
                 -- Add debug box before the glyph so it's behind the text
                 head = u.draw_debug_rect(head, glyph_direct, x, cell_y, width, -cell_height, "0 0 1 RG")
@@ -372,7 +377,7 @@ local function calc_grid_position(col, row, glyph_dims, params)
         -- Calculate base x position for the sub-column
         local sub_base_x = rtl_col * grid_width + half_thickness + shift_x
         if sub_col == 1 then
-            sub_base_x = sub_base_x + sub_width  -- Right half
+            sub_base_x = sub_base_x + sub_width -- Right half
         end
 
         -- Apply alignment within the sub-column
@@ -415,8 +420,7 @@ local text_position = {
 
 -- Register module in package.loaded for require() compatibility
 -- 注册模块到 package.loaded
-package.loaded['luatex-cn-vertical-render-position'] = text_position
+package.loaded['vertical.luatex-cn-vertical-render-position'] = text_position
 
 -- Return module exports
 return text_position
-

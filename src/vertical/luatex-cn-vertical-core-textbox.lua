@@ -42,8 +42,10 @@
 --
 -- ============================================================================
 
-local constants = package.loaded['luatex-cn-vertical-base-constants'] or require('luatex-cn-vertical-base-constants')
-local utils = package.loaded['luatex-cn-vertical-base-utils'] or require('luatex-cn-vertical-base-utils')
+local constants = package.loaded['vertical.luatex-cn-vertical-base-constants'] or
+    require('vertical.luatex-cn-vertical-base-constants')
+local utils = package.loaded['vertical.luatex-cn-vertical-base-utils'] or
+    require('vertical.luatex-cn-vertical-base-utils')
 local D = node.direct
 
 local textbox = {}
@@ -107,7 +109,8 @@ function textbox.process_inner_box(box_num, params)
         grid_height = params.grid_height,
         box_align = params.box_align,
         column_aligns = col_aligns,
-        debug_on = (params.debug == "true" or params.debug == true) or (_G.vertical and _G.vertical.debug and _G.vertical.debug.enabled),
+        debug_on = (params.debug == "true" or params.debug == true) or
+            (_G.vertical and _G.vertical.debug and _G.vertical.debug.enabled),
         border_on = (params.border == "true" or params.border == true),
         background_color = params.background_color,
         font_color = params.font_color,
@@ -130,7 +133,8 @@ function textbox.process_inner_box(box_num, params)
     local saved_pages = _G.vertical_pending_pages
     _G.vertical_pending_pages = {}
 
-    utils.debug_log("--- textbox.process_inner_box: START (box=" .. box_num .. ", indent=" .. tostring(current_indent) .. ") ---")
+    utils.debug_log("--- textbox.process_inner_box: START (box=" ..
+        box_num .. ", indent=" .. tostring(current_indent) .. ") ---")
 
     -- 调用三阶段流水线
     vertical.prepare_grid(box_num, sub_params)
@@ -149,12 +153,12 @@ function textbox.process_inner_box(box_num, params)
         local actual_cols = node.get_attribute(res_box, constants.ATTR_TEXTBOX_WIDTH) or 1
         node.set_attribute(res_box, constants.ATTR_TEXTBOX_WIDTH, actual_cols)
         node.set_attribute(res_box, constants.ATTR_TEXTBOX_HEIGHT, tonumber(params.height) or 1)
-        
+
         -- 应用缩进属性，确保在下一列继续时保持正确位移
         if current_indent > 0 then
             node.set_attribute(res_box, constants.ATTR_INDENT, current_indent)
         end
-        
+
         -- 将渲染好的盒子写回 TeX
         tex.box[box_num] = res_box
     end
@@ -176,14 +180,15 @@ function textbox.register_floating_box(box_num, params)
 
     -- Capture the box (already processed by process_inner_box)
     local b = node.copy_list(box)
-    
+
     textbox.floating_registry[id] = {
         box = b,
         x = constants.to_dimen(params.x) or 0,
         y = constants.to_dimen(params.y) or 0
     }
 
-    utils.debug_log(string.format("[textbox] Registered floating box ID=%d at (%s, %s)", id, tostring(params.x), tostring(params.y)))
+    utils.debug_log(string.format("[textbox] Registered floating box ID=%d at (%s, %s)", id, tostring(params.x),
+        tostring(params.y)))
 
     -- Create user whatsit anchor
     local n = node.new("whatsit", "user_defined")
@@ -204,7 +209,7 @@ function textbox.calculate_floating_positions(layout_map, params)
 
     local t = D.todirect(list)
     local last_page = 0
-    
+
     while t do
         local id = D.getid(t)
         if id == constants.WHATSIT then
@@ -236,6 +241,6 @@ end
 
 -- Register module in package.loaded for require() compatibility
 -- 注册模块到 package.loaded
-package.loaded['luatex-cn-vertical-core-textbox'] = textbox
+package.loaded['vertical.luatex-cn-vertical-core-textbox'] = textbox
 
 return textbox

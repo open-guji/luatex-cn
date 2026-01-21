@@ -86,6 +86,6 @@ else
 end
 
 -- Register module
-package.loaded['luatex-cn-vertical-base-hooks'] = hooks
+package.loaded['vertical.luatex-cn-vertical-base-hooks'] = hooks
 
 return hooks

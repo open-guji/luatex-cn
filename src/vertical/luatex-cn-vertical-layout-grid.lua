@@ -62,10 +62,13 @@
 
 -- Load dependencies
 -- Check if already loaded via dofile (package.loaded set manually)
-local constants = package.loaded['luatex-cn-vertical-base-constants'] or require('luatex-cn-vertical-base-constants')
+local constants = package.loaded['vertical.luatex-cn-vertical-base-constants'] or
+require('vertical.luatex-cn-vertical-base-constants')
 local D = constants.D
-local utils = package.loaded['luatex-cn-vertical-base-utils'] or require('luatex-cn-vertical-base-utils')
-local hooks = package.loaded['luatex-cn-vertical-base-hooks'] or require('luatex-cn-vertical-base-hooks')
+local utils = package.loaded['vertical.luatex-cn-vertical-base-utils'] or
+require('vertical.luatex-cn-vertical-base-utils')
+local hooks = package.loaded['vertical.luatex-cn-vertical-base-hooks'] or
+require('vertical.luatex-cn-vertical-base-hooks')
 
 -- @param page_columns (number) Total columns before a page break
 -- @param params (table) Optional parameters:
@@ -296,8 +299,8 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
 
             -- Process via core_textflow
             -- Note: subsequent chunks must also account for indentation in their columns
-            local textflow = package.loaded['luatex-cn-vertical-core-textflow'] or
-            require('luatex-cn-vertical-core-textflow')
+            local textflow = package.loaded['vertical.luatex-cn-vertical-core-textflow'] or
+                require('vertical.luatex-cn-vertical-core-textflow')
             local available_in_first = effective_limit - cur_row
             local capacity_per_subsequent = line_limit - base_indent - r_indent -- Use base_indent for subsequent columns
 
@@ -376,8 +379,16 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
             end
 
             table.insert(col_buffer,
-                { node = t, page = cur_page, col = cur_col, relative_row = cur_row, is_block = true, width = tb_w, height =
-                tb_h })
+                {
+                    node = t,
+                    page = cur_page,
+                    col = cur_col,
+                    relative_row = cur_row,
+                    is_block = true,
+                    width = tb_w,
+                    height =
+                        tb_h
+                })
             cur_row = cur_row + tb_h
             skip_banxin_and_occupied()
         elseif id == constants.GLYPH then
@@ -478,7 +489,7 @@ local layout = {
 
 -- Register module in package.loaded for require() compatibility
 -- 注册模块到 package.loaded
-package.loaded['luatex-cn-vertical-layout-grid'] = layout
+package.loaded['vertical.luatex-cn-vertical-layout-grid'] = layout
 
 -- Return module exports
 return layout

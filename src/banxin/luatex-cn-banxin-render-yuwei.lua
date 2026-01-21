@@ -49,8 +49,10 @@
 -- ============================================================================
 
 -- Load dependencies
-local constants = package.loaded['luatex-cn-vertical-base-constants'] or require('luatex-cn-vertical-base-constants')
-local utils = package.loaded['luatex-cn-vertical-base-utils'] or require('luatex-cn-vertical-base-utils')
+local constants = package.loaded['vertical.luatex-cn-vertical-base-constants'] or
+    require('vertical.luatex-cn-vertical-base-constants')
+local utils = package.loaded['vertical.luatex-cn-vertical-base-utils'] or
+    require('vertical.luatex-cn-vertical-base-utils')
 
 -- Conversion factor from scaled points to PDF big points
 local sp_to_bp = utils.sp_to_bp
@@ -241,8 +243,7 @@ local yuwei = {
 
 -- Register module in package.loaded for require() compatibility
 -- 注册模块到 package.loaded
-package.loaded['banxin.render_yuwei'] = yuwei
-package.loaded['render_yuwei'] = yuwei
+package.loaded['banxin.luatex-cn-banxin-render-yuwei'] = yuwei
 
 -- Return module exports
 return yuwei

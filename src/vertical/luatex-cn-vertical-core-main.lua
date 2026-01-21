@@ -90,13 +90,20 @@ end
 
 -- Load submodules using Lua's require mechanism
 -- 加载子模块
-local constants = package.loaded['luatex-cn-vertical-base-constants'] or require('luatex-cn-vertical-base-constants')
-local utils = package.loaded['luatex-cn-vertical-base-utils'] or require('luatex-cn-vertical-base-utils')
-local flatten = package.loaded['luatex-cn-vertical-flatten-nodes'] or require('luatex-cn-vertical-flatten-nodes')
-local layout = package.loaded['luatex-cn-vertical-layout-grid'] or require('luatex-cn-vertical-layout-grid')
-local render = package.loaded['luatex-cn-vertical-render-page'] or require('luatex-cn-vertical-render-page')
-local textbox = package.loaded['luatex-cn-vertical-core-textbox'] or require('luatex-cn-vertical-core-textbox')
-local sidenote = package.loaded['luatex-cn-vertical-core-sidenote'] or require('luatex-cn-vertical-core-sidenote')
+local constants = package.loaded['vertical.luatex-cn-vertical-base-constants'] or
+    require('vertical.luatex-cn-vertical-base-constants')
+local utils = package.loaded['vertical.luatex-cn-vertical-base-utils'] or
+    require('vertical.luatex-cn-vertical-base-utils')
+local flatten = package.loaded['vertical.luatex-cn-vertical-flatten-nodes'] or
+    require('vertical.luatex-cn-vertical-flatten-nodes')
+local layout = package.loaded['vertical.luatex-cn-vertical-layout-grid'] or
+    require('vertical.luatex-cn-vertical-layout-grid')
+local render = package.loaded['vertical.luatex-cn-vertical-render-page'] or
+    require('vertical.luatex-cn-vertical-render-page')
+local textbox = package.loaded['vertical.luatex-cn-vertical-core-textbox'] or
+require('vertical.luatex-cn-vertical-core-textbox')
+local sidenote = package.loaded['vertical.luatex-cn-vertical-core-sidenote'] or
+require('vertical.luatex-cn-vertical-core-sidenote')
 
 
 local D = node.direct
@@ -312,7 +319,7 @@ function vertical.prepare_grid(box_num, params)
     else
         if is_debug then
             utils.debug_log("[core] Finished apply_positions for textbox. Global page number remains " ..
-            tostring(_G.vertical.current_page_number))
+                tostring(_G.vertical.current_page_number))
         end
     end
 
@@ -350,10 +357,10 @@ function vertical.prepare_grid(box_num, params)
             local tb_w = D.get_attribute(n, constants.ATTR_TEXTBOX_WIDTH) or 0
             if tb_w > 0 then
                 utils.debug_log("  [layout_map] Block Node=" ..
-                tostring(n) ..
-                " at p=" ..
-                (pos.page or 0) ..
-                " c=" .. pos.col .. " r=" .. pos.row .. " w=" .. (pos.width or 0) .. " h=" .. (pos.height or 0))
+                    tostring(n) ..
+                    " at p=" ..
+                    (pos.page or 0) ..
+                    " c=" .. pos.col .. " r=" .. pos.row .. " w=" .. (pos.width or 0) .. " h=" .. (pos.height or 0))
             end
         end
     end

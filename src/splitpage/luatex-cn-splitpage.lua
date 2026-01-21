@@ -178,6 +178,5 @@ end
 -- Register module
 _G.splitpage = splitpage
 package.loaded['splitpage.luatex-cn-splitpage'] = splitpage
-package.loaded['luatex-cn-splitpage'] = splitpage
 
 return splitpage

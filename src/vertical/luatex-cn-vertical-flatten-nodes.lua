@@ -61,9 +61,11 @@
 
 -- Load dependencies
 -- Check if already loaded via dofile (package.loaded set manually)
-local constants = package.loaded['luatex-cn-vertical-base-constants'] or require('luatex-cn-vertical-base-constants')
+local constants = package.loaded['vertical.luatex-cn-vertical-base-constants'] or
+require('vertical.luatex-cn-vertical-base-constants')
 local D = constants.D
-local utils = package.loaded['luatex-cn-vertical-base-utils'] or require('luatex-cn-vertical-base-utils')
+local utils = package.loaded['vertical.luatex-cn-vertical-base-utils'] or
+require('vertical.luatex-cn-vertical-base-utils')
 
 --- 将 vlist（来自 vbox）展平为单一节点列表
 -- 从行首提取缩进并将其应用为属性。
@@ -159,8 +161,8 @@ local function flatten_vbox(head, grid_width, char_width)
                 -- Recurse
                 local inner_has_content = collect_nodes(inner, box_indent, box_r_indent)
                 if inner_has_content then has_content = true end
-                
-                -- IMPORTANT: Only add penalty for HLIST lines that are part of 
+
+                -- IMPORTANT: Only add penalty for HLIST lines that are part of
                 -- the main vertical flow, i.e., at the second recursion level.
                 -- For simplicity, let's just add it if this HLIST had content.
                 if tid == constants.HLIST and inner_has_content then
@@ -179,8 +181,8 @@ local function flatten_vbox(head, grid_width, char_width)
                 elseif tid == constants.GLUE or tid == constants.WHATSIT then
                     local subtype = D.getsubtype(t)
                     if tid == constants.WHATSIT or subtype == 0 or subtype == 13 or subtype == 14 then
-                       keep = true
-                       if tid == constants.WHATSIT then has_content = true end
+                        keep = true
+                        if tid == constants.WHATSIT then has_content = true end
                     end
                 elseif tid == constants.PENALTY then
                     keep = true
@@ -200,10 +202,10 @@ local function flatten_vbox(head, grid_width, char_width)
                     if jiazhu_sub_attr then
                         D.set_attribute(copy, constants.ATTR_JIAZHU_SUB, jiazhu_sub_attr)
                     end
-                    
+
                     D.set_attribute(copy, constants.ATTR_TEXTBOX_WIDTH, 0)
                     D.set_attribute(copy, constants.ATTR_TEXTBOX_HEIGHT, 0)
-                    
+
                     append_node(copy)
                 end
             end
@@ -223,7 +225,7 @@ local flatten = {
 
 -- Register module in package.loaded for require() compatibility
 -- 注册模块到 package.loaded
-package.loaded['luatex-cn-vertical-flatten-nodes'] = flatten
+package.loaded['vertical.luatex-cn-vertical-flatten-nodes'] = flatten
 
 -- Return module exports
 return flatten

@@ -44,12 +44,14 @@
 -- ============================================================================
 
 -- Load dependencies
-local constants = package.loaded['luatex-cn-vertical-base-constants'] or require('luatex-cn-vertical-base-constants')
+local constants = package.loaded['vertical.luatex-cn-vertical-base-constants'] or
+require('vertical.luatex-cn-vertical-base-constants')
 local D = constants.D
-local utils = package.loaded['luatex-cn-vertical-base-utils'] or require('luatex-cn-vertical-base-utils')
-local text_position = package.loaded['luatex-cn-vertical-render-position'] or
-    require('luatex-cn-vertical-render-position')
-local yuwei = package.loaded['luatex-cn-banxin-render-yuwei'] or require('luatex-cn-banxin-render-yuwei')
+local utils = package.loaded['vertical.luatex-cn-vertical-base-utils'] or
+require('vertical.luatex-cn-vertical-base-utils')
+local text_position = package.loaded['vertical.luatex-cn-vertical-render-position'] or
+    require('vertical.luatex-cn-vertical-render-position')
+local yuwei = package.loaded['banxin.luatex-cn-banxin-render-yuwei'] or require('banxin.luatex-cn-banxin-render-yuwei')
 
 -- Conversion factor from scaled points to PDF big points
 local sp_to_bp = utils.sp_to_bp
@@ -509,8 +511,7 @@ local banxin = {
 
 -- Register module in package.loaded for require() compatibility
 -- 注册模块到 package.loaded
-package.loaded['banxin.render_banxin'] = banxin
-package.loaded['render_banxin'] = banxin
+package.loaded['banxin.luatex-cn-banxin-render-banxin'] = banxin
 
 -- Return module exports
 return banxin

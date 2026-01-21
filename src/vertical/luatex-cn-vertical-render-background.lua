@@ -43,9 +43,11 @@
 -- ============================================================================
 
 -- Load dependencies
-local constants = package.loaded['luatex-cn-vertical-base-constants'] or require('luatex-cn-vertical-base-constants')
+local constants = package.loaded['vertical.luatex-cn-vertical-base-constants'] or
+require('vertical.luatex-cn-vertical-base-constants')
 local D = constants.D
-local utils = package.loaded['luatex-cn-vertical-base-utils'] or require('luatex-cn-vertical-base-utils')
+local utils = package.loaded['vertical.luatex-cn-vertical-base-utils'] or
+require('vertical.luatex-cn-vertical-base-utils')
 
 --- 绘制背景色矩形
 -- @param p_head (node) 节点列表头部（直接引用）
@@ -137,7 +139,7 @@ local background = {
 
 -- Register module in package.loaded for require() compatibility
 -- 注册模块到 package.loaded
-package.loaded['luatex-cn-vertical-render-background'] = background
+package.loaded['vertical.luatex-cn-vertical-render-background'] = background
 
 -- Return module exports
 return background

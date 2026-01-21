@@ -43,13 +43,13 @@ function text_utils.normalize_line_endings(text)
     if not text or text == "" then
         return text
     end
-    
+
     -- Replace CRLF with LF first (must be done before replacing standalone CR)
     text = text:gsub("\r\n", "\n")
-    
+
     -- Replace any remaining CR with LF
     text = text:gsub("\r", "\n")
-    
+
     return text
 end
 
@@ -62,13 +62,13 @@ function text_utils.remove_bom(text)
     if not text or text == "" then
         return text
     end
-    
+
     -- UTF-8 BOM is EF BB BF (239 187 191 in decimal)
     local bom = string.char(0xEF, 0xBB, 0xBF)
     if text:sub(1, 3) == bom then
         return text:sub(4)
     end
-    
+
     return text
 end
 
@@ -82,7 +82,7 @@ function text_utils.normalize_whitespace(text, preserve_newlines)
     if not text or text == "" then
         return text
     end
-    
+
     if preserve_newlines then
         -- Normalize each line separately
         local lines = {}
@@ -117,28 +117,28 @@ function text_utils.normalize_text(text, options)
     if not text or text == "" then
         return text
     end
-    
+
     options = options or {}
-    local remove_bom = options.remove_bom ~= false  -- default true
-    local norm_line_endings = options.normalize_line_endings ~= false  -- default true
-    local norm_whitespace = options.normalize_whitespace or false  -- default false
-    local preserve_newlines = options.preserve_newlines ~= false  -- default true
-    
+    local remove_bom = options.remove_bom ~= false                    -- default true
+    local norm_line_endings = options.normalize_line_endings ~= false -- default true
+    local norm_whitespace = options.normalize_whitespace or false     -- default false
+    local preserve_newlines = options.preserve_newlines ~= false      -- default true
+
     -- Step 1: Remove BOM
     if remove_bom then
         text = text_utils.remove_bom(text)
     end
-    
+
     -- Step 2: Normalize line endings
     if norm_line_endings then
         text = text_utils.normalize_line_endings(text)
     end
-    
+
     -- Step 3: Normalize whitespace (optional)
     if norm_whitespace then
         text = text_utils.normalize_whitespace(text, preserve_newlines)
     end
-    
+
     return text
 end
 
@@ -151,12 +151,12 @@ function text_utils.normalize_for_typesetting(text)
     return text_utils.normalize_text(text, {
         remove_bom = true,
         normalize_line_endings = true,
-        normalize_whitespace = false,  -- Preserve all spacing
+        normalize_whitespace = false, -- Preserve all spacing
         preserve_newlines = true
     })
 end
 
 -- Register module
-package.loaded['luatex-cn-vertical-base-text-utils'] = text_utils
+package.loaded['vertical.luatex-cn-vertical-base-text-utils'] = text_utils
 
 return text_utils

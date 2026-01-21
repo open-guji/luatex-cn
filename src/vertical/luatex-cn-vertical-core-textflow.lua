@@ -31,7 +31,8 @@
 --
 -- ============================================================================
 
-local constants = package.loaded['luatex-cn-vertical-base-constants'] or require('luatex-cn-vertical-base-constants')
+local constants = package.loaded['vertical.luatex-cn-vertical-base-constants'] or
+    require('vertical.luatex-cn-vertical-base-constants')
 local D = constants.D
 
 local textflow = {}
@@ -53,7 +54,7 @@ function textflow.process_jiazhu_sequence(jiazhu_nodes, available_rows, line_lim
         local h = first_chunk and available_rows or line_limit
         local capacity = h * 2
         local remaining = total_nodes - current_idx + 1
-        
+
         local chunk_size
         local rows_used
         local is_full = false
@@ -72,14 +73,14 @@ function textflow.process_jiazhu_sequence(jiazhu_nodes, available_rows, line_lim
         local chunk_nodes = {}
         -- 计算平衡界限
         local right_count = math.ceil(chunk_size / 2)
-        
+
         for i = 0, chunk_size - 1 do
             local node_idx = current_idx + i
             local n = jiazhu_nodes[node_idx]
-            
+
             local sub_col
             local relative_row
-            
+
             if i < right_count then
                 -- 右小行 (先行)
                 sub_col = 1
@@ -89,10 +90,10 @@ function textflow.process_jiazhu_sequence(jiazhu_nodes, available_rows, line_lim
                 sub_col = 2
                 relative_row = i - right_count
             end
-            
+
             -- 设置属性以便渲染层识别
             D.set_attribute(n, constants.ATTR_JIAZHU_SUB, sub_col)
-            
+
             table.insert(chunk_nodes, {
                 node = n,
                 sub_col = sub_col,
@@ -114,6 +115,6 @@ function textflow.process_jiazhu_sequence(jiazhu_nodes, available_rows, line_lim
 end
 
 -- Register module
-package.loaded['luatex-cn-vertical-core-textflow'] = textflow
+package.loaded['vertical.luatex-cn-vertical-core-textflow'] = textflow
 
 return textflow

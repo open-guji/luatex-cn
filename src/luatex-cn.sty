@@ -63,12 +63,12 @@
 % ============================================================================
 
 % Core vertical typesetting engine (always loaded)
-\RequirePackage{luatex-cn-vertical}
+\RequirePackage{vertical/luatex-cn-vertical}
 
 % Banxin (版心) features - optional
 \bool_if:NT \g_luatexcn_banxin_bool
   {
-    \RequirePackage{luatex-cn-banxin}
+    \RequirePackage{banxin/luatex-cn-banxin}
   }
 
 % ============================================================================

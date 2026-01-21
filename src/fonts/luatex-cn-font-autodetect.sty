@@ -104,31 +104,7 @@
 
 % Load the Lua module
 \directlua{
-  texio.write_nl("term and log", "[Font Auto-Detect] Starting")
-  fontdetect = nil
-  local lua_file = kpse.find_file("luatex-cn-font-autodetect.lua", "lua")
-  if lua_file then
-    texio.write_nl("term and log", "[Font Auto-Detect] kpse found: " .. lua_file)
-    fontdetect = dofile(lua_file)
-  else
-    texio.write_nl("term and log", "[Font Auto-Detect] kpse not found")
-    local paths = {"../src/fonts/luatex-cn-font-autodetect.lua", "src/fonts/luatex-cn-font-autodetect.lua"}
-    for _, path in ipairs(paths) do
-      local f = io.open(path, "r")
-      if f then
-        f:close()
-        texio.write_nl("term and log", "[Font Auto-Detect] Found: " .. path)
-        fontdetect = dofile(path)
-        break
-      end
-    end
-  end
-  if fontdetect then
-    texio.write_nl("term and log", "[Font Auto-Detect] Module ready")
-  else
-    texio.write_nl("term and log", "[Font Auto-Detect] Creating stub")
-    fontdetect = { get_font_setup = function() return nil end }
-  end
+  fontdetect = require("fonts.luatex-cn-font-autodetect")
 }
 
 % Command to apply auto-detected font

@@ -66,13 +66,13 @@ local function normalize_rgb(s)
 
     -- Map basic color names
     local color_map = {
-        black = "0.0000 0.0000 0.0000",
-        white = "1.0000 1.0000 1.0000",
-        red   = "1.0000 0.0000 0.0000",
-        green = "0.0000 1.0000 0.0000",
-        blue  = "0.0000 0.0000 1.0000",
+        black  = "0.0000 0.0000 0.0000",
+        white  = "1.0000 1.0000 1.0000",
+        red    = "1.0000 0.0000 0.0000",
+        green  = "0.0000 1.0000 0.0000",
+        blue   = "0.0000 0.0000 1.0000",
         yellow = "1.0000 1.0000 0.0000",
-        gray  = "0.5000 0.5000 0.5000",
+        gray   = "0.5000 0.5000 0.5000",
     }
     local mapped = color_map[s:lower()]
     if mapped then return mapped end
@@ -82,10 +82,10 @@ local function normalize_rgb(s)
 
     -- Extract RGB values
     local r, g, b = s:match("([%d%.]+)%s+([%d%.]+)%s+([%d%.]+)")
-    if not r then 
+    if not r then
         -- If it's not a numeric RGB, return nil instead of the original string
         -- to avoid injecting invalid PDF literal commands
-        return nil 
+        return nil
     end
 
     r, g, b = tonumber(r), tonumber(g), tonumber(b)
@@ -93,7 +93,7 @@ local function normalize_rgb(s)
 
     -- Convert 0-255 range to 0-1 range
     if r > 1 or g > 1 or b > 1 then
-        return string.format("%.4f %.4f %.4f", r/255, g/255, b/255)
+        return string.format("%.4f %.4f %.4f", r / 255, g / 255, b / 255)
     end
 
     return string.format("%.4f %.4f %.4f", r, g, b)
@@ -123,17 +123,18 @@ local function draw_debug_rect(head, anchor, x_sp, y_sp, w_sp, h_sp, color_cmd)
     local ty_bp = y_sp * sp_to_bp
     local tw_bp = w_sp * sp_to_bp
     local th_bp = h_sp * sp_to_bp
-    
+
     -- literal for rectangle: q (save state) 0.5 w (line width) <color> 1 0 0 1 <x> <y> cm (move) 0 0 <w> <h> re (rect) S (stroke) Q (restore)
-    local literal = string.format("q 0.5 w %s 1 0 0 1 %.4f %.4f cm 0 0 %.4f %.4f re S Q", color_cmd, tx_bp, ty_bp, tw_bp, th_bp)
-    
+    local literal = string.format("q 0.5 w %s 1 0 0 1 %.4f %.4f cm 0 0 %.4f %.4f re S Q", color_cmd, tx_bp, ty_bp, tw_bp,
+        th_bp)
+
     -- Use more robust node creation
     local whatsit_id = node.id("whatsit")
     local pdf_literal_id = node.subtype("pdf_literal")
     local nn = node.direct.new(whatsit_id, pdf_literal_id)
     node.direct.setfield(nn, "data", literal)
     node.direct.setfield(nn, "mode", 0)
-    
+
     if anchor then
         return node.direct.insert_before(head, anchor, nn)
     else
@@ -167,7 +168,7 @@ end
 -- @return string 中文数字字符串
 local function to_chinese_numeral(n)
     if not n or n <= 0 then return "" end
-    local digits = {"一", "二", "三", "四", "五", "六", "七", "八", "九"}
+    local digits = { "一", "二", "三", "四", "五", "六", "七", "八", "九" }
     if n < 10 then
         return digits[n]
     elseif n == 10 then
@@ -212,7 +213,7 @@ local utils = {
 
 -- Register module in package.loaded for require() compatibility
 -- 注册模块到 package.loaded
-package.loaded['luatex-cn-vertical-base-utils'] = utils
+package.loaded['vertical.luatex-cn-vertical-base-utils'] = utils
 
 -- Return module exports
 return utils

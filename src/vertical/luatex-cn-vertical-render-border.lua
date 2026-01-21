@@ -42,9 +42,11 @@
 -- ============================================================================
 
 -- Load dependencies
-local constants = package.loaded['luatex-cn-vertical-base-constants'] or require('luatex-cn-vertical-base-constants')
+local constants = package.loaded['vertical.luatex-cn-vertical-base-constants'] or
+require('vertical.luatex-cn-vertical-base-constants')
 local D = constants.D
-local utils = package.loaded['luatex-cn-vertical-base-utils'] or require('luatex-cn-vertical-base-utils')
+local utils = package.loaded['vertical.luatex-cn-vertical-base-utils'] or
+require('vertical.luatex-cn-vertical-base-utils')
 
 --- 绘制列边框（仅限普通列，不含版心列）
 -- 版心列应由 banxin.draw_banxin_column 单独绘制
@@ -74,7 +76,7 @@ local function draw_column_borders(p_head, params)
     local shift_x = params.shift_x
     local outer_shift = params.outer_shift
     local border_rgb_str = params.border_rgb_str
-    local banxin_cols = params.banxin_cols or {}  -- Set of column indices to skip
+    local banxin_cols = params.banxin_cols or {} -- Set of column indices to skip
 
     local b_thickness_bp = border_thickness * sp_to_bp
     local half_thickness = math.floor(border_thickness / 2)
@@ -141,9 +143,8 @@ local border = {
     draw_outer_border = draw_outer_border,
 }
 
--- Register module in package.loaded for require() compatibility
 -- 注册模块到 package.loaded
-package.loaded['luatex-cn-vertical-render-border'] = border
+package.loaded['vertical.luatex-cn-vertical-render-border'] = border
 
 -- Return module exports
 return border

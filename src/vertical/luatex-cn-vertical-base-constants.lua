@@ -57,11 +57,11 @@ constants.D = node.direct
 -- Global debug configuration
 _G.vertical = _G.vertical or {}
 _G.vertical.debug = {
-    enabled = false,        -- 是否开启调试模式
-    show_grid = true,      -- 显示字符格
-    show_boxes = true,     -- 显示文本框避让区
-    show_banxin = true,    -- 显示版心参考线
-    verbose_log = true     -- 是否在 .log 中输出详细坐标
+    enabled = false,    -- 是否开启调试模式
+    show_grid = true,   -- 显示字符格
+    show_boxes = true,  -- 显示文本框避让区
+    show_banxin = true, -- 显示版心参考线
+    verbose_log = true  -- 是否在 .log 中输出详细坐标
 }
 
 -- Node type IDs
@@ -77,14 +77,19 @@ constants.LOCAL_PAR = node.id("local_par")
 -- Custom attributes for indentation
 -- Note: Attributes are registered in vertical.sty via \newluatexattribute
 constants.ATTR_INDENT = luatexbase.attributes.cnverticalindent or luatexbase.new_attribute("cnverticalindent")
-constants.ATTR_RIGHT_INDENT = luatexbase.attributes.cnverticalrightindent or luatexbase.new_attribute("cnverticalrightindent")
-constants.ATTR_TEXTBOX_WIDTH = luatexbase.attributes.cnverticaltextboxwidth or luatexbase.new_attribute("cnverticaltextboxwidth")
-constants.ATTR_TEXTBOX_HEIGHT = luatexbase.attributes.cnverticaltextboxheight or luatexbase.new_attribute("cnverticaltextboxheight")
-constants.ATTR_TEXTBOX_DISTRIBUTE = luatexbase.attributes.cnverticaltextboxdistribute or luatexbase.new_attribute("cnverticaltextboxdistribute")
+constants.ATTR_RIGHT_INDENT = luatexbase.attributes.cnverticalrightindent or
+luatexbase.new_attribute("cnverticalrightindent")
+constants.ATTR_TEXTBOX_WIDTH = luatexbase.attributes.cnverticaltextboxwidth or
+luatexbase.new_attribute("cnverticaltextboxwidth")
+constants.ATTR_TEXTBOX_HEIGHT = luatexbase.attributes.cnverticaltextboxheight or
+luatexbase.new_attribute("cnverticaltextboxheight")
+constants.ATTR_TEXTBOX_DISTRIBUTE = luatexbase.attributes.cnverticaltextboxdistribute or
+luatexbase.new_attribute("cnverticaltextboxdistribute")
 
 -- Block Indentation Attributes
 constants.ATTR_BLOCK_ID = luatexbase.attributes.cnverticalblockid or luatexbase.new_attribute("cnverticalblockid")
-constants.ATTR_FIRST_INDENT = luatexbase.attributes.cnverticalfirstindent or luatexbase.new_attribute("cnverticalfirstindent")
+constants.ATTR_FIRST_INDENT = luatexbase.attributes.cnverticalfirstindent or
+luatexbase.new_attribute("cnverticalfirstindent")
 
 -- Attributes for Jiazhu (Interlinear Note)
 constants.ATTR_JIAZHU = luatexbase.attributes.cnverticaljiazhu or luatexbase.new_attribute("cnverticaljiazhu")
@@ -118,13 +123,13 @@ local function to_dimen(dim_str)
     if ok then
         return res
     end
-    
+
     -- Fallback: try to parse as pure number (assume sp)
     local num = tonumber(dim_str)
     if num then
         return num
     end
-    
+
     return nil
 end
 
@@ -132,7 +137,7 @@ constants.to_dimen = to_dimen
 
 -- Register module in package.loaded for require() compatibility
 -- 注册模块到 package.loaded
-package.loaded['luatex-cn-vertical-base-constants'] = constants
+package.loaded['vertical.luatex-cn-vertical-base-constants'] = constants
 
 -- Return module
 return constants

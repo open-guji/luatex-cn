@@ -1,6 +1,6 @@
 -- luatex-cn-splitpage-test.lua - Unit tests for splitpage module
 local test_utils = require('test.test_utils')
-local splitpage = require('luatex-cn-splitpage')
+local splitpage = require('tex.splitpage.luatex-cn-splitpage')
 
 test_utils.run_test("splitpage - Internal to_sp (via configure)", function()
     -- Reset state

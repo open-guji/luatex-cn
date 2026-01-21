@@ -1,7 +1,7 @@
 ---@diagnostic disable: duplicate-set-field
 -- luatex-cn-font-autodetect-test.lua - Unit tests for font autodetetection
 local test_utils = require('test.test_utils')
-local fontdetect = require('luatex-cn-font-autodetect')
+local fontdetect = require('tex.fonts.luatex-cn-font-autodetect')
 
 -- Save original functions/values
 local org_os_type = os.type

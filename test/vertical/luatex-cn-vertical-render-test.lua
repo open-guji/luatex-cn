@@ -1,8 +1,8 @@
 -- luatex-cn-vertical-render-test.lua - Unit tests for vertical rendering modules
 local test_utils = require('test.test_utils')
 -- We need to mock constants for render-position
-local constants = require('luatex-cn-vertical-base-constants')
-local render_pos = require('luatex-cn-vertical-render-position')
+local constants = require('tex.vertical.luatex-cn-vertical-base-constants')
+local render_pos = require('tex.vertical.luatex-cn-vertical-render-position')
 
 test_utils.run_test("render-position - create_vertical_text", function()
     local text = "测试"

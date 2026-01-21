@@ -1,6 +1,6 @@
 -- luatex-cn-vertical-core-textbox-test.lua - Unit tests for core textbox
 local test_utils = require('test.test_utils')
-local textbox = require('luatex-cn-vertical-core-textbox')
+local textbox = require('tex.vertical.luatex-cn-vertical-core-textbox')
 
 test_utils.run_test("core-textbox - detect", function()
     local n = node.new("whatsit")

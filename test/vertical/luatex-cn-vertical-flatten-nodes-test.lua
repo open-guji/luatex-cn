@@ -1,6 +1,6 @@
 -- luatex-cn-vertical-flatten-nodes-test.lua - Unit tests for flatten nodes
 local test_utils = require('test.test_utils')
-local flatten = require('luatex-cn-vertical-flatten-nodes')
+local flatten = require('tex.vertical.luatex-cn-vertical-flatten-nodes')
 
 test_utils.run_test("flatten-nodes - basic flattening", function()
     local n1 = node.new("glyph")

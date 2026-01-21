@@ -1,6 +1,6 @@
 -- luatex-cn-vertical-core-main-test.lua - Unit tests for vertical core main
 local test_utils = require('test.test_utils')
-local constants = require('luatex-cn-vertical-base-constants')
+local constants = require('tex.vertical.luatex-cn-vertical-base-constants')
 
 -- Mock submodules that main requires
 package.loaded['luatex-cn-vertical-flatten-nodes'] = {
@@ -13,7 +13,7 @@ package.loaded['luatex-cn-vertical-render-page'] = {
     apply_positions = function(head, map, params) return { { head = head, cols = 1 } } end
 }
 
-local main = require('luatex-cn-vertical-core-main')
+local main = require('tex.vertical.luatex-cn-vertical-core-main')
 
 test_utils.run_test("core-main - prepare_grid", function()
     -- Setup mock box

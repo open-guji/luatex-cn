@@ -1,6 +1,6 @@
 -- luatex-cn-vertical-layout-grid-test.lua - Unit tests for layout grid
 local test_utils = require('test.test_utils')
-local layout = require('luatex-cn-vertical-layout-grid')
+local layout = require('tex.vertical.luatex-cn-vertical-layout-grid')
 
 test_utils.run_test("layout-grid - basic positioning", function()
     local n1 = node.new("glyph")

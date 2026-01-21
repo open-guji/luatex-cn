@@ -1,6 +1,6 @@
 -- luatex-cn-vertical-base-hooks-test.lua - Unit tests for base hooks
 local test_utils = require('test.test_utils')
-local hooks = require('luatex-cn-vertical-base-hooks')
+local hooks = require('tex.vertical.luatex-cn-vertical-base-hooks')
 
 test_utils.run_test("base-hooks - Registry Check", function()
     test_utils.assert_eq(type(hooks.registry), "table", "hooks.registry missing")

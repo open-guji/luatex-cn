@@ -4,11 +4,11 @@
 
 致力于基于 LuaTeX 引擎实现最纯粹、最高质量的中文排版支持.长期愿景希望完整支持中文排版，包括横排/竖排，古籍/现代版式。目前主要实现古籍复刻，已完整覆盖竖排核心逻辑、版心装饰及夹注处理。
 
-LuaTeX package for Chinese charactor typesetting, covering horizontal/vertical, tranditional/mordern layout. Currently focus on Ancient Book replication. Implemented core logic of vertical typesetting, decorative elements of traditional Chinese books, and interlinear notes.
+LuaTeX package for Chinese charactor typesetting, covering horizontal/vertical, traditional/modern layout. Currently focus on Ancient Book replication. Implemented core logic of vertical typesetting, decorative elements of traditional Chinese books, and interlinear notes.
 
-CTAN （审核中/Under Review）: [v0.1.1](https://ctan.org/pkg/luatex-cn)
+CTAN: [v0.1.1](https://ctan.org/pkg/luatex-cn)
 
-GitHub Release: [v0.1.1](https://github.com/open-guji/luatex-cn/releases)
+GitHub Release: [v0.1.2](https://github.com/open-guji/luatex-cn/releases)
 
 ## 展示
 
@@ -44,8 +44,11 @@ GitHub Release: [v0.1.1](https://github.com/open-guji/luatex-cn/releases)
 
 快速安装：
 1. **即将发布至 CTAN**，你可以直接使用 TeX 发行版自带的包管理器进行安装：
-2. 从 [GitHub Release](https://github.com/open-guji/luatex-cn/releases) 下载最新版本的 `luatex-cn-src-v*.zip`。解压到 `texmf/tex/latex/luatex-cn/`，运行 `texhash`。
-3. 下载最新版本，解压到自己正在编写的.tex文件夹中，直接编译。
+```
+tlmgr install luatex-cn
+```
+2. 从 [GitHub Release](https://github.com/open-guji/luatex-cn/releases) 下载最新版本的 `luatex-cn-tex-v*.zip`。将解压后`tex/`下的内容移动到 `texmf/tex/latex/luatex-cn/`，运行 `texhash`。
+3. 下载最新版本，将解压后`tex/`下的内容移动到自己正在编写的.tex文件夹中，直接编译。
 
 ## 使用方法
 
@@ -84,6 +87,10 @@ GitHub Release: [v0.1.1](https://github.com/open-guji/luatex-cn/releases)
 联系人(contract): Sheldon Li
 
 邮件（Email）: sheldonli.dev@gmail.com
+
+## 开发与测试
+
+如果你正在参与开发或希望在本地测试源码更改，请参考 [开发者指南](文档/developer_guide.md)。
 
 ## 许可证
 

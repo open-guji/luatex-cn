@@ -2,15 +2,22 @@
 
 本项目的所有重大更改都将记录在此文件中。
 
+## [0.1.2] - 2026-01-22
+- src 重命名为 tex
+- 彻底修复了Windows下CRLF，BOM 字符问题
+- 采用l3build，详见 build.lua
+- 修复package require 路径，确保 release 的版本解压即用。
+
 ## [0.1.1] - 2026-01-19
 
+### 功能
+- 增加了批注命令，底层仍是可悬浮文本框。
+
 ### 修复
-- 修复了 `ltc-guji.cls` 中 RGB 颜色值因缺少保护而导致的 `! LaTeX Error: The key 'vertical/0' is unknown` 错误。
-- 修复了 CTAN 构建脚本因文件名包含中文（`首页展示`）而失败的问题。
-- 增强了 Windows 构建脚本 (`scripts/build_ctan_windows.py`)，自动检测并修复文件的 BOM 和 CRLF 编码问题。
+- 修复了CRLF，BOM 在Windows下字符问题
 
 ### 文档
-- 更新了 README 文档中的链接引用。
+- 更新了文档，中英双语。
 
 ## [0.1.0] - 2026-01-18
 

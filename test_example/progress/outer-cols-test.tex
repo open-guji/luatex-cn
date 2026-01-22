@@ -1,0 +1,28 @@
+% outer-cols-test.tex - 测试 outer-cols 功能
+\documentclass{ltc-guji}
+
+\pageSetup{
+  columns=10,
+  lines=15
+}
+
+\contentSetup{
+  font-size=14pt
+}
+
+\LtcDebugOn
+
+\begin{document}
+
+\begin{正文}
+% 测试 1: 普通 TextBox (占 1 格)
+\TextBox[n-cols=1]{甲}%
+% 测试 2: outer-cols=2 (应该占 2 格外部空间)
+\TextBox[n-cols=1, outer-cols=2]{乙}%
+% 测试 3: outer-cols=3 (应该占 3 格外部空间)
+\TextBox[n-cols=1, outer-cols=3]{丙}%
+% 测试 4: 普通 (占 1 格)
+\TextBox[n-cols=1]{丁}%
+\end{正文}
+
+\end{document}

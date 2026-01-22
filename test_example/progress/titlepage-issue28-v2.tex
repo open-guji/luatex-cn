@@ -1,0 +1,34 @@
+% titlepage-issue28-v2.tex - 复现 issue #28 书名页样式 (手动布局版)
+% 使用 outer-cols 实现不同列宽
+\documentclass{ltc-guji}
+
+\pageSetup{
+  columns=10,
+  lines=20
+}
+
+\contentSetup{
+  font-size=14pt
+}
+
+\begin{document}
+
+% 手动创建书名页布局
+% 总共 10 列：
+% - 列 1-2: 空白 (左边距)
+% - 列 3: 出版信息 (1 格宽)
+% - 列 4-7: 书名 (4 格宽，大字)
+% - 列 8: 日期 (1 格宽)
+% - 列 9-10: 空白 (右边距)
+
+\clearpage
+\begin{正文}
+% 右侧：日期 (小字，顶部对齐)
+\TextBox[n-cols=1, box-align=top, font-size=10pt]{光緒九年仲春}%
+% 中间：书名 (大字，居中，占 4 格外部空间)
+\TextBox[n-cols=1, outer-cols=4, box-align=center, font-size=28pt]{童蒙必讀書}%
+% 左侧：出版信息 (小字，底部对齐)
+\TextBox[n-cols=1, box-align=bottom, font-size=10pt]{武昌書局校刊}%
+\end{正文}
+
+\end{document}

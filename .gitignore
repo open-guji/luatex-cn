@@ -1,12 +1,12 @@
 # CTAN build
-build/
+/build/
 *.zip
 
 # test
 */test.*
 
 # AI related
-progress/
+/progress/
 .antigravity
 .claudeignore
 .clauderules

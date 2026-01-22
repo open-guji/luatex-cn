@@ -48,7 +48,7 @@ local function get_abs_path(path)
 end
 
 local script_dir = debug.getinfo(1).source:match("@?(.*[/\\])") or "./"
-local source_dir = get_abs_path(script_dir .. (is_windows() and "..\\src" or "../src"))
+local source_dir = get_abs_path(script_dir .. (is_windows() and "..\\tex" or "../tex"))
 
 print("TEXMFHOME: " .. texmf_home)
 print("Target:    " .. target_dir)

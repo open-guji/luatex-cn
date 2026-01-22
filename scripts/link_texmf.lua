@@ -1,7 +1,26 @@
 #!/usr/bin/env texlua
 
--- link_texmf.lua
--- Easily turn on/off the junction link from TEXMFHOME to this folder's src
+--[[
+    link_texmf.lua - TEXMFHOME 符号链接管理工具
+
+    功能说明:
+    此脚本用于在 TEXMFHOME 目录下创建或删除指向本项目 tex 目录的符号链接。
+    通过创建链接，可以让 TeX 系统直接使用本项目的宏包，无需手动复制文件，
+    方便开发和测试。
+
+    用法:
+        texlua scripts/link_texmf.lua --on     创建符号链接
+        texlua scripts/link_texmf.lua --off    删除符号链接
+
+    工作原理:
+    - 自动检测 TEXMFHOME 路径（通过 kpsewhich）
+    - 在 TEXMFHOME/tex/latex/ 下创建 luatex-cn 链接
+    - Windows 使用 junction（目录联接），Linux/macOS 使用软链接
+
+    注意事项:
+    - Windows 上创建 junction 可能需要管理员权限
+    - 使用 --off 删除链接后，原始 tex 目录内容不受影响
+--]]
 
 local function get_texmf_home()
     local handle = io.popen("kpsewhich -var-value=TEXMFHOME")

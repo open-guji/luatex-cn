@@ -1,19 +1,25 @@
-name: CTAN Packaging
+name: Build & Release
 
 on:
   push:
-    branches:
-      - main
-  workflow_dispatch:
+    tags:
+      - 'v*'
 
 jobs:
-  build_ctan:
+  build:
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
 
       - name: Install TeX Live
         uses: TeX-Live/setup-texlive-action@v3
@@ -27,20 +33,18 @@ jobs:
             ctablestack
             fontspec
             latex-bin
+            ctex
+            markdown
+            geometry
+            zip
 
-      - name: Tag version and update dates
+      - name: Build CTAN package
         run: |
-          texlua scripts/tag_version.lua
+          texlua build.lua ctan
 
-      - name: Run l3build ctan
-        run: |
-          l3build ctan
-
-      - name: Prepare ctan branch content
+      - name: Deploy to ctan branch
         run: |
           mkdir out
-          # Find where l3build put the ctan staging area
-          # We want out/ to look exactly like build/distrib/ctan/
           for d in build/distrib/ctan build/ctan; do
             if [ -d "$d/luatex-cn" ]; then
               echo "Found staging area in $d"
@@ -50,7 +54,7 @@ jobs:
           done
           ls -R out
 
-      - name: Deploy to ctan branch
+      - name: Push to ctan branch
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
@@ -59,4 +63,18 @@ jobs:
           force_orphan: true
           user_name: 'github-actions[bot]'
           user_email: 'github-actions[bot]@users.noreply.github.com'
-          commit_message: "Automatic CTAN package update [skip ci]"
+          commit_message: "Release ${{ github.ref_name }} [skip ci]"
+
+      - name: Prepare release asset
+        run: |
+          mv luatex-cn-ctan.zip luatex-cn-${{ github.ref_name }}.zip
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: luatex-cn-${{ github.ref_name }}.zip
+          generate_release_notes: true
+          draft: true
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

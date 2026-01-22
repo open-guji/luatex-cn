@@ -1,3 +1,19 @@
+# CTAN build
+build/
+*.zip
+
+# test
+*/test.*
+
+# AI related
+progress/
+.antigravity
+.claudeignore
+.clauderules
+.claude/
+.agent/
+.cursorrules
+
 # Miscellaneous
 *.class
 *.lock
@@ -38,15 +54,3 @@
 *.figlist
 *.auxlock
 
-# CTAN build
-build/
-*.zip
-
-# AI related
-progress/
-.antigravity
-.claudeignore
-.clauderules
-.claude/
-.agent/
-.cursorrules

@@ -9,31 +9,31 @@ if version_file then
 end
 
 -- Location for development files
-sourcefiledir = "tex"
-docfiledir    = "."
+sourcefiledir         = "tex"
+docfiledir            = "."
 
 -- Names for directories in the ZIP package
-sourcepkgdir  = "tex"
-docpkgdir     = "doc"
+sourcepkgdir          = "tex"
+docpkgdir             = "doc"
 
 -- Source files (included in the ZIP)
-sourcefiles   = { "**/*.sty", "**/*.cls", "**/*.lua", "**/*.cfg" }
+sourcefiles           = { "**/*.sty", "**/*.cls", "**/*.lua", "**/*.cfg" }
 
 -- Documentation and example files (Chinese folders copied in ctan_hook)
-docfiles      = {
+docfiles              = {
   "README.md", "README-EN.md", "LICENSE", "VERSION", "INSTALL.md"
 }
 
 -- Exclude build and output directories
-excludefiles  = { "build/**/*", "out/**/*" }
+excludefiles          = { "build/**/*", "out/**/*" }
 
 -- Disable automatic root installation
-installfiles  = {}
+installfiles          = {}
 
 -- Skip tests/typesetting
-checkfiles    = {}
-testfiles     = {}
-typesetfiles  = {}
+checkfiles            = {}
+testfiles             = {}
+typesetfiles          = {}
 
 --------------------------------------------------------------------------------
 -- Helper functions (pure Lua, no Python dependency)
@@ -113,7 +113,8 @@ local function list_dir(path)
   if sep == "\\" then
     -- Windows: use PowerShell with temp file for proper UTF-8 support
     local tmp_file = os.tmpname()
-    local cmd = 'powershell -Command "[Console]::OutputEncoding = [System.Text.Encoding]::UTF8; Get-ChildItem -Name \'' .. path:gsub("\\", "\\\\") .. '\'" > "' .. tmp_file .. '" 2>nul'
+    local cmd = 'powershell -Command "[Console]::OutputEncoding = [System.Text.Encoding]::UTF8; Get-ChildItem -Name \'' ..
+    path:gsub("\\", "\\\\") .. '\'" > "' .. tmp_file .. '" 2>nul'
     os.execute(cmd)
 
     local f = io.open(tmp_file, "rb")
@@ -301,7 +302,7 @@ local function translate_names(path, is_root)
   end
 
   -- Then, process files and directories at this level
-  entries = list_dir(path)  -- Re-read after recursion
+  entries = list_dir(path) -- Re-read after recursion
   for _, entry in ipairs(entries) do
     local full_path = join_path(path, entry)
 
@@ -341,7 +342,7 @@ end
 -- Custom tagging function
 function tag_hook(tagname, tagdate)
   local formatted_date = tagdate:gsub("-", "/")
-  local cmd = "texlua scripts/tag_version.lua " .. tagname .. " " .. formatted_date
+  local cmd = "texlua scripts/build/tag_version.lua " .. tagname .. " " .. formatted_date
   print("Running version update: " .. cmd)
   os.execute(cmd)
   return 0
@@ -350,7 +351,7 @@ end
 -- Pre-build hook: sanitize files and tag version
 function checkinit_hook()
   sanitize_project_files()
-  os.execute("texlua scripts/tag_version.lua")
+  os.execute("texlua scripts/build/tag_version.lua")
   return 0
 end
 
@@ -413,19 +414,24 @@ local function ctan_custom()
 
   -- Step 2: Tag version
   print("\n>>> Tagging version...")
-  os.execute("texlua scripts/tag_version.lua")
+  os.execute("texlua scripts/build/tag_version.lua")
 
-  -- Step 3: Run standard l3build unpack
+  -- Step 3: Generate documentation PDFs from Markdown
+  print("\n>>> Generating documentation PDFs...")
+  local sep = get_sep()
+  local python_cmd = sep == "\\" and "python" or "python3"
+  os.execute(python_cmd .. " scripts/build/generate_docs_pdf.py")
+
+  -- Step 4: Run standard l3build unpack
   print("\n>>> Running l3build unpack...")
   os.execute("l3build unpack")
 
-  -- Step 4: Create staging directory
+  -- Step 5: Create staging directory
   local ctan_dir = join_path("build", "distrib", "ctan")
   local staging_path = join_path(ctan_dir, module)
 
   print("\n>>> Creating staging directory: " .. staging_path)
   -- Create parent directories
-  local sep = get_sep()
   if sep == "\\" then
     os.execute('mkdir "' .. ctan_dir .. '" 2>nul')
   else
@@ -466,7 +472,8 @@ local function ctan_custom()
   -- Create zip (platform-specific)
   if sep == "\\" then
     -- Windows: use PowerShell
-    local ps_cmd = 'powershell -Command "Compress-Archive -Path \'' .. staging_path .. '\' -DestinationPath \'' .. zip_path .. '\' -Force"'
+    local ps_cmd = 'powershell -Command "Compress-Archive -Path \'' ..
+    staging_path .. '\' -DestinationPath \'' .. zip_path .. '\' -Force"'
     os.execute(ps_cmd)
   else
     -- Unix: use zip command
@@ -510,6 +517,6 @@ uploadconfig = {
   pkg     = module,
   author  = "Sheldon Li",
   license = "apache-2.0",
-  summary = "Sophisticated traditional Chinese vertical typesetting and ancient book layout.",
+  summary = "A LuaTeX based package to handle Chinese text typesetting.",
   topic   = { "chinese", "vertical-typesetting", "ancient-books" },
 }

@@ -456,7 +456,7 @@
     \tl_gset_eq:NN \g_yinzhang_width_tl \l_yinzhang_width_tl
     \tl_gset_eq:NN \g_yinzhang_color_tl \l_yinzhang_color_tl
     
-    \AddToHook{shipout/foreground}{
+    \AddToHook{shipout/background}{
       \int_compare:nNnT { \value{page} } = { \g_yinzhang_target_page_int }
         {
           \begin{tikzpicture}[overlay]

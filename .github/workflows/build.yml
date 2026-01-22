@@ -36,7 +36,9 @@ jobs:
             ctex
             markdown
             geometry
-            zip
+
+      - name: Install system dependencies
+        run: sudo apt-get install -y zip
 
       - name: Build CTAN package
         run: |

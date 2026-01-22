@@ -22,7 +22,7 @@ See [INSTALL.md](INSTALL.md) for detailed installation instructions.
 
 Quick install:
 1. **Coming soon to CTAN**, you can install it directly via your TeX distribution's package manager.
-2. Download the latest `luatex-cn-src-v*.zip` from [GitHub Releases](https://github.com/open-guji/luatex-cn/releases). Extract it to `texmf/tex/latex/luatex-cn/` and run `texhash`.
+2. Download the latest `luatex-cn-tex-v*.zip` from [GitHub Releases](https://github.com/open-guji/luatex-cn/releases). Extract it to `texmf/tex/latex/luatex-cn/` and run `texhash`.
 3. Download the latest version, extract it into your current project folder, and compile directly.
 
 ## Usage

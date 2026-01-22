@@ -47,8 +47,8 @@ GitHub Release: [v0.1.2](https://github.com/open-guji/luatex-cn/releases)
 ```
 tlmgr install luatex-cn
 ```
-2. 从 [GitHub Release](https://github.com/open-guji/luatex-cn/releases) 下载最新版本的 `luatex-cn-src-v*.zip`。解压到 `texmf/tex/latex/luatex-cn/`，运行 `texhash`。
-3. 下载最新版本，解压到自己正在编写的.tex文件夹中，直接编译。
+2. 从 [GitHub Release](https://github.com/open-guji/luatex-cn/releases) 下载最新版本的 `luatex-cn-tex-v*.zip`。将解压后`tex/`下的内容移动到 `texmf/tex/latex/luatex-cn/`，运行 `texhash`。
+3. 下载最新版本，将解压后`tex/`下的内容移动到自己正在编写的.tex文件夹中，直接编译。
 
 ## 使用方法
 

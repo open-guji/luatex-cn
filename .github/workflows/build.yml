@@ -67,12 +67,14 @@ jobs:
 
       - name: Prepare release asset
         run: |
-          mv luatex-cn-ctan.zip luatex-cn-${{ github.ref_name }}.zip
+          cd out/luatex-cn
+          zip -r ../../luatex-cn-tex-${{ github.ref_name }}.zip tex/
+          cd ../..
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: luatex-cn-${{ github.ref_name }}.zip
+          files: luatex-cn-tex-${{ github.ref_name }}.zip
           generate_release_notes: true
           draft: true
           prerelease: false

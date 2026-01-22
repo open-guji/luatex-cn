@@ -2,6 +2,12 @@
 
 本项目的所有重大更改都将记录在此文件中。
 
+## [0.1.2] - 2026-01-22
+- src 重命名为 tex
+- 彻底修复了Windows下CRLF，BOM 字符问题
+- 采用l3build，详见 build.lua
+- 修复package require 路径，确保 release 的版本解压即用。
+
 ## [0.1.1] - 2026-01-19
 
 ### 功能

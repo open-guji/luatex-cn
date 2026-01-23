@@ -320,24 +320,24 @@
     banxin-padding-top .tl_set:N = \l__cnv_banxin_padding_top_tl,
     banxin-padding-top .initial:n = {2pt},
 
-    banxin-padding-bottom .tl_set:N = \l_cnv_banxin_padding_bottom_tl,
+    banxin-padding-bottom .tl_set:N = \l__cnv_banxin_padding_bottom_tl,
     banxin-padding-bottom .initial:n = {10pt},
 
     % Lower Yuwei (下鱼尾) - optional decoration
-    lower-yuwei .bool_set:N = \l_cnv_lower_yuwei_bool,
+    lower-yuwei .bool_set:N = \l__cnv_lower_yuwei_bool,
     lower-yuwei .initial:n = true,
 
     % Chapter title (章节标题) - displayed in section 2 of banxin
-    chapter-title .tl_set:N = \l_cnv_chapter_title_tl,
+    chapter-title .tl_set:N = \l__cnv_chapter_title_tl,
     chapter-title .initial:n = {},
 
-    chapter-title-top-margin .tl_set:N = \l_cnv_chapter_title_top_margin_tl,
+    chapter-title-top-margin .tl_set:N = \l__cnv_chapter_title_top_margin_tl,
     chapter-title-top-margin .initial:n = {20pt},
 
-    chapter-title-cols .int_set:N = \l_cnv_chapter_title_cols_int,
+    chapter-title-cols .int_set:N = \l__cnv_chapter_title_cols_int,
     chapter-title-cols .initial:n = 1,
 
-    chapter-title-font-size .tl_set:N = \l_cnv_chapter_title_font_size_tl,
+    chapter-title-font-size .tl_set:N = \l__cnv_chapter_title_font_size_tl,
     chapter-title-font-size .initial:n = {},
 
     chapter-title-grid-height .tl_set:N = \l_cnv_chapter_title_grid_height_tl,
@@ -470,12 +470,12 @@
         banxin_middle_ratio = [=[\luaescapestring{\l__cnv_banxin_middle_tl}]=],
         book_name = [=[\luaescapestring{\l__cnv_book_name_tl}]=],
         banxin_padding_top = [=[\luaescapestring{\l__cnv_banxin_padding_top_tl}]=],
-        banxin_padding_bottom = [=[\luaescapestring{\l_cnv_banxin_padding_bottom_tl}]=],
-        lower_yuwei = [=[\bool_if:NTF \l_cnv_lower_yuwei_bool {true} {false}]=],
-        chapter_title = [=[\luaescapestring{\l_cnv_chapter_title_tl}]=],
-        chapter_title_top_margin = [=[\luaescapestring{\l_cnv_chapter_title_top_margin_tl}]=],
-        chapter_title_cols = \int_use:N \l_cnv_chapter_title_cols_int,
-        chapter_title_font_size = [=[\luaescapestring{\l_cnv_chapter_title_font_size_tl}]=],
+        banxin_padding_bottom = [=[\luaescapestring{\l__cnv_banxin_padding_bottom_tl}]=],
+        lower_yuwei = [=[\bool_if:NTF \l__cnv_lower_yuwei_bool {true} {false}]=],
+        chapter_title = [=[\luaescapestring{\l__cnv_chapter_title_tl}]=],
+        chapter_title_top_margin = [=[\luaescapestring{\l__cnv_chapter_title_top_margin_tl}]=],
+        chapter_title_cols = \int_use:N \l__cnv_chapter_title_cols_int,
+        chapter_title_font_size = [=[\luaescapestring{\l__cnv_chapter_title_font_size_tl}]=],
         chapter_title_grid_height = [=[\luaescapestring{\l_cnv_chapter_title_grid_height_tl}]=],
         book_name_align = [=[\luaescapestring{\l_cnv_book_name_align_tl}]=],
         book_name_grid_height = [=[\luaescapestring{\l_cnv_book_name_grid_height_tl}]=],

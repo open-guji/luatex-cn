@@ -518,6 +518,36 @@
     %   n-char = floor(available-height / grid-height)
     %   height = n-char * grid-height
 
+    % I. Width Logic (Auto-calculated from n-column)
+    % 1. Calculate raw content area width
+    \dim_set:Nn \l_tmpa_dim { \l_guji_paper_width_tl }
+    \dim_sub:Nn \l_tmpa_dim { \l_guji_margin_left_tl }
+    \dim_sub:Nn \l_tmpa_dim { \l_guji_margin_right_tl }
+    % \l_tmpa_dim = content-width
+
+    % 2. Calculate border overhead (width)
+    \dim_set:Nn \l_tmpb_dim { 0pt }
+    \bool_if:NT \l_guji_outer_border_bool {
+      \dim_add:Nn \l_tmpb_dim { (\l_guji_outer_border_sep_tl + \l_guji_outer_border_thickness_tl) * 2 }
+    }
+    \bool_if:NT \l_guji_border_bool {
+      \dim_add:Nn \l_tmpb_dim { \l_guji_border_thickness_tl }
+    }
+    % \l_tmpb_dim = border-overhead-width
+
+    % 3. Calculate grid-width
+    % total-cols = 2 * n-column + 1
+    \int_set:Nn \l_tmpa_int { 2 * \l_guji_n_column_int + 1 }
+    
+    % grid-width = (content-width - border-overhead) / total-cols
+    \dim_sub:Nn \l_tmpa_dim { \l_tmpb_dim }
+    % available-for-grids / total-cols
+    \int_set:Nn \l_tmpb_int { \dim_to_decimal_in_sp:n { \l_tmpa_dim } / \l_tmpa_int }
+    \tl_set:Nx \l_guji_grid_width_tl { \dim_eval:n { \l_tmpb_int sp } }
+
+    \bool_if:NT \g_cnv_debug_bool { \iow_term:x { Guji~Layout~Width:~total-cols=\int_use:N \l_tmpa_int ,~grid-width=\l_guji_grid_width_tl } }
+
+    % II. Height Logic
     % 1. Calculate raw content area height
     \dim_set:Nn \l_tmpa_dim { \l_guji_paper_height_tl }
     \dim_sub:Nn \l_tmpa_dim { \l_guji_margin_top_tl }

@@ -153,26 +153,26 @@
 }
 
 % PiZhu (批注) - Floating annotation box
-\tl_new:N \l_cnv_pizhu_font_size_tl
-\tl_new:N \l_cnv_pizhu_color_tl
-\tl_new:N \l_cnv_pizhu_grid_width_tl
-\tl_new:N \l_cnv_pizhu_grid_height_tl
-\tl_new:N \l_cnv_pizhu_x_tl
-\tl_new:N \l_cnv_pizhu_y_tl
-\int_new:N \l_cnv_pizhu_height_int
+\tl_new:N \l__cnv_pizhu_font_size_tl
+\tl_new:N \l__cnv_pizhu_color_tl
+\tl_new:N \l__cnv_pizhu_grid_width_tl
+\tl_new:N \l__cnv_pizhu_grid_height_tl
+\tl_new:N \l__cnv_pizhu_x_tl
+\tl_new:N \l__cnv_pizhu_y_tl
+\int_new:N \l__cnv_pizhu_height_int
 
 \keys_define:nn { PiZhu }
   {
-    x .tl_set:N = \l_cnv_pizhu_x_tl,
-    y .tl_set:N = \l_cnv_pizhu_y_tl,
-    height .int_set:N = \l_cnv_pizhu_height_int,
-    font-size .tl_set:N = \l_cnv_pizhu_font_size_tl,
+    x .tl_set:N = \l__cnv_pizhu_x_tl,
+    y .tl_set:N = \l__cnv_pizhu_y_tl,
+    height .int_set:N = \l__cnv_pizhu_height_int,
+    font-size .tl_set:N = \l__cnv_pizhu_font_size_tl,
     font-size .initial:n = {18pt},
-    color .tl_set:N = \l_cnv_pizhu_color_tl,
+    color .tl_set:N = \l__cnv_pizhu_color_tl,
     color .initial:n = {1~0~0},
-    grid-width .tl_set:N = \l_cnv_pizhu_grid_width_tl,
+    grid-width .tl_set:N = \l__cnv_pizhu_grid_width_tl,
     grid-width .initial:n = {20pt},
-    grid-height .tl_set:N = \l_cnv_pizhu_grid_height_tl,
+    grid-height .tl_set:N = \l__cnv_pizhu_grid_height_tl,
     grid-height .initial:n = {19pt},
   }
 
@@ -181,13 +181,13 @@
     \keys_set:nn { PiZhu } { #1 }
     \TextBox[
       floating=true,
-      x=\l_cnv_pizhu_x_tl,
-      y=\l_cnv_pizhu_y_tl,
-      height=\l_cnv_pizhu_height_int,
-      font-color=\l_cnv_pizhu_color_tl,
-      font-size=\l_cnv_pizhu_font_size_tl,
-      grid-width=\l_cnv_pizhu_grid_width_tl,
-      grid-height=\l_cnv_pizhu_grid_height_tl
+      x=\l__cnv_pizhu_x_tl,
+      y=\l__cnv_pizhu_y_tl,
+      height=\l__cnv_pizhu_height_int,
+      font-color=\l__cnv_pizhu_color_tl,
+      font-size=\l__cnv_pizhu_font_size_tl,
+      grid-width=\l__cnv_pizhu_grid_width_tl,
+      grid-height=\l__cnv_pizhu_grid_height_tl
     ]{#2}
   \group_end:
 }
@@ -201,9 +201,9 @@
 
 \ExplSyntaxOn
 
-\tl_new:N \l_cnv_banxin_upper_tl
-\tl_new:N \l_cnv_banxin_middle_tl
-\tl_new:N \l_cnv_banxin_lower_tl
+\tl_new:N \l__cnv_banxin_upper_tl
+\tl_new:N \l__cnv_banxin_middle_tl
+\tl_new:N \l__cnv_banxin_lower_tl
 
 \bool_new:N \g_cnv_debug_bool
 \bool_set_false:N \g_cnv_debug_bool
@@ -306,18 +306,18 @@
     jiazhu-align .initial:n = {outward},
 
     % Banxin (版心) configuration
-    banxin-upper-ratio .tl_set:N = \l_cnv_banxin_upper_tl,
+    banxin-upper-ratio .tl_set:N = \l__cnv_banxin_upper_tl,
     banxin-upper-ratio .initial:n = {0.28},
 
-    banxin-middle-ratio .tl_set:N = \l_cnv_banxin_middle_tl,
+    banxin-middle-ratio .tl_set:N = \l__cnv_banxin_middle_tl,
     banxin-middle-ratio .initial:n = {0.56},
 
     % Book Name (formerly Banxin text)
-    book-name .tl_set:N = \l_cnv_book_name_tl,
+    book-name .tl_set:N = \l__cnv_book_name_tl,
     book-name .initial:n = {},
 
     % Banxin padding (版心独立的间距设置)
-    banxin-padding-top .tl_set:N = \l_cnv_banxin_padding_top_tl,
+    banxin-padding-top .tl_set:N = \l__cnv_banxin_padding_top_tl,
     banxin-padding-top .initial:n = {2pt},
 
     banxin-padding-bottom .tl_set:N = \l_cnv_banxin_padding_bottom_tl,
@@ -438,7 +438,7 @@
       }
     \tl_replace_all:Nnn \l__cn_vertical_font_rgb_tl { , } { ~ }
 
-    \bool_if:NT \g_cnv_debug_bool { \typeout{DEBUG: banxin-padding-top is \l_cnv_banxin_padding_top_tl} }
+    \bool_if:NT \g_cnv_debug_bool { \typeout{DEBUG: banxin-padding-top is \l__cnv_banxin_padding_top_tl} }
     \directlua{
       vertical.process_from_tex(0, {
         height = [=[\luaescapestring{\l__cn_vertical_height_tl}]=],
@@ -466,10 +466,10 @@
         margin_bottom = [=[\luaescapestring{\l__cn_vertical_margin_bottom_tl}]=],
         margin_left = [=[\luaescapestring{\l__cn_vertical_margin_left_tl}]=],
         margin_right = [=[\luaescapestring{\l__cn_vertical_margin_right_tl}]=],
-        banxin_upper_ratio = [=[\luaescapestring{\l_cnv_banxin_upper_tl}]=],
-        banxin_middle_ratio = [=[\luaescapestring{\l_cnv_banxin_middle_tl}]=],
-        book_name = [=[\luaescapestring{\l_cnv_book_name_tl}]=],
-        banxin_padding_top = [=[\luaescapestring{\l_cnv_banxin_padding_top_tl}]=],
+        banxin_upper_ratio = [=[\luaescapestring{\l__cnv_banxin_upper_tl}]=],
+        banxin_middle_ratio = [=[\luaescapestring{\l__cnv_banxin_middle_tl}]=],
+        book_name = [=[\luaescapestring{\l__cnv_book_name_tl}]=],
+        banxin_padding_top = [=[\luaescapestring{\l__cnv_banxin_padding_top_tl}]=],
         banxin_padding_bottom = [=[\luaescapestring{\l_cnv_banxin_padding_bottom_tl}]=],
         lower_yuwei = [=[\bool_if:NTF \l_cnv_lower_yuwei_bool {true} {false}]=],
         chapter_title = [=[\luaescapestring{\l_cnv_chapter_title_tl}]=],

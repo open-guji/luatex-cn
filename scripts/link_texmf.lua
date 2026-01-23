@@ -24,9 +24,10 @@
 
 local function get_texmf_home()
     local handle = io.popen("kpsewhich -var-value=TEXMFHOME")
+    if not handle then return "" end
     local result = handle:read("*a")
     handle:close()
-    return result:gsub("%s+", "")
+    return result and result:gsub("%s+", "") or ""
 end
 
 local function is_windows()
@@ -55,14 +56,16 @@ local parent_dir = texmf_home .. (is_windows() and "\\tex\\latex" or "/tex/latex
 local function get_abs_path(path)
     if is_windows() then
         local handle = io.popen('pushd "' .. path .. '" && cd && popd')
-        local abs = handle:read("*a"):gsub("%s+$", "")
+        if not handle then return path end
+        local abs = handle:read("*a")
         handle:close()
-        return abs
+        return abs and abs:gsub("%s+$", "") or path
     else
         local handle = io.popen('cd "' .. path .. '" && pwd')
-        local abs = handle:read("*a"):gsub("%s+$", "")
+        if not handle then return path end
+        local abs = handle:read("*a")
         handle:close()
-        return abs
+        return abs and abs:gsub("%s+$", "") or path
     end
 end
 
@@ -79,9 +82,12 @@ if action == "--on" then
     -- Check if target exists
     if is_windows() then
         local handle = io.popen('if exist "' .. target_dir .. '" echo exists')
-        local exists = handle:read("*a"):match("exists")
-        handle:close()
-        if exists then
+        local exists = nil
+        if handle then
+            exists = handle:read("*a")
+            handle:close()
+        end
+        if exists and exists:match("exists") then
             print("Target already exists: " .. target_dir)
             print("Please run with --off first if you want to recreate it.")
             os.exit(1)
@@ -109,10 +115,12 @@ elseif action == "--off" then
     if is_windows() then
         -- Check if it exists
         local handle = io.popen('if exist "' .. target_dir .. '" echo exists')
-        local exists = handle:read("*a"):match("exists")
-        handle:close()
-
-        if exists then
+        local exists = nil
+        if handle then
+            exists = handle:read("*a")
+            handle:close()
+        end
+        if exists and exists:match("exists") then
             -- On Windows, rmdir is used to remove a junction
             execute('rmdir "' .. target_dir .. '"')
             print("Link removed: " .. target_dir)

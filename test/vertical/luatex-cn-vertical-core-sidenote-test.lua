@@ -1,6 +1,6 @@
 -- luatex-cn-vertical-core-sidenote-test.lua - Unit tests for core sidenote
 local test_utils = require('test.test_utils')
-local sidenote = require('tex.vertical.luatex-cn-vertical-core-sidenote')
+local sidenote = require('vertical.luatex-cn-vertical-core-sidenote')
 
 test_utils.run_test("core-sidenote - Registration", function()
     sidenote.reset_registry()

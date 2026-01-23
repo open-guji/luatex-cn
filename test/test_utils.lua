@@ -28,12 +28,12 @@ local function get_project_root()
 end
 
 local root = get_project_root()
-package.path = root .. "src/?.lua;"
-    .. root .. "src/vertical/?.lua;"
-    .. root .. "src/banxin/?.lua;"
-    .. root .. "src/fonts/?.lua;"
-    .. root .. "src/splitpage/?.lua;"
-    .. root .. "src/?/init.lua;"
+package.path = root .. "tex/?.lua;"
+    .. root .. "tex/vertical/?.lua;"
+    .. root .. "tex/banxin/?.lua;"
+    .. root .. "tex/fonts/?.lua;"
+    .. root .. "tex/splitpage/?.lua;"
+    .. root .. "tex/?/init.lua;"
     .. package.path
 
 -- Mock TeX/LuaTeX globals (Force override to avoid native object conflicts)

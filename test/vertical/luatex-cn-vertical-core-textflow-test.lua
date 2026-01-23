@@ -1,6 +1,6 @@
 -- luatex-cn-vertical-core-textflow-test.lua - Unit tests for core textflow
 local test_utils = require('test.test_utils')
-local textflow = require('tex.vertical.luatex-cn-vertical-core-textflow')
+local textflow = require('vertical.luatex-cn-vertical-core-textflow')
 
 test_utils.run_test("core-textflow - basic wrap", function()
     -- Mock params and nodes

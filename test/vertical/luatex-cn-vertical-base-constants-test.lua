@@ -1,6 +1,6 @@
 -- luatex-cn-vertical-base-constants-test.lua - Unit tests for base constants
 local test_utils = require('test.test_utils')
-local constants = require('tex.vertical.luatex-cn-vertical-base-constants')
+local constants = require('vertical.luatex-cn-vertical-base-constants')
 
 test_utils.run_test("base-constants - Export Check", function()
     test_utils.assert_eq(type(constants.D), "table", "constants.D missing")

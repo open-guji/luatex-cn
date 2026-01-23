@@ -373,7 +373,7 @@
 \cs_new:Npn \__cn_vertical_process_grid:n #1
   {
     % Put content into a vbox to preserve structure (paragraphs)
-    \setbox0=\vbox{\hsize=\maxdimen \hfuzz=\maxdimen \hbadness=10000 \parindent=0pt #1}
+    \vbox_set:Nn \l_tmpa_box { \hsize=\maxdimen \hfuzz=\maxdimen \hbadness=10000 \parindent=0pt #1 }
     % Call Lua to transform the box
     \setlength{\topskip}{0pt}
     
@@ -439,20 +439,20 @@
     \tl_replace_all:Nnn \l__cn_vertical_font_rgb_tl { , } { ~ }
 
     \bool_if:NT \g_cnv_debug_bool { \typeout{DEBUG: banxin-padding-top is \l__cnv_banxin_padding_top_tl} }
-    \directlua{
-      vertical.process_from_tex(0, {
+    \lua_now:e {
+      vertical.process_from_tex(\int_value:w \l_tmpa_box, {
         height = [=[\luaescapestring{\l__cn_vertical_height_tl}]=],
         grid_width = [=[\luaescapestring{\l__cn_vertical_grid_width_tl}]=],
         grid_height = [=[\luaescapestring{\l__cn_vertical_grid_height_tl}]=],
         col_limit = \int_use:N \l__cn_vertical_cols_int,
-        debug_on = [=[\bool_if:NTF \g_cnv_debug_bool {true} {false}]=],
-        banxin_on = [=[\bool_if:NTF \l__cn_vertical_banxin_bool {true} {false}]=],
-        border_on = [=[\bool_if:NTF \l__cn_vertical_border_bool {true} {false}]=],
+        debug_on = \bool_if:NTF \g_cnv_debug_bool {true} {false},
+        banxin_on = \bool_if:NTF \l__cn_vertical_banxin_bool {true} {false},
+        border_on = \bool_if:NTF \l__cn_vertical_border_bool {true} {false},
         border_padding_top = [=[\luaescapestring{\l__cn_vertical_border_padding_top_tl}]=],
         border_padding_bottom = [=[\luaescapestring{\l__cn_vertical_border_padding_bottom_tl}]=],
         vertical_align = [=[\luaescapestring{\l__cn_vertical_valign_tl}]=],
         border_thickness = [=[\luaescapestring{\l__cn_vertical_border_thickness_tl}]=],
-        outer_border_on = [=[\bool_if:NTF \l__cn_vertical_outer_border_bool {true} {false}]=],
+        outer_border_on = \bool_if:NTF \l__cn_vertical_outer_border_bool {true} {false},
         outer_border_thickness = [=[\luaescapestring{\l__cn_vertical_outer_border_thickness_tl}]=],
         outer_border_sep = [=[\luaescapestring{\l__cn_vertical_outer_border_sep_tl}]=],
         n_column = \int_use:N \l__cn_vertical_n_column_int,
@@ -471,7 +471,7 @@
         book_name = [=[\luaescapestring{\l__cnv_book_name_tl}]=],
         banxin_padding_top = [=[\luaescapestring{\l__cnv_banxin_padding_top_tl}]=],
         banxin_padding_bottom = [=[\luaescapestring{\l__cnv_banxin_padding_bottom_tl}]=],
-        lower_yuwei = [=[\bool_if:NTF \l__cnv_lower_yuwei_bool {true} {false}]=],
+        lower_yuwei = \bool_if:NTF \l__cnv_lower_yuwei_bool {true} {false},
         chapter_title = [=[\luaescapestring{\l__cnv_chapter_title_tl}]=],
         chapter_title_top_margin = [=[\luaescapestring{\l__cnv_chapter_title_top_margin_tl}]=],
         chapter_title_cols = \int_use:N \l__cnv_chapter_title_cols_int,
@@ -479,8 +479,8 @@
         chapter_title_grid_height = [=[\luaescapestring{\l_cnv_chapter_title_grid_height_tl}]=],
         book_name_align = [=[\luaescapestring{\l_cnv_book_name_align_tl}]=],
         book_name_grid_height = [=[\luaescapestring{\l_cnv_book_name_grid_height_tl}]=],
-        upper_yuwei = [=[\bool_if:NTF \l_cnv_upper_yuwei_bool {true} {false}]=],
-        banxin_divider = [=[\bool_if:NTF \l_cnv_banxin_divider_bool {true} {false}]=],
+        upper_yuwei = \bool_if:NTF \l_cnv_upper_yuwei_bool {true} {false},
+        banxin_divider = \bool_if:NTF \l_cnv_banxin_divider_bool {true} {false},
         page_number_align = [=[\luaescapestring{\l_cnv_page_number_align_tl}]=],
         page_number_font_size = [=[\luaescapestring{\l_cnv_page_number_font_size_tl}]=],
         jiazhu_font_size = [=[\luaescapestring{\l__cn_vertical_jiazhu_size_tl}]=],
@@ -590,7 +590,7 @@
       { \dim_set:Nn \l__cn_vertical_textbox_inner_gh_dim { \l__cn_vertical_textbox_inner_gh_tl } }
     
     % Capture content in a box and process it via Lua for inner verticality
-    \setbox0=\vbox{
+    \vbox_set:Nn \l_tmpa_box {
       \setluatexattribute\cnverticaltextboxwidth{0}
       \setluatexattribute\cnverticaltextboxheight{0}
       % Reset paragraph spacing to prevent unwanted glues in grid layout
@@ -657,7 +657,7 @@
       }
     \tl_replace_all:Nnn \l__cn_vertical_textbox_font_rgb_tl { , } { ~ }
 
-    \directlua{vertical_textbox.process_inner_box(0, {
+    \lua_now:e {vertical_textbox.process_inner_box(\int_value:w \l_tmpa_box, {
       n_cols = \int_use:N \l__cn_vertical_textbox_n_cols_int, 
       height = \int_use:N \l__cn_vertical_textbox_height_int, 
       grid_width = "\dim_to_decimal:n { \l__cn_vertical_textbox_inner_gw_dim } pt", 
@@ -669,18 +669,18 @@
       background_color = [=[\l__cn_vertical_textbox_bg_rgb_tl]=],
       font_color = [=[\l__cn_vertical_textbox_font_rgb_tl]=],
       font_size = [=[\luaescapestring{\l__cn_vertical_textbox_font_size_tl}]=]
-    })}
+    }) }
     \setluatexattribute\cnverticaltextboxwidth{0}
     \setluatexattribute\cnverticaltextboxheight{0}
     \bool_if:NTF \l__cn_vertical_textbox_floating_bool
       {
-        \directlua{vertical_textbox.register_floating_box(0, {
+        \lua_now:e { vertical_textbox.register_floating_box(\int_value:w \l_tmpa_box, {
           x = [=[\luaescapestring{\l__cn_vertical_textbox_x_tl}]=],
           y = [=[\luaescapestring{\l__cn_vertical_textbox_y_tl}]=]
-        })}
+        }) }
       }
       {
-        \leavevmode\box0
+        \mode_leave_vertical: \box_use:N \l_tmpa_box
       }
     \group_end:
   }

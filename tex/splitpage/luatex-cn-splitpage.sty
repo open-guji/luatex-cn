@@ -59,7 +59,7 @@
 \NewDocumentCommand{\splitpageSetup}{ m }
   {
     \keys_set:nn { splitpage } { #1 }
-    \directlua{
+    \lua_now:e {
       splitpage.configure({
         source_width = "\luaescapestring{\l__splitpage_source_width_tl}",
         source_height = "\luaescapestring{\l__splitpage_source_height_tl}",
@@ -76,7 +76,7 @@
       {
         \keys_set:nn { splitpage } { #1 }
       }
-    \directlua{
+    \lua_now:e {
       splitpage.configure({
         source_width = "\luaescapestring{\l__splitpage_source_width_tl}",
         source_height = "\luaescapestring{\l__splitpage_source_height_tl}",
@@ -86,15 +86,15 @@
       splitpage.enable()
     }
     % Sync \paperwidth with target width for TikZ coordinate calculations
-    \paperwidth=\directlua{tex.sprint(splitpage.get_target_width())}sp\relax
+    \dim_set:Nn \paperwidth { \lua_now:e { tex.sprint(splitpage.get_target_width()) } sp }
   }
 
 % Disable split page processing
 \NewDocumentCommand{\disableSplitPage}{ }
   {
-    \directlua{splitpage.disable()}
+    \lua_now:e { splitpage.disable() }
     % Restore paperwidth to source width (the full spread size)
-    \paperwidth=\l__splitpage_source_width_tl\relax
+    \dim_set:Nn \paperwidth { \l__splitpage_source_width_tl }
   }
 
 \ExplSyntaxOff

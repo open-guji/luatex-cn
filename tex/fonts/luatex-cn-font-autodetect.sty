@@ -92,6 +92,8 @@
 
 \RequirePackage{ifluatex}
 \RequirePackage{luatexbase}
+\RequirePackage{expl3}
+\RequirePackage{xparse}
 
 % Ensure we're using LuaTeX
 \ifluatex\else
@@ -102,54 +104,64 @@
   }
 \fi
 
+\RequirePackage{expl3}
+\RequirePackage{xparse}
+
+\ExplSyntaxOn
+
 % Load the Lua module
-\directlua{
+\lua_now:e {
   fontdetect = require("fonts.luatex-cn-font-autodetect")
 }
 
+\tl_new:N \l__fontauto_font_name_tl
+\tl_new:N \l__fontauto_font_features_tl
+
 % Command to apply auto-detected font
-\newcommand{\ApplyAutoFont}{%
-  \directlua{
-    texio.write_nl("term and log", "[Font Auto-Detect] ApplyAutoFont command called")
+\NewDocumentCommand{\ApplyAutoFont}{}{
+  \lua_now:e {
+    texio.write_nl("term~and~log",~"[Font~Auto-Detect]~ApplyAutoFont~command~called");~
 
-    if not fontdetect then
-      texio.write_nl("term and log", "[Font Auto-Detect] ERROR: fontdetect module not loaded")
-      return
-    end
-
-    local font_setup = fontdetect.get_font_setup()
-    if font_setup then
-      texio.write_nl("term and log", "[Font Auto-Detect] Applying font: " .. font_setup.name)
-      token.set_macro("fontauto@fontname", font_setup.name)
-      token.set_macro("fontauto@features", font_setup.features)
-    else
-      texio.write_nl("term and log", "[Font Auto-Detect] No font configured, using LaTeX default")
-      token.set_macro("fontauto@fontname", "")
-    end
-  }%
-  \ifx\fontauto@fontname\empty\else
-    \expandafter\setmainfont\expandafter{\fontauto@fontname}[\fontauto@features]%
-  \fi
+    if~not~fontdetect~then~
+      texio.write_nl("term~and~log",~"[Font~Auto-Detect]~ERROR:~fontdetect~module~not~loaded");~
+    else~
+        local~font_setup~=~fontdetect.get_font_setup();~
+        if~font_setup~then~
+          texio.write_nl("term~and~log",~"[Font~Auto-Detect]~Applying~font:~"~..~font_setup.name);~
+          token.set_macro("l__fontauto_font_name_tl",~font_setup.name);~
+          token.set_macro("l__fontauto_font_features_tl",~font_setup.features);~
+        else~
+          texio.write_nl("term~and~log",~"[Font~Auto-Detect]~No~font~configured,~using~LaTeX~default");~
+          token.set_macro("l__fontauto_font_name_tl",~"");~
+        end;~
+    end;
+  }
+  \tl_if_empty:NF \l__fontauto_font_name_tl
+    {
+      \exp_args:NV \setmainfont \l__fontauto_font_name_tl [\l__fontauto_font_features_tl]
+    }
 }
 
 % Command to get auto-detected font name (for use in keys)
-\newcommand{\GetAutoFontName}{%
-  \directlua{
+\NewDocumentCommand{\GetAutoFontName}{}{
+  \lua_now:e {
     local font_setup = fontdetect.get_font_setup()
     if font_setup then
       tex.print(font_setup.name)
     end
-  }%
+  }
 }
 
 % Command to get auto-detected font features
-\newcommand{\GetAutoFontFeatures}{%
-  \directlua{
+\NewDocumentCommand{\GetAutoFontFeatures}{}{
+  \lua_now:e {
     local font_setup = fontdetect.get_font_setup()
     if font_setup then
       tex.print(font_setup.features)
     end
-  }%
+  }
 }
+
+\ExplSyntaxOff
 
 \endinput

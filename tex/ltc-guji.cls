@@ -316,8 +316,8 @@
         right=\l_guji_margin_right_tl
       }
       % Manual paper size adjustment for LuaTeX if changed in body
-      \pagewidth=\l_guji_paper_width_tl
-      \pageheight=\l_guji_paper_height_tl
+      \dim_set:Nn \pagewidth { \l_guji_paper_width_tl }
+      \dim_set:Nn \pageheight { \l_guji_paper_height_tl }
     \else
       % In preamble
       \geometry{
@@ -385,7 +385,7 @@
   }
 \NewCommandCopy{\设置页码}{\SetPageNumber}
 
-\NewDocumentCommand{\chapter}{ m }
+\DeclareDocumentCommand{\chapter}{ m }
   {
     \tl_set:Nn \l_guji_chapter_title_tl { #1 }
     \ResetPageNumber
@@ -503,9 +503,9 @@
     
     % global debug flag \g_cnv_debug_bool is already set by keys_set:nn { guji } { #1 } above
     % Zero out vertical skips for exact grid layout
-    \setlength{\topskip}{0pt}
-    \setlength{\parskip}{0pt}
-    \setlength{\partopsep}{0pt}
+    \dim_zero:N \topskip
+    \dim_zero:N \parskip
+    \dim_zero:N \partopsep
     
     % --- Auto-Layout Logic ---
     % Either n-char OR grid-height must be specified (mutually exclusive)
@@ -620,16 +620,16 @@
       }
     
     % Zap all vertical spacing
-    \setlength{\topskip}{0pt}
-    \setlength{\parskip}{0pt}
-    \setlength{\partopsep}{0pt}
-    \setlength{\topsep}{0pt}
-    \setlength{\itemsep}{0pt}
-    \setlength{\parsep}{0pt}
-    \setlength{\baselineskip}{0pt}
-    \setlength{\lineskip}{0pt}
-    \setlength{\lineskiplimit}{0pt}
-    \parindent=0pt
+    \dim_zero:N \topskip
+    \dim_zero:N \parskip
+    \dim_zero:N \partopsep
+    \dim_zero:N \topsep
+    \dim_zero:N \itemsep
+    \dim_zero:N \parsep
+    \dim_zero:N \baselineskip
+    \dim_zero:N \lineskip
+    \dim_zero:N \lineskiplimit
+    \dim_zero:N \parindent
 
     \keys_set:nx { vertical }
       {

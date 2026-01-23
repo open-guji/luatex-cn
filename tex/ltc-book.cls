@@ -193,16 +193,16 @@
       { \keys_set:nn { vertical } { border=true } } 
       { \keys_set:nn { vertical } { border=false } }
     
-    \setlength{\topskip}{0pt}
-    \setlength{\parskip}{0pt}
-    \parindent=0pt
+    \dim_zero:N \topskip
+    \dim_zero:N \parskip
+    \dim_zero:N \parindent
 
     \tl_if_empty:NT \l_ltc_book_height_tl
       {
         \tl_set:Nx \l_ltc_book_height_tl { \dim_eval:n { \l_ltc_book_paper_height_tl - \l_ltc_book_margin_top_tl - \l_ltc_book_margin_bottom_tl } }
       }
 
-    \keys_set:nn { vertical }
+    \keys_set:nx { vertical }
       {
         height = \l_ltc_book_height_tl,
         grid-width = \l_ltc_book_grid_width_tl,

@@ -132,22 +132,22 @@
     \keys_set:nn { SideNode } { #1 }
     % Use explicit font size
     \tl_if_empty:NTF \l__cnv_sidenode_font_size_tl
-      { \dimen0=\f@size pt }
-      { \dimen0=\l__cnv_sidenode_font_size_tl\relax }
-    \fontsize{\dimen0}{\dimen0}\selectfont
+      { \dim_set:Nn \l_tmpa_dim { \f@size pt } }
+      { \dim_set:Nn \l_tmpa_dim { \l__cnv_sidenode_font_size_tl } }
+    \fontsize{\l_tmpa_dim}{\l_tmpa_dim}\selectfont
     % Color must be inside the box to be captured in the node list
-    \setbox0=\hbox{\textcolor{\l__cnv_sidenode_color_tl}{#2}}%
+    \hbox_set:Nn \l_tmpa_box {\textcolor{\l__cnv_sidenode_color_tl}{#2}}%
 
     % Prepare metadata
-    \dimen2=\l__cnv_sidenode_grid_height_dim
+    \dim_set_eq:NN \l_tmpb_dim \l__cnv_sidenode_grid_height_dim
     % If grid-height not set, default to font size (tight packing)
-    \dim_compare:nF { \dimen2 > 0pt } { \dimen2=\dimen0 }
+    \dim_compare:nF { \l_tmpb_dim > 0pt } { \dim_set_eq:NN \l_tmpb_dim \l_tmpa_dim }
 
-    \directlua{vertical_sidenote.register_sidenote(0, {
-      yoffset = \number\l__cnv_sidenode_yoffset_dim,
-      grid_height = \number\dimen2,
-      padding_top = \number\l__cnv_sidenode_padding_top_dim,
-      padding_bottom = \number\l__cnv_sidenode_padding_bottom_dim
+    \lua_now:e { vertical_sidenote.register_sidenote(\int_value:w \l_tmpa_box, {
+      yoffset = \int_value:w \l__cnv_sidenode_yoffset_dim,
+      grid_height = \int_value:w \l_tmpb_dim,
+      padding_top = \int_value:w \l__cnv_sidenode_padding_top_dim,
+      padding_bottom = \int_value:w \l__cnv_sidenode_padding_bottom_dim
     })}%
   \group_end:
 }

@@ -15,15 +15,16 @@
 % LuaTeX 竖排排版宏包
 % 这是 luatex_cn 的子包
 %
-\NeedsTeXFormat{LaTeX2e}
-\ProvidesPackage{vertical/luatex-cn-vertical}[2026/01/21 v0.1.2 Chinese vertical typesetting for LuaTeX]
+\RequirePackage{expl3}
+\ProvidesExplPackage {luatex-cn-vertical} {2026/01/21} {v0.1.2} {Chinese vertical typesetting for LuaTeX}
 
 % Check if LuaTeX is being used
-\RequirePackage{ifluatex}
-\ifluatex\else
-  \PackageError{luatex-cn-vertical}{This package requires LuaTeX}{%
-    Please compile your document with LuaLaTeX.}
-\fi
+\sys_if_engine_luatex:TF
+  { }
+  {
+    \PackageError { luatex-cn-vertical } { This~package~requires~LuaTeX }
+      { Please~compile~your~document~with~LuaLaTeX. }
+  }
 
 % Load luatexbase for attributes
 \RequirePackage{luatexbase}
@@ -39,6 +40,7 @@
 \newluatexattribute\cnverticaljiazhu
 \newluatexattribute\cnverticaljiazhusub
 
+\ExplSyntaxOff
 % Load the Lua modules
 % Split into multiple directlua blocks for better error reporting
 
@@ -103,8 +105,8 @@
   vertical = require('vertical.luatex-cn-vertical-core-main')
 }
 
-% Define keys for SideNode
 \ExplSyntaxOn
+% Define keys for SideNode
 \dim_new:N \l__cnv_sidenode_yoffset_dim
 \dim_new:N \l__cnv_sidenode_grid_height_dim
 \tl_new:N \l__cnv_sidenode_font_size_tl
@@ -192,14 +194,9 @@
   \group_end:
 }
 
-\ExplSyntaxOff
-
-
 
 % Use l3keys for key-value parameters
-\RequirePackage{xparse}
 
-\ExplSyntaxOn
 
 \tl_new:N \l__cnv_banxin_upper_tl
 \tl_new:N \l__cnv_banxin_middle_tl

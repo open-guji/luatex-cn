@@ -87,27 +87,18 @@
 %
 % ============================================================================
 
-\NeedsTeXFormat{LaTeX2e}
-\ProvidesPackage{fonts/luatex-cn-font-autodetect}[2026/01/21 v0.1.2 Font Auto-Detection for Chinese]
-
-\RequirePackage{ifluatex}
-\RequirePackage{luatexbase}
 \RequirePackage{expl3}
 \RequirePackage{xparse}
+\RequirePackage{luatexbase}
+\ProvidesExplPackage {luatex-cn-font-autodetect} {2026/01/21} {v0.1.2} {Automatic Chinese font detection for LuaLaTeX}
 
 % Ensure we're using LuaTeX
-\ifluatex\else
-  \PackageError{luatex-cn-font-autodetect}{%
-    This package requires LuaLaTeX%
-  }{%
-    Please compile your document with lualatex.%
+\sys_if_engine_luatex:TF
+  { }
+  {
+    \PackageError { luatex-cn-font-autodetect } { This~package~requires~LuaLaTeX }
+      { Please~compile~your~document~with~lualatex. }
   }
-\fi
-
-\RequirePackage{expl3}
-\RequirePackage{xparse}
-
-\ExplSyntaxOn
 
 % Load the Lua module
 \lua_now:e {

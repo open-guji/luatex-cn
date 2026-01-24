@@ -16,12 +16,10 @@
 % A LaTeX document class for ancient Chinese book typesetting.
 % Developed for LuaTeX
 
-\NeedsTeXFormat{LaTeX2e}
-\ProvidesClass{ltc-guji}[2026/01/21 v0.1.2 Ancient Chinese Book Class (Template Support)]
-
-% 1. Options Handling
+\RequirePackage{expl3}
 \RequirePackage{l3keys2e}
-\ExplSyntaxOn
+\ProvidesExplClass {ltc-guji} {2026/01/21} {v0.1.2} {Ancient Chinese Book Class (Template Support)}
+
 \tl_new:N \l_guji_initial_template_tl
 \prop_new:N \g_guji_template_map_prop
 
@@ -36,24 +34,29 @@
     紅樓夢甲戌本 = HongLouMengJiaXuBen
   }
 
-\DeclareOption*{
-  \tl_set:Nx \l_tmpa_tl { \CurrentOption }
-  
-  % Try to map the option name
-  \prop_get:NVNT \g_guji_template_map_prop \l_tmpa_tl \l_tmpb_tl
-    { \tl_set_eq:NN \l_tmpa_tl \l_tmpb_tl }
-  
-  % Look for config file: configs/luatex-cn-guji-<name>.cfg
-  \file_if_exist:nTF { configs/luatex-cn-guji- \l_tmpa_tl .cfg }
-    {
-      \tl_set_eq:NN \l_guji_initial_template_tl \l_tmpa_tl
-    }
-    {
-      \PassOptionsToClass{\l_tmpa_tl}{article}
-    }
-}
-\ExplSyntaxOff
-\ProcessOptions\relax
+\keys_define:nn { ltc-guji }
+  {
+    unknown .code:n =
+      {
+        \tl_set_eq:NN \l_tmpa_tl \l_keys_key_tl
+        
+        % Try to map the option name
+        \prop_get:NVNT \g_guji_template_map_prop \l_tmpa_tl \l_tmpb_tl
+          { \tl_set_eq:NN \l_tmpa_tl \l_tmpb_tl }
+        
+        % Look for config file: configs/luatex-cn-guji-<name>.cfg
+        \file_if_exist:nTF { configs/luatex-cn-guji- \l_tmpa_tl .cfg }
+          {
+            \tl_set_eq:NN \l_guji_initial_template_tl \l_tmpa_tl
+          }
+          {
+            \PassOptionsToClass { \l_tmpa_tl } { article }
+          }
+      }
+  }
+
+\ProcessKeysOptions { ltc-guji }
+
 \LoadClass{article}
 
 % 2. Core Dependencies

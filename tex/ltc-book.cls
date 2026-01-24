@@ -16,27 +16,30 @@
 % Chinese Vertical Book - A document class for modern vertical Chinese typesetting
 % Developed for LuaTeX
 
-\NeedsTeXFormat{LaTeX2e}
-\ProvidesClass{ltc-book}[2026/01/21 v0.1.2 Chinese Vertical Book Class]
-
-% 1. Options Handling
+\RequirePackage{expl3}
 \RequirePackage{l3keys2e}
-\ExplSyntaxOn
+\ProvidesExplClass {ltc-book} {2026/01/21} {v0.1.2} {Chinese Vertical Book Class}
+
 \tl_new:N \l_ltc_book_initial_template_tl
 
-\DeclareOption*{
-  \tl_set:Nx \l_tmpa_tl { \CurrentOption }
-  % Look for config file: configs/<name>.ltc_book.cfg
-  \file_if_exist:nTF { configs/ \l_tmpa_tl .ltc_book.cfg }
-    {
-      \tl_set_eq:NN \l_ltc_book_initial_template_tl \l_tmpa_tl
-    }
-    {
-      \PassOptionsToClass{\l_tmpa_tl}{article}
-    }
-}
-\ExplSyntaxOff
-\ProcessOptions\relax
+\keys_define:nn { ltc-book }
+  {
+    unknown .code:n =
+      {
+        \tl_set_eq:NN \l_tmpa_tl \l_keys_key_tl
+        % Look for config file: configs/<name>.ltc_book.cfg
+        \file_if_exist:nTF { configs/ \l_tmpa_tl .ltc_book.cfg }
+          {
+            \tl_set_eq:NN \l_ltc_book_initial_template_tl \l_tmpa_tl
+          }
+          {
+            \PassOptionsToClass { \l_tmpa_tl } { article }
+          }
+      }
+  }
+
+\ProcessKeysOptions { ltc-book }
+
 \LoadClass{article}
 
 % 2. Core Dependencies
@@ -235,14 +238,12 @@
     \keys_set:nx { ltc_book } { template = \l_ltc_book_initial_template_tl }
   }
 
-\ExplSyntaxOff
 
 \pagestyle{plain}
 
 % Environment Aliases (CJK support)
 \NewEnvironmentCopy{正文}{ltc-book-content}
 
-\ExplSyntaxOn
 % Apply auto-detected font if no font-name is set
 \AtEndOfClass{
   \tl_if_empty:NT \l_ltc_book_font_name_tl

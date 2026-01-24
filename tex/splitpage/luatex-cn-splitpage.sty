@@ -15,25 +15,26 @@
 % luatex-cn-splitpage.sty
 % Automatic page splitting for traditional Chinese book formats (筒子页)
 %
-\NeedsTeXFormat{LaTeX2e}
-\ProvidesPackage{splitpage/luatex-cn-splitpage}[2026/01/21 v0.1.2 Page splitting for Chinese traditional books]
+\RequirePackage{expl3}
+\ProvidesExplPackage {luatex-cn-splitpage} {2026/01/21} {v0.1.2} {Page splitting for Chinese traditional books}
 
 % Check if LuaTeX is being used
-\RequirePackage{ifluatex}
-\ifluatex\else
-  \PackageError{luatex-cn-splitpage}{This package requires LuaTeX}{%
-    Please compile your document with LuaLaTeX.}
-\fi
+\sys_if_engine_luatex:TF
+  { }
+  {
+    \PackageError { luatex-cn-splitpage } { This~package~requires~LuaTeX }
+      { Please~compile~your~document~with~LuaLaTeX. }
+  }
 
 \RequirePackage{luatexbase}
 \RequirePackage{xparse}
 
 % Clear cache and load the Lua module
+\ExplSyntaxOff
 \directlua{
   package.loaded['splitpage.luatex-cn-splitpage'] = nil
   splitpage = require('splitpage.luatex-cn-splitpage')
 }
-
 \ExplSyntaxOn
 
 % Key-value configuration

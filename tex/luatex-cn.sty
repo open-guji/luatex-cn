@@ -35,7 +35,7 @@
 \bool_new:N \g_luatexcn_traditional_bool
 \bool_new:N \g_luatexcn_simplified_bool
 
-\keys_define:nn { luatex-cn }
+\keys_define:nn { luatexcn }
   {
     banxin .bool_set:N = \g_luatexcn_banxin_bool,
     traditional .code:n =
@@ -51,7 +51,7 @@
     simplified .initial:n = true
   }
 
-\ProcessKeysOptions { luatex-cn }
+\ProcessKeysOptions { luatexcn }
 
 % ============================================================================
 % Load Sub-packages (from their respective directories)

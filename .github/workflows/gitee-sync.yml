@@ -1,0 +1,25 @@
+name: Sync to Gitee
+
+on:
+  push:
+    branches:
+      - main  # 如果你的默认分支是 master，请改为 master
+
+jobs:
+  repo-sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Mirror the GitHub repos to Gitee
+        uses: Yikun/hub-mirror-action@master
+        with:
+          # 来源：GitHub 组织名/仓库名
+          src: github/open-guji
+          # 目的地：Gitee 组织名
+          dst: gitee/open-guji
+          dst_key: ${{ secrets.GITEE_PRIVATE_KEY }}
+          dst_token: ${{ secrets.GITEE_TOKEN }}
+          account_type: org
+          # 如果只想同步当前这一个仓库，请指定 static_list
+          static_list: "${{ github.event.repository.name }}"
+          force_update: true
+          debug: true

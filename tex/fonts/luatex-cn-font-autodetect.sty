@@ -102,11 +102,11 @@
 
 % Load the Lua module
 \lua_now:e {
-  fontdetect = require("fonts.luatex-cn-font-autodetect")
+  fontdetect~=~require("fonts.luatex-cn-font-autodetect")
 }
 
-\tl_new:N \l__fontauto_font_name_tl
-\tl_new:N \l__fontauto_font_features_tl
+\tl_new:N \l__luatexcn_font_name_tl
+\tl_new:N \l__luatexcn_font_features_tl
 
 % Command to apply auto-detected font
 \NewDocumentCommand{\ApplyAutoFont}{}{
@@ -119,37 +119,37 @@
         local~font_setup~=~fontdetect.get_font_setup();~
         if~font_setup~then~
           texio.write_nl("term~and~log",~"[Font~Auto-Detect]~Applying~font:~"~..~font_setup.name);~
-          token.set_macro("l__fontauto_font_name_tl",~font_setup.name);~
-          token.set_macro("l__fontauto_font_features_tl",~font_setup.features);~
+          token.set_macro("l__luatexcn_font_name_tl",~font_setup.name);~
+          token.set_macro("l__luatexcn_font_features_tl",~font_setup.features);~
         else~
           texio.write_nl("term~and~log",~"[Font~Auto-Detect]~No~font~configured,~using~LaTeX~default");~
-          token.set_macro("l__fontauto_font_name_tl",~"");~
+          token.set_macro("l__luatexcn_font_name_tl",~"");~
         end;~
     end;
   }
-  \tl_if_empty:NF \l__fontauto_font_name_tl
+  \tl_if_empty:NF \l__luatexcn_font_name_tl
     {
-      \exp_args:NV \setmainfont \l__fontauto_font_name_tl [\l__fontauto_font_features_tl]
+      \exp_args:NV \setmainfont \l__luatexcn_font_name_tl [\l__luatexcn_font_features_tl]
     }
 }
 
 % Command to get auto-detected font name (for use in keys)
 \NewDocumentCommand{\GetAutoFontName}{}{
   \lua_now:e {
-    local font_setup = fontdetect.get_font_setup()
-    if font_setup then
-      tex.print(font_setup.name)
-    end
+    local~font_setup~=~fontdetect.get_font_setup();~
+    if~font_setup~then~
+      tex.print(font_setup.name);~
+    end;
   }
 }
 
 % Command to get auto-detected font features
 \NewDocumentCommand{\GetAutoFontFeatures}{}{
   \lua_now:e {
-    local font_setup = fontdetect.get_font_setup()
-    if font_setup then
-      tex.print(font_setup.features)
-    end
+    local~font_setup~=~fontdetect.get_font_setup();~
+    if~font_setup~then~
+      tex.print(font_setup.features);~
+    end;
   }
 }
 

@@ -23,18 +23,18 @@
 % 1. Book Name / Title Synchronization
 \cs_if_exist:NTF \title
   {
-    \NewCommandCopy \__banxin_orig_title \title
+    \NewCommandCopy \__luatexcn_banxin_orig_title \title
     \RenewDocumentCommand \title { m }
       {
-        \__banxin_orig_title { #1 }
-        \keys_set:nn { vertical } { book-name = { #1 } }
+        \__luatexcn_banxin_orig_title { #1 }
+        \keys_set:nn { luatexcn / vertical } { book-name = { #1 } }
       }
   }
   {
     \NewDocumentCommand \title { m }
       {
         \gdef\@title{#1}
-        \keys_set:nn { vertical } { book-name = { #1 } }
+        \keys_set:nn { luatexcn / vertical } { book-name = { #1 } }
       }
   }
 
@@ -42,7 +42,7 @@
 \AddToHook{begindocument/before}{
   \cs_if_exist:NT \@title {
     \tl_if_empty:NF \@title {
-      \keys_set:nn { vertical } { book-name = { \@title } }
+      \keys_set:nn { luatexcn / vertical } { book-name = { \@title } }
     }
   }
 }
@@ -50,30 +50,30 @@
 % 2. Chapter Title Synchronization
 \cs_if_exist:NTF \chapter
   {
-    \NewCommandCopy \__banxin_orig_chapter \chapter
+    \NewCommandCopy \__luatexcn_banxin_orig_chapter \chapter
     \RenewDocumentCommand \chapter { s o m }
       {
         \IfBooleanTF {#1}
-          { \__banxin_orig_chapter* {#3} }
+          { \__luatexcn_banxin_orig_chapter* {#3} }
           {
             \IfNoValueTF {#2}
-              { \__banxin_orig_chapter {#3} }
-              { \__banxin_orig_chapter [#2] {#3} }
+              { \__luatexcn_banxin_orig_chapter {#3} }
+              { \__luatexcn_banxin_orig_chapter [#2] {#3} }
           }
-        \keys_set:nn { vertical } { chapter-title = { #3 } }
+        \keys_set:nn { luatexcn / vertical } { chapter-title = { #3 } }
       }
   }
   {
     \NewDocumentCommand \chapter { m }
       {
-        \keys_set:nn { vertical } { chapter-title = { #1 } }
+        \keys_set:nn { luatexcn / vertical } { chapter-title = { #1 } }
       }
   }
 
 % Setup command for banxin specific parameters
 \NewDocumentCommand{\banxinSetup}{ m }
   {
-    \keys_set:nn { vertical } { #1 }
+    \keys_set:nn { luatexcn / vertical } { #1 }
   }
 
 \ExplSyntaxOff

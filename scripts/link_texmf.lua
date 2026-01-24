@@ -22,16 +22,26 @@
     - 使用 --off 删除链接后，原始 tex 目录内容不受影响
 --]]
 
+local function is_windows()
+    return package.config:sub(1, 1) == "\\"
+end
+
 local function get_texmf_home()
     local handle = io.popen("kpsewhich -var-value=TEXMFHOME")
     if not handle then return "" end
     local result = handle:read("*a")
     handle:close()
-    return result and result:gsub("%s+", "") or ""
-end
+    if not result then return "" end
+    result = result:gsub("%s+", "")
 
-local function is_windows()
-    return package.config:sub(1, 1) == "\\"
+    -- Expand ~ to home directory on Linux/macOS
+    if not is_windows() and result:sub(1, 1) == "~" then
+        local home = os.getenv("HOME")
+        if home then
+            result = home .. result:sub(2)
+        end
+    end
+    return result
 end
 
 local function execute(cmd)
@@ -55,13 +65,13 @@ local parent_dir = texmf_home .. (is_windows() and "\\tex\\latex" or "/tex/latex
 
 local function get_abs_path(path)
     if is_windows() then
-        local handle = io.popen('pushd "' .. path .. '" && cd && popd')
+        local handle = io.popen('pushd "' .. path .. '" >nul 2>&1 && cd && popd')
         if not handle then return path end
         local abs = handle:read("*a")
         handle:close()
         return abs and abs:gsub("%s+$", "") or path
     else
-        local handle = io.popen('cd "' .. path .. '" && pwd')
+        local handle = io.popen('cd "' .. path .. '" >/dev/null 2>&1 && pwd')
         if not handle then return path end
         local abs = handle:read("*a")
         handle:close()

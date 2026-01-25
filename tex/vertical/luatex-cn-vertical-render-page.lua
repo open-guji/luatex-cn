@@ -482,7 +482,11 @@ local function apply_positions(head, layout_map, params)
         if p_head then
             local p_max_col = page_nodes[p].max_col
             local p_total_cols = p_max_col + 1
-            if draw_border and p_total_cols < p_cols then p_total_cols = p_cols end
+            -- Always enforce full page width to ensure correct RTL/SplitPage absolute positioning
+            -- Issue #10: Partial pages were shrinking, causing "Right Whitespace" (actually leftward shift)
+            if p_cols > 0 and p_total_cols < p_cols then
+                p_total_cols = p_cols
+            end
 
 
             local inner_width = p_total_cols * grid_width + border_thickness

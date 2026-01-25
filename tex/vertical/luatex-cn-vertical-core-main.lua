@@ -427,10 +427,11 @@ function vertical.process_from_tex(box_num, params)
             tex.print("\\par\\nointerlineskip")
             if right_first then
                 -- 右半页：将内容左移，使右半部分显示
-                tex.print(string.format("\\noindent\\kern-%.5fpt\\smash{\\copy%d}", target_w_pt, box_num))
+                tex.print(string.format("\\noindent\\kern-%.5fpt\\hbox to 0pt{\\smash{\\copy%d}\\hss}", target_w_pt,
+                    box_num))
             else
                 -- 左半页：不移动
-                tex.print(string.format("\\noindent\\smash{\\copy%d}", box_num))
+                tex.print(string.format("\\noindent\\hbox to 0pt{\\smash{\\copy%d}\\hss}", box_num))
             end
 
             -- New page for second half
@@ -442,10 +443,11 @@ function vertical.process_from_tex(box_num, params)
             tex.print("\\par\\nointerlineskip")
             if right_first then
                 -- 左半页：不移动
-                tex.print(string.format("\\noindent\\smash{\\copy%d}", box_num))
+                tex.print(string.format("\\noindent\\hbox to 0pt{\\smash{\\copy%d}\\hss}", box_num))
             else
                 -- 右半页：将内容左移
-                tex.print(string.format("\\noindent\\kern-%.5fpt\\smash{\\copy%d}", target_w_pt, box_num))
+                tex.print(string.format("\\noindent\\kern-%.5fpt\\hbox to 0pt{\\smash{\\copy%d}\\hss}", target_w_pt,
+                    box_num))
             end
 
             if i < total_pages - 1 then
@@ -457,7 +459,7 @@ function vertical.process_from_tex(box_num, params)
         for i = 0, total_pages - 1 do
             tex.print(string.format("\\directlua{vertical.load_page(%d, %d)}", box_num, i))
             tex.print("\\par\\nointerlineskip")
-            tex.print(string.format("\\noindent\\hfill\\smash{\\box%d}", box_num))
+            tex.print(string.format("\\noindent\\hfill\\hbox to 0pt{\\smash{\\box%d}\\hss}", box_num))
             if i < total_pages - 1 then
                 tex.print("\\newpage")
             end

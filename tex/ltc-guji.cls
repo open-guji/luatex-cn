@@ -481,7 +481,6 @@
 
 % 8. High-level Interface
 \NewEnviron{guji-content}[1][]{%
-    \clearpage
     \group_begin:
     \keys_set:nn { luatexcn / guji } { #1 }
     % Note: book-name is set directly by \title command
@@ -708,16 +707,16 @@
     }
 }
 \ExplSyntaxOff
-
+%
 % Command Aliases (CJK support)
-\NewCommandCopy{\JiaZhu}{\TextFlow}
-\NewCommandCopy{\夹注}{\TextFlow}
-\NewCommandCopy{\印章}{\YinZhang}
-
+\NewCommandCopy{\JiaZhu}{\TextFlow}%
+\NewCommandCopy{\夹注}{\TextFlow}%
+\NewCommandCopy{\印章}{\YinZhang}%
+%
 % Environment Aliases (CJK support)
-\NewEnvironmentCopy{正文}{guji-content}
-
+\NewEnvironmentCopy{正文}{guji-content}%
+%
 % 8. Remove page numbers by default
-\pagestyle{empty}
-
+\pagestyle{empty}%
+%
 \endinput

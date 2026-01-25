@@ -32,7 +32,10 @@ installfiles          = {}
 
 -- Skip tests/typesetting
 checkfiles            = {}
-testfiles             = {}
+testfiles             = { "*.lvt" }
+testfilesdir          = "testfiles"
+stdengine             = "luatex"
+checkengines          = { "luatex" }
 typesetfiles          = {}
 
 --------------------------------------------------------------------------------
@@ -114,7 +117,7 @@ local function list_dir(path)
     -- Windows: use PowerShell with temp file for proper UTF-8 support
     local tmp_file = os.tmpname()
     local cmd = 'powershell -Command "[Console]::OutputEncoding = [System.Text.Encoding]::UTF8; Get-ChildItem -Name \'' ..
-    path:gsub("\\", "\\\\") .. '\'" > "' .. tmp_file .. '" 2>nul'
+        path:gsub("\\", "\\\\") .. '\'" > "' .. tmp_file .. '" 2>nul'
     os.execute(cmd)
 
     local f = io.open(tmp_file, "rb")
@@ -473,7 +476,7 @@ local function ctan_custom()
   if sep == "\\" then
     -- Windows: use PowerShell
     local ps_cmd = 'powershell -Command "Compress-Archive -Path \'' ..
-    staging_path .. '\' -DestinationPath \'' .. zip_path .. '\' -Force"'
+        staging_path .. '\' -DestinationPath \'' .. zip_path .. '\' -Force"'
     os.execute(ps_cmd)
   else
     -- Unix: use zip command

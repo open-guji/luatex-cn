@@ -236,7 +236,9 @@ function vertical.prepare_grid(box_num, params)
         list = list,
         page_columns = p_cols,
         line_limit = limit,
-        n_column = b_interval
+        n_column = b_interval,
+        banxin_on = banxin_on,
+        grid_height = g_height
     })
 
     -- 5. Pipeline Stage 3: Apply positions and render

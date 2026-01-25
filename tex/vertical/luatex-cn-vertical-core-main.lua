@@ -379,7 +379,9 @@ function vertical.load_page(box_num, index, copy)
             -- Copy the node list so the original is preserved
             tex.box[box_num] = node.copy_list(box)
         else
+            -- Move the node to TeX and clear our reference
             tex.box[box_num] = box
+            _G.vertical_pending_pages[index + 1] = nil
         end
     end
 end
@@ -461,10 +463,65 @@ function vertical.process_from_tex(box_num, params)
             end
         end
     end
+
+    -- Clear registries that are no longer needed (they were only used during prepare_grid)
+    -- This recovers memory for sidenotes and floating boxes immediately.
+    sidenote.clear_registry()
+    textbox.clear_registry()
 end
 
--- CRITICAL: Update global variable with the local one that has the function
-_G.vertical = vertical
+--- Final cleanup function to be called at the end of the document
+-- This safely flushes all remaining nodes in registries and clears tables
+function vertical.cleanup()
+    local glyph_id = node.id("glyph")
+    local before = node.count(glyph_id)
+    if utils.debug_log then utils.debug_log(string.format("[core] Performing cleanup. Glyphs before: %d", before)) end
+
+    -- 1. Flush and clear pending pages
+    for i, box in pairs(_G.vertical_pending_pages) do
+        if box then
+            node.flush_list(box)
+        end
+    end
+    _G.vertical_pending_pages = {}
+
+    -- 2. Flush and clear sidenote registry
+    if sidenote and sidenote.registry then
+        for _, item in pairs(sidenote.registry) do
+            local head = type(item) == "table" and item.head or item
+            if head then
+                node.flush_list(head)
+            end
+        end
+        sidenote.clear_registry()
+    end
+
+    -- 3. Flush and clear textbox registries
+    if textbox and textbox.floating_registry then
+        for _, item in pairs(textbox.floating_registry) do
+            if item.box then
+                node.flush_list(item.box)
+            end
+        end
+        textbox.clear_registry()
+    end
+
+    -- 4. Force garbage collection
+    collectgarbage("collect")
+    collectgarbage("collect") -- Second pass for finalizers
+
+    local after = node.count(glyph_id)
+    if utils.debug_log then utils.debug_log(string.format("[core] Cleanup finished. Glyphs after: %d", after)) end
+
+    -- Write to log even if debug is off
+    if texio and texio.write_nl then
+        texio.write_nl("log", string.format("[Guji-Cleanup] Glyph count: %d -> %d", before, after))
+    end
+end
+
+-- CRITICAL: Ensure the cleanup function is in the global vertical table
+_G.vertical = _G.vertical or {}
+_G.vertical.cleanup = vertical.cleanup
 
 -- Return module
 return vertical

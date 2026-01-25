@@ -462,7 +462,14 @@ local function apply_positions(head, layout_map, params)
                 end
                 page_nodes[p].tail = t
                 if pos.col > page_nodes[p].max_col then page_nodes[p].max_col = pos.col end
+            else
+                -- Page index out of range? This shouldn't happen, but flush to be safe
+                node.flush_node(D.tonode(t))
             end
+        else
+            -- Node not in layout map (e.g. filtered spaces, penalties, etc.)
+            -- MUST be flushed to prevent memory leak
+            node.flush_node(D.tonode(t))
         end
         t = next_node
     end

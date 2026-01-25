@@ -142,6 +142,13 @@ function textbox.process_inner_box(box_num, params)
     -- 获取渲染结果（应当只有 1 "页"）
     local res_box = _G.vertical_pending_pages[1]
 
+    -- Flush any other pages produced (shouldn't happen for textboxes, but for safety)
+    for i = 2, #_G.vertical_pending_pages do
+        if _G.vertical_pending_pages[i] then
+            node.flush_list(_G.vertical_pending_pages[i])
+        end
+    end
+
     -- 恢复主文档分页缓存
     _G.vertical_pending_pages = saved_pages
 
@@ -237,6 +244,12 @@ function textbox.calculate_floating_positions(layout_map, params)
         t = D.getnext(t)
     end
     return floating_map
+end
+
+--- Clear the floating textbox registry to free node memory
+function textbox.clear_registry()
+    textbox.floating_registry = {}
+    textbox.floating_counter = 0
 end
 
 -- Register module in package.loaded for require() compatibility

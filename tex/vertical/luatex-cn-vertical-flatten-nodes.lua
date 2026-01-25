@@ -62,10 +62,10 @@
 -- Load dependencies
 -- Check if already loaded via dofile (package.loaded set manually)
 local constants = package.loaded['vertical.luatex-cn-vertical-base-constants'] or
-require('vertical.luatex-cn-vertical-base-constants')
+    require('vertical.luatex-cn-vertical-base-constants')
 local D = constants.D
 local utils = package.loaded['vertical.luatex-cn-vertical-base-utils'] or
-require('vertical.luatex-cn-vertical-base-utils')
+    require('vertical.luatex-cn-vertical-base-utils')
 
 --- 将 vlist（来自 vbox）展平为单一节点列表
 -- 从行首提取缩进并将其应用为属性。

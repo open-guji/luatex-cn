@@ -285,5 +285,11 @@ function sidenote.calculate_sidenote_positions(layout_map, params)
     return sidenote_map
 end
 
+--- Clear the sidenote registry to free node memory
+function sidenote.clear_registry()
+    sidenote.registry = {}
+    sidenote.registry_counter = 0
+end
+
 package.loaded['vertical.luatex-cn-vertical-core-sidenote'] = sidenote
 return sidenote

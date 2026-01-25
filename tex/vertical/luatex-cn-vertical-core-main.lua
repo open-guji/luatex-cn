@@ -427,10 +427,10 @@ function vertical.process_from_tex(box_num, params)
             tex.print("\\par\\nointerlineskip")
             if right_first then
                 -- 右半页：将内容左移，使右半部分显示
-                tex.print(string.format("\\noindent\\kern-%.5fpt\\copy%d", target_w_pt, box_num))
+                tex.print(string.format("\\noindent\\kern-%.5fpt\\smash{\\copy%d}", target_w_pt, box_num))
             else
                 -- 左半页：不移动
-                tex.print(string.format("\\noindent\\copy%d", box_num))
+                tex.print(string.format("\\noindent\\smash{\\copy%d}", box_num))
             end
 
             -- New page for second half
@@ -442,10 +442,10 @@ function vertical.process_from_tex(box_num, params)
             tex.print("\\par\\nointerlineskip")
             if right_first then
                 -- 左半页：不移动
-                tex.print(string.format("\\noindent\\copy%d", box_num))
+                tex.print(string.format("\\noindent\\smash{\\copy%d}", box_num))
             else
                 -- 右半页：将内容左移
-                tex.print(string.format("\\noindent\\kern-%.5fpt\\copy%d", target_w_pt, box_num))
+                tex.print(string.format("\\noindent\\kern-%.5fpt\\smash{\\copy%d}", target_w_pt, box_num))
             end
 
             if i < total_pages - 1 then

@@ -64,6 +64,10 @@ function textbox.process_inner_box(box_num, params)
     local box = tex.box[box_num]
     if not box then return end
 
+    -- Debug: Log all floating params
+    utils.debug_log(string.format("[textbox] process_inner_box: floating=%s, floating_x=%s, floating_y=%s, floating_paper_width=%s",
+        tostring(params.floating), tostring(params.floating_x), tostring(params.floating_y), tostring(params.floating_paper_width)))
+
     -- 1. 获取缩进及其它上下文环境
     local current_indent = 0
     local ci = tex.attribute[constants.ATTR_INDENT]
@@ -118,6 +122,11 @@ function textbox.process_inner_box(box_num, params)
         is_textbox = true,
         distribute = (ba == "fill"),
         border_color = params.border_color,
+        -- Pass floating position info for center gap detection
+        floating = (params.floating == "true" or params.floating == true),
+        floating_x = constants.to_dimen(params.floating_x) or 0,
+        floating_y = constants.to_dimen(params.floating_y) or 0,
+        floating_paper_width = constants.to_dimen(params.floating_paper_width) or 0,
     }
 
     -- 3. 执行核心排版流水线

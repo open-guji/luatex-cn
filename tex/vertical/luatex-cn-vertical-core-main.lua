@@ -181,6 +181,12 @@ function vertical.prepare_grid(box_num, params)
         m_bottom = 0
         m_left = 0
         m_right = 0
+    else
+        -- Store main document paper_width for use by floating textboxes
+        if p_width > 0 then
+            _G.vertical = _G.vertical or {}
+            _G.vertical.main_paper_width = p_width
+        end
     end
 
     local is_debug = (params.debug_on == "true" or params.debug_on == true)
@@ -212,6 +218,12 @@ function vertical.prepare_grid(box_num, params)
     local layout_map, total_pages = layout.calculate_grid_positions(list, g_height, limit, b_interval, p_cols, {
         distribute = params.distribute,
         banxin_on = banxin_on,
+        -- Pass floating textbox info for center gap detection
+        floating = params.floating,
+        floating_x = params.floating_x,
+        floating_paper_width = params.floating_paper_width,
+        paper_width = p_width,
+        grid_width = g_width,
     })
 
     -- 4a. Pipeline Stage 2.5: For textboxes, determine actual columns used

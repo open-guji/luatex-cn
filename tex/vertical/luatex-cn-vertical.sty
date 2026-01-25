@@ -715,7 +715,7 @@
 \NewDocumentCommand{\Space}{ O{1em} }
   {
     \regex_match:nnTF { ^\d+$ } { #1 }
-      { \skip_horizontal:n { \l__cn_vertical_grid_height_tl * #1 } }
+      { \skip_horizontal:n { \l__luatexcn_v_grid_height_tl * #1 } }
       { \skip_horizontal:n { #1 } }
   }
 

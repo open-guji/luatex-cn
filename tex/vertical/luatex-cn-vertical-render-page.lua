@@ -645,20 +645,29 @@ local function apply_positions(head, layout_map, params)
                         local w = D.getfield(curr, "width") or 0
 
                         -- Top-Right Origin (0,0) from PAPER edge
-                        -- X increases to the LEFT
-                        -- Y increases DOWNWARDS
+                        -- X axis: 0 at Right Edge, increasing to the LEFT
+                        -- Y axis: 0 at Top Edge, increasing DOWNWARDS
 
-                        -- Since the container box is usually placed at (margin_right, margin_top) by geometry,
-                        -- we must subtract these margins to get absolute paper coordinates.
-                        local m_right = params.margin_right or 0
+                        -- The container box is placed at (margin_left, margin_top) relative to paper.
+                        -- We need to calculate the kern relative to this origin.
+
+                        local p_width = params.paper_width or 0
+                        local m_left = params.margin_left or 0
                         local m_top = params.margin_top or 0
 
-                        -- relative coordinates within the page box
-                        local rel_x = item.x - m_right
+                        -- Calculate X position relative to the container's left edge
+                        -- User X is distance from RIGHT paper edge.
+                        -- Physical X from Left Paper Edge = p_width - item.x
+                        -- Relative X from Container Left = (p_width - item.x) - m_left
+                        local rel_x = p_width - m_left - item.x
+
+                        -- Calculate Y position relative to the container's top edge
+                        -- User Y is distance from TOP paper edge.
+                        -- Relative Y = item.y - m_top
                         local rel_y = item.y - m_top
 
-                        -- In dir RTT, positive Kern moves LEFT from the origin (which is at m_right).
-                        -- So Kern(rel_x) puts the box at m_right + rel_x = m_right + (x - m_right) = x from paper right edge.
+                        -- Apply Kern for X positioning
+                        -- Positive Kern moves Right in TLT (standard) mode direction
                         local final_x = rel_x
 
                         -- Apply shift for Y. shift - h = rel_y  => shift = rel_y + h

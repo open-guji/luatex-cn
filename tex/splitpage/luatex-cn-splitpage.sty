@@ -16,13 +16,13 @@
 % Automatic page splitting for traditional Chinese book formats (筒子页)
 %
 \RequirePackage{expl3}
-\ProvidesExplPackage {luatex-cn-splitpage} {2026/01/21} {v0.1.2} {Page splitting for Chinese traditional books}
+\ProvidesExplPackage {splitpage/luatex-cn-splitpage} {2026/01/21} {v0.1.2} {Page splitting for Chinese traditional books}
 
 % Check if LuaTeX is being used
 \sys_if_engine_luatex:TF
   { }
   {
-    \PackageError { luatex-cn-splitpage } { This~package~requires~LuaTeX }
+    \PackageError { splitpage/luatex-cn-splitpage } { This~package~requires~LuaTeX }
       { Please~compile~your~document~with~LuaLaTeX. }
   }
 

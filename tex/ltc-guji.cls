@@ -494,7 +494,7 @@
         \tl_if_empty:NTF \l_luatexcn_guji_font_features_tl
           {
             % No features specified, use default for CJK vertical
-            \exp_args:NV \setmainfont \l_luatexcn_guji_font_name_tl [RawFeature={+vert,+vrt2}, CharacterWidth=Full]
+            \exp_args:NV \setmainfont \l_luatexcn_guji_font_name_tl [RawFeature={+vert,+vrt2}]
           }
           {
             \exp_args:NV \setmainfont \l_luatexcn_guji_font_name_tl [\l_luatexcn_guji_font_features_tl]
@@ -703,7 +703,7 @@
     {
        % If font-name was specified in class options or template, apply it now
        \tl_if_empty:NTF \l_luatexcn_guji_font_features_tl
-         { \exp_args:NV \setmainfont \l_luatexcn_guji_font_name_tl [RawFeature={+vert,+vrt2}, CharacterWidth=Full] }
+         { \exp_args:NV \setmainfont \l_luatexcn_guji_font_name_tl [RawFeature={+vert,+vrt2}] }
          { \exp_args:NV \setmainfont \l_luatexcn_guji_font_name_tl [\l_luatexcn_guji_font_features_tl] }
     }
 }

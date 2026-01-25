@@ -16,13 +16,13 @@
 % 这是 luatex_cn 的子包
 %
 \RequirePackage{expl3}
-\ProvidesExplPackage {luatex-cn-vertical} {2026/01/21} {v0.1.2} {Chinese vertical typesetting for LuaTeX}
+\ProvidesExplPackage {vertical/luatex-cn-vertical} {2026/01/21} {v0.1.2} {Chinese vertical typesetting for LuaTeX}
 
 % Check if LuaTeX is being used
 \sys_if_engine_luatex:TF
   { }
   {
-    \PackageError { luatex-cn-vertical } { This~package~requires~LuaTeX }
+    \PackageError { vertical/luatex-cn-vertical } { This~package~requires~LuaTeX }
       { Please~compile~your~document~with~LuaLaTeX. }
   }
 

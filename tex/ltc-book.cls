@@ -251,6 +251,6 @@
       \ApplyAutoFont
     }
 }
-\ExplSyntaxOff
-
-\endinput
+\ExplSyntaxOff%
+%
+\endinput%

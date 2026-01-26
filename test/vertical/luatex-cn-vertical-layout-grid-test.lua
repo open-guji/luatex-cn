@@ -11,7 +11,8 @@ test_utils.run_test("layout-grid - basic positioning", function()
         grid_height = 655360
     }
 
-    local head, map, pages = layout.calculate_grid_positions(n1, params)
+    local map, pages = layout.calculate_grid_positions(n1, params.grid_height, params.n_char or 20, params
+        .n_column, 2 * params.n_column + 1, params)
     test_utils.assert_eq(pages, 1, "Should be 1 page")
     test_utils.assert_eq(map[n1].col, 0, "First glyph should be in col 0")
     test_utils.assert_eq(map[n1].row, 0, "First glyph should be in row 0")

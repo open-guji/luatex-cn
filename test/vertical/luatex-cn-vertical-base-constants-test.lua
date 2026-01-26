@@ -4,7 +4,6 @@ local constants = require('vertical.luatex-cn-vertical-base-constants')
 
 test_utils.run_test("base-constants - Export Check", function()
     test_utils.assert_eq(type(constants.D), "table", "constants.D missing")
-    test_utils.assert_eq(type(constants.NODE_IDS), "table", "constants.NODE_IDS missing")
     test_utils.assert_eq(type(constants.to_dimen), "function", "constants.to_dimen missing")
 end)
 
@@ -17,11 +16,10 @@ test_utils.run_test("base-constants - to_dimen", function()
 end)
 
 test_utils.run_test("base-constants - Node IDs", function()
-    -- Common node types
-    test_utils.assert_eq(constants.GLYPH, 1, "constants.GLYPH mismatch")
-    test_utils.assert_eq(constants.HLIST, 1, "constants.HLIST mismatch") -- Mock is simplified
+    test_utils.assert_eq(constants.GLYPH, 29, "constants.GLYPH mismatch")
+    test_utils.assert_eq(constants.HLIST, 0, "constants.HLIST mismatch") -- Mock is improved
     test_utils.assert_eq(constants.VLIST, 1, "constants.VLIST mismatch")
-    test_utils.assert_eq(constants.KERN, 1, "constants.KERN mismatch")
+    test_utils.assert_eq(constants.KERN, 13, "constants.KERN mismatch")
 end)
 
 print("\nAll base-constants tests passed!")

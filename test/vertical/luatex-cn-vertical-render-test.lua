@@ -29,7 +29,7 @@ test_utils.run_test("render-position - create_vertical_text", function()
     -- it will use the node.new mock from test_utils.
 
     -- Let's verify if nodes were created
-    test_utils.assert_eq(head.id, 1, "Mocked node id mismatch")
+    test_utils.assert_eq(head.id, 29, "Mocked node id mismatch")
 end)
 
 print("\nAll vertical-render tests passed!")

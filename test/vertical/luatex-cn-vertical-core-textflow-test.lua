@@ -10,7 +10,7 @@ test_utils.run_test("core-textflow - basic wrap", function()
     }
 
     -- textflow logic handles how nodes move between columns
-    test_utils.assert_eq(type(textflow.wrap_nodes), "function", "wrap_nodes missing")
+    test_utils.assert_eq(type(textflow.process_jiazhu_sequence), "function", "process_jiazhu_sequence missing")
 end)
 
 print("\nAll core-textflow tests passed!")

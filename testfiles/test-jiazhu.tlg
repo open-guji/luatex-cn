@@ -4,77 +4,216 @@ Don't change this file in any respect.
 TEST 1: Basic Jiazhu
 ============================================================
 > \box...=
-\vbox(0.0+0.0)x345.0, direction TLT
-.\hbox(0.0+0.0)x345.0, glue set 345.0fill, direction TLT
+\vbox(0.0+0.0)x16383.99998, direction TLT
+.\hbox(0.0+0.0)x16383.99998, glue set 16952.0fil, direction TLT
 ..\localpar
 ...\localinterlinepenalty=0
 ...\localbrokenpenalty=0
 ...\localleftbox=null
 ...\localrightbox=null
-..\glue 0.0 plus 1.0fill
-..\hbox(0.0+0.0)x0.0, glue set - 120.4fil, direction TLT
-...\hbox(0.0+0.0)x120.4, direction TLT
-....\hbox(0.0+302.39935)x120.4, direction TLT
-.....\TU/TW-Kai(0)/m/n/10 正
-.....\kern-10.0 (font)
-.....\TU/TW-Kai(0)/m/n/10 文
-.....\kern-10.0 (font)
-.....\TU/TW-Kai(0)/m/n/10 文
-.....\kern-10.0 (font)
-.....\TU/TW-Kai(0)/m/n/10 字
-.....\kern-10.0 (font)
-.....\TU/TW-Kai(0)/m/n/7 夹
-.....\kern-7.0 (font)
-.....\TU/TW-Kai(0)/m/n/7 注
-.....\kern-7.0 (font)
-.....\TU/TW-Kai(0)/m/n/7 文
-.....\kern-7.0 (font)
-.....\TU/TW-Kai(0)/m/n/7 字
-.....\kern-7.0 (font)
-.....\TU/TW-Kai(0)/m/n/10 续
-.....\kern-10.0 (font)
+..\kern-568.0
+..\hbox(0.0+0.0)x0.0, glue set - 869.59991fil, direction TLT
+...\hbox(0.0+0.0)x869.59991, direction TLT
+....\hbox(0.0+612.49997)x869.59991, direction TLT
+.....\pdfliteral origin <lua data reference ...>
+.....\pdfliteral origin <lua data reference ...>
+.....\pdfliteral origin <lua data reference ...>
+.....\pdfliteral origin <lua data reference ...>
+.....\pdfliteral origin <lua data reference ...>
+.....\pdfliteral origin <lua data reference ...>
+.....\pdfliteral origin <lua data reference ...>
+.....\pdfliteral origin <lua data reference ...>
+.....\pdfliteral origin <lua data reference ...>
+.....\pdfliteral origin <lua data reference ...>
+.....\pdfliteral origin <lua data reference ...>
+.....\pdfliteral origin <lua data reference ...>
+.....\pdfliteral origin <lua data reference ...>
+.....\pdfliteral origin <lua data reference ...>
+.....\pdfliteral origin <lua data reference ...>
+.....\pdfliteral origin <lua data reference ...>
+.....\pdfliteral origin <lua data reference ...>
+.....\pdfliteral origin <lua data reference ...>
+.....\TU/FandolSong(0)/m/n/28 正
+.....\kern-28.0 (font)
+.....\TU/FandolSong(0)/m/n/28 文
+.....\kern-28.0 (font)
+.....\TU/FandolSong(0)/m/n/28 文
+.....\kern-28.0 (font)
+.....\TU/FandolSong(0)/m/n/28 字
+.....\kern-28.0 (font)
+.....\TU/FandolSong(0)/m/n/19.6 夹
+.....\kern-19.6 (font)
+.....\TU/FandolSong(0)/m/n/19.6 注
+.....\kern-19.6 (font)
+.....\TU/FandolSong(0)/m/n/19.6 文
+.....\kern-19.6 (font)
+.....\TU/FandolSong(0)/m/n/19.6 字
+.....\kern-19.6 (font)
+.....\TU/FandolSong(0)/m/n/28 续
+.....\kern-28.0 (font)
+...\glue 0.0 plus 1.0fil minus 1.0fil
+..\penalty 10000
+..\glue(\parfillskip) 0.0 plus 1.0fil
+..\glue(\rightskip) 0.0
+.\glue 0.0 plus 1.0fil
+.\penalty -10000
+.\glue(\parskip) 0.0
+.\glue(\parskip) 0.0
+.\hbox(0.0+0.0)x16383.99998, glue set 16384.0fil, direction TLT
+..\localpar
+...\localinterlinepenalty=0
+...\localbrokenpenalty=0
+...\localleftbox=null
+...\localrightbox=null
+..\hbox(0.0+0.0)x0.0, glue set - 869.59991fil, direction TLT
+...\hbox(0.0+0.0)x869.59991, direction TLT
+....\hbox(0.0+612.49997)x869.59991, direction TLT
+.....\pdfliteral origin <lua data reference ...>
+.....\pdfliteral origin <lua data reference ...>
+.....\pdfliteral origin <lua data reference ...>
+.....\pdfliteral origin <lua data reference ...>
+.....\pdfliteral origin <lua data reference ...>
+.....\pdfliteral origin <lua data reference ...>
+.....\pdfliteral origin <lua data reference ...>
+.....\pdfliteral origin <lua data reference ...>
+.....\pdfliteral origin <lua data reference ...>
+.....\pdfliteral origin <lua data reference ...>
+.....\pdfliteral origin <lua data reference ...>
+.....\pdfliteral origin <lua data reference ...>
+.....\pdfliteral origin <lua data reference ...>
+.....\pdfliteral origin <lua data reference ...>
+.....\pdfliteral origin <lua data reference ...>
+.....\pdfliteral origin <lua data reference ...>
+.....\pdfliteral origin <lua data reference ...>
+.....\pdfliteral origin <lua data reference ...>
+.....\TU/FandolSong(0)/m/n/28 正
+.....\kern-28.0 (font)
+.....\TU/FandolSong(0)/m/n/28 文
+.....\kern-28.0 (font)
+.....\TU/FandolSong(0)/m/n/28 文
+.....\kern-28.0 (font)
+.....\TU/FandolSong(0)/m/n/28 字
+.....\kern-28.0 (font)
+.....\TU/FandolSong(0)/m/n/19.6 夹
+.....\kern-19.6 (font)
+.....\TU/FandolSong(0)/m/n/19.6 注
+.....\kern-19.6 (font)
+.....\TU/FandolSong(0)/m/n/19.6 文
+.....\kern-19.6 (font)
+.....\TU/FandolSong(0)/m/n/19.6 字
+.....\kern-19.6 (font)
+.....\TU/FandolSong(0)/m/n/28 续
+.....\kern-28.0 (font)
 ...\glue 0.0 plus 1.0fil minus 1.0fil
 ..\penalty 10000
 ..\glue(\parfillskip) 0.0 plus 1.0fil
 ..\glue(\rightskip) 0.0
 ! OK.
 <argument> ...ow {夹注文字} 续} } \showbox 0 
-l. ...}
+l. ...\end{guji-content}
 ============================================================
 ============================================================
 TEST 2: Jiazhu with multiple segments
 ============================================================
 > \box...=
-\vbox(0.0+0.0)x345.0, direction TLT
-.\hbox(0.0+0.0)x345.0, glue set 345.0fill, direction TLT
+\vbox(0.0+0.0)x16383.99998, direction TLT
+.\hbox(0.0+0.0)x16383.99998, glue set 16952.0fil, direction TLT
 ..\localpar
 ...\localinterlinepenalty=0
 ...\localbrokenpenalty=0
 ...\localleftbox=null
 ...\localrightbox=null
-..\glue 0.0 plus 1.0fill
-..\hbox(0.0+0.0)x0.0, glue set - 120.4fil, direction TLT
-...\hbox(0.0+0.0)x120.4, direction TLT
-....\hbox(0.0+302.39935)x120.4, direction TLT
-.....\TU/TW-Kai(0)/m/n/10 甲
-.....\kern-10.0 (font)
-.....\TU/TW-Kai(0)/m/n/7 注
-.....\kern-7.0 (font)
-.....\TU/TW-Kai(0)/m/n/7 一
-.....\kern-7.0 (font)
-.....\TU/TW-Kai(0)/m/n/10 乙
-.....\kern-10.0 (font)
-.....\TU/TW-Kai(0)/m/n/7 注
-.....\kern-7.0 (font)
-.....\TU/TW-Kai(0)/m/n/7 二
-.....\kern-7.0 (font)
-.....\TU/TW-Kai(0)/m/n/10 丙
-.....\kern-10.0 (font)
+..\kern-568.0
+..\hbox(0.0+0.0)x0.0, glue set - 869.59991fil, direction TLT
+...\hbox(0.0+0.0)x869.59991, direction TLT
+....\hbox(0.0+612.49997)x869.59991, direction TLT
+.....\pdfliteral origin <lua data reference ...>
+.....\pdfliteral origin <lua data reference ...>
+.....\pdfliteral origin <lua data reference ...>
+.....\pdfliteral origin <lua data reference ...>
+.....\pdfliteral origin <lua data reference ...>
+.....\pdfliteral origin <lua data reference ...>
+.....\pdfliteral origin <lua data reference ...>
+.....\pdfliteral origin <lua data reference ...>
+.....\pdfliteral origin <lua data reference ...>
+.....\pdfliteral origin <lua data reference ...>
+.....\pdfliteral origin <lua data reference ...>
+.....\pdfliteral origin <lua data reference ...>
+.....\pdfliteral origin <lua data reference ...>
+.....\pdfliteral origin <lua data reference ...>
+.....\pdfliteral origin <lua data reference ...>
+.....\pdfliteral origin <lua data reference ...>
+.....\pdfliteral origin <lua data reference ...>
+.....\pdfliteral origin <lua data reference ...>
+.....\TU/FandolSong(0)/m/n/28 甲
+.....\kern-28.0 (font)
+.....\TU/FandolSong(0)/m/n/19.6 注
+.....\kern-19.6 (font)
+.....\TU/FandolSong(0)/m/n/19.6 一
+.....\kern-19.6 (font)
+.....\TU/FandolSong(0)/m/n/28 乙
+.....\kern-28.0 (font)
+.....\TU/FandolSong(0)/m/n/19.6 注
+.....\kern-19.6 (font)
+.....\TU/FandolSong(0)/m/n/19.6 二
+.....\kern-19.6 (font)
+.....\TU/FandolSong(0)/m/n/28 丙
+.....\kern-28.0 (font)
+...\glue 0.0 plus 1.0fil minus 1.0fil
+..\penalty 10000
+..\glue(\parfillskip) 0.0 plus 1.0fil
+..\glue(\rightskip) 0.0
+.\glue 0.0 plus 1.0fil
+.\penalty -10000
+.\glue(\parskip) 0.0
+.\glue(\parskip) 0.0
+.\hbox(0.0+0.0)x16383.99998, glue set 16384.0fil, direction TLT
+..\localpar
+...\localinterlinepenalty=0
+...\localbrokenpenalty=0
+...\localleftbox=null
+...\localrightbox=null
+..\hbox(0.0+0.0)x0.0, glue set - 869.59991fil, direction TLT
+...\hbox(0.0+0.0)x869.59991, direction TLT
+....\hbox(0.0+612.49997)x869.59991, direction TLT
+.....\pdfliteral origin <lua data reference ...>
+.....\pdfliteral origin <lua data reference ...>
+.....\pdfliteral origin <lua data reference ...>
+.....\pdfliteral origin <lua data reference ...>
+.....\pdfliteral origin <lua data reference ...>
+.....\pdfliteral origin <lua data reference ...>
+.....\pdfliteral origin <lua data reference ...>
+.....\pdfliteral origin <lua data reference ...>
+.....\pdfliteral origin <lua data reference ...>
+.....\pdfliteral origin <lua data reference ...>
+.....\pdfliteral origin <lua data reference ...>
+.....\pdfliteral origin <lua data reference ...>
+.....\pdfliteral origin <lua data reference ...>
+.....\pdfliteral origin <lua data reference ...>
+.....\pdfliteral origin <lua data reference ...>
+.....\pdfliteral origin <lua data reference ...>
+.....\pdfliteral origin <lua data reference ...>
+.....\pdfliteral origin <lua data reference ...>
+.....\TU/FandolSong(0)/m/n/28 甲
+.....\kern-28.0 (font)
+.....\TU/FandolSong(0)/m/n/19.6 注
+.....\kern-19.6 (font)
+.....\TU/FandolSong(0)/m/n/19.6 一
+.....\kern-19.6 (font)
+.....\TU/FandolSong(0)/m/n/28 乙
+.....\kern-28.0 (font)
+.....\TU/FandolSong(0)/m/n/19.6 注
+.....\kern-19.6 (font)
+.....\TU/FandolSong(0)/m/n/19.6 二
+.....\kern-19.6 (font)
+.....\TU/FandolSong(0)/m/n/28 丙
+.....\kern-28.0 (font)
 ...\glue 0.0 plus 1.0fil minus 1.0fil
 ..\penalty 10000
 ..\glue(\parfillskip) 0.0 plus 1.0fil
 ..\glue(\rightskip) 0.0
 ! OK.
 <argument> ...TextFlow {注二} 丙} } \showbox 0 
-l. ...}
+l. ...\end{guji-content}
 ============================================================
+Bad grouping: 5!

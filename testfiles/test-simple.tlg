@@ -4,20 +4,19 @@ Don't change this file in any respect.
 TEST 1: Box content
 ============================================================
 > \box...=
-\hbox(6.77+0.11)x51.71, direction TLT
-.\TU/lmr/m/n/10 T
-.\kern-0.83 (font)
-.\TU/lmr/m/n/10 e
-.\TU/lmr/m/n/10 x
-.\TU/lmr/m/n/10 t
+\hbox(6.77+0.11)x52.49004, direction TLT
+.\TU/FandolSong(0)/m/n/10 T
+.\TU/FandolSong(0)/m/n/10 e
+.\TU/FandolSong(0)/m/n/10 x
+.\TU/FandolSong(0)/m/n/10 t
 .\glue(\spaceskip) 3.33 plus 1.665 minus 1.11
-.\TU/lmr/m/n/10 t
-.\TU/lmr/m/n/10 o
+.\TU/FandolSong(0)/m/n/10 t
+.\TU/FandolSong(0)/m/n/10 o
 .\glue(\spaceskip) 3.33 plus 1.665 minus 1.11
-.\TU/lmr/m/n/10 t
-.\TU/lmr/m/n/10 e
-.\TU/lmr/m/n/10 s
-.\TU/lmr/m/n/10 t
+.\TU/FandolSong(0)/m/n/10 t
+.\TU/FandolSong(0)/m/n/10 e
+.\TU/FandolSong(0)/m/n/10 s
+.\TU/FandolSong(0)/m/n/10 t
 ! OK.
 <argument> ...x 0=\hbox {Text to test} \showbox 0 
 l. ...}

@@ -3,78 +3,9 @@ Don't change this file in any respect.
 ============================================================
 TEST 1: Basic Vertical Layout
 ============================================================
-> \box...=
-\vbox(0.0+0.0)x345.0, direction TLT
-.\hbox(0.0+0.0)x345.0, glue set 345.0fill, direction TLT
-..\localpar
-...\localinterlinepenalty=0
-...\localbrokenpenalty=0
-...\localleftbox=null
-...\localrightbox=null
-..\glue 0.0 plus 1.0fill
-..\hbox(0.0+0.0)x0.0, glue set - 120.4fil, direction TLT
-...\hbox(0.0+0.0)x120.4, direction TLT
-....\hbox(0.0+302.39935)x120.4, direction TLT
-.....\TU/TW-Kai(0)/m/n/10 测
-.....\kern-10.0 (font)
-.....\TU/TW-Kai(0)/m/n/10 试
-.....\kern-10.0 (font)
-.....\TU/TW-Kai(0)/m/n/10 竖
-.....\kern-10.0 (font)
-.....\TU/TW-Kai(0)/m/n/10 排
-.....\kern-10.0 (font)
-.....\TU/TW-Kai(0)/m/n/10 内
-.....\kern-10.0 (font)
-.....\TU/TW-Kai(0)/m/n/10 容
-.....\kern-10.0 (font)
-...\glue 0.0 plus 1.0fil minus 1.0fil
-..\penalty 10000
-..\glue(\parfillskip) 0.0 plus 1.0fil
-..\glue(\rightskip) 0.0
-! OK.
-<argument> ...l {测试竖排内容} } \showbox 0 
-l. ...}
 ============================================================
 ============================================================
 TEST 2: Vertical with multiple lines
 ============================================================
-> \box...=
-\vbox(0.0+0.0)x345.0, direction TLT
-.\hbox(0.0+0.0)x345.0, glue set 345.0fill, direction TLT
-..\localpar
-...\localinterlinepenalty=0
-...\localbrokenpenalty=0
-...\localleftbox=null
-...\localrightbox=null
-..\glue 0.0 plus 1.0fill
-..\hbox(0.0+0.0)x0.0, glue set - 120.4fil, direction TLT
-...\hbox(0.0+0.0)x120.4, direction TLT
-....\hbox(0.0+302.39935)x120.4, direction TLT
-.....\TU/TW-Kai(0)/m/n/10 第
-.....\kern-10.0 (font)
-.....\TU/TW-Kai(0)/m/n/10 一
-.....\kern-10.0 (font)
-.....\TU/TW-Kai(0)/m/n/10 行
-.....\kern-10.0 (font)
-.....\TU/TW-Kai(0)/m/n/10 内
-.....\kern-10.0 (font)
-.....\TU/TW-Kai(0)/m/n/10 容
-.....\kern-10.0 (font)
-.....\TU/TW-Kai(0)/m/n/10 第
-.....\kern-10.0 (font)
-.....\TU/TW-Kai(0)/m/n/10 二
-.....\kern-10.0 (font)
-.....\TU/TW-Kai(0)/m/n/10 行
-.....\kern-10.0 (font)
-.....\TU/TW-Kai(0)/m/n/10 内
-.....\kern-10.0 (font)
-.....\TU/TW-Kai(0)/m/n/10 容
-.....\kern-10.0 (font)
-...\glue 0.0 plus 1.0fil minus 1.0fil
-..\penalty 10000
-..\glue(\parfillskip) 0.0 plus 1.0fil
-..\glue(\rightskip) 0.0
-! OK.
-<argument> ...容\\第二行内容} } \showbox 0 
-l. ...}
 ============================================================
+Bad grouping: 5!

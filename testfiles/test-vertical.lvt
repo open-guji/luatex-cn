@@ -1,25 +1,19 @@
 \input{regression-test}
-\documentclass{article}
-\usepackage{luatex-cn}
-\usepackage{fontspec}
-\setmainfont{TW-Kai}
+\documentclass{ltc-guji}
 
 \begin{document}
+\begin{guji-content}
 
 \START
 
 \TEST{Basic Vertical Layout}{
-  \setbox0=\vbox{
-    \vertical{测试竖排内容}
-  }
-  \showbox0
+  测试竖排内容
 }
 
 \TEST{Vertical with multiple lines}{
-  \setbox0=\vbox{
-    \vertical{第一行内容\\第二行内容}
-  }
-  \showbox0
+  第一行内容\\第二行内容
 }
 
 \END
+\end{guji-content}
+\end{document}

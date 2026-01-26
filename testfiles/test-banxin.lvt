@@ -2,6 +2,7 @@
 \documentclass{ltc-guji}
 
 \begin{document}
+\begin{guji-content}
 
 \START
 
@@ -24,3 +25,4 @@
 }
 
 \END
+\end{guji-content}

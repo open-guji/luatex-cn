@@ -1,6 +1,5 @@
 \input{regression-test}
-\documentclass{article}
-\usepackage{luatex-cn}
+\documentclass{ltc-guji}
 
 \begin{document}
 
@@ -13,3 +12,4 @@
 }
 
 \END
+\end{document}

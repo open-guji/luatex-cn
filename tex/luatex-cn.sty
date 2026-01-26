@@ -59,10 +59,7 @@
 \RequirePackage{splitpage/luatex-cn-splitpage}
 
 % 3. Load Banxin (版心) - Conditional
-\bool_if:NT \g_luatexcn_banxin_bool
-  {
-    \RequirePackage{banxin/luatex-cn-banxin}
-  }
+\RequirePackage{banxin/luatex-cn-banxin}
 
 % ============================================================================
 % Interface Documentation
@@ -70,7 +67,7 @@
 % This package now serves as a bundle loading:
 % - luatex-cn-core
 % - luatex-cn-splitpage
-% - luatex-cn-banxin (optional, default on)
+% - luatex-cn-banxin
 %
 % ============================================================================
 

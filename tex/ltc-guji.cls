@@ -72,9 +72,6 @@
 \RequirePackage{luatex-cn-core}
 \RequirePackage{splitpage/luatex-cn-splitpage}
 
-% Load font auto-detection module
-%\RequirePackage{fonts/luatex-cn-font-autodetect} % Already loaded by luatex-cn-core
-
 % Load banxin for 版心/鱼尾 features
 \RequirePackage{banxin/luatex-cn-banxin}
 

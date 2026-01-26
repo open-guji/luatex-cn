@@ -52,8 +52,6 @@
 \RequirePackage{expl3}
 \RequirePackage{xparse}
 \RequirePackage{luatex-cn-core}
-%\RequirePackage{vertical/luatex-cn-vertical} % Loaded by core
-%\RequirePackage{fonts/luatex-cn-font-autodetect} % Loaded by core
 
 % 3. Key-Value Configuration System
 \ExplSyntaxOn

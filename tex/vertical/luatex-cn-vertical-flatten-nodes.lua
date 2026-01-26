@@ -64,8 +64,102 @@
 local constants = package.loaded['vertical.luatex-cn-vertical-base-constants'] or
     require('vertical.luatex-cn-vertical-base-constants')
 local D = constants.D
-local utils = package.loaded['vertical.luatex-cn-vertical-base-utils'] or
-    require('vertical.luatex-cn-vertical-base-utils')
+require('vertical.luatex-cn-vertical-base-utils')
+
+local _internal = {}
+
+--- 计算盒子的缩进（基于 shift 和 leftskip）
+-- @param box (direct node) HLIST 或 VLIST 节点
+-- @param current_indent (number) 当前累积的缩进值
+-- @param char_width (number) 字符宽度
+-- @return (number) 新的缩进值
+local function get_box_indentation(box, current_indent, char_width)
+    local box_indent = current_indent
+    local tid = D.getid(box)
+
+    -- Detect Shift on any box
+    local shift = D.getfield(box, "shift") or 0
+    if shift > 0 then
+        box_indent = math.max(box_indent, math.floor(shift / char_width + 0.5))
+    end
+
+    if tid == constants.HLIST then
+        -- Check for leftskip inside HLIST
+        local s = D.getfield(box, "list")
+        while s do
+            local sid = D.getid(s)
+            if sid == constants.GLYPH then break end
+            if sid == constants.GLUE and D.getsubtype(s) == 8 then -- leftskip
+                local w = D.getfield(s, "width")
+                box_indent = math.max(box_indent, math.floor(w / char_width + 0.5))
+                break
+            end
+            s = D.getnext(s)
+        end
+    end
+    return box_indent
+end
+
+--- 判断是否保留该节点
+-- @param tid (number) 节点 ID
+-- @param subtype (number) 节点子类型
+-- @return (boolean) 是否保留
+local function should_keep_node(tid, subtype)
+    if tid == constants.GLYPH or tid == constants.KERN then
+        return true
+    elseif tid == constants.GLUE or tid == constants.WHATSIT then
+        -- Keep typical glues (0), spaces (13, 14), and WHATITS
+        if tid == constants.WHATSIT or subtype == 0 or subtype == 13 or subtype == 14 then
+            return true
+        end
+    elseif tid == constants.PENALTY then
+        return true
+    end
+    return false
+end
+
+_internal.get_box_indentation = get_box_indentation
+
+--- 复制节点并应用属性
+-- @param t (direct node) 源节点
+-- @param indent (number) 缩进值
+-- @param r_indent (number) 右缩进值
+-- @return (direct node) 复制后的节点
+local function copy_node_with_attributes(t, indent, r_indent)
+    local copy = D.copy(t)
+    if indent > 0 then D.set_attribute(copy, constants.ATTR_INDENT, indent) end
+    if r_indent > 0 then D.set_attribute(copy, constants.ATTR_RIGHT_INDENT, r_indent) end
+
+    -- CRITICAL: Preserve jiazhu attributes (they are set by \jiazhu command)
+    local jiazhu_attr = D.get_attribute(t, constants.ATTR_JIAZHU)
+    if jiazhu_attr then
+        D.set_attribute(copy, constants.ATTR_JIAZHU, jiazhu_attr)
+    end
+    local jiazhu_sub_attr = D.get_attribute(t, constants.ATTR_JIAZHU_SUB)
+    if jiazhu_sub_attr then
+        D.set_attribute(copy, constants.ATTR_JIAZHU_SUB, jiazhu_sub_attr)
+    end
+
+    return copy
+end
+
+--- 处理 Textbox 节点
+local function process_textbox_node(t, running_indent, running_r_indent)
+    local tb_w = D.get_attribute(t, constants.ATTR_TEXTBOX_WIDTH) or 0
+    local tb_h = D.get_attribute(t, constants.ATTR_TEXTBOX_HEIGHT) or 0
+
+    if tb_w > 0 and tb_h > 0 then
+        local copy = D.copy(t)
+        -- Apply running indent (inherited from previous lines if needed)
+        if running_indent > 0 then D.set_attribute(copy, constants.ATTR_INDENT, running_indent) end
+        if running_r_indent > 0 then D.set_attribute(copy, constants.ATTR_RIGHT_INDENT, running_r_indent) end
+        return copy, true
+    end
+    return nil, false
+end
+
+_internal.copy_node_with_attributes = copy_node_with_attributes
+_internal.process_textbox_node = process_textbox_node
 
 --- 将 vlist（来自 vbox）展平为单一节点列表
 -- 从行首提取缩进并将其应用为属性。
@@ -113,50 +207,18 @@ local function flatten_vbox(head, grid_width, char_width)
             local subtype = D.getsubtype(t)
             -- print(string.format("[D-flatten] Node=%s ID=%d S=%d [p_indent=%d]", tostring(t), tid, subtype, indent_lvl))
 
-            -- Check for Textbox Block attribute
-            local tb_w = 0
-            local tb_h = 0
-            if tid == constants.HLIST or tid == constants.VLIST then
-                tb_w = D.get_attribute(t, constants.ATTR_TEXTBOX_WIDTH) or 0
-                tb_h = D.get_attribute(t, constants.ATTR_TEXTBOX_HEIGHT) or 0
-            end
-
-            if tb_w > 0 and tb_h > 0 then
-                local copy = D.copy(t)
-                -- Apply running indent (inherited from previous lines if needed)
-                if running_indent > 0 then D.set_attribute(copy, constants.ATTR_INDENT, running_indent) end
-                if running_r_indent > 0 then D.set_attribute(copy, constants.ATTR_RIGHT_INDENT, running_r_indent) end
-                append_node(copy)
+            -- 1. Try to process as Textbox Block
+            local tb_node, is_tb = process_textbox_node(t, running_indent, running_r_indent)
+            if is_tb then
+                append_node(tb_node)
                 has_content = true
             elseif tid == constants.HLIST or tid == constants.VLIST then
-                -- Check for line-level indentation
+                -- 2. Process recursable box (HList/VList)
                 local inner = D.getfield(t, "list")
-                local box_indent = running_indent
-                local box_r_indent = running_r_indent
 
-                -- Detect Shift on any box
-                local shift = D.getfield(t, "shift") or 0
-                if shift > 0 then
-                    box_indent = math.max(box_indent, math.floor(shift / char_width + 0.5))
-                end
-
-                if tid == constants.HLIST then
-                    -- Check for leftskip inside HLIST
-                    local s = inner
-                    while s do
-                        local sid = D.getid(s)
-                        if sid == constants.GLYPH then break end
-                        if sid == constants.GLUE and D.getsubtype(s) == 8 then -- leftskip
-                            local st = D.getsubtype(s)
-                            local w = D.getfield(s, "width")
-                            if st == 8 then -- leftskip
-                                box_indent = math.max(box_indent, math.floor(w / char_width + 0.5))
-                            end
-                            break
-                        end
-                        s = D.getnext(s)
-                    end
-                end
+                -- Calculate indentation for this box
+                local box_indent = get_box_indentation(t, running_indent, char_width)
+                local box_r_indent = running_r_indent -- Right indent logic propagation (if needed)
 
                 -- Recurse
                 local inner_has_content = collect_nodes(inner, box_indent, box_r_indent)
@@ -164,7 +226,6 @@ local function flatten_vbox(head, grid_width, char_width)
 
                 -- IMPORTANT: Only add penalty for HLIST lines that are part of
                 -- the main vertical flow, i.e., at the second recursion level.
-                -- For simplicity, let's just add it if this HLIST had content.
                 if tid == constants.HLIST and inner_has_content then
                     if utils and utils.debug_log then
                         utils.debug_log("  [flatten] Adding Column Break after Line=" .. tostring(t))
@@ -174,39 +235,18 @@ local function flatten_vbox(head, grid_width, char_width)
                     append_node(p)
                 end
             else
-                local keep = false
-                if tid == constants.GLYPH or tid == constants.KERN then
-                    keep = true
-                    if tid == constants.GLYPH then has_content = true end
-                elseif tid == constants.GLUE or tid == constants.WHATSIT then
-                    local subtype = D.getsubtype(t)
-                    if tid == constants.WHATSIT or subtype == 0 or subtype == 13 or subtype == 14 then
-                        keep = true
-                        if tid == constants.WHATSIT then has_content = true end
-                    end
-                elseif tid == constants.PENALTY then
-                    keep = true
-                end
-
-                if keep then
-                    local copy = D.copy(t)
-                    if running_indent > 0 then D.set_attribute(copy, constants.ATTR_INDENT, running_indent) end
-                    if running_r_indent > 0 then D.set_attribute(copy, constants.ATTR_RIGHT_INDENT, running_r_indent) end
-
-                    -- CRITICAL: Preserve jiazhu attributes (they are set by \jiazhu command)
-                    local jiazhu_attr = D.get_attribute(t, constants.ATTR_JIAZHU)
-                    if jiazhu_attr then
-                        D.set_attribute(copy, constants.ATTR_JIAZHU, jiazhu_attr)
-                    end
-                    local jiazhu_sub_attr = D.get_attribute(t, constants.ATTR_JIAZHU_SUB)
-                    if jiazhu_sub_attr then
-                        D.set_attribute(copy, constants.ATTR_JIAZHU_SUB, jiazhu_sub_attr)
-                    end
+                -- 3. Process leaf nodes
+                if should_keep_node(tid, subtype) then
+                    local copy = copy_node_with_attributes(t, running_indent, running_r_indent)
 
                     D.set_attribute(copy, constants.ATTR_TEXTBOX_WIDTH, 0)
                     D.set_attribute(copy, constants.ATTR_TEXTBOX_HEIGHT, 0)
 
                     append_node(copy)
+
+                    if tid == constants.GLYPH or tid == constants.WHATSIT then
+                        has_content = true
+                    end
                 end
             end
             t = D.getnext(t)

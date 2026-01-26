@@ -351,10 +351,20 @@ function tag_hook(tagname, tagdate)
   return 0
 end
 
--- Pre-build hook: sanitize files and tag version
+-- Pre-build hook: sanitize files, tag version, and run unit tests
 function checkinit_hook()
   sanitize_project_files()
   os.execute("texlua scripts/build/tag_version.lua")
+
+  -- Run Lua unit tests before l3build regression tests
+  print("\n>>> Running Lua unit tests...")
+  local result = os.execute("texlua test/run_all.lua")
+  if not result then
+    print("\n[FAIL] Lua unit tests failed! Aborting l3build check.")
+    os.exit(1)
+  end
+  print("")
+
   return 0
 end
 
@@ -500,9 +510,30 @@ local function ctan_custom()
   return 0
 end
 
+-- Custom test function to run Lua unit tests
+local function run_unit_tests()
+  print("\n========================================")
+  print("  Running Lua Unit Tests")
+  print("========================================\n")
+
+  local result = os.execute("texlua test/run_all.lua")
+  if result then
+    print("\n[OK] All Lua unit tests passed!")
+    return 0
+  else
+    print("\n[FAIL] Some Lua unit tests failed!")
+    return 1
+  end
+end
+
 -- If called directly with "ctan" argument, run our custom build
 if arg and arg[1] == "ctan" then
   os.exit(ctan_custom())
+end
+
+-- If called with "test" argument, run unit tests only
+if arg and arg[1] == "test" then
+  os.exit(run_unit_tests())
 end
 
 --------------------------------------------------------------------------------

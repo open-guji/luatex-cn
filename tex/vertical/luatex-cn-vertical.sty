@@ -335,10 +335,13 @@
     page-number-align .initial:n = {right-bottom},
 
     page-number-font-size .tl_set:N = \l__luatexcn_v_page_number_font_size_tl,
-    page-number-font-size .initial:n = {15pt},
+    page-number-font-size .initial:n = {14pt},
     
     font-size .tl_set:N = \l__luatexcn_v_font_size_tl,
     font-size .initial:n = {12pt},
+
+    page-number-grid-height .tl_set:N = \l__luatexcn_v_page_number_grid_height_tl,
+    page-number-grid-height .initial:n = {},
   }
 
 \tl_new:N \l__luatexcn_v_border_rgb_tl
@@ -468,6 +471,7 @@
         page_number_font_size~=~[=[\luaescapestring{\l__luatexcn_v_page_number_font_size_tl}]=],
         jiazhu_font_size~=~[=[\luaescapestring{\l__luatexcn_v_jiazhu_size_tl}]=],
         jiazhu_align~=~[=[\luaescapestring{\l__luatexcn_v_jiazhu_align_tl}]=],
+        page_number_grid_height~=~[=[\luaescapestring{\l__luatexcn_v_page_number_grid_height_tl}]=],
         font_size~=~[=[\luaescapestring{\l__luatexcn_v_font_size_tl}]=]
       })
     }

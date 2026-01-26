@@ -45,10 +45,10 @@
 
 -- Load dependencies
 local constants = package.loaded['vertical.luatex-cn-vertical-base-constants'] or
-require('vertical.luatex-cn-vertical-base-constants')
+    require('vertical.luatex-cn-vertical-base-constants')
 local D = constants.D
 local utils = package.loaded['vertical.luatex-cn-vertical-base-utils'] or
-require('vertical.luatex-cn-vertical-base-utils')
+    require('vertical.luatex-cn-vertical-base-utils')
 local text_position = package.loaded['vertical.luatex-cn-vertical-render-position'] or
     require('vertical.luatex-cn-vertical-render-position')
 local yuwei = package.loaded['banxin.luatex-cn-banxin-render-yuwei'] or require('banxin.luatex-cn-banxin-render-yuwei')
@@ -451,30 +451,55 @@ local function draw_banxin_column(p_head, params)
             local page_right_margin = 65536 * 2                                -- 2pt small right margin
             local page_bottom_margin = params.b_padding_bottom or (65536 * 15) -- Use config or default 15pt
 
+            -- Calculate number of characters in page string
+            local num_chars = 0
+            for _ in page_str:gmatch("[%z\1-\127\194-\244][\128-\191]*") do
+                num_chars = num_chars + 1
+            end
+
+            -- Determine grid height per character
+            local grid_h = constants.to_dimen(params.page_number_grid_height)
+            if not grid_h or grid_h <= 0 then
+                -- Default logic: if no grid height specified, use font size * 1.2 or fixed fallback
+                -- Previous default was fixed (65536 * 30) total, which is too small for multiple chars.
+                -- Let's use font size or a reasonable default per char.
+                local fs = params.page_number_font_size or (65536 * 15)
+                grid_h = fs * 1.2  -- 1.2 spacing
+            end
+
+            -- Calculate total container height
+            local container_height = grid_h * num_chars
+
             -- Available bottom-right position
             -- Determine y_top, alignment and orientation for page number
             local p_v_align = "bottom"
             local p_h_align = "right"
-            local page_y_top = middle_y_bottom + lower_yuwei_total + page_bottom_margin
+            -- Fix: create_vertical_text expects y_top as the TOP edge of the box.
+            -- We want the BOTTOM of the box to be at (middle_y_bottom + lower_yuwei_total + page_bottom_margin).
+            -- So we must ADD container_height to the calculated bottom position.
+            local page_y_top = middle_y_bottom + lower_yuwei_total + page_bottom_margin + container_height
 
             if params.page_number_align == "center" then
                 p_v_align = "center"
                 p_h_align = "center"
                 -- Center in the middle section (between yuwei/dividers)
                 local available_middle_h = middle_h - upper_yuwei_total - lower_yuwei_total
-                page_y_top = middle_y_bottom + lower_yuwei_total + available_middle_h / 2
+                -- Center: middle point is (bottom + available/2).
+                -- To center rect of height H at point P, Top = P + H/2.
+                local center_y = middle_y_bottom + lower_yuwei_total + available_middle_h / 2
+                page_y_top = center_y + container_height / 2
             elseif params.page_number_align == "bottom-center" then
                 p_v_align = "bottom"
                 p_h_align = "center"
                 -- Stay in the lower section
-                page_y_top = middle_y_bottom + lower_yuwei_total + page_bottom_margin
+                page_y_top = middle_y_bottom + lower_yuwei_total + page_bottom_margin + container_height
             end
 
             local page_chain = text_position.create_vertical_text(page_str, {
                 x = x,
                 y_top = page_y_top,
                 width = width - (params.page_number_align == "center" and 0 or page_right_margin),
-                height = (65536 * 30), -- Container height
+                height = container_height, -- Use consistent container height
                 v_align = p_v_align,
                 h_align = p_h_align,
                 font_size = params.page_number_font_size or (65536 * 15),

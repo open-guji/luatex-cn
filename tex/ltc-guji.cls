@@ -262,6 +262,9 @@
     page-number-font-size .tl_set:N = \l_luatexcn_guji_page_number_font_size_tl,
     page-number-font-size .initial:n = {},
 
+    page-number-grid-height .tl_set:N = \l_luatexcn_guji_page_number_grid_height_tl,
+    page-number-grid-height .initial:n = {},
+
     % Split page (筒子页) configuration
     split-page .bool_set:N = \l_luatexcn_guji_split_page_bool,
     split-page .initial:n = true,
@@ -675,6 +678,7 @@
         banxin-divider = \bool_if:NTF \l_luatexcn_guji_banxin_divider_bool {true} {false},
         page-number-align = \l_luatexcn_guji_page_number_align_tl,
         page-number-font-size = \l_luatexcn_guji_page_number_font_size_tl,
+        page-number-grid-height = \l_luatexcn_guji_page_number_grid_height_tl,
         debug = \bool_if:NTF \g_luatexcn_v_debug_bool {true} {false}
       }
     \nointerlineskip

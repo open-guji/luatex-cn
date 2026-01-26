@@ -504,17 +504,32 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
             t = lookahead
             if not t then break end
             goto start_of_loop
-        elseif id == constants.PENALTY and D.getfield(t, "penalty") <= -10000 then
-            flush_buffer()
-            if cur_row > cur_column_indent then
-                cur_col = cur_col + 1
-                cur_row = 0
-                if cur_col >= p_cols then
-                    cur_col = 0
-                    cur_page = cur_page + 1
+        elseif id == constants.PENALTY then
+            local p_val = D.getfield(t, "penalty")
+            -- Internal Flatten logic uses -10001 for forced column break (paragraph end)
+            if p_val == -10001 then
+                flush_buffer()
+                if cur_row > cur_column_indent then
+                    cur_col = cur_col + 1
+                    cur_row = 0
+                    if cur_col >= p_cols then
+                        cur_col = 0
+                        cur_page = cur_page + 1
+                    end
+                    cur_column_indent = 0
+                    skip_banxin_and_occupied()
                 end
-                cur_column_indent = 0
-                skip_banxin_and_occupied()
+                -- Standard TeX \newpage / \pagebreak / \clearpage uses -10000 or -20000
+            elseif p_val <= -10000 then
+                flush_buffer()
+                -- Force Page Break if there is content on current page
+                if cur_col > 0 or cur_row > cur_column_indent then
+                    cur_page = cur_page + 1
+                    cur_col = 0
+                    cur_row = 0
+                    cur_column_indent = 0
+                    skip_banxin_and_occupied()
+                end
             end
         end
 

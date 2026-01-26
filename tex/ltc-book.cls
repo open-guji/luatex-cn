@@ -51,11 +51,9 @@
 \RequirePackage{environ}
 \RequirePackage{expl3}
 \RequirePackage{xparse}
-\RequirePackage{luatex-cn}
-\RequirePackage{vertical/luatex-cn-vertical}
-
-% Load font auto-detection module
-\RequirePackage{fonts/luatex-cn-font-autodetect}
+\RequirePackage{luatex-cn-core}
+%\RequirePackage{vertical/luatex-cn-vertical} % Loaded by core
+%\RequirePackage{fonts/luatex-cn-font-autodetect} % Loaded by core
 
 % 3. Key-Value Configuration System
 \ExplSyntaxOn
@@ -131,7 +129,7 @@
     n-column .int_set:N = \l_luatexcn_book_n_column_int,
     n-column .initial:n = 0,
 
-    debug .bool_set:N = \g_luatexcn_v_debug_bool,
+    debug .bool_set:N = \g_luatexcn_debug_bool,
     debug .initial:n = false,
 
     template .code:n = {
@@ -223,8 +221,7 @@
         book-name-align = \l_luatexcn_book_book_name_align_tl,
         upper-yuwei = \bool_if:NTF \l_luatexcn_book_upper_yuwei_bool {true} {false},
         banxin-divider = \bool_if:NTF \l_luatexcn_book_banxin_divider_bool {true} {false},
-        page-number-align = \l_luatexcn_book_page_number_align_tl,
-        debug = \bool_if:NTF \g_luatexcn_v_debug_bool {true} {false}
+        page-number-align = \l_luatexcn_book_page_number_align_tl
       }
     \nointerlineskip
     \__luatexcn_v_process_grid:n { \BODY }

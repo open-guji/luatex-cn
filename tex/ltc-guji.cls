@@ -69,21 +69,14 @@
 \RequirePackage{expl3}
 \RequirePackage{xparse}
 \RequirePackage{tikz}
-\RequirePackage{luatex-cn}
+\RequirePackage{luatex-cn-core}
 \RequirePackage{splitpage/luatex-cn-splitpage}
 
 % Load font auto-detection module
-\RequirePackage{fonts/luatex-cn-font-autodetect}
+%\RequirePackage{fonts/luatex-cn-font-autodetect} % Already loaded by luatex-cn-core
 
-% Load banxin for 版心/鱼尾 features (registers hooks with vertical)
- \lua_now:e {
-    local~status,~err~=~pcall(function()~
-        require('banxin.luatex-cn-banxin-main')~
-    end);~
-    if~not~status~then~
-        tex.error("Failed~to~load~banxin:~"~..~tostring(err));~
-    end;~
- }
+% Load banxin for 版心/鱼尾 features
+\RequirePackage{banxin/luatex-cn-banxin}
 
 % 3. Page Geometry - Will be applied dynamically via tsemplate
 % Default values stored in key-value system below
@@ -169,7 +162,7 @@
     outer-border-sep .tl_set:N = \l_luatexcn_guji_outer_border_sep_tl,
     outer-border-sep .initial:n = {},
 
-    debug .bool_gset:N = \g_luatexcn_v_debug_bool,
+    debug .bool_gset:N = \g_luatexcn_debug_bool,
 
     vertical-align .tl_set:N = \l_luatexcn_guji_valign_tl,
     vertical-align .initial:n = {},
@@ -300,8 +293,8 @@
     
     debug .code:n = {
       \str_if_eq:nnTF { #1 } { true }
-        { \bool_gset_true:N \g_luatexcn_v_debug_bool }
-        { \bool_gset_false:N \g_luatexcn_v_debug_bool }
+        { \bool_gset_true:N \g_luatexcn_debug_bool }
+        { \bool_gset_false:N \g_luatexcn_debug_bool }
     },
     debug .initial:n = false
   }
@@ -345,7 +338,7 @@
           source-width = \l_luatexcn_guji_paper_width_tl,
           source-height = \l_luatexcn_guji_paper_height_tl,
           right-first = \bool_if:NTF \l_luatexcn_guji_split_right_first_bool {true} {false},
-          debug = \bool_if:NTF \g_luatexcn_v_debug_bool {true} {false}
+          debug = \bool_if:NTF \g_luatexcn_debug_bool {true} {false}
         }
         \enableSplitPage
       }
@@ -504,7 +497,7 @@
       }
     \fontsize{\l_luatexcn_guji_font_size_tl}{\l_luatexcn_guji_line_spacing_tl}\selectfont
     
-    % global debug flag \g_luatexcn_v_debug_bool is already set by keys_set:nn { luatexcn / guji } { #1 } above
+    % global debug flag \g_luatexcn_debug_bool is already set by keys_set:nn { luatexcn / guji } { #1 } above
     % Zero out vertical skips for exact grid layout
     \dim_zero:N \topskip
     \dim_zero:N \parskip
@@ -548,7 +541,7 @@
     \int_set:Nn \l_tmpb_int { \dim_to_decimal_in_sp:n { \l_tmpa_dim } / \l_tmpa_int }
     \tl_set:Nx \l_luatexcn_guji_grid_width_tl { \dim_eval:n { \l_tmpb_int sp } }
 
-    \bool_if:NT \g_luatexcn_v_debug_bool { \iow_term:x { Guji~Layout~Width:~total-cols=\int_use:N~\l_tmpa_int~,~grid-width=\l_luatexcn_guji_grid_width_tl } }
+    \bool_if:NT \g_luatexcn_debug_bool { \iow_term:x { Guji~Layout~Width:~total-cols=\int_use:N~\l_tmpa_int~,~grid-width=\l_luatexcn_guji_grid_width_tl } }
 
     % II. Height Logic
     % 1. Calculate raw content area height
@@ -582,7 +575,7 @@
         % height = grid-height * n-char (may be slightly less than available)
         \dim_set:Nn \l_tmpa_dim { \l_luatexcn_guji_grid_height_dim * \l_luatexcn_guji_n_char_int }
         \tl_set:Nx \l_luatexcn_guji_height_tl { \dim_use:N \l_tmpa_dim }
-        \bool_if:NT \g_luatexcn_v_debug_bool { \iow_term:x { Guji~Mode~A:~n-char=\int_use:N~\l_luatexcn_guji_n_char_int~,~grid-height=\l_luatexcn_guji_grid_height_tl~,~height=\l_luatexcn_guji_height_tl } }
+        \bool_if:NT \g_luatexcn_debug_bool { \iow_term:x { Guji~Mode~A:~n-char=\int_use:N~\l_luatexcn_guji_n_char_int~,~grid-height=\l_luatexcn_guji_grid_height_tl~,~height=\l_luatexcn_guji_height_tl } }
       }
       {
         % Mode B: grid-height specified, calculate fitting rows
@@ -596,7 +589,7 @@
             % height = rows * grid-height
             \dim_set:Nn \l_tmpa_dim { \l_luatexcn_guji_grid_height_tl * \l_tmpa_int }
             \tl_set:Nx \l_luatexcn_guji_height_tl { \dim_use:N \l_tmpa_dim }
-            \bool_if:NT \g_luatexcn_v_debug_bool { \iow_term:x { Guji~Mode~B:~grid-height=\l_luatexcn_guji_grid_height_tl~,~rows=\int_use:N~\l_tmpa_int~,~height=\l_luatexcn_guji_height_tl } }
+            \bool_if:NT \g_luatexcn_debug_bool { \iow_term:x { Guji~Mode~B:~grid-height=\l_luatexcn_guji_grid_height_tl~,~rows=\int_use:N~\l_tmpa_int~,~height=\l_luatexcn_guji_height_tl } }
           }
       }
 
@@ -609,7 +602,7 @@
     }
 
     % Log final layout
-    \bool_if:NT \g_luatexcn_v_debug_bool { \iow_term:x { Guji~Layout:~TextHeight=\dim_use:N~\l_tmpb_dim~,~TopMargin=\l_luatexcn_guji_margin_top_tl } }
+    \bool_if:NT \g_luatexcn_debug_bool { \iow_term:x { Guji~Layout:~TextHeight=\dim_use:N~\l_tmpb_dim~,~TopMargin=\l_luatexcn_guji_margin_top_tl } }
 
     % Update geometry for this environment
     \__luatexcn_guji_apply_geometry:
@@ -678,8 +671,7 @@
         banxin-divider = \bool_if:NTF \l_luatexcn_guji_banxin_divider_bool {true} {false},
         page-number-align = \l_luatexcn_guji_page_number_align_tl,
         page-number-font-size = \l_luatexcn_guji_page_number_font_size_tl,
-        page-number-grid-height = \l_luatexcn_guji_page_number_grid_height_tl,
-        debug = \bool_if:NTF \g_luatexcn_v_debug_bool {true} {false}
+        page-number-grid-height = \l_luatexcn_guji_page_number_grid_height_tl
       }
     \nointerlineskip
     \__luatexcn_v_process_grid:n { \BODY }

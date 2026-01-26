@@ -14,26 +14,18 @@
 
 % luatex_cn.sty
 % LuaTeX package for Chinese typesetting support
-% Main wrapper package that loads sub-packages and exposes unified interface
+% Main wrapper package that loads luatex-cn-core and other modules
 %
 \NeedsTeXFormat{LaTeX2e}
 \RequirePackage{expl3}
-\ProvidesExplPackage {luatex-cn} {2026/01/26} {0.1.3} {Chinese typesetting support for LuaTeX}
-
-% Check if LuaTeX is being used
-\sys_if_engine_luatex:TF
-  { }
-  {
-    \PackageError { luatex-cn } { This~package~requires~LuaTeX }
-      { Please~compile~your~document~with~LuaLaTeX~instead~of~pdfLaTeX~or~XeLaTeX. }
-  }
+\RequirePackage{l3keys2e}
+\ProvidesExplPackage {luatex-cn} {2026/01/26} {0.1.3} {Chinese typesetting support for LuaTeX (Bundle)}
 
 % ============================================================================
 % Package Options
 % ============================================================================
 \bool_new:N \g_luatexcn_banxin_bool
-\bool_new:N \g_luatexcn_traditional_bool
-\bool_new:N \g_luatexcn_simplified_bool
+\bool_new:N \g_luatexcn_no_banxin_bool
 \bool_new:N \g_luatexcn_debug_bool
 
 \NewDocumentCommand{\GujiDebugOn}{}{\bool_gset_true:N \g_luatexcn_debug_bool}
@@ -44,29 +36,29 @@
 \keys_define:nn { luatexcn }
   {
     banxin .bool_set:N = \g_luatexcn_banxin_bool,
-    traditional .code:n =
-      {
-        \bool_set_true:N \g_luatexcn_traditional_bool
-        \bool_set_false:N \g_luatexcn_simplified_bool
-      },
-    simplified .code:n =
-      {
-        \bool_set_true:N \g_luatexcn_simplified_bool
-        \bool_set_false:N \g_luatexcn_traditional_bool
-      },
-    simplified .initial:n = true
+    banxin .initial:n = true,
+    no-banxin .code:n = { \bool_set_true:N \g_luatexcn_no_banxin_bool },
   }
 
 \ProcessKeysOptions { luatexcn }
 
+% If no-banxin is explicitly set, override banxin
+\bool_if:NT \g_luatexcn_no_banxin_bool
+  {
+    \bool_set_false:N \g_luatexcn_banxin_bool
+  }
+
 % ============================================================================
-% Load Sub-packages (from their respective directories)
+% Load Sub-packages
 % ============================================================================
 
-% Core vertical typesetting engine (always loaded)
-\RequirePackage{vertical/luatex-cn-vertical}
+% 1. Load Core (Vertical + Typesetting + Base Utils)
+\RequirePackage{luatex-cn-core}
 
-% Banxin (版心) features - optional
+% 2. Load SplitPage (筒子页) - Always available in bundle
+\RequirePackage{splitpage/luatex-cn-splitpage}
+
+% 3. Load Banxin (版心) - Conditional
 \bool_if:NT \g_luatexcn_banxin_bool
   {
     \RequirePackage{banxin/luatex-cn-banxin}
@@ -75,38 +67,19 @@
 % ============================================================================
 % Interface Documentation
 % ============================================================================
-% This package exposes the following commands:
+% This package now serves as a bundle loading:
+% - luatex-cn-core
+% - luatex-cn-splitpage
+% - luatex-cn-banxin (optional, default on)
 %
-%   \Vertical[options]{content}     - Main vertical layout command (Alias: \竖排)
-%   \TextBox[options]{content}      - Grid-based textbox (Alias: \文本框)
-%   \Paragraph                      - Environment for grid paragraphs
-%   \TextFlow{content}              - Interlinear notes (Alias: \文本流)
-%   \Space[width]                   - Explicit spacing (Alias: \空格)
-%
-%   \cnvdebugon / \cnvdebugoff      - Debug toggle
-%
-% ============================================================================
-% CJK Aliases and Support
-% ============================================================================
-\NewEnvironmentCopy{列表}{itemize}
-
-% ============================================================================
-% Interface Documentation
-% ============================================================================
-% From banxin (when loaded with [banxin] option):
-%   \banxinSetup{options}           - Configure banxin settings
-%   \setBookName{name}              - Set book name for banxin
-%   \setChapterTitle{title}         - Set chapter title
-%
-%   Additional aliases: \夹注 (for \TextFlow)
 % ============================================================================
 
-% Version info (synchronized with VERSION file in project root)
+% Version info
 \tl_const:Nn \c_luatexcn_version_tl {0.1.3}
 \cs_new:Npn \luatexcnversion { \c_luatexcn_version_tl }
 
 % Main package initialization
-\PackageInfo { luatex_cn } { Chinese~typesetting~package~\tl_use:N \c_luatexcn_version_tl \space loaded }
+\PackageInfo { luatex_cn } { Chinese~typesetting~bundle~\tl_use:N \c_luatexcn_version_tl \space loaded }
 
 \ExplSyntaxOff%
 %

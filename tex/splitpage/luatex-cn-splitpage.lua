@@ -63,9 +63,18 @@ local function to_sp(dim_str)
     return math.floor(num * (factors[unit] or 65536))
 end
 
+-- Register splitpage module if debug module is available
+if _G.luatex_cn_debug then
+    _G.luatex_cn_debug.register_module("splitpage", { color = "green" })
+end
+
 local function debug_log(msg)
-    if splitpage.debug then
-        texio.write_nl("term and log", "[splitpage] " .. msg)
+    if _G.luatex_cn_debug then
+        _G.luatex_cn_debug.log("splitpage", msg)
+    else
+        if splitpage.debug then
+            texio.write_nl("term and log", "[splitpage] " .. msg)
+        end
     end
 end
 

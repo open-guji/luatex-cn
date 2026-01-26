@@ -44,8 +44,19 @@ local text_position = package.loaded['vertical.luatex-cn-vertical-render-positio
     require('vertical.luatex-cn-vertical-render-position')
 local yuwei = package.loaded['banxin.luatex-cn-banxin-render-yuwei'] or require('banxin.luatex-cn-banxin-render-yuwei')
 
+-- Register banxin module if debug module is available
+if _G.luatex_cn_debug then
+    _G.luatex_cn_debug.register_module("banxin", { color = "magenta" })
+end
+
 -- Conversion factor from scaled points to PDF big points
 local sp_to_bp = utils.sp_to_bp
+
+local function banxin_log(msg)
+    if _G.luatex_cn_debug then
+        _G.luatex_cn_debug.log("banxin", msg)
+    end
+end
 
 -- ============================================================================
 -- Helper Functions (纯函数，只计算不产生副作用)
@@ -327,7 +338,7 @@ local function calculate_book_name_params(params, upper_height)
         y_start = block_y_top - (adj_height - total_text_height) / 2
     end
 
-    utils.debug_log(string.format("[banxin] BookName='%s' fsize=%.2f height=%.2f adj_h=%.2f y_start=%.2f",
+    banxin_log(string.format("[banxin] BookName='%s' fsize=%.2f height=%.2f adj_h=%.2f y_start=%.2f",
         book_name, f_size / 65536, total_text_height / 65536, adj_height / 65536, y_start / 65536))
 
     return {
@@ -364,7 +375,7 @@ local function render_book_name(p_head, params, upper_height)
     })
 
     if glyph_chain then
-        utils.debug_log("[banxin] Book name glyph chain created and centered.")
+        banxin_log("[banxin] Book name glyph chain created and centered.")
         p_head = prepend_chain(p_head, glyph_chain)
     end
 
@@ -560,16 +571,12 @@ end
 -- @param x, y, width, height (number) 矩形位置和尺寸 (sp)
 -- @return (node) 新的链表头
 local function render_debug_rects(p_head, x, y, width, height)
-    if not (_G.vertical and _G.vertical.debug and _G.vertical.debug.enabled) then
+    if not (_G.luatex_cn_debug and _G.luatex_cn_debug.is_enabled("banxin")) then
         return p_head
     end
 
-    if _G.vertical.debug.show_banxin then
-        p_head = utils.draw_debug_rect(p_head, nil, x, y, width, -height, "0 1 0 RG [2 2] 0 d")
-    end
-    if _G.vertical.debug.show_boxes then
-        p_head = utils.draw_debug_rect(p_head, nil, x, y, width, -height, "1 0 0 RG")
-    end
+    p_head = utils.draw_debug_rect(p_head, nil, x, y, width, -height, "0 1 0 RG [2 2] 0 d")
+    p_head = utils.draw_debug_rect(p_head, nil, x, y, width, -height, "1 0 0 RG")
 
     return p_head
 end
@@ -590,13 +597,13 @@ local function draw_banxin_column(p_head, params)
     local border_thickness = params.border_thickness
     local color_str = params.color_str or "0 0 0"
 
-    utils.debug_log(string.format("[banxin] input y=%.2f height=%.2f padding_top=%.2f draw_border=%s",
+    banxin_log(string.format("[banxin] input y=%.2f height=%.2f padding_top=%.2f draw_border=%s",
         y / 65536, height / 65536, (params.b_padding_top or 0) / 65536, tostring(params.draw_border)))
 
     -- 1. Draw border
     if params.draw_border then
         local border_literal = create_border_literal(x, y, width, height, border_thickness, color_str)
-        utils.debug_log(string.format("[banxin] Border literal: %s", border_literal))
+        banxin_log(string.format("[banxin] Border literal: %s", border_literal))
         p_head = D.insert_before(p_head, p_head, create_literal_node(border_literal))
     end
 

@@ -114,14 +114,11 @@ local function is_debug_enabled()
     return _debug_enabled
 end
 
---- 如果开启了 verbose_log，则向日志输出调试消息
+--- 如果开启了调试，则向日志输出调试消息
 -- @param message string 调试消息内容
 local function debug_log(message)
-    -- Check local state OR legacy global state for compatibility
-    if _debug_enabled or (_G.vertical and _G.vertical.debug and _G.vertical.debug.verbose_log) then
-        if texio and texio.write_nl then
-            texio.write_nl("log", "[Guji-Debug] " .. message)
-        end
+    if luatex_cn_debug then
+        luatex_cn_debug.log("vertical", message)
     end
 end
 

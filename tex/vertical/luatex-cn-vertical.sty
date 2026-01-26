@@ -44,13 +44,7 @@
 % Robust Lua loader with error reporting is no longer needed since we use \lua_now:e
 
 \lua_now:e {
-  _G.vertical~=~_G.vertical~or~{};
-  _G.vertical.debug~=~_G.vertical.debug~or~{
-      enabled~=~false,
-      verbose_log~=~false,
-      show_grid~=~true,
-      show_boxes~=~true
-  }
+  luatex_cn_debug.register_module("vertical", { color = "yellow" })
 }
 
 % Clear cache and Load Modules
@@ -423,7 +417,7 @@
         grid_width~=~[=[\luaescapestring{\l__luatexcn_v_grid_width_tl}]=],
         grid_height~=~[=[\luaescapestring{\l__luatexcn_v_grid_height_tl}]=],
         col_limit~=~\int_use:N~\l__luatexcn_v_cols_int,
-        debug_on~=~\bool_if:NTF~\g_luatexcn_debug_bool~{true}~{false},
+        debug_on~=~luatex_cn_debug.is_enabled("vertical"),
         banxin_on~=~\bool_if:NTF~\l__luatexcn_v_banxin_bool~{true}~{false},
         border_on~=~\bool_if:NTF~\l__luatexcn_v_border_bool~{true}~{false},
         border_padding_top~=~[=[\luaescapestring{\l__luatexcn_v_border_padding_top_tl}]=],

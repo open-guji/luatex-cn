@@ -26,12 +26,6 @@
 % ============================================================================
 \bool_new:N \g_luatexcn_banxin_bool
 \bool_new:N \g_luatexcn_no_banxin_bool
-\bool_new:N \g_luatexcn_debug_bool
-
-\NewDocumentCommand{\GujiDebugOn}{}{\bool_gset_true:N \g_luatexcn_debug_bool}
-\NewDocumentCommand{\GujiDebugOff}{}{\bool_gset_false:N \g_luatexcn_debug_bool}
-\NewCommandCopy{\古籍调试开启}{\GujiDebugOn}
-\NewCommandCopy{\古籍调试关闭}{\GujiDebugOff}
 
 \keys_define:nn { luatexcn }
   {

@@ -27,8 +27,8 @@
     unknown .code:n =
       {
         \tl_set_eq:NN \l_tmpa_tl \l_keys_key_tl
-        % Look for config file: configs/<name>.ltc_book.cfg
-        \file_if_exist:nTF { configs/ \l_tmpa_tl .ltc_book.cfg }
+        % Look for config file: configs/luatex-cn-book-<name>.cfg
+        \file_if_exist:nTF { configs/luatex-cn-book- \l_tmpa_tl .cfg }
           {
             \tl_set_eq:NN \l_luatexcn_book_initial_template_tl \l_tmpa_tl
           }
@@ -131,7 +131,7 @@
     debug .initial:n = false,
 
     template .code:n = {
-      \InputIfFileExists{configs/#1.ltc_book.cfg}{}{
+      \InputIfFileExists{configs/luatex-cn-book-#1.cfg}{}{
         \keys_set:nn { luatexcn / book / templates } { #1 }
       }
     },

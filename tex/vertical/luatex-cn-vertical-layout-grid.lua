@@ -520,16 +520,17 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
                     skip_banxin_and_occupied()
                 end
                 -- Standard TeX \newpage / \pagebreak / \clearpage uses -10000 or -20000
-            elseif p_val <= -10000 then
-                flush_buffer()
-                -- Force Page Break if there is content on current page
-                if cur_col > 0 or cur_row > cur_column_indent then
-                    cur_page = cur_page + 1
-                    cur_col = 0
-                    cur_row = 0
-                    cur_column_indent = 0
-                    skip_banxin_and_occupied()
-                end
+                -- TODO: Handle page break logic later
+                -- elseif p_val <= -10000 then
+                --     flush_buffer()
+                --     -- Force Page Break if there is content on current page
+                --     if cur_col > 0 or cur_row > cur_column_indent then
+                --         cur_page = cur_page + 1
+                --         cur_col = 0
+                --         cur_row = 0
+                --         cur_column_indent = 0
+                --         skip_banxin_and_occupied()
+                --     end
             end
         end
 

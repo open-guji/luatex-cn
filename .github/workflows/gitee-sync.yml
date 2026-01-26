@@ -1,9 +1,13 @@
 name: Sync to Gitee
 
+concurrency:
+  group: gitee-sync
+  cancel-in-progress: true
+
 on:
   push:
     branches:
-      - main  # 如果你的默认分支是 master，请改为 master
+      - main
 
 jobs:
   repo-sync:

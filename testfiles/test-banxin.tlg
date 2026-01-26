@@ -3,31 +3,8 @@ Don't change this file in any respect.
 ============================================================
 TEST 1: Basic Banxin Setup
 ============================================================
-DEBUG:banxin-padding-topis2pt
-[Guji-Debug]   [flatten] Adding Column Break after Line=354
-[Guji-Debug]   [layout] Node=548 ID=29 [p:0, c:0, r:0]
-[Guji-Debug]   [layout] Node=564 ID=29 [p:0, c:0, r:1]
-[Guji-Debug]   [layout] Node=579 ID=29 [p:0, c:0, r:2]
-[Guji-Debug]   [layout] Node=594 ID=29 [p:0, c:0, r:3]
-[Guji-Debug]   [layout] Node=609 ID=29 [p:0, c:0, r:4]
-[Guji-Debug]   [layout] Node=624 ID=29 [p:0, c:0, r:5]
-[Guji-Debug]   [layout] Node=162 ID=14 [p:0, c:0, r:6]
-[Guji-Debug]   [layout] Node=647 ID=14 [p:0, c:0, r:6]
-[Guji-Debug] [layout] Layout map built. Total entries: 6, Total pages: 1
-[Guji-Debug] [sidenote] calculate_sidenote_positions: registry has 0 entries
 ============================================================
 ============================================================
 TEST 2: Banxin Ratio and Yuwei
 ============================================================
-DEBUG:banxin-padding-topis2pt
-[Guji-Debug]   [flatten] Adding Column Break after Line=779
-[Guji-Debug]   [layout] Node=765 ID=29 [p:0, c:0, r:0]
-[Guji-Debug]   [layout] Node=802 ID=29 [p:0, c:0, r:1]
-[Guji-Debug]   [layout] Node=817 ID=29 [p:0, c:0, r:2]
-[Guji-Debug]   [layout] Node=832 ID=29 [p:0, c:0, r:3]
-[Guji-Debug]   [layout] Node=847 ID=29 [p:0, c:0, r:4]
-[Guji-Debug]   [layout] Node=797 ID=14 [p:0, c:0, r:5]
-[Guji-Debug]   [layout] Node=870 ID=14 [p:0, c:0, r:5]
-[Guji-Debug] [layout] Layout map built. Total entries: 5, Total pages: 1
-[Guji-Debug] [sidenote] calculate_sidenote_positions: registry has 0 entries
 ============================================================

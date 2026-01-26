@@ -3,53 +3,37 @@ Don't change this file in any respect.
 ============================================================
 TEST 1: Basic Jiazhu
 ============================================================
-DEBUG:banxin-padding-topis2pt
-[Guji-Debug]   [flatten] Adding Column Break after Line=441
-[Guji-Debug]   [layout] Node=596 ID=29 [p:0, c:0, r:0]
-[Guji-Debug]   [layout] Node=610 ID=29 [p:0, c:0, r:1]
-[Guji-Debug]   [layout] Node=623 ID=29 [p:0, c:0, r:2]
-[Guji-Debug]   [layout] Node=638 ID=29 [p:0, c:0, r:3]
-[Guji-Debug]   [layout] Node=653 ID=12 [p:0, c:0, r:4]
-[Guji-Debug]   [layout] SPACING: val=5.00pt, grid_h=12.00pt, num_cells=1
-[Guji-Debug]   [layout] Node=668 ID=29 [p:0, c:0, r:5]
-[Guji-Debug]   [layout] JIAZHU DETECTED: node=668
-[Guji-Debug]   [layout] Collected 4 jiazhu glyphs
-[Guji-Debug]   [layout] Node=736 ID=12 [p:0, c:0, r:7]
-[Guji-Debug]   [layout] SPACING: val=5.00pt, grid_h=12.00pt, num_cells=1
-[Guji-Debug]   [layout] Node=751 ID=29 [p:0, c:0, r:8]
-[Guji-Debug]   [layout] Node=162 ID=14 [p:0, c:0, r:9]
-[Guji-Debug]   [layout] Node=774 ID=14 [p:0, c:0, r:9]
-[Guji-Debug] [layout] Layout map built. Total entries: 9, Total pages: 1
-[Guji-Debug] [sidenote] calculate_sidenote_positions: registry has 0 entries
 > \box...=
 \vbox(0.0+0.0)x345.0, direction TLT
-.\hbox(0.0+0.0)x345.0, glue set 329.6fill, direction TLT
+.\hbox(0.0+0.0)x345.0, glue set 345.0fill, direction TLT
 ..\localpar
 ...\localinterlinepenalty=0
 ...\localbrokenpenalty=0
 ...\localleftbox=null
 ...\localrightbox=null
 ..\glue 0.0 plus 1.0fill
-..\hbox(0.0+0.0)x15.4, direction TLT
-...\hbox(0.0+302.39935)x15.4, direction TLT
-....\TU/TW-Kai(0)/m/n/10 正
-....\kern-10.0 (font)
-....\TU/TW-Kai(0)/m/n/10 文
-....\kern-10.0 (font)
-....\TU/TW-Kai(0)/m/n/10 文
-....\kern-10.0 (font)
-....\TU/TW-Kai(0)/m/n/10 字
-....\kern-10.0 (font)
-....\TU/TW-Kai(0)/m/n/7 夹
-....\kern-7.0 (font)
-....\TU/TW-Kai(0)/m/n/7 注
-....\kern-7.0 (font)
-....\TU/TW-Kai(0)/m/n/7 文
-....\kern-7.0 (font)
-....\TU/TW-Kai(0)/m/n/7 字
-....\kern-7.0 (font)
-....\TU/TW-Kai(0)/m/n/10 续
-....\kern-10.0 (font)
+..\hbox(0.0+0.0)x0.0, glue set - 120.4fil, direction TLT
+...\hbox(0.0+0.0)x120.4, direction TLT
+....\hbox(0.0+302.39935)x120.4, direction TLT
+.....\TU/TW-Kai(0)/m/n/10 正
+.....\kern-10.0 (font)
+.....\TU/TW-Kai(0)/m/n/10 文
+.....\kern-10.0 (font)
+.....\TU/TW-Kai(0)/m/n/10 文
+.....\kern-10.0 (font)
+.....\TU/TW-Kai(0)/m/n/10 字
+.....\kern-10.0 (font)
+.....\TU/TW-Kai(0)/m/n/7 夹
+.....\kern-7.0 (font)
+.....\TU/TW-Kai(0)/m/n/7 注
+.....\kern-7.0 (font)
+.....\TU/TW-Kai(0)/m/n/7 文
+.....\kern-7.0 (font)
+.....\TU/TW-Kai(0)/m/n/7 字
+.....\kern-7.0 (font)
+.....\TU/TW-Kai(0)/m/n/10 续
+.....\kern-10.0 (font)
+...\glue 0.0 plus 1.0fil minus 1.0fil
 ..\penalty 10000
 ..\glue(\parfillskip) 0.0 plus 1.0fil
 ..\glue(\rightskip) 0.0
@@ -60,54 +44,33 @@ l. ...}
 ============================================================
 TEST 2: Jiazhu with multiple segments
 ============================================================
-DEBUG:banxin-padding-topis2pt
-[Guji-Debug]   [flatten] Adding Column Break after Line=441
-[Guji-Debug]   [layout] Node=582 ID=29 [p:0, c:0, r:0]
-[Guji-Debug]   [layout] Node=561 ID=12 [p:0, c:0, r:1]
-[Guji-Debug]   [layout] SPACING: val=5.00pt, grid_h=12.00pt, num_cells=1
-[Guji-Debug]   [layout] Node=554 ID=29 [p:0, c:0, r:2]
-[Guji-Debug]   [layout] JIAZHU DETECTED: node=554
-[Guji-Debug]   [layout] Collected 2 jiazhu glyphs
-[Guji-Debug]   [layout] Node=524 ID=12 [p:0, c:0, r:3]
-[Guji-Debug]   [layout] SPACING: val=5.00pt, grid_h=12.00pt, num_cells=1
-[Guji-Debug]   [layout] Node=517 ID=29 [p:0, c:0, r:4]
-[Guji-Debug]   [layout] Node=510 ID=12 [p:0, c:0, r:5]
-[Guji-Debug]   [layout] SPACING: val=5.00pt, grid_h=12.00pt, num_cells=1
-[Guji-Debug]   [layout] Node=405 ID=29 [p:0, c:0, r:6]
-[Guji-Debug]   [layout] JIAZHU DETECTED: node=405
-[Guji-Debug]   [layout] Collected 2 jiazhu glyphs
-[Guji-Debug]   [layout] Node=839 ID=12 [p:0, c:0, r:7]
-[Guji-Debug]   [layout] SPACING: val=5.00pt, grid_h=12.00pt, num_cells=1
-[Guji-Debug]   [layout] Node=848 ID=29 [p:0, c:0, r:8]
-[Guji-Debug]   [layout] Node=836 ID=14 [p:0, c:0, r:9]
-[Guji-Debug]   [layout] Node=871 ID=14 [p:0, c:0, r:9]
-[Guji-Debug] [layout] Layout map built. Total entries: 7, Total pages: 1
-[Guji-Debug] [sidenote] calculate_sidenote_positions: registry has 0 entries
 > \box...=
 \vbox(0.0+0.0)x345.0, direction TLT
-.\hbox(0.0+0.0)x345.0, glue set 329.6fill, direction TLT
+.\hbox(0.0+0.0)x345.0, glue set 345.0fill, direction TLT
 ..\localpar
 ...\localinterlinepenalty=0
 ...\localbrokenpenalty=0
 ...\localleftbox=null
 ...\localrightbox=null
 ..\glue 0.0 plus 1.0fill
-..\hbox(0.0+0.0)x15.4, direction TLT
-...\hbox(0.0+302.39935)x15.4, direction TLT
-....\TU/TW-Kai(0)/m/n/10 甲
-....\kern-10.0 (font)
-....\TU/TW-Kai(0)/m/n/7 注
-....\kern-7.0 (font)
-....\TU/TW-Kai(0)/m/n/7 一
-....\kern-7.0 (font)
-....\TU/TW-Kai(0)/m/n/10 乙
-....\kern-10.0 (font)
-....\TU/TW-Kai(0)/m/n/7 注
-....\kern-7.0 (font)
-....\TU/TW-Kai(0)/m/n/7 二
-....\kern-7.0 (font)
-....\TU/TW-Kai(0)/m/n/10 丙
-....\kern-10.0 (font)
+..\hbox(0.0+0.0)x0.0, glue set - 120.4fil, direction TLT
+...\hbox(0.0+0.0)x120.4, direction TLT
+....\hbox(0.0+302.39935)x120.4, direction TLT
+.....\TU/TW-Kai(0)/m/n/10 甲
+.....\kern-10.0 (font)
+.....\TU/TW-Kai(0)/m/n/7 注
+.....\kern-7.0 (font)
+.....\TU/TW-Kai(0)/m/n/7 一
+.....\kern-7.0 (font)
+.....\TU/TW-Kai(0)/m/n/10 乙
+.....\kern-10.0 (font)
+.....\TU/TW-Kai(0)/m/n/7 注
+.....\kern-7.0 (font)
+.....\TU/TW-Kai(0)/m/n/7 二
+.....\kern-7.0 (font)
+.....\TU/TW-Kai(0)/m/n/10 丙
+.....\kern-10.0 (font)
+...\glue 0.0 plus 1.0fil minus 1.0fil
 ..\penalty 10000
 ..\glue(\parfillskip) 0.0 plus 1.0fil
 ..\glue(\rightskip) 0.0

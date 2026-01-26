@@ -73,6 +73,7 @@ constants.WHATSIT = node.id("whatsit")
 constants.GLUE = node.id("glue")
 constants.PENALTY = node.id("penalty")
 constants.LOCAL_PAR = node.id("local_par")
+constants.RULE = node.id("rule")
 
 -- Custom attributes for indentation
 -- Note: Attributes are registered in vertical.sty via \newluatexattribute

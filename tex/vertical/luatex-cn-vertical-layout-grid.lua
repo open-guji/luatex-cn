@@ -63,12 +63,12 @@
 -- Load dependencies
 -- Check if already loaded via dofile (package.loaded set manually)
 local constants = package.loaded['vertical.luatex-cn-vertical-base-constants'] or
-require('vertical.luatex-cn-vertical-base-constants')
+    require('vertical.luatex-cn-vertical-base-constants')
 local D = constants.D
 local utils = package.loaded['vertical.luatex-cn-vertical-base-utils'] or
-require('vertical.luatex-cn-vertical-base-utils')
+    require('vertical.luatex-cn-vertical-base-utils')
 local hooks = package.loaded['vertical.luatex-cn-vertical-base-hooks'] or
-require('vertical.luatex-cn-vertical-base-hooks')
+    require('vertical.luatex-cn-vertical-base-hooks')
 
 -- @param page_columns (number) Total columns before a page break
 -- @param params (table) Optional parameters:
@@ -88,7 +88,7 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
     -- Debug: Log floating textbox parameters
     if params.floating then
         utils.debug_log(string.format("[layout] Floating textbox detected: floating_x=%.1fpt, paper_width=%.1fpt",
-            (params.floating_x or 0)/65536, (params.paper_width or 0)/65536))
+            (params.floating_x or 0) / 65536, (params.paper_width or 0) / 65536))
     end
 
     -- Stateful cursor layout
@@ -117,55 +117,49 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
         return occupancy[p][c][r] == true
     end
 
-    local function mark_occupied(p, c, r)
-        if not occupancy[p] then occupancy[p] = {} end
-        if not occupancy[p][c] then occupancy[p][c] = {} end
-        occupancy[p][c][r] = true
-    end
-
-    -- Helper: Check if column crosses page center gap (for floating textboxes)
     local function is_center_gap_col(col)
-        local is_floating = (params.floating == true or params.floating == "true")
-        if not is_floating then return false end
+        -- Use provided params if available
+        local g_width = params.grid_width or grid_height or (65536 * 20)
 
-        -- Get paper width: prefer floating_paper_width, then params.paper_width, then global fallback
         local paper_w = params.floating_paper_width or params.paper_width or 0
         if paper_w <= 0 and _G.vertical and _G.vertical.main_paper_width then
             paper_w = _G.vertical.main_paper_width
         end
         if paper_w <= 0 then return false end
 
-        -- params.grid_width is passed as a number (sp), not a string
-        local g_width = params.grid_width or grid_height or (65536 * 20)
-        local floating_x = params.floating_x or 0
         local center = paper_w / 2
         local gap_half_width = 15 * 65536 -- 15pt in sp
 
-        -- Debug on first call
-        if col == 0 and params.floating then
-            utils.debug_log(string.format("[layout] Center gap check: paper_w=%.1fpt, center=%.1fpt, gap=[%.1fpt, %.1fpt], floating_x=%.1fpt, g_width=%.1fpt",
-                paper_w/65536, center/65536, (center-gap_half_width)/65536, (center+gap_half_width)/65536, floating_x/65536, g_width/65536))
+        local floating_x = params.floating_x or 0
+        if not params.floating then
+            -- actually, main text col 0 is anchored to margin_right.
+            -- So floating_x for main text's right origin is margin_right.
+            if type(params.margin_right) == "number" then
+                floating_x = params.margin_right
+            else
+                floating_x = constants.to_dimen(params.margin_right) or 0
+            end
         end
 
-        -- Calculate absolute X position of this column's right edge (RTL: columns go from right to left)
-        -- floating_x is distance from right paper edge
-        -- Column 0 starts at floating_x, column 1 at floating_x + grid_width, etc.
         local col_right_x = floating_x + col * g_width
         local col_left_x = col_right_x + g_width
 
-        -- Check if column overlaps with center gap [center - gap_half_width, center + gap_half_width]
         local gap_left = center - gap_half_width
         local gap_right = center + gap_half_width
 
-        -- Column overlaps gap if: col_right_x < gap_right AND col_left_x > gap_left
         local overlaps = (col_right_x < gap_right) and (col_left_x > gap_left)
 
         if overlaps then
-            utils.debug_log(string.format("[layout] Skipping center gap col=%d (col_range=[%.1fpt, %.1fpt], gap=[%.1fpt, %.1fpt])",
-                col, col_right_x/65536, col_left_x/65536, gap_left/65536, gap_right/65536))
+            utils.debug_log(string.format("[layout] Skipping center gap column %d", col))
         end
 
         return overlaps
+    end
+
+    local function mark_occupied(p, c, r)
+        if not occupancy[p] then occupancy[p] = {} end
+        if not occupancy[p][c] then occupancy[p][c] = {} end
+        occupancy[p][c][r] = true
     end
 
     local function skip_banxin_and_occupied()

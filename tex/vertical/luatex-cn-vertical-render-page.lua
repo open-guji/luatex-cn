@@ -663,7 +663,12 @@ local function apply_positions(head, layout_map, params)
                         -- User X is distance from RIGHT paper edge.
                         -- Physical X from Left Paper Edge = p_width - item.x
                         -- Relative X from Container Left = (p_width - item.x) - m_left
-                        local rel_x = p_width - m_left - item.x
+                        -- Physically, X increases Left-to-Right.
+                        -- item.x is distance from Right paper edge to box's Right edge.
+                        -- Physical X of box's Right edge = p_width - item.x
+                        -- Since the box (TLT) starts at its Left edge, the physical X of the start point
+                        -- is (p_width - item.x) - w.
+                        local rel_x = p_width - m_left - item.x - w
 
                         -- Calculate Y position relative to the container's top edge
                         -- User Y is distance from TOP paper edge.

@@ -125,7 +125,10 @@ function vertical.prepare_grid(box_num, params)
     -- Use grid_height (char height) as approximate char width for indent calculation
     local char_width = g_height
 
-    local p_width = constants.to_dimen(params.paper_width) or 0
+    local p_width = constants.to_dimen(params.paper_width) or constants.to_dimen(params.floating_paper_width) or 0
+    if p_width <= 0 and _G.vertical and _G.vertical.main_paper_width then
+        p_width = _G.vertical.main_paper_width
+    end
     local p_height = constants.to_dimen(params.paper_height) or 0
     local m_top = constants.to_dimen(params.margin_top) or 0
     local m_bottom = constants.to_dimen(params.margin_bottom) or 0
@@ -224,6 +227,7 @@ function vertical.prepare_grid(box_num, params)
         floating_paper_width = params.floating_paper_width,
         paper_width = p_width,
         grid_width = g_width,
+        margin_right = m_right
     })
 
     -- 4a. Pipeline Stage 2.5: For textboxes, determine actual columns used

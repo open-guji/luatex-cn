@@ -222,8 +222,32 @@ function sidenote.calculate_sidenote_positions(layout_map, params)
                         step = sn_grid_height / main_grid_height
                     end
 
+                    local function is_reserved_col(col)
+                        if not params.banxin_on then return false end
+                        local interval = params.n_column or 0
+                        if interval <= 0 then return false end
+                        return _G.vertical.hooks.is_reserved_column(col, interval)
+                    end
+
+                    local function skip_banxin(p, c)
+                        -- Gap for Logical Col C is to its Right (between C and C-1).
+                        -- If either Col C or C-1 is reserved, this gap touches a reserved column.
+                        while is_reserved_col(c) or is_reserved_col(c - 1) or (c >= p_cols) do
+                            if c >= p_cols then
+                                c = 0
+                                p = p + 1
+                            else
+                                c = c + 1
+                            end
+                        end
+                        return p, c
+                    end
+
                     local curr_p = start_page
                     local curr_c = start_col
+                    -- Skip banxin columns (both current col and right boundary col+1)
+                    curr_p, curr_c = skip_banxin(curr_p, curr_c)
+
                     -- Start at max(anchor, filled). Add small margin (0.5?) if overlapping.
                     local filled_r = get_gap_filled(curr_p, curr_c)
                     -- Ensure we start below the filled position
@@ -235,12 +259,11 @@ function sidenote.calculate_sidenote_positions(layout_map, params)
                         if curr_r + padding_bottom_grid >= line_limit then
                             -- Wrap to next column gap
                             curr_c = curr_c + 1
-                            -- Start from top padding in the new column
                             curr_r = padding_top_grid
-                            if curr_c >= p_cols then
-                                curr_c = 0
-                                curr_p = curr_p + 1
-                            end
+
+                            -- Skip banxin and handle page overflow
+                            curr_p, curr_c = skip_banxin(curr_p, curr_c)
+
                             -- Check gap usage in new column
                             local filled = get_gap_filled(curr_p, curr_c)
                             if curr_r <= filled then
@@ -283,6 +306,12 @@ function sidenote.calculate_sidenote_positions(layout_map, params)
     end
 
     return sidenote_map
+end
+
+--- Clear the sidenote registry to free node memory
+function sidenote.clear_registry()
+    sidenote.registry = {}
+    sidenote.registry_counter = 0
 end
 
 package.loaded['vertical.luatex-cn-vertical-core-sidenote'] = sidenote

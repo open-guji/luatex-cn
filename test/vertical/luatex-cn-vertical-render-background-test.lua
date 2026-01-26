@@ -1,6 +1,6 @@
 -- luatex-cn-vertical-render-background-test.lua - Unit tests for render background
 local test_utils = require('test.test_utils')
-local background = require('tex.vertical.luatex-cn-vertical-render-background')
+local background = require('vertical.luatex-cn-vertical-render-background')
 
 test_utils.run_test("render-background - fill rect", function()
     local head = {}

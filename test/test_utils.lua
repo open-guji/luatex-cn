@@ -28,24 +28,43 @@ local function get_project_root()
 end
 
 local root = get_project_root()
-package.path = root .. "src/?.lua;"
-    .. root .. "src/vertical/?.lua;"
-    .. root .. "src/banxin/?.lua;"
-    .. root .. "src/fonts/?.lua;"
-    .. root .. "src/splitpage/?.lua;"
-    .. root .. "src/?/init.lua;"
+package.path = root .. "tex/?.lua;"
+    .. root .. "tex/vertical/?.lua;"
+    .. root .. "tex/banxin/?.lua;"
+    .. root .. "tex/fonts/?.lua;"
+    .. root .. "tex/splitpage/?.lua;"
+    .. root .. "tex/?/init.lua;"
     .. package.path
 
 -- Mock TeX/LuaTeX globals (Force override to avoid native object conflicts)
+local node_id_map = {
+    hlist = 0,
+    vlist = 1,
+    rule = 2,
+    ins = 3,
+    mark = 4,
+    adjust = 5,
+    boundary = 6,
+    disc = 7,
+    whatsit = 8,
+    local_par = 9,
+    dir = 10,
+    glyph = 29,
+    glue = 12,
+    kern = 13,
+    penalty = 14,
+    unset = 15,
+}
+
 node = {
-    id = function(name) return 1 end,
+    id = function(name) return node_id_map[name] or 99 end,
     subtype = function(name) return 1 end,
     new = function(id, subtype)
-        if type(id) == "string" then id = 1 end
-        if type(subtype) == "string" then subtype = 1 end
+        if type(id) == "string" then id = node_id_map[id] or 99 end
+        if type(subtype) == "string" then subtype = 0 end
         return {
             id = id,
-            subtype = subtype,
+            subtype = subtype or 0,
             next = nil,
             width = 0,
             height = 0,
@@ -54,8 +73,36 @@ node = {
             yoffset = 0,
             char = 0,
             font = 0,
-            kern = 0
+            kern = 0,
+            attributes = {}
         }
+    end,
+    copy_list = function(n)
+        if not n then return nil end
+        -- Shallow copy is enough for mock logic
+        local new_head = node.new(n.id, n.subtype)
+        local curr = n.next
+        local tail = new_head
+        while curr do
+            local next_n = node.new(curr.id, curr.subtype)
+            tail.next = next_n
+            tail = next_n
+            curr = curr.next
+        end
+        return new_head
+    end,
+    flush_node = function(n) end,
+    flush_list = function(n) end,
+    write = function(n) end,
+    set_attribute = function(n, id, val)
+        if type(n) == "table" then
+            if not n.attributes then n.attributes = {} end
+            n.attributes[id] = val
+        end
+    end,
+    get_attribute = function(n, id)
+        if type(n) == "table" and n.attributes then return n.attributes[id] end
+        return nil
     end,
     setfield = function(n, f, v) if type(n) == "table" then n[f] = v end end,
     getfield = function(n, f)
@@ -64,23 +111,105 @@ node = {
     end,
     direct = {
         new = function(id, subtype)
-            return { id = id, subtype = subtype, next = nil }
+            local n = { id = id, subtype = subtype, next = nil, attributes = {} }
+            return n
         end,
         setfield = function(n, f, v) if type(n) == "table" then n[f] = v end end,
         getfield = function(n, f)
             if type(n) == "table" then return n[f] end
             return nil
         end,
+        getid = function(n)
+            if type(n) == "table" then return n.id end
+            return nil
+        end,
+        get_attribute = function(n, id)
+            if type(n) == "table" and n.attributes then return n.attributes[id] end
+            return nil
+        end,
+        set_attribute = function(n, id, val)
+            if type(n) == "table" then
+                if not n.attributes then n.attributes = {} end
+                n.attributes[id] = val
+            end
+        end,
+        has_attribute = function(n, id)
+            if type(n) == "table" and n.attributes then return n.attributes[id] ~= nil end
+            return false
+        end,
+        getattr = function(n, id)
+            if type(n) == "table" and n.attributes then return n.attributes[id] end
+            return nil
+        end,
+        setattr = function(n, id, val)
+            if type(n) == "table" then
+                if not n.attributes then n.attributes = {} end
+                n.attributes[id] = val
+            end
+        end,
         insert_before = function(head, anchor, n)
             if not n then return head end
             n.next = anchor
             return n
         end,
+        insert_after = function(head, anchor, n)
+            if not n then return head end
+            if anchor then
+                n.next = anchor.next
+                anchor.next = n
+            end
+            return head
+        end,
+        remove = function(head, n)
+            if head == n then return n.next end
+            local curr = head
+            while curr and curr.next ~= n do curr = curr.next end
+            if curr then curr.next = n.next end
+            return head
+        end,
+        copy = function(n)
+            if not n then return nil end
+            local new_n = {}
+            for k, v in pairs(n) do
+                if k == "attributes" then
+                    new_n.attributes = {}
+                    for ak, av in pairs(v) do new_n.attributes[ak] = av end
+                elseif k ~= "next" and k ~= "prev" then
+                    new_n[k] = v
+                end
+            end
+            return new_n
+        end,
+        getsubtype = function(n)
+            if type(n) == "table" then return n.subtype or 0 end
+            return 0
+        end,
         todirect = function(n) return n end,
-        setlink = function(n, next_node) if type(n) == "table" then n.next = next_node end end,
+        tonode = function(n) return n end,
+        setlink = function(...)
+            local arg = { ... }
+            for i = 1, #arg - 1 do
+                if type(arg[i]) == "table" then arg[i].next = arg[i + 1] end
+                if type(arg[i + 1]) == "table" then arg[i + 1].prev = arg[i] end
+            end
+        end,
         getnext = function(n)
             if type(n) == "table" then return n.next end
             return nil
+        end,
+        setnext = function(n, next_node)
+            if type(n) == "table" then n.next = next_node end
+        end,
+        getprev = function(n)
+            if type(n) == "table" then return n.prev end
+            return nil
+        end,
+        setprev = function(n, prev_node)
+            if type(n) == "table" then n.prev = prev_node end
+        end,
+        getlink = function(n)
+            if type(n) == "table" then return n.prev, n.next end
+            return nil, nil
         end,
     }
 }

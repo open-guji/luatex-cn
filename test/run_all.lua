@@ -33,11 +33,15 @@ for _, test_file in ipairs(tests) do
     print("\n------------------------------------------------------------")
     print("Executing: " .. test_file)
     print("------------------------------------------------------------")
-    local ok = os.execute("texlua " .. test_file)
+    local ok, reason, code = os.execute("texlua " .. test_file)
+
+    -- In Lua 5.3+ (LuaTeX), os.execute returns (success, reason, code)
+    -- success is true/nil
     if ok then
         passed = passed + 1
     else
-        print("\n[!] FAILURE in " .. test_file)
+        print("\n[!] FAILURE in " ..
+        test_file .. " (Reason: " .. (reason or "unknown") .. ", Code: " .. (code or "-1") .. ")")
         table.insert(failed_files, test_file)
     end
 end

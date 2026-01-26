@@ -1495,3 +1495,77 @@ end
 - **`ExplSyntaxOn` 是把双刃剑**：它提供了强大的编程工具，但会静默改变 `\input` 或 `\InputIfFileExists` 加载的文件内容的解析方式。**加载用户配置文件时，永远记得先 `\ExplSyntaxOff`**。
 - **谨慎使用 `x` 展开**：对于可能包含空格的字符串数据（如 RGB 值 `1 0 0`），使用 `o` 或 `V` 展开更加安全。
 - **调试时关注字符串完整性**：如果 `1 0 0` 变成了 `100`，首先怀疑的就是 `expl3` 模式下的空格处理。
+
+---
+
+## 23. 首页空白页与 Class 文件尾部空格陷阱
+
+### 问题描述
+在使用 `ltc-guji.cls` 编写的文档（如《石头记》）中，PDF 输出的第一页是空白页，正文从第二页开始显示。虽然正文内容完整，但这多余的空白页是意外的。
+
+### 调试过程
+1. **现象**：PDF 有 5 页，第 1 页空白。Run log 中出现 `Overfull \hbox (0.40012pt too wide) in paragraph at lines 5--6`。
+2. **分析**：Lines 5-6 是导言区（preamble），理论上不应有输出。`Overfull \hbox` 提示有内容溢出，说明在 `\begin{document}` 之前有不可见内容（如空格、换行符被转义为 `\ `）触发了段落构建，导致 TeX 提前进入水平模式并开始新的一页。
+3. **定位**：检查 `ltc-guji.cls` 文件，发现部分命令行（如 `\ExplSyntaxOff` 之后或 `\endinput` 之前）没有使用 `%` 结尾，留下了潜在的换行符。
+4. **验证**：使用 `grep` 检查 log，发现 `Overfull \hbox`。修复 class 文件后，`Overfull \hbox` 警告消失。
+
+### 根本原因
+**TeX 会将未被 `%` 注释掉的换行符视为空格。** 
+如果这些空格出现在导言区结束、`\begin{document}` 之前的某些敏感位置，或者在 Class 文件加载过程中，它们可能会累积并触发一个空的水平盒子，导致 TeX shipout 一个几乎空白的页面。
+
+### 解决方案
+**养成在 Class/sty 文件中每一行末尾添加 `%` 的习惯**，特别是在：
+1. `\ExplSyntaxOff` 之后
+2. `\endinput` 之前
+3. 定义命令或环境的 `}` 之后
+4. 任何空行，必须写成 `%`
+
+```latex
+% ❌ 危险做法
+\ExplSyntaxOff
+
+\pagestyle{empty}
+
+\endinput
+
+% ✅ 安全做法
+\ExplSyntaxOff%
+%
+\pagestyle{empty}%
+%
+\endinput%
+```
+
+### 教训
+1. **空白页往往是"不仅是空白"**：如果在导言区看日志发现了 `Overfull \hbox` 或页码 `[1]` 出现在 `\begin{document}` 之前，必定是有 stray content。
+2. **Class 文件末尾的空格**：由 `\ExplSyntaxOff` 切换回 LaTeX2e 模式后，空格敏感度恢复，此时的代码必须严格遵守 `%` 结尾规则。
+
+---
+
+## 24. 筒子页 (Split Page) 模式下的 `Overfull \hbox`
+
+### 问题描述
+在启用筒子页（两页拼合为一页输出）模式时，Log 报告巨大的 `Overfull \hbox (539.0001pt too wide)`，溢出量正好等于单页宽度。
+
+### 原因
+**排版引擎逻辑冲突**：
+1. **Core 引擎**：生成了一个**跨页宽度**（Spread Width）的盒子。
+2. **Split Page 逻辑**：将输出页面 (`\pagewidth`) 设置为**单页宽度**（Half Width）。
+3. **TeX 检查**：虽然使用 `\kern` 将盒子移动到了正确位置，但 `\copy` 或 `\box` 仍然保留了原始盒子的宽度信息。当一个双倍宽度的盒子放入单倍宽度的页面流中时，TeX 报告溢出。
+
+### 解决方案
+**使用 `\hbox to 0pt` 和 `\smash` 或者 `\hss` 隐藏盒子尺寸**。
+
+```lua
+-- ❌ 导致溢出
+tex.print(string.format("\\noindent\\kern-%.5fpt\\copy%d", target_w_pt, box_num))
+
+-- ✅ 修复方案：欺骗 TeX，让它认为盒子宽度为 0
+tex.print(string.format("\\noindent\\kern-%.5fpt\\hbox to 0pt{\\smash{\\copy%d}\\hss}", target_w_pt, box_num))
+```
+
+通过 `\hbox to 0pt{... \hss}`，我们将实际内容的宽度"吞掉"，使 TeX 认为这一行的内容宽度为 0，从而完美放入任何尺寸的页面中而不报错。
+
+### 教训
+- **所见即所得 ≠ 内部尺寸**：视觉上对齐了不代表 TeX 的盒子模型满意。
+- **页面几何操作必备技巧**：当进行非标准页面拼版（如筒子页、小册子）时，`\hbox to 0pt` 是处理 content box 尺寸不匹配的万能钥匙。

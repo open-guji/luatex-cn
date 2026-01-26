@@ -1,0 +1,24 @@
+This is a generated file for the l3build validation system.
+Don't change this file in any respect.
+============================================================
+TEST 1: Box content
+============================================================
+> \box...=
+\hbox(6.77+0.11)x51.71, direction TLT
+.\TU/lmr/m/n/10 T
+.\kern-0.83 (font)
+.\TU/lmr/m/n/10 e
+.\TU/lmr/m/n/10 x
+.\TU/lmr/m/n/10 t
+.\glue(\spaceskip) 3.33 plus 1.665 minus 1.11
+.\TU/lmr/m/n/10 t
+.\TU/lmr/m/n/10 o
+.\glue(\spaceskip) 3.33 plus 1.665 minus 1.11
+.\TU/lmr/m/n/10 t
+.\TU/lmr/m/n/10 e
+.\TU/lmr/m/n/10 s
+.\TU/lmr/m/n/10 t
+! OK.
+<argument> ...x 0=\hbox {Text to test} \showbox 0 
+l. ...}
+============================================================

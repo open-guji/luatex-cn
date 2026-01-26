@@ -22,15 +22,26 @@
     - 使用 --off 删除链接后，原始 tex 目录内容不受影响
 --]]
 
-local function get_texmf_home()
-    local handle = io.popen("kpsewhich -var-value=TEXMFHOME")
-    local result = handle:read("*a")
-    handle:close()
-    return result:gsub("%s+", "")
-end
-
 local function is_windows()
     return package.config:sub(1, 1) == "\\"
+end
+
+local function get_texmf_home()
+    local handle = io.popen("kpsewhich -var-value=TEXMFHOME")
+    if not handle then return "" end
+    local result = handle:read("*a")
+    handle:close()
+    if not result then return "" end
+    result = result:gsub("%s+", "")
+
+    -- Expand ~ to home directory on Linux/macOS
+    if not is_windows() and result:sub(1, 1) == "~" then
+        local home = os.getenv("HOME")
+        if home then
+            result = home .. result:sub(2)
+        end
+    end
+    return result
 end
 
 local function execute(cmd)
@@ -44,25 +55,30 @@ if texmf_home == "" or texmf_home == "nil" then
     os.exit(1)
 end
 
+-- Define targets relative to TEXMFHOME
+local relative_targets = {
+    "tex/latex/luatex-cn",
+    "tex/lualatex/luatex-cn"
+}
+
 -- Normalize path for Windows if needed
 if is_windows() then
     texmf_home = texmf_home:gsub("/", "\\")
 end
 
-local target_dir = texmf_home .. (is_windows() and "\\tex\\latex\\luatex-cn" or "/tex/latex/luatex-cn")
-local parent_dir = texmf_home .. (is_windows() and "\\tex\\latex" or "/tex/latex")
-
 local function get_abs_path(path)
     if is_windows() then
-        local handle = io.popen('pushd "' .. path .. '" && cd && popd')
-        local abs = handle:read("*a"):gsub("%s+$", "")
+        local handle = io.popen('pushd "' .. path .. '" >nul 2>&1 && cd && popd')
+        if not handle then return path end
+        local abs = handle:read("*a")
         handle:close()
-        return abs
+        return abs and abs:gsub("%s+$", "") or path
     else
-        local handle = io.popen('cd "' .. path .. '" && pwd')
-        local abs = handle:read("*a"):gsub("%s+$", "")
+        local handle = io.popen('cd "' .. path .. '" >/dev/null 2>&1 && pwd')
+        if not handle then return path end
+        local abs = handle:read("*a")
         handle:close()
-        return abs
+        return abs and abs:gsub("%s+$", "") or path
     end
 end
 
@@ -70,61 +86,94 @@ local script_dir = debug.getinfo(1).source:match("@?(.*[/\\])") or "./"
 local source_dir = get_abs_path(script_dir .. (is_windows() and "..\\tex" or "../tex"))
 
 print("TEXMFHOME: " .. texmf_home)
-print("Target:    " .. target_dir)
 print("Source:    " .. source_dir)
 
 local action = arg[1]
 
 if action == "--on" then
-    -- Check if target exists
-    if is_windows() then
-        local handle = io.popen('if exist "' .. target_dir .. '" echo exists')
-        local exists = handle:read("*a"):match("exists")
-        handle:close()
-        if exists then
-            print("Target already exists: " .. target_dir)
-            print("Please run with --off first if you want to recreate it.")
-            os.exit(1)
-        end
-    else
-        local f = io.open(target_dir, "r")
-        if f then
-            f:close()
-            print("Target already exists: " .. target_dir)
-            print("Please run with --off first if you want to recreate it.")
-            os.exit(1)
-        end
-    end
+    for _, rel_target in ipairs(relative_targets) do
+        local target_path
+        local parent_path
 
-    -- Ensure parent exists
-    if is_windows() then
-        execute('if not exist "' .. parent_dir .. '" mkdir "' .. parent_dir .. '"')
-        execute('mklink /J "' .. target_dir .. '" "' .. source_dir .. '"')
-    else
-        execute('mkdir -p "' .. parent_dir .. '"')
-        execute('ln -s "' .. source_dir .. '" "' .. target_dir .. '"')
-    end
-    print("Link created: " .. target_dir .. " -> " .. source_dir)
-elseif action == "--off" then
-    if is_windows() then
-        -- Check if it exists
-        local handle = io.popen('if exist "' .. target_dir .. '" echo exists')
-        local exists = handle:read("*a"):match("exists")
-        handle:close()
-
-        if exists then
-            -- On Windows, rmdir is used to remove a junction
-            execute('rmdir "' .. target_dir .. '"')
-            print("Link removed: " .. target_dir)
+        if is_windows() then
+            local rel_win = rel_target:gsub("/", "\\")
+            target_path = texmf_home .. "\\" .. rel_win
+            parent_path = target_path:match("(.*)\\[^\\]+$")
         else
-            print("Link does not exist: " .. target_dir)
+            target_path = texmf_home .. "/" .. rel_target
+            parent_path = target_path:match("(.*)/[^/]+$")
         end
-    else
-        execute('rm -f "' .. target_dir .. '"')
-        print("Link removed: " .. target_dir)
+
+        print("Processing: " .. target_path)
+
+        -- Check if target exists
+        local exists = false
+        if is_windows() then
+            local handle = io.popen('if exist "' .. target_path .. '" echo exists')
+            local res = handle:read("*a")
+            handle:close()
+            if res and res:match("exists") then exists = true end
+        else
+            local f = io.open(target_path, "r")
+            if f then
+                f:close()
+                exists = true
+            end
+        end
+
+        if exists then
+            print("  Target already exists. Skipping.")
+        else
+            -- Ensure parent exists
+            if is_windows() then
+                execute('if not exist "' .. parent_path .. '" mkdir "' .. parent_path .. '"')
+                execute('mklink /J "' .. target_path .. '" "' .. source_dir .. '"')
+            else
+                execute('mkdir -p "' .. parent_path .. '"')
+                execute('ln -s "' .. source_dir .. '" "' .. target_path .. '"')
+            end
+            print("  Link created.")
+        end
+    end
+elseif action == "--off" then
+    for _, rel_target in ipairs(relative_targets) do
+        local target_path
+        if is_windows() then
+            local rel_win = rel_target:gsub("/", "\\")
+            target_path = texmf_home .. "\\" .. rel_win
+        else
+            target_path = texmf_home .. "/" .. rel_target
+        end
+
+        print("Processing: " .. target_path)
+
+        -- Check if it exists
+        local exists = false
+        if is_windows() then
+            local handle = io.popen('if exist "' .. target_path .. '" echo exists')
+            local res = handle:read("*a")
+            handle:close()
+            if res and res:match("exists") then exists = true end
+        else
+            -- Check if symlink exists (even if broken) or dir exists
+            -- 'ls' or 'test -e' is better than io.open for symlinks
+            local code = os.execute('test -L "' .. target_path .. '" || test -e "' .. target_path .. '"')
+            if code == 0 or code == true then exists = true end
+        end
+
+        if exists then
+            if is_windows() then
+                execute('rmdir "' .. target_path .. '"')
+            else
+                execute('rm -f "' .. target_path .. '"')
+            end
+            print("  Link removed.")
+        else
+            print("  Link does not exist.")
+        end
     end
 else
     print("Usage: texlua scripts/link_texmf.lua [--on|--off]")
-    print("  --on:  Create junction from TEXMFHOME to src")
-    print("  --off: Remove the junction")
+    print("  --on:  Create junctions/symlinks from TEXMFHOME to src")
+    print("  --off: Remove the junctions/symlinks")
 end

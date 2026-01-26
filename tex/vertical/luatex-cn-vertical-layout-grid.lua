@@ -63,12 +63,12 @@
 -- Load dependencies
 -- Check if already loaded via dofile (package.loaded set manually)
 local constants = package.loaded['vertical.luatex-cn-vertical-base-constants'] or
-require('vertical.luatex-cn-vertical-base-constants')
+    require('vertical.luatex-cn-vertical-base-constants')
 local D = constants.D
 local utils = package.loaded['vertical.luatex-cn-vertical-base-utils'] or
-require('vertical.luatex-cn-vertical-base-utils')
+    require('vertical.luatex-cn-vertical-base-utils')
 local hooks = package.loaded['vertical.luatex-cn-vertical-base-hooks'] or
-require('vertical.luatex-cn-vertical-base-hooks')
+    require('vertical.luatex-cn-vertical-base-hooks')
 
 -- @param page_columns (number) Total columns before a page break
 -- @param params (table) Optional parameters:
@@ -84,6 +84,12 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
     local interval = tonumber(n_column) or 0
     local p_cols = tonumber(page_columns) or (2 * interval + 1)
     if p_cols <= 0 then p_cols = 10000 end -- Safety
+
+    -- Debug: Log floating textbox parameters
+    if params.floating then
+        utils.debug_log(string.format("[layout] Floating textbox detected: floating_x=%.1fpt, paper_width=%.1fpt",
+            (params.floating_x or 0) / 65536, (params.paper_width or 0) / 65536))
+    end
 
     -- Stateful cursor layout
     local cur_page = 0
@@ -111,6 +117,45 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
         return occupancy[p][c][r] == true
     end
 
+    local function is_center_gap_col(col)
+        -- Use provided params if available
+        local g_width = params.grid_width or grid_height or (65536 * 20)
+
+        local paper_w = params.floating_paper_width or params.paper_width or 0
+        if paper_w <= 0 and _G.vertical and _G.vertical.main_paper_width then
+            paper_w = _G.vertical.main_paper_width
+        end
+        if paper_w <= 0 then return false end
+
+        local center = paper_w / 2
+        local gap_half_width = 15 * 65536 -- 15pt in sp
+
+        local floating_x = params.floating_x or 0
+        if not params.floating then
+            -- actually, main text col 0 is anchored to margin_right.
+            -- So floating_x for main text's right origin is margin_right.
+            if type(params.margin_right) == "number" then
+                floating_x = params.margin_right
+            else
+                floating_x = constants.to_dimen(params.margin_right) or 0
+            end
+        end
+
+        local col_right_x = floating_x + col * g_width
+        local col_left_x = col_right_x + g_width
+
+        local gap_left = center - gap_half_width
+        local gap_right = center + gap_half_width
+
+        local overlaps = (col_right_x < gap_right) and (col_left_x > gap_left)
+
+        if overlaps then
+            utils.debug_log(string.format("[layout] Skipping center gap column %d", col))
+        end
+
+        return overlaps
+    end
+
     local function mark_occupied(p, c, r)
         if not occupancy[p] then occupancy[p] = {} end
         if not occupancy[p][c] then occupancy[p][c] = {} end
@@ -123,6 +168,15 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
             changed = false
             -- Skip Banxin
             while is_reserved_col(cur_col) do
+                cur_col = cur_col + 1
+                if cur_col >= p_cols then
+                    cur_col = 0
+                    cur_page = cur_page + 1
+                end
+                changed = true
+            end
+            -- Skip Center Gap (for floating textboxes crossing page center)
+            while is_center_gap_col(cur_col) do
                 cur_col = cur_col + 1
                 if cur_col >= p_cols then
                     cur_col = 0
@@ -450,17 +504,33 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
             t = lookahead
             if not t then break end
             goto start_of_loop
-        elseif id == constants.PENALTY and D.getfield(t, "penalty") <= -10000 then
-            flush_buffer()
-            if cur_row > cur_column_indent then
-                cur_col = cur_col + 1
-                cur_row = 0
-                if cur_col >= p_cols then
-                    cur_col = 0
-                    cur_page = cur_page + 1
+        elseif id == constants.PENALTY then
+            local p_val = D.getfield(t, "penalty")
+            -- Internal Flatten logic uses -10001 for forced column break (paragraph end)
+            if p_val == -10001 then
+                flush_buffer()
+                if cur_row > cur_column_indent then
+                    cur_col = cur_col + 1
+                    cur_row = 0
+                    if cur_col >= p_cols then
+                        cur_col = 0
+                        cur_page = cur_page + 1
+                    end
+                    cur_column_indent = 0
+                    skip_banxin_and_occupied()
                 end
-                cur_column_indent = 0
-                skip_banxin_and_occupied()
+                -- Standard TeX \newpage / \pagebreak / \clearpage uses -10000 or -20000
+                -- TODO: Handle page break logic later
+                -- elseif p_val <= -10000 then
+                --     flush_buffer()
+                --     -- Force Page Break if there is content on current page
+                --     if cur_col > 0 or cur_row > cur_column_indent then
+                --         cur_page = cur_page + 1
+                --         cur_col = 0
+                --         cur_row = 0
+                --         cur_column_indent = 0
+                --         skip_banxin_and_occupied()
+                --     end
             end
         end
 

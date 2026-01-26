@@ -1,6 +1,6 @@
 -- luatex-cn-vertical-render-border-test.lua - Unit tests for render border
 local test_utils = require('test.test_utils')
-local border = require('tex.vertical.luatex-cn-vertical-render-border')
+local border = require('vertical.luatex-cn-vertical-render-border')
 
 test_utils.run_test("render-border - draw outer", function()
     local head = {}

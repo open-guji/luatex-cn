@@ -58,33 +58,37 @@ tlmgr install luatex-cn
 
 ## 使用方法
 
-推荐通过 `ltc-guji` 文档类使用本宏包：
+通过 `ltc-guji` 文档类使用本宏包。绝大多数命令都支持中文：
 
 ```latex
 \documentclass[四库全书]{ltc-guji}
+% 如果不指定字体，会使用系统默认中文字体
+% \setmainfont{Noto Serif SC}
+% \禁用分页裁剪
 
-% 设置书名（显示在右侧版心）
-\title{脂硯齋重評石頭記}
+\title{钦定四库全书}
+\chapter{史记\\卷一}
 
 \begin{document}
 \begin{正文}
-    % 设置章节（更新版心并重置页码）
-    \chapter{第一回}
-    
-    % 侧批：出现在网格列间的批注
-    \侧批{此是第一回回目}
-    甄士隱夢幻識通靈\夹注{双行夹注示例}，賈雨村風塵懷閨秀。
-    
-    % 段落控制：精确控制网格缩进
-    \begin{Paragraph}[indent=2, first-indent=0]
-        列位看官：你道此書從何而來？\空格[1]說起根由，雖近荒唐，細按則深有趣味。
-    \end{Paragraph}
-    
-    % 浮动批注：在页面任意物理坐标放置批注
-    \批注[x=2cm, y=4cm, height=6, color={1 0 0}]{此处可以用红色\\书写跨行批注}
 
-    % 印章：绝对定位添加背景图
-    % \印章[page=1, xshift=-2cm, yshift=-5cm]{seal.png}
+這是古籍竖排的示例，包含夹注\夹注{长夹注自动换列，并且自动平衡，右列可能多一个字}的功能演示。\\ % 强制换列
+空格需手动声明\空格[2] 可加入参数。
+
+段落展示：
+\begin{段落}[indent=2]
+    天地玄黄\\
+    宇宙洪荒
+\end{段落}
+
+侧批\侧批[yoffset=10pt]{较长的侧批可换列甚至换页}可在任意位置插入，可调整位置。
+
+版心展示书名、章节名、页码。鱼尾可设置。
+
+\批注[x=5cm, y=2cm, height=6, color={1 0 0}]{可在任意位置书写多列批注}
+
+% 印章：绝对定位添加背景图
+% \印章[page=1, xshift=2cm, yshift=5cm]{seal.png}
 \end{正文}
 \end{document}
 ```

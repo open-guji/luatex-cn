@@ -26,8 +26,12 @@ else
     end
 end
 
+-- Standardize version: remove leading 'v' if present for internal logic,
+-- but the script outputs it where needed.
+local clean_version = version:gsub("^v", "")
+
 print("--- Starting version update ---")
-print("Target version: v" .. version)
+print("Target version: v" .. clean_version)
 print("Target date:    " .. date)
 
 local function update_file(filepath)
@@ -40,26 +44,26 @@ local function update_file(filepath)
 
     -- Pattern A: \ProvidesPackage{...}[YYYY/MM/DD vX.X.X ...]
     local patternA = "(\\Provides[PackageClass]+{[^}]+}%[)%d%d%d%d/%d%d/%d%d%s+v[%d%.]+"
-    local replacementA = "%1" .. date .. " v" .. version
+    local replacementA = "%1" .. date .. " v" .. clean_version
     local new_content, countA = content:gsub(patternA, replacementA)
     if countA > 0 then changed = true end
 
     -- Pattern A2: \ProvidesExplPackage {name} {date} {vversion}
-    local patternA2 = "(\\ProvidesExpl[PackageClass]+%s*{[^}]+}%s*){%d%d%d%d/%d%d/%d%d}%s*{v[%d%.]+}"
-    local replacementA2 = "%1{" .. date .. "} {v" .. version .. "}"
+    local patternA2 = "(\\ProvidesExpl[PackageClass]+%s*{[^}]+}%s*){%d%d%d%d/%d%d/%d%d}%s*{v[%b.0-9a-zA-Z%-]+}"
+    local replacementA2 = "%1{" .. date .. "} {v" .. clean_version .. "}"
     new_content, countA2 = new_content:gsub(patternA2, replacementA2)
     if countA2 > 0 then changed = true end
 
     -- Pattern B: \newcommand{\luatexcnversion}{X.X.X}
     local patternB = "(\\newcommand{?\\luatexcnversion}?)%s*{(.-)}"
-    local replacementB = "%1{" .. version .. "}"
+    local replacementB = "%1{v" .. clean_version .. "}"
     local countB
     new_content, countB = new_content:gsub(patternB, replacementB)
     if countB > 0 then changed = true end
 
     -- Pattern C: \tl_const:Nn \c_luatexcn_version_tl {X.X.X}
     local patternC = "(\\tl_const:Nn%s+\\c_luatexcn_version_tl%s*){.-}"
-    local replacementC = "%1{" .. version .. "}"
+    local replacementC = "%1{v" .. clean_version .. "}"
     local countC
     new_content, countC = new_content:gsub(patternC, replacementC)
     if countC > 0 then changed = true end

@@ -43,10 +43,39 @@
 
 -- Load dependencies
 local constants = package.loaded['vertical.luatex-cn-vertical-base-constants'] or
-require('vertical.luatex-cn-vertical-base-constants')
+    require('vertical.luatex-cn-vertical-base-constants')
 local D = constants.D
 local utils = package.loaded['vertical.luatex-cn-vertical-base-utils'] or
-require('vertical.luatex-cn-vertical-base-utils')
+    require('vertical.luatex-cn-vertical-base-utils')
+
+local _internal = {}
+
+--- 生成 PDF 边框指令
+-- @param thickness (number) 边框厚度 (bp)
+-- @param rgb_str (string) RGB 颜色字符串
+-- @param x (number) X 坐标 (bp)
+-- @param y (number) Y 坐标 (bp)
+-- @param w (number) 宽度 (bp)
+-- @param h (number) 高度 (bp)
+-- @return (string) PDF literal 字符串
+local function create_border_literal(thickness, rgb_str, x, y, w, h)
+    return string.format("q %.2f w %s RG %.4f %.4f %.4f %.4f re S Q",
+        thickness, rgb_str, x, y, w, h)
+end
+
+--- 创建并插入 PDF literal 节点
+-- @param head (node) 节点列表头部
+-- @param literal (string) PDF 指令
+-- @return (node) 更新后的头部
+local function insert_literal_node(head, literal)
+    local n_node = node.new("whatsit", "pdf_literal")
+    n_node.data = literal
+    n_node.mode = 0
+    return D.insert_before(head, head, D.todirect(n_node))
+end
+
+_internal.create_border_literal = create_border_literal
+_internal.insert_literal_node = insert_literal_node
 
 --- 绘制列边框（仅限普通列，不含版心列）
 -- 版心列应由 banxin.draw_banxin_column 单独绘制
@@ -91,12 +120,8 @@ local function draw_column_borders(p_head, params)
             local th_bp = -(line_limit * grid_height + b_padding_top + b_padding_bottom) * sp_to_bp
 
             -- Draw column border
-            local literal = string.format("q %.2f w %s RG %.4f %.4f %.4f %.4f re S Q",
-                b_thickness_bp, border_rgb_str, tx_bp, ty_bp, tw_bp, th_bp)
-            local n_node = node.new("whatsit", "pdf_literal")
-            n_node.data = literal
-            n_node.mode = 0
-            p_head = D.insert_before(p_head, p_head, D.todirect(n_node))
+            local literal = create_border_literal(b_thickness_bp, border_rgb_str, tx_bp, ty_bp, tw_bp, th_bp)
+            p_head = insert_literal_node(p_head, literal)
         end
     end
 
@@ -127,12 +152,8 @@ local function draw_outer_border(p_head, params)
     local tw_bp = (inner_width + ob_sep_val * 2 + ob_thickness_val) * sp_to_bp
     local th_bp = -(inner_height + ob_sep_val * 2 + ob_thickness_val) * sp_to_bp
 
-    local literal = string.format("q %.2f w %s RG %.4f %.4f %.4f %.4f re S Q",
-        ob_thickness_bp, border_rgb_str, tx_bp, ty_bp, tw_bp, th_bp)
-    local n_node = node.new("whatsit", "pdf_literal")
-    n_node.data = literal
-    n_node.mode = 0
-    p_head = D.insert_before(p_head, p_head, D.todirect(n_node))
+    local literal = create_border_literal(ob_thickness_bp, border_rgb_str, tx_bp, ty_bp, tw_bp, th_bp)
+    p_head = insert_literal_node(p_head, literal)
 
     return p_head
 end

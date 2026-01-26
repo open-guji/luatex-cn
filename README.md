@@ -6,9 +6,13 @@
 
 LuaTeX package for Chinese charactor typesetting, covering horizontal/vertical, traditional/modern layout. Currently focus on Ancient Book replication. Implemented core logic of vertical typesetting, decorative elements of traditional Chinese books, and interlinear notes.
 
-CTAN: [v0.1.1](https://ctan.org/pkg/luatex-cn)
+CTAN: [v0.1.1](https://ctan.org/pkg/luatex-cn) | GitHub Release: [v0.1.3](https://github.com/open-guji/luatex-cn/releases)
 
-GitHub Release: [v0.1.2](https://github.com/open-guji/luatex-cn/releases)
+
+## 路线图
+- v0.1.4：继续修复红楼梦第一回碰到的一些问题，加入眉批命令
+- v0.1.x：完整排版红楼梦第一回、史记五帝本纪。进一步重构代码结构。完成详细用户文档、开发文档。
+- v0.2.0：实现现代繁体竖排，支持标点符号。
 
 ## 展示
 
@@ -44,7 +48,8 @@ GitHub Release: [v0.1.2](https://github.com/open-guji/luatex-cn/releases)
 详细安装说明请参阅 [INSTALL.md](INSTALL.md)。
 
 快速安装：
-1. **即将发布至 CTAN**，你可以直接使用 TeX 发行版自带的包管理器进行安装：
+1. 已经发布至CTAN/TeXLive，你可以直接使用 TeX 发行版自带的包管理器进行安装：
+    - 注意：目前CTAN版本落后于GitHub，建议使用GitHub Release。
 ```
 tlmgr install luatex-cn
 ```

@@ -55,7 +55,7 @@
 \RequirePackage{vertical/luatex-cn-vertical}
 
 % Load font auto-detection module
-\RequirePackage{luatex-cn-font-autodetect}
+\RequirePackage{fonts/luatex-cn-font-autodetect}
 
 % 3. Key-Value Configuration System
 \ExplSyntaxOn

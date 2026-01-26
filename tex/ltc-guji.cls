@@ -73,7 +73,7 @@
 \RequirePackage{splitpage/luatex-cn-splitpage}
 
 % Load font auto-detection module
-\RequirePackage{luatex-cn-font-autodetect}
+\RequirePackage{fonts/luatex-cn-font-autodetect}
 
 % Load banxin for 版心/鱼尾 features (registers hooks with vertical)
  \lua_now:e {

@@ -31,7 +31,7 @@ if vf then
 end
 
 print("--- Starting version update ---")
-print("Target version: v" .. clean_version)
+print("Target version: " .. clean_version)
 print("Target date:    " .. date)
 
 local function update_file(filepath)

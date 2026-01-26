@@ -64,7 +64,8 @@
 local constants = package.loaded['vertical.luatex-cn-vertical-base-constants'] or
     require('vertical.luatex-cn-vertical-base-constants')
 local D = constants.D
-require('vertical.luatex-cn-vertical-base-utils')
+local utils = package.loaded['vertical.luatex-cn-vertical-base-utils'] or
+    require('vertical.luatex-cn-vertical-base-utils')
 
 local _internal = {}
 

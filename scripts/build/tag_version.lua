@@ -51,6 +51,7 @@ local function update_file(filepath)
     -- Pattern A2: \ProvidesExplPackage {name} {date} {vversion}
     local patternA2 = "(\\ProvidesExpl[PackageClass]+%s*{[^}]+}%s*){%d%d%d%d/%d%d/%d%d}%s*{v?[%b.0-9a-zA-Z%-]+}"
     local replacementA2 = "%1{" .. date .. "} {" .. clean_version .. "}"
+    local countA2
     new_content, countA2 = new_content:gsub(patternA2, replacementA2)
     if countA2 > 0 then changed = true end
 

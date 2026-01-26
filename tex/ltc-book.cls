@@ -16,27 +16,30 @@
 % Chinese Vertical Book - A document class for modern vertical Chinese typesetting
 % Developed for LuaTeX
 
-\NeedsTeXFormat{LaTeX2e}
-\ProvidesClass{ltc-book}[2026/01/21 v0.1.2 Chinese Vertical Book Class]
-
-% 1. Options Handling
+\RequirePackage{expl3}
 \RequirePackage{l3keys2e}
-\ExplSyntaxOn
-\tl_new:N \l_ltc_book_initial_template_tl
+\ProvidesExplClass {ltc-book} {2026/01/25} {0.1.3} {Chinese Vertical Book Class}
 
-\DeclareOption*{
-  \tl_set:Nx \l_tmpa_tl { \CurrentOption }
-  % Look for config file: configs/<name>.ltc_book.cfg
-  \file_if_exist:nTF { configs/ \l_tmpa_tl .ltc_book.cfg }
-    {
-      \tl_set_eq:NN \l_ltc_book_initial_template_tl \l_tmpa_tl
-    }
-    {
-      \PassOptionsToClass{\l_tmpa_tl}{article}
-    }
-}
-\ExplSyntaxOff
-\ProcessOptions\relax
+\tl_new:N \l_luatexcn_book_initial_template_tl
+
+\keys_define:nn { luatexcn / book / options }
+  {
+    unknown .code:n =
+      {
+        \tl_set_eq:NN \l_tmpa_tl \l_keys_key_tl
+        % Look for config file: configs/<name>.ltc_book.cfg
+        \file_if_exist:nTF { configs/ \l_tmpa_tl .ltc_book.cfg }
+          {
+            \tl_set_eq:NN \l_luatexcn_book_initial_template_tl \l_tmpa_tl
+          }
+          {
+            \PassOptionsToClass { \l_tmpa_tl } { article }
+          }
+      }
+  }
+
+\ProcessKeysOptions { luatexcn / book / options }
+
 \LoadClass{article}
 
 % 2. Core Dependencies
@@ -52,102 +55,102 @@
 \RequirePackage{vertical/luatex-cn-vertical}
 
 % Load font auto-detection module
-\RequirePackage{fonts/luatex-cn-font-autodetect}
+\RequirePackage{luatex-cn-font-autodetect}
 
 % 3. Key-Value Configuration System
 \ExplSyntaxOn
 
-\keys_define:nn { ltc_book }
+\keys_define:nn { luatexcn / book }
   {
     % Page geometry - modern book defaults (A5-ish)
-    paper-width .tl_set:N = \l_ltc_book_paper_width_tl,
+    paper-width .tl_set:N = \l_luatexcn_book_paper_width_tl,
     paper-width .initial:n = 148mm,
 
-    paper-height .tl_set:N = \l_ltc_book_paper_height_tl,
+    paper-height .tl_set:N = \l_luatexcn_book_paper_height_tl,
     paper-height .initial:n = 210mm,
 
-    margin-top .tl_set:N = \l_ltc_book_margin_top_tl,
+    margin-top .tl_set:N = \l_luatexcn_book_margin_top_tl,
     margin-top .initial:n = 15mm,
 
-    margin-bottom .tl_set:N = \l_ltc_book_margin_bottom_tl,
+    margin-bottom .tl_set:N = \l_luatexcn_book_margin_bottom_tl,
     margin-bottom .initial:n = 30mm,
 
-    margin-left .tl_set:N = \l_ltc_book_margin_left_tl,
+    margin-left .tl_set:N = \l_luatexcn_book_margin_left_tl,
     margin-left .initial:n = 15mm,
 
-    margin-right .tl_set:N = \l_ltc_book_margin_right_tl,
+    margin-right .tl_set:N = \l_luatexcn_book_margin_right_tl,
     margin-right .initial:n = 25mm,
 
     % Grid and font settings
-    font-size .tl_set:N = \l_ltc_book_font_size_tl,
+    font-size .tl_set:N = \l_luatexcn_book_font_size_tl,
     font-size .initial:n = 12pt,
     
-    line-spacing .tl_set:N = \l_ltc_book_line_spacing_tl,
+    line-spacing .tl_set:N = \l_luatexcn_book_line_spacing_tl,
     line-spacing .initial:n = 14pt,
 
-    grid-width .tl_set:N = \l_ltc_book_grid_width_tl,
+    grid-width .tl_set:N = \l_luatexcn_book_grid_width_tl,
     grid-width .initial:n = 14pt,
 
-    grid-height .tl_set:N = \l_ltc_book_grid_height_tl,
+    grid-height .tl_set:N = \l_luatexcn_book_grid_height_tl,
     grid-height .initial:n = 14pt,
 
-    chapter-title-grid-height .tl_set:N = \l_ltc_book_chapter_title_grid_height_tl,
+    chapter-title-grid-height .tl_set:N = \l_luatexcn_book_chapter_title_grid_height_tl,
     chapter-title-grid-height .initial:n = {},
 
-    book-name-align .tl_set:N = \l_ltc_book_book_name_align_tl,
+    book-name-align .tl_set:N = \l_luatexcn_book_book_name_align_tl,
     book-name-align .initial:n = {center},
 
-    upper-yuwei .bool_set:N = \l_ltc_book_upper_yuwei_bool,
+    upper-yuwei .bool_set:N = \l_luatexcn_book_upper_yuwei_bool,
     upper-yuwei .initial:n = true,
 
-    banxin-divider .bool_set:N = \l_ltc_book_banxin_divider_bool,
+    banxin-divider .bool_set:N = \l_luatexcn_book_banxin_divider_bool,
     banxin-divider .initial:n = true,
 
-    page-number-align .tl_set:N = \l_ltc_book_page_number_align_tl,
+    page-number-align .tl_set:N = \l_luatexcn_book_page_number_align_tl,
     page-number-align .initial:n = {right-bottom},
 
-    font-name .tl_set:N = \l_ltc_book_font_name_tl,
+    font-name .tl_set:N = \l_luatexcn_book_font_name_tl,
     font-name .initial:n = {},
 
-    font-features .tl_set:N = \l_ltc_book_font_features_tl,
+    font-features .tl_set:N = \l_luatexcn_book_font_features_tl,
     font-features .initial:n = {},
 
-    height .tl_set:N = \l_ltc_book_height_tl,
+    height .tl_set:N = \l_luatexcn_book_height_tl,
     height .initial:n = ,
 
     % No border by default for modern books
-    border .bool_set:N = \l_ltc_book_border_bool,
+    border .bool_set:N = \l_luatexcn_book_border_bool,
     border .initial:n = false,
 
-    border-thickness .tl_set:N = \l_ltc_book_border_thickness_tl,
+    border-thickness .tl_set:N = \l_luatexcn_book_border_thickness_tl,
     border-thickness .initial:n = 0.4pt,
 
-    vertical-align .tl_set:N = \l_ltc_book_valign_tl,
+    vertical-align .tl_set:N = \l_luatexcn_book_valign_tl,
     vertical-align .initial:n = center,
 
-    n-column .int_set:N = \l_ltc_book_n_column_int,
+    n-column .int_set:N = \l_luatexcn_book_n_column_int,
     n-column .initial:n = 0,
 
-    debug .bool_gset:N = \g_cnv_debug_bool,
+    debug .bool_set:N = \g_luatexcn_v_debug_bool,
     debug .initial:n = false,
 
     template .code:n = {
       \InputIfFileExists{configs/#1.ltc_book.cfg}{}{
-        \keys_set:nn { ltc_book / templates } { #1 }
+        \keys_set:nn { luatexcn / book / templates } { #1 }
       }
     },
   }
 
 % 4. Geometry setup
-\cs_new:Npn \__ltc_book_apply_geometry:
+\cs_new:Npn \__luatexcn_book_apply_geometry:
   {
     \geometry{
-      paperwidth=\l_ltc_book_paper_width_tl,
-      paperheight=\l_ltc_book_paper_height_tl,
-      top=\l_ltc_book_margin_top_tl,
-      bottom=\l_ltc_book_margin_bottom_tl,
-      left=\l_ltc_book_margin_left_tl,
-      right=\l_ltc_book_margin_right_tl
+      paperwidth=\l_luatexcn_book_paper_width_tl,
+      paperheight=\l_luatexcn_book_paper_height_tl,
+      top=\l_luatexcn_book_margin_top_tl,
+      bottom=\l_luatexcn_book_margin_bottom_tl,
+      left=\l_luatexcn_book_margin_left_tl,
+      right=\l_luatexcn_book_margin_right_tl
     }
   }
 
@@ -161,95 +164,93 @@
   right=15mm
 }
 
-\NewDocumentCommand{\ltc_bookSetup}{ +m }
+\NewDocumentCommand{\bookSetup}{ +m }
   {
-    \keys_set:nn { ltc_book } { #1 }
-    \__ltc_book_apply_geometry:
+    \keys_set:nn { luatexcn / book } { #1 }
+    \__luatexcn_book_apply_geometry:
   }
 
 % 5. Main content environment
 \NewEnviron{ltc-book-content}[1][]{%
     \clearpage
     \group_begin:
-    \keys_set:nn { ltc_book } { #1 }
+    \keys_set:nn { luatexcn / book } { #1 }
 
     % Font selection logic
-    \tl_if_empty:NF \l_ltc_book_font_name_tl
+    \tl_if_empty:NF \l_luatexcn_book_font_name_tl
       {
-        \tl_if_empty:NTF \l_ltc_book_font_features_tl
+        \tl_if_empty:NTF \l_luatexcn_book_font_features_tl
           {
             % No features specified, use default for CJK vertical
-            \exp_args:NV \setmainfont \l_ltc_book_font_name_tl [RawFeature={+vert,+vrt2}, CharacterWidth=Full]
+            \exp_args:NV \setmainfont \l_luatexcn_book_font_name_tl [RawFeature={+vert,+vrt2}, CharacterWidth=Full]
           }
           {
-            \exp_args:NV \setmainfont \l_ltc_book_font_name_tl [\l_ltc_book_font_features_tl]
+            \exp_args:NV \setmainfont \l_luatexcn_book_font_name_tl [\l_luatexcn_book_font_features_tl]
           }
       }
 
-    \fontsize{\l_ltc_book_font_size_tl}{\l_ltc_book_line_spacing_tl}\selectfont
+    \fontsize{\l_luatexcn_book_font_size_tl}{\l_luatexcn_book_line_spacing_tl}\selectfont
     
     % Configure vertical module
-    \bool_if:NTF \l_ltc_book_border_bool 
-      { \keys_set:nn { vertical } { border=true } } 
-      { \keys_set:nn { vertical } { border=false } }
+    \bool_if:NTF \l_luatexcn_book_border_bool 
+      { \keys_set:nn { luatexcn / vertical } { border=true } } 
+      { \keys_set:nn { luatexcn / vertical } { border=false } }
     
-    \setlength{\topskip}{0pt}
-    \setlength{\parskip}{0pt}
-    \parindent=0pt
+    \dim_zero:N \topskip
+    \dim_zero:N \parskip
+    \dim_zero:N \parindent
 
-    \tl_if_empty:NT \l_ltc_book_height_tl
+    \tl_if_empty:NT \l_luatexcn_book_height_tl
       {
-        \tl_set:Nx \l_ltc_book_height_tl { \dim_eval:n { \l_ltc_book_paper_height_tl - \l_ltc_book_margin_top_tl - \l_ltc_book_margin_bottom_tl } }
+        \tl_set:Nx \l_luatexcn_book_height_tl { \dim_eval:n { \l_luatexcn_book_paper_height_tl - \l_luatexcn_book_margin_top_tl - \l_luatexcn_book_margin_bottom_tl } }
       }
 
-    \keys_set:nn { vertical }
+    \keys_set:nx { luatexcn / vertical }
       {
-        height = \l_ltc_book_height_tl,
-        grid-width = \l_ltc_book_grid_width_tl,
-        grid-height = \l_ltc_book_grid_height_tl,
-        vertical-align = \l_ltc_book_valign_tl,
-        border-thickness = \l_ltc_book_border_thickness_tl,
-        n-column = \int_use:N \l_ltc_book_n_column_int,
-        paper-width = \l_ltc_book_paper_width_tl,
-        paper-height = \l_ltc_book_paper_height_tl,
-        margin-top = \l_ltc_book_margin_top_tl,
-        margin-bottom = \l_ltc_book_margin_bottom_tl,
-        margin-left = \l_ltc_book_margin_left_tl,
-        margin-right = \l_ltc_book_margin_right_tl,
-        chapter-title-grid-height = \l_ltc_book_chapter_title_grid_height_tl,
-        book-name-align = \l_ltc_book_book_name_align_tl,
-        upper-yuwei = \bool_if:NTF \l_ltc_book_upper_yuwei_bool {true} {false},
-        banxin-divider = \bool_if:NTF \l_ltc_book_banxin_divider_bool {true} {false},
-        page-number-align = \l_ltc_book_page_number_align_tl,
-        debug = \bool_if:NTF \g_cnv_debug_bool {true} {false}
+        height = \l_luatexcn_book_height_tl,
+        grid-width = \l_luatexcn_book_grid_width_tl,
+        grid-height = \l_luatexcn_book_grid_height_tl,
+        vertical-align = \l_luatexcn_book_valign_tl,
+        border-thickness = \l_luatexcn_book_border_thickness_tl,
+        n-column = \int_use:N \l_luatexcn_book_n_column_int,
+        paper-width = \l_luatexcn_book_paper_width_tl,
+        paper-height = \l_luatexcn_book_paper_height_tl,
+        margin-top = \l_luatexcn_book_margin_top_tl,
+        margin-bottom = \l_luatexcn_book_margin_bottom_tl,
+        margin-left = \l_luatexcn_book_margin_left_tl,
+        margin-right = \l_luatexcn_book_margin_right_tl,
+        chapter-title-grid-height = \l_luatexcn_book_chapter_title_grid_height_tl,
+        book-name-align = \l_luatexcn_book_book_name_align_tl,
+        upper-yuwei = \bool_if:NTF \l_luatexcn_book_upper_yuwei_bool {true} {false},
+        banxin-divider = \bool_if:NTF \l_luatexcn_book_banxin_divider_bool {true} {false},
+        page-number-align = \l_luatexcn_book_page_number_align_tl,
+        debug = \bool_if:NTF \g_luatexcn_v_debug_bool {true} {false}
       }
     \nointerlineskip
-    \__cn_vertical_process_grid:n { \BODY }
+    \__luatexcn_v_process_grid:n { \BODY }
     \group_end:
     \clearpage
 }
 
 % 6. Apply initial template if specified
-\tl_if_empty:NF \l_ltc_book_initial_template_tl
+\tl_if_empty:NF \l_luatexcn_book_initial_template_tl
   {
-    \keys_set:nx { ltc_book } { template = \l_ltc_book_initial_template_tl }
+    \keys_set:nx { luatexcn / book } { template = \l_luatexcn_book_initial_template_tl }
   }
 
-\ExplSyntaxOff
 
 \pagestyle{plain}
 
 % Environment Aliases (CJK support)
 \NewEnvironmentCopy{正文}{ltc-book-content}
 
-\ExplSyntaxOn
 % Apply auto-detected font if no font-name is set
 \AtEndOfClass{
-  \tl_if_empty:NT \l_ltc_book_font_name_tl
+  \tl_if_empty:NT \l_luatexcn_book_font_name_tl
     {
       \ApplyAutoFont
     }
 }
-\ExplSyntaxOff
-
-\endinput
+\ExplSyntaxOff%
+%
+\endinput%

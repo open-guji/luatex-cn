@@ -32,7 +32,10 @@ installfiles          = {}
 
 -- Skip tests/typesetting
 checkfiles            = {}
-testfiles             = {}
+testfiles             = { "*.lvt" }
+testfilesdir          = "testfiles"
+stdengine             = "luatex"
+checkengines          = { "luatex" }
 typesetfiles          = {}
 
 --------------------------------------------------------------------------------
@@ -114,7 +117,7 @@ local function list_dir(path)
     -- Windows: use PowerShell with temp file for proper UTF-8 support
     local tmp_file = os.tmpname()
     local cmd = 'powershell -Command "[Console]::OutputEncoding = [System.Text.Encoding]::UTF8; Get-ChildItem -Name \'' ..
-    path:gsub("\\", "\\\\") .. '\'" > "' .. tmp_file .. '" 2>nul'
+        path:gsub("\\", "\\\\") .. '\'" > "' .. tmp_file .. '" 2>nul'
     os.execute(cmd)
 
     local f = io.open(tmp_file, "rb")
@@ -348,10 +351,20 @@ function tag_hook(tagname, tagdate)
   return 0
 end
 
--- Pre-build hook: sanitize files and tag version
+-- Pre-build hook: sanitize files, tag version, and run unit tests
 function checkinit_hook()
   sanitize_project_files()
   os.execute("texlua scripts/build/tag_version.lua")
+
+  -- Run Lua unit tests before l3build regression tests
+  print("\n>>> Running Lua unit tests...")
+  local result = os.execute("texlua test/run_all.lua")
+  if not result then
+    print("\n[FAIL] Lua unit tests failed! Aborting l3build check.")
+    os.exit(1)
+  end
+  print("")
+
   return 0
 end
 
@@ -473,7 +486,7 @@ local function ctan_custom()
   if sep == "\\" then
     -- Windows: use PowerShell
     local ps_cmd = 'powershell -Command "Compress-Archive -Path \'' ..
-    staging_path .. '\' -DestinationPath \'' .. zip_path .. '\' -Force"'
+        staging_path .. '\' -DestinationPath \'' .. zip_path .. '\' -Force"'
     os.execute(ps_cmd)
   else
     -- Unix: use zip command
@@ -497,9 +510,30 @@ local function ctan_custom()
   return 0
 end
 
+-- Custom test function to run Lua unit tests
+local function run_unit_tests()
+  print("\n========================================")
+  print("  Running Lua Unit Tests")
+  print("========================================\n")
+
+  local result = os.execute("texlua test/run_all.lua")
+  if result then
+    print("\n[OK] All Lua unit tests passed!")
+    return 0
+  else
+    print("\n[FAIL] Some Lua unit tests failed!")
+    return 1
+  end
+end
+
 -- If called directly with "ctan" argument, run our custom build
 if arg and arg[1] == "ctan" then
   os.exit(ctan_custom())
+end
+
+-- If called with "test" argument, run unit tests only
+if arg and arg[1] == "test" then
+  os.exit(run_unit_tests())
 end
 
 --------------------------------------------------------------------------------

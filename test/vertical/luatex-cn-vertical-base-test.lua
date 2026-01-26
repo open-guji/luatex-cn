@@ -1,8 +1,8 @@
 -- luatex-cn-vertical-base-test.lua - Unit tests for vertical base modules
 local test_utils = require('test.test_utils')
-local constants = require('tex.vertical.luatex-cn-vertical-base-constants')
-local utils = require('tex.vertical.luatex-cn-vertical-base-utils')
-local text_utils = require('tex.vertical.luatex-cn-vertical-base-text-utils')
+local constants = require('vertical.luatex-cn-vertical-base-constants')
+local utils = require('vertical.luatex-cn-vertical-base-utils')
+local text_utils = require('vertical.luatex-cn-vertical-base-text-utils')
 
 test_utils.run_test("base-utils - sp_to_bp", function()
     -- 65536 sp = 1 pt

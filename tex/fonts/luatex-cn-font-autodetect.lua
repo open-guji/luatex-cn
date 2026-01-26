@@ -15,7 +15,7 @@ fontdetect.schemes = {
             kai = "KaiTi",        -- 楷体
             fangsong = "FangSong" -- 仿宋
         },
-        features = "RawFeature={+vert,+vrt2}, CharacterWidth=Full"
+        features = "RawFeature={+vert,+vrt2}"
     },
 
     -- macOS fonts (苹方/华文系列)
@@ -27,7 +27,7 @@ fontdetect.schemes = {
             kai = "Kaiti SC",       -- 楷体-简
             fangsong = "STFangsong" -- 华文仿宋
         },
-        features = "RawFeature={+vert,+vrt2}, CharacterWidth=Full"
+        features = "RawFeature={+vert,+vrt2}"
     },
 
     -- Linux fonts (Fandol 开源字体)
@@ -39,7 +39,7 @@ fontdetect.schemes = {
             kai = "FandolKai",
             fangsong = "FandolFang"
         },
-        features = "RawFeature={+vert,+vrt2}, CharacterWidth=Full"
+        features = "RawFeature={+vert,+vrt2}"
     },
 
     -- Ubuntu fonts (文泉驿/Noto)
@@ -51,7 +51,7 @@ fontdetect.schemes = {
             kai = "AR PL UKai CN", -- 文泉驿正黑
             fangsong = "Noto Serif CJK SC"
         },
-        features = "RawFeature={+vert,+vrt2}, CharacterWidth=Full"
+        features = "RawFeature={+vert,+vrt2}"
     },
 
     -- Common alternative fonts (备用方案)
@@ -63,7 +63,7 @@ fontdetect.schemes = {
             kai = "TW-Kai",
             fangsong = "TW-Kai"
         },
-        features = "RawFeature={+vert,+vrt2}, CharacterWidth=Full"
+        features = "RawFeature={+vert,+vrt2}"
     }
 }
 

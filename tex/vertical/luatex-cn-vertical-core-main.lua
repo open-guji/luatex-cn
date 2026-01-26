@@ -125,7 +125,10 @@ function vertical.prepare_grid(box_num, params)
     -- Use grid_height (char height) as approximate char width for indent calculation
     local char_width = g_height
 
-    local p_width = constants.to_dimen(params.paper_width) or 0
+    local p_width = constants.to_dimen(params.paper_width) or constants.to_dimen(params.floating_paper_width) or 0
+    if p_width <= 0 and _G.vertical and _G.vertical.main_paper_width then
+        p_width = _G.vertical.main_paper_width
+    end
     local p_height = constants.to_dimen(params.paper_height) or 0
     local m_top = constants.to_dimen(params.margin_top) or 0
     local m_bottom = constants.to_dimen(params.margin_bottom) or 0
@@ -181,6 +184,12 @@ function vertical.prepare_grid(box_num, params)
         m_bottom = 0
         m_left = 0
         m_right = 0
+    else
+        -- Store main document paper_width for use by floating textboxes
+        if p_width > 0 then
+            _G.vertical = _G.vertical or {}
+            _G.vertical.main_paper_width = p_width
+        end
     end
 
     local is_debug = (params.debug_on == "true" or params.debug_on == true)
@@ -212,6 +221,13 @@ function vertical.prepare_grid(box_num, params)
     local layout_map, total_pages = layout.calculate_grid_positions(list, g_height, limit, b_interval, p_cols, {
         distribute = params.distribute,
         banxin_on = banxin_on,
+        -- Pass floating textbox info for center gap detection
+        floating = params.floating,
+        floating_x = params.floating_x,
+        floating_paper_width = params.floating_paper_width,
+        paper_width = p_width,
+        grid_width = g_width,
+        margin_right = m_right
     })
 
     -- 4a. Pipeline Stage 2.5: For textboxes, determine actual columns used
@@ -236,7 +252,9 @@ function vertical.prepare_grid(box_num, params)
         list = list,
         page_columns = p_cols,
         line_limit = limit,
-        n_column = b_interval
+        n_column = b_interval,
+        banxin_on = banxin_on,
+        grid_height = g_height
     })
 
     -- 5. Pipeline Stage 3: Apply positions and render
@@ -379,7 +397,9 @@ function vertical.load_page(box_num, index, copy)
             -- Copy the node list so the original is preserved
             tex.box[box_num] = node.copy_list(box)
         else
+            -- Move the node to TeX and clear our reference
             tex.box[box_num] = box
+            _G.vertical_pending_pages[index + 1] = nil
         end
     end
 end
@@ -425,10 +445,11 @@ function vertical.process_from_tex(box_num, params)
             tex.print("\\par\\nointerlineskip")
             if right_first then
                 -- 右半页：将内容左移，使右半部分显示
-                tex.print(string.format("\\noindent\\kern-%.5fpt\\copy%d", target_w_pt, box_num))
+                tex.print(string.format("\\noindent\\kern-%.5fpt\\hbox to 0pt{\\smash{\\copy%d}\\hss}", target_w_pt,
+                    box_num))
             else
                 -- 左半页：不移动
-                tex.print(string.format("\\noindent\\copy%d", box_num))
+                tex.print(string.format("\\noindent\\hbox to 0pt{\\smash{\\copy%d}\\hss}", box_num))
             end
 
             -- New page for second half
@@ -440,10 +461,11 @@ function vertical.process_from_tex(box_num, params)
             tex.print("\\par\\nointerlineskip")
             if right_first then
                 -- 左半页：不移动
-                tex.print(string.format("\\noindent\\copy%d", box_num))
+                tex.print(string.format("\\noindent\\hbox to 0pt{\\smash{\\copy%d}\\hss}", box_num))
             else
                 -- 右半页：将内容左移
-                tex.print(string.format("\\noindent\\kern-%.5fpt\\copy%d", target_w_pt, box_num))
+                tex.print(string.format("\\noindent\\kern-%.5fpt\\hbox to 0pt{\\smash{\\copy%d}\\hss}", target_w_pt,
+                    box_num))
             end
 
             if i < total_pages - 1 then
@@ -455,16 +477,71 @@ function vertical.process_from_tex(box_num, params)
         for i = 0, total_pages - 1 do
             tex.print(string.format("\\directlua{vertical.load_page(%d, %d)}", box_num, i))
             tex.print("\\par\\nointerlineskip")
-            tex.print(string.format("\\noindent\\hfill\\smash{\\box%d}", box_num))
+            tex.print(string.format("\\noindent\\hfill\\hbox to 0pt{\\smash{\\box%d}\\hss}", box_num))
             if i < total_pages - 1 then
                 tex.print("\\newpage")
             end
         end
     end
+
+    -- Clear registries that are no longer needed (they were only used during prepare_grid)
+    -- This recovers memory for sidenotes and floating boxes immediately.
+    sidenote.clear_registry()
+    textbox.clear_registry()
 end
 
--- CRITICAL: Update global variable with the local one that has the function
-_G.vertical = vertical
+--- Final cleanup function to be called at the end of the document
+-- This safely flushes all remaining nodes in registries and clears tables
+function vertical.cleanup()
+    local glyph_id = node.id("glyph")
+    local before = node.count(glyph_id)
+    if utils.debug_log then utils.debug_log(string.format("[core] Performing cleanup. Glyphs before: %d", before)) end
+
+    -- 1. Flush and clear pending pages
+    for i, box in pairs(_G.vertical_pending_pages) do
+        if box then
+            node.flush_list(box)
+        end
+    end
+    _G.vertical_pending_pages = {}
+
+    -- 2. Flush and clear sidenote registry
+    if sidenote and sidenote.registry then
+        for _, item in pairs(sidenote.registry) do
+            local head = type(item) == "table" and item.head or item
+            if head then
+                node.flush_list(head)
+            end
+        end
+        sidenote.clear_registry()
+    end
+
+    -- 3. Flush and clear textbox registries
+    if textbox and textbox.floating_registry then
+        for _, item in pairs(textbox.floating_registry) do
+            if item.box then
+                node.flush_list(item.box)
+            end
+        end
+        textbox.clear_registry()
+    end
+
+    -- 4. Force garbage collection
+    collectgarbage("collect")
+    collectgarbage("collect") -- Second pass for finalizers
+
+    local after = node.count(glyph_id)
+    if utils.debug_log then utils.debug_log(string.format("[core] Cleanup finished. Glyphs after: %d", after)) end
+
+    -- Write to log even if debug is off
+    if texio and texio.write_nl then
+        texio.write_nl("log", string.format("[Guji-Cleanup] Glyph count: %d -> %d", before, after))
+    end
+end
+
+-- CRITICAL: Ensure the cleanup function is in the global vertical table
+_G.vertical = _G.vertical or {}
+_G.vertical.cleanup = vertical.cleanup
 
 -- Return module
 return vertical

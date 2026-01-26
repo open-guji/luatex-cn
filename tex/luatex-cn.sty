@@ -17,18 +17,16 @@
 % Main wrapper package that loads sub-packages and exposes unified interface
 %
 \NeedsTeXFormat{LaTeX2e}
-\ProvidesPackage{luatex-cn}[2026/01/21 v0.1.2 Chinese typesetting support for LuaTeX]
-
-% Load expl3 (LaTeX3 programming layer)
 \RequirePackage{expl3}
-\ExplSyntaxOn
+\ProvidesExplPackage {luatex-cn} {2026/01/25} {0.1.3} {Chinese typesetting support for LuaTeX}
 
 % Check if LuaTeX is being used
-\RequirePackage{ifluatex}
-\ifluatex\else
-  \PackageError{luatex-cn}{This package requires LuaTeX}{%
-    Please compile your document with LuaLaTeX instead of pdfLaTeX or XeLaTeX.}
-\fi
+\sys_if_engine_luatex:TF
+  { }
+  {
+    \PackageError { luatex-cn } { This~package~requires~LuaTeX }
+      { Please~compile~your~document~with~LuaLaTeX~instead~of~pdfLaTeX~or~XeLaTeX. }
+  }
 
 % ============================================================================
 % Package Options
@@ -37,26 +35,23 @@
 \bool_new:N \g_luatexcn_traditional_bool
 \bool_new:N \g_luatexcn_simplified_bool
 
-% Default: simplified Chinese
-\bool_set_true:N \g_luatexcn_simplified_bool
-
-% Define package options
-\DeclareOption{banxin}
+\keys_define:nn { luatexcn }
   {
-    \bool_set_true:N \g_luatexcn_banxin_bool
-  }
-\DeclareOption{traditional}
-  {
-    \bool_set_true:N \g_luatexcn_traditional_bool
-    \bool_set_false:N \g_luatexcn_simplified_bool
-  }
-\DeclareOption{simplified}
-  {
-    \bool_set_true:N \g_luatexcn_simplified_bool
-    \bool_set_false:N \g_luatexcn_traditional_bool
+    banxin .bool_set:N = \g_luatexcn_banxin_bool,
+    traditional .code:n =
+      {
+        \bool_set_true:N \g_luatexcn_traditional_bool
+        \bool_set_false:N \g_luatexcn_simplified_bool
+      },
+    simplified .code:n =
+      {
+        \bool_set_true:N \g_luatexcn_simplified_bool
+        \bool_set_false:N \g_luatexcn_traditional_bool
+      },
+    simplified .initial:n = true
   }
 
-\ProcessOptions\relax
+\ProcessKeysOptions { luatexcn }
 
 % ============================================================================
 % Load Sub-packages (from their respective directories)
@@ -101,11 +96,12 @@
 % ============================================================================
 
 % Version info (synchronized with VERSION file in project root)
-\newcommand{\luatexcnversion}{0.1.2}
+\tl_const:Nn \c_luatexcn_version_tl {0.1.3}
+\cs_new:Npn \luatexcnversion { \c_luatexcn_version_tl }
 
 % Main package initialization
-\PackageInfo{luatex_cn}{Chinese typesetting package v\luatexcnversion\space loaded}
+\PackageInfo { luatex_cn } { Chinese~typesetting~package~v \c_luatexcn_version_tl \space loaded }
 
-\ExplSyntaxOff
-
-\endinput
+\ExplSyntaxOff%
+%
+\endinput%

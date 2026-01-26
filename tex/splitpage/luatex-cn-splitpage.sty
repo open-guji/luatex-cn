@@ -15,57 +15,56 @@
 % luatex-cn-splitpage.sty
 % Automatic page splitting for traditional Chinese book formats (筒子页)
 %
-\NeedsTeXFormat{LaTeX2e}
-\ProvidesPackage{splitpage/luatex-cn-splitpage}[2026/01/21 v0.1.2 Page splitting for Chinese traditional books]
+\RequirePackage{expl3}
+\ProvidesExplPackage {splitpage/luatex-cn-splitpage} {2026/01/25} {0.1.3} {Page splitting for Chinese traditional books}
 
 % Check if LuaTeX is being used
-\RequirePackage{ifluatex}
-\ifluatex\else
-  \PackageError{luatex-cn-splitpage}{This package requires LuaTeX}{%
-    Please compile your document with LuaLaTeX.}
-\fi
+\sys_if_engine_luatex:TF
+  { }
+  {
+    \PackageError { splitpage/luatex-cn-splitpage } { This~package~requires~LuaTeX }
+      { Please~compile~your~document~with~LuaLaTeX. }
+  }
 
 \RequirePackage{luatexbase}
 \RequirePackage{xparse}
 
 % Clear cache and load the Lua module
-\directlua{
-  package.loaded['splitpage.luatex-cn-splitpage'] = nil
-  splitpage = require('splitpage.luatex-cn-splitpage')
+\lua_now:e {
+  package.loaded['splitpage.luatex-cn-splitpage']~=~nil;
+  splitpage~=~require('splitpage.luatex-cn-splitpage');
 }
 
-\ExplSyntaxOn
-
 % Key-value configuration
-\keys_define:nn { splitpage }
+\keys_define:nn { luatexcn / splitpage }
   {
     % Source page dimensions (the large paper before splitting)
-    source-width .tl_set:N = \l__splitpage_source_width_tl,
+    source-width .tl_set:N = \l__luatexcn_sp_source_width_tl,
     source-width .initial:n = {296mm},
 
-    source-height .tl_set:N = \l__splitpage_source_height_tl,
+    source-height .tl_set:N = \l__luatexcn_sp_source_height_tl,
     source-height .initial:n = {210mm},
 
     % Output order: right-first (default) or left-first
-    right-first .bool_set:N = \l__splitpage_right_first_bool,
+    right-first .bool_set:N = \l__luatexcn_sp_right_first_bool,
     right-first .initial:n = true,
 
     % Debug mode
-    debug .bool_set:N = \l__splitpage_debug_bool,
+    debug .bool_set:N = \l__luatexcn_sp_debug_bool,
     debug .initial:n = false,
   }
 
 % Setup command
 \NewDocumentCommand{\splitpageSetup}{ m }
   {
-    \keys_set:nn { splitpage } { #1 }
-    \directlua{
+    \keys_set:nn { luatexcn / splitpage } { #1 }
+    \lua_now:e {
       splitpage.configure({
-        source_width = "\luaescapestring{\l__splitpage_source_width_tl}",
-        source_height = "\luaescapestring{\l__splitpage_source_height_tl}",
-        right_first = \bool_if:NTF \l__splitpage_right_first_bool {true} {false},
-        debug = \bool_if:NTF \l__splitpage_debug_bool {true} {false},
-      })
+        source_width~=~"\luaescapestring{\l__luatexcn_sp_source_width_tl}",
+        source_height~=~"\luaescapestring{\l__luatexcn_sp_source_height_tl}",
+        right_first~=~\bool_if:NTF~\l__luatexcn_sp_right_first_bool~{true}~{false},
+        debug~=~\bool_if:NTF~\l__luatexcn_sp_debug_bool~{true}~{false},
+      });~
     }
   }
 
@@ -74,30 +73,29 @@
   {
     \tl_if_empty:nF { #1 }
       {
-        \keys_set:nn { splitpage } { #1 }
+        \keys_set:nn { luatexcn / splitpage } { #1 }
       }
-    \directlua{
+    \lua_now:e {
       splitpage.configure({
-        source_width = "\luaescapestring{\l__splitpage_source_width_tl}",
-        source_height = "\luaescapestring{\l__splitpage_source_height_tl}",
-        right_first = \bool_if:NTF \l__splitpage_right_first_bool {true} {false},
-        debug = \bool_if:NTF \l__splitpage_debug_bool {true} {false},
-      })
-      splitpage.enable()
+        source_width~=~"\luaescapestring{\l__luatexcn_sp_source_width_tl}",
+        source_height~=~"\luaescapestring{\l__luatexcn_sp_source_height_tl}",
+        right_first~=~\bool_if:NTF~\l__luatexcn_sp_right_first_bool~{true}~{false},
+        debug~=~\bool_if:NTF~\l__luatexcn_sp_debug_bool~{true}~{false},
+      });~
+      splitpage.enable();~
     }
     % Sync \paperwidth with target width for TikZ coordinate calculations
-    \paperwidth=\directlua{tex.sprint(splitpage.get_target_width())}sp\relax
+    \dim_set:Nn \paperwidth { \lua_now:e { tex.sprint(splitpage.get_target_width());~ } sp }
   }
 
 % Disable split page processing
 \NewDocumentCommand{\disableSplitPage}{ }
   {
-    \directlua{splitpage.disable()}
+    \lua_now:e { splitpage.disable();~ }
     % Restore paperwidth to source width (the full spread size)
-    \paperwidth=\l__splitpage_source_width_tl\relax
+    \dim_set:Nn \paperwidth { \l__luatexcn_sp_source_width_tl }
   }
 
-\ExplSyntaxOff
 
 % ============================================================================
 % Utility commands for background/foreground hooks
@@ -107,7 +105,7 @@
 % Usage: \ifSplitPageEnabled ... \else ... \fi
 \newif\ifSplitPageEnabled
 \newcommand{\updateSplitPageStatus}{%
-  \directlua{
+  \lua_now:e {
     if splitpage.is_enabled() then
       tex.sprint("\\SplitPageEnabledtrue")
     else
@@ -120,7 +118,7 @@
 % Usage: \ifSplitPageRight ... \else ... \fi
 \newif\ifSplitPageRight
 \newcommand{\updateSplitPageSide}{%
-  \directlua{
+  \lua_now:e {
     local page = tex.count["c@page"]
     if splitpage.is_right_page(page) then
       tex.sprint("\\SplitPageRighttrue")
@@ -131,21 +129,22 @@
 }
 
 % Get source dimensions (original page size before splitting)
-\newcommand{\splitpageSourceWidth}{\directlua{tex.sprint(splitpage.get_source_width() .. "sp")}}
-\newcommand{\splitpageSourceHeight}{\directlua{tex.sprint(splitpage.get_source_height() .. "sp")}}
+\newcommand{\splitpageSourceWidth}{\lua_now:e { tex.sprint(splitpage.get_source_width() .. "sp") }}
+\newcommand{\splitpageSourceHeight}{\lua_now:e { tex.sprint(splitpage.get_source_height() .. "sp") }}
 
 % Get target dimensions (half page size after splitting)
-\newcommand{\splitpageTargetWidth}{\directlua{tex.sprint(splitpage.get_target_width() .. "sp")}}
-\newcommand{\splitpageTargetHeight}{\directlua{tex.sprint(splitpage.get_target_height() .. "sp")}}
+\newcommand{\splitpageTargetWidth}{\lua_now:e { tex.sprint(splitpage.get_target_width() .. "sp") }}
+\newcommand{\splitpageTargetHeight}{\lua_now:e { tex.sprint(splitpage.get_target_height() .. "sp") }}
 
 % CJK aliases
 \NewCommandCopy{\启用分页裁剪}{\enableSplitPage}
 \NewCommandCopy{\禁用分页裁剪}{\disableSplitPage}
 \NewCommandCopy{\分页裁剪设置}{\splitpageSetup}
 
-% Flush pending pages at end of document
 \AtEndDocument{%
-  \directlua{splitpage.flush_pending()}%
+  \lua_now:e { splitpage.flush_pending() }%
 }
 
-\endinput
+\ExplSyntaxOff%
+%
+\endinput%

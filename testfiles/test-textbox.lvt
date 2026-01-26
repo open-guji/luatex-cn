@@ -1,0 +1,29 @@
+\input{regression-test}
+\documentclass{article}
+\usepackage{luatex-cn}
+\usepackage{fontspec}
+\setmainfont{TW-Kai}
+
+\begin{document}
+
+\START
+
+\TEST{Simple TextBox}{
+  \setbox0=\vbox{
+    \vertical{
+      \TextBox[height=2]{文本框内容}
+    }
+  }
+  \showbox0
+}
+
+\TEST{TextBox with alignment}{
+  \setbox0=\vbox{
+    \vertical{
+      \TextBox[height=3, vertical-align=middle]{对齐内容}
+    }
+  }
+  \showbox0
+}
+
+\END

@@ -287,13 +287,7 @@
       }
       \ExplSyntaxOn 
     },
-    
-    debug .code:n = {
-      \str_if_eq:nnTF { #1 } { true }
-        { \GujiDebugOn }
-        { \GujiDebugOff }
-    },
-    debug .initial:n = false,
+
   }
 
 % 5. Logic to apply geometry
@@ -334,8 +328,7 @@
         \exp_args:Nx \splitpageSetup{
           source-width = \l_luatexcn_guji_paper_width_tl,
           source-height = \l_luatexcn_guji_paper_height_tl,
-          right-first = \bool_if:NTF \l_luatexcn_guji_split_right_first_bool {true} {false},
-          debug = \bool_if:NTF \g_luatexcn_debug_enabled_bool {true} {false}
+          right-first = \bool_if:NTF \l_luatexcn_guji_split_right_first_bool {true} {false}
         }
         \enableSplitPage
       }

@@ -49,9 +49,7 @@
     right-first .bool_set:N = \l__luatexcn_sp_right_first_bool,
     right-first .initial:n = true,
 
-    % Debug mode
-    debug .bool_set:N = \l__luatexcn_sp_debug_bool,
-    debug .initial:n = false,
+
   }
 
 % Setup command
@@ -63,7 +61,6 @@
         source_width~=~"\luaescapestring{\l__luatexcn_sp_source_width_tl}",
         source_height~=~"\luaescapestring{\l__luatexcn_sp_source_height_tl}",
         right_first~=~\bool_if:NTF~\l__luatexcn_sp_right_first_bool~{true}~{false},
-        debug~=~\bool_if:NTF~\l__luatexcn_sp_debug_bool~{true}~{false},
       });~
     }
   }
@@ -80,7 +77,6 @@
         source_width~=~"\luaescapestring{\l__luatexcn_sp_source_width_tl}",
         source_height~=~"\luaescapestring{\l__luatexcn_sp_source_height_tl}",
         right_first~=~\bool_if:NTF~\l__luatexcn_sp_right_first_bool~{true}~{false},
-        debug~=~\bool_if:NTF~\l__luatexcn_sp_debug_bool~{true}~{false},
       });~
       splitpage.enable();~
     }

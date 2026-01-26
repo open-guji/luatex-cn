@@ -35,29 +35,29 @@
 % Core Commands
 % ============================================================================
 
-\NewDocumentCommand{\GujiDebugOn}{ }
+\NewDocumentCommand{\LtcDebugOn}{ }
   {
     \bool_gset_true:N \g_luatexcn_debug_enabled_bool
     \lua_now:e { luatex_cn_debug.set_global_status(true) }
   }
 
-\NewDocumentCommand{\GujiDebugOff}{ }
+\NewDocumentCommand{\LtcDebugOff}{ }
   {
     \bool_gset_false:N \g_luatexcn_debug_enabled_bool
     \lua_now:e { luatex_cn_debug.set_global_status(false) }
   }
 
-\NewDocumentCommand{\GujiDebugModuleOn}{ m }
+\NewDocumentCommand{\LtcDebugModuleOn}{ m }
   {
     \lua_now:e { luatex_cn_debug.set_module_status("#1", true) }
   }
 
-\NewDocumentCommand{\GujiDebugModuleOff}{ m }
+\NewDocumentCommand{\LtcDebugModuleOff}{ m }
   {
     \lua_now:e { luatex_cn_debug.set_module_status("#1", false) }
   }
 
-\NewDocumentCommand{\GujiDebugColor}{ m m }
+\NewDocumentCommand{\LtcDebugColor}{ m m }
   {
     \lua_now:e { luatex_cn_debug.modules["#1"].color = "#2" }
   }
@@ -66,12 +66,10 @@
 % CJK Aliases
 % ============================================================================
 
-\NewCommandCopy{\古籍调试开启}{\GujiDebugOn}
-\NewCommandCopy{\古籍调试关闭}{\GujiDebugOff}
-\NewCommandCopy{\古籍模块调试开启}{\GujiDebugModuleOn}
-\NewCommandCopy{\古籍模块调试关闭}{\GujiDebugModuleOff}
-\NewCommandCopy{\古籍调试颜色}{\GujiDebugColor}
-
-% Keep legacy names if any (GujiDebugOn/Off are already standardized)
+\NewCommandCopy{\开启调试}{\LtcDebugOn}
+\NewCommandCopy{\关闭调试}{\LtcDebugOff}
+\NewCommandCopy{\开启调试模块}{\LtcDebugModuleOn}
+\NewCommandCopy{\关闭调试模块}{\LtcDebugModuleOff}
+% Keep legacy names if any (LtcDebugOn/Off are already standardized)
 
 \endinput

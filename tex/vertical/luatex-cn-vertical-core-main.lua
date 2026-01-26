@@ -70,12 +70,7 @@ local vertical = _G.vertical
 -- Initialize global page number
 vertical.current_page_number = vertical.current_page_number or 1
 
-vertical.debug = vertical.debug or {
-    enabled = false,
-    verbose_log = false,
-    show_grid = true,
-    show_boxes = true
-}
+
 
 --- Reset the global page number to 1
 function vertical.reset_page_number()
@@ -192,9 +187,7 @@ function vertical.prepare_grid(box_num, params)
         end
     end
 
-    local is_debug = (params.debug_on == "true" or params.debug_on == true)
-    if is_debug then _G.vertical.debug.enabled = true end
-    is_debug = _G.vertical.debug.enabled
+    local is_debug = luatex_cn_debug and luatex_cn_debug.is_enabled("vertical")
     local is_border = (params.border_on == "true" or params.border_on == true)
     local is_outer_border = (params.outer_border_on == "true" or params.outer_border_on == true)
 
@@ -430,7 +423,7 @@ function vertical.process_from_tex(box_num, params)
             local cmd_dim = string.format("\\global\\pagewidth=%.5fpt", target_w_pt)
             local cmd_dim_h = string.format("\\global\\pageheight=%.5fpt", target_h_pt)
 
-            if _G.vertical.debug.enabled then
+            if is_debug then
                 utils.debug_log("[core] TeX CMD: " .. cmd_load)
                 utils.debug_log("[core] TeX CMD: " .. cmd_dim)
             end

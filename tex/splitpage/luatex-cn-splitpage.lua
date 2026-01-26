@@ -35,8 +35,6 @@ splitpage.source_height = 0
 splitpage.target_width = 0
 splitpage.target_height = 0
 splitpage.right_first = true
-splitpage.debug = true
-
 -- Convert sp to bp
 local function sp_to_bp(sp)
     return sp / 65536 / 72.27 * 72
@@ -71,10 +69,6 @@ end
 local function debug_log(msg)
     if _G.luatex_cn_debug then
         _G.luatex_cn_debug.log("splitpage", msg)
-    else
-        if splitpage.debug then
-            texio.write_nl("term and log", "[splitpage] " .. msg)
-        end
     end
 end
 
@@ -94,9 +88,6 @@ function splitpage.configure(params)
 
     if params.right_first ~= nil then
         splitpage.right_first = params.right_first
-    end
-    if params.debug ~= nil then
-        splitpage.debug = params.debug
     end
 
     debug_log(string.format("Configured: source=%.1fmm x %.1fmm, target=%.1fmm x %.1fmm",

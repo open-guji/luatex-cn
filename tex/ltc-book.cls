@@ -127,12 +127,6 @@
     n-column .int_set:N = \l_luatexcn_book_n_column_int,
     n-column .initial:n = 0,
 
-    debug .code:n = {
-      \str_if_eq:nnTF { #1 } { true }
-        { \GujiDebugOn }
-        { \GujiDebugOff }
-    },
-    debug .initial:n = false,
 
     template .code:n = {
       \InputIfFileExists{configs/luatex-cn-book-#1.cfg}{}{

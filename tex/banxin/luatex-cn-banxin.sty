@@ -19,6 +19,11 @@
 \RequirePackage{xparse}
 \ProvidesExplPackage {banxin/luatex-cn-banxin} {2026/01/26} {0.1.3} {Ancient Book Banxin Support}
 
+\lua_now:e {
+  package.loaded["banxin.luatex-cn-banxin-main"]~=~nil;
+  banxin~=~require("banxin.luatex-cn-banxin-main");
+}
+
 % --- Compatibility Mode Logic ---
 % 1. Book Name / Title Synchronization
 \cs_if_exist:NTF \title

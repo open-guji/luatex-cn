@@ -266,7 +266,7 @@ local function draw_yuwei(params)
     local p = parse_params(params)
 
     -- 2. Debug logging
-    if _G.vertical and _G.vertical.debug and _G.vertical.debug.verbose_log then
+    if luatex_cn_debug and luatex_cn_debug.is_enabled("vertical") then
         utils.debug_log(string.format("[yuwei] Drawing yuwei with style=%s, direction=%d, color=%s",
             tostring(p.style), p.direction, p.color_str))
     end

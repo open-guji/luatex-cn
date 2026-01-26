@@ -239,12 +239,12 @@ local function handle_debug_drawing(curr, p_head, pos, ctx)
     local show_me = false
     local color_str = "0 0 1 RG"
     if pos.is_block then
-        if _G.vertical.debug.show_boxes then
+        if luatex_cn_debug and luatex_cn_debug.is_enabled("vertical") then
             show_me = true
             color_str = "1 0 0 RG"
         end
     else
-        if _G.vertical.debug.show_grid then
+        if luatex_cn_debug and luatex_cn_debug.is_enabled("vertical") then
             show_me = true
         end
     end

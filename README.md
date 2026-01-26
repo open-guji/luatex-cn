@@ -62,20 +62,29 @@ tlmgr install luatex-cn
 
 ```latex
 \documentclass[四库全书]{ltc-guji}
-% 如果不指定字体，会使用系统默认中文字体
-% \setmainfont{Noto Serif SC}
+
+% 设置书名（显示在右侧版心）
+\title{脂硯齋重評石頭記}
 
 \begin{document}
 \begin{正文}
-\chapter{五帝本紀第一}
-這是竖排的中文文本示例，包含夹注\夹注{双行小注}的功能演示。
+    % 设置章节（更新版心并重置页码）
+    \chapter{第一回}
+    
+    % 侧批：出现在网格列间的批注
+    \侧批{此是第一回回目}
+    甄士隱夢幻識通靈\夹注{双行夹注示例}，賈雨村風塵懷閨秀。
+    
+    % 段落控制：精确控制网格缩进
+    \begin{Paragraph}[indent=2, first-indent=0]
+        列位看官：你道此書從何而來？\空格[1]說起根由，雖近荒唐，細按則深有趣味。
+    \end{Paragraph}
+    
+    % 浮动批注：在页面任意物理坐标放置批注
+    \批注[x=2cm, y=4cm, height=6, color={1 0 0}]{此处可以用红色\\书写跨行批注}
 
-\begin{列表}
-    \item 史部
-    \item 卷一
-\end{列表}
-
-% \印章[page=1]{seal.png}
+    % 印章：绝对定位添加背景图
+    % \印章[page=1, xshift=-2cm, yshift=-5cm]{seal.png}
 \end{正文}
 \end{document}
 ```

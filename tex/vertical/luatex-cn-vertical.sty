@@ -486,6 +486,11 @@
     \VerticalRTT[#1]{#2}
   }
 
+\NewDocumentCommand{\Vertical}{ O{} +m }
+  {
+    \VerticalRTT[#1]{#2}
+  }
+
 % Grid Textbox Command (Simplified for Single Column)
 % Syntax: \GridTextbox[height=N, distribute=true/false]{content}
 % height is in grid units (integers), width is always 1

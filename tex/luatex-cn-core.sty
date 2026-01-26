@@ -38,31 +38,7 @@
 % Font auto-detection module
 \RequirePackage{fonts/luatex-cn-font-autodetect}
 
-% ============================================================================
-% Interface Documentation
-% ============================================================================
-% This package exposes the following commands:
-%
-%   \Vertical[options]{content}     - Main vertical layout command (Alias: \竖排)
-%   \TextBox[options]{content}      - Grid-based textbox (Alias: \文本框)
-%   \Paragraph                      - Environment for grid paragraphs
-%   \TextFlow{content}              - Interlinear notes (Alias: \文本流)
-%   \Space[width]                   - Explicit spacing (Alias: \空格)
-%
-%   \cnvdebugon / \cnvdebugoff      - Debug toggle
-%
-% ============================================================================
-% CJK Aliases and Support
-% ============================================================================
-% Define main English interface if not present (vertical package defines \vertical and \VerticalRTT)
-\NewDocumentCommand{\Vertical}{ O{} +m } { \VerticalRTT[#1]{#2} }
 
-% CJK Aliases are already provided by vertical/luatex-cn-vertical.sty:
-% \竖排 -> \VerticalRTT
-% \文本框 -> \TextBox
-% \段落 -> \Paragraph
-% \文本流 -> \TextFlow
-% \空格 -> \Space
 
 % Version info (synchronized with VERSION file in project root)
 \tl_const:Nn \c_luatexcn_core_version_tl {0.1.3}

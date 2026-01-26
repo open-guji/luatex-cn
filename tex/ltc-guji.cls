@@ -85,7 +85,7 @@
     end;~
  }
 
-% 3. Page Geometry - Will be applied dynamically via template
+% 3. Page Geometry - Will be applied dynamically via tsemplate
 % Default values stored in key-value system below
 
 % Storage for Book Name (formerly Banxin text)

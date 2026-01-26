@@ -99,10 +99,26 @@ local function normalize_rgb(s)
     return string.format("%.4f %.4f %.4f", r, g, b)
 end
 
+-- Debug state (private)
+local _debug_enabled = false
+
+--- 设置调试模式开启状态
+-- @param enable boolean
+local function set_debug(enable)
+    _debug_enabled = (enable == true)
+end
+
+--- 检查调试模式是否开启
+-- @return boolean
+local function is_debug_enabled()
+    return _debug_enabled
+end
+
 --- 如果开启了 verbose_log，则向日志输出调试消息
 -- @param message string 调试消息内容
 local function debug_log(message)
-    if _G.vertical and _G.vertical.debug and _G.vertical.debug.verbose_log then
+    -- Check local state OR legacy global state for compatibility
+    if _debug_enabled or (_G.vertical and _G.vertical.debug and _G.vertical.debug.verbose_log) then
         if texio and texio.write_nl then
             texio.write_nl("log", "[Guji-Debug] " .. message)
         end
@@ -209,6 +225,8 @@ local utils = {
     create_pdf_literal = create_pdf_literal,
     insert_pdf_literal = insert_pdf_literal,
     to_chinese_numeral = to_chinese_numeral,
+    set_debug = set_debug,
+    is_debug_enabled = is_debug_enabled,
 }
 
 -- Register module in package.loaded for require() compatibility

@@ -267,7 +267,7 @@ function vertical.prepare_grid(box_num, params)
         grid_height = g_height,
         total_pages = total_pages,
         vertical_align = valign,
-        draw_debug = is_debug,
+        -- draw_debug removed, use utils.is_debug_enabled()
         draw_border = is_border,
         b_padding_top = b_padding_top,
         b_padding_bottom = b_padding_bottom,

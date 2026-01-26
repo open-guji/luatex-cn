@@ -110,7 +110,7 @@ local function is_center_gap_col(col, params, grid_height)
 
     local overlaps = (col_right_x < gap_right) and (col_left_x > gap_left)
 
-    if overlaps and params.draw_debug then
+    if overlaps then
         utils.debug_log(string.format("[layout] Skipping center gap column %d", col))
     end
 
@@ -496,10 +496,8 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
                 if num_cells < 1 then num_cells = 1 end
 
                 if ctx.cur_row > ctx.cur_column_indent then
-                    if utils and utils.debug_log then
-                        utils.debug_log(string.format("  [layout] SPACING: val=%.2fpt, grid_h=%.2fpt, num_cells=%d",
-                            net_width / 65536, (grid_height or 0) / 65536, num_cells))
-                    end
+                    utils.debug_log(string.format("  [layout] SPACING: val=%.2fpt, grid_h=%.2fpt, num_cells=%d",
+                        net_width / 65536, (grid_height or 0) / 65536, num_cells))
 
                     for i = 1, num_cells do
                         ctx.cur_row = ctx.cur_row + 1

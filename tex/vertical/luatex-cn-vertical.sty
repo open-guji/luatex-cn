@@ -181,14 +181,10 @@
 \tl_new:N \l__cnv_banxin_middle_tl
 \tl_new:N \l__cnv_banxin_lower_tl
 
-\bool_new:N \g_luatexcn_v_debug_bool
-\bool_set_false:N \g_luatexcn_v_debug_bool
+% Ensure global debug boolean exists (if loaded standalone)
+\cs_if_exist:NF \g_luatexcn_debug_bool { \bool_new:N \g_luatexcn_debug_bool }
 
-\bool_new:N \l__luatexcn_v_banxin_bool
-\bool_set_false:N \l__luatexcn_v_banxin_bool
-
-\NewDocumentCommand{\cnvdebugon}{}{\bool_set_true:N \g_luatexcn_v_debug_bool}
-\NewDocumentCommand{\cnvdebugoff}{}{\bool_set_false:N \g_luatexcn_v_debug_bool}
+% Removed local debug commands in favor of global \GujiDebugOn
 
 % Define keys
 \keys_define:nn { luatexcn / vertical }
@@ -208,11 +204,7 @@
     cols .int_set:N = \l__luatexcn_v_cols_int,
     cols .initial:n = 0,
 
-    debug .code:n = {
-      \str_if_eq:nnTF { #1 } { true }
-        { \bool_gset_true:N \g_luatexcn_v_debug_bool }
-        { \bool_gset_false:N \g_luatexcn_v_debug_bool }
-    },
+    % Debug key removed - use global \GujiDebugOn
 
     border .bool_set:N = \l__luatexcn_v_border_bool,
     border .initial:n = false,
@@ -424,14 +416,14 @@
       }
     \tl_replace_all:Nnn \l__luatexcn_v_font_rgb_tl { , } { ~ }
 
-    \bool_if:NT \g_luatexcn_v_debug_bool { \typeout{DEBUG:~banxin-padding-top~is~\l__luatexcn_v_banxin_padding_top_tl} }
+    \bool_if:NT \g_luatexcn_debug_bool { \typeout{DEBUG:~banxin-padding-top~is~\l__luatexcn_v_banxin_padding_top_tl} }
     \lua_now:e {
       vertical.process_from_tex(\int_value:w \l_tmpa_box, {
         height~=~[=[\luaescapestring{\l__luatexcn_v_height_tl}]=],
         grid_width~=~[=[\luaescapestring{\l__luatexcn_v_grid_width_tl}]=],
         grid_height~=~[=[\luaescapestring{\l__luatexcn_v_grid_height_tl}]=],
         col_limit~=~\int_use:N~\l__luatexcn_v_cols_int,
-        debug_on~=~\bool_if:NTF~\g_luatexcn_v_debug_bool~{true}~{false},
+        debug_on~=~\bool_if:NTF~\g_luatexcn_debug_bool~{true}~{false},
         banxin_on~=~\bool_if:NTF~\l__luatexcn_v_banxin_bool~{true}~{false},
         border_on~=~\bool_if:NTF~\l__luatexcn_v_border_bool~{true}~{false},
         border_padding_top~=~[=[\luaescapestring{\l__luatexcn_v_border_padding_top_tl}]=],
@@ -499,7 +491,6 @@
 % height is in grid units (integers), width is always 1
 % Key-value interface for \GridTextbox
 \bool_new:N \l__luatexcn_v_textbox_border_bool
-\bool_new:N \l__luatexcn_v_textbox_debug_bool
 \tl_new:N \l__luatexcn_v_textbox_box_align_tl
 \tl_new:N \l__luatexcn_v_textbox_inner_gw_tl
 \tl_new:N \l__luatexcn_v_textbox_inner_gh_tl
@@ -534,8 +525,8 @@
     banxin .bool_set:N = \l__luatexcn_v_banxin_bool,
     column-align .tl_set:N = \l__luatexcn_v_textbox_col_align_tl,
     column-align .initial:n = {},
-    debug .bool_set:N = \l__luatexcn_v_textbox_debug_bool,
-    debug .initial:n = false,
+    % debug key removed - use global \GujiDebugOn
+
     vertical-align .tl_set:N = \l__luatexcn_v_textbox_box_align_tl,
     floating .bool_set:N = \l__luatexcn_v_textbox_floating_bool,
     floating .initial:n = false,
@@ -559,7 +550,7 @@
   {
     \group_begin:
     % Inherit debug setting from global environment
-    \bool_set_eq:NN \l__luatexcn_v_textbox_debug_bool \g_luatexcn_v_debug_bool
+    % No local override anymore
     \keys_set:nn { luatexcn / v / textbox } { #1 }
     % Width is always 1 for outer layout (textbox occupies 1 column externally)
     \setluatexattribute\cnverticaltextboxwidth{1}
@@ -654,7 +645,7 @@
       grid_height~=~"\dim_to_decimal:n { \l__luatexcn_v_textbox_inner_gh_dim }~pt",
       box_align~=~"\luaescapestring{\tl_use:N~\l__luatexcn_v_textbox_box_align_tl}",
       column_aligns~=~"\luaescapestring{\tl_use:N~\l__luatexcn_v_textbox_col_align_tl}",
-      debug~=~"\bool_if:NTF~\l__luatexcn_v_textbox_debug_bool~{true}{false}",
+      debug~=~"\bool_if:NTF~\g_luatexcn_debug_bool~{true}{false}",
       border~=~"\bool_if:NTF~\l__luatexcn_v_textbox_border_bool~{true}{false}",
       background_color~=~[=[\l__luatexcn_v_textbox_bg_rgb_tl]=],
       font_color~=~[=[\l__luatexcn_v_textbox_font_rgb_tl]=],

@@ -33,6 +33,12 @@ TEST 1: Basic Jiazhu
 .....\pdfliteral origin <lua data reference ...>
 .....\pdfliteral origin <lua data reference ...>
 .....\pdfliteral origin <lua data reference ...>
+.....\FONT26 一
+.....\kern-28.0
+.....\pdfliteral origin <lua data reference ...>
+.....\pdfliteral origin <lua data reference ...>
+.....\pdfliteral origin <lua data reference ...>
+.....\pdfliteral origin <lua data reference ...>
 .....\TU/FandolSong(0)/m/n/28 正
 .....\kern-28.0 (font)
 .....\TU/FandolSong(0)/m/n/28 文
@@ -82,6 +88,12 @@ TEST 1: Basic Jiazhu
 .....\pdfliteral origin <lua data reference ...>
 .....\pdfliteral origin <lua data reference ...>
 .....\pdfliteral origin <lua data reference ...>
+.....\pdfliteral origin <lua data reference ...>
+.....\pdfliteral origin <lua data reference ...>
+.....\pdfliteral origin <lua data reference ...>
+.....\pdfliteral origin <lua data reference ...>
+.....\FONT26 一
+.....\kern-28.0
 .....\pdfliteral origin <lua data reference ...>
 .....\pdfliteral origin <lua data reference ...>
 .....\pdfliteral origin <lua data reference ...>
@@ -145,6 +157,12 @@ TEST 2: Jiazhu with multiple segments
 .....\pdfliteral origin <lua data reference ...>
 .....\pdfliteral origin <lua data reference ...>
 .....\pdfliteral origin <lua data reference ...>
+.....\FONT27 二
+.....\kern-28.0
+.....\pdfliteral origin <lua data reference ...>
+.....\pdfliteral origin <lua data reference ...>
+.....\pdfliteral origin <lua data reference ...>
+.....\pdfliteral origin <lua data reference ...>
 .....\TU/FandolSong(0)/m/n/28 甲
 .....\kern-28.0 (font)
 .....\TU/FandolSong(0)/m/n/19.6 注
@@ -190,6 +208,12 @@ TEST 2: Jiazhu with multiple segments
 .....\pdfliteral origin <lua data reference ...>
 .....\pdfliteral origin <lua data reference ...>
 .....\pdfliteral origin <lua data reference ...>
+.....\pdfliteral origin <lua data reference ...>
+.....\pdfliteral origin <lua data reference ...>
+.....\pdfliteral origin <lua data reference ...>
+.....\pdfliteral origin <lua data reference ...>
+.....\FONT27 二
+.....\kern-28.0
 .....\pdfliteral origin <lua data reference ...>
 .....\pdfliteral origin <lua data reference ...>
 .....\pdfliteral origin <lua data reference ...>

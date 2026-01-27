@@ -134,7 +134,7 @@
     judou-pos .initial:n = {right-bottom},
 
     judou-size .tl_set:N = \l_luatexcn_book_judou_size_tl,
-    judou-size .initial:n = {1em},
+    judou-size .initial:n = {3em},
 
     judou-color .tl_set:N = \l_luatexcn_book_judou_color_tl,
     judou-color .initial:n = {red},

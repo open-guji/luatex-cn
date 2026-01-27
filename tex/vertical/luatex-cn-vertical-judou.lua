@@ -59,6 +59,7 @@ local REPLACEMENT_DOU = 0x3001 -- 、
 -- @param params (table) Parameters containing punct_mode, etc.
 -- @return (direct node) The modified head
 function judou.process_judou(head, params)
+    print("[LUA-DEBUG] Entering process_judou, mode: " .. tostring(params.punct_mode))
     local mode = params.punct_mode or "normal"
     if params.judou_on == "true" or params.judou_on == true then
         mode = "judou"
@@ -71,12 +72,17 @@ function judou.process_judou(head, params)
     local t = head
     local last_visible = nil
 
+    local user_defined_subtype = node.subtype("user_defined")
+
     while t do
         local next_node = D.getnext(t)
         local id = D.getid(t)
 
         if id == constants.GLYPH then
             local char = D.getfield(t, "char")
+            if char > 32 then
+                print(string.format("[LUA-DEBUG] Glyph char=%x", char))
+            end
             local is_ju = SET_JU[char]
             local is_dou = SET_DOU[char]
             local is_close = SET_CLOSE_QUOTE[char]
@@ -84,7 +90,6 @@ function judou.process_judou(head, params)
 
             if mode == "none" then
                 if is_ju or is_dou or is_close or is_open then
-                    -- Remove ALL punctuation and quotes
                     head = D.remove(head, t)
                     node.flush_node(D.tonode(t))
                 else
@@ -94,18 +99,24 @@ function judou.process_judou(head, params)
                 local replacement = nil
                 local nodes_to_remove = { t }
 
+                print(string.format("[LUA-DEBUG] Checking judou mode for %x: is_ju=%s, is_dou=%s", char, tostring(is_ju),
+                    tostring(is_dou)))
+
                 if is_ju then
                     replacement = REPLACEMENT_JU
+                    print(string.format("[LUA-DEBUG] Identified JU replacement: %x", replacement))
                     -- Peek next for close quote
                     if next_node and D.getid(next_node) == constants.GLYPH then
                         local next_char = D.getfield(next_node, "char")
                         if SET_CLOSE_QUOTE[next_char] then
                             table.insert(nodes_to_remove, next_node)
+                            -- Advance next_node because we're consuming it
                             next_node = D.getnext(next_node)
                         end
                     end
                 elseif is_dou then
                     replacement = REPLACEMENT_DOU
+                    print(string.format("[LUA-DEBUG] Identified DOU replacement: %x", replacement))
                     -- Peek next for open quote if char is ':'
                     if char == 0xFF1A and next_node and D.getid(next_node) == constants.GLYPH then
                         local next_char = D.getfield(next_node, "char")
@@ -115,15 +126,15 @@ function judou.process_judou(head, params)
                         end
                     end
                 elseif is_close or is_open then
-                    -- Lonely quotes in judou mode should probably be removed
+                    print("[LUA-DEBUG] Removing quote node")
                     head = D.remove(head, t)
                     node.flush_node(D.tonode(t))
                 end
 
+                print(string.format("[LUA-DEBUG] Final replacement for %x: %s", char, tostring(replacement)))
                 if replacement then
                     if last_visible then
-                        -- Create whatsit anchor
-                        local w = D.new(constants.WHATSIT, "user_defined")
+                        local w = D.new(constants.WHATSIT, user_defined_subtype)
                         D.setfield(w, "user_id", constants.JUDOU_USER_ID)
                         D.setfield(w, "type", 100) -- value type
                         D.setfield(w, "value", replacement)
@@ -139,6 +150,11 @@ function judou.process_judou(head, params)
                         end
 
                         D.insert_after(head, last_visible, w)
+                        print(string.format("[LUA-DEBUG] Inserted JUDOU whatsit for char: %x after %s", char,
+                            tostring(last_visible)))
+                    else
+                        print(string.format("[LUA-DEBUG] FAILED to insert JUDOU whatsit for char: %x (no last_visible)",
+                            char))
                     end
 
                     -- Remove the processed glyphs
@@ -146,12 +162,16 @@ function judou.process_judou(head, params)
                         head = D.remove(head, n)
                         node.flush_node(D.tonode(n))
                     end
+                else
+                    -- Not a replacement candidate, and not a quote to be removed?
+                    if not (is_close or is_open) then
+                        last_visible = t
+                    end
                 end
             else
                 last_visible = t
             end
         elseif id == constants.HLIST or id == constants.VLIST then
-            -- Blocks act as anchors
             last_visible = t
         end
         t = next_node

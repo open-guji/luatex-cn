@@ -239,21 +239,34 @@ end
 
 -- 辅助函数：处理 Judou（句读）标志的定位
 local function handle_judou_node(curr, p_head, pos, params, ctx)
+    print(string.format("[LUA-DEBUG] handle_judou_node CALLED for char: %x", D.getfield(curr, "value") or 0))
     local char = D.getfield(curr, "value")
+
+    -- Get font from whatsit attribute or params
+    local w_font = D.get_attribute(curr, constants.ATTR_JUDOU_FONT)
+    local base_font_id = (w_font and w_font > 0) and w_font or params.font_id or font.current()
+
+    -- Handle Judou Font Scaling (User wants 3em)
+    local font_id = base_font_id
+    local judou_size_sp = constants.to_dimen(ctx.judou_size)
+    if judou_size_sp and judou_size_sp > 0 then
+        local base_f_data = font.getfont(base_font_id)
+        if base_f_data then
+            -- Create a scaled version of the font if sizes differ significantly
+            if math.abs(base_f_data.size - judou_size_sp) > 6553 then -- > 0.1pt
+                local new_f_data = {}
+                for k, v in pairs(base_f_data) do new_f_data[k] = v end
+                new_f_data.size = judou_size_sp
+                font_id = font.define(new_f_data)
+            end
+        end
+    end
 
     -- Create glyph node
     local g = D.new(constants.GLYPH)
     D.setfield(g, "char", char)
-
-    -- Get font from whatsit attribute
-    local w_font = D.get_attribute(curr, constants.ATTR_JUDOU_FONT)
-    local font_id = (w_font and w_font > 0) and w_font or params.font_id or font.current()
     D.setfield(g, "font", font_id)
-
-    -- Set basic glyph properties
     D.setfield(g, "lang", 0)
-    D.setfield(g, "left", 0)
-    D.setfield(g, "right", 0)
 
     -- Force dimension calculation by looking up font data
     local f_data = font.getfont(font_id)
@@ -263,43 +276,38 @@ local function handle_judou_node(curr, p_head, pos, params, ctx)
         w = c_data.width or 0
         h = c_data.height or 0
         d = c_data.depth or 0
-    else
-        -- Fallback: Use small size if font data missing
-        w = ctx.grid_width * 0.4
-        h = ctx.grid_height * 0.4
-        d = 0
     end
+
+    -- Set dimensions for TeX's layout tracking
     D.setfield(g, "width", w)
     D.setfield(g, "height", h)
     D.setfield(g, "depth", d)
 
-    -- Position calculation (Absolute Coordinates)
-    -- RTL column position
+    -- Position calculation
     local rtl_col = ctx.p_total_cols - 1 - pos.col
-    -- Base coordinate is THE TOP of the cell
-    local cell_x = rtl_col * ctx.grid_width + ctx.half_thickness + ctx.shift_x
-    local cell_y = -pos.row * ctx.grid_height - ctx.shift_y
+    local base_x = rtl_col * ctx.grid_width + ctx.half_thickness + ctx.shift_x
+    local base_y = -pos.row * ctx.grid_height - ctx.shift_y
 
-    -- Refined positioning:
-    -- Traditional Judou marks are at the RIGHT-BOTTOM of the character cell.
-    -- X: mostly to the right
-    local final_x = cell_x + ctx.grid_width * 0.8
-    -- Y: near the BOTTOM of the cell. Cell bottom is cell_y - grid_height.
-    -- We place the baseline so the glyph is centered vertically around the boundary
-    -- or slightly above it.
-    local final_y = cell_y - ctx.grid_height + d + ctx.grid_height * 0.1
+    local final_x = base_x
+    local final_y = base_y
 
+    -- Default positioning logic
     if ctx.judou_pos == "right-bottom" then
-        final_x = cell_x + ctx.grid_width * 0.85
-        final_y = cell_y - ctx.grid_height + d + ctx.grid_height * 0.05
+        final_x = base_x + ctx.grid_width * 0.6
+        final_y = base_y - ctx.grid_height * 0.2
     elseif ctx.judou_pos == "right" then
-        -- Middle-right of cell
-        final_x = cell_x + ctx.grid_width * 0.85
-        final_y = cell_y - ctx.grid_height * 0.5 + d
+        final_x = base_x + ctx.grid_width * 0.6
+        final_y = base_y - ctx.grid_height * 0.5
     end
 
+    -- Apply offsets
     D.setfield(g, "xoffset", final_x)
     D.setfield(g, "yoffset", final_y)
+
+    if luatex_cn_debug and luatex_cn_debug.is_enabled("vertical") then
+        utils.debug_log(string.format("[render] JUDOU char=%d [c:%d, r:%d] xoff=%.2f yoff=%.2f font=%d size=%.2fpt",
+            char, pos.col, pos.row, final_x / 65536, final_y / 65536, font_id, (judou_size_sp or 0) / 65536))
+    end
 
     -- Add color
     local judou_color = params.judou_color or "red"
@@ -311,9 +319,9 @@ local function handle_judou_node(curr, p_head, pos, params, ctx)
     }
     local rgb = color_map[judou_color] or judou_color
 
-    -- Create color pdf_literal nodes using the robust node.new
+    -- Create color pdf_literal nodes
     local color_start_node = node.new("whatsit", "pdf_literal")
-    color_start_node.mode = 0 -- origin
+    color_start_node.mode = 0
     color_start_node.data = string.format("q %s rg %s RG", rgb, rgb)
     local color_start = D.todirect(color_start_node)
 
@@ -327,9 +335,9 @@ local function handle_judou_node(curr, p_head, pos, params, ctx)
     D.insert_after(p_head, color_start, g)
     D.insert_after(p_head, g, color_end)
 
-    -- Zero-width alignment
+    -- Negate glyph width to avoid cursor creep
     local k = D.new(constants.KERN)
-    D.setfield(k, "subtype", 1) -- explicit
+    D.setfield(k, "subtype", 1)
     D.setfield(k, "kern", -w)
     D.insert_after(p_head, color_end, k)
 

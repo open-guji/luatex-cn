@@ -88,10 +88,12 @@ constants.ATTR_FIRST_INDENT = luatexbase.attributes.cnverticalfirstindent or
 -- Attributes for Jiazhu (Interlinear Note)
 constants.ATTR_JIAZHU = luatexbase.attributes.cnverticaljiazhu or luatexbase.new_attribute("cnverticaljiazhu")
 constants.ATTR_JIAZHU_SUB = luatexbase.attributes.cnverticaljiazhusub or luatexbase.new_attribute("cnverticaljiazhusub")
+constants.ATTR_JUDOU_FONT = luatexbase.attributes.cnverticaljudoufont or luatexbase.new_attribute("cnverticaljudoufont")
 
 -- Constants for Side Pizhu
 constants.SIDENOTE_USER_ID = 202601
 constants.FLOATING_TEXTBOX_USER_ID = 202602
+constants.JUDOU_USER_ID = 202603
 
 --- 将 TeX 尺寸字符串转换为 scaled points (sp)
 -- @param dim_str (string) TeX 尺寸字符串（例如 "20pt", "1.5em"）

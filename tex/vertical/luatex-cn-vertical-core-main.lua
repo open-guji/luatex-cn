@@ -99,6 +99,8 @@ local textbox = package.loaded['vertical.luatex-cn-vertical-core-textbox'] or
     require('vertical.luatex-cn-vertical-core-textbox')
 local sidenote = package.loaded['vertical.luatex-cn-vertical-core-sidenote'] or
     require('vertical.luatex-cn-vertical-core-sidenote')
+local judou = package.loaded['vertical.luatex-cn-vertical-judou'] or
+    require('vertical.luatex-cn-vertical-judou')
 
 
 local D = node.direct
@@ -210,6 +212,12 @@ function vertical.prepare_grid(box_num, params)
             end
             utils.debug_log(string.format("[core] Post-flatten nodes: %d, Head: %s", count, tostring(list)))
         end
+    end
+
+    -- 3a. Pipeline Stage 1.5: Process Judou Mode (Transformation)
+    if params.judou_on == "true" or params.judou_on == true then
+        list = judou.process_judou(D.todirect(list), params)
+        list = D.tonode(list)
     end
 
     -- 4. Pipeline Stage 2: Calculate grid layout

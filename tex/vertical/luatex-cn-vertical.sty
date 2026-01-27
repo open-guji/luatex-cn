@@ -334,6 +334,18 @@
 
     page-number-grid-height .tl_set:N = \l__luatexcn_v_page_number_grid_height_tl,
     page-number-grid-height .initial:n = {},
+
+    judou-on .bool_set:N = \l__luatexcn_v_judou_on_bool,
+    judou-on .initial:n = false,
+
+    judou-pos .tl_set:N = \l__luatexcn_v_judou_pos_tl,
+    judou-pos .initial:n = {right-bottom},
+
+    judou-size .tl_set:N = \l__luatexcn_v_judou_size_tl,
+    judou-size .initial:n = {3em},
+
+    judou-color .tl_set:N = \l__luatexcn_v_judou_color_tl,
+    judou-color .initial:n = {red},
   }
 
 \tl_new:N \l__luatexcn_v_border_rgb_tl
@@ -440,9 +452,24 @@
         jiazhu_font_size~=~[=[\luaescapestring{\l__luatexcn_v_jiazhu_size_tl}]=],
         jiazhu_align~=~[=[\luaescapestring{\l__luatexcn_v_jiazhu_align_tl}]=],
         page_number_grid_height~=~[=[\luaescapestring{\l__luatexcn_v_page_number_grid_height_tl}]=],
-        font_size~=~[=[\luaescapestring{\l__luatexcn_v_font_size_tl}]=]
+        font_size~=~[=[\luaescapestring{\l__luatexcn_v_font_size_tl}]=],
+        judou_on~=~\bool_if:NTF~\l__luatexcn_v_judou_on_bool~{true}~{false},
+        judou_pos~=~[=[\luaescapestring{\l__luatexcn_v_judou_pos_tl}]=],
+        judou_size~=~[=[\luaescapestring{\l__luatexcn_v_judou_size_tl}]=]
       })
     }
+  }
+
+% Judou Mode Toggle Commands
+% Usage: \JudouOn to enable, \JudouOff to disable
+\NewDocumentCommand{\JudouOn}{ O{} }
+  {
+    \keys_set:nn { luatexcn / vertical } { judou-on = true, #1 }
+  }
+
+\NewDocumentCommand{\JudouOff}{ }
+  {
+    \keys_set:nn { luatexcn / vertical } { judou-on = false }
   }
 
 % Define Main Command with Key-Value interface
@@ -749,6 +776,8 @@
 \NewCommandCopy{\CePi}{\SideNode}
 \NewCommandCopy{\侧批}{\SideNode}
 \NewCommandCopy{\批注}{\PiZhu}
+\NewCommandCopy{\开启句读模式}{\JudouOn}
+\NewCommandCopy{\关闭句读模式}{\JudouOff}
 \NewEnvironmentCopy{列表}{itemize}
 
 \endinput%

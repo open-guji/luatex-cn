@@ -124,7 +124,10 @@ local function calculate_render_context(params)
         text_rgb_str = text_rgb_str,
         grid_width = params.grid_width,
         grid_height = params.grid_height,
-        jiazhu_align = params.jiazhu_align or "outward"
+        jiazhu_align = params.jiazhu_align or "outward",
+        judou_pos = params.judou_pos or "right-bottom",
+        judou_size = params.judou_size or "3em",
+        judou_color = params.judou_color or "red",
     }
 end
 
@@ -231,6 +234,86 @@ local function handle_block_node(curr, p_head, pos, ctx)
 
     p_head = D.insert_before(p_head, curr, k_pre)
     D.insert_after(p_head, curr, k_post)
+    return p_head
+end
+
+-- 辅助函数：处理 Judou（句读）标志的定位
+local function handle_judou_node(curr, p_head, pos, params, ctx)
+    local char = D.getfield(curr, "value")
+    -- Parse judou_size - default to 1.5x grid_height
+    local f_size = constants.to_dimen(ctx.judou_size) or (ctx.grid_height * 1.5)
+
+    -- Create glyph node
+    local g = D.new(constants.GLYPH)
+    D.setfield(g, "char", char)
+    -- Get font from whatsit attribute
+    local w_font = D.get_attribute(curr, constants.ATTR_JUDOU_FONT)
+    if w_font and w_font > 0 then
+        D.setfield(g, "font", w_font)
+    elseif params.font_id then
+        D.setfield(g, "font", params.font_id)
+    end
+
+    local w = D.getfield(g, "width") or 0
+    local h = D.getfield(g, "height") or 0
+    local d = D.getfield(g, "depth") or 0
+
+    -- Position calculation
+    -- The whatsit is at position (col, row), position mark relative to this cell
+    local rtl_col = ctx.p_total_cols - 1 - pos.col
+    local base_x = rtl_col * ctx.grid_width + ctx.half_thickness + ctx.shift_x
+    local base_y = -pos.row * ctx.grid_height - ctx.shift_y
+
+    local final_x = base_x
+    local final_y = base_y
+
+    if ctx.judou_pos == "right-bottom" then
+        -- Position at right-bottom of current character cell
+        -- x: move right by 0.6 * grid_width
+        -- y: move down by 0.2 * grid_height
+        final_x = base_x + ctx.grid_width * 0.6
+        final_y = base_y - ctx.grid_height * 0.2
+    elseif ctx.judou_pos == "right" then
+        -- Position at right-middle of previous character cell
+        final_x = base_x + ctx.grid_width * 0.6
+        final_y = base_y - ctx.grid_height * 0.5
+    end
+
+    D.setfield(g, "xoffset", final_x)
+    D.setfield(g, "yoffset", final_y)
+
+    if luatex_cn_debug and luatex_cn_debug.is_enabled("vertical") then
+        utils.debug_log(string.format("[render] JUDOU char=%d [c:%d, r:%d->%d] xoff=%.2f yoff=%.2f",
+            char, pos.col, pos.row, prev_row, final_x / 65536, final_y / 65536))
+    end
+
+    -- Add color if specified
+    local judou_color = params.judou_color or "red"
+    local color_literal = nil
+    -- Simple color name to RGB mapping
+    local color_map = {
+        red = "1 0 0",
+        blue = "0 0 1",
+        green = "0 1 0",
+        black = "0 0 0",
+    }
+    local rgb = color_map[judou_color] or judou_color
+    -- Create color pdf_literal nodes
+    local color_start = D.new(constants.WHATSIT, "pdf_literal")
+    D.setfield(color_start, "data", string.format("%s rg", rgb))
+    local color_end = D.new(constants.WHATSIT, "pdf_literal")
+    D.setfield(color_end, "data", "0 0 0 rg") -- Reset to black
+
+    -- Insert: color_start -> glyph -> color_end
+    p_head = D.insert_before(p_head, curr, color_start)
+    D.insert_after(p_head, color_start, g)
+    D.insert_after(p_head, g, color_end)
+
+    -- Hide the glyph's width so it doesn't affect layout
+    local k = D.new(constants.KERN)
+    D.setfield(k, "kern", -w)
+    D.insert_after(p_head, color_end, k)
+
     return p_head
 end
 
@@ -347,10 +430,16 @@ local function process_page_nodes(p_head, layout_map, params, ctx)
                 D.setfield(curr, "kern", 0)
             end
         elseif id == constants.WHATSIT then
-            -- Keep WHATSIT nodes in the list for TikZ/other special content
-            -- but REMOVE our internal anchors (Sidenote/FloatingBox) to avoid PDF errors
             local uid = D.getfield(curr, "user_id")
-            if uid == constants.SIDENOTE_USER_ID or uid == constants.FLOATING_TEXTBOX_USER_ID then
+            if uid == constants.JUDOU_USER_ID then
+                local pos = layout_map[curr]
+                if pos then
+                    p_head = handle_judou_node(curr, p_head, pos, params, ctx)
+                end
+                -- Remove the anchor whatsit
+                p_head = D.remove(p_head, curr)
+                node.flush_node(D.tonode(curr))
+            elseif uid == constants.SIDENOTE_USER_ID or uid == constants.FLOATING_TEXTBOX_USER_ID then
                 p_head = D.remove(p_head, curr)
                 -- We don't need to free it here if D.remove doesn't, but let's be safe
                 node.flush_node(D.tonode(curr))

@@ -127,6 +127,15 @@
     n-column .int_set:N = \l_luatexcn_book_n_column_int,
     n-column .initial:n = 0,
 
+    judou-on .bool_set:N = \l_luatexcn_book_judou_on_bool,
+    judou-on .initial:n = false,
+
+    judou-pos .tl_set:N = \l_luatexcn_book_judou_pos_tl,
+    judou-pos .initial:n = {right-bottom},
+
+    judou-size .tl_set:N = \l_luatexcn_book_judou_size_tl,
+    judou-size .initial:n = {1em},
+
 
     template .code:n = {
       \InputIfFileExists{configs/luatex-cn-book-#1.cfg}{}{
@@ -217,7 +226,10 @@
         book-name-align = \l_luatexcn_book_book_name_align_tl,
         upper-yuwei = \bool_if:NTF \l_luatexcn_book_upper_yuwei_bool {true} {false},
         banxin-divider = \bool_if:NTF \l_luatexcn_book_banxin_divider_bool {true} {false},
-        page-number-align = \l_luatexcn_book_page_number_align_tl
+        page-number-align = \l_luatexcn_book_page_number_align_tl,
+        judou-on = \bool_if:NTF \l_luatexcn_book_judou_on_bool {true} {false},
+        judou-pos = \l_luatexcn_book_judou_pos_tl,
+        judou-size = \l_luatexcn_book_judou_size_tl
       }
     \nointerlineskip
     \__luatexcn_v_process_grid:n { \BODY }

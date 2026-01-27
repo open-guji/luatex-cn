@@ -1,0 +1,207 @@
+This is a generated file for the l3build validation system.
+Don't change this file in any respect.
+============================================================
+TEST 1: Basic Paragraph
+============================================================
+Guji Layout Width: total-cols=17, grid-width=50.30588pt
+Guji Mode A: n-char=21, grid-height=28.00476pt, height=588.09998pt
+Guji Layout: TextHeight=614.49997pt, TopMargin=188.50003pt
+*geometry* verbose mode - [ newgeometry ] result:
+* driver: luatex
+* paper: custom
+* layout: <same size as paper>
+* layoutoffset:(h,v)=(0.0pt,0.0pt)
+* modes: 
+* h-part:(L,W,R)=(133.2pt, 301.6pt, 133.2pt)
+* v-part:(T,H,B)=(188.50003pt, 614.49997pt, 91.6pt)
+* \paperwidth=568.0pt
+* \paperheight=894.6pt
+* \textwidth=301.6pt
+* \textheight=614.49997pt
+* \oddsidemargin=60.93001pt
+* \evensidemargin=60.93001pt
+* \topmargin=79.23004pt
+* \headheight=12.0pt
+* \headsep=25.0pt
+* \topskip=0.0pt
+* \footskip=42.67912pt
+* \marginparwidth=65.0pt
+* \marginparsep=11.0pt
+* \columnsep=10.0pt
+* \skip\footins=9.0pt plus 4.0pt minus 2.0pt
+* \hoffset=0.0pt
+* \voffset=0.0pt
+* \mag=1000
+* \@twocolumnfalse
+* \@twosidefalse
+* \@mparswitchfalse
+* \@reversemarginfalse
+* (1in=72.27pt=25.4mm, 1cm=28.453pt)
+DEBUG: banxin-padding-top is 2pt
+^^[[33m[vertical]^^[[0m   [flatten] Adding Column Break after Line=594
+^^[[33m[vertical]^^[[0m   [flatten] Adding Column Break after Line=843
+^^[[33m[vertical]^^[[0m [core] Post-flatten nodes: 1, Head: <node    nil <    829 >    873 : glyph 256>
+^^[[33m[vertical]^^[[0m   [layout] Node=829 ID=29 [p:0, c:0, r:0]
+^^[[33m[vertical]^^[[0m   [layout] Node=873 ID=29 [p:0, c:0, r:1]
+^^[[33m[vertical]^^[[0m   [layout] Node=888 ID=29 [p:0, c:0, r:2]
+^^[[33m[vertical]^^[[0m   [layout] Node=903 ID=29 [p:0, c:0, r:3]
+^^[[33m[vertical]^^[[0m   [layout] Node=868 ID=14 [p:0, c:0, r:4]
+^^[[33m[vertical]^^[[0m   [layout] Node=926 ID=14 [p:0, c:0, r:4]
+^^[[33m[vertical]^^[[0m   [layout] Node=933 ID=29 [p:0, c:1, r:0]
+^^[[33m[vertical]^^[[0m   [layout] Node=956 ID=29 [p:0, c:1, r:4]
+^^[[33m[vertical]^^[[0m   [layout] Node=979 ID=29 [p:0, c:1, r:5]
+^^[[33m[vertical]^^[[0m   [layout] Node=1002 ID=29 [p:0, c:1, r:6]
+^^[[33m[vertical]^^[[0m   [layout] Node=1025 ID=29 [p:0, c:1, r:7]
+^^[[33m[vertical]^^[[0m   [layout] Node=1048 ID=29 [p:0, c:1, r:8]
+^^[[33m[vertical]^^[[0m   [layout] Node=1071 ID=29 [p:0, c:1, r:9]
+^^[[33m[vertical]^^[[0m   [layout] Node=1094 ID=29 [p:0, c:1, r:10]
+^^[[33m[vertical]^^[[0m   [layout] Node=1117 ID=29 [p:0, c:1, r:11]
+^^[[33m[vertical]^^[[0m   [layout] Node=1140 ID=29 [p:0, c:1, r:12]
+^^[[33m[vertical]^^[[0m   [layout] Node=1163 ID=29 [p:0, c:1, r:13]
+^^[[33m[vertical]^^[[0m   [layout] Node=1186 ID=29 [p:0, c:1, r:14]
+^^[[33m[vertical]^^[[0m   [layout] Node=1209 ID=29 [p:0, c:1, r:15]
+^^[[33m[vertical]^^[[0m   [layout] Node=1232 ID=29 [p:0, c:1, r:16]
+^^[[33m[vertical]^^[[0m   [layout] Node=1255 ID=29 [p:0, c:1, r:17]
+^^[[33m[vertical]^^[[0m   [layout] Node=1278 ID=29 [p:0, c:1, r:18]
+^^[[33m[vertical]^^[[0m   [layout] Node=1301 ID=12 [p:0, c:1, r:19]
+^^[[33m[vertical]^^[[0m   [layout] SPACING: val=28.00pt, grid_h=28.00pt, num_cells=1
+^^[[33m[vertical]^^[[0m   [layout] Node=1339 ID=29 [p:0, c:1, r:20]
+^^[[33m[vertical]^^[[0m   [layout] Node=1354 ID=29 [p:0, c:1, r:21]
+^^[[33m[vertical]^^[[0m   [layout] Node=1369 ID=29 [p:0, c:2, r:1]
+^^[[33m[vertical]^^[[0m   [layout] Node=1384 ID=29 [p:0, c:2, r:2]
+^^[[33m[vertical]^^[[0m   [layout] Node=1399 ID=14 [p:0, c:2, r:3]
+^^[[33m[vertical]^^[[0m   [layout] Node=1410 ID=14 [p:0, c:2, r:3]
+^^[[33m[vertical]^^[[0m [layout] Layout map built. Total entries: 24, Total pages: 1
+^^[[33m[vertical]^^[[0m [core] Calling apply_positions with start_page=1 (is_textbox=false)
+^^[[33m[vertical]^^[[0m [render] apply_positions: border_rgb=0 0 0 -> 0.0000 0.0000 0.0000, font_rgb=0 0 0, font_size=1835008
+^^[[33m[vertical]^^[[0m >>> LUA PAGE: interval=8, p_total_cols=17, banxin_on=true
+^^[[33m[vertical]^^[[0m >>> LUA RESERVED COL: 8
+^^[[35m[banxin]^^[[0m [banxin] input y=-7.20 height=598.10 padding_top=2.00 draw_border=true
+^^[[35m[banxin]^^[[0m [banxin] Border literal: q 0.40 w 0.0000 0.0000 0.0000 RG 408.1171 -7.1731 50.1180 -595.8662 re S Q
+^^[[33m[vertical]^^[[0m [yuwei] Drawing yuwei with style=black, direction=1, color=0.0000 0.0000 0.0000
+^^[[33m[vertical]^^[[0m [GlyphPos] char=19968 x=409.65 cw=48.31 gw=15.00 -> xoff=442.95 yoff=-505.99
+^^[[33m[vertical]^^[[0m   [render] GLYPH char=19968 [c:0, r:0.00, s:nil] xoff=823.25 yoff=-31.65 w=28.00 h=10.50 fsize=28.00
+^^[[33m[vertical]^^[[0m   [render] GLYPH char=20108 [c:0, r:1.00, s:nil] xoff=823.25 yoff=-61.74 w=28.00 h=14.66 fsize=28.00
+^^[[33m[vertical]^^[[0m   [render] GLYPH char=19977 [c:0, r:2.00, s:nil] xoff=823.25 yoff=-90.20 w=28.00 h=16.46 fsize=28.00
+^^[[33m[vertical]^^[[0m   [render] GLYPH char=22235 [c:0, r:3.00, s:nil] xoff=823.25 yoff=-117.59 w=28.00 h=14.77 fsize=28.00
+^^[[33m[vertical]^^[[0m   [render] GLYPH char=30002 [c:1, r:3.00, s:nil] xoff=772.94 yoff=-117.64 w=28.00 h=18.81 fsize=28.00
+^^[[33m[vertical]^^[[0m   [render] GLYPH char=25100 [c:1, r:4.00, s:nil] xoff=772.94 yoff=-145.85 w=28.00 h=19.30 fsize=28.00
+^^[[33m[vertical]^^[[0m   [render] GLYPH char=31179 [c:1, r:5.00, s:nil] xoff=772.94 yoff=-173.90 w=28.00 h=18.35 fsize=28.00
+^^[[33m[vertical]^^[[0m   [render] GLYPH char=33775 [c:1, r:6.00, s:nil] xoff=772.94 yoff=-202.66 w=28.00 h=20.95 fsize=28.00
+^^[[33m[vertical]^^[[0m   [render] GLYPH char=38525 [c:1, r:7.00, s:nil] xoff=772.94 yoff=-230.32 w=28.00 h=19.69 fsize=28.00
+^^[[33m[vertical]^^[[0m   [render] GLYPH char=25955 [c:1, r:8.00, s:nil] xoff=772.94 yoff=-257.85 w=28.00 h=19.25 fsize=28.00
+^^[[33m[vertical]^^[[0m   [render] GLYPH char=20154 [c:1, r:9.00, s:nil] xoff=772.94 yoff=-286.70 w=28.00 h=17.72 fsize=28.00
+^^[[33m[vertical]^^[[0m   [render] GLYPH char=38988 [c:1, r:10.00, s:nil] xoff=772.94 yoff=-313.59 w=28.00 h=18.38 fsize=28.00
+^^[[33m[vertical]^^[[0m   [render] GLYPH char=12288 [c:1, r:11.00, s:nil] xoff=772.94 yoff=-334.45 w=28.00 h=0.00 fsize=28.00
+^^[[33m[vertical]^^[[0m   [render] GLYPH char=26481 [c:1, r:12.00, s:nil] xoff=772.94 yoff=-370.65 w=28.00 h=20.95 fsize=28.00
+^^[[33m[vertical]^^[[0m   [render] GLYPH char=37117 [c:1, r:13.00, s:nil] xoff=772.94 yoff=-398.19 w=28.00 h=19.58 fsize=28.00
+^^[[33m[vertical]^^[[0m   [render] GLYPH char=29275 [c:1, r:14.00, s:nil] xoff=772.94 yoff=-426.41 w=28.00 h=20.32 fsize=28.00
+^^[[33m[vertical]^^[[0m   [render] GLYPH char=38272 [c:1, r:15.00, s:nil] xoff=772.94 yoff=-454.21 w=28.00 h=19.61 fsize=28.00
+^^[[33m[vertical]^^[[0m   [render] GLYPH char=38577 [c:1, r:16.00, s:nil] xoff=772.94 yoff=-482.78 w=28.00 h=20.32 fsize=28.00
+^^[[33m[vertical]^^[[0m   [render] GLYPH char=22763 [c:1, r:17.00, s:nil] xoff=772.94 yoff=-511.03 w=28.00 h=18.87 fsize=28.00
+^^[[33m[vertical]^^[[0m   [render] GLYPH char=26360 [c:1, r:18.00, s:nil] xoff=772.94 yoff=-538.68 w=28.00 h=20.95 fsize=28.00
+^^[[33m[vertical]^^[[0m   [render] GLYPH char=19968 [c:1, r:20.00, s:nil] xoff=772.94 yoff=-591.75 w=28.00 h=10.50 fsize=28.00
+^^[[33m[vertical]^^[[0m   [render] GLYPH char=20108 [c:2, r:0.00, s:nil] xoff=722.64 yoff=-33.73 w=28.00 h=14.66 fsize=28.00
+^^[[33m[vertical]^^[[0m   [render] GLYPH char=19977 [c:2, r:1.00, s:nil] xoff=722.64 yoff=-62.20 w=28.00 h=16.46 fsize=28.00
+^^[[33m[vertical]^^[[0m   [render] GLYPH char=22235 [c:2, r:2.00, s:nil] xoff=722.64 yoff=-89.59 w=28.00 h=14.77 fsize=28.00
+^^[[33m[vertical]^^[[0m [core] Finished apply_positions. Pages: 1. Global page number: 1 -> 2
+^^[[33m[vertical]^^[[0m --- [core] Layout Map Summary --- [1
+] [2]
+============================================================
+============================================================
+TEST 2:  Paragraph Full Column
+============================================================
+Guji Layout Width: total-cols=17, grid-width=50.30588pt
+Guji Mode A: n-char=21, grid-height=28.00476pt, height=588.09998pt
+Guji Layout: TextHeight=614.49997pt, TopMargin=188.50003pt
+*geometry* verbose mode - [ newgeometry ] result:
+* driver: luatex
+* paper: custom
+* layout: <same size as paper>
+* layoutoffset:(h,v)=(0.0pt,0.0pt)
+* modes: 
+* h-part:(L,W,R)=(133.2pt, 301.6pt, 133.2pt)
+* v-part:(T,H,B)=(188.50003pt, 614.49997pt, 91.6pt)
+* \paperwidth=568.0pt
+* \paperheight=894.6pt
+* \textwidth=301.6pt
+* \textheight=614.49997pt
+* \oddsidemargin=60.93001pt
+* \evensidemargin=60.93001pt
+* \topmargin=79.23004pt
+* \headheight=12.0pt
+* \headsep=25.0pt
+* \topskip=0.0pt
+* \footskip=42.67912pt
+* \marginparwidth=65.0pt
+* \marginparsep=11.0pt
+* \columnsep=10.0pt
+* \skip\footins=9.0pt plus 4.0pt minus 2.0pt
+* \hoffset=0.0pt
+* \voffset=0.0pt
+* \mag=1000
+* \@twocolumnfalse
+* \@twosidefalse
+* \@mparswitchfalse
+* \@reversemarginfalse
+* (1in=72.27pt=25.4mm, 1cm=28.453pt)
+DEBUG: banxin-padding-top is 2pt
+^^[[33m[vertical]^^[[0m   [flatten] Adding Column Break after Line=2623
+^^[[33m[vertical]^^[[0m [core] Post-flatten nodes: 1, Head: <node    nil <   3549 >   3563 : glyph 256>
+^^[[33m[vertical]^^[[0m   [layout] Node=3549 ID=29 [p:0, c:0, r:0]
+^^[[33m[vertical]^^[[0m   [layout] Node=3563 ID=29 [p:0, c:0, r:6]
+^^[[33m[vertical]^^[[0m   [layout] Node=3134 ID=29 [p:0, c:0, r:7]
+^^[[33m[vertical]^^[[0m   [layout] Node=407 ID=29 [p:0, c:0, r:8]
+^^[[33m[vertical]^^[[0m   [layout] Node=822 ID=29 [p:0, c:0, r:9]
+^^[[33m[vertical]^^[[0m   [layout] Node=559 ID=29 [p:0, c:0, r:10]
+^^[[33m[vertical]^^[[0m   [layout] Node=552 ID=29 [p:0, c:0, r:11]
+^^[[33m[vertical]^^[[0m   [layout] Node=573 ID=29 [p:0, c:0, r:12]
+^^[[33m[vertical]^^[[0m   [layout] Node=566 ID=29 [p:0, c:0, r:13]
+^^[[33m[vertical]^^[[0m   [layout] Node=587 ID=29 [p:0, c:0, r:14]
+^^[[33m[vertical]^^[[0m   [layout] Node=580 ID=29 [p:0, c:0, r:15]
+^^[[33m[vertical]^^[[0m   [layout] Node=628 ID=29 [p:0, c:0, r:16]
+^^[[33m[vertical]^^[[0m   [layout] Node=852 ID=29 [p:0, c:0, r:17]
+^^[[33m[vertical]^^[[0m   [layout] Node=649 ID=29 [p:0, c:0, r:18]
+^^[[33m[vertical]^^[[0m   [layout] Node=666 ID=29 [p:0, c:0, r:19]
+^^[[33m[vertical]^^[[0m   [layout] Node=3497 ID=29 [p:0, c:0, r:20]
+^^[[33m[vertical]^^[[0m   [layout] Node=2151 ID=12 [p:0, c:0, r:21]
+^^[[33m[vertical]^^[[0m   [layout] SPACING: val=28.00pt IGNORED (at top or within indent)
+^^[[33m[vertical]^^[[0m   [layout] Node=2166 ID=29 [p:0, c:1, r:0]
+^^[[33m[vertical]^^[[0m   [layout] Node=2181 ID=29 [p:0, c:1, r:1]
+^^[[33m[vertical]^^[[0m   [layout] Node=2211 ID=29 [p:0, c:1, r:2]
+^^[[33m[vertical]^^[[0m   [layout] Node=3425 ID=29 [p:0, c:1, r:3]
+^^[[33m[vertical]^^[[0m   [layout] Node=1735 ID=14 [p:0, c:1, r:4]
+^^[[33m[vertical]^^[[0m   [layout] Node=1738 ID=14 [p:0, c:1, r:4]
+^^[[33m[vertical]^^[[0m [layout] Layout map built. Total entries: 20, Total pages: 1
+^^[[33m[vertical]^^[[0m [core] Calling apply_positions with start_page=2 (is_textbox=false)
+^^[[33m[vertical]^^[[0m [render] apply_positions: border_rgb=0 0 0 -> 0.0000 0.0000 0.0000, font_rgb=0 0 0, font_size=1835008
+^^[[33m[vertical]^^[[0m >>> LUA PAGE: interval=8, p_total_cols=17, banxin_on=true
+^^[[33m[vertical]^^[[0m >>> LUA RESERVED COL: 8
+^^[[35m[banxin]^^[[0m [banxin] input y=-7.20 height=598.10 padding_top=2.00 draw_border=true
+^^[[35m[banxin]^^[[0m [banxin] Border literal: q 0.40 w 0.0000 0.0000 0.0000 RG 408.1171 -7.1731 50.1180 -595.8662 re S Q
+^^[[33m[vertical]^^[[0m [yuwei] Drawing yuwei with style=black, direction=1, color=0.0000 0.0000 0.0000
+^^[[33m[vertical]^^[[0m [GlyphPos] char=20108 x=409.65 cw=48.31 gw=15.00 -> xoff=442.95 yoff=-505.99
+^^[[33m[vertical]^^[[0m   [render] GLYPH char=30002 [c:0, r:5.00, s:nil] xoff=823.25 yoff=-173.64 w=28.00 h=18.81 fsize=28.00
+^^[[33m[vertical]^^[[0m   [render] GLYPH char=25100 [c:0, r:6.00, s:nil] xoff=823.25 yoff=-201.85 w=28.00 h=19.30 fsize=28.00
+^^[[33m[vertical]^^[[0m   [render] GLYPH char=31179 [c:0, r:7.00, s:nil] xoff=823.25 yoff=-229.91 w=28.00 h=18.35 fsize=28.00
+^^[[33m[vertical]^^[[0m   [render] GLYPH char=33775 [c:0, r:8.00, s:nil] xoff=823.25 yoff=-258.67 w=28.00 h=20.95 fsize=28.00
+^^[[33m[vertical]^^[[0m   [render] GLYPH char=38525 [c:0, r:9.00, s:nil] xoff=823.25 yoff=-286.33 w=28.00 h=19.69 fsize=28.00
+^^[[33m[vertical]^^[[0m   [render] GLYPH char=25955 [c:0, r:10.00, s:nil] xoff=823.25 yoff=-313.86 w=28.00 h=19.25 fsize=28.00
+^^[[33m[vertical]^^[[0m   [render] GLYPH char=20154 [c:0, r:11.00, s:nil] xoff=823.25 yoff=-342.71 w=28.00 h=17.72 fsize=28.00
+^^[[33m[vertical]^^[[0m   [render] GLYPH char=38988 [c:0, r:12.00, s:nil] xoff=823.25 yoff=-369.60 w=28.00 h=18.38 fsize=28.00
+^^[[33m[vertical]^^[[0m   [render] GLYPH char=12288 [c:0, r:13.00, s:nil] xoff=823.25 yoff=-390.46 w=28.00 h=0.00 fsize=28.00
+^^[[33m[vertical]^^[[0m   [render] GLYPH char=26481 [c:0, r:14.00, s:nil] xoff=823.25 yoff=-426.66 w=28.00 h=20.95 fsize=28.00
+^^[[33m[vertical]^^[[0m   [render] GLYPH char=37117 [c:0, r:15.00, s:nil] xoff=823.25 yoff=-454.20 w=28.00 h=19.58 fsize=28.00
+^^[[33m[vertical]^^[[0m   [render] GLYPH char=29275 [c:0, r:16.00, s:nil] xoff=823.25 yoff=-482.42 w=28.00 h=20.32 fsize=28.00
+^^[[33m[vertical]^^[[0m   [render] GLYPH char=38272 [c:0, r:17.00, s:nil] xoff=823.25 yoff=-510.22 w=28.00 h=19.61 fsize=28.00
+^^[[33m[vertical]^^[[0m   [render] GLYPH char=38577 [c:0, r:18.00, s:nil] xoff=823.25 yoff=-538.79 w=28.00 h=20.32 fsize=28.00
+^^[[33m[vertical]^^[[0m   [render] GLYPH char=22763 [c:0, r:19.00, s:nil] xoff=823.25 yoff=-567.04 w=28.00 h=18.87 fsize=28.00
+^^[[33m[vertical]^^[[0m   [render] GLYPH char=26360 [c:0, r:20.00, s:nil] xoff=823.25 yoff=-594.69 w=28.00 h=20.95 fsize=28.00
+^^[[33m[vertical]^^[[0m   [render] GLYPH char=19968 [c:1, r:0.00, s:nil] xoff=772.94 yoff=-31.65 w=28.00 h=10.50 fsize=28.00
+^^[[33m[vertical]^^[[0m   [render] GLYPH char=20108 [c:1, r:1.00, s:nil] xoff=772.94 yoff=-61.74 w=28.00 h=14.66 fsize=28.00
+^^[[33m[vertical]^^[[0m   [render] GLYPH char=19977 [c:1, r:2.00, s:nil] xoff=772.94 yoff=-90.20 w=28.00 h=16.46 fsize=28.00
+^^[[33m[vertical]^^[[0m   [render] GLYPH char=22235 [c:1, r:3.00, s:nil] xoff=772.94 yoff=-117.59 w=28.00 h=14.77 fsize=28.00
+^^[[33m[vertical]^^[[0m [core] Finished apply_positions. Pages: 1. Global page number: 2 -> 3
+^^[[33m[vertical]^^[[0m --- [core] Layout Map Summary --- [3
+] [4]
+============================================================

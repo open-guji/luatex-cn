@@ -334,10 +334,10 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
                 ctx.cur_page = ctx.cur_page + 1
             end
 
-            indent = get_indent_for_current_pos(block_id, base_indent, first_indent)
-
-            ctx.cur_column_indent = indent
-            if ctx.cur_row < indent then ctx.cur_row = indent end
+            -- CRITICAL: Reset column indent when wrapping to new column
+            -- The next node will set it again if it has indent > 0
+            -- This prevents indent from "leaking" when column fills up exactly
+            ctx.cur_column_indent = 0
             move_to_next_valid_position(ctx, interval, grid_height)
             move_to_next_valid_position(ctx, interval, grid_height)
         end
@@ -531,6 +531,7 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
             -- Internal Flatten logic uses -10001 for forced column break (paragraph end)
             if p_val == -10001 then
                 flush_buffer()
+                -- Column break only happens if there's content in current column
                 if ctx.cur_row > ctx.cur_column_indent then
                     ctx.cur_col = ctx.cur_col + 1
                     ctx.cur_row = 0
@@ -538,9 +539,10 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
                         ctx.cur_col = 0
                         ctx.cur_page = ctx.cur_page + 1
                     end
-                    ctx.cur_column_indent = 0
                     move_to_next_valid_position(ctx, interval, grid_height)
                 end
+                -- Always reset indent when paragraph ends, regardless of column break
+                ctx.cur_column_indent = 0
                 -- Standard TeX \newpage / \pagebreak / \clearpage uses -10000 or -20000
                 -- TODO: Handle page break logic later
                 -- elseif p_val <= -10000 then

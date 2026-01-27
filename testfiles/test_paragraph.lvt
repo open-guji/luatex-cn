@@ -1,0 +1,32 @@
+\input{regression-test}
+\documentclass{ltc-guji}
+\setmainfont{TW-Kai}
+\LtcDebugOn
+
+\begin{document}
+\START
+
+\TEST{Basic Paragraph}{
+    \begin{正文}
+        
+    一二三四
+    \begin{段落}[indent=3]
+        甲戌秋華陽散人題　東都牛門隱士書
+    \end{段落}
+    一二三四
+    \end{正文}
+}
+
+\TEST{ Paragraph Full Column}{
+    \begin{正文}
+        
+    \begin{段落}[indent=5]
+        甲戌秋華陽散人題　東都牛門隱士書
+    \end{段落}
+    一二三四
+    \end{正文}
+}
+
+
+\END
+\end{document}

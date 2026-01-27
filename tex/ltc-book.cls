@@ -18,7 +18,7 @@
 
 \RequirePackage{expl3}
 \RequirePackage{l3keys2e}
-\ProvidesExplClass {ltc-book} {2026/01/27} {0.1.3} {Chinese Vertical Book Class}
+\ProvidesExplClass {ltc-book} {2026/01/27} {0.1.4} {Chinese Vertical Book Class}
 
 \tl_new:N \l_luatexcn_book_initial_template_tl
 

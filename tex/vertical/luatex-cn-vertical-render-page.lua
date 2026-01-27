@@ -309,8 +309,8 @@ local function handle_judou_node(curr, p_head, pos, params, ctx)
             char, pos.col, pos.row, final_x / 65536, final_y / 65536, font_id, (judou_size_sp or 0) / 65536))
     end
 
-    -- Add color
-    local judou_color = params.judou_color or "red"
+    -- Add color using pdf_literal with coordinate transformation (like draw_debug_rect)
+    local judou_color = ctx.judou_color or "red"
     local color_map = {
         red = "1 0 0",
         blue = "0 0 1",
@@ -319,27 +319,35 @@ local function handle_judou_node(curr, p_head, pos, params, ctx)
     }
     local rgb = color_map[judou_color] or judou_color
 
-    -- Create color pdf_literal nodes
-    local color_start_node = node.new("whatsit", "pdf_literal")
-    color_start_node.mode = 0
-    color_start_node.data = string.format("q %s rg %s RG", rgb, rgb)
-    local color_start = D.todirect(color_start_node)
+    -- Convert to PDF big points
+    local sp_to_bp = 1 / 65536
+    local x_bp = final_x * sp_to_bp
+    local y_bp = final_y * sp_to_bp
 
-    local color_end_node = node.new("whatsit", "pdf_literal")
-    color_end_node.mode = 0
-    color_end_node.data = "Q"
-    local color_end = D.todirect(color_end_node)
+    -- Create color start literal with coordinate transformation
+    local pdf_literal_subtype = node.subtype("pdf_literal")
+    local color_start = D.new(constants.WHATSIT, pdf_literal_subtype)
+    D.setfield(color_start, "mode", 0)
+    -- Move to position, set color
+    D.setfield(color_start, "data", string.format("q %s rg %s RG 1 0 0 1 %.4f %.4f cm", rgb, rgb, x_bp, y_bp))
 
-    -- Insert nodes: color_start -> g -> color_end
+    local color_end = D.new(constants.WHATSIT, pdf_literal_subtype)
+    D.setfield(color_end, "mode", 0)
+    D.setfield(color_end, "data", "Q")
+
+    -- Reset glyph offsets since we position via cm
+    D.setfield(g, "xoffset", 0)
+    D.setfield(g, "yoffset", 0)
+
+    -- Insert: color_start -> glyph -> kern -> color_end
     p_head = D.insert_before(p_head, curr, color_start)
     D.insert_after(p_head, color_start, g)
-    D.insert_after(p_head, g, color_end)
 
-    -- Negate glyph width to avoid cursor creep
+    -- Add kern to negate glyph width
     local k = D.new(constants.KERN)
-    D.setfield(k, "subtype", 1)
     D.setfield(k, "kern", -w)
-    D.insert_after(p_head, color_end, k)
+    D.insert_after(p_head, g, k)
+    D.insert_after(p_head, k, color_end)
 
     return p_head
 end
@@ -474,6 +482,7 @@ local function process_page_nodes(p_head, layout_map, params, ctx)
         end
         curr = next_curr
     end
+
     return p_head
 end
 

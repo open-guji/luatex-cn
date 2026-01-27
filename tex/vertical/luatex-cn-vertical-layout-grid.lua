@@ -79,6 +79,7 @@ local function is_reserved_col(col, interval, banxin_on)
 end
 
 local function is_center_gap_col(col, params, grid_height)
+    if not params.banxin_on then return false end
     -- Use provided params if available
     local g_width = params.grid_width or grid_height or (65536 * 20)
 

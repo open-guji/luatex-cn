@@ -54,6 +54,117 @@ local SET_OPEN_QUOTE = {
 local REPLACEMENT_JU = 0x3002  -- 。
 local REPLACEMENT_DOU = 0x3001 -- 、
 
+--- Get the type of punctuation for a given character
+-- @param char (number) Unicode character code
+-- @return (string|nil) 'ju', 'dou', 'close', 'open', or nil
+function judou.get_punctuation_type(char)
+    if SET_JU[char] then return "ju" end
+    if SET_DOU[char] then return "dou" end
+    if SET_CLOSE_QUOTE[char] then return "close" end
+    if SET_OPEN_QUOTE[char] then return "open" end
+    return nil
+end
+
+--- Create a JUDOU whatsit node
+-- @param replacement (number) Unicode character code for replacement
+-- @param font_id (number) Font ID to use
+-- @param jiazhu_attr (number|nil) Jiazhu attribute value
+-- @return (direct node) The created whatsit node
+function judou.create_judou_whatsit(replacement, font_id, jiazhu_attr)
+    local user_defined_subtype = node.subtype("user_defined")
+    local w = D.new(constants.WHATSIT, user_defined_subtype)
+    D.setfield(w, "user_id", constants.JUDOU_USER_ID)
+    D.setfield(w, "type", 100) -- value type
+    D.setfield(w, "value", replacement)
+
+    if font_id then
+        D.set_attribute(w, constants.ATTR_JUDOU_FONT, font_id)
+    end
+    if jiazhu_attr then
+        D.set_attribute(w, constants.ATTR_JIAZHU, jiazhu_attr)
+    end
+    return w
+end
+
+--- Handle punctuation removal in 'none' mode
+-- @param head (direct node) Node list head
+-- @param t (direct node) Current glyph node
+-- @param ptype (string) Punctuation type ('ju', 'dou', 'close', 'open')
+-- @return (direct node, direct node|nil) New head, and the next node to process
+function judou.handle_none_mode(head, t, ptype)
+    if ptype then
+        local next_node = D.getnext(t)
+        head = D.remove(head, t)
+        node.flush_node(D.tonode(t))
+        return head, next_node
+    end
+    return head, D.getnext(t), t -- Return t as last_visible if not ptype
+end
+
+--- Handle punctuation replacement in 'judou' mode
+-- @param head (direct node) Node list head
+-- @param t (direct node) Current glyph node
+-- @param ptype (string) Punctuation type ('ju', 'dou', 'close', 'open')
+-- @param last_visible (direct node|nil) Last visible non-punctuation node
+-- @return (direct node, direct node|nil, direct node|nil) New head, next node, and updated last_visible
+function judou.handle_judou_mode(head, t, ptype, last_visible)
+    local char = D.getfield(t, "char")
+    local next_node = D.getnext(t)
+    local nodes_to_remove = { t }
+    local replacement = nil
+
+    print(string.format("[LUA-DEBUG] Checking judou mode for %x: ptype=%s", char, tostring(ptype)))
+
+    if ptype == "ju" then
+        replacement = REPLACEMENT_JU
+        -- Peek next for close quote
+        if next_node and D.getid(next_node) == constants.GLYPH then
+            local next_char = D.getfield(next_node, "char")
+            if SET_CLOSE_QUOTE[next_char] then
+                table.insert(nodes_to_remove, next_node)
+                next_node = D.getnext(next_node)
+            end
+        end
+    elseif ptype == "dou" then
+        replacement = REPLACEMENT_DOU
+        -- Peek next for open quote if char is ':'
+        if char == 0xFF1A and next_node and D.getid(next_node) == constants.GLYPH then
+            local next_char = D.getfield(next_node, "char")
+            if SET_OPEN_QUOTE[next_char] then
+                table.insert(nodes_to_remove, next_node)
+                next_node = D.getnext(next_node)
+            end
+        end
+    elseif ptype == "close" or ptype == "open" then
+        print("[LUA-DEBUG] Removing quote node")
+        head = D.remove(head, t)
+        node.flush_node(D.tonode(t))
+        return head, next_node, last_visible
+    end
+
+    if replacement then
+        if last_visible then
+            local font_id = D.getfield(t, "font")
+            local jiazhu_attr = D.get_attribute(t, constants.ATTR_JIAZHU)
+            local w = judou.create_judou_whatsit(replacement, font_id, jiazhu_attr)
+
+            D.insert_after(head, last_visible, w)
+            print(string.format("[LUA-DEBUG] Inserted JUDOU whatsit for char: %x after %s", char, tostring(last_visible)))
+        else
+            print(string.format("[LUA-DEBUG] FAILED to insert JUDOU whatsit for char: %x (no last_visible)", char))
+        end
+
+        -- Remove the processed glyphs
+        for _, n in ipairs(nodes_to_remove) do
+            head = D.remove(head, n)
+            node.flush_node(D.tonode(n))
+        end
+        return head, next_node, last_visible
+    end
+
+    return head, next_node, t -- Not a replacement candidate, treat as last_visible
+end
+
 --- Process node list for Punctuation modes
 -- @param head (direct node) The node list head
 -- @param params (table) Parameters containing punct_mode, etc.
@@ -72,102 +183,26 @@ function judou.process_judou(head, params)
     local t = head
     local last_visible = nil
 
-    local user_defined_subtype = node.subtype("user_defined")
-
     while t do
-        local next_node = D.getnext(t)
         local id = D.getid(t)
+        local next_node = D.getnext(t)
 
         if id == constants.GLYPH then
             local char = D.getfield(t, "char")
             if char > 32 then
                 print(string.format("[LUA-DEBUG] Glyph char=%x", char))
             end
-            local is_ju = SET_JU[char]
-            local is_dou = SET_DOU[char]
-            local is_close = SET_CLOSE_QUOTE[char]
-            local is_open = SET_OPEN_QUOTE[char]
+
+            local ptype = judou.get_punctuation_type(char)
 
             if mode == "none" then
-                if is_ju or is_dou or is_close or is_open then
-                    head = D.remove(head, t)
-                    node.flush_node(D.tonode(t))
-                else
-                    last_visible = t
+                head, next_node, last_visible = judou.handle_none_mode(head, t, ptype)
+                if not last_visible then
+                    -- If handle_none_mode didn't return last_visible, keep the old one
+                    last_visible = last_visible
                 end
             elseif mode == "judou" then
-                local replacement = nil
-                local nodes_to_remove = { t }
-
-                print(string.format("[LUA-DEBUG] Checking judou mode for %x: is_ju=%s, is_dou=%s", char, tostring(is_ju),
-                    tostring(is_dou)))
-
-                if is_ju then
-                    replacement = REPLACEMENT_JU
-                    print(string.format("[LUA-DEBUG] Identified JU replacement: %x", replacement))
-                    -- Peek next for close quote
-                    if next_node and D.getid(next_node) == constants.GLYPH then
-                        local next_char = D.getfield(next_node, "char")
-                        if SET_CLOSE_QUOTE[next_char] then
-                            table.insert(nodes_to_remove, next_node)
-                            -- Advance next_node because we're consuming it
-                            next_node = D.getnext(next_node)
-                        end
-                    end
-                elseif is_dou then
-                    replacement = REPLACEMENT_DOU
-                    print(string.format("[LUA-DEBUG] Identified DOU replacement: %x", replacement))
-                    -- Peek next for open quote if char is ':'
-                    if char == 0xFF1A and next_node and D.getid(next_node) == constants.GLYPH then
-                        local next_char = D.getfield(next_node, "char")
-                        if SET_OPEN_QUOTE[next_char] then
-                            table.insert(nodes_to_remove, next_node)
-                            next_node = D.getnext(next_node)
-                        end
-                    end
-                elseif is_close or is_open then
-                    print("[LUA-DEBUG] Removing quote node")
-                    head = D.remove(head, t)
-                    node.flush_node(D.tonode(t))
-                end
-
-                print(string.format("[LUA-DEBUG] Final replacement for %x: %s", char, tostring(replacement)))
-                if replacement then
-                    if last_visible then
-                        local w = D.new(constants.WHATSIT, user_defined_subtype)
-                        D.setfield(w, "user_id", constants.JUDOU_USER_ID)
-                        D.setfield(w, "type", 100) -- value type
-                        D.setfield(w, "value", replacement)
-
-                        -- Store font ID and attributes from original glyph
-                        local font_id = D.getfield(t, "font")
-                        if font_id then
-                            D.set_attribute(w, constants.ATTR_JUDOU_FONT, font_id)
-                        end
-                        local jiazhu_attr = D.get_attribute(t, constants.ATTR_JIAZHU)
-                        if jiazhu_attr then
-                            D.set_attribute(w, constants.ATTR_JIAZHU, jiazhu_attr)
-                        end
-
-                        D.insert_after(head, last_visible, w)
-                        print(string.format("[LUA-DEBUG] Inserted JUDOU whatsit for char: %x after %s", char,
-                            tostring(last_visible)))
-                    else
-                        print(string.format("[LUA-DEBUG] FAILED to insert JUDOU whatsit for char: %x (no last_visible)",
-                            char))
-                    end
-
-                    -- Remove the processed glyphs
-                    for _, n in ipairs(nodes_to_remove) do
-                        head = D.remove(head, n)
-                        node.flush_node(D.tonode(n))
-                    end
-                else
-                    -- Not a replacement candidate, and not a quote to be removed?
-                    if not (is_close or is_open) then
-                        last_visible = t
-                    end
-                end
+                head, next_node, last_visible = judou.handle_judou_mode(head, t, ptype, last_visible)
             else
                 last_visible = t
             end

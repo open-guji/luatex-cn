@@ -74,38 +74,55 @@ local function normalize_rgb(s)
         yellow = "1.0000 1.0000 0.0000",
         gray   = "0.5000 0.5000 0.5000",
     }
-    local mapped = color_map[s:lower()]
+    local low_s = s:lower():gsub("^%s*(.-)%s*$", "%1")
+    local mapped = color_map[low_s]
     if mapped then return mapped end
 
-    -- Replace commas with spaces and strip braces/brackets
-    s = s:gsub(",", " "):gsub("[{}%[%]]", "")
+    -- Strip common prefixes and suffixes
+    -- Handle rgb:(...), RGB:(...), color:...
+    s = s:gsub("^rgb%s*:%s*", ""):gsub("^RGB%s*:%s*", ""):gsub("^color%s*:%s*", "")
+    s = s:gsub("[{}%[%]%(%)]", " ")
+    s = s:gsub("[,;]", " ")
+    s = s:gsub("%s+", " "):gsub("^%s*(.-)%s*$", "%1")
 
-    -- Extract RGB values
-    local r, g, b = s:match("([%d%.]+)%s+([%d%.]+)%s+([%d%.]+)")
-    if not r then
-        -- If it's not a numeric RGB, return nil instead of the original string
-        -- to avoid injecting invalid PDF literal commands
+    -- Extract RGB values (supports 3 numbers)
+    local r_raw, g_raw, b_raw = s:match("([%d%.]+)%s+([%d%.]+)%s+([%d%.]+)")
+    if not r_raw then
         return nil
     end
 
-    r, g, b = tonumber(r), tonumber(g), tonumber(b)
+    local r, g, b = tonumber(r_raw), tonumber(g_raw), tonumber(b_raw)
     if not r or not g or not b then return nil end
 
     -- Convert 0-255 range to 0-1 range
-    if r > 1 or g > 1 or b > 1 then
+    -- If any value is > 1.0, assume it's 0-255 scale
+    if r > 1.0 or g > 1.0 or b > 1.0 then
         return string.format("%.4f %.4f %.4f", r / 255, g / 255, b / 255)
     end
 
     return string.format("%.4f %.4f %.4f", r, g, b)
 end
 
---- 如果开启了 verbose_log，则向日志输出调试消息
+-- Debug state (private)
+local _debug_enabled = false
+
+--- 设置调试模式开启状态
+-- @param enable boolean
+local function set_debug(enable)
+    _debug_enabled = (enable == true)
+end
+
+--- 检查调试模式是否开启
+-- @return boolean
+local function is_debug_enabled()
+    return _debug_enabled
+end
+
+--- 如果开启了调试，则向日志输出调试消息
 -- @param message string 调试消息内容
 local function debug_log(message)
-    if _G.vertical and _G.vertical.debug and _G.vertical.debug.verbose_log then
-        if texio and texio.write_nl then
-            texio.write_nl("log", "[Guji-Debug] " .. message)
-        end
+    if luatex_cn_debug then
+        luatex_cn_debug.log("vertical", message)
     end
 end
 
@@ -140,6 +157,28 @@ local function draw_debug_rect(head, anchor, x_sp, y_sp, w_sp, h_sp, color_cmd)
     else
         return node.direct.insert_before(head, head, nn)
     end
+end
+
+local function draw_debug_grid(head, x_sp, y_sp, w_sp, h_total_sp, color_name)
+    local tx_bp = x_sp * sp_to_bp
+    local ty_bp = y_sp * sp_to_bp
+    local tw_bp = w_sp * sp_to_bp
+    local th_bp = h_total_sp * sp_to_bp
+
+    local color_str = "0 0 1 RG" -- Default blue
+    if color_name == "red" then color_str = "1 0 0 RG" end
+    if color_name == "green" then color_str = "0 1 0 RG" end
+
+    -- Draw a single rectangle for the column
+    local literal = string.format("q 0.2 w %s %.4f %.4f %.4f %.4f re S Q", color_str, tx_bp, ty_bp, tw_bp, -th_bp)
+
+    local whatsit_id = node.id("whatsit")
+    local pdf_literal_id = node.subtype("pdf_literal")
+    local nn = node.direct.new(whatsit_id, pdf_literal_id)
+    node.direct.setfield(nn, "data", literal)
+    node.direct.setfield(nn, "mode", 0)
+
+    return node.direct.insert_before(head, head, nn)
 end
 
 --- 创建具有给定数据的 PDF literal 节点
@@ -206,9 +245,12 @@ local utils = {
     sp_to_bp = sp_to_bp,
     debug_log = debug_log,
     draw_debug_rect = draw_debug_rect,
+    draw_debug_grid = draw_debug_grid,
     create_pdf_literal = create_pdf_literal,
     insert_pdf_literal = insert_pdf_literal,
     to_chinese_numeral = to_chinese_numeral,
+    set_debug = set_debug,
+    is_debug_enabled = is_debug_enabled,
 }
 
 -- Register module in package.loaded for require() compatibility

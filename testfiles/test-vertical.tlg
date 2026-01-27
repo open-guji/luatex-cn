@@ -3,108 +3,74 @@ Don't change this file in any respect.
 ============================================================
 TEST 1: Basic Vertical Layout
 ============================================================
-DEBUG:banxin-padding-topis2pt
-[Guji-Debug]   [flatten] Adding Column Break after Line=354
-[Guji-Debug]   [layout] Node=547 ID=29 [p:0, c:0, r:0]
-[Guji-Debug]   [layout] Node=563 ID=29 [p:0, c:0, r:1]
-[Guji-Debug]   [layout] Node=578 ID=29 [p:0, c:0, r:2]
-[Guji-Debug]   [layout] Node=593 ID=29 [p:0, c:0, r:3]
-[Guji-Debug]   [layout] Node=608 ID=29 [p:0, c:0, r:4]
-[Guji-Debug]   [layout] Node=623 ID=29 [p:0, c:0, r:5]
-[Guji-Debug]   [layout] Node=162 ID=14 [p:0, c:0, r:6]
-[Guji-Debug]   [layout] Node=646 ID=14 [p:0, c:0, r:6]
-[Guji-Debug] [layout] Layout map built. Total entries: 6, Total pages: 1
-[Guji-Debug] [sidenote] calculate_sidenote_positions: registry has 0 entries
-> \box...=
-\vbox(0.0+0.0)x345.0, direction TLT
-.\hbox(0.0+0.0)x345.0, glue set 329.6fill, direction TLT
-..\localpar
-...\localinterlinepenalty=0
-...\localbrokenpenalty=0
-...\localleftbox=null
-...\localrightbox=null
-..\glue 0.0 plus 1.0fill
-..\hbox(0.0+0.0)x15.4, direction TLT
-...\hbox(0.0+302.39935)x15.4, direction TLT
-....\TU/TW-Kai(0)/m/n/10 测
-....\kern-10.0 (font)
-....\TU/TW-Kai(0)/m/n/10 试
-....\kern-10.0 (font)
-....\TU/TW-Kai(0)/m/n/10 竖
-....\kern-10.0 (font)
-....\TU/TW-Kai(0)/m/n/10 排
-....\kern-10.0 (font)
-....\TU/TW-Kai(0)/m/n/10 内
-....\kern-10.0 (font)
-....\TU/TW-Kai(0)/m/n/10 容
-....\kern-10.0 (font)
-..\penalty 10000
-..\glue(\parfillskip) 0.0 plus 1.0fil
-..\glue(\rightskip) 0.0
-! OK.
-<argument> ...l {测试竖排内容} } \showbox 0 
-l. ...}
+*geometry* verbose mode - [ newgeometry ] result:
+* driver: luatex
+* paper: custom
+* layout: <same size as paper>
+* layoutoffset:(h,v)=(0.0pt,0.0pt)
+* modes: 
+* h-part:(L,W,R)=(133.2pt, 301.6pt, 133.2pt)
+* v-part:(T,H,B)=(188.50003pt, 614.49997pt, 91.6pt)
+* \paperwidth=568.0pt
+* \paperheight=894.6pt
+* \textwidth=301.6pt
+* \textheight=614.49997pt
+* \oddsidemargin=60.93001pt
+* \evensidemargin=60.93001pt
+* \topmargin=79.23004pt
+* \headheight=12.0pt
+* \headsep=25.0pt
+* \topskip=0.0pt
+* \footskip=42.67912pt
+* \marginparwidth=65.0pt
+* \marginparsep=11.0pt
+* \columnsep=10.0pt
+* \skip\footins=9.0pt plus 4.0pt minus 2.0pt
+* \hoffset=0.0pt
+* \voffset=0.0pt
+* \mag=1000
+* \@twocolumnfalse
+* \@twosidefalse
+* \@mparswitchfalse
+* \@reversemarginfalse
+* (1in=72.27pt=25.4mm, 1cm=28.453pt)
+[1
+] [2]
 ============================================================
 ============================================================
 TEST 2: Vertical with multiple lines
 ============================================================
-DEBUG:banxin-padding-topis2pt
-[Guji-Debug]   [flatten] Adding Column Break after Line=354
-[Guji-Debug]   [flatten] Adding Column Break after Line=441
-[Guji-Debug]   [layout] Node=405 ID=29 [p:0, c:0, r:0]
-[Guji-Debug]   [layout] Node=398 ID=29 [p:0, c:0, r:1]
-[Guji-Debug]   [layout] Node=718 ID=29 [p:0, c:0, r:2]
-[Guji-Debug]   [layout] Node=725 ID=29 [p:0, c:0, r:3]
-[Guji-Debug]   [layout] Node=732 ID=29 [p:0, c:0, r:4]
-[Guji-Debug]   [layout] Node=715 ID=14 [p:0, c:0, r:5]
-[Guji-Debug]   [layout] Node=739 ID=12 [p:0, c:0, r:5]
-[Guji-Debug]   [layout] Node=750 ID=14 [p:0, c:0, r:5]
-[Guji-Debug]   [layout] Node=761 ID=14 [p:0, c:1, r:0]
-[Guji-Debug]   [layout] Node=768 ID=14 [p:0, c:1, r:0]
-[Guji-Debug]   [layout] Node=779 ID=29 [p:0, c:1, r:0]
-[Guji-Debug]   [layout] Node=794 ID=29 [p:0, c:1, r:1]
-[Guji-Debug]   [layout] Node=809 ID=29 [p:0, c:1, r:2]
-[Guji-Debug]   [layout] Node=824 ID=29 [p:0, c:1, r:3]
-[Guji-Debug]   [layout] Node=839 ID=29 [p:0, c:1, r:4]
-[Guji-Debug]   [layout] Node=854 ID=14 [p:0, c:1, r:5]
-[Guji-Debug]   [layout] Node=865 ID=14 [p:0, c:1, r:5]
-[Guji-Debug] [layout] Layout map built. Total entries: 10, Total pages: 1
-[Guji-Debug] [sidenote] calculate_sidenote_positions: registry has 0 entries
-> \box...=
-\vbox(0.0+0.0)x345.0, direction TLT
-.\hbox(0.0+0.0)x345.0, glue set 314.6fill, direction TLT
-..\localpar
-...\localinterlinepenalty=0
-...\localbrokenpenalty=0
-...\localleftbox=null
-...\localrightbox=null
-..\glue 0.0 plus 1.0fill
-..\hbox(0.0+0.0)x30.4, direction TLT
-...\hbox(0.0+302.39935)x30.4, direction TLT
-....\TU/TW-Kai(0)/m/n/10 第
-....\kern-10.0 (font)
-....\TU/TW-Kai(0)/m/n/10 一
-....\kern-10.0 (font)
-....\TU/TW-Kai(0)/m/n/10 行
-....\kern-10.0 (font)
-....\TU/TW-Kai(0)/m/n/10 内
-....\kern-10.0 (font)
-....\TU/TW-Kai(0)/m/n/10 容
-....\kern-10.0 (font)
-....\TU/TW-Kai(0)/m/n/10 第
-....\kern-10.0 (font)
-....\TU/TW-Kai(0)/m/n/10 二
-....\kern-10.0 (font)
-....\TU/TW-Kai(0)/m/n/10 行
-....\kern-10.0 (font)
-....\TU/TW-Kai(0)/m/n/10 内
-....\kern-10.0 (font)
-....\TU/TW-Kai(0)/m/n/10 容
-....\kern-10.0 (font)
-..\penalty 10000
-..\glue(\parfillskip) 0.0 plus 1.0fil
-..\glue(\rightskip) 0.0
-! OK.
-<argument> ...容\\第二行内容} } \showbox 0 
-l. ...}
+*geometry* verbose mode - [ newgeometry ] result:
+* driver: luatex
+* paper: custom
+* layout: <same size as paper>
+* layoutoffset:(h,v)=(0.0pt,0.0pt)
+* modes: 
+* h-part:(L,W,R)=(133.2pt, 301.6pt, 133.2pt)
+* v-part:(T,H,B)=(188.50003pt, 614.49997pt, 91.6pt)
+* \paperwidth=568.0pt
+* \paperheight=894.6pt
+* \textwidth=301.6pt
+* \textheight=614.49997pt
+* \oddsidemargin=60.93001pt
+* \evensidemargin=60.93001pt
+* \topmargin=79.23004pt
+* \headheight=12.0pt
+* \headsep=25.0pt
+* \topskip=0.0pt
+* \footskip=42.67912pt
+* \marginparwidth=65.0pt
+* \marginparsep=11.0pt
+* \columnsep=10.0pt
+* \skip\footins=9.0pt plus 4.0pt minus 2.0pt
+* \hoffset=0.0pt
+* \voffset=0.0pt
+* \mag=1000
+* \@twocolumnfalse
+* \@twosidefalse
+* \@mparswitchfalse
+* \@reversemarginfalse
+* (1in=72.27pt=25.4mm, 1cm=28.453pt)
+[3
+] [4]
 ============================================================

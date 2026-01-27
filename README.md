@@ -26,11 +26,11 @@ CTAN: [v0.1.1](https://ctan.org/pkg/luatex-cn) | GitHub Release: [v0.1.3](https:
 > [查看源码](示例/史记五帝本纪/史记.tex) | [查看 PDF](示例/史记五帝本纪/史记.pdf)
 
 ### 2. 《红楼梦》（甲戌本排版） 
-演示了侧批、眉批、手抄本版式。
+演示了侧批、眉批、标点、手抄本版式。
 
-| 第二页 | 第一页 |
+| 第二页（标点） | 第一页（眉批） |
 | :---: | :---: |
-| ![红楼梦2](示例/首页展示/honglou-p3.png) | ![红楼梦1](示例/首页展示/honglou-p2.png) |
+| ![红楼梦2](示例/首页展示/honglou-p2.png) | ![红楼梦1](示例/首页展示/honglou-p1.png) |
 
 > [查看源码](示例/红楼梦甲戌本/石头记.tex) | [查看 PDF](示例/红楼梦甲戌本/石头记.pdf)
 
@@ -58,24 +58,37 @@ tlmgr install luatex-cn
 
 ## 使用方法
 
-推荐通过 `ltc-guji` 文档类使用本宏包：
+通过 `ltc-guji` 文档类使用本宏包。绝大多数命令都支持中文：
 
 ```latex
 \documentclass[四库全书]{ltc-guji}
 % 如果不指定字体，会使用系统默认中文字体
 % \setmainfont{Noto Serif SC}
+% \禁用分页裁剪
+
+\title{钦定四库全书}
+\chapter{史记\\卷一}
 
 \begin{document}
 \begin{正文}
-\chapter{五帝本紀第一}
-這是竖排的中文文本示例，包含夹注\夹注{双行小注}的功能演示。
 
-\begin{列表}
-    \item 史部
-    \item 卷一
-\end{列表}
+這是古籍竖排的示例，包含夹注\夹注{长夹注自动换列，并且自动平衡，右列可能多一个字}的功能演示。\\ % 强制换列
+空格需手动声明\空格[2] 可加入参数。
 
-% \印章[page=1]{seal.png}
+段落展示：
+\begin{段落}[indent=2]
+    天地玄黄\\
+    宇宙洪荒
+\end{段落}
+
+侧批\侧批[yoffset=10pt]{较长的侧批可换列甚至换页}可在任意位置插入，可调整位置。
+
+版心展示书名、章节名、页码。鱼尾可设置。
+
+\批注[x=5cm, y=2cm, height=6, color={1 0 0}]{可在任意位置书写多列批注}
+
+% 印章：绝对定位添加背景图
+% \印章[page=1, xshift=2cm, yshift=5cm]{seal.png}
 \end{正文}
 \end{document}
 ```

@@ -233,7 +233,7 @@ tex = {
         local num, unit = s:match("^([%d%.]+)(%a+)$")
         if not num then return 0 end
         num = tonumber(num)
-        local factors = { pt = 65536, bp = 65781, mm = 186467, sp = 1 }
+        local factors = { pt = 65536, bp = 65781, mm = 186467, sp = 1, em = 655360 }
         return math.floor(num * (factors[unit] or 65536))
     end,
     current = function() return 0 end,

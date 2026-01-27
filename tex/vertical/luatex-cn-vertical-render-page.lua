@@ -81,6 +81,93 @@ local text_position = package.loaded['vertical.luatex-cn-vertical-render-positio
     require('vertical.luatex-cn-vertical-render-position')
 
 
+-- Internal functions for unit testing
+local _internal = {}
+
+-- 辅助函数：计算渲染上下文（尺寸、偏移、列数等）
+local function calculate_render_context(params)
+    local border_thickness = params.border_thickness or 26214 -- 0.4pt default
+    local half_thickness = math.floor(border_thickness / 2)
+    local ob_thickness_val = (params.outer_border_thickness or (65536 * 2))
+    local ob_sep_val = (params.outer_border_sep or (65536 * 2))
+
+    local outer_shift = params.draw_outer_border and (ob_thickness_val + ob_sep_val) or 0
+    -- Only add border padding to shift_y when border is actually drawn
+    local border_shift = params.draw_border and (border_thickness + params.b_padding_top) or 0
+
+    local shift_x = (params.shift_x and params.shift_x ~= 0) and params.shift_x or outer_shift
+    local shift_y = (params.shift_y and params.shift_y ~= 0) and params.shift_y or (outer_shift + border_shift)
+
+    local interval = tonumber(params.n_column) or 0
+    local p_cols = tonumber(params.page_columns) or (2 * interval + 1)
+    local line_limit = params.line_limit or 20
+
+    local b_rgb_str = utils.normalize_rgb(params.border_rgb) or "0.0000 0.0000 0.0000"
+    local background_rgb_str = utils.normalize_rgb(params.bg_rgb)
+    local text_rgb_str = utils.normalize_rgb(params.font_rgb)
+
+    return {
+        border_thickness = border_thickness,
+        half_thickness = half_thickness,
+        ob_thickness_val = ob_thickness_val,
+        ob_sep_val = ob_sep_val,
+        outer_shift = outer_shift,
+        shift_x = shift_x,
+        shift_y = shift_y,
+        interval = interval,
+        p_cols = p_cols,
+        line_limit = line_limit,
+        b_padding_top = params.b_padding_top or 0,
+        b_padding_bottom = params.b_padding_bottom or 0,
+        b_rgb_str = b_rgb_str,
+        background_rgb_str = background_rgb_str,
+        text_rgb_str = text_rgb_str,
+        grid_width = params.grid_width,
+        grid_height = params.grid_height,
+        jiazhu_align = params.jiazhu_align or "outward",
+        judou_pos = params.judou_pos or "right-bottom",
+        judou_size = params.judou_size or "1em",
+        judou_color = params.judou_color or "red",
+    }
+end
+
+_internal.calculate_render_context = calculate_render_context
+
+-- 辅助函数：将节点按页分组
+local function group_nodes_by_page(d_head, layout_map, total_pages)
+    local page_nodes = {}
+    for p = 0, total_pages - 1 do
+        page_nodes[p] = { head = nil, tail = nil, max_col = 0 }
+    end
+
+    local t = d_head
+    while t do
+        local next_node = D.getnext(t)
+        local pos = layout_map[t]
+        D.setnext(t, nil)
+
+        if pos then
+            local p = pos.page or 0
+            if page_nodes[p] then
+                if not page_nodes[p].head then
+                    page_nodes[p].head = t
+                else
+                    D.setnext(page_nodes[p].tail, t)
+                end
+                page_nodes[p].tail = t
+                if pos.col > page_nodes[p].max_col then page_nodes[p].max_col = pos.col end
+            else
+                node.flush_node(D.tonode(t))
+            end
+        else
+            node.flush_node(D.tonode(t))
+        end
+        t = next_node
+    end
+    return page_nodes
+end
+
+_internal.group_nodes_by_page = group_nodes_by_page
 
 -- 辅助函数：处理单个字形的定位
 local function handle_glyph_node(curr, p_head, pos, params, ctx)
@@ -112,7 +199,7 @@ local function handle_glyph_node(curr, p_head, pos, params, ctx)
     D.setfield(curr, "xoffset", final_x)
     D.setfield(curr, "yoffset", final_y)
 
-    if params.draw_debug then
+    if luatex_cn_debug and luatex_cn_debug.is_enabled("vertical") then
         local font_id = D.getfield(curr, "font") or 0
         local font_data = font.getfont(font_id)
         local font_size = font_data and font_data.size or 0
@@ -150,17 +237,132 @@ local function handle_block_node(curr, p_head, pos, ctx)
     return p_head
 end
 
+-- 辅助函数：处理 Judou（句读）标志的定位
+local function handle_judou_node(curr, p_head, pos, params, ctx)
+    print(string.format("[LUA-DEBUG] handle_judou_node CALLED for char: %x", D.getfield(curr, "value") or 0))
+    local char = D.getfield(curr, "value")
+
+    -- Get font from whatsit attribute or params
+    local w_font = D.get_attribute(curr, constants.ATTR_JUDOU_FONT)
+    local base_font_id = (w_font and w_font > 0) and w_font or params.font_id or font.current()
+
+    -- Handle Judou Font Scaling (default 1em)
+    local font_id = base_font_id
+    local judou_size_sp = constants.to_dimen(ctx.judou_size)
+    if judou_size_sp and judou_size_sp > 0 then
+        local base_f_data = font.getfont(base_font_id)
+        if base_f_data then
+            -- Create a scaled version of the font if sizes differ significantly
+            if math.abs(base_f_data.size - judou_size_sp) > 6553 then -- > 0.1pt
+                local new_f_data = {}
+                for k, v in pairs(base_f_data) do new_f_data[k] = v end
+                new_f_data.size = judou_size_sp
+                font_id = font.define(new_f_data)
+            end
+        end
+    end
+
+    -- Create glyph node
+    local g = D.new(constants.GLYPH)
+    D.setfield(g, "char", char)
+    D.setfield(g, "font", font_id)
+    D.setfield(g, "lang", 0)
+
+    -- Force dimension calculation by looking up font data
+    local f_data = font.getfont(font_id)
+    local w, h, d = 0, 0, 0
+    if f_data and f_data.characters and f_data.characters[char] then
+        local c_data = f_data.characters[char]
+        w = c_data.width or 0
+        h = c_data.height or 0
+        d = c_data.depth or 0
+    end
+
+    -- Set dimensions for TeX's layout tracking
+    D.setfield(g, "width", w)
+    D.setfield(g, "height", h)
+    D.setfield(g, "depth", d)
+
+    -- Position calculation
+    local rtl_col = ctx.p_total_cols - 1 - pos.col
+    local base_x = rtl_col * ctx.grid_width + ctx.half_thickness + ctx.shift_x
+    local base_y = -pos.row * ctx.grid_height - ctx.shift_y
+
+    local final_x = base_x
+    local final_y = base_y
+
+    -- Default positioning logic
+    if ctx.judou_pos == "right-bottom" then
+        final_x = base_x + ctx.grid_width * 0.45
+        final_y = base_y - ctx.grid_height * 0.05
+    elseif ctx.judou_pos == "right" then
+        final_x = base_x + ctx.grid_width * 0.5
+        final_y = base_y - ctx.grid_height * 0.5
+    end
+
+    -- Apply offsets
+    D.setfield(g, "xoffset", final_x)
+    D.setfield(g, "yoffset", final_y)
+
+    if luatex_cn_debug and luatex_cn_debug.is_enabled("vertical") then
+        utils.debug_log(string.format("[render] JUDOU char=%d [c:%d, r:%d] xoff=%.2f yoff=%.2f font=%d size=%.2fpt",
+            char, pos.col, pos.row, final_x / 65536, final_y / 65536, font_id, (judou_size_sp or 0) / 65536))
+    end
+
+    -- Add color using pdf_literal with coordinate transformation (like draw_debug_rect)
+    local judou_color = ctx.judou_color or "red"
+    local color_map = {
+        red = "1 0 0",
+        blue = "0 0 1",
+        green = "0 1 0",
+        black = "0 0 0",
+    }
+    local rgb = color_map[judou_color] or judou_color
+
+    -- Convert to PDF big points
+    local sp_to_bp = 1 / 65536
+    local x_bp = final_x * sp_to_bp
+    local y_bp = final_y * sp_to_bp
+
+    -- Create color start literal with coordinate transformation
+    local pdf_literal_subtype = node.subtype("pdf_literal")
+    local color_start = D.new(constants.WHATSIT, pdf_literal_subtype)
+    D.setfield(color_start, "mode", 0)
+    -- Move to position, set color
+    D.setfield(color_start, "data", string.format("q %s rg %s RG 1 0 0 1 %.4f %.4f cm", rgb, rgb, x_bp, y_bp))
+
+    local color_end = D.new(constants.WHATSIT, pdf_literal_subtype)
+    D.setfield(color_end, "mode", 0)
+    D.setfield(color_end, "data", "Q")
+
+    -- Reset glyph offsets since we position via cm
+    D.setfield(g, "xoffset", 0)
+    D.setfield(g, "yoffset", 0)
+
+    -- Insert: color_start -> glyph -> kern -> color_end
+    p_head = D.insert_before(p_head, curr, color_start)
+    D.insert_after(p_head, color_start, g)
+
+    -- Add kern to negate glyph width
+    local k = D.new(constants.KERN)
+    D.setfield(k, "kern", -w)
+    D.insert_after(p_head, g, k)
+    D.insert_after(p_head, k, color_end)
+
+    return p_head
+end
+
 -- 辅助函数：绘制调试网格/框
 local function handle_debug_drawing(curr, p_head, pos, ctx)
     local show_me = false
     local color_str = "0 0 1 RG"
     if pos.is_block then
-        if _G.vertical.debug.show_boxes then
+        if luatex_cn_debug and luatex_cn_debug.is_enabled("vertical") then
             show_me = true
             color_str = "1 0 0 RG"
         end
     else
-        if _G.vertical.debug.show_grid then
+        if luatex_cn_debug and luatex_cn_debug.is_enabled("vertical") then
             show_me = true
         end
     end
@@ -199,7 +401,7 @@ local function process_page_nodes(p_head, layout_map, params, ctx)
             local pos = layout_map[curr]
             if pos then
                 if not pos.col or pos.col < 0 then
-                    if params.draw_debug then
+                    if luatex_cn_debug and luatex_cn_debug.is_enabled("vertical") then
                         utils.debug_log(string.format("  [render] SKIP Node=%s ID=%d (invalid col=%s)", tostring(curr),
                             id, tostring(pos.col)))
                     end
@@ -210,11 +412,11 @@ local function process_page_nodes(p_head, layout_map, params, ctx)
                         p_head = handle_block_node(curr, p_head, pos, ctx)
                     end
 
-                    if params.draw_debug then
+                    if luatex_cn_debug and luatex_cn_debug.is_enabled("vertical") then
                         p_head = handle_debug_drawing(curr, p_head, pos, ctx)
                     end
                 end
-            elseif params.draw_debug then
+            elseif luatex_cn_debug and luatex_cn_debug.is_enabled("vertical") then
                 -- CRITICAL DEBUG: If it has Jiazhu attribute but no pos, it's a bug!
                 local has_jiazhu = (D.get_attribute(curr, constants.ATTR_JIAZHU) == 1)
                 if has_jiazhu then
@@ -246,7 +448,7 @@ local function process_page_nodes(p_head, layout_map, params, ctx)
                 p_head = D.insert_before(p_head, curr, k_pre)
                 D.insert_after(p_head, curr, k_post)
 
-                if params.draw_debug then
+                if luatex_cn_debug and luatex_cn_debug.is_enabled("vertical") then
                     utils.debug_log(string.format("  [render] GLUE (space) positioned at [c:%d, r:%.2f]", pos.col,
                         pos.row))
                     p_head = handle_debug_drawing(curr, p_head, pos, ctx)
@@ -263,10 +465,16 @@ local function process_page_nodes(p_head, layout_map, params, ctx)
                 D.setfield(curr, "kern", 0)
             end
         elseif id == constants.WHATSIT then
-            -- Keep WHATSIT nodes in the list for TikZ/other special content
-            -- but REMOVE our internal anchors (Sidenote/FloatingBox) to avoid PDF errors
             local uid = D.getfield(curr, "user_id")
-            if uid == constants.SIDENOTE_USER_ID or uid == constants.FLOATING_TEXTBOX_USER_ID then
+            if uid == constants.JUDOU_USER_ID then
+                local pos = layout_map[curr]
+                if pos then
+                    p_head = handle_judou_node(curr, p_head, pos, params, ctx)
+                end
+                -- Remove the anchor whatsit
+                p_head = D.remove(p_head, curr)
+                node.flush_node(D.tonode(curr))
+            elseif uid == constants.SIDENOTE_USER_ID or uid == constants.FLOATING_TEXTBOX_USER_ID then
                 p_head = D.remove(p_head, curr)
                 -- We don't need to free it here if D.remove doesn't, but let's be safe
                 node.flush_node(D.tonode(curr))
@@ -274,6 +482,7 @@ local function process_page_nodes(p_head, layout_map, params, ctx)
         end
         curr = next_curr
     end
+
     return p_head
 end
 
@@ -339,7 +548,6 @@ local function render_sidenotes(p_head, sidenote_nodes, params, ctx)
         -- `p_head` is the main list.
 
         local id = D.getid(curr)
-
         if id == constants.GLYPH then
             -- For sidenotes, we need to apply the offset
             -- Calculate position manually with offset
@@ -385,324 +593,290 @@ local function render_sidenotes(p_head, sidenote_nodes, params, ctx)
             end
         end
 
-        if params.draw_debug then
+        if luatex_cn_debug and luatex_cn_debug.is_enabled("vertical") then
             p_head = handle_debug_drawing(curr, p_head, pos, ctx)
         end
     end
 
     return p_head
 end
+
+-- 辅助函数：定位浮动文本框
+local function position_floating_box(p_head, item, params)
+    local curr = D.todirect(item.box)
+    local h = D.getfield(curr, "height") or 0
+    local w = D.getfield(curr, "width") or 0
+
+    local p_width = params.paper_width or 0
+    local m_left = params.margin_left or 0
+    local m_top = params.margin_top or 0
+
+    -- Calculate absolute positions relative to container
+    local rel_x = p_width - m_left - item.x - w
+    local rel_y = item.y - m_top
+
+    -- Apply Kern & Shift
+    local final_x = rel_x
+    D.setfield(curr, "shift", rel_y + h)
+
+    local k_pre = D.new(constants.KERN)
+    D.setfield(k_pre, "kern", final_x)
+
+    local k_post = D.new(constants.KERN)
+    D.setfield(k_post, "kern", -(final_x + w))
+
+    p_head = D.insert_before(p_head, p_head, k_pre)
+    D.insert_after(p_head, k_pre, curr)
+    D.insert_after(p_head, curr, k_post)
+
+    if luatex_cn_debug and luatex_cn_debug.is_enabled("vertical") then
+        utils.debug_log(string.format(
+            "[render] Floating Box (Absolute Top-Right) at x=%.2f, y=%.2f (rel_x=%.2f, rel_y=%.2f)",
+            item.x / 65536, item.y / 65536, rel_x / 65536, rel_y / 65536))
+    end
+    return p_head
+end
+
+_internal.position_floating_box = position_floating_box
+
+-- 辅助函数：渲染单个页面
+local function render_single_page(p_head, p_max_col, p, layout_map, params, ctx)
+    if not p_head then return nil, 0 end
+
+    local p_total_cols = p_max_col + 1
+    local p_cols = ctx.p_cols
+    -- Always enforce full page width to ensure correct RTL/SplitPage absolute positioning
+    if p_cols > 0 and p_total_cols < p_cols then
+        p_total_cols = p_cols
+    end
+
+    local grid_width = ctx.grid_width
+    local grid_height = ctx.grid_height
+    local border_thickness = ctx.border_thickness
+    local line_limit = ctx.line_limit
+    local b_padding_top = ctx.b_padding_top
+    local b_padding_bottom = ctx.b_padding_bottom
+    local vertical_align = params.vertical_align
+    local draw_debug = luatex_cn_debug and luatex_cn_debug.is_enabled("vertical")
+    local draw_border = params.draw_border
+    local draw_outer_border = params.draw_outer_border
+    local shift_x = ctx.shift_x
+    local shift_y = ctx.shift_y
+    local outer_shift = ctx.outer_shift
+    local interval = ctx.interval
+    local half_thickness = ctx.half_thickness
+    local b_rgb_str = ctx.b_rgb_str
+
+    local inner_width = p_total_cols * grid_width + border_thickness
+    local inner_height = line_limit * grid_height + b_padding_top + b_padding_bottom + border_thickness
+
+    -- Reserved columns (via hooks - e.g., banxin)
+    local reserved_cols = {}
+    local banxin_on = params.banxin_on
+    if draw_debug then
+        utils.debug_log(string.format(">>> LUA PAGE: interval=%d, p_total_cols=%d, banxin_on=%s", interval,
+            p_total_cols, tostring(banxin_on)))
+    end
+    if banxin_on and interval > 0 then
+        for col = 0, p_total_cols - 1 do
+            if _G.vertical.hooks.is_reserved_column(col, interval) then
+                reserved_cols[col] = true
+                if draw_debug then
+                    utils.debug_log(string.format(">>> LUA RESERVED COL: %d", col))
+                end
+            end
+        end
+    end
+
+    -- Borders & Reserved Columns
+    if banxin_on and interval > 0 then
+        for col = 0, p_total_cols - 1 do
+            if reserved_cols[col] then
+                local rtl_col = p_total_cols - 1 - col
+                local effective_half = draw_border and half_thickness or 0
+                local reserved_x = rtl_col * grid_width + effective_half + shift_x
+                local reserved_y = -(effective_half + outer_shift)
+                local reserved_height = line_limit * grid_height + b_padding_top + b_padding_bottom
+
+                p_head = _G.vertical.hooks.render_reserved_column(p_head, {
+                    x = reserved_x,
+                    y = reserved_y,
+                    width = grid_width,
+                    height = reserved_height,
+                    border_thickness = border_thickness,
+                    color_str = b_rgb_str,
+                    upper_ratio = params.banxin_upper_ratio or 0.28,
+                    middle_ratio = params.banxin_middle_ratio or 0.56,
+                    lower_ratio = params.banxin_lower_ratio or 0.16,
+                    book_name = params.book_name or "",
+                    shift_y = shift_y,
+                    vertical_align = vertical_align,
+                    b_padding_top = params.banxin_padding_top or 0,
+                    b_padding_bottom = params.banxin_padding_bottom or 0,
+                    lower_yuwei = params.lower_yuwei,
+                    chapter_title = params.chapter_title or "",
+                    chapter_title_top_margin = params.chapter_title_top_margin or (65536 * 20),
+                    chapter_title_cols = params.chapter_title_cols or 1,
+                    chapter_title_font_size = params.chapter_title_font_size,
+                    chapter_title_grid_height = params.chapter_title_grid_height,
+                    book_name_grid_height = params.book_name_grid_height,
+                    book_name_align = params.book_name_align,
+                    upper_yuwei = params.upper_yuwei,
+                    banxin_divider = params.banxin_divider,
+                    page_number_align = params.page_number_align,
+                    page_number_font_size = params.page_number_font_size,
+                    page_number = (params.start_page_number or 1) + p,
+                    grid_width = grid_width,
+                    grid_height = grid_height,
+                    font_size = params.font_size,
+                    draw_border = draw_border,
+                })
+            end
+        end
+    end
+
+    if draw_border and p_total_cols > 0 then
+        -- Column borders
+        p_head = border.draw_column_borders(p_head, {
+            total_cols = p_total_cols,
+            grid_width = grid_width,
+            grid_height = grid_height,
+            line_limit = line_limit,
+            border_thickness = border_thickness,
+            b_padding_top = b_padding_top,
+            b_padding_bottom = b_padding_bottom,
+            shift_x = shift_x,
+            outer_shift = outer_shift,
+            border_rgb_str = b_rgb_str,
+            banxin_cols = reserved_cols,
+        })
+    end
+
+    -- Outer border
+    if draw_outer_border and p_total_cols > 0 then
+        p_head = border.draw_outer_border(p_head, {
+            inner_width = inner_width,
+            inner_height = inner_height,
+            outer_border_thickness = ctx.ob_thickness_val,
+            outer_border_sep = ctx.ob_sep_val,
+            border_rgb_str = b_rgb_str,
+        })
+    end
+
+    -- Colors & Background
+    p_head = background.set_font_color(p_head, ctx.text_rgb_str)
+    p_head = background.draw_background(p_head, {
+        bg_rgb_str = ctx.background_rgb_str,
+        paper_width = params.paper_width,
+        paper_height = params.paper_height,
+        margin_left = params.margin_left,
+        margin_top = params.margin_top,
+        inner_width = inner_width,
+        inner_height = inner_height,
+        outer_shift = outer_shift,
+        is_textbox = params.is_textbox,
+    })
+
+    -- Node positions
+    -- Update context with page-specific total_cols
+    local ctx_node = {}
+    for k, v in pairs(ctx) do ctx_node[k] = v end
+    ctx_node.p_total_cols = p_total_cols
+
+    p_head = process_page_nodes(p_head, layout_map, params, ctx_node)
+
+    -- Render Sidenotes
+    if params.sidenote_map then
+        local sidenote_for_page = {}
+        for _, sn_list in pairs(params.sidenote_map) do
+            for _, node_info in ipairs(sn_list) do
+                if node_info.page == p then
+                    table.insert(sidenote_for_page, node_info)
+                end
+            end
+        end
+
+        -- 3. Draw Debug Grid (if enabled)
+        if luatex_cn_debug and luatex_cn_debug.is_enabled("vertical") then
+            local page_cols = p_total_cols
+            local n_column = interval
+            local banxin_hook = hooks.banxin or _G.vertical.hooks.banxin
+            for col = 0, page_cols - 1 do
+                local is_banxin_col = banxin_hook and banxin_hook.is_banxin_col and
+                    banxin_hook.is_banxin_col(col, n_column, banxin_on)
+                if not is_banxin_col then
+                    local rtl_col = page_cols - 1 - col
+                    local x_pos = rtl_col * grid_width + shift_x
+                    local y_pos = -(outer_shift)
+                    p_head = utils.draw_debug_grid(p_head, x_pos, y_pos, grid_width, line_limit * grid_height, "blue")
+                end
+            end
+        end
+
+        if #sidenote_for_page > 0 then
+            if draw_debug then
+                utils.debug_log("[render] Drawing " .. #sidenote_for_page .. " sidenote nodes on page " .. p)
+            end
+            p_head = render_sidenotes(p_head, sidenote_for_page, params, ctx_node)
+        end
+    end
+
+    -- Render Floating TextBoxes
+    if params.floating_map then
+        for _, item in ipairs(params.floating_map) do
+            if item.page == p then
+                p_head = position_floating_box(p_head, item, params)
+            end
+        end
+    end
+
+    return D.tonode(p_head), p_total_cols
+end
+
+_internal.render_single_page = render_single_page
+
 -- @param head (node) 节点列表头部
 -- @param layout_map (table) 从节点指针到 {col, row} 的映射
 -- @param params (table) 渲染参数
 -- @return (table) 页面信息数组 {head, cols}
 local function apply_positions(head, layout_map, params)
+    local pages = {}
     local d_head = D.todirect(head)
 
-    local grid_width = params.grid_width
-    local grid_height = params.grid_height
-    local total_pages = params.total_pages
-    local vertical_align = params.vertical_align
-    local draw_debug = params.draw_debug
-    local draw_border = params.draw_border
-    local b_padding_top = params.b_padding_top
-    local b_padding_bottom = params.b_padding_bottom
-    local line_limit = params.line_limit
-    local border_thickness = params.border_thickness
-    local draw_outer_border = params.draw_outer_border
-    local outer_border_thickness = params.outer_border_thickness
-    local outer_border_sep = params.outer_border_sep
-    local n_column = params.n_column
-    local page_columns = params.page_columns
-    local border_rgb = params.border_rgb
-    local bg_rgb = params.bg_rgb
-    local font_rgb = params.font_rgb
+    local ctx = calculate_render_context(params)
+    local grid_width = ctx.grid_width
+    local grid_height = ctx.grid_height
+    local border_thickness = ctx.border_thickness
+    local half_thickness = ctx.half_thickness
+    local outer_shift = ctx.outer_shift
+    local shift_x = ctx.shift_x
+    local shift_y = ctx.shift_y
+    local interval = ctx.interval
+    local p_cols = ctx.p_cols
+    local line_limit = ctx.line_limit
+    local b_padding_top = ctx.b_padding_top
+    local b_padding_bottom = ctx.b_padding_bottom
+    local b_rgb_str = ctx.b_rgb_str
+    local background_rgb_str = ctx.background_rgb_str
+    local text_rgb_str = ctx.text_rgb_str
 
-    local half_thickness = math.floor(border_thickness / 2)
-    local ob_thickness_val = (outer_border_thickness or (65536 * 2))
-    local ob_sep_val = (outer_border_sep or (65536 * 2))
-
-    local outer_shift = draw_outer_border and (ob_thickness_val + ob_sep_val) or 0
-    -- Only add border padding to shift_y when border is actually drawn
-    local border_shift = draw_border and (border_thickness + b_padding_top) or 0
-    local shift_x = (params.shift_x and params.shift_x ~= 0) and params.shift_x or outer_shift
-    local shift_y = (params.shift_y and params.shift_y ~= 0) and params.shift_y or (outer_shift + border_shift)
-
-    local interval = tonumber(n_column) or 0
-    local p_cols = tonumber(page_columns) or (2 * interval + 1)
-
-    local b_rgb_str = utils.normalize_rgb(border_rgb) or "0.0000 0.0000 0.0000"
-    local background_rgb_str = utils.normalize_rgb(bg_rgb)
-    local text_rgb_str = utils.normalize_rgb(font_rgb)
-
-    if draw_debug then
+    if luatex_cn_debug and luatex_cn_debug.is_enabled("vertical") then
         utils.debug_log(string.format("[render] apply_positions: border_rgb=%s -> %s, font_rgb=%s, font_size=%s",
-            tostring(border_rgb), tostring(b_rgb_str), tostring(font_rgb), tostring(params.font_size)))
+            tostring(params.border_rgb), tostring(b_rgb_str), tostring(params.font_rgb), tostring(params.font_size)))
     end
 
     -- Group nodes by page
-    local page_nodes = {}
-    for p = 0, total_pages - 1 do
-        page_nodes[p] = { head = nil, tail = nil, max_col = 0 }
-    end
-
-    local t = d_head
-    while t do
-        local next_node = D.getnext(t)
-        local pos = layout_map[t]
-        D.setnext(t, nil)
-
-        if pos then
-            local p = pos.page or 0
-            if page_nodes[p] then
-                if not page_nodes[p].head then
-                    page_nodes[p].head = t
-                else
-                    D.setnext(page_nodes[p].tail, t)
-                end
-                page_nodes[p].tail = t
-                if pos.col > page_nodes[p].max_col then page_nodes[p].max_col = pos.col end
-            else
-                -- Page index out of range? This shouldn't happen, but flush to be safe
-                node.flush_node(D.tonode(t))
-            end
-        else
-            -- Node not in layout map (e.g. filtered spaces, penalties, etc.)
-            -- MUST be flushed to prevent memory leak
-            node.flush_node(D.tonode(t))
-        end
-        t = next_node
-    end
+    local page_nodes = group_nodes_by_page(d_head, layout_map, params.total_pages)
 
     local result_pages = {}
 
     -- Process each page
-    for p = 0, total_pages - 1 do
+    for p = 0, params.total_pages - 1 do
         local p_head = page_nodes[p].head
-        if p_head then
-            local p_max_col = page_nodes[p].max_col
-            local p_total_cols = p_max_col + 1
-            -- Always enforce full page width to ensure correct RTL/SplitPage absolute positioning
-            -- Issue #10: Partial pages were shrinking, causing "Right Whitespace" (actually leftward shift)
-            if p_cols > 0 and p_total_cols < p_cols then
-                p_total_cols = p_cols
-            end
-
-
-            local inner_width = p_total_cols * grid_width + border_thickness
-            local inner_height = line_limit * grid_height + b_padding_top + b_padding_bottom + border_thickness
-
-            -- Reserved columns (via hooks - e.g., banxin)
-            local reserved_cols = {}
-            local banxin_on = params.banxin_on
-            if draw_debug then
-                utils.debug_log(string.format(">>> LUA PAGE: interval=%d, p_total_cols=%d, banxin_on=%s", interval,
-                    p_total_cols,
-                    tostring(banxin_on)))
-            end
-            if banxin_on and interval > 0 then
-                for col = 0, p_total_cols - 1 do
-                    if _G.vertical.hooks.is_reserved_column(col, interval) then
-                        reserved_cols[col] = true
-                        if draw_debug then
-                            utils.debug_log(string.format(">>> LUA RESERVED COL: %d", col))
-                        end
-                    end
-                end
-            end
-
-            -- Borders & Reserved Columns
-            if banxin_on and interval > 0 then
-                for col = 0, p_total_cols - 1 do
-                    if reserved_cols[col] then
-                        local rtl_col = p_total_cols - 1 - col
-                        local effective_half = draw_border and half_thickness or 0
-                        local reserved_x = rtl_col * grid_width + effective_half + shift_x
-                        local reserved_y = -(effective_half + outer_shift)
-                        local reserved_height = line_limit * grid_height + b_padding_top + b_padding_bottom
-
-                        p_head = _G.vertical.hooks.render_reserved_column(p_head, {
-                            x = reserved_x,
-                            y = reserved_y,
-                            width = grid_width,
-                            height = reserved_height,
-                            border_thickness = border_thickness,
-                            color_str = b_rgb_str,
-                            upper_ratio = params.banxin_upper_ratio or 0.28,
-                            middle_ratio = params.banxin_middle_ratio or 0.56,
-                            lower_ratio = params.banxin_lower_ratio or 0.16,
-                            book_name = params.book_name or "",
-                            shift_y = shift_y,
-                            vertical_align = vertical_align,
-                            b_padding_top = params.banxin_padding_top or 0,
-                            b_padding_bottom = params.banxin_padding_bottom or 0,
-                            lower_yuwei = params.lower_yuwei,
-                            chapter_title = params.chapter_title or "",
-                            chapter_title_top_margin = params.chapter_title_top_margin or (65536 * 20),
-                            chapter_title_cols = params.chapter_title_cols or 1,
-                            chapter_title_font_size = params.chapter_title_font_size,
-                            chapter_title_grid_height = params.chapter_title_grid_height,
-                            book_name_grid_height = params.book_name_grid_height,
-                            book_name_align = params.book_name_align,
-                            upper_yuwei = params.upper_yuwei,
-                            banxin_divider = params.banxin_divider,
-                            page_number_align = params.page_number_align,
-                            page_number_font_size = params.page_number_font_size,
-                            page_number = (params.start_page_number or 1) + p,
-                            grid_width = grid_width,
-                            grid_height = grid_height,
-                            font_size = params.font_size,
-                            draw_border = draw_border,
-                        })
-                    end
-                end
-            end
-
-            if draw_border and p_total_cols > 0 then
-                -- Column borders
-                p_head = border.draw_column_borders(p_head, {
-                    total_cols = p_total_cols,
-                    grid_width = grid_width,
-                    grid_height = grid_height,
-                    line_limit = line_limit,
-                    border_thickness = border_thickness,
-                    b_padding_top = b_padding_top,
-                    b_padding_bottom = b_padding_bottom,
-                    shift_x = shift_x,
-                    outer_shift = outer_shift,
-                    border_rgb_str = b_rgb_str,
-                    banxin_cols = reserved_cols,
-                })
-            end
-
-            -- Outer border
-            if draw_outer_border and p_total_cols > 0 then
-                p_head = border.draw_outer_border(p_head, {
-                    inner_width = inner_width,
-                    inner_height = inner_height,
-                    outer_border_thickness = ob_thickness_val,
-                    outer_border_sep = ob_sep_val,
-                    border_rgb_str = b_rgb_str,
-                })
-            end
-
-            -- Colors & Background
-            p_head = background.set_font_color(p_head, text_rgb_str)
-            p_head = background.draw_background(p_head, {
-                bg_rgb_str = background_rgb_str,
-                paper_width = params.paper_width,
-                paper_height = params.paper_height,
-                margin_left = params.margin_left,
-                margin_top = params.margin_top,
-                inner_width = inner_width,
-                inner_height = inner_height,
-                outer_shift = outer_shift,
-                is_textbox = params.is_textbox,
-            })
-
-            -- Node positions
-            local ctx = {
-                grid_width = grid_width,
-                grid_height = grid_height,
-                p_total_cols = p_total_cols,
-                shift_x = shift_x,
-                shift_y = shift_y,
-                half_thickness = half_thickness,
-                jiazhu_align = params.jiazhu_align or "outward",
-            }
-            p_head = process_page_nodes(p_head, layout_map, params, ctx)
-
-            -- Render Sidenotes
-            if params.sidenote_map then
-                local sidenote_for_page = {}
-                -- Flatten map for this page
-                for _, sn_list in pairs(params.sidenote_map) do
-                    for _, node_info in ipairs(sn_list) do
-                        if node_info.page == p then
-                            table.insert(sidenote_for_page, node_info)
-                        end
-                    end
-                end
-                if #sidenote_for_page > 0 then
-                    if draw_debug then
-                        utils.debug_log("[render] Drawing " ..
-                            #sidenote_for_page .. " sidenote nodes on page " .. p)
-                    end
-                    p_head = render_sidenotes(p_head, sidenote_for_page, params, ctx)
-                end
-            end
-
-            -- Render Floating TextBoxes
-            if params.floating_map then
-                for _, item in ipairs(params.floating_map) do
-                    if item.page == p then
-                        local curr = D.todirect(item.box)
-
-                        -- Position: x, y are absolute from top-left (or whatever origin we use)
-                        -- In our system, (shift_x, shift_y) is the top-left of the border area.
-                        -- But let's assume item.x and item.y are relative to the paper origin for now,
-                        -- or relative to the context (shift_x, shift_y).
-                        -- Given the user's "不影响正文排版", absolute positioning makes sense.
-
-                        -- We use Kern + Shift to position the box
-                        local h = D.getfield(curr, "height") or 0
-                        local w = D.getfield(curr, "width") or 0
-
-                        -- Top-Right Origin (0,0) from PAPER edge
-                        -- X axis: 0 at Right Edge, increasing to the LEFT
-                        -- Y axis: 0 at Top Edge, increasing DOWNWARDS
-
-                        -- The container box is placed at (margin_left, margin_top) relative to paper.
-                        -- We need to calculate the kern relative to this origin.
-
-                        local p_width = params.paper_width or 0
-                        local m_left = params.margin_left or 0
-                        local m_top = params.margin_top or 0
-
-                        -- Calculate X position relative to the container's left edge
-                        -- User X is distance from RIGHT paper edge.
-                        -- Physical X from Left Paper Edge = p_width - item.x
-                        -- Relative X from Container Left = (p_width - item.x) - m_left
-                        -- Physically, X increases Left-to-Right.
-                        -- item.x is distance from Right paper edge to box's Right edge.
-                        -- Physical X of box's Right edge = p_width - item.x
-                        -- Since the box (TLT) starts at its Left edge, the physical X of the start point
-                        -- is (p_width - item.x) - w.
-                        local rel_x = p_width - m_left - item.x - w
-
-                        -- Calculate Y position relative to the container's top edge
-                        -- User Y is distance from TOP paper edge.
-                        -- Relative Y = item.y - m_top
-                        local rel_y = item.y - m_top
-
-                        -- Apply Kern for X positioning
-                        -- Positive Kern moves Right in TLT (standard) mode direction
-                        local final_x = rel_x
-
-                        -- Apply shift for Y. shift - h = rel_y  => shift = rel_y + h
-                        D.setfield(curr, "shift", rel_y + h)
-
-                        local k_pre = D.new(constants.KERN)
-                        D.setfield(k_pre, "kern", final_x)
-
-                        local k_post = D.new(constants.KERN)
-                        D.setfield(k_post, "kern", -(final_x + w))
-
-                        p_head = D.insert_before(p_head, p_head, k_pre)
-                        D.insert_after(p_head, k_pre, curr)
-                        D.insert_after(p_head, curr, k_post)
-
-                        if draw_debug then
-                            utils.debug_log(string.format(
-                                "[render] Floating Box (Absolute Top-Right) at x=%.2f, y=%.2f (rel_x=%.2f, rel_y=%.2f)",
-                                item.x / 65536, item.y / 65536, rel_x / 65536, rel_y / 65536))
-                        end
-                    end
-                end
-            end
-
-
-            result_pages[p + 1] = { head = D.tonode(p_head), cols = p_total_cols }
+        local p_max_col = page_nodes[p].max_col
+        local rendered_head, cols = render_single_page(p_head, p_max_col, p, layout_map, params, ctx)
+        if rendered_head then
+            result_pages[p + 1] = { head = rendered_head, cols = cols }
         end
     end
 
@@ -712,6 +886,7 @@ end
 -- Create module table
 local render = {
     apply_positions = apply_positions,
+    _internal = _internal
 }
 
 -- Register module

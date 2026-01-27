@@ -29,19 +29,30 @@ Quick install:
 The recommended way to use the package is through the `ltc-guji` document class:
 
 ```latex
-\documentclass[四库全书]{ltc-guji}
+\documentclass[红楼梦甲戌本]{ltc-guji}
+
+% Set book title (appears in the right-side banxin)
+\title{脂硯齋重評石頭記}
 
 \begin{document}
 \begin{正文}
-\chapter{五帝本紀第一}
-這是竖排的中文文本示例，包含夹注\夹注{双行小注}的功能演示。
+    % Set chapter (updates banxin and resets page number)
+    \chapter{Chapter 1}
+    
+    % SideNote: Annotations between grid columns
+    \侧批{Side annotation example}
+    甄士隱夢幻識通靈\夹注{Interlinear notes}\空格[1]賈雨村風塵懷閨秀。
+    
+    % Paragraph control: Precise grid-based indentation
+    \begin{Paragraph}[indent=2]
+        This is a paragraph with grid indentation.
+    \end{Paragraph}
+    
+    % Floating Annotation: Absolute positioning on the page
+    \批注[x=2cm, y=4cm, height=6, color={1 0 0}]{Floating annotation\\supports multiple lines}
 
-\begin{列表}
-    \item Part 1
-    \item Volume 1
-\end{列表}
-
-\印章[page=1]{seal.png}
+    % Seal/Stamp: Background image with absolute positioning
+    % \印章[page=1, xshift=-2cm, yshift=-5cm]{seal.png}
 \end{正文}
 \end{document}
 ```

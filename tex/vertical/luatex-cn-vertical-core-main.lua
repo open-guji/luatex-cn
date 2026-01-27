@@ -70,12 +70,7 @@ local vertical = _G.vertical
 -- Initialize global page number
 vertical.current_page_number = vertical.current_page_number or 1
 
-vertical.debug = vertical.debug or {
-    enabled = false,
-    verbose_log = false,
-    show_grid = true,
-    show_boxes = true
-}
+
 
 --- Reset the global page number to 1
 function vertical.reset_page_number()
@@ -104,6 +99,8 @@ local textbox = package.loaded['vertical.luatex-cn-vertical-core-textbox'] or
     require('vertical.luatex-cn-vertical-core-textbox')
 local sidenote = package.loaded['vertical.luatex-cn-vertical-core-sidenote'] or
     require('vertical.luatex-cn-vertical-core-sidenote')
+local judou = package.loaded['vertical.luatex-cn-vertical-judou'] or
+    require('vertical.luatex-cn-vertical-judou')
 
 
 local D = node.direct
@@ -116,9 +113,11 @@ local D = node.direct
 function vertical.prepare_grid(box_num, params)
     -- 1. Get box from TeX
     local box = tex.box[box_num]
-    if not box then return end
+    if not box then return 0 end
 
     local list = box.list
+    if not list then return 0 end
+
     local g_width = constants.to_dimen(params.grid_width) or (65536 * 20)
     local g_height = constants.to_dimen(params.grid_height) or g_width
 
@@ -192,9 +191,7 @@ function vertical.prepare_grid(box_num, params)
         end
     end
 
-    local is_debug = (params.debug_on == "true" or params.debug_on == true)
-    if is_debug then _G.vertical.debug.enabled = true end
-    is_debug = _G.vertical.debug.enabled
+    local is_debug = luatex_cn_debug and luatex_cn_debug.is_enabled("vertical")
     local is_border = (params.border_on == "true" or params.border_on == true)
     local is_outer_border = (params.outer_border_on == "true" or params.outer_border_on == true)
 
@@ -217,7 +214,16 @@ function vertical.prepare_grid(box_num, params)
         end
     end
 
+    -- 3a. Pipeline Stage 1.5: Process Punctuation (None/Judou/Normal modes)
+    if (params.judou_on == "true" or params.judou_on == true) or
+        (params.punct_mode and params.punct_mode ~= "normal") then
+        list = judou.process_judou(D.todirect(list), params)
+        list = D.tonode(list)
+    end
+
     -- 4. Pipeline Stage 2: Calculate grid layout
+    print(string.format("[LUA] Final Layout Settings: g_height=%.2f pt, limit=%d, p_cols=%d", g_height / 65536, limit,
+        p_cols))
     local layout_map, total_pages = layout.calculate_grid_positions(list, g_height, limit, b_interval, p_cols, {
         distribute = params.distribute,
         banxin_on = banxin_on,
@@ -229,6 +235,7 @@ function vertical.prepare_grid(box_num, params)
         grid_width = g_width,
         margin_right = m_right
     })
+    print(string.format("[LUA] Laid out total_pages = %d", total_pages))
 
     -- 4a. Pipeline Stage 2.5: For textboxes, determine actual columns used
     if is_textbox then
@@ -267,7 +274,7 @@ function vertical.prepare_grid(box_num, params)
         grid_height = g_height,
         total_pages = total_pages,
         vertical_align = valign,
-        draw_debug = is_debug,
+        -- draw_debug removed, use utils.is_debug_enabled()
         draw_border = is_border,
         b_padding_top = b_padding_top,
         b_padding_bottom = b_padding_bottom,
@@ -430,7 +437,7 @@ function vertical.process_from_tex(box_num, params)
             local cmd_dim = string.format("\\global\\pagewidth=%.5fpt", target_w_pt)
             local cmd_dim_h = string.format("\\global\\pageheight=%.5fpt", target_h_pt)
 
-            if _G.vertical.debug.enabled then
+            if is_debug then
                 utils.debug_log("[core] TeX CMD: " .. cmd_load)
                 utils.debug_log("[core] TeX CMD: " .. cmd_dim)
             end
@@ -477,7 +484,7 @@ function vertical.process_from_tex(box_num, params)
         for i = 0, total_pages - 1 do
             tex.print(string.format("\\directlua{vertical.load_page(%d, %d)}", box_num, i))
             tex.print("\\par\\nointerlineskip")
-            tex.print(string.format("\\noindent\\hfill\\hbox to 0pt{\\smash{\\box%d}\\hss}", box_num))
+            tex.print(string.format("\\noindent\\hfill\\box%d", box_num))
             if i < total_pages - 1 then
                 tex.print("\\newpage")
             end

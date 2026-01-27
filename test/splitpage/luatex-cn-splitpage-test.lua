@@ -9,19 +9,19 @@ test_utils.run_test("splitpage - Internal to_sp (via configure)", function()
 
     -- Test mm
     splitpage.configure({ source_width = "100mm", source_height = "200mm" })
-    -- 1mm = 65536 * 72.27 / 25.4 sp
-    local expected_w = math.floor(100 * 65536 * 72.27 / 25.4)
+    -- Use tex.sp for reliable comparison
+    local expected_w = tex.sp("100mm")
     test_utils.assert_eq(splitpage.source_width, expected_w, "mm conversion failure")
     test_utils.assert_eq(splitpage.target_width, math.floor(expected_w / 2), "half-width calculation failure")
 
     -- Test cm
     splitpage.configure({ source_width = "10cm" })
-    local expected_cm = math.floor(10 * 65536 * 72.27 / 2.54)
+    local expected_cm = tex.sp("10cm")
     test_utils.assert_eq(splitpage.source_width, expected_cm, "cm conversion failure")
 
     -- Test pt
     splitpage.configure({ source_width = "72.27pt" })
-    test_utils.assert_eq(splitpage.source_width, math.floor(72.27 * 65536), "pt conversion failure")
+    test_utils.assert_eq(splitpage.source_width, tex.sp("72.27pt"), "pt conversion failure")
 end)
 
 test_utils.run_test("splitpage - enable/disable", function()

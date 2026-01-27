@@ -54,15 +54,8 @@ local constants = {}
 -- Node.direct interface for performance
 constants.D = node.direct
 
--- Global debug configuration
-_G.vertical = _G.vertical or {}
-_G.vertical.debug = {
-    enabled = false,    -- 是否开启调试模式
-    show_grid = true,   -- 显示字符格
-    show_boxes = true,  -- 显示文本框避让区
-    show_banxin = true, -- 显示版心参考线
-    verbose_log = false -- 是否在 .log 中输出详细坐标
-}
+-- Legacy debug table removed in favor of centralized luatex-cn-debug module.
+-- Registration is handled by modules (e.g., vertical.sty calls luatex_cn_debug.register_module)
 
 -- Node type IDs
 constants.GLYPH = node.id("glyph")
@@ -73,6 +66,7 @@ constants.WHATSIT = node.id("whatsit")
 constants.GLUE = node.id("glue")
 constants.PENALTY = node.id("penalty")
 constants.LOCAL_PAR = node.id("local_par")
+constants.RULE = node.id("rule")
 
 -- Custom attributes for indentation
 -- Note: Attributes are registered in vertical.sty via \newluatexattribute
@@ -94,10 +88,12 @@ constants.ATTR_FIRST_INDENT = luatexbase.attributes.cnverticalfirstindent or
 -- Attributes for Jiazhu (Interlinear Note)
 constants.ATTR_JIAZHU = luatexbase.attributes.cnverticaljiazhu or luatexbase.new_attribute("cnverticaljiazhu")
 constants.ATTR_JIAZHU_SUB = luatexbase.attributes.cnverticaljiazhusub or luatexbase.new_attribute("cnverticaljiazhusub")
+constants.ATTR_JUDOU_FONT = luatexbase.attributes.cnverticaljudoufont or luatexbase.new_attribute("cnverticaljudoufont")
 
 -- Constants for Side Pizhu
 constants.SIDENOTE_USER_ID = 202601
 constants.FLOATING_TEXTBOX_USER_ID = 202602
+constants.JUDOU_USER_ID = 202603
 
 --- 将 TeX 尺寸字符串转换为 scaled points (sp)
 -- @param dim_str (string) TeX 尺寸字符串（例如 "20pt", "1.5em"）
@@ -113,21 +109,21 @@ local function to_dimen(dim_str)
         return dim_str
     end
 
-    -- Strip curly braces if present
-    dim_str = tostring(dim_str):gsub("^%s*{", ""):gsub("}%s*$", "")
+    -- Strip curly braces if present (handle nested/multiple braces)
+    dim_str = tostring(dim_str):gsub("[{}]", ""):gsub("^%s*(.-)%s*$", "%1")
 
     if dim_str == "" then return nil end
 
-    -- Try standard tex.sp parsing (handles units like "10pt")
+    -- Fallback: try to parse as pure number (assume em per refined requirement)
+    if tonumber(dim_str) then
+        local ok, res = pcall(tex.sp, dim_str .. "em")
+        if ok then return res end
+    end
+
+    -- Try standard tex.sp parsing (handles units like "10pt", "5em")
     local ok, res = pcall(tex.sp, dim_str)
     if ok then
         return res
-    end
-
-    -- Fallback: try to parse as pure number (assume sp)
-    local num = tonumber(dim_str)
-    if num then
-        return num
     end
 
     return nil

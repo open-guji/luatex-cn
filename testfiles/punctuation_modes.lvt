@@ -1,0 +1,38 @@
+\input{regression-test}
+\documentclass{article}
+\usepackage{fontspec}
+\setmainfont{FandolSong-Regular.otf}
+\usepackage{vertical/luatex-cn-vertical}
+\usepackage{zhlipsum}
+
+% Mock the debug boolean if it's not defined
+\ExplSyntaxOn
+\bool_if_exist:NF \g_luatexcn_debug_enabled_bool
+  { \bool_new:N \g_luatexcn_debug_enabled_bool }
+\ExplSyntaxOff
+
+\begin{document}
+\START
+\showoutput
+\showboxdepth=10
+\showboxbreadth=100
+
+\section{Normal Mode}
+\begin{Vertical}[punct-mode=normal, n-column=4]
+你好！“世界”？这，是：一个；测试。
+\end{Vertical}
+
+\section{None Mode}
+\begin{Vertical}[punct-mode=none, n-column=4]
+你好！“世界”？这，是：一个；测试。
+\end{Vertical}
+
+\section{Judou Mode}
+\begin{Vertical}[punct-mode=judou, n-column=4]
+你好！“世界”？这，是：一个；测试。
+你好！” 世界？——组合测试。
+说：“你好。”——组合测试。
+\end{Vertical}
+
+\OMIT
+\end{document}

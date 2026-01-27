@@ -35,37 +35,23 @@ splitpage.source_height = 0
 splitpage.target_width = 0
 splitpage.target_height = 0
 splitpage.right_first = true
-splitpage.debug = true
+local constants = require('vertical.luatex-cn-vertical-base-constants')
 
 -- Convert sp to bp
 local function sp_to_bp(sp)
     return sp / 65536 / 72.27 * 72
 end
 
--- Convert dimension string to sp
-local function to_sp(dim_str)
-    if type(dim_str) == "number" then return dim_str end
-    if type(dim_str) ~= "string" then return 0 end
+local to_sp = constants.to_dimen
 
-    local num, unit = dim_str:match("^([%d%.]+)(%a+)$")
-    if not num then return 0 end
-    num = tonumber(num)
-    if not num then return 0 end
-
-    local factors = {
-        pt = 65536,
-        bp = 65536 * 72.27 / 72,
-        mm = 65536 * 72.27 / 25.4,
-        cm = 65536 * 72.27 / 2.54,
-        ["in"] = 65536 * 72.27,
-        sp = 1,
-    }
-    return math.floor(num * (factors[unit] or 65536))
+-- Register splitpage module if debug module is available
+if _G.luatex_cn_debug then
+    _G.luatex_cn_debug.register_module("splitpage", { color = "green" })
 end
 
 local function debug_log(msg)
-    if splitpage.debug then
-        texio.write_nl("term and log", "[splitpage] " .. msg)
+    if _G.luatex_cn_debug then
+        _G.luatex_cn_debug.log("splitpage", msg)
     end
 end
 
@@ -85,9 +71,6 @@ function splitpage.configure(params)
 
     if params.right_first ~= nil then
         splitpage.right_first = params.right_first
-    end
-    if params.debug ~= nil then
-        splitpage.debug = params.debug
     end
 
     debug_log(string.format("Configured: source=%.1fmm x %.1fmm, target=%.1fmm x %.1fmm",

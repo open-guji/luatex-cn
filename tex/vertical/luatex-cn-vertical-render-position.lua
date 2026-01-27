@@ -109,7 +109,7 @@ local function position_glyph(glyph_direct, x, y, params)
     D.setfield(glyph_direct, "yoffset", y_offset)
 
     -- --- Trace Logging ---
-    if _G.vertical and _G.vertical.debug and _G.vertical.debug.verbose_log then
+    if luatex_cn_debug and luatex_cn_debug.is_enabled("vertical") then
         local u = package.loaded['vertical.luatex-cn-vertical-base-utils'] or
             require('vertical.luatex-cn-vertical-base-utils')
         u.debug_log(string.format("[GlyphPos] char=%d x=%.2f cw=%.2f gw=%.2f -> xoff=%.2f yoff=%.2f",
@@ -201,7 +201,7 @@ local function create_vertical_text(text, params)
     local cell_height = height / num_cells
 
     local u = package.loaded['vertical.luatex-cn-vertical-base-utils'] or
-    require('vertical.luatex-cn-vertical-base-utils')
+        require('vertical.luatex-cn-vertical-base-utils')
 
     local head = nil
     local tail = nil
@@ -260,7 +260,7 @@ local function create_vertical_text(text, params)
         end
 
         -- --- DEBUG: Draw blue box around each character ---
-        if _G.vertical and _G.vertical.debug and _G.vertical.debug.enabled and _G.vertical.debug.show_grid then
+        if luatex_cn_debug and luatex_cn_debug.is_enabled("vertical") then
             local u = package.loaded['vertical.luatex-cn-vertical-base-utils'] or
                 require('vertical.luatex-cn-vertical-base-utils')
             if u and u.draw_debug_rect then

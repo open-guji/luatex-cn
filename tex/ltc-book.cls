@@ -18,7 +18,7 @@
 
 \RequirePackage{expl3}
 \RequirePackage{l3keys2e}
-\ProvidesExplClass {ltc-book} {2026/01/25} {0.1.3} {Chinese Vertical Book Class}
+\ProvidesExplClass {ltc-book} {2026/01/27} {0.1.4} {Chinese Vertical Book Class}
 
 \tl_new:N \l_luatexcn_book_initial_template_tl
 
@@ -27,8 +27,8 @@
     unknown .code:n =
       {
         \tl_set_eq:NN \l_tmpa_tl \l_keys_key_tl
-        % Look for config file: configs/<name>.ltc_book.cfg
-        \file_if_exist:nTF { configs/ \l_tmpa_tl .ltc_book.cfg }
+        % Look for config file: configs/luatex-cn-book-<name>.cfg
+        \file_if_exist:nTF { configs/luatex-cn-book- \l_tmpa_tl .cfg }
           {
             \tl_set_eq:NN \l_luatexcn_book_initial_template_tl \l_tmpa_tl
           }
@@ -51,11 +51,7 @@
 \RequirePackage{environ}
 \RequirePackage{expl3}
 \RequirePackage{xparse}
-\RequirePackage{luatex-cn}
-\RequirePackage{vertical/luatex-cn-vertical}
-
-% Load font auto-detection module
-\RequirePackage{fonts/luatex-cn-font-autodetect}
+\RequirePackage{luatex-cn-core}
 
 % 3. Key-Value Configuration System
 \ExplSyntaxOn
@@ -131,11 +127,24 @@
     n-column .int_set:N = \l_luatexcn_book_n_column_int,
     n-column .initial:n = 0,
 
-    debug .bool_set:N = \g_luatexcn_v_debug_bool,
-    debug .initial:n = false,
+    judou-on .bool_set:N = \l_luatexcn_book_judou_on_bool,
+    judou-on .initial:n = false,
+
+    judou-pos .tl_set:N = \l_luatexcn_book_judou_pos_tl,
+    judou-pos .initial:n = {right-bottom},
+
+    judou-size .tl_set:N = \l_luatexcn_book_judou_size_tl,
+    judou-size .initial:n = {3em},
+
+    judou-color .tl_set:N = \l_luatexcn_book_judou_color_tl,
+    judou-color .initial:n = {red},
+
+    punct-mode .tl_set:N = \l_luatexcn_book_punct_mode_tl,
+    punct-mode .initial:n = {normal},
+
 
     template .code:n = {
-      \InputIfFileExists{configs/#1.ltc_book.cfg}{}{
+      \InputIfFileExists{configs/luatex-cn-book-#1.cfg}{}{
         \keys_set:nn { luatexcn / book / templates } { #1 }
       }
     },
@@ -169,6 +178,25 @@
     \keys_set:nn { luatexcn / book } { #1 }
     \__luatexcn_book_apply_geometry:
   }
+
+% Convenience Commands for Punctuation Modes in ltc-book
+\DeclareDocumentCommand{\NormalPunctuationMode}{ O{} }
+  {
+    \keys_set:nn { luatexcn / book } { punct-mode = normal, #1 }
+  }
+\DeclareDocumentCommand{\正常标点模式}{ O{} } { \NormalPunctuationMode[#1] }
+
+\DeclareDocumentCommand{\JudouPunctuationMode}{ O{} }
+  {
+    \keys_set:nn { luatexcn / book } { punct-mode = judou, #1 }
+  }
+\DeclareDocumentCommand{\句读模式}{ O{} } { \JudouPunctuationMode[#1] }
+
+\DeclareDocumentCommand{\NonePunctuationMode}{ O{} }
+  {
+    \keys_set:nn { luatexcn / book } { punct-mode = none, #1 }
+  }
+\DeclareDocumentCommand{\无标点模式}{ O{} } { \NonePunctuationMode[#1] }
 
 % 5. Main content environment
 \NewEnviron{ltc-book-content}[1][]{%
@@ -224,7 +252,11 @@
         upper-yuwei = \bool_if:NTF \l_luatexcn_book_upper_yuwei_bool {true} {false},
         banxin-divider = \bool_if:NTF \l_luatexcn_book_banxin_divider_bool {true} {false},
         page-number-align = \l_luatexcn_book_page_number_align_tl,
-        debug = \bool_if:NTF \g_luatexcn_v_debug_bool {true} {false}
+        judou-on = \bool_if:NTF \l_luatexcn_book_judou_on_bool {true} {false},
+        judou-pos = \l_luatexcn_book_judou_pos_tl,
+        judou-size = \l_luatexcn_book_judou_size_tl,
+        judou-color = \l_luatexcn_book_judou_color_tl,
+        punct-mode = \l_luatexcn_book_punct_mode_tl
       }
     \nointerlineskip
     \__luatexcn_v_process_grid:n { \BODY }

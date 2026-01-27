@@ -16,7 +16,7 @@
 % 这是 luatex_cn 的子包
 %
 \RequirePackage{expl3}
-\ProvidesExplPackage {vertical/luatex-cn-vertical} {2026/01/25} {0.1.3} {Chinese vertical typesetting for LuaTeX}
+\ProvidesExplPackage {vertical/luatex-cn-vertical} {2026/01/27} {0.1.4} {Chinese vertical typesetting for LuaTeX}
 
 % Check if LuaTeX is being used
 \sys_if_engine_luatex:TF
@@ -44,13 +44,7 @@
 % Robust Lua loader with error reporting is no longer needed since we use \lua_now:e
 
 \lua_now:e {
-  _G.vertical~=~_G.vertical~or~{};
-  _G.vertical.debug~=~_G.vertical.debug~or~{
-      enabled~=~false,
-      verbose_log~=~false,
-      show_grid~=~true,
-      show_boxes~=~true
-  }
+  luatex_cn_debug.register_module("vertical", { color = "yellow" })
 }
 
 % Clear cache and Load Modules
@@ -84,26 +78,32 @@
   vertical_sidenote~=~require('vertical.luatex-cn-vertical-core-sidenote');
   vertical~=~require('vertical.luatex-cn-vertical-core-main')
 }
+% Helper for unified dimension parsing (calls Lua)
+\cs_new:Npn \__luatexcn_to_dimen:n #1
+  {
+    \lua_now:e { tex.sprint(vertical_constants.to_dimen([=[\luaescapestring{#1}]=]) ~ or ~ 0) } sp
+  }
+
 % Define keys for SideNode
-\dim_new:N \l__luatexcn_v_sidenode_yoffset_dim
-\dim_new:N \l__luatexcn_v_sidenode_grid_height_dim
+\tl_new:N \l__luatexcn_v_sidenode_yoffset_tl
+\tl_new:N \l__luatexcn_v_sidenode_grid_height_tl
 \tl_new:N \l__luatexcn_v_sidenode_font_size_tl
 \tl_new:N \l__luatexcn_v_sidenode_color_tl
-\dim_new:N \l__luatexcn_v_sidenode_padding_top_dim
-\dim_new:N \l__luatexcn_v_sidenode_padding_bottom_dim
+\tl_new:N \l__luatexcn_v_sidenode_padding_top_tl
+\tl_new:N \l__luatexcn_v_sidenode_padding_bottom_tl
 
 \keys_define:nn { luatexcn / sidenode }
   {
-    yoffset .dim_set:N = \l__luatexcn_v_sidenode_yoffset_dim,
+    yoffset .tl_set:N = \l__luatexcn_v_sidenode_yoffset_tl,
     yoffset .initial:n = 0pt,
-    grid-height .dim_set:N = \l__luatexcn_v_sidenode_grid_height_dim,
+    grid-height .tl_set:N = \l__luatexcn_v_sidenode_grid_height_tl,
     font-size .tl_set:N = \l__luatexcn_v_sidenode_font_size_tl,
     font-size .initial:n = 10pt,
     color .tl_set:N = \l__luatexcn_v_sidenode_color_tl,
     color .initial:n = red,
-    border-padding-top .dim_set:N = \l__luatexcn_v_sidenode_padding_top_dim,
+    border-padding-top .tl_set:N = \l__luatexcn_v_sidenode_padding_top_tl,
     border-padding-top .initial:n = 0pt,
-    border-padding-bottom .dim_set:N = \l__luatexcn_v_sidenode_padding_bottom_dim,
+    border-padding-bottom .tl_set:N = \l__luatexcn_v_sidenode_padding_bottom_tl,
     border-padding-bottom .initial:n = 0pt,
   }
 
@@ -113,21 +113,21 @@
     % Use explicit font size
     \tl_if_empty:NTF \l__luatexcn_v_sidenode_font_size_tl
       { \dim_set:Nn \l_tmpa_dim { \f@size pt } }
-      { \dim_set:Nn \l_tmpa_dim { \l__luatexcn_v_sidenode_font_size_tl } }
+      { \dim_set:Nn \l_tmpa_dim { \__luatexcn_to_dimen:n { \l__luatexcn_v_sidenode_font_size_tl } } }
     \fontsize{\l_tmpa_dim}{\l_tmpa_dim}\selectfont
     % Color must be inside the box to be captured in the node list
     \hbox_set:Nn \l_tmpa_box {\textcolor{\l__luatexcn_v_sidenode_color_tl}{#2}}%
 
     % Prepare metadata
-    \dim_set_eq:NN \l_tmpb_dim \l__luatexcn_v_sidenode_grid_height_dim
+    \dim_set:Nn \l_tmpb_dim { \__luatexcn_to_dimen:n { \l__luatexcn_v_sidenode_grid_height_tl } }
     % If grid-height not set, default to font size (tight packing)
     \dim_compare:nF { \l_tmpb_dim > 0pt } { \dim_set_eq:NN \l_tmpb_dim \l_tmpa_dim }
 
     \lua_now:e { vertical_sidenote.register_sidenote(\int_value:w \l_tmpa_box, {
-      yoffset = \int_value:w \l__luatexcn_v_sidenode_yoffset_dim,
+      yoffset = vertical_constants.to_dimen([=[\luaescapestring{\tl_use:N \l__luatexcn_v_sidenode_yoffset_tl}]=]) ~ or ~ 0,
       grid_height = \int_value:w \l_tmpb_dim,
-      padding_top = \int_value:w \l__luatexcn_v_sidenode_padding_top_dim,
-      padding_bottom = \int_value:w \l__luatexcn_v_sidenode_padding_bottom_dim
+      padding_top = vertical_constants.to_dimen([=[\luaescapestring{\tl_use:N \l__luatexcn_v_sidenode_padding_top_tl}]=]) ~ or ~ 0,
+      padding_bottom = vertical_constants.to_dimen([=[\luaescapestring{\tl_use:N \l__luatexcn_v_sidenode_padding_bottom_tl}]=]) ~ or ~ 0
     })}%
   \group_end:
 }
@@ -181,14 +181,10 @@
 \tl_new:N \l__cnv_banxin_middle_tl
 \tl_new:N \l__cnv_banxin_lower_tl
 
-\bool_new:N \g_luatexcn_v_debug_bool
-\bool_set_false:N \g_luatexcn_v_debug_bool
+% Ensure global debug boolean exists (if loaded standalone)
+% Standardized debug flag is provided by luatex-cn-debug.sty via luatex-cn-core.sty
 
-\bool_new:N \l__luatexcn_v_banxin_bool
-\bool_set_false:N \l__luatexcn_v_banxin_bool
-
-\NewDocumentCommand{\cnvdebugon}{}{\bool_set_true:N \g_luatexcn_v_debug_bool}
-\NewDocumentCommand{\cnvdebugoff}{}{\bool_set_false:N \g_luatexcn_v_debug_bool}
+% Removed local debug commands in favor of global \LtcDebugOn
 
 % Define keys
 \keys_define:nn { luatexcn / vertical }
@@ -208,11 +204,7 @@
     cols .int_set:N = \l__luatexcn_v_cols_int,
     cols .initial:n = 0,
 
-    debug .code:n = {
-      \str_if_eq:nnTF { #1 } { true }
-        { \bool_gset_true:N \g_luatexcn_v_debug_bool }
-        { \bool_gset_false:N \g_luatexcn_v_debug_bool }
-    },
+    % Debug key removed - use global \LtcDebugOn
 
     border .bool_set:N = \l__luatexcn_v_border_bool,
     border .initial:n = false,
@@ -342,6 +334,21 @@
 
     page-number-grid-height .tl_set:N = \l__luatexcn_v_page_number_grid_height_tl,
     page-number-grid-height .initial:n = {},
+
+    judou-on .bool_set:N = \l__luatexcn_v_judou_on_bool,
+    judou-on .initial:n = false,
+
+    judou-pos .tl_set:N = \l__luatexcn_v_judou_pos_tl,
+    judou-pos .initial:n = {right-bottom},
+
+    judou-size .tl_set:N = \l__luatexcn_v_judou_size_tl,
+    judou-size .initial:n = {1em},
+
+    judou-color .tl_set:N = \l__luatexcn_v_judou_color_tl,
+    judou-color .initial:n = {red},
+
+    punct-mode .tl_set:N = \l__luatexcn_v_punct_mode_tl,
+    punct-mode .initial:n = {normal},
   }
 
 \tl_new:N \l__luatexcn_v_border_rgb_tl
@@ -363,75 +370,51 @@
     % Call Lua to transform the box
     \skip_zero:N \topskip
     
-    % Support direct RGB input (e.g. 0.1 0.2 0.3 or 0.1,0.2,0.3 or 100,50,0)
-    \tl_if_in:NnTF \l__luatexcn_v_border_color_tl { , }
-      { \tl_set_eq:NN \l__luatexcn_v_border_rgb_tl \l__luatexcn_v_border_color_tl }
+    % Support direct RGB input or named colors
+    % We try to extract from xcolor first; if it fails, we pass raw string to Lua
+    \cs_if_exist:cTF { color @ \l__luatexcn_v_border_color_tl }
       {
-        \tl_if_in:NnTF \l__luatexcn_v_border_color_tl { ~ }
-          { \tl_set_eq:NN \l__luatexcn_v_border_rgb_tl \l__luatexcn_v_border_color_tl }
-          {
-             % Try extraction, but wrap in safety
-             \cs_if_exist:cTF { color @ \l__luatexcn_v_border_color_tl }
-             {
-               \exp_args:NV \extractcolorspec \l__luatexcn_v_border_color_tl \l_tmpa_tl
-               \exp_args:NNx \convertcolorspec \l_tmpa_tl {rgb} \l_tmpb_tl
-               \tl_set:Nx \l__luatexcn_v_border_rgb_tl { \l_tmpb_tl }
-             }
-             { \tl_set_eq:NN \l__luatexcn_v_border_rgb_tl \l__luatexcn_v_border_color_tl }
-          }
+        \exp_args:NV \extractcolorspec \l__luatexcn_v_border_color_tl \l_tmpa_tl
+        \exp_args:NNx \convertcolorspec \l_tmpa_tl {rgb} \l_tmpb_tl
+        \tl_set:Nx \l__luatexcn_v_border_rgb_tl { \l_tmpb_tl }
       }
+      { \tl_set_eq:NN \l__luatexcn_v_border_rgb_tl \l__luatexcn_v_border_color_tl }
     \tl_replace_all:Nnn \l__luatexcn_v_border_rgb_tl { , } { ~ }
 
     \tl_if_empty:NTF \l__luatexcn_v_background_color_tl
       { \tl_set:Nn \l__luatexcn_v_background_rgb_tl { nil } }
       {
-        \tl_if_in:NnTF \l__luatexcn_v_background_color_tl { , }
-          { \tl_set_eq:NN \l__luatexcn_v_background_rgb_tl \l__luatexcn_v_background_color_tl }
+        \cs_if_exist:cTF { color @ \l__luatexcn_v_background_color_tl }
           {
-            \tl_if_in:NnTF \l__luatexcn_v_background_color_tl { ~ }
-              { \tl_set_eq:NN \l__luatexcn_v_background_rgb_tl \l__luatexcn_v_background_color_tl }
-              {
-                 \cs_if_exist:cTF { color @ \l__luatexcn_v_background_color_tl }
-                 {
-                   \exp_args:NV \extractcolorspec \l__luatexcn_v_background_color_tl \l_tmpa_tl
-                   \exp_args:NNx \convertcolorspec \l_tmpa_tl {rgb} \l_tmpb_tl
-                   \tl_set:Nx \l__luatexcn_v_background_rgb_tl { \l_tmpb_tl }
-                 }
-                 { \tl_set_eq:NN \l__luatexcn_v_background_rgb_tl \l__luatexcn_v_background_color_tl }
-              }
+            \exp_args:NV \extractcolorspec \l__luatexcn_v_background_color_tl \l_tmpa_tl
+            \exp_args:NNx \convertcolorspec \l_tmpa_tl {rgb} \l_tmpb_tl
+            \tl_set:Nx \l__luatexcn_v_background_rgb_tl { \l_tmpb_tl }
           }
+          { \tl_set_eq:NN \l__luatexcn_v_background_rgb_tl \l__luatexcn_v_background_color_tl }
       }
     \tl_replace_all:Nnn \l__luatexcn_v_background_rgb_tl { , } { ~ }
 
     \tl_if_empty:NTF \l__luatexcn_v_font_color_tl
       { \tl_set:Nn \l__luatexcn_v_font_rgb_tl { nil } }
       {
-        \tl_if_in:NnTF \l__luatexcn_v_font_color_tl { , }
-          { \tl_set_eq:NN \l__luatexcn_v_font_rgb_tl \l__luatexcn_v_font_color_tl }
+        \cs_if_exist:cTF { color @ \l__luatexcn_v_font_color_tl }
           {
-            \tl_if_in:NnTF \l__luatexcn_v_font_color_tl { ~ }
-              { \tl_set_eq:NN \l__luatexcn_v_font_rgb_tl \l__luatexcn_v_font_color_tl }
-              {
-                 \cs_if_exist:cTF { color @ \l__luatexcn_v_font_color_tl }
-                 {
-                   \exp_args:NV \extractcolorspec \l__luatexcn_v_font_color_tl \l_tmpa_tl
-                   \exp_args:NNx \convertcolorspec \l_tmpa_tl {rgb} \l_tmpb_tl
-                   \tl_set:Nx \l__luatexcn_v_font_rgb_tl { \l_tmpb_tl }
-                 }
-                 { \tl_set_eq:NN \l__luatexcn_v_font_rgb_tl \l__luatexcn_v_font_color_tl }
-              }
+            \exp_args:NV \extractcolorspec \l__luatexcn_v_font_color_tl \l_tmpa_tl
+            \exp_args:NNx \convertcolorspec \l_tmpa_tl {rgb} \l_tmpb_tl
+            \tl_set:Nx \l__luatexcn_v_font_rgb_tl { \l_tmpb_tl }
           }
+          { \tl_set_eq:NN \l__luatexcn_v_font_rgb_tl \l__luatexcn_v_font_color_tl }
       }
     \tl_replace_all:Nnn \l__luatexcn_v_font_rgb_tl { , } { ~ }
 
-    \bool_if:NT \g_luatexcn_v_debug_bool { \typeout{DEBUG:~banxin-padding-top~is~\l__luatexcn_v_banxin_padding_top_tl} }
+    \bool_if:NT \g_luatexcn_debug_enabled_bool { \typeout{DEBUG:~banxin-padding-top~is~\l__luatexcn_v_banxin_padding_top_tl} }
     \lua_now:e {
       vertical.process_from_tex(\int_value:w \l_tmpa_box, {
         height~=~[=[\luaescapestring{\l__luatexcn_v_height_tl}]=],
         grid_width~=~[=[\luaescapestring{\l__luatexcn_v_grid_width_tl}]=],
         grid_height~=~[=[\luaescapestring{\l__luatexcn_v_grid_height_tl}]=],
         col_limit~=~\int_use:N~\l__luatexcn_v_cols_int,
-        debug_on~=~\bool_if:NTF~\g_luatexcn_v_debug_bool~{true}~{false},
+
         banxin_on~=~\bool_if:NTF~\l__luatexcn_v_banxin_bool~{true}~{false},
         border_on~=~\bool_if:NTF~\l__luatexcn_v_border_bool~{true}~{false},
         border_padding_top~=~[=[\luaescapestring{\l__luatexcn_v_border_padding_top_tl}]=],
@@ -472,10 +455,46 @@
         jiazhu_font_size~=~[=[\luaescapestring{\l__luatexcn_v_jiazhu_size_tl}]=],
         jiazhu_align~=~[=[\luaescapestring{\l__luatexcn_v_jiazhu_align_tl}]=],
         page_number_grid_height~=~[=[\luaescapestring{\l__luatexcn_v_page_number_grid_height_tl}]=],
-        font_size~=~[=[\luaescapestring{\l__luatexcn_v_font_size_tl}]=]
+        font_size~=~[=[\luaescapestring{\l__luatexcn_v_font_size_tl}]=],
+        judou_on~=~\bool_if:NTF~\l__luatexcn_v_judou_on_bool~{true}~{false},
+        judou_pos~=~[=[\luaescapestring{\l__luatexcn_v_judou_pos_tl}]=],
+        judou_size~=~[=[\luaescapestring{\l__luatexcn_v_judou_size_tl}]=],
+        judou_color~=~[=[\luaescapestring{\l__luatexcn_v_judou_color_tl}]=],
+        punct_mode~=~[=[\luaescapestring{\l__luatexcn_v_punct_mode_tl}]=]
       })
     }
   }
+
+% Judou Mode Toggle Commands
+% Usage: \JudouOn to enable, \JudouOff to disable
+\NewDocumentCommand{\JudouOn}{ O{} }
+  {
+    \keys_set:nn { luatexcn / vertical } { judou-on = true, #1 }
+  }
+
+\NewDocumentCommand{\JudouOff}{ }
+  {
+    \keys_set:nn { luatexcn / vertical } { judou-on = false }
+  }
+
+% Convenience Commands for Punctuation Modes
+\NewDocumentCommand{\NormalPunctuationMode}{ O{} }
+  {
+    \keys_set:nn { luatexcn / vertical } { punct-mode = normal, #1 }
+  }
+\NewDocumentCommand{\正常标点模式}{ O{} } { \NormalPunctuationMode[#1] }
+
+\NewDocumentCommand{\JudouPunctuationMode}{ O{} }
+  {
+    \keys_set:nn { luatexcn / vertical } { punct-mode = judou, #1 }
+  }
+\NewDocumentCommand{\句读模式}{ O{} } { \JudouPunctuationMode[#1] }
+
+\NewDocumentCommand{\NonePunctuationMode}{ O{} }
+  {
+    \keys_set:nn { luatexcn / vertical } { punct-mode = none, #1 }
+  }
+\NewDocumentCommand{\无标点模式}{ O{} } { \NonePunctuationMode[#1] }
 
 % Define Main Command with Key-Value interface
 % Syntax: \VerticalRTT[key=val]{text}
@@ -494,12 +513,16 @@
     \VerticalRTT[#1]{#2}
   }
 
+\NewDocumentCommand{\Vertical}{ O{} +m }
+  {
+    \VerticalRTT[#1]{#2}
+  }
+
 % Grid Textbox Command (Simplified for Single Column)
 % Syntax: \GridTextbox[height=N, distribute=true/false]{content}
 % height is in grid units (integers), width is always 1
 % Key-value interface for \GridTextbox
 \bool_new:N \l__luatexcn_v_textbox_border_bool
-\bool_new:N \l__luatexcn_v_textbox_debug_bool
 \tl_new:N \l__luatexcn_v_textbox_box_align_tl
 \tl_new:N \l__luatexcn_v_textbox_inner_gw_tl
 \tl_new:N \l__luatexcn_v_textbox_inner_gh_tl
@@ -534,8 +557,8 @@
     banxin .bool_set:N = \l__luatexcn_v_banxin_bool,
     column-align .tl_set:N = \l__luatexcn_v_textbox_col_align_tl,
     column-align .initial:n = {},
-    debug .bool_set:N = \l__luatexcn_v_textbox_debug_bool,
-    debug .initial:n = false,
+    % debug key removed - use global \LtcDebugOn
+
     vertical-align .tl_set:N = \l__luatexcn_v_textbox_box_align_tl,
     floating .bool_set:N = \l__luatexcn_v_textbox_floating_bool,
     floating .initial:n = false,
@@ -559,7 +582,7 @@
   {
     \group_begin:
     % Inherit debug setting from global environment
-    \bool_set_eq:NN \l__luatexcn_v_textbox_debug_bool \g_luatexcn_v_debug_bool
+    % No local override anymore
     \keys_set:nn { luatexcn / v / textbox } { #1 }
     % Width is always 1 for outer layout (textbox occupies 1 column externally)
     \setluatexattribute\cnverticaltextboxwidth{1}
@@ -570,23 +593,21 @@
     \tl_if_empty:NTF \l__luatexcn_v_textbox_inner_gw_tl
       {
         \int_compare:nNnTF \l__luatexcn_v_textbox_n_cols_int > 0
-          { \dim_set:Nn \l__luatexcn_v_textbox_inner_gw_dim { \l__luatexcn_v_grid_width_tl / \l__luatexcn_v_textbox_n_cols_int } }
-          { \dim_set:Nn \l__luatexcn_v_textbox_inner_gw_dim { \l__luatexcn_v_grid_width_tl } }
+          { \dim_set:Nn \l__luatexcn_v_textbox_inner_gw_dim { (\__luatexcn_to_dimen:n { \l__luatexcn_v_grid_width_tl }) / \l__luatexcn_v_textbox_n_cols_int } }
+          { \dim_set:Nn \l__luatexcn_v_textbox_inner_gw_dim { \__luatexcn_to_dimen:n {  \l__luatexcn_v_grid_width_tl } } }
       }
-      { \dim_set:Nn \l__luatexcn_v_textbox_inner_gw_dim { \l__luatexcn_v_textbox_inner_gw_tl } }
+      { \dim_set:Nn \l__luatexcn_v_textbox_inner_gw_dim { \__luatexcn_to_dimen:n { \l__luatexcn_v_textbox_inner_gw_tl } } }
     % If inner-grid-height not specified, user outer grid-height directly (for alignment)
     \tl_if_empty:NTF \l__luatexcn_v_textbox_inner_gh_tl
-      { \dim_set:Nn \l__luatexcn_v_textbox_inner_gh_dim { \l__luatexcn_v_grid_height_tl } }
-      { \dim_set:Nn \l__luatexcn_v_textbox_inner_gh_dim { \l__luatexcn_v_textbox_inner_gh_tl } }
+      { \dim_set:Nn \l__luatexcn_v_textbox_inner_gh_dim { \__luatexcn_to_dimen:n { \l__luatexcn_v_grid_height_tl } } }
+      { \dim_set:Nn \l__luatexcn_v_textbox_inner_gh_dim { \__luatexcn_to_dimen:n { \l__luatexcn_v_textbox_inner_gh_tl } } }
     
     % Capture content in a box and process it via Lua for inner verticality
     \vbox_set:Nn \l_tmpa_box {
       \setluatexattribute\cnverticaltextboxwidth{0}
       \setluatexattribute\cnverticaltextboxheight{0}
       % Reset paragraph spacing to prevent unwanted glues in grid layout
-      \dim_zero:N \parindent
-      \skip_zero:N \parskip
-      \skip_zero:N \topskip
+      \dim_set:Nn \l_tmpa_dim { \__luatexcn_to_dimen:n { \l__luatexcn_v_grid_height_tl } }
       % Scale font size to match the inner grid width, but slightly smaller (0.85x) to avoid crowding
       % Scale font size
       \tl_if_empty:NTF \l__luatexcn_v_textbox_font_size_tl
@@ -599,7 +620,7 @@
         }
         {
           % User-specified font size
-          \fontsize{\l__luatexcn_v_textbox_font_size_tl}{\l__luatexcn_v_textbox_font_size_tl}\selectfont
+          \fontsize{\__luatexcn_to_dimen:n { \l__luatexcn_v_textbox_font_size_tl }}{\__luatexcn_to_dimen:n { \l__luatexcn_v_textbox_font_size_tl }}\selectfont
         }
       % Inner line length should be the grid height of the block
       \hsize=\dim_eval:n { \l__luatexcn_v_textbox_inner_gh_dim * \int_use:N \l__luatexcn_v_textbox_height_int }
@@ -612,39 +633,23 @@
     \tl_set:No \l__luatexcn_v_textbox_font_color_tl { \l__luatexcn_v_textbox_font_color_tl }
 
     % Convert background color to RGB
-    \tl_if_in:NnTF \l__luatexcn_v_textbox_bg_color_tl { , }
-      { \tl_set_eq:NN \l__luatexcn_v_textbox_bg_rgb_tl \l__luatexcn_v_textbox_bg_color_tl }
+    \cs_if_exist:cTF { color @ \l__luatexcn_v_textbox_bg_color_tl }
       {
-        \tl_if_in:NnTF \l__luatexcn_v_textbox_bg_color_tl { ~ }
-          { \tl_set_eq:NN \l__luatexcn_v_textbox_bg_rgb_tl \l__luatexcn_v_textbox_bg_color_tl }
-          {
-             \cs_if_exist:cTF { color @ \l__luatexcn_v_textbox_bg_color_tl }
-             {
-                \exp_args:NV \extractcolorspec \l__luatexcn_v_textbox_bg_color_tl \l_tmpa_tl
-                \exp_args:NNx \convertcolorspec \l_tmpa_tl { rgb } \l_tmpb_tl
-                \tl_set:Nx \l__luatexcn_v_textbox_bg_rgb_tl { \l_tmpb_tl }
-             }
-             { \tl_set_eq:NN \l__luatexcn_v_textbox_bg_rgb_tl \l__luatexcn_v_textbox_bg_color_tl }
-          }
+        \exp_args:NV \extractcolorspec \l__luatexcn_v_textbox_bg_color_tl \l_tmpa_tl
+        \exp_args:NNx \convertcolorspec \l_tmpa_tl { rgb } \l_tmpb_tl
+        \tl_set:Nx \l__luatexcn_v_textbox_bg_rgb_tl { \l_tmpb_tl }
       }
+      { \tl_set_eq:NN \l__luatexcn_v_textbox_bg_rgb_tl \l__luatexcn_v_textbox_bg_color_tl }
     \tl_replace_all:Nnn \l__luatexcn_v_textbox_bg_rgb_tl { , } { ~ }
 
     % Convert font color to RGB
-    \tl_if_in:NnTF \l__luatexcn_v_textbox_font_color_tl { , }
-      { \tl_set_eq:NN \l__luatexcn_v_textbox_font_rgb_tl \l__luatexcn_v_textbox_font_color_tl }
+    \cs_if_exist:cTF { color @ \l__luatexcn_v_textbox_font_color_tl }
       {
-        \tl_if_in:NnTF \l__luatexcn_v_textbox_font_color_tl { ~ }
-          { \tl_set_eq:NN \l__luatexcn_v_textbox_font_rgb_tl \l__luatexcn_v_textbox_font_color_tl }
-          {
-             \cs_if_exist:cTF { color @ \l__luatexcn_v_textbox_font_color_tl }
-             {
-                \exp_args:NV \extractcolorspec \l__luatexcn_v_textbox_font_color_tl \l_tmpa_tl
-                \exp_args:NNx \convertcolorspec \l_tmpa_tl { rgb } \l_tmpb_tl
-                \tl_set:Nx \l__luatexcn_v_textbox_font_rgb_tl { \l_tmpb_tl }
-             }
-             { \tl_set_eq:NN \l__luatexcn_v_textbox_font_rgb_tl \l__luatexcn_v_textbox_font_color_tl }
-          }
+        \exp_args:NV \extractcolorspec \l__luatexcn_v_textbox_font_color_tl \l_tmpa_tl
+        \exp_args:NNx \convertcolorspec \l_tmpa_tl { rgb } \l_tmpb_tl
+        \tl_set:Nx \l__luatexcn_v_textbox_font_rgb_tl { \l_tmpb_tl }
       }
+      { \tl_set_eq:NN \l__luatexcn_v_textbox_font_rgb_tl \l__luatexcn_v_textbox_font_color_tl }
     \tl_replace_all:Nnn \l__luatexcn_v_textbox_font_rgb_tl { , } { ~ }
 
     \lua_now:e {vertical_textbox.process_inner_box(\int_value:w~\l_tmpa_box,~{
@@ -654,7 +659,7 @@
       grid_height~=~"\dim_to_decimal:n { \l__luatexcn_v_textbox_inner_gh_dim }~pt",
       box_align~=~"\luaescapestring{\tl_use:N~\l__luatexcn_v_textbox_box_align_tl}",
       column_aligns~=~"\luaescapestring{\tl_use:N~\l__luatexcn_v_textbox_col_align_tl}",
-      debug~=~"\bool_if:NTF~\l__luatexcn_v_textbox_debug_bool~{true}{false}",
+
       border~=~"\bool_if:NTF~\l__luatexcn_v_textbox_border_bool~{true}{false}",
       background_color~=~[=[\l__luatexcn_v_textbox_bg_rgb_tl]=],
       font_color~=~[=[\l__luatexcn_v_textbox_font_rgb_tl]=],
@@ -726,9 +731,9 @@
 % Default width is 1em (one grid cell)
 \NewDocumentCommand{\Space}{ O{1em} }
   {
-    \regex_match:nnTF { ^\d+$ } { #1 }
-      { \skip_horizontal:n { \l__luatexcn_v_grid_height_tl * #1 } }
-      { \skip_horizontal:n { #1 } }
+    \regex_match:nnTF { ^[0-9\.]+$ } { #1 }
+      { \skip_horizontal:n { \__luatexcn_to_dimen:n { \l__luatexcn_v_grid_height_tl } * #1 } }
+      { \skip_horizontal:n { \__luatexcn_to_dimen:n { #1 } } }
   }
 
 % Paragraph Environment
@@ -795,5 +800,8 @@
 \NewCommandCopy{\CePi}{\SideNode}
 \NewCommandCopy{\侧批}{\SideNode}
 \NewCommandCopy{\批注}{\PiZhu}
+\NewCommandCopy{\开启句读模式}{\JudouOn}
+\NewCommandCopy{\关闭句读模式}{\JudouOff}
+\NewEnvironmentCopy{列表}{itemize}
 
 \endinput%

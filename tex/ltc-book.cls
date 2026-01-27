@@ -184,16 +184,19 @@
   {
     \keys_set:nn { luatexcn / book } { punct-mode = normal, #1 }
   }
+\DeclareDocumentCommand{\正常标点模式}{ O{} } { \NormalPunctuationMode[#1] }
 
 \DeclareDocumentCommand{\JudouPunctuationMode}{ O{} }
   {
     \keys_set:nn { luatexcn / book } { punct-mode = judou, #1 }
   }
+\DeclareDocumentCommand{\句读模式}{ O{} } { \JudouPunctuationMode[#1] }
 
 \DeclareDocumentCommand{\NonePunctuationMode}{ O{} }
   {
     \keys_set:nn { luatexcn / book } { punct-mode = none, #1 }
   }
+\DeclareDocumentCommand{\无标点模式}{ O{} } { \NonePunctuationMode[#1] }
 
 % 5. Main content environment
 \NewEnviron{ltc-book-content}[1][]{%

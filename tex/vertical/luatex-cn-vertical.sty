@@ -481,16 +481,19 @@
   {
     \keys_set:nn { luatexcn / vertical } { punct-mode = normal, #1 }
   }
+\NewDocumentCommand{\正常标点模式}{ O{} } { \NormalPunctuationMode[#1] }
 
 \NewDocumentCommand{\JudouPunctuationMode}{ O{} }
   {
     \keys_set:nn { luatexcn / vertical } { punct-mode = judou, #1 }
   }
+\NewDocumentCommand{\句读模式}{ O{} } { \JudouPunctuationMode[#1] }
 
 \NewDocumentCommand{\NonePunctuationMode}{ O{} }
   {
     \keys_set:nn { luatexcn / vertical } { punct-mode = none, #1 }
   }
+\NewDocumentCommand{\无标点模式}{ O{} } { \NonePunctuationMode[#1] }
 
 % Define Main Command with Key-Value interface
 % Syntax: \VerticalRTT[key=val]{text}

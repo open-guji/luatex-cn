@@ -111,9 +111,11 @@ local D = node.direct
 function vertical.prepare_grid(box_num, params)
     -- 1. Get box from TeX
     local box = tex.box[box_num]
-    if not box then return end
+    if not box then return 0 end
 
     local list = box.list
+    if not list then return 0 end
+
     local g_width = constants.to_dimen(params.grid_width) or (65536 * 20)
     local g_height = constants.to_dimen(params.grid_height) or g_width
 
@@ -211,6 +213,8 @@ function vertical.prepare_grid(box_num, params)
     end
 
     -- 4. Pipeline Stage 2: Calculate grid layout
+    print(string.format("[LUA] Final Layout Settings: g_height=%.2f pt, limit=%d, p_cols=%d", g_height / 65536, limit,
+        p_cols))
     local layout_map, total_pages = layout.calculate_grid_positions(list, g_height, limit, b_interval, p_cols, {
         distribute = params.distribute,
         banxin_on = banxin_on,
@@ -222,6 +226,7 @@ function vertical.prepare_grid(box_num, params)
         grid_width = g_width,
         margin_right = m_right
     })
+    print(string.format("[LUA] Laid out total_pages = %d", total_pages))
 
     -- 4a. Pipeline Stage 2.5: For textboxes, determine actual columns used
     if is_textbox then
@@ -470,7 +475,7 @@ function vertical.process_from_tex(box_num, params)
         for i = 0, total_pages - 1 do
             tex.print(string.format("\\directlua{vertical.load_page(%d, %d)}", box_num, i))
             tex.print("\\par\\nointerlineskip")
-            tex.print(string.format("\\noindent\\hfill\\hbox to 0pt{\\smash{\\box%d}\\hss}", box_num))
+            tex.print(string.format("\\noindent\\hfill\\box%d", box_num))
             if i < total_pages - 1 then
                 tex.print("\\newpage")
             end

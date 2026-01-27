@@ -715,6 +715,7 @@ _internal.render_single_page = render_single_page
 -- @param params (table) 渲染参数
 -- @return (table) 页面信息数组 {head, cols}
 local function apply_positions(head, layout_map, params)
+    local pages = {}
     local d_head = D.todirect(head)
 
     local ctx = calculate_render_context(params)

@@ -267,6 +267,8 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
     while t do
         ::start_of_loop::
         local id = D.getid(t)
+
+        -- Logging for diagnostic
         -- print(string.format("[D-layout-trace] Node=%s ID=%d [WHATSIT_REF=%d]", tostring(t), id, constants.WHATSIT or -1))
         if id == constants.WHATSIT then
             -- Position transparently at current cursor

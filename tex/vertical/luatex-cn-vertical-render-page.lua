@@ -240,8 +240,6 @@ end
 -- 辅助函数：处理 Judou（句读）标志的定位
 local function handle_judou_node(curr, p_head, pos, params, ctx)
     local char = D.getfield(curr, "value")
-    -- Parse judou_size - default to 1.5x grid_height
-    local f_size = constants.to_dimen(ctx.judou_size) or (ctx.grid_height * 1.5)
 
     -- Create glyph node
     local g = D.new(constants.GLYPH)
@@ -254,12 +252,15 @@ local function handle_judou_node(curr, p_head, pos, params, ctx)
         D.setfield(g, "font", params.font_id)
     end
 
+    -- Force dimension calculation by getting fields
     local w = D.getfield(g, "width") or 0
     local h = D.getfield(g, "height") or 0
     local d = D.getfield(g, "depth") or 0
 
     -- Position calculation
-    -- The whatsit is at position (col, row), position mark relative to this cell
+    -- The whatsit is at position (col, row), which is the TOP of the cell
+    -- in which the punctuation would have been.
+    -- This top boundary is also the BOTTOM boundary of the PREVIOUS character.
     local rtl_col = ctx.p_total_cols - 1 - pos.col
     local base_x = rtl_col * ctx.grid_width + ctx.half_thickness + ctx.shift_x
     local base_y = -pos.row * ctx.grid_height - ctx.shift_y
@@ -268,14 +269,14 @@ local function handle_judou_node(curr, p_head, pos, params, ctx)
     local final_y = base_y
 
     if ctx.judou_pos == "right-bottom" then
-        -- Position at right-bottom of current character cell
-        -- x: move right by 0.6 * grid_width
-        -- y: move down by 0.2 * grid_height
-        final_x = base_x + ctx.grid_width * 0.6
-        final_y = base_y - ctx.grid_height * 0.2
+        -- Position at right-bottom corner of last cell
+        -- x: move right towards the edge of the column
+        -- y: base_y is already the bottom of the previous cell
+        final_x = base_x + ctx.grid_width * 0.75
+        final_y = base_y - ctx.grid_height * 0.1 -- Move slightly down into next cell's space?
+        -- Actually, usually Judou marks are centered on the boundary or slightly into the next cell
     elseif ctx.judou_pos == "right" then
-        -- Position at right-middle of previous character cell
-        final_x = base_x + ctx.grid_width * 0.6
+        final_x = base_x + ctx.grid_width * 0.8
         final_y = base_y - ctx.grid_height * 0.5
     end
 
@@ -283,14 +284,12 @@ local function handle_judou_node(curr, p_head, pos, params, ctx)
     D.setfield(g, "yoffset", final_y)
 
     if luatex_cn_debug and luatex_cn_debug.is_enabled("vertical") then
-        utils.debug_log(string.format("[render] JUDOU char=%d [c:%d, r:%d->%d] xoff=%.2f yoff=%.2f",
-            char, pos.col, pos.row, prev_row, final_x / 65536, final_y / 65536))
+        utils.debug_log(string.format("[render] JUDOU char=%d [c:%d, r:%d] xoff=%.2f yoff=%.2f",
+            char, pos.col, pos.row, final_x / 65536, final_y / 65536))
     end
 
     -- Add color if specified
     local judou_color = params.judou_color or "red"
-    local color_literal = nil
-    -- Simple color name to RGB mapping
     local color_map = {
         red = "1 0 0",
         blue = "0 0 1",
@@ -298,11 +297,11 @@ local function handle_judou_node(curr, p_head, pos, params, ctx)
         black = "0 0 0",
     }
     local rgb = color_map[judou_color] or judou_color
-    -- Create color pdf_literal nodes
+    -- Create color pdf_literal nodes with state save/restore
     local color_start = D.new(constants.WHATSIT, "pdf_literal")
-    D.setfield(color_start, "data", string.format("%s rg", rgb))
+    D.setfield(color_start, "data", string.format("q %s rg", rgb))
     local color_end = D.new(constants.WHATSIT, "pdf_literal")
-    D.setfield(color_end, "data", "0 0 0 rg") -- Reset to black
+    D.setfield(color_end, "data", "Q")
 
     -- Insert: color_start -> glyph -> color_end
     p_head = D.insert_before(p_head, curr, color_start)

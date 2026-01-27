@@ -23,21 +23,48 @@ local D = node.direct
 
 local judou = {}
 
--- Punctuation mapping
--- U+FF0C (Fullwidth Comma) -> U+3001 (Ideographic Comma / 顿号)
--- U+3002 (Ideographic Period) -> U+3002 (Remains Period)
-local PUNCT_MAP = {
-    [0xFF0C] = 0x3001,
-    [0x3002] = 0x3002,
+-- Character sets for punctuation processing
+local SET_JU = {
+    [0x3002] = true, -- 。
+    [0xFF01] = true, -- ！
+    [0xFF1F] = true, -- ？
 }
 
---- Process node list for Judou mode
--- Converts commas and periods into whatsit anchors and removes them from flow
+local SET_DOU = {
+    [0xFF0C] = true, -- ，
+    [0xFF1A] = true, -- ：
+    [0x3001] = true, -- 、
+    [0xFF1B] = true, -- ；
+}
+
+local SET_CLOSE_QUOTE = {
+    [0x201D] = true, -- ”
+    [0x2019] = true, -- ’
+    [0x300D] = true, -- 」
+    [0x300F] = true, -- 』
+}
+
+local SET_OPEN_QUOTE = {
+    [0x201C] = true, -- “
+    [0x2018] = true, -- ‘
+    [0x300C] = true, -- 「
+    [0x300E] = true, -- 『
+}
+
+local REPLACEMENT_JU = 0x3002  -- 。
+local REPLACEMENT_DOU = 0x3001 -- 、
+
+--- Process node list for Punctuation modes
 -- @param head (direct node) The node list head
--- @param params (table) Parameters containing judou_on, etc.
+-- @param params (table) Parameters containing punct_mode, etc.
 -- @return (direct node) The modified head
 function judou.process_judou(head, params)
-    if not (params.judou_on == "true" or params.judou_on == true) then
+    local mode = params.punct_mode or "normal"
+    if params.judou_on == "true" or params.judou_on == true then
+        mode = "judou"
+    end
+
+    if mode == "normal" then
         return head
     end
 
@@ -50,45 +77,77 @@ function judou.process_judou(head, params)
 
         if id == constants.GLYPH then
             local char = D.getfield(t, "char")
-            if PUNCT_MAP[char] then
-                -- This is a target punctuation
-                if last_visible then
-                    utils.debug_log(string.format("[judou] Transforming char %x at node %s", char, tostring(t)))
+            local is_ju = SET_JU[char]
+            local is_dou = SET_DOU[char]
+            local is_close = SET_CLOSE_QUOTE[char]
+            local is_open = SET_OPEN_QUOTE[char]
 
-                    -- Create whatsit anchor
-                    local w = D.new(constants.WHATSIT, "user_defined")
-                    D.setfield(w, "user_id", constants.JUDOU_USER_ID)
-                    D.setfield(w, "type", 100) -- value type
-
-                    -- Encode replacement character into value
-                    D.setfield(w, "value", PUNCT_MAP[char])
-
-                    -- Store font ID from original glyph
-                    local font_id = D.getfield(t, "font")
-                    if font_id then
-                        D.set_attribute(w, constants.ATTR_JUDOU_FONT, font_id)
-                    end
-
-                    -- Carry over attributes (like Jiazhu) which might be important
-                    -- Note: Attributes are stored on the node, but when we replace glyph with whatsit,
-                    -- the whatsit should ideally inherit them.
-                    local jiazhu_attr = D.get_attribute(t, constants.ATTR_JIAZHU)
-                    if jiazhu_attr then
-                        D.set_attribute(w, constants.ATTR_JIAZHU, jiazhu_attr)
-                    end
-
-                    -- Insert whatsit AFTER the previous character anchor
-                    D.insert_after(head, last_visible, w)
-
-                    -- Remove the original glyph from the list
+            if mode == "none" then
+                if is_ju or is_dou or is_close or is_open then
+                    -- Remove ALL punctuation and quotes
                     head = D.remove(head, t)
                     node.flush_node(D.tonode(t))
                 else
-                    -- No preceding character (start of block)?
-                    -- Keep it as is for now.
+                    last_visible = t
+                end
+            elseif mode == "judou" then
+                local replacement = nil
+                local nodes_to_remove = { t }
+
+                if is_ju then
+                    replacement = REPLACEMENT_JU
+                    -- Peek next for close quote
+                    if next_node and D.getid(next_node) == constants.GLYPH then
+                        local next_char = D.getfield(next_node, "char")
+                        if SET_CLOSE_QUOTE[next_char] then
+                            table.insert(nodes_to_remove, next_node)
+                            next_node = D.getnext(next_node)
+                        end
+                    end
+                elseif is_dou then
+                    replacement = REPLACEMENT_DOU
+                    -- Peek next for open quote if char is ':'
+                    if char == 0xFF1A and next_node and D.getid(next_node) == constants.GLYPH then
+                        local next_char = D.getfield(next_node, "char")
+                        if SET_OPEN_QUOTE[next_char] then
+                            table.insert(nodes_to_remove, next_node)
+                            next_node = D.getnext(next_node)
+                        end
+                    end
+                elseif is_close or is_open then
+                    -- Lonely quotes in judou mode should probably be removed
+                    head = D.remove(head, t)
+                    node.flush_node(D.tonode(t))
+                end
+
+                if replacement then
+                    if last_visible then
+                        -- Create whatsit anchor
+                        local w = D.new(constants.WHATSIT, "user_defined")
+                        D.setfield(w, "user_id", constants.JUDOU_USER_ID)
+                        D.setfield(w, "type", 100) -- value type
+                        D.setfield(w, "value", replacement)
+
+                        -- Store font ID and attributes from original glyph
+                        local font_id = D.getfield(t, "font")
+                        if font_id then
+                            D.set_attribute(w, constants.ATTR_JUDOU_FONT, font_id)
+                        end
+                        local jiazhu_attr = D.get_attribute(t, constants.ATTR_JIAZHU)
+                        if jiazhu_attr then
+                            D.set_attribute(w, constants.ATTR_JIAZHU, jiazhu_attr)
+                        end
+
+                        D.insert_after(head, last_visible, w)
+                    end
+
+                    -- Remove the processed glyphs
+                    for _, n in ipairs(nodes_to_remove) do
+                        head = D.remove(head, n)
+                        node.flush_node(D.tonode(n))
+                    end
                 end
             else
-                -- Normal character, use as anchor
                 last_visible = t
             end
         elseif id == constants.HLIST or id == constants.VLIST then

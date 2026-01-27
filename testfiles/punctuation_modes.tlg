@@ -1,0 +1,194 @@
+This is a generated file for the l3build validation system.
+Don't change this file in any respect.
+LaTeX Font Warning: Font shape `TU/FandolSong-Regular.otf(0)/b/n' undefined
+(Font)              using `TU/FandolSong-Regular.otf(0)/m/n' instead on input line ....
+Completed box being shipped out [1]
+\vbox(633.0+0.0)x407.0, direction TLT
+.\hbox(0.0+0.0)x0.0, direction TLT
+..\kern-72.26999
+..\vbox(0.0+0.0)x0.0, glue set 72.26999fil, direction TLT
+...\kern-72.26999
+...\hbox(0.0+0.0)x0.0, direction TLT
+....\glue 0.0 plus 1.0fil minus 1.0fil
+...\glue 0.0 plus 1.0fil minus 1.0fil
+.\glue 16.0
+.\vbox(617.0+0.0)x345.0, shifted 62.0, direction TLT
+..\vbox(12.0+0.0)x345.0, glue set 12.0fil, direction TLT
+...\glue 0.0 plus 1.0fil
+...\hbox(0.0+0.0)x345.0, direction TLT
+....\pdfcolorstack 0 push {0 g 0 G}
+....\hbox(0.0+0.0)x345.0, direction TLT
+....\pdfcolorstack 0 pop
+..\glue 25.0
+..\glue(\lineskip) 0.0
+..\vbox(550.0+0.0)x345.0, glue set >20000.0fil, direction TLT
+...\write-{}
+...\pdfcolorstack 0 push {0 g 0 G}
+...\glue(\topskip) 0.00641
+...\hbox(9.99359+0.1584)x345.0, glue set 237.01443fil, direction TLT
+....\localpar
+.....\localinterlinepenalty=0
+.....\localbrokenpenalty=0
+.....\localleftbox=null
+.....\localrightbox=null
+....\hbox(9.5904+0.0)x21.59999, direction TLT
+.....\glue 0.0
+.....\TU/FandolSong-Regular.otf(0)/b/n/14.4 1
+.....\glue 14.4
+....\TU/FandolSong-Regular.otf(0)/b/n/14.4 N
+....\TU/FandolSong-Regular.otf(0)/b/n/14.4 o
+....\TU/FandolSong-Regular.otf(0)/b/n/14.4 r
+....\discretionary (penalty 50)
+.....< \TU/FandolSong-Regular.otf(0)/b/n/14.4 -
+....\TU/FandolSong-Regular.otf(0)/b/n/14.4 m
+....\TU/FandolSong-Regular.otf(0)/b/n/14.4 a
+....\TU/FandolSong-Regular.otf(0)/b/n/14.4 l
+....\glue(\spaceskip) 4.7952 plus 2.3976 minus 1.5984
+....\TU/FandolSong-Regular.otf(0)/b/n/14.4 M
+....\TU/FandolSong-Regular.otf(0)/b/n/14.4 o
+....\TU/FandolSong-Regular.otf(0)/b/n/14.4 d
+....\TU/FandolSong-Regular.otf(0)/b/n/14.4 e
+....\penalty 10000
+....\glue(\parfillskip) 0.0 plus 1.0fil
+....\glue(\rightskip) 0.0
+...\write1{\@writefile{toc}{\protect \contentsline {section}{\protect \numberline {1}Normal Mode}{\thepage }{}\protected@file@percent }}
+...\penalty 10000
+...\glue 9.913 plus 0.86198
+...\glue(\parskip) 0.0 plus 1.0
+...\glue(\parskip) 0.0
+...\glue(\parskip) 0.0 plus 1.0
+...\glue(\parskip) 0.0
+...\hbox(7.76+302.39935)x345.0, glue set 111.27fill, direction TLT
+....\localpar
+.....\localinterlinepenalty=0
+.....\localbrokenpenalty=0
+.....\localleftbox=null
+.....\localrightbox=null
+....\glue 0.0 plus 1.0fill
+....\hbox(0.0+302.39935)x60.4, direction TLT
+.....\TU/FandolSong-Regular.otf(0)/m/n/10 你
+.....\kern-10.0 (font)
+....\TU/FandolSong-Regular.otf(0)/m/n/10 好
+....\TU/FandolSong-Regular.otf(0)/m/n/10 ！
+....\TU/FandolSong-Regular.otf(0)/m/n/10 “
+....\TU/FandolSong-Regular.otf(0)/m/n/10 世
+....\TU/FandolSong-Regular.otf(0)/m/n/10 界
+....\TU/FandolSong-Regular.otf(0)/m/n/10 ”
+....\TU/FandolSong-Regular.otf(0)/m/n/10 ？
+....\TU/FandolSong-Regular.otf(0)/m/n/10 这
+....\TU/FandolSong-Regular.otf(0)/m/n/10 ，
+....\TU/FandolSong-Regular.otf(0)/m/n/10 是
+....\TU/FandolSong-Regular.otf(0)/m/n/10 ：
+....\TU/FandolSong-Regular.otf(0)/m/n/10 一
+....\TU/FandolSong-Regular.otf(0)/m/n/10 个
+....\TU/FandolSong-Regular.otf(0)/m/n/10 ；
+....\TU/FandolSong-Regular.otf(0)/m/n/10 测
+....\TU/FandolSong-Regular.otf(0)/m/n/10 试
+....\TU/FandolSong-Regular.otf(0)/m/n/10 。
+....\glue(\spaceskip) 3.33 plus 1.665 minus 1.11
+....\penalty 10000
+....\glue(\parfillskip) 0.0 plus 1.0fil
+....\glue(\rightskip) 0.0
+...\glue -5.0
+...\glue 0.0 plus 0.0001fil
+..\glue(\baselineskip) 23.34
+..\hbox(6.66+0.0)x345.0, direction TLT
+...\pdfcolorstack 0 push {0 g 0 G}
+...\hbox(6.66+0.0)x345.0, glue set 170.0fil, direction TLT
+....\glue 0.0 plus 1.0fil
+....\TU/FandolSong-Regular.otf(0)/m/n/10 1
+....\glue 0.0 plus 1.0fil
+...\pdfcolorstack 0 pop
+.\kern0.0
+Completed box being shipped out [2]
+\vbox(633.0+0.0)x407.0, direction TLT
+.\hbox(0.0+0.0)x0.0, direction TLT
+..\kern-72.26999
+..\vbox(0.0+0.0)x0.0, glue set 72.26999fil, direction TLT
+...\kern-72.26999
+...\hbox(0.0+0.0)x0.0, direction TLT
+....\glue 0.0 plus 1.0fil minus 1.0fil
+...\glue 0.0 plus 1.0fil minus 1.0fil
+.\glue 16.0
+.\vbox(617.0+0.0)x345.0, shifted 62.0, direction TLT
+..\vbox(12.0+0.0)x345.0, glue set 12.0fil, direction TLT
+...\glue 0.0 plus 1.0fil
+...\hbox(0.0+0.0)x345.0, direction TLT
+....\pdfcolorstack 0 push {0 g 0 G}
+....\hbox(0.0+0.0)x345.0, direction TLT
+....\pdfcolorstack 0 pop
+..\glue 25.0
+..\glue(\lineskip) 0.0
+..\vbox(550.0+0.0)x345.0, glue set >20000.0fil, direction TLT
+...\glue(\topskip) 0.00641
+...\hbox(9.99359+0.1584)x345.0, glue set 251.44324fil, direction TLT
+....\localpar
+.....\localinterlinepenalty=0
+.....\localbrokenpenalty=0
+.....\localleftbox=null
+.....\localrightbox=null
+....\hbox(9.5904+0.0)x21.59999, direction TLT
+.....\glue 0.0
+.....\TU/FandolSong-Regular.otf(0)/b/n/14.4 2
+.....\glue 14.4
+....\TU/FandolSong-Regular.otf(0)/b/n/14.4 N
+....\TU/FandolSong-Regular.otf(0)/b/n/14.4 o
+....\TU/FandolSong-Regular.otf(0)/b/n/14.4 n
+....\TU/FandolSong-Regular.otf(0)/b/n/14.4 e
+....\glue(\spaceskip) 4.7952 plus 2.3976 minus 1.5984
+....\TU/FandolSong-Regular.otf(0)/b/n/14.4 M
+....\TU/FandolSong-Regular.otf(0)/b/n/14.4 o
+....\TU/FandolSong-Regular.otf(0)/b/n/14.4 d
+....\TU/FandolSong-Regular.otf(0)/b/n/14.4 e
+....\penalty 10000
+....\glue(\parfillskip) 0.0 plus 1.0fil
+....\glue(\rightskip) 0.0
+...\write1{\@writefile{toc}{\protect \contentsline {section}{\protect \numberline {2}None Mode}{\thepage }{}\protected@file@percent }}
+...\penalty 10000
+...\glue 9.913 plus 0.86198
+...\glue(\parskip) 0.0 plus 1.0
+...\glue(\parskip) 0.0
+...\glue(\parskip) 0.0 plus 1.0
+...\glue(\parskip) 0.0
+...\hbox(7.76+302.39935)x345.0, glue set 111.27fill, direction TLT
+....\localpar
+.....\localinterlinepenalty=0
+.....\localbrokenpenalty=0
+.....\localleftbox=null
+.....\localrightbox=null
+....\glue 0.0 plus 1.0fill
+....\hbox(0.0+302.39935)x60.4, direction TLT
+.....\TU/FandolSong-Regular.otf(0)/m/n/10 你
+.....\kern-10.0 (font)
+....\TU/FandolSong-Regular.otf(0)/m/n/10 好
+....\TU/FandolSong-Regular.otf(0)/m/n/10 ！
+....\TU/FandolSong-Regular.otf(0)/m/n/10 “
+....\TU/FandolSong-Regular.otf(0)/m/n/10 世
+....\TU/FandolSong-Regular.otf(0)/m/n/10 界
+....\TU/FandolSong-Regular.otf(0)/m/n/10 ”
+....\TU/FandolSong-Regular.otf(0)/m/n/10 ？
+....\TU/FandolSong-Regular.otf(0)/m/n/10 这
+....\TU/FandolSong-Regular.otf(0)/m/n/10 ，
+....\TU/FandolSong-Regular.otf(0)/m/n/10 是
+....\TU/FandolSong-Regular.otf(0)/m/n/10 ：
+....\TU/FandolSong-Regular.otf(0)/m/n/10 一
+....\TU/FandolSong-Regular.otf(0)/m/n/10 个
+....\TU/FandolSong-Regular.otf(0)/m/n/10 ；
+....\TU/FandolSong-Regular.otf(0)/m/n/10 测
+....\TU/FandolSong-Regular.otf(0)/m/n/10 试
+....\TU/FandolSong-Regular.otf(0)/m/n/10 。
+....\glue(\spaceskip) 3.33 plus 1.665 minus 1.11
+....\penalty 10000
+....\glue(\parfillskip) 0.0 plus 1.0fil
+....\glue(\rightskip) 0.0
+...\glue -5.0
+...\glue 0.0 plus 0.0001fil
+..\glue(\baselineskip) 23.34
+..\hbox(6.66+0.0)x345.0, direction TLT
+...\pdfcolorstack 0 push {0 g 0 G}
+...\hbox(6.66+0.0)x345.0, glue set 170.0fil, direction TLT
+....\glue 0.0 plus 1.0fil
+....\TU/FandolSong-Regular.otf(0)/m/n/10 2
+....\glue 0.0 plus 1.0fil
+...\pdfcolorstack 0 pop
+.\kern0.0

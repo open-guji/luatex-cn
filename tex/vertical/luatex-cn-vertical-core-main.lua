@@ -214,8 +214,9 @@ function vertical.prepare_grid(box_num, params)
         end
     end
 
-    -- 3a. Pipeline Stage 1.5: Process Judou Mode (Transformation)
-    if params.judou_on == "true" or params.judou_on == true then
+    -- 3a. Pipeline Stage 1.5: Process Punctuation (None/Judou/Normal modes)
+    if (params.judou_on == "true" or params.judou_on == true) or
+        (params.punct_mode and params.punct_mode ~= "normal") then
         list = judou.process_judou(D.todirect(list), params)
         list = D.tonode(list)
     end

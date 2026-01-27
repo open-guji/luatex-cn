@@ -346,6 +346,9 @@
 
     judou-color .tl_set:N = \l__luatexcn_v_judou_color_tl,
     judou-color .initial:n = {red},
+
+    punct-mode .tl_set:N = \l__luatexcn_v_punct_mode_tl,
+    punct-mode .initial:n = {normal},
   }
 
 \tl_new:N \l__luatexcn_v_border_rgb_tl
@@ -455,7 +458,8 @@
         font_size~=~[=[\luaescapestring{\l__luatexcn_v_font_size_tl}]=],
         judou_on~=~\bool_if:NTF~\l__luatexcn_v_judou_on_bool~{true}~{false},
         judou_pos~=~[=[\luaescapestring{\l__luatexcn_v_judou_pos_tl}]=],
-        judou_size~=~[=[\luaescapestring{\l__luatexcn_v_judou_size_tl}]=]
+        judou_size~=~[=[\luaescapestring{\l__luatexcn_v_judou_size_tl}]=],
+        punct_mode~=~[=[\luaescapestring{\l__luatexcn_v_punct_mode_tl}]=]
       })
     }
   }
@@ -470,6 +474,22 @@
 \NewDocumentCommand{\JudouOff}{ }
   {
     \keys_set:nn { luatexcn / vertical } { judou-on = false }
+  }
+
+% Convenience Commands for Punctuation Modes
+\NewDocumentCommand{\NormalPunctuationMode}{ O{} }
+  {
+    \keys_set:nn { luatexcn / vertical } { punct-mode = normal, #1 }
+  }
+
+\NewDocumentCommand{\JudouPunctuationMode}{ O{} }
+  {
+    \keys_set:nn { luatexcn / vertical } { punct-mode = judou, #1 }
+  }
+
+\NewDocumentCommand{\NonePunctuationMode}{ O{} }
+  {
+    \keys_set:nn { luatexcn / vertical } { punct-mode = none, #1 }
   }
 
 % Define Main Command with Key-Value interface

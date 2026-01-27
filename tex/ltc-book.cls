@@ -136,6 +136,12 @@
     judou-size .tl_set:N = \l_luatexcn_book_judou_size_tl,
     judou-size .initial:n = {1em},
 
+    judou-color .tl_set:N = \l_luatexcn_book_judou_color_tl,
+    judou-color .initial:n = {red},
+
+    punct-mode .tl_set:N = \l_luatexcn_book_punct_mode_tl,
+    punct-mode .initial:n = {normal},
+
 
     template .code:n = {
       \InputIfFileExists{configs/luatex-cn-book-#1.cfg}{}{
@@ -171,6 +177,22 @@
   {
     \keys_set:nn { luatexcn / book } { #1 }
     \__luatexcn_book_apply_geometry:
+  }
+
+% Convenience Commands for Punctuation Modes in ltc-book
+\DeclareDocumentCommand{\NormalPunctuationMode}{ O{} }
+  {
+    \keys_set:nn { luatexcn / book } { punct-mode = normal, #1 }
+  }
+
+\DeclareDocumentCommand{\JudouPunctuationMode}{ O{} }
+  {
+    \keys_set:nn { luatexcn / book } { punct-mode = judou, #1 }
+  }
+
+\DeclareDocumentCommand{\NonePunctuationMode}{ O{} }
+  {
+    \keys_set:nn { luatexcn / book } { punct-mode = none, #1 }
   }
 
 % 5. Main content environment
@@ -229,7 +251,9 @@
         page-number-align = \l_luatexcn_book_page_number_align_tl,
         judou-on = \bool_if:NTF \l_luatexcn_book_judou_on_bool {true} {false},
         judou-pos = \l_luatexcn_book_judou_pos_tl,
-        judou-size = \l_luatexcn_book_judou_size_tl
+        judou-size = \l_luatexcn_book_judou_size_tl,
+        judou-color = \l_luatexcn_book_judou_color_tl,
+        punct-mode = \l_luatexcn_book_punct_mode_tl
       }
     \nointerlineskip
     \__luatexcn_v_process_grid:n { \BODY }

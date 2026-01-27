@@ -35,31 +35,14 @@ splitpage.source_height = 0
 splitpage.target_width = 0
 splitpage.target_height = 0
 splitpage.right_first = true
+local constants = require('vertical.luatex-cn-vertical-base-constants')
+
 -- Convert sp to bp
 local function sp_to_bp(sp)
     return sp / 65536 / 72.27 * 72
 end
 
--- Convert dimension string to sp
-local function to_sp(dim_str)
-    if type(dim_str) == "number" then return dim_str end
-    if type(dim_str) ~= "string" then return 0 end
-
-    local num, unit = dim_str:match("^([%d%.]+)(%a+)$")
-    if not num then return 0 end
-    num = tonumber(num)
-    if not num then return 0 end
-
-    local factors = {
-        pt = 65536,
-        bp = 65536 * 72.27 / 72,
-        mm = 65536 * 72.27 / 25.4,
-        cm = 65536 * 72.27 / 2.54,
-        ["in"] = 65536 * 72.27,
-        sp = 1,
-    }
-    return math.floor(num * (factors[unit] or 65536))
-end
+local to_sp = constants.to_dimen
 
 -- Register splitpage module if debug module is available
 if _G.luatex_cn_debug then

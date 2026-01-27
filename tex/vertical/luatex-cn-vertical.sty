@@ -78,26 +78,32 @@
   vertical_sidenote~=~require('vertical.luatex-cn-vertical-core-sidenote');
   vertical~=~require('vertical.luatex-cn-vertical-core-main')
 }
+% Helper for unified dimension parsing (calls Lua)
+\cs_new:Npn \__luatexcn_to_dimen:n #1
+  {
+    \lua_now:e { tex.sprint(vertical_constants.to_dimen([=[\luaescapestring{#1}]=]) ~ or ~ 0) } sp
+  }
+
 % Define keys for SideNode
-\dim_new:N \l__luatexcn_v_sidenode_yoffset_dim
-\dim_new:N \l__luatexcn_v_sidenode_grid_height_dim
+\tl_new:N \l__luatexcn_v_sidenode_yoffset_tl
+\tl_new:N \l__luatexcn_v_sidenode_grid_height_tl
 \tl_new:N \l__luatexcn_v_sidenode_font_size_tl
 \tl_new:N \l__luatexcn_v_sidenode_color_tl
-\dim_new:N \l__luatexcn_v_sidenode_padding_top_dim
-\dim_new:N \l__luatexcn_v_sidenode_padding_bottom_dim
+\tl_new:N \l__luatexcn_v_sidenode_padding_top_tl
+\tl_new:N \l__luatexcn_v_sidenode_padding_bottom_tl
 
 \keys_define:nn { luatexcn / sidenode }
   {
-    yoffset .dim_set:N = \l__luatexcn_v_sidenode_yoffset_dim,
+    yoffset .tl_set:N = \l__luatexcn_v_sidenode_yoffset_tl,
     yoffset .initial:n = 0pt,
-    grid-height .dim_set:N = \l__luatexcn_v_sidenode_grid_height_dim,
+    grid-height .tl_set:N = \l__luatexcn_v_sidenode_grid_height_tl,
     font-size .tl_set:N = \l__luatexcn_v_sidenode_font_size_tl,
     font-size .initial:n = 10pt,
     color .tl_set:N = \l__luatexcn_v_sidenode_color_tl,
     color .initial:n = red,
-    border-padding-top .dim_set:N = \l__luatexcn_v_sidenode_padding_top_dim,
+    border-padding-top .tl_set:N = \l__luatexcn_v_sidenode_padding_top_tl,
     border-padding-top .initial:n = 0pt,
-    border-padding-bottom .dim_set:N = \l__luatexcn_v_sidenode_padding_bottom_dim,
+    border-padding-bottom .tl_set:N = \l__luatexcn_v_sidenode_padding_bottom_tl,
     border-padding-bottom .initial:n = 0pt,
   }
 
@@ -107,21 +113,21 @@
     % Use explicit font size
     \tl_if_empty:NTF \l__luatexcn_v_sidenode_font_size_tl
       { \dim_set:Nn \l_tmpa_dim { \f@size pt } }
-      { \dim_set:Nn \l_tmpa_dim { \l__luatexcn_v_sidenode_font_size_tl } }
+      { \dim_set:Nn \l_tmpa_dim { \__luatexcn_to_dimen:n { \l__luatexcn_v_sidenode_font_size_tl } } }
     \fontsize{\l_tmpa_dim}{\l_tmpa_dim}\selectfont
     % Color must be inside the box to be captured in the node list
     \hbox_set:Nn \l_tmpa_box {\textcolor{\l__luatexcn_v_sidenode_color_tl}{#2}}%
 
     % Prepare metadata
-    \dim_set_eq:NN \l_tmpb_dim \l__luatexcn_v_sidenode_grid_height_dim
+    \dim_set:Nn \l_tmpb_dim { \__luatexcn_to_dimen:n { \l__luatexcn_v_sidenode_grid_height_tl } }
     % If grid-height not set, default to font size (tight packing)
     \dim_compare:nF { \l_tmpb_dim > 0pt } { \dim_set_eq:NN \l_tmpb_dim \l_tmpa_dim }
 
     \lua_now:e { vertical_sidenote.register_sidenote(\int_value:w \l_tmpa_box, {
-      yoffset = \int_value:w \l__luatexcn_v_sidenode_yoffset_dim,
+      yoffset = vertical_constants.to_dimen([=[\luaescapestring{\tl_use:N \l__luatexcn_v_sidenode_yoffset_tl}]=]) ~ or ~ 0,
       grid_height = \int_value:w \l_tmpb_dim,
-      padding_top = \int_value:w \l__luatexcn_v_sidenode_padding_top_dim,
-      padding_bottom = \int_value:w \l__luatexcn_v_sidenode_padding_bottom_dim
+      padding_top = vertical_constants.to_dimen([=[\luaescapestring{\tl_use:N \l__luatexcn_v_sidenode_padding_top_tl}]=]) ~ or ~ 0,
+      padding_bottom = vertical_constants.to_dimen([=[\luaescapestring{\tl_use:N \l__luatexcn_v_sidenode_padding_bottom_tl}]=]) ~ or ~ 0
     })}%
   \group_end:
 }
@@ -536,23 +542,21 @@
     \tl_if_empty:NTF \l__luatexcn_v_textbox_inner_gw_tl
       {
         \int_compare:nNnTF \l__luatexcn_v_textbox_n_cols_int > 0
-          { \dim_set:Nn \l__luatexcn_v_textbox_inner_gw_dim { \l__luatexcn_v_grid_width_tl / \l__luatexcn_v_textbox_n_cols_int } }
-          { \dim_set:Nn \l__luatexcn_v_textbox_inner_gw_dim { \l__luatexcn_v_grid_width_tl } }
+          { \dim_set:Nn \l__luatexcn_v_textbox_inner_gw_dim { (\__luatexcn_to_dimen:n { \l__luatexcn_v_grid_width_tl }) / \l__luatexcn_v_textbox_n_cols_int } }
+          { \dim_set:Nn \l__luatexcn_v_textbox_inner_gw_dim { \__luatexcn_to_dimen:n {  \l__luatexcn_v_grid_width_tl } } }
       }
-      { \dim_set:Nn \l__luatexcn_v_textbox_inner_gw_dim { \l__luatexcn_v_textbox_inner_gw_tl } }
+      { \dim_set:Nn \l__luatexcn_v_textbox_inner_gw_dim { \__luatexcn_to_dimen:n { \l__luatexcn_v_textbox_inner_gw_tl } } }
     % If inner-grid-height not specified, user outer grid-height directly (for alignment)
     \tl_if_empty:NTF \l__luatexcn_v_textbox_inner_gh_tl
-      { \dim_set:Nn \l__luatexcn_v_textbox_inner_gh_dim { \l__luatexcn_v_grid_height_tl } }
-      { \dim_set:Nn \l__luatexcn_v_textbox_inner_gh_dim { \l__luatexcn_v_textbox_inner_gh_tl } }
+      { \dim_set:Nn \l__luatexcn_v_textbox_inner_gh_dim { \__luatexcn_to_dimen:n { \l__luatexcn_v_grid_height_tl } } }
+      { \dim_set:Nn \l__luatexcn_v_textbox_inner_gh_dim { \__luatexcn_to_dimen:n { \l__luatexcn_v_textbox_inner_gh_tl } } }
     
     % Capture content in a box and process it via Lua for inner verticality
     \vbox_set:Nn \l_tmpa_box {
       \setluatexattribute\cnverticaltextboxwidth{0}
       \setluatexattribute\cnverticaltextboxheight{0}
       % Reset paragraph spacing to prevent unwanted glues in grid layout
-      \dim_zero:N \parindent
-      \skip_zero:N \parskip
-      \skip_zero:N \topskip
+      \dim_set:Nn \l_tmpa_dim { \__luatexcn_to_dimen:n { \l__luatexcn_v_grid_height_tl } }
       % Scale font size to match the inner grid width, but slightly smaller (0.85x) to avoid crowding
       % Scale font size
       \tl_if_empty:NTF \l__luatexcn_v_textbox_font_size_tl
@@ -565,7 +569,7 @@
         }
         {
           % User-specified font size
-          \fontsize{\l__luatexcn_v_textbox_font_size_tl}{\l__luatexcn_v_textbox_font_size_tl}\selectfont
+          \fontsize{\__luatexcn_to_dimen:n { \l__luatexcn_v_textbox_font_size_tl }}{\__luatexcn_to_dimen:n { \l__luatexcn_v_textbox_font_size_tl }}\selectfont
         }
       % Inner line length should be the grid height of the block
       \hsize=\dim_eval:n { \l__luatexcn_v_textbox_inner_gh_dim * \int_use:N \l__luatexcn_v_textbox_height_int }
@@ -676,9 +680,9 @@
 % Default width is 1em (one grid cell)
 \NewDocumentCommand{\Space}{ O{1em} }
   {
-    \regex_match:nnTF { ^\d+$ } { #1 }
-      { \skip_horizontal:n { \l__luatexcn_v_grid_height_tl * #1 } }
-      { \skip_horizontal:n { #1 } }
+    \regex_match:nnTF { ^[0-9\.]+$ } { #1 }
+      { \skip_horizontal:n { \__luatexcn_to_dimen:n { \l__luatexcn_v_grid_height_tl } * #1 } }
+      { \skip_horizontal:n { \__luatexcn_to_dimen:n { #1 } } }
   }
 
 % Paragraph Environment

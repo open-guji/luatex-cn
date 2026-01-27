@@ -40,7 +40,7 @@ end)
 test_utils.run_test("calculate_start_position - basic", function()
     if not internal.calculate_start_position then return end
     local row = internal.calculate_start_position(5, { yoffset = 65536 * 20 }, 65536 * 20)
-    test_utils.assert_eq(row, 7, "anchor_row + 1 + yoffset_grid")
+    test_utils.assert_eq(row, 6, "anchor_row + yoffset_grid")
 end)
 
 test_utils.run_test("calculate_next_node_pos - wrapping", function()

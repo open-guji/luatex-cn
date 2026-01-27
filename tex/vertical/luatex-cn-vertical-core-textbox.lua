@@ -112,7 +112,7 @@ local function build_sub_params(params, col_aligns)
         grid_height = params.grid_height,
         box_align = params.box_align,
         column_aligns = col_aligns,
-        debug_on = (luatex_cn_debug and luatex_cn_debug.is_enabled("vertical")),
+        debug_on = (params.debug == "true" or params.debug == true or (luatex_cn_debug and luatex_cn_debug.is_enabled("vertical"))),
         border_on = (params.border == "true" or params.border == true),
         background_color = params.background_color,
         font_color = params.font_color,

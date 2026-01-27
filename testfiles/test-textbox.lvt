@@ -2,18 +2,19 @@
 \documentclass{ltc-guji}
 
 \begin{document}
-\begin{guji-content}
-
 \START
 
 \TEST{Simple TextBox}{
-  \TextBox[height=2]{文本框内容}
+  \begin{guji-content}
+    \TextBox[height=2]{文本框内容}
+  \end{guji-content}
 }
 
 \TEST{TextBox with alignment}{
-  \TextBox[height=3, vertical-align=center]{对齐内容}
+  \begin{guji-content}
+    \TextBox[height=3, vertical-align=center]{对齐内容}
+  \end{guji-content}
 }
 
 \END
-\end{guji-content}
 \end{document}

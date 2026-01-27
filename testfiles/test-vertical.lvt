@@ -2,18 +2,19 @@
 \documentclass{ltc-guji}
 
 \begin{document}
-\begin{guji-content}
-
 \START
 
 \TEST{Basic Vertical Layout}{
-  测试竖排内容
+  \begin{guji-content}
+    测试竖排内容
+  \end{guji-content}
 }
 
 \TEST{Vertical with multiple lines}{
-  第一行内容\\第二行内容
+  \begin{guji-content}
+    第一行内容\\第二行内容
+  \end{guji-content}
 }
 
 \END
-\end{guji-content}
 \end{document}

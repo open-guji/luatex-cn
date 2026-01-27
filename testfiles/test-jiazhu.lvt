@@ -2,23 +2,25 @@
 \documentclass{ltc-guji}
 
 \begin{document}
-\begin{guji-content}
-
 \START
 
 \TEST{Basic Jiazhu}{
-  \setbox0=\vbox{
-    \vertical{正文文字 \TextFlow{夹注文字} 续}
-  }
-  \showbox0
+  \begin{guji-content}
+    \setbox0=\vbox{
+      正文文字 \TextFlow{夹注文字} 续
+    }
+    \showbox0
+  \end{guji-content}
 }
 
 \TEST{Jiazhu with multiple segments}{
-  \setbox0=\vbox{
-    \vertical{甲 \TextFlow{注一} 乙 \TextFlow{注二} 丙}
-  }
-  \showbox0
+  \begin{guji-content}
+    \setbox0=\vbox{
+      甲 \TextFlow{注一} 乙 \TextFlow{注二} 丙
+    }
+    \showbox0
+  \end{guji-content}
 }
 
 \END
-\end{guji-content}
+\end{document}

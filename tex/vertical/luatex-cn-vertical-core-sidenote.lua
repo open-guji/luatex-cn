@@ -93,7 +93,7 @@ end
 local function calculate_start_position(anchor_row, metadata, main_grid_height)
     local yoffset_grid = (metadata.yoffset or 0) / main_grid_height
     local padding_top_grid = (metadata.padding_top or 0) / main_grid_height
-    return math.max(anchor_row + 1, padding_top_grid) + yoffset_grid
+    return math.max(anchor_row, padding_top_grid) + yoffset_grid
 end
 
 local function calculate_next_node_pos(curr_p, curr_c, curr_r, node_id, config)

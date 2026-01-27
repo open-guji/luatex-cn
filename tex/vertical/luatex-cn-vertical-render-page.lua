@@ -293,10 +293,10 @@ local function handle_judou_node(curr, p_head, pos, params, ctx)
 
     -- Default positioning logic
     if ctx.judou_pos == "right-bottom" then
-        final_x = base_x + ctx.grid_width * 0.6
-        final_y = base_y - ctx.grid_height * 0.2
+        final_x = base_x + ctx.grid_width * 0.45
+        final_y = base_y - ctx.grid_height * 0.05
     elseif ctx.judou_pos == "right" then
-        final_x = base_x + ctx.grid_width * 0.6
+        final_x = base_x + ctx.grid_width * 0.5
         final_y = base_y - ctx.grid_height * 0.5
     end
 

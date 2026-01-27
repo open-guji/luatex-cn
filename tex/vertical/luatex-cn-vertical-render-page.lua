@@ -126,7 +126,7 @@ local function calculate_render_context(params)
         grid_height = params.grid_height,
         jiazhu_align = params.jiazhu_align or "outward",
         judou_pos = params.judou_pos or "right-bottom",
-        judou_size = params.judou_size or "3em",
+        judou_size = params.judou_size or "1em",
         judou_color = params.judou_color or "red",
     }
 end
@@ -246,7 +246,7 @@ local function handle_judou_node(curr, p_head, pos, params, ctx)
     local w_font = D.get_attribute(curr, constants.ATTR_JUDOU_FONT)
     local base_font_id = (w_font and w_font > 0) and w_font or params.font_id or font.current()
 
-    -- Handle Judou Font Scaling (User wants 3em)
+    -- Handle Judou Font Scaling (default 1em)
     local font_id = base_font_id
     local judou_size_sp = constants.to_dimen(ctx.judou_size)
     if judou_size_sp and judou_size_sp > 0 then

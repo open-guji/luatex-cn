@@ -155,6 +155,28 @@ local function draw_debug_rect(head, anchor, x_sp, y_sp, w_sp, h_sp, color_cmd)
     end
 end
 
+local function draw_debug_grid(head, x_sp, y_sp, w_sp, h_total_sp, color_name)
+    local tx_bp = x_sp * sp_to_bp
+    local ty_bp = y_sp * sp_to_bp
+    local tw_bp = w_sp * sp_to_bp
+    local th_bp = h_total_sp * sp_to_bp
+
+    local color_str = "0 0 1 RG" -- Default blue
+    if color_name == "red" then color_str = "1 0 0 RG" end
+    if color_name == "green" then color_str = "0 1 0 RG" end
+
+    -- Draw a single rectangle for the column
+    local literal = string.format("q 0.2 w %s %.4f %.4f %.4f %.4f re S Q", color_str, tx_bp, ty_bp, tw_bp, -th_bp)
+
+    local whatsit_id = node.id("whatsit")
+    local pdf_literal_id = node.subtype("pdf_literal")
+    local nn = node.direct.new(whatsit_id, pdf_literal_id)
+    node.direct.setfield(nn, "data", literal)
+    node.direct.setfield(nn, "mode", 0)
+
+    return node.direct.insert_before(head, head, nn)
+end
+
 --- 创建具有给定数据的 PDF literal 节点
 -- @param literal_str string PDF literal 字符串（例如 "q 0.5 w 0 0 0 RG ... Q"）
 -- @param mode number 可选模式（默认 0: 原点位于当前位置）
@@ -219,6 +241,7 @@ local utils = {
     sp_to_bp = sp_to_bp,
     debug_log = debug_log,
     draw_debug_rect = draw_debug_rect,
+    draw_debug_grid = draw_debug_grid,
     create_pdf_literal = create_pdf_literal,
     insert_pdf_literal = insert_pdf_literal,
     to_chinese_numeral = to_chinese_numeral,

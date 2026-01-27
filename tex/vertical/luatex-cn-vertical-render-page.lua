@@ -196,7 +196,7 @@ local function handle_glyph_node(curr, p_head, pos, params, ctx)
     D.setfield(curr, "xoffset", final_x)
     D.setfield(curr, "yoffset", final_y)
 
-    if utils.is_debug_enabled() then
+    if luatex_cn_debug and luatex_cn_debug.is_enabled("vertical") then
         local font_id = D.getfield(curr, "font") or 0
         local font_data = font.getfont(font_id)
         local font_size = font_data and font_data.size or 0
@@ -283,7 +283,7 @@ local function process_page_nodes(p_head, layout_map, params, ctx)
             local pos = layout_map[curr]
             if pos then
                 if not pos.col or pos.col < 0 then
-                    if utils.is_debug_enabled() then
+                    if luatex_cn_debug and luatex_cn_debug.is_enabled("vertical") then
                         utils.debug_log(string.format("  [render] SKIP Node=%s ID=%d (invalid col=%s)", tostring(curr),
                             id, tostring(pos.col)))
                     end
@@ -294,11 +294,11 @@ local function process_page_nodes(p_head, layout_map, params, ctx)
                         p_head = handle_block_node(curr, p_head, pos, ctx)
                     end
 
-                    if utils.is_debug_enabled() then
+                    if luatex_cn_debug and luatex_cn_debug.is_enabled("vertical") then
                         p_head = handle_debug_drawing(curr, p_head, pos, ctx)
                     end
                 end
-            elseif utils.is_debug_enabled() then
+            elseif luatex_cn_debug and luatex_cn_debug.is_enabled("vertical") then
                 -- CRITICAL DEBUG: If it has Jiazhu attribute but no pos, it's a bug!
                 local has_jiazhu = (D.get_attribute(curr, constants.ATTR_JIAZHU) == 1)
                 if has_jiazhu then
@@ -330,7 +330,7 @@ local function process_page_nodes(p_head, layout_map, params, ctx)
                 p_head = D.insert_before(p_head, curr, k_pre)
                 D.insert_after(p_head, curr, k_post)
 
-                if utils.is_debug_enabled() then
+                if luatex_cn_debug and luatex_cn_debug.is_enabled("vertical") then
                     utils.debug_log(string.format("  [render] GLUE (space) positioned at [c:%d, r:%.2f]", pos.col,
                         pos.row))
                     p_head = handle_debug_drawing(curr, p_head, pos, ctx)
@@ -423,7 +423,6 @@ local function render_sidenotes(p_head, sidenote_nodes, params, ctx)
         -- `p_head` is the main list.
 
         local id = D.getid(curr)
-
         if id == constants.GLYPH then
             -- For sidenotes, we need to apply the offset
             -- Calculate position manually with offset
@@ -469,7 +468,7 @@ local function render_sidenotes(p_head, sidenote_nodes, params, ctx)
             end
         end
 
-        if utils.is_debug_enabled() then
+        if luatex_cn_debug and luatex_cn_debug.is_enabled("vertical") then
             p_head = handle_debug_drawing(curr, p_head, pos, ctx)
         end
     end
@@ -505,7 +504,7 @@ local function position_floating_box(p_head, item, params)
     D.insert_after(p_head, k_pre, curr)
     D.insert_after(p_head, curr, k_post)
 
-    if utils.is_debug_enabled() then
+    if luatex_cn_debug and luatex_cn_debug.is_enabled("vertical") then
         utils.debug_log(string.format(
             "[render] Floating Box (Absolute Top-Right) at x=%.2f, y=%.2f (rel_x=%.2f, rel_y=%.2f)",
             item.x / 65536, item.y / 65536, rel_x / 65536, rel_y / 65536))
@@ -533,7 +532,7 @@ local function render_single_page(p_head, p_max_col, p, layout_map, params, ctx)
     local b_padding_top = ctx.b_padding_top
     local b_padding_bottom = ctx.b_padding_bottom
     local vertical_align = params.vertical_align
-    local draw_debug = utils.is_debug_enabled()
+    local draw_debug = luatex_cn_debug and luatex_cn_debug.is_enabled("vertical")
     local draw_border = params.draw_border
     local draw_outer_border = params.draw_outer_border
     local shift_x = ctx.shift_x
@@ -673,12 +672,13 @@ local function render_single_page(p_head, p_max_col, p, layout_map, params, ctx)
         end
 
         -- 3. Draw Debug Grid (if enabled)
-        if utils.is_debug_enabled() then
+        if luatex_cn_debug and luatex_cn_debug.is_enabled("vertical") then
             local page_cols = p_total_cols
             local n_column = interval
-            local banxin = _G.vertical.hooks.banxin
+            local banxin_hook = hooks.banxin or _G.vertical.hooks.banxin
             for col = 0, page_cols - 1 do
-                local is_banxin_col = banxin.is_banxin_col(col, n_column, banxin_on)
+                local is_banxin_col = banxin_hook and banxin_hook.is_banxin_col and
+                    banxin_hook.is_banxin_col(col, n_column, banxin_on)
                 if not is_banxin_col then
                     local rtl_col = page_cols - 1 - col
                     local x_pos = rtl_col * grid_width + shift_x
@@ -734,7 +734,7 @@ local function apply_positions(head, layout_map, params)
     local background_rgb_str = ctx.background_rgb_str
     local text_rgb_str = ctx.text_rgb_str
 
-    if utils.is_debug_enabled() then
+    if luatex_cn_debug and luatex_cn_debug.is_enabled("vertical") then
         utils.debug_log(string.format("[render] apply_positions: border_rgb=%s -> %s, font_rgb=%s, font_size=%s",
             tostring(params.border_rgb), tostring(b_rgb_str), tostring(params.font_rgb), tostring(params.font_size)))
     end

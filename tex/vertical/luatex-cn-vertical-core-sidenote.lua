@@ -58,7 +58,9 @@ end
 local function is_reserved_column(col, banxin_on, interval)
     if not banxin_on then return false end
     if interval <= 0 then return false end
-    return _G.vertical.hooks.is_reserved_column(col, interval)
+    local hooks = package.loaded['vertical.luatex-cn-vertical-base-hooks'] or
+        require('vertical.luatex-cn-vertical-base-hooks')
+    return hooks.is_reserved_column(col, interval)
 end
 
 local function skip_to_valid_column(p, c, p_cols, banxin_on, interval)
@@ -99,14 +101,16 @@ local function calculate_next_node_pos(curr_p, curr_c, curr_r, node_id, config)
 
     -- Determine if this node consumes a row
     if node_id == constants.GLYPH or node_id == constants.HLIST or
-        node_id == constants.VLIST or node_id == constants.RULE then
+        node_id == constants.VLIST or node_id == constants.RULE or
+        node_id == constants.GLUE then
         next_r = curr_r + config.step
     end
 
     -- Handle overflow
     if next_r + config.padding_bottom_grid >= config.line_limit then
         next_c = curr_c + 1
-        next_r = config.padding_top_grid
+        -- Reset to base_indent instead of just padding_top
+        next_r = math.max(config.base_indent, config.padding_top_grid)
         next_p, next_c = skip_to_valid_column(next_p, next_c, config.p_cols, config.banxin_on, config.interval)
 
         local filled = config.tracker.get(next_p, next_c)
@@ -138,10 +142,15 @@ local function place_individual_sidenote(sid, registry_item, last_node_pos, para
         padding_top_grid = (metadata.padding_top or 0) / main_grid_height,
         padding_bottom_grid = (metadata.padding_bottom or 0) / main_grid_height,
         step = step,
-        tracker = tracker
+        tracker = tracker,
+        base_indent = last_node_pos.indent or 0
     }
 
     local curr_p, curr_c = last_node_pos.page, last_node_pos.col
+    local base_indent = last_node_pos.indent or 0
+    utils.debug_log(string.format("[sidenote] Placing sid=%d at p=%d, c=%d, anchor_r=%.2f, indent=%d",
+        sid, curr_p, curr_c, last_node_pos.row, base_indent))
+
     curr_p, curr_c = skip_to_valid_column(curr_p, curr_c, p_cols, config.banxin_on, config.interval)
 
     local curr_r = calculate_start_position(last_node_pos.row, metadata, main_grid_height)
@@ -179,9 +188,23 @@ local function find_sidenote_anchors(head, layout_map, on_sidenote_found)
         local id = D.getid(t)
         if id == constants.WHATSIT then
             local uid = D.getfield(t, "user_id")
+            utils.debug_log("[sidenote] Found whatsit, uid=" .. tostring(uid))
             if uid == constants.SIDENOTE_USER_ID then
                 local sid = D.getfield(t, "value")
-                on_sidenote_found(sid, last_node_pos)
+                local indent = D.get_attribute(t, constants.ATTR_INDENT) or 0
+                local pos = layout_map[t]
+                if pos then
+                    local anchor_pos = {
+                        page = pos.page,
+                        col = pos.col,
+                        row = pos.row,
+                        indent = indent
+                    }
+                    on_sidenote_found(sid, anchor_pos)
+                else
+                    -- Fallback to last node if whatsit not in layout map
+                    on_sidenote_found(sid, last_node_pos)
+                end
             end
         else
             if layout_map[t] then

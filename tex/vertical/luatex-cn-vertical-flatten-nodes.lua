@@ -85,15 +85,17 @@ local function get_box_indentation(box, current_indent, char_width)
     end
 
     if tid == constants.HLIST then
-        -- Check for leftskip inside HLIST
+        -- Check for indent glue/kern inside HLIST
         local s = D.getfield(box, "list")
         while s do
             local sid = D.getid(s)
-            if sid == constants.GLYPH then break end
-            if sid == constants.GLUE and D.getsubtype(s) == 8 then -- leftskip
-                local w = D.getfield(s, "width")
-                box_indent = math.max(box_indent, math.floor(w / char_width + 0.5))
-                break
+            if sid == constants.GLYPH or sid == constants.WHATSIT then break end
+            if sid == constants.GLUE or sid == constants.KERN then
+                local w = D.getfield(s, "width") or 0
+                if w > 0 then
+                    local calc = w / char_width
+                    box_indent = math.max(box_indent, math.floor(calc + 0.5))
+                end
             end
             s = D.getnext(s)
         end

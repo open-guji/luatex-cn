@@ -107,21 +107,21 @@ local function to_dimen(dim_str)
         return dim_str
     end
 
-    -- Strip curly braces if present
-    dim_str = tostring(dim_str):gsub("^%s*{", ""):gsub("}%s*$", "")
+    -- Strip curly braces if present (handle nested/multiple braces)
+    dim_str = tostring(dim_str):gsub("[{}]", ""):gsub("^%s*(.-)%s*$", "%1")
 
     if dim_str == "" then return nil end
 
-    -- Try standard tex.sp parsing (handles units like "10pt")
+    -- Fallback: try to parse as pure number (assume em per refined requirement)
+    if tonumber(dim_str) then
+        local ok, res = pcall(tex.sp, dim_str .. "em")
+        if ok then return res end
+    end
+
+    -- Try standard tex.sp parsing (handles units like "10pt", "5em")
     local ok, res = pcall(tex.sp, dim_str)
     if ok then
         return res
-    end
-
-    -- Fallback: try to parse as pure number (assume sp)
-    local num = tonumber(dim_str)
-    if num then
-        return num
     end
 
     return nil

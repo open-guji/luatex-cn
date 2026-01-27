@@ -74,25 +74,29 @@ local function normalize_rgb(s)
         yellow = "1.0000 1.0000 0.0000",
         gray   = "0.5000 0.5000 0.5000",
     }
-    local mapped = color_map[s:lower()]
+    local low_s = s:lower():gsub("^%s*(.-)%s*$", "%1")
+    local mapped = color_map[low_s]
     if mapped then return mapped end
 
-    -- Replace commas with spaces and strip braces/brackets
-    s = s:gsub(",", " "):gsub("[{}%[%]]", "")
+    -- Strip common prefixes and suffixes
+    -- Handle rgb:(...), RGB:(...), color:...
+    s = s:gsub("^rgb%s*:%s*", ""):gsub("^RGB%s*:%s*", ""):gsub("^color%s*:%s*", "")
+    s = s:gsub("[{}%[%]%(%)]", " ")
+    s = s:gsub("[,;]", " ")
+    s = s:gsub("%s+", " "):gsub("^%s*(.-)%s*$", "%1")
 
-    -- Extract RGB values
-    local r, g, b = s:match("([%d%.]+)%s+([%d%.]+)%s+([%d%.]+)")
-    if not r then
-        -- If it's not a numeric RGB, return nil instead of the original string
-        -- to avoid injecting invalid PDF literal commands
+    -- Extract RGB values (supports 3 numbers)
+    local r_raw, g_raw, b_raw = s:match("([%d%.]+)%s+([%d%.]+)%s+([%d%.]+)")
+    if not r_raw then
         return nil
     end
 
-    r, g, b = tonumber(r), tonumber(g), tonumber(b)
+    local r, g, b = tonumber(r_raw), tonumber(g_raw), tonumber(b_raw)
     if not r or not g or not b then return nil end
 
     -- Convert 0-255 range to 0-1 range
-    if r > 1 or g > 1 or b > 1 then
+    -- If any value is > 1.0, assume it's 0-255 scale
+    if r > 1.0 or g > 1.0 or b > 1.0 then
         return string.format("%.4f %.4f %.4f", r / 255, g / 255, b / 255)
     end
 

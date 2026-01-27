@@ -349,64 +349,40 @@
     % Call Lua to transform the box
     \skip_zero:N \topskip
     
-    % Support direct RGB input (e.g. 0.1 0.2 0.3 or 0.1,0.2,0.3 or 100,50,0)
-    \tl_if_in:NnTF \l__luatexcn_v_border_color_tl { , }
-      { \tl_set_eq:NN \l__luatexcn_v_border_rgb_tl \l__luatexcn_v_border_color_tl }
+    % Support direct RGB input or named colors
+    % We try to extract from xcolor first; if it fails, we pass raw string to Lua
+    \cs_if_exist:cTF { color @ \l__luatexcn_v_border_color_tl }
       {
-        \tl_if_in:NnTF \l__luatexcn_v_border_color_tl { ~ }
-          { \tl_set_eq:NN \l__luatexcn_v_border_rgb_tl \l__luatexcn_v_border_color_tl }
-          {
-             % Try extraction, but wrap in safety
-             \cs_if_exist:cTF { color @ \l__luatexcn_v_border_color_tl }
-             {
-               \exp_args:NV \extractcolorspec \l__luatexcn_v_border_color_tl \l_tmpa_tl
-               \exp_args:NNx \convertcolorspec \l_tmpa_tl {rgb} \l_tmpb_tl
-               \tl_set:Nx \l__luatexcn_v_border_rgb_tl { \l_tmpb_tl }
-             }
-             { \tl_set_eq:NN \l__luatexcn_v_border_rgb_tl \l__luatexcn_v_border_color_tl }
-          }
+        \exp_args:NV \extractcolorspec \l__luatexcn_v_border_color_tl \l_tmpa_tl
+        \exp_args:NNx \convertcolorspec \l_tmpa_tl {rgb} \l_tmpb_tl
+        \tl_set:Nx \l__luatexcn_v_border_rgb_tl { \l_tmpb_tl }
       }
+      { \tl_set_eq:NN \l__luatexcn_v_border_rgb_tl \l__luatexcn_v_border_color_tl }
     \tl_replace_all:Nnn \l__luatexcn_v_border_rgb_tl { , } { ~ }
 
     \tl_if_empty:NTF \l__luatexcn_v_background_color_tl
       { \tl_set:Nn \l__luatexcn_v_background_rgb_tl { nil } }
       {
-        \tl_if_in:NnTF \l__luatexcn_v_background_color_tl { , }
-          { \tl_set_eq:NN \l__luatexcn_v_background_rgb_tl \l__luatexcn_v_background_color_tl }
+        \cs_if_exist:cTF { color @ \l__luatexcn_v_background_color_tl }
           {
-            \tl_if_in:NnTF \l__luatexcn_v_background_color_tl { ~ }
-              { \tl_set_eq:NN \l__luatexcn_v_background_rgb_tl \l__luatexcn_v_background_color_tl }
-              {
-                 \cs_if_exist:cTF { color @ \l__luatexcn_v_background_color_tl }
-                 {
-                   \exp_args:NV \extractcolorspec \l__luatexcn_v_background_color_tl \l_tmpa_tl
-                   \exp_args:NNx \convertcolorspec \l_tmpa_tl {rgb} \l_tmpb_tl
-                   \tl_set:Nx \l__luatexcn_v_background_rgb_tl { \l_tmpb_tl }
-                 }
-                 { \tl_set_eq:NN \l__luatexcn_v_background_rgb_tl \l__luatexcn_v_background_color_tl }
-              }
+            \exp_args:NV \extractcolorspec \l__luatexcn_v_background_color_tl \l_tmpa_tl
+            \exp_args:NNx \convertcolorspec \l_tmpa_tl {rgb} \l_tmpb_tl
+            \tl_set:Nx \l__luatexcn_v_background_rgb_tl { \l_tmpb_tl }
           }
+          { \tl_set_eq:NN \l__luatexcn_v_background_rgb_tl \l__luatexcn_v_background_color_tl }
       }
     \tl_replace_all:Nnn \l__luatexcn_v_background_rgb_tl { , } { ~ }
 
     \tl_if_empty:NTF \l__luatexcn_v_font_color_tl
       { \tl_set:Nn \l__luatexcn_v_font_rgb_tl { nil } }
       {
-        \tl_if_in:NnTF \l__luatexcn_v_font_color_tl { , }
-          { \tl_set_eq:NN \l__luatexcn_v_font_rgb_tl \l__luatexcn_v_font_color_tl }
+        \cs_if_exist:cTF { color @ \l__luatexcn_v_font_color_tl }
           {
-            \tl_if_in:NnTF \l__luatexcn_v_font_color_tl { ~ }
-              { \tl_set_eq:NN \l__luatexcn_v_font_rgb_tl \l__luatexcn_v_font_color_tl }
-              {
-                 \cs_if_exist:cTF { color @ \l__luatexcn_v_font_color_tl }
-                 {
-                   \exp_args:NV \extractcolorspec \l__luatexcn_v_font_color_tl \l_tmpa_tl
-                   \exp_args:NNx \convertcolorspec \l_tmpa_tl {rgb} \l_tmpb_tl
-                   \tl_set:Nx \l__luatexcn_v_font_rgb_tl { \l_tmpb_tl }
-                 }
-                 { \tl_set_eq:NN \l__luatexcn_v_font_rgb_tl \l__luatexcn_v_font_color_tl }
-              }
+            \exp_args:NV \extractcolorspec \l__luatexcn_v_font_color_tl \l_tmpa_tl
+            \exp_args:NNx \convertcolorspec \l_tmpa_tl {rgb} \l_tmpb_tl
+            \tl_set:Nx \l__luatexcn_v_font_rgb_tl { \l_tmpb_tl }
           }
+          { \tl_set_eq:NN \l__luatexcn_v_font_rgb_tl \l__luatexcn_v_font_color_tl }
       }
     \tl_replace_all:Nnn \l__luatexcn_v_font_rgb_tl { , } { ~ }
 
@@ -602,39 +578,23 @@
     \tl_set:No \l__luatexcn_v_textbox_font_color_tl { \l__luatexcn_v_textbox_font_color_tl }
 
     % Convert background color to RGB
-    \tl_if_in:NnTF \l__luatexcn_v_textbox_bg_color_tl { , }
-      { \tl_set_eq:NN \l__luatexcn_v_textbox_bg_rgb_tl \l__luatexcn_v_textbox_bg_color_tl }
+    \cs_if_exist:cTF { color @ \l__luatexcn_v_textbox_bg_color_tl }
       {
-        \tl_if_in:NnTF \l__luatexcn_v_textbox_bg_color_tl { ~ }
-          { \tl_set_eq:NN \l__luatexcn_v_textbox_bg_rgb_tl \l__luatexcn_v_textbox_bg_color_tl }
-          {
-             \cs_if_exist:cTF { color @ \l__luatexcn_v_textbox_bg_color_tl }
-             {
-                \exp_args:NV \extractcolorspec \l__luatexcn_v_textbox_bg_color_tl \l_tmpa_tl
-                \exp_args:NNx \convertcolorspec \l_tmpa_tl { rgb } \l_tmpb_tl
-                \tl_set:Nx \l__luatexcn_v_textbox_bg_rgb_tl { \l_tmpb_tl }
-             }
-             { \tl_set_eq:NN \l__luatexcn_v_textbox_bg_rgb_tl \l__luatexcn_v_textbox_bg_color_tl }
-          }
+        \exp_args:NV \extractcolorspec \l__luatexcn_v_textbox_bg_color_tl \l_tmpa_tl
+        \exp_args:NNx \convertcolorspec \l_tmpa_tl { rgb } \l_tmpb_tl
+        \tl_set:Nx \l__luatexcn_v_textbox_bg_rgb_tl { \l_tmpb_tl }
       }
+      { \tl_set_eq:NN \l__luatexcn_v_textbox_bg_rgb_tl \l__luatexcn_v_textbox_bg_color_tl }
     \tl_replace_all:Nnn \l__luatexcn_v_textbox_bg_rgb_tl { , } { ~ }
 
     % Convert font color to RGB
-    \tl_if_in:NnTF \l__luatexcn_v_textbox_font_color_tl { , }
-      { \tl_set_eq:NN \l__luatexcn_v_textbox_font_rgb_tl \l__luatexcn_v_textbox_font_color_tl }
+    \cs_if_exist:cTF { color @ \l__luatexcn_v_textbox_font_color_tl }
       {
-        \tl_if_in:NnTF \l__luatexcn_v_textbox_font_color_tl { ~ }
-          { \tl_set_eq:NN \l__luatexcn_v_textbox_font_rgb_tl \l__luatexcn_v_textbox_font_color_tl }
-          {
-             \cs_if_exist:cTF { color @ \l__luatexcn_v_textbox_font_color_tl }
-             {
-                \exp_args:NV \extractcolorspec \l__luatexcn_v_textbox_font_color_tl \l_tmpa_tl
-                \exp_args:NNx \convertcolorspec \l_tmpa_tl { rgb } \l_tmpb_tl
-                \tl_set:Nx \l__luatexcn_v_textbox_font_rgb_tl { \l_tmpb_tl }
-             }
-             { \tl_set_eq:NN \l__luatexcn_v_textbox_font_rgb_tl \l__luatexcn_v_textbox_font_color_tl }
-          }
+        \exp_args:NV \extractcolorspec \l__luatexcn_v_textbox_font_color_tl \l_tmpa_tl
+        \exp_args:NNx \convertcolorspec \l_tmpa_tl { rgb } \l_tmpb_tl
+        \tl_set:Nx \l__luatexcn_v_textbox_font_rgb_tl { \l_tmpb_tl }
       }
+      { \tl_set_eq:NN \l__luatexcn_v_textbox_font_rgb_tl \l__luatexcn_v_textbox_font_color_tl }
     \tl_replace_all:Nnn \l__luatexcn_v_textbox_font_rgb_tl { , } { ~ }
 
     \lua_now:e {vertical_textbox.process_inner_box(\int_value:w~\l_tmpa_box,~{

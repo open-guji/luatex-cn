@@ -13,17 +13,17 @@ jobs:
   repo-sync:
     runs-on: ubuntu-latest
     steps:
-      - name: Mirror the GitHub repos to Gitee
-        uses: Yikun/hub-mirror-action@master
+      - name: Checkout
+        uses: actions/checkout@v4
         with:
-          # 来源：GitHub 组织名/仓库名
-          src: github/open-guji
-          # 目的地：Gitee 组织名
-          dst: gitee/open-guji
-          dst_key: ${{ secrets.GITEE_PRIVATE_KEY }}
-          dst_token: ${{ secrets.GITEE_TOKEN }}
-          account_type: org
-          # 如果只想同步当前这一个仓库，请指定 static_list
-          static_list: "${{ github.event.repository.name }}"
-          force_update: true
-          debug: true
+          fetch-depth: 0
+
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.GITEE_PRIVATE_KEY }}
+
+      - name: Push main branch to Gitee
+        run: |
+          git remote add gitee git@gitee.com:open-guji/${{ github.event.repository.name }}.git
+          git push -f gitee main:main

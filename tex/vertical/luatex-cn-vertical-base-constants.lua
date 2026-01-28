@@ -65,27 +65,37 @@ constants.DECORATE_USER_ID = 202604
 
 --- 将 TeX 尺寸字符串转换为 scaled points (sp)
 local function to_dimen(dim_str)
-    if not dim_str or dim_str == "" then return nil end
+    if not dim_str or dim_str == "" or dim_str == "nil" then return nil end
     if type(dim_str) == "number" then return dim_str end
+
+    -- Clean string: remove braces and whitespace
     dim_str = tostring(dim_str):gsub("[{}]", ""):gsub("^%s*(.-)%s*$", "%1")
     if dim_str == "" then return nil end
 
-    -- Check for em units
-    local em_val = dim_str:match("^([%-%d%.]+)%s*em$")
-    if not em_val then
-        -- If it's a raw number, treat as em (standard behavior in this package)
-        if tonumber(dim_str) then
-            em_val = dim_str
-        end
-    end
-
+    -- Handle em units (relative to font size)
+    -- Normalize: remove space between number and 'em' if present
+    local clean_em = dim_str:lower():gsub("%s+", "")
+    local em_val = clean_em:match("^([%-%d%.]+)em$")
     if em_val then
         return { value = tonumber(em_val), unit = "em" }
     end
 
+    -- If it's a raw number (no units), assume it's scaled points (sp)
+    if tonumber(dim_str) then
+        return tonumber(dim_str)
+    end
+
     -- Absolute dimensions (pt, mm, bp, etc.)
-    local ok, res = pcall(tex.sp, dim_str)
-    if ok then return res end
+    -- tex.sp handles spaces if they are between number and unit usually,
+    -- but we clean it just in case
+    local clean_abs = dim_str:gsub("%s+", "")
+    local ok, res = pcall(tex.sp, clean_abs)
+    if ok and res then return res end
+
+    -- Final fallback: try raw tex.sp if cleaning failed
+    ok, res = pcall(tex.sp, dim_str)
+    if ok and res then return res end
+
     return nil
 end
 

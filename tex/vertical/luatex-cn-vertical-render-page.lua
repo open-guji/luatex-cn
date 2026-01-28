@@ -369,28 +369,23 @@ local function handle_decorate_node(curr, p_head, pos, params, ctx, reg_id)
     D.setfield(g, "yoffset", 0)
 
     -- Create position literal with optional color
-    local pdf_literal_subtype = node.subtype("pdf_literal")
-    local color_start = D.new(constants.WHATSIT, pdf_literal_subtype)
-    D.setfield(color_start, "mode", 0)
-
     -- If color is not specified, use black (default for correction marks)
     local draw_rgb = rgb or "0 0 0"
 
-    -- Apply color and position
-    D.setfield(color_start, "data", string.format("q %s rg %s RG 1 0 0 1 %.4f %.4f cm", draw_rgb, draw_rgb, x_bp, y_bp))
+    -- Create position and color start node
+    local color_start = utils.create_color_position_q_literal(draw_rgb, x_bp, y_bp)
+    local n_start = utils.create_pdf_literal(color_start)
 
-    local color_end = D.new(constants.WHATSIT, pdf_literal_subtype)
-    D.setfield(color_end, "mode", 0)
-    D.setfield(color_end, "data", "Q")
+    local n_end = utils.create_pdf_literal(utils.create_graphics_state_end())
 
-    -- Insert nodes: color_start -> glyph -> kern_neg -> color_end
-    p_head = D.insert_before(p_head, curr, color_start)
-    D.insert_after(p_head, color_start, g)
+    -- Insert nodes: n_start -> glyph -> kern_neg -> n_end
+    p_head = D.insert_before(p_head, curr, n_start)
+    D.insert_after(p_head, n_start, g)
 
     local k = D.new(constants.KERN)
     D.setfield(k, "kern", -w)
     D.insert_after(p_head, g, k)
-    D.insert_after(p_head, k, color_end)
+    D.insert_after(p_head, k, n_end)
 
     if luatex_cn_debug and luatex_cn_debug.is_enabled("vertical") then
         utils.debug_log(string.format("[render] DECORATE char=%d [c:%d, r:%d] pos_x=%.4f pos_y=%.4f color=%s",

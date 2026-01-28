@@ -79,7 +79,8 @@ DEBUG: banxin-padding-top is 2pt
 ^^[[35m[banxin]^^[[0m [banxin] input y=-7.20 height=598.10 padding_top=2.00 draw_border=true
 ^^[[35m[banxin]^^[[0m [banxin] Border literal: q 0.40 w 0.0000 0.0000 0.0000 RG 408.1171 -7.1731 50.1180 -595.8662 re S Q
 ^^[[33m[vertical]^^[[0m [yuwei] Drawing yuwei with style=black, direction=1, color=0.0000 0.0000 0.0000
-^^[[33m[vertical]^^[[0m [GlyphPos] char=19968 x=409.65 cw=48.31 gw=15.00 -> xoff=442.95 yoff=-505.99
+^^[[35m[banxin]^^[[0m [banxin] PageNumber text='一' fs=12.00 grid_h=14.40 height=14.40
+^^[[33m[vertical]^^[[0m [GlyphPos] char=19968 x=409.65 cw=48.31 gw=12.00 -> xoff=445.95 yoff=-506.57
 ^^[[33m[vertical]^^[[0m   [render] GLYPH char=19968 [c:0, r:0.00, s:nil] xoff=823.25 yoff=-31.65 w=28.00 h=10.50 fsize=28.00
 ^^[[33m[vertical]^^[[0m   [render] GLYPH char=20108 [c:0, r:1.00, s:nil] xoff=823.25 yoff=-61.74 w=28.00 h=14.66 fsize=28.00
 ^^[[33m[vertical]^^[[0m   [render] GLYPH char=19977 [c:0, r:2.00, s:nil] xoff=823.25 yoff=-90.20 w=28.00 h=16.46 fsize=28.00
@@ -180,7 +181,8 @@ DEBUG: banxin-padding-top is 2pt
 ^^[[35m[banxin]^^[[0m [banxin] input y=-7.20 height=598.10 padding_top=2.00 draw_border=true
 ^^[[35m[banxin]^^[[0m [banxin] Border literal: q 0.40 w 0.0000 0.0000 0.0000 RG 408.1171 -7.1731 50.1180 -595.8662 re S Q
 ^^[[33m[vertical]^^[[0m [yuwei] Drawing yuwei with style=black, direction=1, color=0.0000 0.0000 0.0000
-^^[[33m[vertical]^^[[0m [GlyphPos] char=20108 x=409.65 cw=48.31 gw=15.00 -> xoff=442.95 yoff=-505.99
+^^[[35m[banxin]^^[[0m [banxin] PageNumber text='二' fs=12.00 grid_h=14.40 height=14.40
+^^[[33m[vertical]^^[[0m [GlyphPos] char=20108 x=409.65 cw=48.31 gw=12.00 -> xoff=445.95 yoff=-506.57
 ^^[[33m[vertical]^^[[0m   [render] GLYPH char=30002 [c:0, r:5.00, s:nil] xoff=823.25 yoff=-173.64 w=28.00 h=18.81 fsize=28.00
 ^^[[33m[vertical]^^[[0m   [render] GLYPH char=25100 [c:0, r:6.00, s:nil] xoff=823.25 yoff=-201.85 w=28.00 h=19.30 fsize=28.00
 ^^[[33m[vertical]^^[[0m   [render] GLYPH char=31179 [c:0, r:7.00, s:nil] xoff=823.25 yoff=-229.91 w=28.00 h=18.35 fsize=28.00

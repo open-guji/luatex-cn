@@ -58,14 +58,14 @@ Completed box being shipped out [1]
 ...\glue(\parskip) 0.0
 ...\glue(\parskip) 0.0 plus 1.0
 ...\glue(\parskip) 0.0
-...\hbox(7.76+302.39935)x345.0, glue set 111.27fill, direction TLT
+...\hbox(7.76+242.79999)x345.0, glue set 111.27fill, direction TLT
 ....\localpar
 .....\localinterlinepenalty=0
 .....\localbrokenpenalty=0
 .....\localleftbox=null
 .....\localrightbox=null
 ....\glue 0.0 plus 1.0fill
-....\hbox(0.0+302.39935)x60.4, direction TLT
+....\hbox(0.0+242.79999)x60.4, direction TLT
 .....\TU/FandolSong-Regular.otf(0)/m/n/10 你
 .....\kern-10.0 (font)
 ....\TU/FandolSong-Regular.otf(0)/m/n/10 好
@@ -150,14 +150,14 @@ Completed box being shipped out [2]
 ...\glue(\parskip) 0.0
 ...\glue(\parskip) 0.0 plus 1.0
 ...\glue(\parskip) 0.0
-...\hbox(7.76+302.39935)x345.0, glue set 111.27fill, direction TLT
+...\hbox(7.76+242.79999)x345.0, glue set 111.27fill, direction TLT
 ....\localpar
 .....\localinterlinepenalty=0
 .....\localbrokenpenalty=0
 .....\localleftbox=null
 .....\localrightbox=null
 ....\glue 0.0 plus 1.0fill
-....\hbox(0.0+302.39935)x60.4, direction TLT
+....\hbox(0.0+242.79999)x60.4, direction TLT
 .....\TU/FandolSong-Regular.otf(0)/m/n/10 你
 .....\kern-10.0 (font)
 ....\TU/FandolSong-Regular.otf(0)/m/n/10 好

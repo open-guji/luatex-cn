@@ -113,7 +113,6 @@ local function resolve_dimen(val, font_size_sp)
     end
 
     local num = tonumber(d)
-    if not num or num <= 0 then return nil end
     return num
 end
 

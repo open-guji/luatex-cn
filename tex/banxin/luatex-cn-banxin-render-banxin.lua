@@ -409,7 +409,7 @@ local function calculate_chapter_title_layout(params, upper_height, middle_heigh
     local lower_yuwei_total = params.lower_yuwei ~= false and calculate_yuwei_total_height(yuwei_dims) or 0
 
     local middle_y_top = params.y - upper_height
-    local title_top_margin = constants.resolve_dimen(constants.to_dimen(params.chapter_title_top_margin), 65536 * 15)
+    local title_top_margin = constants.resolve_dimen(params.chapter_title_top_margin, base_f_size) or 0
 
     banxin_log(string.format(
         "[banxin] CalcTitleLayout title='%s' middle_h=%.2f upper_yuwei=%.2f lower_yuwei=%.2f margin=%.2f",
@@ -481,9 +481,8 @@ local function render_chapter_title(p_head, params, upper_height, middle_height,
         local num_chars = count_utf8_chars(sub_text)
         local total_h = num_chars * desired_grid_h
 
-        -- Center vertically within available space
-        local y_center = layout.y_top - layout.available_height / 2
-        local new_y_top = y_center + total_h / 2
+        -- Top-align (respecting layout.y_top which already accounts for margin)
+        local new_y_top = layout.y_top
 
         local chapter_chain = text_position.create_vertical_text(sub_text, {
             x = sub_x,

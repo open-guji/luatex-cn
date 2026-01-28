@@ -215,6 +215,8 @@ local function handle_glyph_node(curr, p_head, pos, params, ctx)
     return p_head
 end
 
+_internal.handle_glyph_node = handle_glyph_node
+
 -- 辅助函数：处理 HLIST/VLIST（块）的定位
 local function handle_block_node(curr, p_head, pos, ctx)
     local h = D.getfield(curr, "height") or 0
@@ -236,6 +238,8 @@ local function handle_block_node(curr, p_head, pos, ctx)
     D.insert_after(p_head, curr, k_post)
     return p_head
 end
+
+_internal.handle_block_node = handle_block_node
 
 -- 辅助函数：处理 Decorate（装饰）标志的定位 - 渲染在前一个字符位置
 local function handle_decorate_node(curr, p_head, pos, params, ctx, reg_id)
@@ -396,6 +400,8 @@ local function handle_decorate_node(curr, p_head, pos, params, ctx, reg_id)
     return p_head
 end
 
+_internal.handle_decorate_node = handle_decorate_node
+
 -- 辅助函数：绘制调试网格/框
 local function handle_debug_drawing(curr, p_head, pos, ctx)
     local show_me = false
@@ -433,6 +439,8 @@ local function handle_debug_drawing(curr, p_head, pos, ctx)
     end
     return p_head
 end
+
+_internal.handle_debug_drawing = handle_debug_drawing
 
 -- 辅助函数：处理单个页面的所有节点
 local function process_page_nodes(p_head, layout_map, params, ctx)
@@ -534,6 +542,8 @@ local function process_page_nodes(p_head, layout_map, params, ctx)
 
     return p_head
 end
+
+_internal.process_page_nodes = process_page_nodes
 
 -- 辅助函数：绘制侧批 (Sidenotes)
 local function render_sidenotes(p_head, sidenote_nodes, params, ctx)
@@ -649,6 +659,8 @@ local function render_sidenotes(p_head, sidenote_nodes, params, ctx)
 
     return p_head
 end
+
+_internal.render_sidenotes = render_sidenotes
 
 -- 辅助函数：定位浮动文本框
 local function position_floating_box(p_head, item, params)

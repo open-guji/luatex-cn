@@ -192,6 +192,19 @@ local function create_pdf_literal(literal_str, mode)
     return n_node
 end
 
+--- 创建 PDF literal 节点（直接节点版本）
+-- @param literal_str string PDF literal 字符串
+-- @param mode number 可选模式（默认 0）
+-- @return node 直接节点引用
+local function create_pdf_literal_direct(literal_str, mode)
+    local whatsit_id = node.id("whatsit")
+    local pdf_literal_id = node.subtype("pdf_literal")
+    local nn = node.direct.new(whatsit_id, pdf_literal_id)
+    node.direct.setfield(nn, "data", literal_str)
+    node.direct.setfield(nn, "mode", mode or 0)
+    return nn
+end
+
 --- 在节点列表头部插入 PDF literal 节点
 -- @param head node 直接节点链头部
 -- @param literal_str string PDF literal 字符串
@@ -199,6 +212,45 @@ end
 local function insert_pdf_literal(head, literal_str)
     local n_node = create_pdf_literal(literal_str)
     return node.direct.insert_before(head, head, node.direct.todirect(n_node))
+end
+
+--- 创建颜色设置 PDF literal 字符串
+-- @param rgb string RGB 颜色字符串 "r g b"
+-- @param is_stroke boolean 是否为描边色 (RG) 而非填充色 (rg)
+-- @return string PDF literal 字符串
+local function create_color_literal(rgb, is_stroke)
+    local op = is_stroke and "RG" or "rg"
+    return string.format("%s %s", rgb, op)
+end
+
+--- 创建位置变换 PDF literal 字符串
+-- @param x_bp number X 坐标 (bp)
+-- @param y_bp number Y 坐标 (bp)
+-- @return string PDF literal 字符串
+local function create_position_cm(x_bp, y_bp)
+    return string.format("1 0 0 1 %.4f %.4f cm", x_bp, y_bp)
+end
+
+--- 包裹 PDF 指令在图形状态中 (q ... Q)
+-- @param inner string 内部 PDF 指令
+-- @return string 包裹后的 PDF literal
+local function wrap_graphics_state(inner)
+    return "q " .. inner .. " Q"
+end
+
+--- 创建完整的着色定位 PDF literal 字符串
+-- @param rgb string RGB 颜色
+-- @param x_bp number X 坐标 (bp)
+-- @param y_bp number Y 坐标 (bp)
+-- @return string PDF literal 字符串（用于开始）
+local function create_color_position_literal(rgb, x_bp, y_bp)
+    return string.format("q %s rg %s RG 1 0 0 1 %.4f %.4f cm", rgb, rgb, x_bp, y_bp)
+end
+
+--- 创建图形状态结束 PDF literal
+-- @return string PDF literal 字符串 "Q"
+local function create_graphics_state_end()
+    return "Q"
 end
 
 --- 将整数转换为传统的中文数字字符串
@@ -247,7 +299,13 @@ local utils = {
     draw_debug_rect = draw_debug_rect,
     draw_debug_grid = draw_debug_grid,
     create_pdf_literal = create_pdf_literal,
+    create_pdf_literal_direct = create_pdf_literal_direct,
     insert_pdf_literal = insert_pdf_literal,
+    create_color_literal = create_color_literal,
+    create_position_cm = create_position_cm,
+    wrap_graphics_state = wrap_graphics_state,
+    create_color_position_literal = create_color_position_literal,
+    create_graphics_state_end = create_graphics_state_end,
     to_chinese_numeral = to_chinese_numeral,
     set_debug = set_debug,
     is_debug_enabled = is_debug_enabled,

@@ -410,12 +410,62 @@ local function calc_grid_position(col, row, glyph_dims, params)
     return x_offset, y_offset
 end
 
+--- 计算 RTL 布局中的物理列号和 X 坐标
+-- 在竖排 RTL 布局中，逻辑列号（从0开始向右）需要转换为物理列号（从右向左）。
+--
+-- @param col (number) 逻辑列号 (0-indexed)
+-- @param total_cols (number) 总列数
+-- @param grid_width (number) 网格宽度 (sp)
+-- @param half_thickness (number) 边框半厚度 (sp)
+-- @param shift_x (number) X 偏移量 (sp)
+-- @return (number, number) rtl_col, x_position
+local function calculate_rtl_position(col, total_cols, grid_width, half_thickness, shift_x)
+    local rtl_col = total_cols - 1 - col
+    local x_pos = rtl_col * grid_width + (half_thickness or 0) + (shift_x or 0)
+    return rtl_col, x_pos
+end
+
+--- 计算块级元素的 RTL X 坐标
+-- 块级元素可能跨越多列，需要计算其左边缘位置。
+--
+-- @param col (number) 起始列号
+-- @param width (number) 块宽度（列数）
+-- @param total_cols (number) 总列数
+-- @param grid_width (number) 网格宽度 (sp)
+-- @param half_thickness (number) 边框半厚度 (sp)
+-- @param shift_x (number) X 偏移量 (sp)
+-- @return (number) x_position
+local function calculate_rtl_block_position(col, width, total_cols, grid_width, half_thickness, shift_x)
+    local rtl_col_left = total_cols - (col + (width or 1))
+    return rtl_col_left * grid_width + (half_thickness or 0) + (shift_x or 0)
+end
+
+--- 计算 Y 坐标（基于行号）
+-- @param row (number) 行号 (0-indexed)
+-- @param grid_height (number) 网格高度 (sp)
+-- @param shift_y (number) Y 偏移量 (sp)
+-- @return (number) y_position
+local function calculate_y_position(row, grid_height, shift_y)
+    return -row * grid_height - (shift_y or 0)
+end
+
+-- Internal functions for unit testing
+local _internal = {
+    calculate_rtl_position = calculate_rtl_position,
+    calculate_rtl_block_position = calculate_rtl_block_position,
+    calculate_y_position = calculate_y_position,
+}
+
 -- Create module table
 local text_position = {
     position_glyph = position_glyph,
     create_vertical_text = create_vertical_text,
     position_glyph_in_grid = position_glyph_in_grid,
     calc_grid_position = calc_grid_position,
+    calculate_rtl_position = calculate_rtl_position,
+    calculate_rtl_block_position = calculate_rtl_block_position,
+    calculate_y_position = calculate_y_position,
+    _internal = _internal,
 }
 
 -- Register module in package.loaded for require() compatibility

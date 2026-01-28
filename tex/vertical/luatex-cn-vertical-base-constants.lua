@@ -55,6 +55,7 @@ constants.ATTR_JUDOU_FONT = luatexbase.attributes.cnverticaljudoufont or luatexb
 constants.ATTR_DECORATE_ID = 202610
 -- Stores the visual center X coordinate (relative to glyph origin)
 constants.ATTR_DECORATE_VISUAL_CENTER = 202611
+constants.ATTR_DECORATE_FONT = 202612
 
 -- Constants for Side Pizhu
 constants.SIDENOTE_USER_ID = 202601
@@ -79,7 +80,7 @@ end
 
 constants.to_dimen = to_dimen
 
-local function register_decorate(char_str, xoff_str, yoff_str, size_str, color_str, font_id)
+local function register_decorate(char_str, xoff_str, yoff_str, size_str, color_str, font_id, scale)
     _G.decorate_registry = _G.decorate_registry or {}
 
     local char_code = 63 -- Default '?'
@@ -91,7 +92,8 @@ local function register_decorate(char_str, xoff_str, yoff_str, size_str, color_s
         char = char_code,
         xoffset = to_dimen(xoff_str) or 0,
         yoffset = to_dimen(yoff_str) or 0,
-        font_size = to_dimen(size_str) or tex.sp("6pt"),
+        font_size = to_dimen(size_str), -- Nil means inherit from text font
+        scale = tonumber(scale) or 1.0, -- Multiplier for font size
         color = color_str,
         font_id = font_id or font.current()
     }
@@ -142,6 +144,7 @@ local function register_decorate(char_str, xoff_str, yoff_str, size_str, color_s
 
     -- Use box 0 to pass node back to TeX
     tex.box[0] = D.tonode(h)
+    return reg_id
 end
 
 constants.register_decorate = register_decorate

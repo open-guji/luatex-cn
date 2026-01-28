@@ -237,121 +237,6 @@ local function handle_block_node(curr, p_head, pos, ctx)
     return p_head
 end
 
--- 辅助函数：处理 Judou（句读）标志的定位
-local function handle_judou_node(curr, p_head, pos, params, ctx)
-    print(string.format("[LUA-DEBUG] handle_judou_node CALLED for char: %x", D.getfield(curr, "value") or 0))
-    local char = D.getfield(curr, "value")
-
-    -- Get font from whatsit attribute or params
-    local w_font = D.get_attribute(curr, constants.ATTR_JUDOU_FONT)
-    local base_font_id = (w_font and w_font > 0) and w_font or params.font_id or font.current()
-
-    -- Handle Judou Font Scaling (default 1em)
-    local font_id = base_font_id
-    local judou_size_sp = constants.to_dimen(ctx.judou_size)
-    if judou_size_sp and judou_size_sp > 0 then
-        local base_f_data = font.getfont(base_font_id)
-        if base_f_data then
-            -- Create a scaled version of the font if sizes differ significantly
-            if math.abs(base_f_data.size - judou_size_sp) > 6553 then -- > 0.1pt
-                local new_f_data = {}
-                for k, v in pairs(base_f_data) do new_f_data[k] = v end
-                new_f_data.size = judou_size_sp
-                font_id = font.define(new_f_data)
-            end
-        end
-    end
-
-    -- Create glyph node
-    local g = D.new(constants.GLYPH)
-    D.setfield(g, "char", char)
-    D.setfield(g, "font", font_id)
-    D.setfield(g, "lang", 0)
-
-    -- Force dimension calculation by looking up font data
-    local f_data = font.getfont(font_id)
-    local w, h, d = 0, 0, 0
-    if f_data and f_data.characters and f_data.characters[char] then
-        local c_data = f_data.characters[char]
-        w = c_data.width or 0
-        h = c_data.height or 0
-        d = c_data.depth or 0
-    end
-
-    -- Set dimensions for TeX's layout tracking
-    D.setfield(g, "width", w)
-    D.setfield(g, "height", h)
-    D.setfield(g, "depth", d)
-
-    -- Position calculation
-    local rtl_col = ctx.p_total_cols - 1 - pos.col
-    local base_x = rtl_col * ctx.grid_width + ctx.half_thickness + ctx.shift_x
-    local base_y = -pos.row * ctx.grid_height - ctx.shift_y
-
-    local final_x = base_x
-    local final_y = base_y
-
-    -- Default positioning logic
-    if ctx.judou_pos == "right-bottom" then
-        final_x = base_x + ctx.grid_width * 0.45
-        final_y = base_y - ctx.grid_height * 0.05
-    elseif ctx.judou_pos == "right" then
-        final_x = base_x + ctx.grid_width * 0.5
-        final_y = base_y - ctx.grid_height * 0.5
-    end
-
-    -- Apply offsets
-    D.setfield(g, "xoffset", final_x)
-    D.setfield(g, "yoffset", final_y)
-
-    if luatex_cn_debug and luatex_cn_debug.is_enabled("vertical") then
-        utils.debug_log(string.format("[render] JUDOU char=%d [c:%d, r:%d] xoff=%.2f yoff=%.2f font=%d size=%.2fpt",
-            char, pos.col, pos.row, final_x / 65536, final_y / 65536, font_id, (judou_size_sp or 0) / 65536))
-    end
-
-    -- Add color using pdf_literal with coordinate transformation (like draw_debug_rect)
-    local judou_color = ctx.judou_color or "red"
-    local color_map = {
-        red = "1 0 0",
-        blue = "0 0 1",
-        green = "0 1 0",
-        black = "0 0 0",
-    }
-    local rgb = color_map[judou_color] or judou_color
-
-    -- Convert to PDF big points
-    local sp_to_bp = 1 / 65536
-    local x_bp = final_x * sp_to_bp
-    local y_bp = final_y * sp_to_bp
-
-    -- Create color start literal with coordinate transformation
-    local pdf_literal_subtype = node.subtype("pdf_literal")
-    local color_start = D.new(constants.WHATSIT, pdf_literal_subtype)
-    D.setfield(color_start, "mode", 0)
-    -- Move to position, set color
-    D.setfield(color_start, "data", string.format("q %s rg %s RG 1 0 0 1 %.4f %.4f cm", rgb, rgb, x_bp, y_bp))
-
-    local color_end = D.new(constants.WHATSIT, pdf_literal_subtype)
-    D.setfield(color_end, "mode", 0)
-    D.setfield(color_end, "data", "Q")
-
-    -- Reset glyph offsets since we position via cm
-    D.setfield(g, "xoffset", 0)
-    D.setfield(g, "yoffset", 0)
-
-    -- Insert: color_start -> glyph -> kern -> color_end
-    p_head = D.insert_before(p_head, curr, color_start)
-    D.insert_after(p_head, color_start, g)
-
-    -- Add kern to negate glyph width
-    local k = D.new(constants.KERN)
-    D.setfield(k, "kern", -w)
-    D.insert_after(p_head, g, k)
-    D.insert_after(p_head, k, color_end)
-
-    return p_head
-end
-
 -- 辅助函数：处理 Decorate（装饰）标志的定位 - 渲染在前一个字符位置
 local function handle_decorate_node(curr, p_head, pos, params, ctx, reg_id)
     -- Get registry ID from parameter
@@ -364,9 +249,14 @@ local function handle_decorate_node(curr, p_head, pos, params, ctx, reg_id)
     local char = reg.char
     local xoffset_sp = reg.xoffset or 0
     local yoffset_sp = reg.yoffset or 0
-    local font_size_sp = reg.font_size or constants.to_dimen("6pt")
+    -- If font_size is nil/0, we skip scaling and use base_font_id size
+    local font_size_sp = reg.font_size
     local color_str = reg.color or "red"
-    local base_font_id = reg.font_id or params.font_id or font.current()
+
+    -- Check for font override from attribute (e.g. for Judou using text font)
+    local attr_font_id = constants.ATTR_DECORATE_FONT and D.get_attribute(curr, constants.ATTR_DECORATE_FONT)
+    local base_font_id = (attr_font_id and attr_font_id > 0) and attr_font_id or reg.font_id or params.font_id or
+        font.current()
 
     -- Color mapping
     local color_map = {
@@ -381,13 +271,25 @@ local function handle_decorate_node(curr, p_head, pos, params, ctx, reg_id)
 
     -- Create scaled font if needed
     local font_id = base_font_id
-    if font_size_sp and font_size_sp > 0 then
+    local scale = reg.scale or 1.0
+
+    -- If font_size_sp is not specified, use text font size * scale
+    local target_size = font_size_sp
+    if not target_size or target_size == 0 then
         local base_f_data = font.getfont(base_font_id)
         if base_f_data then
-            if math.abs(base_f_data.size - font_size_sp) > 6553 then
+            target_size = base_f_data.size * scale
+        end
+    end
+
+    if target_size and target_size > 0 then
+        local base_f_data = font.getfont(base_font_id)
+        if base_f_data then
+            -- Scale if difference is more than 0.1pt
+            if math.abs(base_f_data.size - target_size) > 6553 then
                 local new_f_data = {}
                 for k, v in pairs(base_f_data) do new_f_data[k] = v end
-                new_f_data.size = font_size_sp
+                new_f_data.size = target_size
                 font_id = font.define(new_f_data)
             end
         end
@@ -608,15 +510,7 @@ local function process_page_nodes(p_head, layout_map, params, ctx)
             end
         elseif id == constants.WHATSIT then
             local uid = D.getfield(curr, "user_id")
-            if uid == constants.JUDOU_USER_ID or uid == 202603 then
-                local pos = layout_map[curr]
-                if pos then
-                    p_head = handle_judou_node(curr, p_head, pos, params, ctx)
-                end
-                -- Remove the anchor whatsit
-                p_head = D.remove(p_head, curr)
-                node.flush_node(D.tonode(curr))
-            elseif uid == constants.SIDENOTE_USER_ID or uid == constants.FLOATING_TEXTBOX_USER_ID then
+            if uid == constants.SIDENOTE_USER_ID or uid == constants.FLOATING_TEXTBOX_USER_ID then
                 p_head = D.remove(p_head, curr)
                 node.flush_node(D.tonode(curr))
             end

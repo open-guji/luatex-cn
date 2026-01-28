@@ -234,7 +234,7 @@ end
 -- @param y_bp number Y 坐标 (bp)
 -- @return string PDF literal 字符串（用于开始：q ... cm）
 local function create_color_position_literal(rgb, x_bp, y_bp)
-    return string.format("%s rg %s RG %s", create_color_literal(rgb, false), create_color_literal(rgb, true),
+    return string.format("%s %s %s", create_color_literal(rgb, false), create_color_literal(rgb, true),
         create_position_cm(x_bp, y_bp))
 end
 

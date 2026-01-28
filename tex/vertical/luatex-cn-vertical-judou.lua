@@ -40,6 +40,11 @@ local SET_CLOSE_QUOTE = {
     [0x2019] = true, -- ’
     [0x300D] = true, -- 」
     [0x300F] = true, -- 』
+    [0xFF09] = true, -- ）
+    [0x3009] = true, -- 〉
+    [0x300B] = true, -- 》
+    [0x3011] = true, -- 】
+    [0x3015] = true, -- 〕
 }
 
 local SET_OPEN_QUOTE = {
@@ -47,6 +52,11 @@ local SET_OPEN_QUOTE = {
     [0x2018] = true, -- ‘
     [0x300C] = true, -- 「
     [0x300E] = true, -- 『
+    [0xFF08] = true, -- （
+    [0x3008] = true, -- 〈
+    [0x300A] = true, -- 《
+    [0x3010] = true, -- 【
+    [0x3014] = true, -- 〔
 }
 
 local REPLACEMENT_JU = 0x3002  -- 。
@@ -121,12 +131,12 @@ end
 -- @param t (direct node) Current glyph node
 -- @param ptype (string) Punctuation type ('ju', 'dou', 'close', 'open')
 -- @return (direct node, direct node|nil) New head, and the next node to process
-function judou.handle_none_mode(head, t, ptype)
+function judou.handle_none_mode(head, t, ptype, last_visible)
     if ptype then
         local next_node = D.getnext(t)
         head = D.remove(head, t)
         node.flush_node(D.tonode(t))
-        return head, next_node
+        return head, next_node, last_visible
     end
     return head, D.getnext(t), t -- Return t as last_visible if not ptype
 end
@@ -138,7 +148,10 @@ end
 -- @param last_visible (direct node|nil) Last visible non-punctuation node
 -- @return (direct node, direct node|nil, direct node|nil) New head, next node, and updated last_visible
 function judou.handle_judou_mode(head, t, ptype, last_visible)
-    if not ptype then return head, D.getnext(t), last_visible end
+    if not ptype then
+        -- Regular character: Update last_visible as the anchor for future marks
+        return head, D.getnext(t), t
+    end
 
     -- CRITICAL: If this glyph already has an ATTR_DECORATE_ID,
     -- it's a custom decoration (e.g. from \改 command).
@@ -186,15 +199,31 @@ function judou.handle_judou_mode(head, t, ptype, last_visible)
 
             if marker then
                 D.insert_after(head, last_visible, marker)
+                if luatex_cn_debug and luatex_cn_debug.is_enabled("vertical") then
+                    local utils = package.loaded['vertical.luatex-cn-vertical-base-utils']
+                    if utils and utils.debug_log then
+                        utils.debug_log(string.format("[judou] Added mark %s after anchor node %s",
+                            (replacement_code == REPLACEMENT_JU and "JU" or "DOU"), tostring(last_visible)))
+                    end
+                end
             end
-        end
 
-        -- Remove the processed glyphs
-        for _, n in ipairs(nodes_to_remove) do
-            head = D.remove(head, n)
-            node.flush_node(D.tonode(n))
+            -- Remove the processed glyphs
+            for _, n in ipairs(nodes_to_remove) do
+                head = D.remove(head, n)
+                node.flush_node(D.tonode(n))
+            end
+            return head, next_node, last_visible
+        else
+            -- No visible character before punctuation - keep punctuation to avoid data loss
+            if luatex_cn_debug and luatex_cn_debug.is_enabled("vertical") then
+                local utils = package.loaded['vertical.luatex-cn-vertical-base-utils']
+                if utils and utils.debug_log then
+                    utils.debug_log(string.format("[judou] SKIP replacement for char %d: no last_visible anchor", char))
+                end
+            end
+            return head, next_node, t -- Keep t as last_visible
         end
-        return head, next_node, last_visible
     end
 
     return head, next_node, t -- Not a replacement candidate, treat as last_visible
@@ -226,7 +255,7 @@ function judou.process_judou(head, params)
             local ptype = judou.get_punctuation_type(char)
 
             if mode == "none" then
-                head, next_node, last_visible = judou.handle_none_mode(head, t, ptype)
+                head, next_node, last_visible = judou.handle_none_mode(head, t, ptype, last_visible)
             elseif mode == "judou" then
                 head, next_node, last_visible = judou.handle_judou_mode(head, t, ptype, last_visible)
             else

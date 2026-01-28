@@ -470,9 +470,21 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
             ctx.cur_row = ctx.cur_row + tb_h
             move_to_next_valid_position(ctx, interval, grid_height)
         elseif id == constants.GLYPH then
-            table.insert(col_buffer, { node = t, page = ctx.cur_page, col = ctx.cur_col, relative_row = ctx.cur_row })
-            ctx.cur_row = ctx.cur_row + 1
-            move_to_next_valid_position(ctx, interval, grid_height)
+            local dec_id = D.get_attribute(t, constants.ATTR_DECORATE_ID)
+            if dec_id and dec_id > 0 then
+                -- Decorate Marker: position directly at current row WITHOUT entering col_buffer
+                -- This ensures the marker doesn't affect normal character layout
+                layout_map[t] = {
+                    page = ctx.cur_page,
+                    col = ctx.cur_col,
+                    row = ctx.cur_row
+                }
+                -- DO NOT increment cur_row - marker is zero-width overlay
+            else
+                table.insert(col_buffer, { node = t, page = ctx.cur_page, col = ctx.cur_col, relative_row = ctx.cur_row })
+                ctx.cur_row = ctx.cur_row + 1
+                move_to_next_valid_position(ctx, interval, grid_height)
+            end
         elseif id == constants.GLUE or id == constants.KERN then
             local net_width = 0
             local lookahead = t

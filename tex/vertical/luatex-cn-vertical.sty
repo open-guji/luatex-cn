@@ -132,6 +132,48 @@
   \group_end:
 }
 
+% Decorate Command - Zero-width decoration for the previous character
+% Creates a whatsit node that will be processed by Lua to overlay on the previous character
+% Syntax: \decorate[color=red, xoffset=0pt, yoffset=0pt, font-size=6pt]{content}
+
+\tl_new:N \l__luatexcn_v_decorate_color_tl
+\tl_new:N \l__luatexcn_v_decorate_xoffset_tl
+\tl_new:N \l__luatexcn_v_decorate_yoffset_tl
+\tl_new:N \l__luatexcn_v_decorate_font_size_tl
+
+\keys_define:nn { luatexcn / decorate }
+  {
+    color .tl_set:N = \l__luatexcn_v_decorate_color_tl,
+    color .initial:n = red,
+    xoffset .tl_set:N = \l__luatexcn_v_decorate_xoffset_tl,
+    xoffset .initial:n = 0pt,
+    yoffset .tl_set:N = \l__luatexcn_v_decorate_yoffset_tl,
+    yoffset .initial:n = 0pt,
+    font-size .tl_set:N = \l__luatexcn_v_decorate_font_size_tl,
+    font-size .initial:n = 6pt,
+  }
+
+\NewDocumentCommand{\decorate}{ O{} m }{%
+  \group_begin:
+    \keys_set:nn { luatexcn / decorate } { #1 }
+    \lua_now:e {
+      local~constants~=~require('vertical.luatex-cn-vertical-base-constants')
+      constants.register_decorate(
+        "\luaescapestring{#2}",
+        "\luaescapestring{\l__luatexcn_v_decorate_xoffset_tl}",
+        "\luaescapestring{\l__luatexcn_v_decorate_yoffset_tl}",
+        "\luaescapestring{\l__luatexcn_v_decorate_font_size_tl}",
+        "\luaescapestring{\l__luatexcn_v_decorate_color_tl}",
+        font.current()
+      )
+    }
+    \box0\scan_stop:
+  \group_end:
+}
+
+% Alias for CJK name
+\NewCommandCopy{\装饰}{\decorate}
+
 % PiZhu (批注) - Floating annotation box
 \tl_new:N \l__luatexcn_v_pizhu_font_size_tl
 \tl_new:N \l__luatexcn_v_pizhu_color_tl

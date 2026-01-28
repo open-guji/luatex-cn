@@ -89,11 +89,14 @@ constants.ATTR_FIRST_INDENT = luatexbase.attributes.cnverticalfirstindent or
 constants.ATTR_JIAZHU = luatexbase.attributes.cnverticaljiazhu or luatexbase.new_attribute("cnverticaljiazhu")
 constants.ATTR_JIAZHU_SUB = luatexbase.attributes.cnverticaljiazhusub or luatexbase.new_attribute("cnverticaljiazhusub")
 constants.ATTR_JUDOU_FONT = luatexbase.attributes.cnverticaljudoufont or luatexbase.new_attribute("cnverticaljudoufont")
+constants.ATTR_DECORATE_ID = 202610
+constants.ATTR_DECORATE_WIDTH = 202611
 
 -- Constants for Side Pizhu
 constants.SIDENOTE_USER_ID = 202601
 constants.FLOATING_TEXTBOX_USER_ID = 202602
 constants.JUDOU_USER_ID = 202603
+constants.DECORATE_USER_ID = 202604
 
 --- 将 TeX 尺寸字符串转换为 scaled points (sp)
 -- @param dim_str (string) TeX 尺寸字符串（例如 "20pt", "1.5em"）
@@ -130,6 +133,62 @@ local function to_dimen(dim_str)
 end
 
 constants.to_dimen = to_dimen
+
+local function register_decorate(char_str, xoff_str, yoff_str, size_str, color_str, font_id)
+    _G.decorate_registry = _G.decorate_registry or {}
+
+    local char_code = 63 -- Default '?'
+    if char_str and char_str ~= "" then
+        char_code = utf8.codepoint(char_str, 1)
+    end
+
+    local reg = {
+        char = char_code,
+        xoffset = to_dimen(xoff_str) or 0,
+        yoffset = to_dimen(yoff_str) or 0,
+        font_size = to_dimen(size_str) or tex.sp("6pt"),
+        color = color_str,
+        font_id = font_id or font.current()
+    }
+    table.insert(_G.decorate_registry, reg)
+    local reg_id = #_G.decorate_registry
+
+    local D = node.direct
+    local g = D.new(constants.GLYPH)
+    D.setfield(g, "char", reg.char)
+    D.setfield(g, "font", reg.font_id)
+
+    -- Save actual width to attribute for later centering calculation
+    if constants.ATTR_DECORATE_WIDTH then
+        local f = font.getfont(reg.font_id)
+        if f and f.characters and f.characters[reg.char] then
+            local w = f.characters[reg.char].width
+            D.set_attribute(g, constants.ATTR_DECORATE_WIDTH, w)
+        end
+    end
+
+    -- Set glyph dimensions to zero so it doesn't take up horizontal space
+    D.setfield(g, "width", 0)
+    D.setfield(g, "height", 0)
+    D.setfield(g, "depth", 0)
+    if constants.ATTR_DECORATE_ID then
+        D.set_attribute(g, constants.ATTR_DECORATE_ID, reg_id)
+    end
+
+    -- Wrap in HLIST to be compatible with tex.box
+    local h = D.new(node.id("hlist"))
+    D.setfield(h, "list", g) -- Correct field for head of list in direct mode is often "list" or "head" depending on version?
+    -- in direct mode, list head is "head" or we use setfield(h, "head", g)
+    D.setfield(h, "head", g)
+    D.setfield(h, "width", 0)
+    D.setfield(h, "height", 0)
+    D.setfield(h, "depth", 0)
+
+    -- Use box 0 to pass node back to TeX
+    tex.box[0] = D.tonode(h)
+end
+
+constants.register_decorate = register_decorate
 
 -- Register module in package.loaded for require() compatibility
 -- 注册模块到 package.loaded

@@ -198,8 +198,9 @@ local function flatten_vbox(head, grid_width, char_width)
     -- @param n_head (direct node) 要收集的节点列表头部（将被消耗）
     -- @param indent_lvl (number) 当前缩进
     -- @param r_indent_lvl (number) 当前右缩进
+    -- @param parent_is_vlist (boolean) 父节点是否为 VLIST（用于判断是否为行盒子）
     -- @return (boolean) 如果收集到了任何可见内容（字形/文本框），则返回 true
-    local function collect_nodes(n_head, indent_lvl, r_indent_lvl)
+    local function collect_nodes(n_head, indent_lvl, r_indent_lvl, parent_is_vlist)
         local t = n_head
         local running_indent = indent_lvl
         local running_r_indent = r_indent_lvl
@@ -208,7 +209,6 @@ local function flatten_vbox(head, grid_width, char_width)
         while t do
             local tid = D.getid(t)
             local subtype = D.getsubtype(t)
-            -- print(string.format("[D-flatten] Node=%s ID=%d S=%d [p_indent=%d]", tostring(t), tid, subtype, indent_lvl))
 
             -- 1. Try to process as Textbox Block
             local tb_node, is_tb = process_textbox_node(t, running_indent, running_r_indent)
@@ -224,12 +224,16 @@ local function flatten_vbox(head, grid_width, char_width)
                 local box_r_indent = running_r_indent -- Right indent logic propagation (if needed)
 
                 -- Recurse
-                local inner_has_content = collect_nodes(inner, box_indent, box_r_indent)
+                -- If current node is VLIST, its children are in vertical flow.
+                -- If current node is HLIST, its children are inline.
+                local inner_parent_is_vlist = (tid == constants.VLIST)
+                local inner_has_content = collect_nodes(inner, box_indent, box_r_indent, inner_parent_is_vlist)
                 if inner_has_content then has_content = true end
 
                 -- IMPORTANT: Only add penalty for HLIST lines that are part of
-                -- the main vertical flow, i.e., at the second recursion level.
-                if tid == constants.HLIST and inner_has_content then
+                -- the main vertical flow. This prevents inline HLISTs (like \box0 in decorate)
+                -- from triggering unwanted column breaks.
+                if tid == constants.HLIST and inner_has_content and parent_is_vlist then
                     if utils and utils.debug_log then
                         utils.debug_log("  [flatten] Adding Column Break after Line=" .. tostring(t))
                     end
@@ -257,7 +261,8 @@ local function flatten_vbox(head, grid_width, char_width)
         return has_content
     end
 
-    collect_nodes(d_head, 0, 0)
+    -- Initial call: treat input as VList content (true)
+    collect_nodes(d_head, 0, 0, true)
     return D.tonode(result_head_d)
 end
 

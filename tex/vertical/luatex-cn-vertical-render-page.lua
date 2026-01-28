@@ -413,6 +413,22 @@ local function handle_decorate_node(curr, p_head, pos, params, ctx, reg_id)
     D.setfield(g, "height", h)
     D.setfield(g, "depth", d)
 
+    -- Centering Logic
+    -- Default: Assume visual center is at w/2
+    local center_offset = (ctx.grid_width - w) / 2
+
+    -- Use Visual Center from attribute if available (calculated from BBox in base_constants)
+    if constants.ATTR_DECORATE_VISUAL_CENTER then
+        local v_center = D.get_attribute(curr, constants.ATTR_DECORATE_VISUAL_CENTER)
+        if v_center then
+            center_offset = ctx.grid_width / 2 - v_center
+            if luatex_cn_debug and luatex_cn_debug.is_enabled("vertical") then
+                utils.debug_log(string.format("[render] DECORATE char=%d Using Visual Center: %s", char,
+                    tostring(v_center)))
+            end
+        end
+    end
+
     -- Position calculation
     -- Decoration whatsits appear AFTER the previous character in layout_grid.lua.
     -- To align with the previous character at Row R, we use row - 1.
@@ -425,8 +441,12 @@ local function handle_decorate_node(curr, p_head, pos, params, ctx, reg_id)
     local base_y = -target_row * ctx.grid_height - ctx.shift_y
 
     -- Centering within the grid cell + user offsets
-    local final_x = base_x + xoffset_sp + (ctx.grid_width - w) / 2
-    local final_y = base_y + yoffset_sp - ctx.grid_height / 2
+    -- User requirement: Offset direction should be increasing from Top-Right
+    -- to Bottom-Left (i.e., X+ moves Left, Y+ moves Down).
+    -- PDF Coordinates: X+ Right, Y+ Up.
+    -- So we subtract user offsets.
+    local final_x = base_x + center_offset - xoffset_sp
+    local final_y = base_y - yoffset_sp - ctx.grid_height / 2
 
     -- Convert to PDF points
     local sp_to_bp = 1 / 65536

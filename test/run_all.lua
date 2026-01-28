@@ -3,24 +3,24 @@ local test_utils = require('test.test_utils')
 
 -- List of tests to run
 local tests = {
-    "test/banxin/luatex-cn-banxin-render-yuwei-test.lua",
-    "test/banxin/luatex-cn-banxin-render-banxin-test.lua",
-    "test/banxin/luatex-cn-banxin-main-test.lua",
-    "test/fonts/luatex-cn-font-autodetect-test.lua",
-    "test/splitpage/luatex-cn-splitpage-test.lua",
-    "test/vertical/luatex-cn-vertical-base-constants-test.lua",
-    "test/vertical/luatex-cn-vertical-base-hooks-test.lua",
-    "test/vertical/luatex-cn-vertical-base-test.lua",
-    "test/vertical/luatex-cn-vertical-core-main-test.lua",
-    "test/vertical/luatex-cn-vertical-core-sidenote-test.lua",
-    "test/vertical/luatex-cn-vertical-core-textbox-test.lua",
-    "test/vertical/luatex-cn-vertical-core-textflow-test.lua",
-    "test/vertical/luatex-cn-vertical-flatten-nodes-test.lua",
-    "test/vertical/luatex-cn-vertical-layout-grid-test.lua",
-    "test/vertical/luatex-cn-vertical-render-background-test.lua",
-    "test/vertical/luatex-cn-vertical-render-border-test.lua",
-    "test/vertical/luatex-cn-vertical-render-page-test.lua",
-    "test/vertical/luatex-cn-vertical-render-test.lua",
+    "test/unit_test/banxin/luatex-cn-banxin-render-yuwei-test.lua",
+    "test/unit_test/banxin/luatex-cn-banxin-render-banxin-test.lua",
+    "test/unit_test/banxin/luatex-cn-banxin-main-test.lua",
+    "test/unit_test/fonts/luatex-cn-font-autodetect-test.lua",
+    "test/unit_test/splitpage/luatex-cn-splitpage-test.lua",
+    "test/unit_test/vertical/luatex-cn-vertical-base-constants-test.lua",
+    "test/unit_test/vertical/luatex-cn-vertical-base-hooks-test.lua",
+    "test/unit_test/vertical/luatex-cn-vertical-base-test.lua",
+    "test/unit_test/vertical/luatex-cn-vertical-core-main-test.lua",
+    "test/unit_test/vertical/luatex-cn-vertical-core-sidenote-test.lua",
+    "test/unit_test/vertical/luatex-cn-vertical-core-textbox-test.lua",
+    "test/unit_test/vertical/luatex-cn-vertical-core-textflow-test.lua",
+    "test/unit_test/vertical/luatex-cn-vertical-flatten-nodes-test.lua",
+    "test/unit_test/vertical/luatex-cn-vertical-layout-grid-test.lua",
+    "test/unit_test/vertical/luatex-cn-vertical-render-background-test.lua",
+    "test/unit_test/vertical/luatex-cn-vertical-render-border-test.lua",
+    "test/unit_test/vertical/luatex-cn-vertical-render-page-test.lua",
+    "test/unit_test/vertical/luatex-cn-vertical-render-test.lua",
 }
 
 print("=== Running All Project Tests ===")
@@ -41,7 +41,7 @@ for _, test_file in ipairs(tests) do
         passed = passed + 1
     else
         print("\n[!] FAILURE in " ..
-        test_file .. " (Reason: " .. (reason or "unknown") .. ", Code: " .. (code or "-1") .. ")")
+            test_file .. " (Reason: " .. (reason or "unknown") .. ", Code: " .. (code or "-1") .. ")")
         table.insert(failed_files, test_file)
     end
 end

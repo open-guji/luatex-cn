@@ -128,8 +128,10 @@ function vertical.prepare_grid(box_num, params)
     local list = box.list
     if not list then return 0 end
 
-    local g_width = constants.to_dimen(params.grid_width) or (65536 * 20)
-    local g_height = constants.to_dimen(params.grid_height) or g_width
+    -- Resolve em for base grid dimensions using current font size
+    local current_fs = font.getfont(font.current()).size or 655360
+    local g_width = safe_to_sp(constants.to_dimen(params.grid_width) or (65536 * 20), current_fs)
+    local g_height = safe_to_sp(constants.to_dimen(params.grid_height) or g_width, current_fs)
 
     -- Use grid_height (char height) as approximate char width for indent calculation
     local char_width = g_height
@@ -317,7 +319,7 @@ function vertical.prepare_grid(box_num, params)
         lower_yuwei = (params.lower_yuwei == "true" or params.lower_yuwei == true),
         chapter_title = params.chapter_title or "",
         chapter_title_top_margin = safe_to_sp(constants.to_dimen(params.chapter_title_top_margin), g_height) or
-        (65536 * 20),                                                                                                         -- 20pt default
+            (65536 * 20), -- 20pt default
         chapter_title_cols = tonumber(params.chapter_title_cols) or 1,
         chapter_title_font_size = params.chapter_title_font_size,
         chapter_title_grid_height = params.chapter_title_grid_height,

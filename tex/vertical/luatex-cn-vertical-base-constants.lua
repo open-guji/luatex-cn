@@ -102,10 +102,19 @@ end
 constants.to_dimen = to_dimen
 
 local function resolve_dimen(val, font_size_sp)
-    if type(val) == "table" and val.unit == "em" then
-        return math.floor(val.value * font_size_sp + 0.5)
+    if not val or val == "" then return nil end
+    local d = val
+    if type(d) == "string" then
+        d = to_dimen(d)
     end
-    return tonumber(val) or 0
+
+    if type(d) == "table" and d.unit == "em" then
+        return math.floor(d.value * (font_size_sp or 655360) + 0.5)
+    end
+
+    local num = tonumber(d)
+    if not num or num <= 0 then return nil end
+    return num
 end
 
 constants.resolve_dimen = resolve_dimen

@@ -115,7 +115,7 @@ local function register_decorate(char_str, xoff_str, yoff_str, size_str, color_s
         font_size = to_dimen(size_str), -- Nil means inherit from text font
         scale = tonumber(scale) or 1.0, -- Multiplier for font size
         color = color_str,
-        font_id = font_id or font.current()
+        font_id = font_id               -- Store provided ID (may be nil)
     }
     table.insert(_G.decorate_registry, reg)
     local reg_id = #_G.decorate_registry
@@ -123,7 +123,7 @@ local function register_decorate(char_str, xoff_str, yoff_str, size_str, color_s
     local D = node.direct
     local g = D.new(constants.GLYPH)
     D.setfield(g, "char", reg.char)
-    D.setfield(g, "font", reg.font_id)
+    D.setfield(g, "font", reg.font_id or font.current()) -- Placeholder for TeX box
 
     -- Calculate Visual Center for alignment
     if constants.ATTR_DECORATE_VISUAL_CENTER then

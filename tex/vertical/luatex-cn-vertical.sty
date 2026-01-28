@@ -174,6 +174,47 @@
 % Alias for CJK name
 \NewCommandCopy{\装饰}{\decorate}
 
+% 改 (Fix/Correction) Command - Mark a character as corrected
+% Used in classical Chinese text editing: 甲\改{乙} means "甲 is corrected to 乙"
+% This overlays a 、(deletion mark) on the previous character and places the 
+% replacement character at bottom-right corner at half the font size
+% Syntax: \改{replacement character}
+\NewDocumentCommand{\改}{ m }{%
+  \group_begin:
+    % First: overlay a 、 symbol to mark deletion (centered on the character)
+    \lua_now:e {
+      local~constants~=~require('vertical.luatex-cn-vertical-base-constants')
+      constants.register_decorate(
+        "、",
+        "0.6em",
+        "0em",
+        nil,
+        "black",
+        nil,
+        2
+      )
+    }%
+    \box0\scan_stop:
+    % Second: add the replacement character at bottom-right, half size
+    \lua_now:e {
+      local~constants~=~require('vertical.luatex-cn-vertical-base-constants')
+      constants.register_decorate(
+        "\luaescapestring{#1}",
+        "-0.3em",
+        "0.5em",
+        nil,
+        "black",
+        nil,
+        0.5
+      )
+    }%
+    \box0\scan_stop:
+  \group_end:
+}
+
+% Alias with English name
+\NewCommandCopy{\fix}{\改}
+
 % PiZhu (批注) - Floating annotation box
 \tl_new:N \l__luatexcn_v_pizhu_font_size_tl
 \tl_new:N \l__luatexcn_v_pizhu_color_tl

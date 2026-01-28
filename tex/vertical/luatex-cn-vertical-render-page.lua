@@ -247,7 +247,8 @@ local function handle_decorate_node(curr, p_head, pos, params, ctx, reg_id)
 
     -- Check for font override from attribute (e.g. for Judou using text font)
     local attr_font_id = constants.ATTR_DECORATE_FONT and D.get_attribute(curr, constants.ATTR_DECORATE_FONT)
-    local base_font_id = (attr_font_id and attr_font_id > 0) and attr_font_id or reg.font_id or params.font_id or
+    local base_font_id = (attr_font_id and attr_font_id > 0) and attr_font_id or reg.font_id or ctx.last_font_id or
+        params.font_id or
         font.current()
 
     local base_f_data = font.getfont(base_font_id)
@@ -258,18 +259,21 @@ local function handle_decorate_node(curr, p_head, pos, params, ctx, reg_id)
     -- Resolve additional parameters from registry
     local char = reg.char
     local font_size_sp = constants.resolve_dimen(reg.font_size, base_size)
-    local color_str = reg.color or "red"
+    local color_str = reg.color -- nil means use current color (no color change)
 
-    -- Color mapping
-    local color_map = {
-        red = "1 0 0",
-        blue = "0 0 1",
-        green = "1 0 0", -- Fix: use red if not found
-        black = "0 0 0",
-        purple = "0.5 0 0.5",
-        orange = "1 0.5 0"
-    }
-    local rgb = color_map[color_str] or "1 0 0"
+    -- Color mapping (only used if color_str is specified)
+    local rgb = nil
+    if color_str then
+        local color_map = {
+            red = "1 0 0",
+            blue = "0 0 1",
+            green = "0 1 0",
+            black = "0 0 0",
+            purple = "0.5 0 0.5",
+            orange = "1 0.5 0"
+        }
+        rgb = color_map[color_str] or color_str -- Allow custom RGB strings
+    end
 
     -- Create scaled font if needed
     local font_id = base_font_id
@@ -324,8 +328,8 @@ local function handle_decorate_node(curr, p_head, pos, params, ctx, reg_id)
     -- Use Visual Center from attribute if available (calculated from BBox in base_constants)
     if constants.ATTR_DECORATE_VISUAL_CENTER then
         local v_center = D.get_attribute(curr, constants.ATTR_DECORATE_VISUAL_CENTER)
-        if v_center then
-            center_offset = ctx.grid_width / 2 - v_center
+        if v_center and v_center ~= 0 then
+            center_offset = (ctx.grid_width / 2) - v_center
             if luatex_cn_debug and luatex_cn_debug.is_enabled("vertical") then
                 utils.debug_log(string.format("[render] DECORATE char=%d Using Visual Center: %s", char,
                     tostring(v_center)))
@@ -334,9 +338,8 @@ local function handle_decorate_node(curr, p_head, pos, params, ctx, reg_id)
     end
 
     -- Position calculation
-    -- Decoration whatsits appear AFTER the previous character in layout_grid.lua.
-    -- To align with the previous character at Row R, we use row - 1.
-    -- Since layout_grid puts marker at (prev_row + 1), we subtract 1 here.
+    -- Decoration nodes usually share the same row/col as the character they follow or attach to.
+    -- In layout_grid.lua, they are assigned to the current grid position.
     local target_row = pos.row - 1
     if target_row < 0 then target_row = 0 end
 
@@ -361,11 +364,16 @@ local function handle_decorate_node(curr, p_head, pos, params, ctx, reg_id)
     D.setfield(g, "xoffset", 0)
     D.setfield(g, "yoffset", 0)
 
-    -- Create color and position literal (Matching JuDou exactly)
+    -- Create position literal with optional color
     local pdf_literal_subtype = node.subtype("pdf_literal")
     local color_start = D.new(constants.WHATSIT, pdf_literal_subtype)
     D.setfield(color_start, "mode", 0)
-    D.setfield(color_start, "data", string.format("q %s rg %s RG 1 0 0 1 %.4f %.4f cm", rgb, rgb, x_bp, y_bp))
+
+    -- If color is not specified, use black (default for correction marks)
+    local draw_rgb = rgb or "0 0 0"
+
+    -- Apply color and position
+    D.setfield(color_start, "data", string.format("q %s rg %s RG 1 0 0 1 %.4f %.4f cm", draw_rgb, draw_rgb, x_bp, y_bp))
 
     local color_end = D.new(constants.WHATSIT, pdf_literal_subtype)
     D.setfield(color_end, "mode", 0)
@@ -429,6 +437,8 @@ end
 -- 辅助函数：处理单个页面的所有节点
 local function process_page_nodes(p_head, layout_map, params, ctx)
     local curr = p_head
+    -- Initialize last_font_id with current fallback font
+    ctx.last_font_id = ctx.last_font_id or params.font_id or font.current()
     while curr do
         local next_curr = D.getnext(curr)
         local id = D.getid(curr)
@@ -450,6 +460,8 @@ local function process_page_nodes(p_head, layout_map, params, ctx)
                             p_head = D.remove(p_head, curr)
                             node.flush_node(D.tonode(curr))
                         else
+                            -- Track the font from regular glyphs for decoration fallback
+                            ctx.last_font_id = D.getfield(curr, "font")
                             p_head = handle_glyph_node(curr, p_head, pos, params, ctx)
                             if luatex_cn_debug and luatex_cn_debug.is_enabled("vertical") then
                                 p_head = handle_debug_drawing(curr, p_head, pos, ctx)

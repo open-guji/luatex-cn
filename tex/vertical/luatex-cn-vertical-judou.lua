@@ -138,6 +138,15 @@ end
 -- @param last_visible (direct node|nil) Last visible non-punctuation node
 -- @return (direct node, direct node|nil, direct node|nil) New head, next node, and updated last_visible
 function judou.handle_judou_mode(head, t, ptype, last_visible)
+    if not ptype then return head, D.getnext(t), last_visible end
+
+    -- CRITICAL: If this glyph already has an ATTR_DECORATE_ID,
+    -- it's a custom decoration (e.g. from \改 command).
+    -- We MUST NOT replace it or override its settings.
+    if constants.ATTR_DECORATE_ID and D.get_attribute(t, constants.ATTR_DECORATE_ID) then
+        return head, D.getnext(t), t
+    end
+
     local char = D.getfield(t, "char")
     local next_node = D.getnext(t)
     local nodes_to_remove = { t }

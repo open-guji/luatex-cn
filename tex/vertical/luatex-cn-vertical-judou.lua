@@ -72,11 +72,14 @@ local function ensure_judou_styles()
 
     -- Register default styles for Judou
     -- Offset X: Negative to move Right (assuming X+ moves Left)
-    -- Offset -12pt is closer than -22pt
     -- Offset Y: Positive moves Down
-    -- Scale: 1.2 to ensure the symbols don't look too small relative to main text
-    ju_id = constants.register_decorate("。", "-12pt", "12pt", nil, "red", nil, 1.2)
-    dou_id = constants.register_decorate("、", "-12pt", "12pt", nil, "red", nil, 1.2)
+    -- Using em units ensuring scaling with font size
+    -- Moderate offsets: -0.2em X and 0.3em Y for better balance
+    -- X offset: positive = move left, negative = move right
+    -- Y offset: positive = move down
+    -- For bottom-right corner positioning, we use small negative x (right) and large y (down)
+    ju_id = constants.register_decorate("。", "0.2em", "0.8em", nil, "red", nil, 1.2)
+    dou_id = constants.register_decorate("、", "0.2em", "0.8em", nil, "red", nil, 1.2)
 end
 
 --- Create a JUDOU Decorate Marker node (GLYPH with ATTR_DECORATE_ID)

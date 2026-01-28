@@ -245,18 +245,20 @@ local function handle_decorate_node(curr, p_head, pos, params, ctx, reg_id)
         return p_head
     end
 
-    -- Get parameters from registry
-    local char = reg.char
-    local xoffset_sp = reg.xoffset or 0
-    local yoffset_sp = reg.yoffset or 0
-    -- If font_size is nil/0, we skip scaling and use base_font_id size
-    local font_size_sp = reg.font_size
-    local color_str = reg.color or "red"
-
     -- Check for font override from attribute (e.g. for Judou using text font)
     local attr_font_id = constants.ATTR_DECORATE_FONT and D.get_attribute(curr, constants.ATTR_DECORATE_FONT)
     local base_font_id = (attr_font_id and attr_font_id > 0) and attr_font_id or reg.font_id or params.font_id or
         font.current()
+
+    local base_f_data = font.getfont(base_font_id)
+    local base_size = base_f_data and base_f_data.size or 655360
+    local xoffset_sp = constants.resolve_dimen(reg.xoffset, base_size)
+    local yoffset_sp = constants.resolve_dimen(reg.yoffset, base_size)
+
+    -- Resolve additional parameters from registry
+    local char = reg.char
+    local font_size_sp = constants.resolve_dimen(reg.font_size, base_size)
+    local color_str = reg.color or "red"
 
     -- Color mapping
     local color_map = {

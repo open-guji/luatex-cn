@@ -90,9 +90,17 @@ local function extract_registry_content(registry_item)
     return content, metadata
 end
 
+-- Safely resolve dimension value that may be a table (em unit) or number
+local function safe_resolve(val, font_size_sp)
+    if type(val) == "table" and val.unit == "em" then
+        return math.floor((val.value or 0) * (font_size_sp or 655360) + 0.5)
+    end
+    return tonumber(val) or 0
+end
+
 local function calculate_start_position(anchor_row, metadata, main_grid_height)
-    local yoffset_grid = (metadata.yoffset or 0) / main_grid_height
-    local padding_top_grid = (metadata.padding_top or 0) / main_grid_height
+    local yoffset_grid = safe_resolve(metadata.yoffset, main_grid_height) / main_grid_height
+    local padding_top_grid = safe_resolve(metadata.padding_top, main_grid_height) / main_grid_height
     return math.max(anchor_row, padding_top_grid) + yoffset_grid
 end
 
@@ -139,8 +147,8 @@ local function place_individual_sidenote(sid, registry_item, last_node_pos, para
         line_limit = line_limit,
         banxin_on = params.banxin_on,
         interval = params.n_column or 0,
-        padding_top_grid = (metadata.padding_top or 0) / main_grid_height,
-        padding_bottom_grid = (metadata.padding_bottom or 0) / main_grid_height,
+        padding_top_grid = safe_resolve(metadata.padding_top, main_grid_height) / main_grid_height,
+        padding_bottom_grid = safe_resolve(metadata.padding_bottom, main_grid_height) / main_grid_height,
         step = step,
         tracker = tracker,
         base_indent = last_node_pos.indent or 0

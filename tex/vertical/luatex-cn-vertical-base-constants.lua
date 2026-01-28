@@ -69,16 +69,36 @@ local function to_dimen(dim_str)
     if type(dim_str) == "number" then return dim_str end
     dim_str = tostring(dim_str):gsub("[{}]", ""):gsub("^%s*(.-)%s*$", "%1")
     if dim_str == "" then return nil end
-    if tonumber(dim_str) then
-        local ok, res = pcall(tex.sp, dim_str .. "em")
-        if ok then return res end
+
+    -- Check for em units
+    local em_val = dim_str:match("^([%-%d%.]+)%s*em$")
+    if not em_val then
+        -- If it's a raw number, treat as em (standard behavior in this package)
+        if tonumber(dim_str) then
+            em_val = dim_str
+        end
     end
+
+    if em_val then
+        return { value = tonumber(em_val), unit = "em" }
+    end
+
+    -- Absolute dimensions (pt, mm, bp, etc.)
     local ok, res = pcall(tex.sp, dim_str)
     if ok then return res end
     return nil
 end
 
 constants.to_dimen = to_dimen
+
+local function resolve_dimen(val, font_size_sp)
+    if type(val) == "table" and val.unit == "em" then
+        return math.floor(val.value * font_size_sp + 0.5)
+    end
+    return tonumber(val) or 0
+end
+
+constants.resolve_dimen = resolve_dimen
 
 local function register_decorate(char_str, xoff_str, yoff_str, size_str, color_str, font_id, scale)
     _G.decorate_registry = _G.decorate_registry or {}
@@ -112,10 +132,12 @@ local function register_decorate(char_str, xoff_str, yoff_str, size_str, color_s
         if f and f.characters and f.characters[reg.char] then
             local c = f.characters[reg.char]
             if c.boundingbox and #c.boundingbox >= 3 then
-                -- BBox present: Center = (min_x + max_x) / 2
-                visual_center = (c.boundingbox[1] + c.boundingbox[3]) / 2
+                -- BBox is in design units (typically 1/1000 em), convert to sp
+                local units_per_em = f.units_per_em or 1000
+                local raw_v_center = (c.boundingbox[1] + c.boundingbox[3]) / 2
+                visual_center = raw_v_center * (f.size / units_per_em)
             else
-                -- Fallback: Use Advance Width / 2
+                -- Fallback: Use Advance Width / 2 (already in sp)
                 -- HACK: Special handling for Stars in Fandol fonts which are left-aligned
                 if reg.char == 9733 or reg.char == 9734 then
                     visual_center = (c.width or 0) * 0.25

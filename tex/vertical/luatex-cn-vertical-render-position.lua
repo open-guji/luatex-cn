@@ -436,8 +436,9 @@ end
 -- @param shift_x (number) X 偏移量 (sp)
 -- @return (number) x_position
 local function calculate_rtl_block_position(col, width, total_cols, grid_width, half_thickness, shift_x)
+    -- Original: (total_cols - (col + (width or 1))) * grid_width + half_thickness + shift_x
     local rtl_col_left = total_cols - (col + (width or 1))
-    return rtl_col_left * grid_width + (half_thickness or 0) + (shift_x or 0)
+    return (rtl_col_left * grid_width) + (half_thickness or 0) + (shift_x or 0)
 end
 
 --- 计算 Y 坐标（基于行号）
@@ -446,7 +447,8 @@ end
 -- @param shift_y (number) Y 偏移量 (sp)
 -- @return (number) y_position
 local function calculate_y_position(row, grid_height, shift_y)
-    return -row * grid_height - (shift_y or 0)
+    -- Original: -row * grid_height - shift_y
+    return (-row * grid_height) - (shift_y or 0)
 end
 
 -- Internal functions for unit testing

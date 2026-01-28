@@ -418,9 +418,9 @@ local function handle_debug_drawing(curr, p_head, pos, ctx)
     end
 
     if show_me then
-        local rtl_col_l = ctx.p_total_cols - (pos.col + (pos.width or 1))
-        local tx_sp = (rtl_col_l * ctx.grid_width + ctx.half_thickness + ctx.shift_x)
-        local ty_sp = (-pos.row * ctx.grid_height - ctx.shift_y)
+        local _, tx_sp = text_position.calculate_rtl_position(pos.col, ctx.p_total_cols, ctx.grid_width,
+            ctx.half_thickness, ctx.shift_x)
+        local ty_sp = text_position.calculate_y_position(pos.row, ctx.grid_height, ctx.shift_y)
         local tw_sp = ctx.grid_width
         local th_sp = -ctx.grid_height
 
@@ -501,9 +501,9 @@ local function process_page_nodes(p_head, layout_map, params, ctx)
                 D.setfield(curr, "shrink", 0)
 
                 -- Calculate grid position (same logic as glyph but simpler - no centering needed)
-                local rtl_col = ctx.p_total_cols - 1 - pos.col
-                local final_x = rtl_col * ctx.grid_width + ctx.half_thickness + ctx.shift_x
-                local final_y = -pos.row * ctx.grid_height - ctx.shift_y
+                local _, final_x = text_position.calculate_rtl_position(pos.col, ctx.p_total_cols, ctx.grid_width,
+                    ctx.half_thickness, ctx.shift_x)
+                local final_y = text_position.calculate_y_position(pos.row, ctx.grid_height, ctx.shift_y)
 
                 -- Insert kern to move to correct position, then kern back
                 local k_pre = D.new(constants.KERN)

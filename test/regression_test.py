@@ -97,12 +97,48 @@ def process_file(tex_file, mode):
         return False, "Compilation failed"
     
     if mode == "save":
-        # 2. Convert to PNGs in baseline
-        pngs = pdf_to_pngs(pdf_file, BASELINE_DIR)
-        if pngs:
-            print(f"Saved {len(pngs)} baseline pages.")
-            return True, f"Saved {len(pngs)} pages"
-        return False, "PNG conversion failed"
+        # 2. Convert to PNGs in a temp location first (use CURRENT_DIR as temp)
+        new_pngs = pdf_to_pngs(pdf_file, CURRENT_DIR)
+        if not new_pngs:
+            return False, "PNG conversion failed"
+        
+        # 3. Check if baselines already exist and compare
+        existing_baselines = sorted(list(BASELINE_DIR.glob(f"{pdf_file.stem}-*.png")), 
+                                    key=lambda x: int(re.search(r'-(\d+)\.png$', x.name).group(1)))
+        
+        images_match = False
+        if len(existing_baselines) == len(new_pngs):
+            # Compare all pages
+            all_match = True
+            for b_png, n_png in zip(existing_baselines, new_pngs):
+                diff_png = DIFF_DIR / f"temp_diff_{n_png.name}"
+                diff_count = compare_images(b_png, n_png, diff_png)
+                if diff_png.exists(): 
+                    diff_png.unlink()
+                if diff_count != 0:
+                    all_match = False
+                    break
+            images_match = all_match
+        
+        if images_match:
+            # Images are identical - revert PDF to avoid unnecessary changes
+            print(f"No visual changes - reverting PDF for {tex_file.name}")
+            # Revert PDF using git checkout
+            try:
+                run_command(["git", "checkout", "--", str(pdf_file)], cwd=BASE_DIR)
+            except Exception:
+                pass  # If git fails, just leave the PDF as is
+            return True, f"No changes ({len(existing_baselines)} pages)"
+        else:
+            # Images differ - move new PNGs to baseline and keep new PDF
+            # Clean up old baselines
+            for old_png in existing_baselines:
+                old_png.unlink()
+            # Move new PNGs to baseline
+            for png in new_pngs:
+                shutil.move(str(png), str(BASELINE_DIR / png.name))
+            print(f"Saved {len(new_pngs)} baseline pages.")
+            return True, f"Saved {len(new_pngs)} pages"
         
     elif mode == "check":
         # 2. Convert to PNGs in current

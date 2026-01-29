@@ -20,7 +20,9 @@ local tests = {
     "test/unit_test/vertical/luatex-cn-vertical-render-background-test.lua",
     "test/unit_test/vertical/luatex-cn-vertical-render-border-test.lua",
     "test/unit_test/vertical/luatex-cn-vertical-render-page-test.lua",
+    "test/unit_test/vertical/luatex-cn-vertical-render-position-test.lua",
     "test/unit_test/vertical/luatex-cn-vertical-render-test.lua",
+    "test/unit_test/vertical/test_unified_parsing.lua",
 }
 
 print("=== Running All Project Tests ===")

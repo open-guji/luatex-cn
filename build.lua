@@ -33,7 +33,7 @@ installfiles          = {}
 -- Skip tests/typesetting
 checkfiles            = {}
 testfiles             = { "*.lvt" }
-testfilesdir          = "test/l3build_check"
+testfilesdir          = "testfiles"
 stdengine             = "luatex"
 checkengines          = { "luatex" }
 typesetfiles          = {}

@@ -1,39 +1,64 @@
-English | [中文版](Judou)
+[English Version] | [中文版](Judou)
 
-# Judou (Punctuation Marks)
+# Judou (Punctuation)
 
-Judou is the traditional way of punctuating vertical text in ancient China. `luatex-cn` can automatically process modern punctuation and offers specialized typesetting modes.
+**Judou** (jù dòu) refers to the traditional Chinese system of punctuation and pausing marks. `luatex-cn` can automatically convert modern punctuation into traditional styles suitable for ancient book typesetting.
 
 ## What is Judou Mode?
-Traditional Chinese typesetting doesn't use modern full-width commas and periods. Instead, it uses small circles ("Ju") or dots ("Dou") placed at the bottom-right corner of the preceding character.
+Traditional ancient books typically do not use modern full-width punctuation marks. Instead, they use small circles ("Ju") or dots ("Dou") attached to the characters.
+
+- **Ju (句)**: Corresponds to periods (.), question marks (?), and exclamation marks (!). Rendered as a small circle (○).
+- **Dou (读)**: Corresponds to commas (,), semicolons (;), and enumeration commas (、). Rendered as a small dot or tick (●).
 
 ## Usage
 
-### Global Activation
+### 1. Global Activation
+Enable it in the document class options:
 ```latex
 \documentclass[judou-on=true]{ltc-guji}
 ```
 
-### Commands
-- `\JudouOn`: Enables automatic Judou conversion.
-- `\JudouOff`: Disables conversion (restores modern punctuation or hides them).
-- `\句读模式` / `\JudouPunctuationMode`: Switches to traditional Judou visual style.
-- `\无标点模式` / `\NonePunctuationMode`: Hides all punctuation characters.
+### 2. Commands
+You can switch modes anywhere in the document:
 
-## Punctuation Modes (`punct-mode`)
+- `\JudouOn`: Enable the Judou processing mechanism.
+- `\JudouOff`: Disable Judou processing.
 
-| Mode | Effect |
-|------|--------|
-| `normal` | Displays modern full-width punctuation. |
-| `judou` | Maps commas and periods to Ju/Dou marks at the bottom-right of characters. |
-| `none` | Removes all punctuation for a clean, unpunctuated text. |
+Switching **Punctuation Styles**:
 
-## Technical Implementation
-Punctuation processing occurs in the Lua layer via the `vertical-judou.lua` module:
-1. **Identification**: Scans the node stream and identifies punctuation via Unicode codes.
-2. **Conversion**: In `judou` mode, it removes the punctuation glyph node and inserts a `WHATSIT` node immediately following the previous visible CJK character.
-3. **Rendering**: During rendering, it uses the coordinates of the preceding character to draw a small circle or dot at its bottom-right anchor.
+- `\JudouPunctuationMode` (or `\句读模式`): Convert modern punctuation to Ju/Dou marks.
+- `\NonePunctuationMode` (or `\无标点模式`): Hide all punctuation (Plain text / "Baiwen").
+- `\NormalPunctuationMode` (or `\正常标点模式`): Show standard modern full-width punctuation.
+
+### Example
+```latex
+\JudouOn
+\JudouPunctuationMode
+人之初，性本善。
+% "," becomes a dot, "." becomes a circle at the bottom-right.
+
+\NonePunctuationMode
+子曰学而时习之不亦说乎
+% All punctuation is hidden.
+```
+
+## Parameters
+
+Fine-tune Judou appearance via parameters:
+
+| Key | Description | Default |
+|-----|-------------|---------|
+| `judou-color` | Color of the marks | `red` |
+| `judou-size` | Size of the marks | `1em` |
+| `judou-pos` | Position relative to character | `right-bottom` |
+
+## Technical Details
+Implemented via `vertical-judou.lua`:
+1. **Identification**: Scans node stream for punctuation Unicode code points.
+2. **Conversion**: In `judou` mode, punctuation nodes are removed and replaced by a `WHATSIT` node attached to the preceding CJK character.
+3. **Rendering**: The renderer draws the circle/dot at the specified anchor point (usually bottom-right) of the character.
+   - v0.1.5 optimized the positioning algorithm to ensure marks adhere closely to the character bounding box without extra gaps.
 
 ---
 
-👉 Next Steps: Check [[Interlinear & Side Notes | EN:Side-Note]] or [[Features Overview | EN:Features]].
+👉 Next: [[Side-Note | EN:Side-Note]] or [[Features | EN:Features]].

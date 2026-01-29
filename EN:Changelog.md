@@ -4,6 +4,15 @@ English | [中文版](Changelog)
 
 All notable changes to this project will be documented here.
 
+## [0.1.5] - 2026-01-28
+
+- ✨ **Multi-font Support**: Added multi-font fallback chain and Chinese font setting commands (fix #23).
+- ✨ **New Features**: Implemented `\decorate` and `\fix` functionalities, supporting vertical typesetting correction marks (fix #12).
+- ✨ **Textbox Enhancements**: Textbox supports vertical compression (flattening) to fit grid positions (fix #24).
+- 🐛 **Bug Fixes**: Fixed layout bugs including 0pt dimension parsing error, Judou positioning offsets, and long title squeezing (fix #19, #20).
+- ✅ **Regression Tests**: Introduced automated regression testing program based on PDF rendering comparison.
+- ♻️ **Refactoring**: Refactored core rendering logic and improved overall code stability.
+
 ## [0.1.4] - 2026-01-27
 
 - ✨ Added Judou (punctuation marks) functionality

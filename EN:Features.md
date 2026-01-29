@@ -25,7 +25,9 @@ Multiple ways to add comments to the text:
 ## 4. Decorations & Utilities
 - **[[Seals | EN:Seal]]**: Add collection or personal seals anywhere with opacity support.
 - **[[Judou | EN:Judou]]**: Traditional punctuation marks (circles and dots).
-- **Font Auto-detection**: Cross-platform identification of suitable CJK fonts.
+- **[[Fonts | EN:Fonts]]**: Auto-detection, font families, and fallback chains for rare characters.
+- **[[Textbox | EN:Textbox]]**: Grid-based layout with auto-compression and filling.
+- **[[Correction & Decoration | EN:Correction]]**: Correction marks (\fix) and character decoration (\decorate).
 
 ## 5. Template System
 Preset classical styles available out-of-the-box:

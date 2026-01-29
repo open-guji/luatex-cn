@@ -8,6 +8,9 @@
     * [[批注 | Annotation]]
     * [[印章 | Seal]]
     * [[句读 | Judou]]
+    * [[字体设置 | Fonts]]
+    * [[文本框 | Textbox]]
+    * [[改字与装饰 | Correction]]
 * [[更新日志 | Changelog]]
 ---
 
@@ -26,6 +29,10 @@
     * [[Annotation | EN:Annotation]]
     * [[Seal | EN:Seal]]
     * [[Judou | EN:Judou]]
+    * [[Fonts | EN:Fonts]]
+    * [[Textbox | EN:Textbox]]
+    * [[Correction & Decoration | EN:Correction]]
+    * [[Correction & Decoration | EN:Correction]]
 * [[Changelog | EN:Changelog]]
 
 ### 🌎 Developer Manual

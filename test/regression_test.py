@@ -74,11 +74,17 @@ def compare_images(baseline_png, current_png, diff_png):
         str(baseline_png), str(current_png), str(diff_png)
     ])
     
-    # compare outputs the number of different pixels to stderr
-    diff_pixels = res.stderr.strip()
+    # compare outputs the number of different pixels to stderr (sometimes stdout)
+    output = (res.stderr + res.stdout).strip()
+    if not output:
+        return 0 if res.returncode == 0 else -1
+        
     try:
-        count = int(float(diff_pixels.split()[0]))
-        return count
+        # Find the first number (handles "123", "123 (0.123)", etc.)
+        match = re.search(r"(\d+(\.\d+)?)", output)
+        if match:
+            return int(float(match.group(1)))
+        return 0 if res.returncode == 0 else -1
     except (ValueError, IndexError):
         return 0 if res.returncode == 0 else -1
 

@@ -757,7 +757,12 @@
       floating~=~\bool_if:NTF~\l__luatexcn_v_textbox_floating_bool~{true}{false},
       floating_x~=~[=[\luaescapestring{\l__luatexcn_v_textbox_x_tl}]=],
       floating_y~=~[=[\luaescapestring{\l__luatexcn_v_textbox_y_tl}]=],
-      floating_paper_width~=~[=[\luaescapestring{\l__luatexcn_v_textbox_floating_paper_width_tl}]=]
+      floating_paper_width~=~[=[\luaescapestring{\l__luatexcn_v_textbox_floating_paper_width_tl}]=],
+      judou_on~=~\bool_if:NTF~\l__luatexcn_v_judou_on_bool~{true}~{false},
+      judou_pos~=~[=[\luaescapestring{\l__luatexcn_v_judou_pos_tl}]=],
+      judou_size~=~[=[\luaescapestring{\l__luatexcn_v_judou_size_tl}]=],
+      judou_color~=~[=[\luaescapestring{\l__luatexcn_v_judou_color_tl}]=],
+      punct_mode~=~[=[\luaescapestring{\l__luatexcn_v_punct_mode_tl}]=]
     }) }
     \setluatexattribute\cnverticaltextboxwidth{0}
     \setluatexattribute\cnverticaltextboxheight{0}
@@ -873,6 +878,15 @@
     \par
   }
 
+% 填充文本框 - Backwards compatible: accepts either integer (old syntax) or key-value options (new syntax)
+\NewDocumentCommand{\FillTextBox}{ O{} +m }
+  {%
+    \tl_set:Nn \l_tmpa_tl { #1 }
+    \regex_match:nnTF { ^[0-9]+$ } { #1 }
+      { \TextBox[height=#1, box-align=fill]{#2} }  % Old syntax: just an integer height
+      { \TextBox[#1, box-align=fill]{#2} }          % New syntax: key-value options
+  }
+
 \ExplSyntaxOff%
 
 % ============================================================================
@@ -880,10 +894,7 @@
 % ============================================================================
 \NewCommandCopy{\竖排}{\VerticalRTT}
 \NewCommandCopy{\文本框}{\TextBox}
-\NewDocumentCommand{\填充文本框}{ O{1} +m }
-  {%
-    \TextBox[height=#1, box-align=fill]{#2}%
-  }
+\NewCommandCopy{\填充文本框}{\FillTextBox}
 \NewCommandCopy{\文本流}{\TextFlow}
 \NewCommandCopy{\空格}{\Space}
 \NewCommandCopy{\段落}{\Paragraph}

@@ -124,6 +124,12 @@ local function build_sub_params(params, col_aligns)
         floating_x = constants.to_dimen(params.floating_x) or 0,
         floating_y = constants.to_dimen(params.floating_y) or 0,
         floating_paper_width = constants.to_dimen(params.floating_paper_width) or 0,
+        -- Judou mode parameters (inherited from parent environment)
+        judou_on = (params.judou_on == true or params.judou_on == "true"),
+        judou_pos = params.judou_pos,
+        judou_size = params.judou_size,
+        judou_color = params.judou_color,
+        punct_mode = params.punct_mode,
     }
 end
 

@@ -5,6 +5,7 @@
 # test
 */test.*
 test_example/
+temp_verify/
 
 # AI related
 /progress/

@@ -103,11 +103,14 @@ end
 local function build_sub_params(params, col_aligns)
     local ba = params.box_align or "top"
     local n_cols = get_effective_n_cols(params.n_cols)
+    local height = tonumber(params.height) or 0
+    -- height=0 means auto: use large limit to fit content
+    local col_limit = (height > 0) and height or 1000
 
     return {
         n_cols = n_cols,
         page_columns = n_cols,
-        col_limit = tonumber(params.height) or 6,
+        col_limit = col_limit,
         grid_width = params.grid_width,
         grid_height = params.grid_height,
         box_align = params.box_align,
@@ -124,6 +127,12 @@ local function build_sub_params(params, col_aligns)
         floating_x = constants.to_dimen(params.floating_x) or 0,
         floating_y = constants.to_dimen(params.floating_y) or 0,
         floating_paper_width = constants.to_dimen(params.floating_paper_width) or 0,
+        -- Judou mode parameters (inherited from parent environment)
+        judou_on = (params.judou_on == true or params.judou_on == "true"),
+        judou_pos = params.judou_pos,
+        judou_size = params.judou_size,
+        judou_color = params.judou_color,
+        punct_mode = params.punct_mode,
     }
 end
 

@@ -354,7 +354,6 @@ end
 -- Pre-build hook: sanitize files, tag version, and run unit tests
 function checkinit_hook()
   sanitize_project_files()
-  os.execute("texlua scripts/build/tag_version.lua")
 
   -- Run Lua unit tests before l3build regression tests
   print("\n>>> Running Lua unit tests...")

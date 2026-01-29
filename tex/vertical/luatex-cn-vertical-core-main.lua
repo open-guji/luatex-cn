@@ -105,6 +105,16 @@ local judou = package.loaded['vertical.luatex-cn-vertical-judou'] or
 
 local D = node.direct
 
+-- Helper function to safely convert dimension values to scaled points
+-- Handles both raw numbers and em unit tables returned by to_dimen
+local function safe_to_sp(val, base_size)
+    if type(val) == "table" and val.unit == "em" then
+        return math.floor((val.value or 0) * (base_size or 655360) + 0.5)
+    end
+    return tonumber(val) or 0
+end
+
+
 
 --- Main entry point called from TeX
 -- @param box_num (number) TeX box register number
@@ -118,8 +128,10 @@ function vertical.prepare_grid(box_num, params)
     local list = box.list
     if not list then return 0 end
 
-    local g_width = constants.to_dimen(params.grid_width) or (65536 * 20)
-    local g_height = constants.to_dimen(params.grid_height) or g_width
+    -- Resolve em for base grid dimensions using current font size
+    local current_fs = font.getfont(font.current()).size or 655360
+    local g_width = safe_to_sp(constants.to_dimen(params.grid_width) or (65536 * 20), current_fs)
+    local g_height = safe_to_sp(constants.to_dimen(params.grid_height) or g_width, current_fs)
 
     -- Use grid_height (char height) as approximate char width for indent calculation
     local char_width = g_height
@@ -134,12 +146,14 @@ function vertical.prepare_grid(box_num, params)
     local m_left = constants.to_dimen(params.margin_left) or 0
     local m_right = constants.to_dimen(params.margin_right) or 0
 
-    local h_dim = constants.to_dimen(params.height) or (65536 * 300)
-    local b_padding_top = constants.to_dimen(params.border_padding_top) or 0
-    local b_padding_bottom = constants.to_dimen(params.border_padding_bottom) or 0
-    local b_thickness = constants.to_dimen(params.border_thickness) or 26214 -- 0.4pt
-    local ob_thickness = constants.to_dimen(params.outer_border_thickness) or (65536 * 2)
-    local ob_sep = constants.to_dimen(params.outer_border_sep) or (65536 * 2)
+    local h_dim = safe_to_sp(constants.to_dimen(params.height), g_height) or (65536 * 300)
+    local b_padding_top_raw = constants.to_dimen(params.border_padding_top)
+    local b_padding_bottom_raw = constants.to_dimen(params.border_padding_bottom)
+    local b_padding_top = safe_to_sp(b_padding_top_raw, g_height)
+    local b_padding_bottom = safe_to_sp(b_padding_bottom_raw, g_height)
+    local b_thickness = safe_to_sp(constants.to_dimen(params.border_thickness), g_height) or 26214 -- 0.4pt
+    local ob_thickness = safe_to_sp(constants.to_dimen(params.outer_border_thickness), g_height) or (65536 * 2)
+    local ob_sep = safe_to_sp(constants.to_dimen(params.outer_border_sep), g_height) or (65536 * 2)
     local b_interval = tonumber(params.n_column) or 8
     local banxin_on = (params.banxin_on == "true" or params.banxin_on == true)
     local p_cols = tonumber(params.page_columns)
@@ -300,11 +314,12 @@ function vertical.prepare_grid(box_num, params)
         banxin_upper_ratio = tonumber(params.banxin_upper_ratio) or 0.28,
         banxin_middle_ratio = tonumber(params.banxin_middle_ratio) or 0.56,
         book_name = params.book_name or "",
-        banxin_padding_top = constants.to_dimen(params.banxin_padding_top) or (65536 * 2), -- 2pt default
-        banxin_padding_bottom = constants.to_dimen(params.banxin_padding_bottom) or 0,
+        banxin_padding_top = safe_to_sp(constants.to_dimen(params.banxin_padding_top), g_height) or (65536 * 2), -- 2pt default
+        banxin_padding_bottom = safe_to_sp(constants.to_dimen(params.banxin_padding_bottom), g_height) or 0,
         lower_yuwei = (params.lower_yuwei == "true" or params.lower_yuwei == true),
         chapter_title = params.chapter_title or "",
-        chapter_title_top_margin = constants.to_dimen(params.chapter_title_top_margin) or (65536 * 20), -- 20pt default
+        chapter_title_top_margin = safe_to_sp(constants.to_dimen(params.chapter_title_top_margin), g_height) or
+            (65536 * 20), -- 20pt default
         chapter_title_cols = tonumber(params.chapter_title_cols) or 1,
         chapter_title_font_size = params.chapter_title_font_size,
         chapter_title_grid_height = params.chapter_title_grid_height,
@@ -313,7 +328,7 @@ function vertical.prepare_grid(box_num, params)
         upper_yuwei = (params.upper_yuwei == "true" or params.upper_yuwei == true),
         banxin_divider = (params.banxin_divider == "true" or params.banxin_divider == true),
         page_number_align = params.page_number_align or "right-bottom",
-        page_number_font_size = constants.to_dimen(params.page_number_font_size),
+        page_number_font_size = safe_to_sp(constants.to_dimen(params.page_number_font_size), g_height),
         column_aligns = params.column_aligns,
         start_page_number = start_page,
         jiazhu_font_size = params.jiazhu_font_size,

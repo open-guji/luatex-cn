@@ -327,6 +327,57 @@ end
 --   - v_align (string) 垂直对齐: "top", "center", "bottom"
 --   - half_thickness (number) 边框厚度的一半 (sp)
 -- @return (number, number) 字形的 x_offset, y_offset
+local function get_visual_center(char_code, font_id)
+    local f = font.getfont(font_id)
+    if not (f and f.characters and f.characters[char_code]) then return nil end
+    local c = f.characters[char_code]
+
+    local bbox = c.boundingbox
+    -- If not in characters table, try descriptions in raw data using character index
+    if not bbox and c.index and f.shared and f.shared.rawdata and f.shared.rawdata.descriptions then
+        local desc = f.shared.rawdata.descriptions[c.index]
+        if desc and desc.boundingbox then
+            bbox = desc.boundingbox
+        end
+    end
+
+    local res
+    local method = "bbox"
+    if bbox and #bbox >= 3 then
+        local units_per_em = f.units_per_em or 1000
+        local raw_v_center = (bbox[1] + bbox[3]) / 2
+        res = raw_v_center * (f.size / units_per_em)
+    else
+        -- Fallback: EM-width centering
+        method = "fallback"
+        res = (c.width or 0) / 2
+    end
+
+    -- --- DEBUG: Log the visual center calculation ---
+    if luatex_cn_debug and luatex_cn_debug.is_enabled("vertical") then
+        local u = package.loaded['vertical.luatex-cn-vertical-base-utils']
+        if u then
+            local bbox_str = bbox and string.format("[%d,%d,%d,%d]", bbox[1], bbox[2], bbox[3], bbox[4]) or "nil"
+            u.debug_log(string.format(
+                "[VisualCenter] char=%d GID=%s size=%.2f units=%d bbox=%s method=%s v_center=%.2f",
+                char_code, tostring(c.index), f.size / 65536, f.units_per_em or 1000, bbox_str, method,
+                res / 65536))
+        end
+    end
+
+    return res
+end
+
+--- 计算网格位置坐标（纯计算，不操作节点）
+-- 供 render.lua 使用，用于主文本定位，其中节点被就地修改。
+--
+-- @param col (number) 列索引（从 0 开始）
+-- @param row (number) 行索引（从 0 开始）
+-- @param glyph_dims (table) 字形尺寸: width, height, depth, char, font
+-- @param params (table) 参数表:
+--   - grid_width (number) 每个网格单元的宽度 (sp)
+--   - grid_height (number) 每个网格单元的高度 (sp)
+--   ...
 local function calc_grid_position(col, row, glyph_dims, params)
     local grid_width = params.grid_width or 0
     local grid_height = params.grid_height or 0
@@ -345,23 +396,24 @@ local function calc_grid_position(col, row, glyph_dims, params)
     local rtl_col = total_cols - 1 - col
     local sub_col = params.sub_col or 0
 
+    -- Calculate visual center for alignment
+    local center_offset = (grid_width - w) / 2
+    if h_align == "center" and glyph_dims.char and glyph_dims.font then
+        local v_center = get_visual_center(glyph_dims.char, glyph_dims.font)
+        if v_center then
+            center_offset = (grid_width / 2) - v_center
+        end
+    end
+
     -- Calculate X offset based on horizontal alignment
     local x_offset
     if sub_col > 0 then
-        -- Jiazhu (dual-column note) logic
+        -- Jiazhu (dual-column note) logic (already handles its own alignment)
         local sub_width = grid_width / 2
         local inner_padding = sub_width * 0.05 -- 5% internal padding
         local jiazhu_align = params.jiazhu_align or "outward"
-
-        -- Determine alignment for each sub-column based on jiazhu_align setting
-        -- sub_col == 1: Right sub-column (先行, displayed on right side in RTL)
-        -- sub_col == 2: Left sub-column (后行, displayed on left side in RTL)
-        local col_align
-        if jiazhu_align == "outward" then
-            -- Default: right col right-aligned, left col left-aligned (向外对齐)
-            col_align = (sub_col == 1) and "right" or "left"
-        elseif jiazhu_align == "inward" then
-            -- Opposite: right col left-aligned, left col right-aligned (向内对齐)
+        local col_align = (sub_col == 1) and "right" or "left"
+        if jiazhu_align == "inward" then
             col_align = (sub_col == 1) and "left" or "right"
         elseif jiazhu_align == "center" then
             col_align = "center"
@@ -369,23 +421,18 @@ local function calc_grid_position(col, row, glyph_dims, params)
             col_align = "left"
         elseif jiazhu_align == "right" then
             col_align = "right"
-        else
-            -- Fallback to outward
-            col_align = (sub_col == 1) and "right" or "left"
         end
 
-        -- Calculate base x position for the sub-column
         local sub_base_x = rtl_col * grid_width + half_thickness + shift_x
-        if sub_col == 1 then
-            sub_base_x = sub_base_x + sub_width -- Right half
-        end
+        if sub_col == 1 then sub_base_x = sub_base_x + sub_width end
 
-        -- Apply alignment within the sub-column
         if col_align == "right" then
             x_offset = sub_base_x + (sub_width - w) - inner_padding
         elseif col_align == "left" then
             x_offset = sub_base_x + inner_padding
         else -- center
+            -- Reuse the same visual centering logic for Jiazhu if needed?
+            -- For now stay with simple centering within sub-column
             x_offset = sub_base_x + (sub_width - w) / 2
         end
     elseif h_align == "left" then
@@ -393,7 +440,7 @@ local function calc_grid_position(col, row, glyph_dims, params)
     elseif h_align == "right" then
         x_offset = rtl_col * grid_width + (grid_width - w) + half_thickness + shift_x
     else -- center
-        x_offset = rtl_col * grid_width + (grid_width - w) / 2 + half_thickness + shift_x
+        x_offset = rtl_col * grid_width + center_offset + half_thickness + shift_x
     end
 
     -- Calculate Y offset based on vertical alignment
@@ -402,6 +449,7 @@ local function calc_grid_position(col, row, glyph_dims, params)
         y_offset = -row * grid_height - h - shift_y
     elseif v_align == "center" then
         local char_total_height = h + d
+        -- Note: we use char_total_height centering for Y
         y_offset = -row * grid_height - (grid_height + char_total_height) / 2 + d - shift_y
     else -- bottom
         y_offset = -row * grid_height - grid_height + d - shift_y
@@ -410,12 +458,65 @@ local function calc_grid_position(col, row, glyph_dims, params)
     return x_offset, y_offset
 end
 
+--- 计算 RTL 布局中的物理列号和 X 坐标
+-- 在竖排 RTL 布局中，逻辑列号（从0开始向右）需要转换为物理列号（从右向左）。
+--
+-- @param col (number) 逻辑列号 (0-indexed)
+-- @param total_cols (number) 总列数
+-- @param grid_width (number) 网格宽度 (sp)
+-- @param half_thickness (number) 边框半厚度 (sp)
+-- @param shift_x (number) X 偏移量 (sp)
+-- @return (number, number) rtl_col, x_position
+local function calculate_rtl_position(col, total_cols, grid_width, half_thickness, shift_x)
+    local rtl_col = total_cols - 1 - col
+    local x_pos = rtl_col * grid_width + (half_thickness or 0) + (shift_x or 0)
+    return rtl_col, x_pos
+end
+
+--- 计算块级元素的 RTL X 坐标
+-- 块级元素可能跨越多列，需要计算其左边缘位置。
+--
+-- @param col (number) 起始列号
+-- @param width (number) 块宽度（列数）
+-- @param total_cols (number) 总列数
+-- @param grid_width (number) 网格宽度 (sp)
+-- @param half_thickness (number) 边框半厚度 (sp)
+-- @param shift_x (number) X 偏移量 (sp)
+-- @return (number) x_position
+local function calculate_rtl_block_position(col, width, total_cols, grid_width, half_thickness, shift_x)
+    -- Original: (total_cols - (col + (width or 1))) * grid_width + half_thickness + shift_x
+    local rtl_col_left = total_cols - (col + (width or 1))
+    return (rtl_col_left * grid_width) + (half_thickness or 0) + (shift_x or 0)
+end
+
+--- 计算 Y 坐标（基于行号）
+-- @param row (number) 行号 (0-indexed)
+-- @param grid_height (number) 网格高度 (sp)
+-- @param shift_y (number) Y 偏移量 (sp)
+-- @return (number) y_position
+local function calculate_y_position(row, grid_height, shift_y)
+    -- Original: -row * grid_height - shift_y
+    return (-row * grid_height) - (shift_y or 0)
+end
+
+-- Internal functions for unit testing
+local _internal = {
+    calculate_rtl_position = calculate_rtl_position,
+    calculate_rtl_block_position = calculate_rtl_block_position,
+    calculate_y_position = calculate_y_position,
+}
+
 -- Create module table
 local text_position = {
+    get_visual_center = get_visual_center,
     position_glyph = position_glyph,
     create_vertical_text = create_vertical_text,
     position_glyph_in_grid = position_glyph_in_grid,
     calc_grid_position = calc_grid_position,
+    calculate_rtl_position = calculate_rtl_position,
+    calculate_rtl_block_position = calculate_rtl_block_position,
+    calculate_y_position = calculate_y_position,
+    _internal = _internal,
 }
 
 -- Register module in package.loaded for require() compatibility

@@ -307,19 +307,16 @@ local function calculate_book_name_params(params, upper_height)
     local book_name = params.book_name or ""
     if book_name == "" then return nil end
 
-    local b_padding_top = params.b_padding_top or 0
-    local b_padding_bottom = params.b_padding_bottom or 0
-    local effective_b = params.draw_border and params.border_thickness or 0
+    -- Use resolve_dimen for safety
+    local f_size = constants.resolve_dimen(params.font_size, 655360)
+    local b_padding_top = constants.resolve_dimen(params.b_padding_top, f_size)
+    local b_padding_bottom = constants.resolve_dimen(params.b_padding_bottom, f_size)
+    local effective_b = params.draw_border and constants.resolve_dimen(params.border_thickness, f_size) or 0
 
     local adj_height = upper_height - effective_b - b_padding_top - b_padding_bottom
     local num_chars = count_utf8_chars(book_name)
 
-    local f_size = params.font_size
-    if not f_size or f_size <= 0 then
-        f_size = params.height / 20
-    end
-
-    local grid_h = constants.to_dimen(params.book_name_grid_height)
+    local grid_h = constants.resolve_dimen(constants.to_dimen(params.book_name_grid_height), f_size)
     local total_text_height
     if grid_h and grid_h > 0 then
         total_text_height = grid_h * num_chars
@@ -412,14 +409,28 @@ local function calculate_chapter_title_layout(params, upper_height, middle_heigh
     local lower_yuwei_total = params.lower_yuwei ~= false and calculate_yuwei_total_height(yuwei_dims) or 0
 
     local middle_y_top = params.y - upper_height
-    local chapter_y_top = middle_y_top - upper_yuwei_total - chapter_top_margin
-    local available_height = middle_height - upper_yuwei_total - lower_yuwei_total - chapter_top_margin
+    local title_top_margin = constants.resolve_dimen(params.chapter_title_top_margin, base_f_size) or 0
 
-    if available_height <= 0 then return nil end
+    banxin_log(string.format(
+        "[banxin] CalcTitleLayout title='%s' middle_h=%.2f upper_yuwei=%.2f lower_yuwei=%.2f margin=%.2f",
+        chapter_title, middle_height / 65536, upper_yuwei_total / 65536, lower_yuwei_total / 65536,
+        title_top_margin / 65536))
+
+    local chapter_y_top = middle_y_top - upper_yuwei_total - title_top_margin
+    local available_height = middle_height - upper_yuwei_total - lower_yuwei_total - title_top_margin
+    if available_height <= 0 then
+        available_height = middle_height * 0.3 -- Fallback
+    end
+
+    local n_cols = math.max(#parts, params.chapter_title_cols or 1)
+
+    banxin_log(string.format("[banxin] CalcTitleLayout avail_h=%.2f", available_height / 65536))
 
     return {
         parts = parts,
-        y_top = chapter_y_top,
+        n_cols = n_cols,
+        chapter_title = chapter_title,
+        y_top = chapter_y_top, -- This is the top of the available area for the title
         available_height = available_height,
     }
 end
@@ -439,11 +450,19 @@ local function render_chapter_title(p_head, params, upper_height, middle_height,
     local n_cols = math.max(#parts, params.chapter_title_cols or 1)
     local col_width = params.width / n_cols
 
-    local title_height = constants.to_dimen(params.chapter_title_grid_height) or layout.available_height
-    local title_font_size = params.chapter_title_font_size
+    -- Use resolve_dimen for safety
+    local base_f_size = constants.resolve_dimen(params.font_size, 655360)
+    local title_font_size = constants.resolve_dimen(params.chapter_title_font_size, base_f_size)
     local font_scale = nil
-    if (not title_font_size or title_font_size == "") and n_cols > 1 then
-        font_scale = 0.7
+    if not title_font_size then
+        font_scale = 0.5 -- Default scale for banxin titles if not specified
+        title_font_size = base_f_size * font_scale
+    end
+
+    local desired_grid_h = constants.resolve_dimen(params.chapter_title_grid_height, title_font_size)
+    if not desired_grid_h or desired_grid_h <= 0 then
+        -- Default spacing: slightly more than font size to avoid overlap
+        desired_grid_h = title_font_size * 1.1
     end
 
     for i, sub_text in ipairs(parts) do
@@ -459,11 +478,17 @@ local function render_chapter_title(p_head, params, upper_height, middle_height,
             end
         end
 
+        local num_chars = count_utf8_chars(sub_text)
+        local total_h = num_chars * desired_grid_h
+
+        -- Top-align (respecting layout.y_top which already accounts for margin)
+        local new_y_top = layout.y_top
+
         local chapter_chain = text_position.create_vertical_text(sub_text, {
             x = sub_x,
-            y_top = layout.y_top,
+            y_top = new_y_top,
             width = col_width,
-            height = title_height,
+            height = total_h,
             v_align = "center",
             h_align = col_h_align,
             font_size = title_font_size,
@@ -499,13 +524,15 @@ local function calculate_page_number_layout(params, upper_height, middle_height,
 
     local num_chars = count_utf8_chars(page_str)
 
-    local grid_h = constants.to_dimen(params.page_number_grid_height)
+    local f_size = constants.resolve_dimen(params.page_number_font_size, base_f_size) or (65536 * 10)
+    local grid_h = constants.resolve_dimen(params.page_number_grid_height, f_size)
     if not grid_h or grid_h <= 0 then
-        local fs = params.page_number_font_size or (65536 * 15)
-        grid_h = fs * 1.2
+        grid_h = f_size * 1.2
     end
-
     local container_height = grid_h * num_chars
+
+    banxin_log(string.format("[banxin] PageNumber text='%s' fs=%.2f grid_h=%.2f height=%.2f",
+        page_str, f_size / 65536, grid_h / 65536, container_height / 65536))
 
     local p_v_align = "bottom"
     local p_h_align = "right"
@@ -530,7 +557,7 @@ local function calculate_page_number_layout(params, upper_height, middle_height,
         height = container_height,
         v_align = p_v_align,
         h_align = p_h_align,
-        font_size = params.page_number_font_size or (65536 * 15),
+        font_size = f_size,
     }
 end
 

@@ -63,6 +63,10 @@
 %   \ApplyAutoFont
 %       应用自动探测的中文字体（调用 \setmainfont）
 %
+%   \DeclareFontFallback{<name>}{<font_list>}
+%       定义一个字体递补链（按顺序寻找缺失字符）。
+%       例如：\DeclareFontFallback{myfallbacks}{Font2, Font3}
+%
 %   \GetAutoFontName
 %       获取探测到的字体名称（可用于调试或显示）
 %
@@ -74,23 +78,22 @@
 % ============================================================================
 % 如果自动探测的字体不符合需求，可以手动使用 fontspec：
 %
-%   \usepackage{fontspec}
 %   \setmainfont{Your Font Name}[
 %     RawFeature={+vert,+vrt2},  % 竖排字形
 %     CharacterWidth=Full        % 全角字符
 %   ]
 %
-% 常用中文字体：
-%   - 思源宋体: Source Han Serif SC / Noto Serif CJK SC
-%   - 思源黑体: Source Han Sans SC / Noto Sans CJK SC
-%   - 方正字体: FZShuSong-Z01, FZKai-Z03, FZHei-B01, FZFangSong-Z02
+% 使用字体递补 (Font Fallbacks):
+%
+%   \DeclareFontFallback{mychain}{Font2, Font3}
+%   \setmainfont{PrimaryFont}[RawFeature={fallback=mychain}]
 %
 % ============================================================================
 
 \RequirePackage{expl3}
 \RequirePackage{xparse}
 \RequirePackage{luatexbase}
-\ProvidesExplPackage {fonts/luatex-cn-font-autodetect} {2026/01/27} {0.1.4} {Automatic Chinese font detection for LuaLaTeX}
+\ProvidesExplPackage {fonts/luatex-cn-font-autodetect} {2026/01/28} {0.1.5} {Automatic Chinese font detection for LuaLaTeX}
 
 % Ensure we're using LuaTeX
 \sys_if_engine_luatex:TF
@@ -152,6 +155,45 @@
     end;
   }
 }
+
+% Command to declare a font fallback chain
+% Usage: \DeclareFontFallback{chain_name}{font1, font2, ...}
+\cs_new:Npn \__luatexcn_declare_font_fallback:nn #1 #2
+  {
+    \str_clear:N \l_tmpa_str
+    \clist_map_inline:nn { #2 }
+      {
+        \tl_set:Nn \l_tmpb_tl { ##1 }
+        \tl_if_in:NnTF \l_tmpb_tl { : }
+          { }
+          { \tl_put_right:Nn \l_tmpb_tl { :mode=node;+vert;+vrt2 } }
+        \str_put_right:Nx \l_tmpa_str { ,~"\lua_escape:e { \tl_use:N \l_tmpb_tl }" }
+      }
+    \lua_now:e
+      {
+        if~luaotfload~and~luaotfload.add_fallback~then~
+          luaotfload.add_fallback("#1",~{~\str_tail:N \l_tmpa_str~})~
+        end
+      }
+  }
+
+\NewDocumentCommand{\DeclareFontFallback}{m m}
+  {
+    \__luatexcn_declare_font_fallback:nn { #1 } { #2 }
+  }
+
+% Command to set main font with a fallback chain in one step
+% Usage: \SetMainFontChain{Font1, Font2, Font3}
+\DeclareDocumentCommand{\setfontfamily}{m}
+  {
+    \DeclareFontFallback { luatexcn_main_fallback } { #1 }
+    \tl_set:Nx \l_tmpa_tl { \clist_item:nn { #1 } { 1 } }
+    \exp_args:NV \setmainfont \l_tmpa_tl [ RawFeature = { fallback = luatexcn_main_fallback } ]
+  }
+
+\DeclareDocumentCommand{\setFontFamily}{m}{\setfontfamily{#1}}
+\DeclareDocumentCommand{\设置字体族}{m}{\setfontfamily{#1}}
+\DeclareDocumentCommand{\设置字体}{m}{\setmainfont{#1}}
 
 \ExplSyntaxOff%
 %

@@ -181,24 +181,112 @@ local function draw_debug_grid(head, x_sp, y_sp, w_sp, h_total_sp, color_name)
     return node.direct.insert_before(head, head, nn)
 end
 
---- 创建具有给定数据的 PDF literal 节点
--- @param literal_str string PDF literal 字符串（例如 "q 0.5 w 0 0 0 RG ... Q"）
+--- 创建具有给定数据的 PDF literal 节点（直接节点版本）
+-- @param literal_str string PDF literal 字符串
 -- @param mode number 可选模式（默认 0: 原点位于当前位置）
--- @return node 直接节点引用 (pdf_literal whatsit)
+-- @return node 直接节点引用
 local function create_pdf_literal(literal_str, mode)
-    local n_node = node.new("whatsit", "pdf_literal")
-    n_node.data = literal_str
-    n_node.mode = mode or 0
-    return n_node
+    local whatsit_id = node.id("whatsit")
+    local pdf_literal_id = node.subtype("pdf_literal")
+    local nn = node.direct.new(whatsit_id, pdf_literal_id)
+    node.direct.setfield(nn, "data", literal_str)
+    node.direct.setfield(nn, "mode", mode or 0)
+    return nn
 end
 
---- 在节点列表头部插入 PDF literal 节点
+--- 在节点列表中插入 PDF literal 节点
 -- @param head node 直接节点链头部
 -- @param literal_str string PDF literal 字符串
+-- @param anchor node 可选，要在其前插入的节点。如果为 nil，则插入到头部。
 -- @return node 更新后的头部（直接节点引用）
-local function insert_pdf_literal(head, literal_str)
-    local n_node = create_pdf_literal(literal_str)
-    return node.direct.insert_before(head, head, node.direct.todirect(n_node))
+local function insert_pdf_literal(head, literal_str, anchor)
+    local nn = create_pdf_literal(literal_str)
+    return node.direct.insert_before(head, anchor or head, nn)
+end
+
+--- 创建颜色设置 PDF literal 字符串
+-- @param rgb string RGB 颜色字符串 "r g b"
+-- @param is_stroke boolean 是否为描边色 (RG) 而非填充色 (rg)
+-- @return string PDF literal 字符串
+local function create_color_literal(rgb, is_stroke)
+    local op = is_stroke and "RG" or "rg"
+    return string.format("%s %s", rgb, op)
+end
+
+--- 创建位置变换 PDF literal 字符串
+-- @param x_bp number X 坐标 (bp)
+-- @param y_bp number Y 坐标 (bp)
+-- @return string PDF literal 字符串
+local function create_position_cm(x_bp, y_bp)
+    return string.format("1 0 0 1 %.4f %.4f cm", x_bp, y_bp)
+end
+
+--- 包裹 PDF 指令在图形状态中 (q ... Q)
+-- @param inner string 内部 PDF 指令
+-- @return string 包裹后的 PDF literal
+local function wrap_graphics_state(inner)
+    return "q " .. inner .. " Q"
+end
+
+--- 创建完整的着色定位 PDF literal 字符串（起始部分，需配对 Q）
+-- @param rgb string RGB 颜色
+-- @param x_bp number X 坐标 (bp)
+-- @param y_bp number Y 坐标 (bp)
+-- @return string PDF literal 字符串（用于开始：q ... cm）
+local function create_color_position_literal(rgb, x_bp, y_bp)
+    return string.format("%s %s %s", create_color_literal(rgb, false), create_color_literal(rgb, true),
+        create_position_cm(x_bp, y_bp))
+end
+
+--- 创建完整的着色定位 PDF literal 字符串（起始部分，含 q）
+-- @param rgb string RGB 颜色
+-- @param x_bp number X 坐标 (bp)
+-- @param y_bp number Y 坐标 (bp)
+-- @return string PDF literal 字符串（用于开始：q ... cm）
+local function create_color_position_q_literal(rgb, x_bp, y_bp)
+    return "q " .. create_color_position_literal(rgb, x_bp, y_bp)
+end
+
+--- 生成 PDF 矩形指令 (raw)
+-- @param x number X 坐标 (bp)
+-- @param y number Y 坐标 (bp)
+-- @param w number 宽度 (bp)
+-- @param h number 高度 (bp)
+-- @param op string PDF 指令后缀 (例如 "re S" 或 "re f")
+-- @return string PDF literal 字符串
+local function create_rect_literal_raw(x, y, w, h, op)
+    return string.format("%.4f %.4f %.4f %.4f %s", x, y, w, h, op)
+end
+
+--- 生成带图形状态保护的边框矩形指令
+-- @param thickness number 边框厚度 (bp)
+-- @param rgb_str string RGB 颜色字符串
+-- @param x number X 坐标 (bp)
+-- @param y number Y 坐标 (bp)
+-- @param w number 宽度 (bp)
+-- @param h number 高度 (bp)
+-- @return string PDF literal 字符串
+local function create_border_literal(thickness, rgb_str, x, y, w, h)
+    local inner = string.format("%.2f w %s RG %s", thickness, rgb_str, create_rect_literal_raw(x, y, w, h, "re S"))
+    return wrap_graphics_state(inner)
+end
+
+--- 生成带图形状态保护的填充矩形指令
+-- @param rgb_str string RGB 颜色字符串
+-- @param x number X 坐标 (bp)
+-- @param y number Y 坐标 (bp)
+-- @param w number 宽度 (bp)
+-- @param h number 高度 (bp)
+-- @return string PDF literal 字符串
+local function create_fill_rect_literal(rgb_str, x, y, w, h)
+    local inner = string.format("0 w %s rg %s", rgb_str, create_rect_literal_raw(x, y, w, h, "re f"))
+    return wrap_graphics_state(inner)
+end
+
+--- 创建图形状态结束 PDF literal
+-- @return string PDF literal 字符串 "Q"
+local function create_graphics_state_end()
+    return "Q"
 end
 
 --- 将整数转换为传统的中文数字字符串
@@ -248,6 +336,14 @@ local utils = {
     draw_debug_grid = draw_debug_grid,
     create_pdf_literal = create_pdf_literal,
     insert_pdf_literal = insert_pdf_literal,
+    create_color_literal = create_color_literal,
+    create_position_cm = create_position_cm,
+    wrap_graphics_state = wrap_graphics_state,
+    create_color_position_literal = create_color_position_literal,
+    create_color_position_q_literal = create_color_position_q_literal,
+    create_fill_rect_literal = create_fill_rect_literal,
+    create_border_literal = create_border_literal,
+    create_graphics_state_end = create_graphics_state_end,
     to_chinese_numeral = to_chinese_numeral,
     set_debug = set_debug,
     is_debug_enabled = is_debug_enabled,

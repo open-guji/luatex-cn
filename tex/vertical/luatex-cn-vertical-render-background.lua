@@ -44,10 +44,10 @@
 
 -- Load dependencies
 local constants = package.loaded['vertical.luatex-cn-vertical-base-constants'] or
-require('vertical.luatex-cn-vertical-base-constants')
+    require('vertical.luatex-cn-vertical-base-constants')
 local D = constants.D
 local utils = package.loaded['vertical.luatex-cn-vertical-base-utils'] or
-require('vertical.luatex-cn-vertical-base-utils')
+    require('vertical.luatex-cn-vertical-base-utils')
 
 --- 绘制背景色矩形
 -- @param p_head (node) 节点列表头部（直接引用）
@@ -102,12 +102,8 @@ local function draw_background(p_head, params)
 
 
     -- Draw filled rectangle for background
-    local literal = string.format("q 0 w %s rg %.4f %.4f %.4f %.4f re f Q",
-        bg_rgb_str, tx_bp, ty_bp, tw_bp, th_bp)
-    local n_node = node.new("whatsit", "pdf_literal")
-    n_node.data = literal
-    n_node.mode = 0
-    p_head = D.insert_before(p_head, p_head, D.todirect(n_node))
+    local literal = utils.create_fill_rect_literal(bg_rgb_str, tx_bp, ty_bp, tw_bp, th_bp)
+    p_head = utils.insert_pdf_literal(p_head, literal)
 
     return p_head
 end
@@ -121,12 +117,9 @@ local function set_font_color(p_head, font_rgb_str)
         return p_head
     end
 
-    -- Set fill color for text (uses lowercase 'rg' for fill color)
-    local literal = string.format("%s rg", font_rgb_str)
-    local n_node = node.new("whatsit", "pdf_literal")
-    n_node.data = literal
-    n_node.mode = 0
-    p_head = D.insert_before(p_head, p_head, D.todirect(n_node))
+    -- Set fill color for text
+    local literal = utils.create_color_literal(font_rgb_str, false)
+    p_head = utils.insert_pdf_literal(p_head, literal)
 
     return p_head
 end

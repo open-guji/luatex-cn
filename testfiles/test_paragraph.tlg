@@ -79,31 +79,56 @@ DEBUG: banxin-padding-top is 2pt
 ^^[[35m[banxin]^^[[0m [banxin] input y=-7.20 height=598.10 padding_top=2.00 draw_border=true
 ^^[[35m[banxin]^^[[0m [banxin] Border literal: q 0.40 w 0.0000 0.0000 0.0000 RG 408.1171 -7.1731 50.1180 -595.8662 re S Q
 ^^[[33m[vertical]^^[[0m [yuwei] Drawing yuwei with style=black, direction=1, color=0.0000 0.0000 0.0000
-^^[[33m[vertical]^^[[0m [GlyphPos] char=19968 x=409.65 cw=48.31 gw=15.00 -> xoff=442.95 yoff=-505.99
+^^[[35m[banxin]^^[[0m [banxin] PageNumber text='一' fs=12.00 grid_h=14.40 height=14.40
+^^[[33m[vertical]^^[[0m [GlyphPos] char=19968 x=409.65 cw=48.31 gw=12.00 -> xoff=445.95 yoff=-506.57
+^^[[33m[vertical]^^[[0m [VisualCenter] char=19968 GID=15940 size=28.00 units=1024 bbox=[56,-124,968,725] method=bbox v_center=14.00
 ^^[[33m[vertical]^^[[0m   [render] GLYPH char=19968 [c:0, r:0.00, s:nil] xoff=823.25 yoff=-31.65 w=28.00 h=10.50 fsize=28.00
-^^[[33m[vertical]^^[[0m   [render] GLYPH char=20108 [c:0, r:1.00, s:nil] xoff=823.25 yoff=-61.74 w=28.00 h=14.66 fsize=28.00
-^^[[33m[vertical]^^[[0m   [render] GLYPH char=19977 [c:0, r:2.00, s:nil] xoff=823.25 yoff=-90.20 w=28.00 h=16.46 fsize=28.00
-^^[[33m[vertical]^^[[0m   [render] GLYPH char=22235 [c:0, r:3.00, s:nil] xoff=823.25 yoff=-117.59 w=28.00 h=14.77 fsize=28.00
-^^[[33m[vertical]^^[[0m   [render] GLYPH char=30002 [c:1, r:3.00, s:nil] xoff=772.94 yoff=-117.64 w=28.00 h=18.81 fsize=28.00
-^^[[33m[vertical]^^[[0m   [render] GLYPH char=25100 [c:1, r:4.00, s:nil] xoff=772.94 yoff=-145.85 w=28.00 h=19.30 fsize=28.00
-^^[[33m[vertical]^^[[0m   [render] GLYPH char=31179 [c:1, r:5.00, s:nil] xoff=772.94 yoff=-173.90 w=28.00 h=18.35 fsize=28.00
+^^[[33m[vertical]^^[[0m [VisualCenter] char=20108 GID=16080 size=28.00 units=1024 bbox=[51,-118,983,719] method=bbox v_center=14.14
+^^[[33m[vertical]^^[[0m   [render] GLYPH char=20108 [c:0, r:1.00, s:nil] xoff=823.11 yoff=-61.74 w=28.00 h=14.66 fsize=28.00
+^^[[33m[vertical]^^[[0m [VisualCenter] char=19977 GID=15949 size=28.00 units=1024 bbox=[93,-135,930,724] method=bbox v_center=13.99
+^^[[33m[vertical]^^[[0m   [render] GLYPH char=19977 [c:0, r:2.00, s:nil] xoff=823.26 yoff=-90.20 w=28.00 h=16.46 fsize=28.00
+^^[[33m[vertical]^^[[0m [VisualCenter] char=22235 GID=18207 size=28.00 units=1024 bbox=[101,-75,929,695] method=bbox v_center=14.08
+^^[[33m[vertical]^^[[0m   [render] GLYPH char=22235 [c:0, r:3.00, s:nil] xoff=823.16 yoff=-117.59 w=28.00 h=14.77 fsize=28.00
+^^[[33m[vertical]^^[[0m [VisualCenter] char=30002 GID=25974 size=28.00 units=1024 bbox=[55,-120,971,709] method=bbox v_center=14.03
+^^[[33m[vertical]^^[[0m   [render] GLYPH char=30002 [c:1, r:3.00, s:nil] xoff=772.91 yoff=-117.64 w=28.00 h=18.81 fsize=28.00
+^^[[33m[vertical]^^[[0m [VisualCenter] char=25100 GID=21072 size=28.00 units=1024 bbox=[108,-137,888,731] method=bbox v_center=13.62
+^^[[33m[vertical]^^[[0m   [render] GLYPH char=25100 [c:1, r:4.00, s:nil] xoff=773.32 yoff=-145.85 w=28.00 h=19.30 fsize=28.00
+^^[[33m[vertical]^^[[0m [VisualCenter] char=31179 GID=27151 size=28.00 units=1024 bbox=[76,-149,951,685] method=bbox v_center=14.04
+^^[[33m[vertical]^^[[0m   [render] GLYPH char=31179 [c:1, r:5.00, s:nil] xoff=772.90 yoff=-173.90 w=28.00 h=18.35 fsize=28.00
+^^[[33m[vertical]^^[[0m [VisualCenter] char=33775 GID=29747 size=28.00 units=1024 bbox=[38,-141,986,702] method=bbox v_center=14.00
 ^^[[33m[vertical]^^[[0m   [render] GLYPH char=33775 [c:1, r:6.00, s:nil] xoff=772.94 yoff=-202.66 w=28.00 h=20.95 fsize=28.00
-^^[[33m[vertical]^^[[0m   [render] GLYPH char=38525 [c:1, r:7.00, s:nil] xoff=772.94 yoff=-230.32 w=28.00 h=19.69 fsize=28.00
+^^[[33m[vertical]^^[[0m [VisualCenter] char=38525 GID=34497 size=28.00 units=1024 bbox=[77,-92,953,664] method=bbox v_center=14.08
+^^[[33m[vertical]^^[[0m   [render] GLYPH char=38525 [c:1, r:7.00, s:nil] xoff=772.86 yoff=-230.32 w=28.00 h=19.69 fsize=28.00
+^^[[33m[vertical]^^[[0m [VisualCenter] char=25955 GID=21927 size=28.00 units=1024 bbox=[58,-130,966,659] method=bbox v_center=14.00
 ^^[[33m[vertical]^^[[0m   [render] GLYPH char=25955 [c:1, r:8.00, s:nil] xoff=772.94 yoff=-257.85 w=28.00 h=19.25 fsize=28.00
-^^[[33m[vertical]^^[[0m   [render] GLYPH char=20154 [c:1, r:9.00, s:nil] xoff=772.94 yoff=-286.70 w=28.00 h=17.72 fsize=28.00
-^^[[33m[vertical]^^[[0m   [render] GLYPH char=38988 [c:1, r:10.00, s:nil] xoff=772.94 yoff=-313.59 w=28.00 h=18.38 fsize=28.00
-^^[[33m[vertical]^^[[0m   [render] GLYPH char=12288 [c:1, r:11.00, s:nil] xoff=772.94 yoff=-334.45 w=28.00 h=0.00 fsize=28.00
-^^[[33m[vertical]^^[[0m   [render] GLYPH char=26481 [c:1, r:12.00, s:nil] xoff=772.94 yoff=-370.65 w=28.00 h=20.95 fsize=28.00
-^^[[33m[vertical]^^[[0m   [render] GLYPH char=37117 [c:1, r:13.00, s:nil] xoff=772.94 yoff=-398.19 w=28.00 h=19.58 fsize=28.00
-^^[[33m[vertical]^^[[0m   [render] GLYPH char=29275 [c:1, r:14.00, s:nil] xoff=772.94 yoff=-426.41 w=28.00 h=20.32 fsize=28.00
-^^[[33m[vertical]^^[[0m   [render] GLYPH char=38272 [c:1, r:15.00, s:nil] xoff=772.94 yoff=-454.21 w=28.00 h=19.61 fsize=28.00
-^^[[33m[vertical]^^[[0m   [render] GLYPH char=38577 [c:1, r:16.00, s:nil] xoff=772.94 yoff=-482.78 w=28.00 h=20.32 fsize=28.00
-^^[[33m[vertical]^^[[0m   [render] GLYPH char=22763 [c:1, r:17.00, s:nil] xoff=772.94 yoff=-511.03 w=28.00 h=18.87 fsize=28.00
-^^[[33m[vertical]^^[[0m   [render] GLYPH char=26360 [c:1, r:18.00, s:nil] xoff=772.94 yoff=-538.68 w=28.00 h=20.95 fsize=28.00
+^^[[33m[vertical]^^[[0m [VisualCenter] char=20154 GID=16126 size=28.00 units=1024 bbox=[215,-109,845,770] method=bbox v_center=14.49
+^^[[33m[vertical]^^[[0m   [render] GLYPH char=20154 [c:1, r:9.00, s:nil] xoff=772.45 yoff=-286.70 w=28.00 h=17.72 fsize=28.00
+^^[[33m[vertical]^^[[0m [VisualCenter] char=38988 GID=34960 size=28.00 units=1024 bbox=[68,-68,959,731] method=bbox v_center=14.04
+^^[[33m[vertical]^^[[0m   [render] GLYPH char=38988 [c:1, r:10.00, s:nil] xoff=772.90 yoff=-313.59 w=28.00 h=18.38 fsize=28.00
+^^[[33m[vertical]^^[[0m [VisualCenter] char=12288 GID=8323 size=28.00 units=1024 bbox=[429,-178,616,137] method=bbox v_center=14.29
+^^[[33m[vertical]^^[[0m   [render] GLYPH char=12288 [c:1, r:11.00, s:nil] xoff=772.65 yoff=-334.45 w=28.00 h=0.00 fsize=28.00
+^^[[33m[vertical]^^[[0m [VisualCenter] char=26481 GID=22453 size=28.00 units=1024 bbox=[48,-114,981,664] method=bbox v_center=14.07
+^^[[33m[vertical]^^[[0m   [render] GLYPH char=26481 [c:1, r:12.00, s:nil] xoff=772.87 yoff=-370.65 w=28.00 h=20.95 fsize=28.00
+^^[[33m[vertical]^^[[0m [VisualCenter] char=37117 GID=33089 size=28.00 units=1024 bbox=[61,-124,966,712] method=bbox v_center=14.04
+^^[[33m[vertical]^^[[0m   [render] GLYPH char=37117 [c:1, r:13.00, s:nil] xoff=772.90 yoff=-398.19 w=28.00 h=19.58 fsize=28.00
+^^[[33m[vertical]^^[[0m [VisualCenter] char=29275 GID=25247 size=28.00 units=1024 bbox=[47,-137,947,710] method=bbox v_center=13.59
+^^[[33m[vertical]^^[[0m   [render] GLYPH char=29275 [c:1, r:14.00, s:nil] xoff=773.35 yoff=-426.41 w=28.00 h=20.32 fsize=28.00
+^^[[33m[vertical]^^[[0m [VisualCenter] char=38272 GID=34244 size=28.00 units=1024 bbox=[77,-169,949,784] method=bbox v_center=14.03
+^^[[33m[vertical]^^[[0m   [render] GLYPH char=38272 [c:1, r:15.00, s:nil] xoff=772.91 yoff=-454.21 w=28.00 h=19.61 fsize=28.00
+^^[[33m[vertical]^^[[0m [VisualCenter] char=38577 GID=34549 size=28.00 units=1024 bbox=[55,-70,976,659] method=bbox v_center=14.10
+^^[[33m[vertical]^^[[0m   [render] GLYPH char=38577 [c:1, r:16.00, s:nil] xoff=772.85 yoff=-482.78 w=28.00 h=20.32 fsize=28.00
+^^[[33m[vertical]^^[[0m [VisualCenter] char=22763 GID=18735 size=28.00 units=1024 bbox=[103,-67,922,676] method=bbox v_center=14.01
+^^[[33m[vertical]^^[[0m   [render] GLYPH char=22763 [c:1, r:17.00, s:nil] xoff=772.93 yoff=-511.03 w=28.00 h=18.87 fsize=28.00
+^^[[33m[vertical]^^[[0m [VisualCenter] char=26360 GID=22332 size=28.00 units=1024 bbox=[195,-41,864,662] method=bbox v_center=14.48
+^^[[33m[vertical]^^[[0m   [render] GLYPH char=26360 [c:1, r:18.00, s:nil] xoff=772.46 yoff=-538.68 w=28.00 h=20.95 fsize=28.00
+^^[[33m[vertical]^^[[0m [VisualCenter] char=19968 GID=15940 size=28.00 units=1024 bbox=[56,-124,968,725] method=bbox v_center=14.00
 ^^[[33m[vertical]^^[[0m   [render] GLYPH char=19968 [c:1, r:20.00, s:nil] xoff=772.94 yoff=-591.75 w=28.00 h=10.50 fsize=28.00
-^^[[33m[vertical]^^[[0m   [render] GLYPH char=20108 [c:2, r:0.00, s:nil] xoff=722.64 yoff=-33.73 w=28.00 h=14.66 fsize=28.00
-^^[[33m[vertical]^^[[0m   [render] GLYPH char=19977 [c:2, r:1.00, s:nil] xoff=722.64 yoff=-62.20 w=28.00 h=16.46 fsize=28.00
-^^[[33m[vertical]^^[[0m   [render] GLYPH char=22235 [c:2, r:2.00, s:nil] xoff=722.64 yoff=-89.59 w=28.00 h=14.77 fsize=28.00
+^^[[33m[vertical]^^[[0m [VisualCenter] char=20108 GID=16080 size=28.00 units=1024 bbox=[51,-118,983,719] method=bbox v_center=14.14
+^^[[33m[vertical]^^[[0m   [render] GLYPH char=20108 [c:2, r:0.00, s:nil] xoff=722.50 yoff=-33.73 w=28.00 h=14.66 fsize=28.00
+^^[[33m[vertical]^^[[0m [VisualCenter] char=19977 GID=15949 size=28.00 units=1024 bbox=[93,-135,930,724] method=bbox v_center=13.99
+^^[[33m[vertical]^^[[0m   [render] GLYPH char=19977 [c:2, r:1.00, s:nil] xoff=722.65 yoff=-62.20 w=28.00 h=16.46 fsize=28.00
+^^[[33m[vertical]^^[[0m [VisualCenter] char=22235 GID=18207 size=28.00 units=1024 bbox=[101,-75,929,695] method=bbox v_center=14.08
+^^[[33m[vertical]^^[[0m   [render] GLYPH char=22235 [c:2, r:2.00, s:nil] xoff=722.55 yoff=-89.59 w=28.00 h=14.77 fsize=28.00
 ^^[[33m[vertical]^^[[0m [core] Finished apply_positions. Pages: 1. Global page number: 1 -> 2
 ^^[[33m[vertical]^^[[0m --- [core] Layout Map Summary --- [1
 ] [2]
@@ -180,27 +205,48 @@ DEBUG: banxin-padding-top is 2pt
 ^^[[35m[banxin]^^[[0m [banxin] input y=-7.20 height=598.10 padding_top=2.00 draw_border=true
 ^^[[35m[banxin]^^[[0m [banxin] Border literal: q 0.40 w 0.0000 0.0000 0.0000 RG 408.1171 -7.1731 50.1180 -595.8662 re S Q
 ^^[[33m[vertical]^^[[0m [yuwei] Drawing yuwei with style=black, direction=1, color=0.0000 0.0000 0.0000
-^^[[33m[vertical]^^[[0m [GlyphPos] char=20108 x=409.65 cw=48.31 gw=15.00 -> xoff=442.95 yoff=-505.99
-^^[[33m[vertical]^^[[0m   [render] GLYPH char=30002 [c:0, r:5.00, s:nil] xoff=823.25 yoff=-173.64 w=28.00 h=18.81 fsize=28.00
-^^[[33m[vertical]^^[[0m   [render] GLYPH char=25100 [c:0, r:6.00, s:nil] xoff=823.25 yoff=-201.85 w=28.00 h=19.30 fsize=28.00
-^^[[33m[vertical]^^[[0m   [render] GLYPH char=31179 [c:0, r:7.00, s:nil] xoff=823.25 yoff=-229.91 w=28.00 h=18.35 fsize=28.00
+^^[[35m[banxin]^^[[0m [banxin] PageNumber text='二' fs=12.00 grid_h=14.40 height=14.40
+^^[[33m[vertical]^^[[0m [GlyphPos] char=20108 x=409.65 cw=48.31 gw=12.00 -> xoff=445.95 yoff=-506.57
+^^[[33m[vertical]^^[[0m [VisualCenter] char=30002 GID=25974 size=28.00 units=1024 bbox=[55,-120,971,709] method=bbox v_center=14.03
+^^[[33m[vertical]^^[[0m   [render] GLYPH char=30002 [c:0, r:5.00, s:nil] xoff=823.22 yoff=-173.64 w=28.00 h=18.81 fsize=28.00
+^^[[33m[vertical]^^[[0m [VisualCenter] char=25100 GID=21072 size=28.00 units=1024 bbox=[108,-137,888,731] method=bbox v_center=13.62
+^^[[33m[vertical]^^[[0m   [render] GLYPH char=25100 [c:0, r:6.00, s:nil] xoff=823.63 yoff=-201.85 w=28.00 h=19.30 fsize=28.00
+^^[[33m[vertical]^^[[0m [VisualCenter] char=31179 GID=27151 size=28.00 units=1024 bbox=[76,-149,951,685] method=bbox v_center=14.04
+^^[[33m[vertical]^^[[0m   [render] GLYPH char=31179 [c:0, r:7.00, s:nil] xoff=823.21 yoff=-229.91 w=28.00 h=18.35 fsize=28.00
+^^[[33m[vertical]^^[[0m [VisualCenter] char=33775 GID=29747 size=28.00 units=1024 bbox=[38,-141,986,702] method=bbox v_center=14.00
 ^^[[33m[vertical]^^[[0m   [render] GLYPH char=33775 [c:0, r:8.00, s:nil] xoff=823.25 yoff=-258.67 w=28.00 h=20.95 fsize=28.00
-^^[[33m[vertical]^^[[0m   [render] GLYPH char=38525 [c:0, r:9.00, s:nil] xoff=823.25 yoff=-286.33 w=28.00 h=19.69 fsize=28.00
+^^[[33m[vertical]^^[[0m [VisualCenter] char=38525 GID=34497 size=28.00 units=1024 bbox=[77,-92,953,664] method=bbox v_center=14.08
+^^[[33m[vertical]^^[[0m   [render] GLYPH char=38525 [c:0, r:9.00, s:nil] xoff=823.16 yoff=-286.33 w=28.00 h=19.69 fsize=28.00
+^^[[33m[vertical]^^[[0m [VisualCenter] char=25955 GID=21927 size=28.00 units=1024 bbox=[58,-130,966,659] method=bbox v_center=14.00
 ^^[[33m[vertical]^^[[0m   [render] GLYPH char=25955 [c:0, r:10.00, s:nil] xoff=823.25 yoff=-313.86 w=28.00 h=19.25 fsize=28.00
-^^[[33m[vertical]^^[[0m   [render] GLYPH char=20154 [c:0, r:11.00, s:nil] xoff=823.25 yoff=-342.71 w=28.00 h=17.72 fsize=28.00
-^^[[33m[vertical]^^[[0m   [render] GLYPH char=38988 [c:0, r:12.00, s:nil] xoff=823.25 yoff=-369.60 w=28.00 h=18.38 fsize=28.00
-^^[[33m[vertical]^^[[0m   [render] GLYPH char=12288 [c:0, r:13.00, s:nil] xoff=823.25 yoff=-390.46 w=28.00 h=0.00 fsize=28.00
-^^[[33m[vertical]^^[[0m   [render] GLYPH char=26481 [c:0, r:14.00, s:nil] xoff=823.25 yoff=-426.66 w=28.00 h=20.95 fsize=28.00
-^^[[33m[vertical]^^[[0m   [render] GLYPH char=37117 [c:0, r:15.00, s:nil] xoff=823.25 yoff=-454.20 w=28.00 h=19.58 fsize=28.00
-^^[[33m[vertical]^^[[0m   [render] GLYPH char=29275 [c:0, r:16.00, s:nil] xoff=823.25 yoff=-482.42 w=28.00 h=20.32 fsize=28.00
-^^[[33m[vertical]^^[[0m   [render] GLYPH char=38272 [c:0, r:17.00, s:nil] xoff=823.25 yoff=-510.22 w=28.00 h=19.61 fsize=28.00
-^^[[33m[vertical]^^[[0m   [render] GLYPH char=38577 [c:0, r:18.00, s:nil] xoff=823.25 yoff=-538.79 w=28.00 h=20.32 fsize=28.00
-^^[[33m[vertical]^^[[0m   [render] GLYPH char=22763 [c:0, r:19.00, s:nil] xoff=823.25 yoff=-567.04 w=28.00 h=18.87 fsize=28.00
-^^[[33m[vertical]^^[[0m   [render] GLYPH char=26360 [c:0, r:20.00, s:nil] xoff=823.25 yoff=-594.69 w=28.00 h=20.95 fsize=28.00
+^^[[33m[vertical]^^[[0m [VisualCenter] char=20154 GID=16126 size=28.00 units=1024 bbox=[215,-109,845,770] method=bbox v_center=14.49
+^^[[33m[vertical]^^[[0m   [render] GLYPH char=20154 [c:0, r:11.00, s:nil] xoff=822.75 yoff=-342.71 w=28.00 h=17.72 fsize=28.00
+^^[[33m[vertical]^^[[0m [VisualCenter] char=38988 GID=34960 size=28.00 units=1024 bbox=[68,-68,959,731] method=bbox v_center=14.04
+^^[[33m[vertical]^^[[0m   [render] GLYPH char=38988 [c:0, r:12.00, s:nil] xoff=823.21 yoff=-369.60 w=28.00 h=18.38 fsize=28.00
+^^[[33m[vertical]^^[[0m [VisualCenter] char=12288 GID=8323 size=28.00 units=1024 bbox=[429,-178,616,137] method=bbox v_center=14.29
+^^[[33m[vertical]^^[[0m   [render] GLYPH char=12288 [c:0, r:13.00, s:nil] xoff=822.96 yoff=-390.46 w=28.00 h=0.00 fsize=28.00
+^^[[33m[vertical]^^[[0m [VisualCenter] char=26481 GID=22453 size=28.00 units=1024 bbox=[48,-114,981,664] method=bbox v_center=14.07
+^^[[33m[vertical]^^[[0m   [render] GLYPH char=26481 [c:0, r:14.00, s:nil] xoff=823.18 yoff=-426.66 w=28.00 h=20.95 fsize=28.00
+^^[[33m[vertical]^^[[0m [VisualCenter] char=37117 GID=33089 size=28.00 units=1024 bbox=[61,-124,966,712] method=bbox v_center=14.04
+^^[[33m[vertical]^^[[0m   [render] GLYPH char=37117 [c:0, r:15.00, s:nil] xoff=823.21 yoff=-454.20 w=28.00 h=19.58 fsize=28.00
+^^[[33m[vertical]^^[[0m [VisualCenter] char=29275 GID=25247 size=28.00 units=1024 bbox=[47,-137,947,710] method=bbox v_center=13.59
+^^[[33m[vertical]^^[[0m   [render] GLYPH char=29275 [c:0, r:16.00, s:nil] xoff=823.66 yoff=-482.42 w=28.00 h=20.32 fsize=28.00
+^^[[33m[vertical]^^[[0m [VisualCenter] char=38272 GID=34244 size=28.00 units=1024 bbox=[77,-169,949,784] method=bbox v_center=14.03
+^^[[33m[vertical]^^[[0m   [render] GLYPH char=38272 [c:0, r:17.00, s:nil] xoff=823.22 yoff=-510.22 w=28.00 h=19.61 fsize=28.00
+^^[[33m[vertical]^^[[0m [VisualCenter] char=38577 GID=34549 size=28.00 units=1024 bbox=[55,-70,976,659] method=bbox v_center=14.10
+^^[[33m[vertical]^^[[0m   [render] GLYPH char=38577 [c:0, r:18.00, s:nil] xoff=823.15 yoff=-538.79 w=28.00 h=20.32 fsize=28.00
+^^[[33m[vertical]^^[[0m [VisualCenter] char=22763 GID=18735 size=28.00 units=1024 bbox=[103,-67,922,676] method=bbox v_center=14.01
+^^[[33m[vertical]^^[[0m   [render] GLYPH char=22763 [c:0, r:19.00, s:nil] xoff=823.23 yoff=-567.04 w=28.00 h=18.87 fsize=28.00
+^^[[33m[vertical]^^[[0m [VisualCenter] char=26360 GID=22332 size=28.00 units=1024 bbox=[195,-41,864,662] method=bbox v_center=14.48
+^^[[33m[vertical]^^[[0m   [render] GLYPH char=26360 [c:0, r:20.00, s:nil] xoff=822.77 yoff=-594.69 w=28.00 h=20.95 fsize=28.00
+^^[[33m[vertical]^^[[0m [VisualCenter] char=19968 GID=15940 size=28.00 units=1024 bbox=[56,-124,968,725] method=bbox v_center=14.00
 ^^[[33m[vertical]^^[[0m   [render] GLYPH char=19968 [c:1, r:0.00, s:nil] xoff=772.94 yoff=-31.65 w=28.00 h=10.50 fsize=28.00
-^^[[33m[vertical]^^[[0m   [render] GLYPH char=20108 [c:1, r:1.00, s:nil] xoff=772.94 yoff=-61.74 w=28.00 h=14.66 fsize=28.00
-^^[[33m[vertical]^^[[0m   [render] GLYPH char=19977 [c:1, r:2.00, s:nil] xoff=772.94 yoff=-90.20 w=28.00 h=16.46 fsize=28.00
-^^[[33m[vertical]^^[[0m   [render] GLYPH char=22235 [c:1, r:3.00, s:nil] xoff=772.94 yoff=-117.59 w=28.00 h=14.77 fsize=28.00
+^^[[33m[vertical]^^[[0m [VisualCenter] char=20108 GID=16080 size=28.00 units=1024 bbox=[51,-118,983,719] method=bbox v_center=14.14
+^^[[33m[vertical]^^[[0m   [render] GLYPH char=20108 [c:1, r:1.00, s:nil] xoff=772.80 yoff=-61.74 w=28.00 h=14.66 fsize=28.00
+^^[[33m[vertical]^^[[0m [VisualCenter] char=19977 GID=15949 size=28.00 units=1024 bbox=[93,-135,930,724] method=bbox v_center=13.99
+^^[[33m[vertical]^^[[0m   [render] GLYPH char=19977 [c:1, r:2.00, s:nil] xoff=772.95 yoff=-90.20 w=28.00 h=16.46 fsize=28.00
+^^[[33m[vertical]^^[[0m [VisualCenter] char=22235 GID=18207 size=28.00 units=1024 bbox=[101,-75,929,695] method=bbox v_center=14.08
+^^[[33m[vertical]^^[[0m   [render] GLYPH char=22235 [c:1, r:3.00, s:nil] xoff=772.86 yoff=-117.59 w=28.00 h=14.77 fsize=28.00
 ^^[[33m[vertical]^^[[0m [core] Finished apply_positions. Pages: 1. Global page number: 2 -> 3
 ^^[[33m[vertical]^^[[0m --- [core] Layout Map Summary --- [3
 ] [4]

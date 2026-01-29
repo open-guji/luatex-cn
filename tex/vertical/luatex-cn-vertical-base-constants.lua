@@ -14,48 +14,12 @@
 -- ============================================================================
 -- base_constants.lua - 基础常量与工具函数库
 -- ============================================================================
--- 文件名: base_constants.lua (原 constants.lua)
--- 层级: 基础层 (Base Layer)
---
--- 【模块功能 / Module Purpose】
--- 本模块是所有子模块的共享基础设施，提供：
---   1. 节点类型 ID 常量（GLYPH、KERN、HLIST、VLIST 等）
---   2. 自定义属性索引（缩进、右缩进、textbox 尺寸等）
---   3. TeX 尺寸字符串到 scaled points 的转换函数 (to_dimen)
---   4. Node.direct 接口的快捷引用 (D)
---
--- 【术语对照 / Terminology】
---   scaled points (sp)  - TeX 内部单位，1pt = 65536sp
---   GLYPH               - 字形节点（glyph node）
---   KERN                - 字距节点（kerning node）
---   HLIST               - 水平列表（horizontal list）
---   VLIST               - 垂直列表（vertical list）
---   GLUE                - 胶水/弹性空白（glue）
---   PENALTY             - 惩罚节点（penalty，用于换行/分页控制）
---   ATTR_INDENT         - 缩进属性（indent attribute）
---   ATTR_TEXTBOX_*      - 文本框属性（textbox attributes）
---
--- 【注意事项】
---   • 本模块必须在所有其他模块之前加载（vertical.sty 确保了这一点）
---   • 属性 ID 由 TeX 层注册（\newluatexattribute），Lua 层通过 luatexbase 访问
---   • to_dimen 函数会过滤空字符串和 "0pt"，返回 nil 而非 0（用于区分未设置）
---
--- 【整体架构 / Architecture】
---   base_constants.lua (本模块)
---      ├─ 导出常量 → 被所有子模块引用
---      ├─ to_dimen() → 被 core_main.lua 用于解析 TeX 参数
---      └─ ATTR_* 索引 → 被 flatten/layout/render 用于读写节点属性
---
--- ============================================================================
 
 -- Create module table
 local constants = {}
 
 -- Node.direct interface for performance
 constants.D = node.direct
-
--- Legacy debug table removed in favor of centralized luatex-cn-debug module.
--- Registration is handled by modules (e.g., vertical.sty calls luatex_cn_debug.register_module)
 
 -- Node type IDs
 constants.GLYPH = node.id("glyph")
@@ -69,7 +33,6 @@ constants.LOCAL_PAR = node.id("local_par")
 constants.RULE = node.id("rule")
 
 -- Custom attributes for indentation
--- Note: Attributes are registered in vertical.sty via \newluatexattribute
 constants.ATTR_INDENT = luatexbase.attributes.cnverticalindent or luatexbase.new_attribute("cnverticalindent")
 constants.ATTR_RIGHT_INDENT = luatexbase.attributes.cnverticalrightindent or
     luatexbase.new_attribute("cnverticalrightindent")
@@ -89,51 +52,118 @@ constants.ATTR_FIRST_INDENT = luatexbase.attributes.cnverticalfirstindent or
 constants.ATTR_JIAZHU = luatexbase.attributes.cnverticaljiazhu or luatexbase.new_attribute("cnverticaljiazhu")
 constants.ATTR_JIAZHU_SUB = luatexbase.attributes.cnverticaljiazhusub or luatexbase.new_attribute("cnverticaljiazhusub")
 constants.ATTR_JUDOU_FONT = luatexbase.attributes.cnverticaljudoufont or luatexbase.new_attribute("cnverticaljudoufont")
+constants.ATTR_DECORATE_ID = 202610
+-- Stores the visual center X coordinate (relative to glyph origin)
+constants.ATTR_DECORATE_VISUAL_CENTER = 202611
+constants.ATTR_DECORATE_FONT = 202612
 
 -- Constants for Side Pizhu
 constants.SIDENOTE_USER_ID = 202601
 constants.FLOATING_TEXTBOX_USER_ID = 202602
 constants.JUDOU_USER_ID = 202603
+constants.DECORATE_USER_ID = 202604
 
 --- 将 TeX 尺寸字符串转换为 scaled points (sp)
--- @param dim_str (string) TeX 尺寸字符串（例如 "20pt", "1.5em"）
--- @return (number|nil) 以 scaled points 为单位的尺寸，如果无效或为零则返回 nil
--- @usage local sp = constants.to_dimen("20pt")
 local function to_dimen(dim_str)
-    if not dim_str or dim_str == "" then
-        return nil
-    end
+    if not dim_str or dim_str == "" or dim_str == "nil" then return nil end
+    if type(dim_str) == "number" then return dim_str end
 
-    -- If it's already a number, return it (assume sp)
-    if type(dim_str) == "number" then
-        return dim_str
-    end
-
-    -- Strip curly braces if present (handle nested/multiple braces)
+    -- Clean string: remove braces and whitespace
     dim_str = tostring(dim_str):gsub("[{}]", ""):gsub("^%s*(.-)%s*$", "%1")
-
     if dim_str == "" then return nil end
 
-    -- Fallback: try to parse as pure number (assume em per refined requirement)
-    if tonumber(dim_str) then
-        local ok, res = pcall(tex.sp, dim_str .. "em")
-        if ok then return res end
+    -- Handle em units (relative to font size)
+    -- Normalize: remove space between number and 'em' if present
+    local clean_em = dim_str:lower():gsub("%s+", "")
+    local em_val = clean_em:match("^([%-%d%.]+)em$")
+    if em_val then
+        return { value = tonumber(em_val), unit = "em" }
     end
 
-    -- Try standard tex.sp parsing (handles units like "10pt", "5em")
-    local ok, res = pcall(tex.sp, dim_str)
-    if ok then
-        return res
+    -- If it's a raw number (no units), assume it's scaled points (sp)
+    if tonumber(dim_str) then
+        return tonumber(dim_str)
     end
+
+    -- Absolute dimensions (pt, mm, bp, etc.)
+    -- tex.sp handles spaces if they are between number and unit usually,
+    -- but we clean it just in case
+    local clean_abs = dim_str:gsub("%s+", "")
+    local ok, res = pcall(tex.sp, clean_abs)
+    if ok and res then return res end
+
+    -- Final fallback: try raw tex.sp if cleaning failed
+    ok, res = pcall(tex.sp, dim_str)
+    if ok and res then return res end
 
     return nil
 end
 
 constants.to_dimen = to_dimen
 
--- Register module in package.loaded for require() compatibility
--- 注册模块到 package.loaded
-package.loaded['vertical.luatex-cn-vertical-base-constants'] = constants
+local function resolve_dimen(val, font_size_sp)
+    if not val or val == "" then return nil end
+    local d = val
+    if type(d) == "string" then
+        d = to_dimen(d)
+    end
 
--- Return module
+    if type(d) == "table" and d.unit == "em" then
+        return math.floor(d.value * (font_size_sp or 655360) + 0.5)
+    end
+
+    local num = tonumber(d)
+    return num
+end
+
+constants.resolve_dimen = resolve_dimen
+
+local function register_decorate(char_str, xoff_str, yoff_str, size_str, color_str, font_id, scale)
+    _G.decorate_registry = _G.decorate_registry or {}
+
+    local char_code = 63 -- Default '?'
+    if char_str and char_str ~= "" then
+        char_code = utf8.codepoint(char_str, 1)
+    end
+
+    local reg = {
+        char = char_code,
+        xoffset = to_dimen(xoff_str) or 0,
+        yoffset = to_dimen(yoff_str) or 0,
+        font_size = to_dimen(size_str), -- Nil means inherit from text font
+        scale = tonumber(scale) or 1.0, -- Multiplier for font size
+        color = color_str,
+        font_id = font_id               -- Store provided ID (may be nil)
+    }
+    table.insert(_G.decorate_registry, reg)
+    local reg_id = #_G.decorate_registry
+
+    local D = node.direct
+    local g = D.new(constants.GLYPH)
+    D.setfield(g, "char", reg.char)
+    D.setfield(g, "font", reg.font_id or font.current()) -- Placeholder for TeX box
+
+    -- Set glyph dimensions to zero so it doesn't take up horizontal space
+    D.setfield(g, "width", 0)
+    D.setfield(g, "height", 0)
+    D.setfield(g, "depth", 0)
+    if constants.ATTR_DECORATE_ID then
+        D.set_attribute(g, constants.ATTR_DECORATE_ID, reg_id)
+    end
+
+    -- Wrap in HLIST
+    local h = D.new(node.id("hlist"))
+    D.setfield(h, "head", g)
+    D.setfield(h, "width", 0)
+    D.setfield(h, "height", 0)
+    D.setfield(h, "depth", 0)
+
+    -- Use box 0 to pass node back to TeX
+    tex.box[0] = D.tonode(h)
+    return reg_id
+end
+
+constants.register_decorate = register_decorate
+
+package.loaded['vertical.luatex-cn-vertical-base-constants'] = constants
 return constants

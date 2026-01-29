@@ -242,9 +242,22 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
 
         for i, entry in ipairs(col_buffer) do
             local row
-            if distribute and N > 1 and N < H then
-                -- Evenly distribute with sub-grid precision: Row = (i-1) * (H-1)/(N-1)
-                row = (i - 1) * (H - 1) / (N - 1)
+            local v_scale = 1.0
+
+            if distribute and N > 1 then
+                if N < H then
+                    -- Evenly distribute: Row = (i-1) * (H-1)/(N-1)
+                    row = (i - 1) * (H - 1) / (N - 1)
+                else
+                    -- Vertical Squeezing: Place characters at compressed rows
+                    -- Each character should occupy exactly H/N of available space.
+                    -- Centering a character in a cell of size grid_height starting at 'row'
+                    -- follows: y = -(row + 0.5) * grid_height.
+                    -- We want center_i = -(i - 0.5) * (H/N) * grid_height.
+                    -- Solving (row + 0.5) = (i - 0.5) * (H/N) gives:
+                    row = (i - 0.5) * (H / N) - 0.5
+                    v_scale = H / N
+                end
             else
                 row = entry.relative_row
             end
@@ -255,7 +268,8 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
                 row = row,
                 is_block = entry.is_block,
                 width = entry.width,
-                height = entry.height
+                height = entry.height,
+                v_scale = v_scale
             }
         end
         col_buffer = {}
@@ -325,7 +339,8 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
         if effective_limit < indent + 1 then effective_limit = indent + 1 end
 
         -- Check wrapping BEFORE placing
-        if ctx.cur_row >= effective_limit then
+        -- In distribution mode, we allow overflow so we can squeeze characters later
+        if ctx.cur_row >= effective_limit and not distribute then
             flush_buffer()
             ctx.cur_col = ctx.cur_col + 1
             ctx.cur_row = 0
@@ -470,9 +485,21 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
             ctx.cur_row = ctx.cur_row + tb_h
             move_to_next_valid_position(ctx, interval, grid_height)
         elseif id == constants.GLYPH then
-            table.insert(col_buffer, { node = t, page = ctx.cur_page, col = ctx.cur_col, relative_row = ctx.cur_row })
-            ctx.cur_row = ctx.cur_row + 1
-            move_to_next_valid_position(ctx, interval, grid_height)
+            local dec_id = D.get_attribute(t, constants.ATTR_DECORATE_ID)
+            if dec_id and dec_id > 0 then
+                -- Decorate Marker: position directly at current row WITHOUT entering col_buffer
+                -- This ensures the marker doesn't affect normal character layout
+                layout_map[t] = {
+                    page = ctx.cur_page,
+                    col = ctx.cur_col,
+                    row = ctx.cur_row
+                }
+                -- DO NOT increment cur_row - marker is zero-width overlay
+            else
+                table.insert(col_buffer, { node = t, page = ctx.cur_page, col = ctx.cur_col, relative_row = ctx.cur_row })
+                ctx.cur_row = ctx.cur_row + 1
+                move_to_next_valid_position(ctx, interval, grid_height)
+            end
         elseif id == constants.GLUE or id == constants.KERN then
             local net_width = 0
             local lookahead = t

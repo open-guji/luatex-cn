@@ -176,13 +176,21 @@ local function handle_glyph_node(curr, p_head, pos, params, ctx)
     local h = D.getfield(curr, "height") or 0
     local w = D.getfield(curr, "width") or 0
 
+    local v_scale = pos.v_scale or 1.0
+
     local h_align = "center"
     if params.column_aligns and params.column_aligns[pos.col] then
         h_align = params.column_aligns[pos.col]
     end
 
     local final_x, final_y = text_position.calc_grid_position(pos.col, pos.row,
-        { width = w, height = h, depth = d },
+        {
+            width = w,
+            height = h * v_scale,
+            depth = d * v_scale,
+            char = D.getfield(curr, "char"),
+            font = D.getfield(curr, "font")
+        },
         {
             grid_width = ctx.grid_width,
             grid_height = ctx.grid_height,
@@ -196,8 +204,6 @@ local function handle_glyph_node(curr, p_head, pos, params, ctx)
             jiazhu_align = ctx.jiazhu_align,
         }
     )
-    D.setfield(curr, "xoffset", final_x)
-    D.setfield(curr, "yoffset", final_y)
 
     if luatex_cn_debug and luatex_cn_debug.is_enabled("vertical") then
         local font_id = D.getfield(curr, "font") or 0
@@ -209,11 +215,34 @@ local function handle_glyph_node(curr, p_head, pos, params, ctx)
             65536, h / 65536, font_size / 65536))
     end
 
+    if v_scale == 1.0 then
+        D.setfield(curr, "xoffset", final_x)
+        D.setfield(curr, "yoffset", final_y)
+    else
+        -- Squeeze using PDF matrix
+        local x_bp = final_x * utils.sp_to_bp
+        local y_bp = final_y * utils.sp_to_bp
+        D.setfield(curr, "xoffset", 0)
+        D.setfield(curr, "yoffset", 0)
+
+        -- Matrix: [1 0 0 v_scale x y]
+        local literal_str = string.format("q 1 0 0 %.4f %.4f %.4f cm", v_scale, x_bp, y_bp)
+        local n_start = utils.create_pdf_literal(literal_str)
+        local n_end = utils.create_pdf_literal(utils.create_graphics_state_end())
+
+        p_head = D.insert_before(p_head, curr, n_start)
+        D.insert_after(p_head, curr, n_end)
+    end
+
+    -- Insert negative kern to keep baseline position correct for next nodes
     local k = D.new(constants.KERN)
     D.setfield(k, "kern", -w)
     D.insert_after(p_head, curr, k)
+
     return p_head
 end
+
+_internal.handle_glyph_node = handle_glyph_node
 
 -- 辅助函数：处理 HLIST/VLIST（块）的定位
 local function handle_block_node(curr, p_head, pos, ctx)
@@ -237,120 +266,136 @@ local function handle_block_node(curr, p_head, pos, ctx)
     return p_head
 end
 
--- 辅助函数：处理 Judou（句读）标志的定位
-local function handle_judou_node(curr, p_head, pos, params, ctx)
-    print(string.format("[LUA-DEBUG] handle_judou_node CALLED for char: %x", D.getfield(curr, "value") or 0))
-    local char = D.getfield(curr, "value")
+_internal.handle_block_node = handle_block_node
 
-    -- Get font from whatsit attribute or params
-    local w_font = D.get_attribute(curr, constants.ATTR_JUDOU_FONT)
-    local base_font_id = (w_font and w_font > 0) and w_font or params.font_id or font.current()
+-- 辅助函数：解析装饰节点的字体大小（不定义新字体，使用 PDF 缩放）
+local function resolve_decorate_font(curr, reg, params, ctx)
+    local attr_font_id = constants.ATTR_DECORATE_FONT and D.get_attribute(curr, constants.ATTR_DECORATE_FONT)
+    local base_font_id = (attr_font_id and attr_font_id > 0) and attr_font_id or reg.font_id or ctx.last_font_id or
+        params.font_id or font.current()
 
-    -- Handle Judou Font Scaling (default 1em)
-    local font_id = base_font_id
-    local judou_size_sp = constants.to_dimen(ctx.judou_size)
-    if judou_size_sp and judou_size_sp > 0 then
-        local base_f_data = font.getfont(base_font_id)
-        if base_f_data then
-            -- Create a scaled version of the font if sizes differ significantly
-            if math.abs(base_f_data.size - judou_size_sp) > 6553 then -- > 0.1pt
-                local new_f_data = {}
-                for k, v in pairs(base_f_data) do new_f_data[k] = v end
-                new_f_data.size = judou_size_sp
-                font_id = font.define(new_f_data)
-            end
-        end
+    local base_f_data = font.getfont(base_font_id)
+    local base_size = base_f_data and base_f_data.size or 655360
+
+    local scale = reg.scale or 1.0
+    local font_size_sp = constants.resolve_dimen(reg.font_size, base_size)
+
+    local target_size = font_size_sp
+    if not target_size or target_size == 0 then
+        target_size = base_size * scale
+    else
+        target_size = target_size * scale
     end
 
-    -- Create glyph node
+    -- Return the original font and the effective scale factor
+    local effective_scale = target_size / base_size
+    return base_font_id, base_size, effective_scale
+end
+
+-- 辅助函数：计算装饰节点的位置
+local function calculate_decorate_position(pos, reg, ctx, base_size, font_id, char, scale, glyph_h, glyph_d)
+    local xoffset_sp = constants.resolve_dimen(reg.xoffset, base_size) or 0
+    local yoffset_sp = constants.resolve_dimen(reg.yoffset, base_size) or 0
+
+    -- Fetch unscaled metrics
+    local f_data = font.getfont(font_id)
+    local glyph_w = 0
+    if f_data and f_data.characters and f_data.characters[char] then
+        glyph_w = (f_data.characters[char].width or 0)
+    end
+
+    -- Horizontal Centering: align glyph's visual center to cell center
+    local v_center = text_position.get_visual_center(char, font_id) or (glyph_w / 2)
+    local scaled_v_center = v_center * scale
+    local center_offset = (ctx.grid_width / 2) - scaled_v_center
+
+    -- Position calculation (use previous row as decorations follow characters)
+    local target_row = math.max(0, pos.row - 1)
+    local rtl_col = ctx.p_total_cols - 1 - pos.col
+    local base_x = rtl_col * ctx.grid_width + ctx.half_thickness + ctx.shift_x
+    local base_y = -target_row * ctx.grid_height - ctx.shift_y
+
+    -- Vertical Centering: Place the glyph's ink center at cell center
+    -- Ink center is approx (h-d)/2 above baseline. We subtract this from the cell center.
+    local cell_center_y = base_y - ctx.grid_height / 2
+    local scaled_ink_center = ((glyph_h - glyph_d) / 2) * scale
+    local target_baseline_y = cell_center_y - scaled_ink_center
+
+    -- Apply user offsets: Positive xshift moves LEFT (flow direction), positive yshift moves DOWN
+    local final_x = base_x + center_offset - xoffset_sp
+    local final_y = target_baseline_y - yoffset_sp
+
+    return final_x * utils.sp_to_bp, final_y * utils.sp_to_bp
+end
+
+-- 辅助函数：处理 Decorate（装饰）标志的定位 - 渲染在前一个字符位置
+local function handle_decorate_node(curr, p_head, pos, params, ctx, reg_id)
+    local reg = _G.decorate_registry and _G.decorate_registry[reg_id]
+    if not reg then return p_head end
+
+    -- 1. Resolve font and scale factor
+    local font_id, base_size, scale = resolve_decorate_font(curr, reg, params, ctx)
+    local char = reg.char
+
+    -- 2. Create glyph (unscaled in TeX stream)
     local g = D.new(constants.GLYPH)
     D.setfield(g, "char", char)
     D.setfield(g, "font", font_id)
     D.setfield(g, "lang", 0)
 
-    -- Force dimension calculation by looking up font data
+    -- Retrieve unscaled dimensions to set correct kerning after scaling
     local f_data = font.getfont(font_id)
     local w, h, d = 0, 0, 0
     if f_data and f_data.characters and f_data.characters[char] then
         local c_data = f_data.characters[char]
-        w = c_data.width or 0
-        h = c_data.height or 0
-        d = c_data.depth or 0
+        w, h, d = c_data.width or 0, c_data.height or 0, c_data.depth or 0
     end
-
-    -- Set dimensions for TeX's layout tracking
     D.setfield(g, "width", w)
     D.setfield(g, "height", h)
     D.setfield(g, "depth", d)
 
-    -- Position calculation
-    local rtl_col = ctx.p_total_cols - 1 - pos.col
-    local base_x = rtl_col * ctx.grid_width + ctx.half_thickness + ctx.shift_x
-    local base_y = -pos.row * ctx.grid_height - ctx.shift_y
+    -- 3. Calculate position (BP)
+    local x_bp, y_bp = calculate_decorate_position(pos, reg, ctx, base_size, font_id, char, scale, h, d)
 
-    local final_x = base_x
-    local final_y = base_y
+    -- 4. Render with scaled PDF matrix
+    D.setfield(g, "xoffset", 0)
+    D.setfield(g, "yoffset", 0)
 
-    -- Default positioning logic
-    if ctx.judou_pos == "right-bottom" then
-        final_x = base_x + ctx.grid_width * 0.45
-        final_y = base_y - ctx.grid_height * 0.05
-    elseif ctx.judou_pos == "right" then
-        final_x = base_x + ctx.grid_width * 0.5
-        final_y = base_y - ctx.grid_height * 0.5
-    end
-
-    -- Apply offsets
-    D.setfield(g, "xoffset", final_x)
-    D.setfield(g, "yoffset", final_y)
-
-    if luatex_cn_debug and luatex_cn_debug.is_enabled("vertical") then
-        utils.debug_log(string.format("[render] JUDOU char=%d [c:%d, r:%d] xoff=%.2f yoff=%.2f font=%d size=%.2fpt",
-            char, pos.col, pos.row, final_x / 65536, final_y / 65536, font_id, (judou_size_sp or 0) / 65536))
-    end
-
-    -- Add color using pdf_literal with coordinate transformation (like draw_debug_rect)
-    local judou_color = ctx.judou_color or "red"
     local color_map = {
         red = "1 0 0",
         blue = "0 0 1",
         green = "0 1 0",
         black = "0 0 0",
+        purple = "0.5 0 0.5",
+        orange = "1 0.5 0"
     }
-    local rgb = color_map[judou_color] or judou_color
+    local draw_rgb = (reg.color and color_map[reg.color]) or reg.color or "0 0 0"
 
-    -- Convert to PDF big points
-    local sp_to_bp = 1 / 65536
-    local x_bp = final_x * sp_to_bp
-    local y_bp = final_y * sp_to_bp
+    -- Build scaled matrix: [scale 0 0 scale x y]
+    local color_part = string.format("%s %s", utils.create_color_literal(draw_rgb, false),
+        utils.create_color_literal(draw_rgb, true))
+    local matrix_part = string.format("%.4f 0 0 %.4f %.4f %.4f cm", scale, scale, x_bp, y_bp)
+    local n_start = utils.create_pdf_literal("q " .. color_part .. " " .. matrix_part)
+    local n_end = utils.create_pdf_literal(utils.create_graphics_state_end())
 
-    -- Create color start literal with coordinate transformation
-    local pdf_literal_subtype = node.subtype("pdf_literal")
-    local color_start = D.new(constants.WHATSIT, pdf_literal_subtype)
-    D.setfield(color_start, "mode", 0)
-    -- Move to position, set color
-    D.setfield(color_start, "data", string.format("q %s rg %s RG 1 0 0 1 %.4f %.4f cm", rgb, rgb, x_bp, y_bp))
+    p_head = D.insert_before(p_head, curr, n_start)
+    D.insert_after(p_head, n_start, g)
 
-    local color_end = D.new(constants.WHATSIT, pdf_literal_subtype)
-    D.setfield(color_end, "mode", 0)
-    D.setfield(color_end, "data", "Q")
-
-    -- Reset glyph offsets since we position via cm
-    D.setfield(g, "xoffset", 0)
-    D.setfield(g, "yoffset", 0)
-
-    -- Insert: color_start -> glyph -> kern -> color_end
-    p_head = D.insert_before(p_head, curr, color_start)
-    D.insert_after(p_head, color_start, g)
-
-    -- Add kern to negate glyph width
+    -- Kern back to avoid shifting TeX's cursor
     local k = D.new(constants.KERN)
     D.setfield(k, "kern", -w)
     D.insert_after(p_head, g, k)
-    D.insert_after(p_head, k, color_end)
+    D.insert_after(p_head, k, n_end)
+
+    if luatex_cn_debug and luatex_cn_debug.is_enabled("vertical") then
+        utils.debug_log(string.format("[render] DECORATE char=%d [c:%d, r:%d] scale=%.2f pos_x=%.4f pos_y=%.4f",
+            char, pos.col, pos.row, scale, x_bp, y_bp))
+    end
 
     return p_head
 end
+
+_internal.handle_decorate_node = handle_decorate_node
 
 -- 辅助函数：绘制调试网格/框
 local function handle_debug_drawing(curr, p_head, pos, ctx)
@@ -368,9 +413,9 @@ local function handle_debug_drawing(curr, p_head, pos, ctx)
     end
 
     if show_me then
-        local rtl_col_l = ctx.p_total_cols - (pos.col + (pos.width or 1))
-        local tx_sp = (rtl_col_l * ctx.grid_width + ctx.half_thickness + ctx.shift_x)
-        local ty_sp = (-pos.row * ctx.grid_height - ctx.shift_y)
+        local _, tx_sp = text_position.calculate_rtl_position(pos.col, ctx.p_total_cols, ctx.grid_width,
+            ctx.half_thickness, ctx.shift_x)
+        local ty_sp = text_position.calculate_y_position(pos.row, ctx.grid_height, ctx.shift_y)
         local tw_sp = ctx.grid_width
         local th_sp = -ctx.grid_height
 
@@ -390,9 +435,13 @@ local function handle_debug_drawing(curr, p_head, pos, ctx)
     return p_head
 end
 
+_internal.handle_debug_drawing = handle_debug_drawing
+
 -- 辅助函数：处理单个页面的所有节点
 local function process_page_nodes(p_head, layout_map, params, ctx)
     local curr = p_head
+    -- Initialize last_font_id with current fallback font
+    ctx.last_font_id = ctx.last_font_id or params.font_id or font.current()
     while curr do
         local next_curr = D.getnext(curr)
         local id = D.getid(curr)
@@ -407,13 +456,25 @@ local function process_page_nodes(p_head, layout_map, params, ctx)
                     end
                 else
                     if id == constants.GLYPH then
-                        p_head = handle_glyph_node(curr, p_head, pos, params, ctx)
+                        local dec_id = D.get_attribute(curr, constants.ATTR_DECORATE_ID)
+                        if dec_id and dec_id > 0 then
+                            p_head = handle_decorate_node(curr, p_head, pos, params, ctx, dec_id)
+                            -- Remove the original marker node to prevent ghost rendering at (0,0)
+                            p_head = D.remove(p_head, curr)
+                            node.flush_node(D.tonode(curr))
+                        else
+                            -- Track the font from regular glyphs for decoration fallback
+                            ctx.last_font_id = D.getfield(curr, "font")
+                            p_head = handle_glyph_node(curr, p_head, pos, params, ctx)
+                            if luatex_cn_debug and luatex_cn_debug.is_enabled("vertical") then
+                                p_head = handle_debug_drawing(curr, p_head, pos, ctx)
+                            end
+                        end
                     else
                         p_head = handle_block_node(curr, p_head, pos, ctx)
-                    end
-
-                    if luatex_cn_debug and luatex_cn_debug.is_enabled("vertical") then
-                        p_head = handle_debug_drawing(curr, p_head, pos, ctx)
+                        if luatex_cn_debug and luatex_cn_debug.is_enabled("vertical") then
+                            p_head = handle_debug_drawing(curr, p_head, pos, ctx)
+                        end
                     end
                 end
             elseif luatex_cn_debug and luatex_cn_debug.is_enabled("vertical") then
@@ -435,9 +496,9 @@ local function process_page_nodes(p_head, layout_map, params, ctx)
                 D.setfield(curr, "shrink", 0)
 
                 -- Calculate grid position (same logic as glyph but simpler - no centering needed)
-                local rtl_col = ctx.p_total_cols - 1 - pos.col
-                local final_x = rtl_col * ctx.grid_width + ctx.half_thickness + ctx.shift_x
-                local final_y = -pos.row * ctx.grid_height - ctx.shift_y
+                local _, final_x = text_position.calculate_rtl_position(pos.col, ctx.p_total_cols, ctx.grid_width,
+                    ctx.half_thickness, ctx.shift_x)
+                local final_y = text_position.calculate_y_position(pos.row, ctx.grid_height, ctx.shift_y)
 
                 -- Insert kern to move to correct position, then kern back
                 local k_pre = D.new(constants.KERN)
@@ -466,17 +527,8 @@ local function process_page_nodes(p_head, layout_map, params, ctx)
             end
         elseif id == constants.WHATSIT then
             local uid = D.getfield(curr, "user_id")
-            if uid == constants.JUDOU_USER_ID then
-                local pos = layout_map[curr]
-                if pos then
-                    p_head = handle_judou_node(curr, p_head, pos, params, ctx)
-                end
-                -- Remove the anchor whatsit
+            if uid == constants.SIDENOTE_USER_ID or uid == constants.FLOATING_TEXTBOX_USER_ID then
                 p_head = D.remove(p_head, curr)
-                node.flush_node(D.tonode(curr))
-            elseif uid == constants.SIDENOTE_USER_ID or uid == constants.FLOATING_TEXTBOX_USER_ID then
-                p_head = D.remove(p_head, curr)
-                -- We don't need to free it here if D.remove doesn't, but let's be safe
                 node.flush_node(D.tonode(curr))
             end
         end
@@ -485,6 +537,8 @@ local function process_page_nodes(p_head, layout_map, params, ctx)
 
     return p_head
 end
+
+_internal.process_page_nodes = process_page_nodes
 
 -- 辅助函数：绘制侧批 (Sidenotes)
 local function render_sidenotes(p_head, sidenote_nodes, params, ctx)
@@ -600,6 +654,8 @@ local function render_sidenotes(p_head, sidenote_nodes, params, ctx)
 
     return p_head
 end
+
+_internal.render_sidenotes = render_sidenotes
 
 -- 辅助函数：定位浮动文本框
 local function position_floating_box(p_head, item, params)

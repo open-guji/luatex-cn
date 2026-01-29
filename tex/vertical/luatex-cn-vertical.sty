@@ -16,7 +16,7 @@
 % 这是 luatex_cn 的子包
 %
 \RequirePackage{expl3}
-\ProvidesExplPackage {vertical/luatex-cn-vertical} {2026/01/27} {0.1.4} {Chinese vertical typesetting for LuaTeX}
+\ProvidesExplPackage {vertical/luatex-cn-vertical} {2026/01/28} {0.1.5} {Chinese vertical typesetting for LuaTeX}
 
 % Check if LuaTeX is being used
 \sys_if_engine_luatex:TF
@@ -81,7 +81,14 @@
 % Helper for unified dimension parsing (calls Lua)
 \cs_new:Npn \__luatexcn_to_dimen:n #1
   {
-    \lua_now:e { tex.sprint(vertical_constants.to_dimen([=[\luaescapestring{#1}]=]) ~ or ~ 0) } sp
+    \lua_now:e { 
+      local~res~=~vertical_constants.to_dimen([=[\luaescapestring{#1}]=])~
+      if~type(res)~==~"table"~and~res.unit~==~"em"~then~
+        local~f~=~font.getfont(font.current())~
+        res~=~math.floor(res.value~*~(f~and~f.size~or~655360)~+~0.5)~
+      end~
+      tex.sprint(res~or~0) 
+    }~sp
   }
 
 % Define keys for SideNode
@@ -131,6 +138,94 @@
     })}%
   \group_end:
 }
+
+% Decorate Command - Zero-width decoration for the previous character
+% Creates a whatsit node that will be processed by Lua to overlay on the previous character
+% Syntax: \decorate[color=red, xoffset=0pt, yoffset=0pt, font-size=6pt]{content}
+
+\tl_new:N \l__luatexcn_v_decorate_color_tl
+\tl_new:N \l__luatexcn_v_decorate_xoffset_tl
+\tl_new:N \l__luatexcn_v_decorate_yoffset_tl
+\tl_new:N \l__luatexcn_v_decorate_font_size_tl
+\tl_new:N \l__luatexcn_v_decorate_scale_tl
+
+\keys_define:nn { luatexcn / decorate }
+  {
+    color .tl_set:N = \l__luatexcn_v_decorate_color_tl,
+    color .initial:n = red,
+    xoffset .tl_set:N = \l__luatexcn_v_decorate_xoffset_tl,
+    xoffset .initial:n = 0pt,
+    xshift .tl_set:N = \l__luatexcn_v_decorate_xoffset_tl,
+    yoffset .tl_set:N = \l__luatexcn_v_decorate_yoffset_tl,
+    yoffset .initial:n = 0pt,
+    yshift .tl_set:N = \l__luatexcn_v_decorate_yoffset_tl,
+    font-size .initial:n = ,
+    scale .tl_set:N = \l__luatexcn_v_decorate_scale_tl,
+    scale .initial:n = 1.0,
+  }
+
+\NewDocumentCommand{\decorate}{ O{} m }{%
+  \group_begin:
+    \keys_set:nn { luatexcn / decorate } { #1 }
+    \lua_now:e {
+      local~constants~=~require('vertical.luatex-cn-vertical-base-constants')
+      constants.register_decorate(
+        "\luaescapestring{#2}",
+        "\luaescapestring{\l__luatexcn_v_decorate_xoffset_tl}",
+        "\luaescapestring{\l__luatexcn_v_decorate_yoffset_tl}",
+        "\luaescapestring{\l__luatexcn_v_decorate_font_size_tl}",
+        "\luaescapestring{\l__luatexcn_v_decorate_color_tl}",
+        font.current(),
+        "\luaescapestring{\l__luatexcn_v_decorate_scale_tl}"
+      )
+    }
+    \box0\scan_stop:
+  \group_end:
+}
+
+% Alias for CJK name
+\NewCommandCopy{\装饰}{\decorate}
+
+% 改 (Fix/Correction) Command - Mark a character as corrected
+% Used in classical Chinese text editing: 甲\改{乙} means "甲 is corrected to 乙"
+% This overlays a 、(deletion mark) on the previous character and places the 
+% replacement character at bottom-right corner at half the font size
+% Syntax: \改{replacement character}
+\NewDocumentCommand{\改}{ m }{%
+  \group_begin:
+    % First: overlay a 、 symbol to mark deletion (centered on the character)
+    \lua_now:e {
+      local~constants~=~require('vertical.luatex-cn-vertical-base-constants')
+      constants.register_decorate(
+        "、",
+        "0em",
+        "0em",
+        nil,
+        "black",
+        nil,
+        2
+      )
+    }%
+    \box0\scan_stop:
+    % Second: add the replacement character at bottom-right, half size
+    \lua_now:e {
+      local~constants~=~require('vertical.luatex-cn-vertical-base-constants')
+      constants.register_decorate(
+        "\luaescapestring{#1}",
+        "-0.6em",
+        "0.5em",
+        nil,
+        "black",
+        nil,
+        0.6
+      )
+    }%
+    \box0\scan_stop:
+  \group_end:
+}
+
+% Alias with English name
+\NewCommandCopy{\fix}{\改}
 
 % PiZhu (批注) - Floating annotation box
 \tl_new:N \l__luatexcn_v_pizhu_font_size_tl
@@ -541,7 +636,7 @@
 \keys_define:nn { luatexcn / v / textbox }
   {
     height .int_set:N = \l__luatexcn_v_textbox_height_int,
-    height .initial:n = 1,
+    height .initial:n = 0,
     n-cols .int_set:N = \l__luatexcn_v_textbox_n_cols_int,
     n-cols .initial:n = 0,
     inner-grid-width .tl_set:N = \l__luatexcn_v_textbox_inner_gw_tl,
@@ -606,6 +701,8 @@
     \vbox_set:Nn \l_tmpa_box {
       \setluatexattribute\cnverticaltextboxwidth{0}
       \setluatexattribute\cnverticaltextboxheight{0}
+      % Reset indent for textbox internal content (textbox as a whole will be indented)
+      \setluatexattribute\cnverticalindent{0}
       % Reset paragraph spacing to prevent unwanted glues in grid layout
       \dim_set:Nn \l_tmpa_dim { \__luatexcn_to_dimen:n { \l__luatexcn_v_grid_height_tl } }
       % Scale font size to match the inner grid width, but slightly smaller (0.85x) to avoid crowding
@@ -622,8 +719,10 @@
           % User-specified font size
           \fontsize{\__luatexcn_to_dimen:n { \l__luatexcn_v_textbox_font_size_tl }}{\__luatexcn_to_dimen:n { \l__luatexcn_v_textbox_font_size_tl }}\selectfont
         }
-      % Inner line length should be the grid height of the block
-      \hsize=\dim_eval:n { \l__luatexcn_v_textbox_inner_gh_dim * \int_use:N \l__luatexcn_v_textbox_height_int }
+      % Inner line length: if height specified, constrain it; otherwise use max for auto-sizing
+      \int_compare:nNnTF \l__luatexcn_v_textbox_height_int > 0
+        { \hsize=\dim_eval:n { \l__luatexcn_v_textbox_inner_gh_dim * \int_use:N \l__luatexcn_v_textbox_height_int } }
+        { \hsize=\c_max_dim }
       #2
     }
     
@@ -667,7 +766,12 @@
       floating~=~\bool_if:NTF~\l__luatexcn_v_textbox_floating_bool~{true}{false},
       floating_x~=~[=[\luaescapestring{\l__luatexcn_v_textbox_x_tl}]=],
       floating_y~=~[=[\luaescapestring{\l__luatexcn_v_textbox_y_tl}]=],
-      floating_paper_width~=~[=[\luaescapestring{\l__luatexcn_v_textbox_floating_paper_width_tl}]=]
+      floating_paper_width~=~[=[\luaescapestring{\l__luatexcn_v_textbox_floating_paper_width_tl}]=],
+      judou_on~=~\bool_if:NTF~\l__luatexcn_v_judou_on_bool~{true}~{false},
+      judou_pos~=~[=[\luaescapestring{\l__luatexcn_v_judou_pos_tl}]=],
+      judou_size~=~[=[\luaescapestring{\l__luatexcn_v_judou_size_tl}]=],
+      judou_color~=~[=[\luaescapestring{\l__luatexcn_v_judou_color_tl}]=],
+      punct_mode~=~[=[\luaescapestring{\l__luatexcn_v_punct_mode_tl}]=]
     }) }
     \setluatexattribute\cnverticaltextboxwidth{0}
     \setluatexattribute\cnverticaltextboxheight{0}
@@ -783,6 +887,15 @@
     \par
   }
 
+% 填充文本框 - Backwards compatible: accepts either integer (old syntax) or key-value options (new syntax)
+\NewDocumentCommand{\FillTextBox}{ O{} +m }
+  {%
+    \tl_set:Nn \l_tmpa_tl { #1 }
+    \regex_match:nnTF { ^[0-9]+$ } { #1 }
+      { \TextBox[height=#1, box-align=fill]{#2} }  % Old syntax: just an integer height
+      { \TextBox[#1, box-align=fill]{#2} }          % New syntax: key-value options
+  }
+
 \ExplSyntaxOff%
 
 % ============================================================================
@@ -790,10 +903,7 @@
 % ============================================================================
 \NewCommandCopy{\竖排}{\VerticalRTT}
 \NewCommandCopy{\文本框}{\TextBox}
-\NewDocumentCommand{\填充文本框}{ O{1} +m }
-  {%
-    \TextBox[height=#1, box-align=fill]{#2}%
-  }
+\NewCommandCopy{\填充文本框}{\FillTextBox}
 \NewCommandCopy{\文本流}{\TextFlow}
 \NewCommandCopy{\空格}{\Space}
 \NewCommandCopy{\段落}{\Paragraph}
@@ -802,6 +912,8 @@
 \NewCommandCopy{\批注}{\PiZhu}
 \NewCommandCopy{\开启句读模式}{\JudouOn}
 \NewCommandCopy{\关闭句读模式}{\JudouOff}
+\NewCommandCopy{\开启无标点模式}{\NonePunctuationMode}
+\NewCommandCopy{\开启正常标点模式}{\NormalPunctuationMode}
 \NewEnvironmentCopy{列表}{itemize}
 
 \endinput%

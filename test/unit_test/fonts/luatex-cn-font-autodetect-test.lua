@@ -69,16 +69,38 @@ test_utils.run_test("auto_select_scheme - Fallback", function()
     local org_exists = fontdetect.font_exists
 
     fontdetect.detect_os = function() return "linux" end
-    -- Mock Fandol and Noto missing
+    -- Mock Fandol and Noto missing (all candidates)
     fontdetect.font_exists = function(name)
-        if name == "FandolSong" or name == "Noto Serif CJK SC" then
-            return false
-        end
+        -- Fandol candidates
+        if name:match("Fandol") then return false end
+        -- Ubuntu candidates
+        if name:match("Noto") or name:match("Source Han") or name:match("AR PL") then return false end
         return true -- Common fonts exist
     end
 
     local scheme = fontdetect.auto_select_scheme()
     test_utils.assert_eq(scheme and scheme.name, "common", "Should fallback to common scheme")
+
+    fontdetect.detect_os = org_detect
+    fontdetect.font_exists = org_exists
+end)
+
+test_utils.run_test("auto_select_scheme - Windows Fallback", function()
+    local org_detect = fontdetect.detect_os
+    local org_exists = fontdetect.font_exists
+
+    fontdetect.detect_os = function() return "windows" end
+    -- Mock SimSun missing, but Microsoft YaHei exists
+    fontdetect.font_exists = function(name)
+        if name == "SimSun" or name == "NSimSun" then
+            return false
+        end
+        return true
+    end
+
+    local scheme = fontdetect.auto_select_scheme()
+    test_utils.assert_eq(scheme and scheme.name, "windows", "Should still be windows scheme")
+    test_utils.assert_eq(scheme and scheme.fonts.main, "Microsoft YaHei", "Should fallback to Microsoft YaHei")
 
     fontdetect.detect_os = org_detect
     fontdetect.font_exists = org_exists

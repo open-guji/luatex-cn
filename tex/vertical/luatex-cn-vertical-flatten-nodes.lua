@@ -84,6 +84,12 @@ local function get_box_indentation(box, current_indent, char_width)
         box_indent = math.max(box_indent, math.floor(shift / char_width + 0.5))
     end
 
+    -- Priority 2: Check for direct attribute on the box (set by \Paragraph environment)
+    local attr_indent = D.get_attribute(box, constants.ATTR_INDENT) or 0
+    if attr_indent > 0 then
+        box_indent = math.max(box_indent, attr_indent)
+    end
+
     if tid == constants.HLIST then
         -- Check for indent glue/kern inside HLIST
         local s = D.getfield(box, "list")
@@ -142,6 +148,16 @@ local function copy_node_with_attributes(t, indent, r_indent)
     if jiazhu_sub_attr then
         D.set_attribute(copy, constants.ATTR_JIAZHU_SUB, jiazhu_sub_attr)
     end
+    local jiazhu_mode_attr = D.get_attribute(t, constants.ATTR_JIAZHU_MODE)
+    if jiazhu_mode_attr then
+        D.set_attribute(copy, constants.ATTR_JIAZHU_MODE, jiazhu_mode_attr)
+    end
+
+    -- CRITICAL: Preserve block indentation attributes
+    local block_id = D.get_attribute(t, constants.ATTR_BLOCK_ID)
+    if block_id then D.set_attribute(copy, constants.ATTR_BLOCK_ID, block_id) end
+    local first_indent = D.get_attribute(t, constants.ATTR_FIRST_INDENT)
+    if first_indent then D.set_attribute(copy, constants.ATTR_FIRST_INDENT, first_indent) end
 
     return copy
 end
@@ -156,6 +172,13 @@ local function process_textbox_node(t, running_indent, running_r_indent)
         -- Apply running indent (inherited from previous lines if needed)
         if running_indent > 0 then D.set_attribute(copy, constants.ATTR_INDENT, running_indent) end
         if running_r_indent > 0 then D.set_attribute(copy, constants.ATTR_RIGHT_INDENT, running_r_indent) end
+
+        -- Preserve block indentation attributes
+        local block_id = D.get_attribute(t, constants.ATTR_BLOCK_ID)
+        if block_id then D.set_attribute(copy, constants.ATTR_BLOCK_ID, block_id) end
+        local first_indent = D.get_attribute(t, constants.ATTR_FIRST_INDENT)
+        if first_indent then D.set_attribute(copy, constants.ATTR_FIRST_INDENT, first_indent) end
+
         return copy, true
     end
     return nil, false
@@ -238,7 +261,7 @@ local function flatten_vbox(head, grid_width, char_width)
                         utils.debug_log("  [flatten] Adding Column Break after Line=" .. tostring(t))
                     end
                     local p = D.new(constants.PENALTY)
-                    D.setfield(p, "penalty", -10001)
+                    D.setfield(p, "penalty", -10002)
                     append_node(p)
                 end
             else

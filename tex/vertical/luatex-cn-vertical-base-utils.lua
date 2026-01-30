@@ -326,6 +326,19 @@ local function to_chinese_numeral(n)
     end
 end
 
+-- Chapter Marker Registry
+_G.chapter_registry = _G.chapter_registry or {}
+-- _G.chapter_registry = _G.chapter_registry or {} -- Moved inside function
+
+--- 注册章节标题并返回 ID
+-- @param title string 章节标题文字
+-- @return number 注册 ID
+local function insert_chapter_marker(title)
+    _G.chapter_registry = _G.chapter_registry or {}
+    table.insert(_G.chapter_registry, title)
+    return #_G.chapter_registry
+end
+
 -- Create module table
 -- 模块导出表
 local utils = {
@@ -347,6 +360,7 @@ local utils = {
     to_chinese_numeral = to_chinese_numeral,
     set_debug = set_debug,
     is_debug_enabled = is_debug_enabled,
+    insert_chapter_marker = insert_chapter_marker,
 }
 
 -- Register module in package.loaded for require() compatibility

@@ -42,7 +42,7 @@ local textflow = {}
 -- @param available_rows (number) 当前列剩余的可选行数
 -- @param line_limit (number) 每列的总行数限制
 -- @return (table) chunks: { {nodes_with_attr, rows_used, is_full_column}, ... }
-function textflow.process_jiazhu_sequence(jiazhu_nodes, available_rows, line_limit)
+function textflow.process_jiazhu_sequence(jiazhu_nodes, available_rows, line_limit, mode)
     local total_nodes = #jiazhu_nodes
     if total_nodes == 0 then return {} end
 
@@ -50,9 +50,18 @@ function textflow.process_jiazhu_sequence(jiazhu_nodes, available_rows, line_lim
     local current_idx = 1
     local first_chunk = true
 
+    -- Mode 1: Right only, Mode 2: Left only, Other: Balanced
+    local is_single_column = (mode == 1 or mode == 2)
+
     while current_idx <= total_nodes do
         local h = first_chunk and available_rows or line_limit
-        local capacity = h * 2
+        local capacity
+        if is_single_column then
+            capacity = h
+        else
+            capacity = h * 2
+        end
+
         local remaining = total_nodes - current_idx + 1
 
         local chunk_size
@@ -60,9 +69,13 @@ function textflow.process_jiazhu_sequence(jiazhu_nodes, available_rows, line_lim
         local is_full = false
 
         if remaining <= capacity then
-            -- 能够在本块（列）内排完，执行平衡算法
+            -- 能够在本块（列）内排完
             chunk_size = remaining
-            rows_used = math.ceil(chunk_size / 2)
+            if is_single_column then
+                rows_used = remaining
+            else
+                rows_used = math.ceil(chunk_size / 2)
+            end
         else
             -- 排不完，填满当前块（列）
             chunk_size = capacity
@@ -72,7 +85,16 @@ function textflow.process_jiazhu_sequence(jiazhu_nodes, available_rows, line_lim
 
         local chunk_nodes = {}
         -- 计算平衡界限
-        local right_count = math.ceil(chunk_size / 2)
+        local right_count
+        if is_single_column then
+            if mode == 1 then            -- Right only
+                right_count = chunk_size -- All go to right (sub_col 1)
+            else                         -- Left only (mode 2)
+                right_count = 0          -- None go to right
+            end
+        else
+            right_count = math.ceil(chunk_size / 2)
+        end
 
         for i = 0, chunk_size - 1 do
             local node_idx = current_idx + i
@@ -87,9 +109,19 @@ function textflow.process_jiazhu_sequence(jiazhu_nodes, available_rows, line_lim
                 relative_row = i
             else
                 -- 左小行 (后行)
-                sub_col = 2
-                relative_row = i - right_count
+                if is_single_column then
+                    -- If left only mode, relative_row is just i, because there are no right nodes
+                    sub_col = 2
+                    relative_row = i
+                else
+                    sub_col = 2
+                    relative_row = i - right_count
+                end
             end
+
+            -- if is_single_column then
+            --    texio.write_nl("term_and_log", string.format("DEBUG: Mode=%s, NodeIdx=%d, Assigned SubCol=%d", tostring(mode), node_idx, sub_col))
+            -- end
 
             -- 设置属性以便渲染层识别
             D.set_attribute(n, constants.ATTR_JIAZHU_SUB, sub_col)

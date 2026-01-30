@@ -135,5 +135,176 @@
       }
     ```
 
+---
+
+## 五、 参数展开与传递详解 (Argument Expansion)
+
+这是 `expl3` 最核心也最容易出错的部分。理解参数展开机制是写出正确代码的关键。
+
+### 1. 参数类型说明符 (Argument Specifiers)
+
+| 说明符 | 含义 | 展开行为 |
+| :---: | :--- | :--- |
+| `n` | Normal (普通参数) | 不展开，原样传递 `{...}` 中的内容 |
+| `N` | single tokeN (单个 token) | 不展开，传递单个控制序列如 `\l_my_tl` |
+| `V` | Value (变量的值) | 展开一次，获取变量内容 |
+| `v` | value by name | 根据名称构造变量并获取其值 |
+| `o` | Once expanded | 展开一次参数 |
+| `x` | eXhaustive expansion | 完全展开（不可在展开上下文中使用） |
+| `e` | Exhaustive expandable | 完全展开（可在展开上下文中使用） |
+| `f` | Full expansion (first token) | 展开直到遇到不可展开的 token |
+| `c` | Csname | 根据字符串构造控制序列 |
+
+### 2. `\exp_args:N...` 的正确用法
+
+`\exp_args:N...` 用于在调用函数前预先展开某些参数。
+
+```tex
+% 假设 \l_my_tl 包含 "hello"
+\tl_new:N \l_my_tl
+\tl_set:Nn \l_my_tl { hello }
+
+% 错误：传递的是 \l_my_tl 这个控制序列本身
+\some_func:nn { arg1 } { \l_my_tl }
+
+% 正确：使用 V 展开，传递 "hello"
+\exp_args:NnV \some_func:nn { arg1 } \l_my_tl
+```
+
+**重要规则**：`\exp_args:N...` 的参数说明符必须与后面的实际参数一一对应：
+- 第一个字母必须是 `N`（表示函数本身不展开）
+- 后续字母依次对应各个参数
+
+```tex
+% \exp_args:NnV \func {arg1} \var
+%              N    n     V
+%              ↓    ↓     ↓
+%           \func {arg1} (value of \var)
+```
+
+### 3. 整数与 Token List 的展开差异
+
+这是一个常见陷阱。整数寄存器在某些上下文中会自动展开为数值，但 token list 不会。
+
+```tex
+% 整数变量
+\int_new:N \l_my_int
+\int_set:Nn \l_my_int { 5 }
+
+% Token list 变量
+\tl_new:N \l_my_tl
+\tl_set:Nn \l_my_tl { 5 }
+
+% 在 keyval 传递时的差异：
+\keys_set:nn { module } { height = \l_my_int }  % ✓ 整数自动展开为 5
+\keys_set:nn { module } { height = \l_my_tl }   % ✗ 传递的是 \l_my_tl 控制序列
+
+% Token list 需要显式展开：
+\keys_set:nx { module } { height = \l_my_tl }   % ✓ x 展开后传递 5
+```
+
+### 4. xparse 可选参数的陷阱（重要！）
+
+**问题场景**：当使用 `\NewDocumentCommand` 定义的命令带有可选参数 `O{}` 时，`\exp_args:N...` 无法正确处理方括号 `[...]`。
+
+```tex
+\NewDocumentCommand{\MyCmd}{ O{} m }{ ... }
+
+% 错误写法：\exp_args 无法正确解析 xparse 的 [...] 语法
+\tl_set:Nn \l_opts_tl { key=value }
+\exp_args:NnV \MyCmd [\l_opts_tl] {content}  % ✗ 不工作！
+```
+
+**原因**：`\exp_args:N...` 按照 TeX 原生的参数规则工作（`{...}` 分组），而 xparse 的 `[...]` 是特殊的参数解析机制，不是标准的 TeX 参数。
+
+**正确解决方案**：使用 `\use:x` 包装整个调用：
+
+```tex
+\tl_set:Nx \l_opts_tl { key=value, option=\l_some_var }
+\use:x {
+  \exp_not:N \MyCmd [\l_opts_tl] { \exp_not:n {content} }
+}
+```
+
+**解释**：
+- `\use:x { ... }` 先完全展开其参数，再执行
+- `\exp_not:N \MyCmd` 保护 `\MyCmd` 不被展开
+- `\l_opts_tl` 会被展开为其内容
+- `\exp_not:n {content}` 保护内容不被展开
+
+### 5. 实际案例：PiZhu 命令的修复
+
+**原始问题代码**：
+```tex
+\NewDocumentCommand{\PiZhu}{ O{} +m }{%
+  \group_begin:
+    \keys_set:nn { luatexcn / pizhu } { #1 }
+    % 直接传递 token list 变量 —— 错误！
+    \TextBox[
+      height=\l__luatexcn_v_pizhu_height_tl,  % 传递的是控制序列，不是值
+      ...
+    ]{#2}
+  \group_end:
+}
+```
+
+**错误尝试**：
+```tex
+% 尝试使用 \exp_args:NnV —— 仍然错误！
+\exp_args:NnV \TextBox [\l_opts_tl]{#2}  % xparse 的 [...] 不能这样处理
+```
+
+**正确修复**：
+```tex
+\NewDocumentCommand{\PiZhu}{ O{} +m }{%
+  \group_begin:
+    \keys_set:nn { luatexcn / pizhu } { #1 }
+    % 使用 \tl_set:Nx 构建选项字符串（x 展开所有变量）
+    \tl_set:Nx \l_tmpa_tl {
+      floating=true,
+      height=\l__luatexcn_v_pizhu_height_tl,  % 会被展开为实际值
+      ...
+    }
+    % 使用 \use:x 正确传递给 xparse 命令
+    \use:x { \exp_not:N \TextBox [\l_tmpa_tl]{\exp_not:n{#2}} }
+  \group_end:
+}
+```
+
+### 6. 常用展开技巧速查表
+
+| 场景 | 推荐方法 |
+| :--- | :--- |
+| 传递 tl 变量的值给普通函数 | `\exp_args:NnV \func {arg} \l_tl` |
+| 传递多个变量值 | `\exp_args:NVV \func \l_tl_a \l_tl_b` |
+| 构建完全展开的字符串 | `\tl_set:Nx \l_result_tl { ... \l_var ... }` |
+| 传递给 xparse 可选参数 | `\use:x { \exp_not:N \Cmd [\l_opts]{\exp_not:n{#1}} }` |
+| 保护内容不被展开 | `\exp_not:n { content }` 或 `\exp_not:N \cmd` |
+| 条件展开 | `\bool_if:NTF \l_bool { true } { false }` |
+
+### 7. 调试技巧
+
+当不确定变量的展开结果时，可以使用以下方法调试：
+
+```tex
+% 打印 token list 的内容到终端
+\tl_show:N \l_my_tl
+
+% 打印展开后的结果
+\tl_set:Nx \l_debug_tl { some=\l_var, other=\l_var2 }
+\tl_show:N \l_debug_tl
+
+% 在日志中记录
+\iow_term:x { Debug:~height=\l_my_height_tl }
+```
+
+---
+
 ## 总结
-使用 `expl3` 能带来极高的稳定性和命名空间隔离。虽然初期需要适应其繁琐的语法（尤其是 Lua 交互时的空格处理），但对于大型项目（如古籍排版系统），这是目前最健壮的技术路线。
+使用 `expl3` 能带来极高的稳定性和命名空间隔离。虽然初期需要适应其繁琐的语法（尤其是 Lua 交互时的空格处理和参数展开机制），但对于大型项目（如古籍排版系统），这是目前最健壮的技术路线。
+
+**核心要点**：
+1. 整数自动展开，token list 需要显式展开
+2. `\exp_args:N...` 只对标准 TeX 参数 `{...}` 有效
+3. xparse 的 `[...]` 可选参数必须用 `\use:x` 配合 `\exp_not:N` 处理
+4. 善用 `\tl_set:Nx` 预先构建展开后的内容

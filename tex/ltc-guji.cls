@@ -18,7 +18,7 @@
 
 \RequirePackage{expl3}
 \RequirePackage{l3keys2e}
-\ProvidesExplClass {ltc-guji} {2026/01/28} {0.1.5} {Ancient Chinese Book Class (Template Support)}
+\ProvidesExplClass {ltc-guji} {2026/01/29} {0.1.6} {Ancient Chinese Book Class (Template Support)}
 
 \tl_new:N \l_luatexcn_guji_initial_template_tl
 \prop_new:N \g_luatexcn_guji_template_map_prop
@@ -136,6 +136,12 @@
     jiazhu-font-size .tl_set:N = \l_luatexcn_guji_jiazhu_font_size_tl,
     jiazhu-font-size .initial:n = {},
 
+    jiazhu-font .tl_set:N = \l_luatexcn_guji_jiazhu_font_tl,
+    jiazhu-font .initial:n = {},
+
+    jiazhu-font-color .tl_set:N = \l_luatexcn_guji_jiazhu_font_color_tl,
+    jiazhu-font-color .initial:n = {},
+
     % Jiazhu alignment: "outward" (default, left col left-align, right col right-align)
     %                   "inward" (left col right-align, right col left-align)
     %                   "center" (both columns center-aligned)
@@ -192,6 +198,8 @@
 
     font-name .tl_set:N = \l_luatexcn_guji_font_name_tl,
     font-name .initial:n = {},
+    debug .bool_set:N = \g_luatexcn_debug_enabled_bool,
+    debug .initial:n = false,
 
     font-features .tl_set:N = \l_luatexcn_guji_font_features_tl,
     font-features .initial:n = {},
@@ -242,6 +250,21 @@
 
     upper-yuwei .bool_set:N = \l_luatexcn_guji_upper_yuwei_bool,
     upper-yuwei .initial:n = true,
+
+    publisher .tl_set:N = \l_luatexcn_guji_publisher_tl,
+    publisher .initial:n = {},
+
+    publisher-font-size .tl_set:N = \l_luatexcn_guji_publisher_font_size_tl,
+    publisher-font-size .initial:n = {},
+
+    publisher-grid-height .tl_set:N = \l_luatexcn_guji_publisher_grid_height_tl,
+    publisher-grid-height .initial:n = {},
+
+    publisher-bottom-margin .tl_set:N = \l_luatexcn_guji_publisher_bottom_margin_tl,
+    publisher-bottom-margin .initial:n = {},
+
+    publisher-align .tl_set:N = \l_luatexcn_guji_publisher_align_tl,
+    publisher-align .initial:n = {right},
 
     banxin-divider .bool_set:N = \l_luatexcn_guji_banxin_divider_bool,
     banxin-divider .initial:n = true,
@@ -357,6 +380,12 @@
     \tl_set:Nn \l_luatexcn_guji_book_name_tl { #1 }
     \gdef\@title{#1}
   }
+
+\NewDocumentCommand{\publisher}{ m }
+  {
+    \tl_set:Nn \l_luatexcn_guji_publisher_tl { #1 }
+  }
+\NewCommandCopy{\出版商}{\publisher}
 
 % Command to reset page number to 1
 \NewDocumentCommand{\ResetPageNumber}{ }
@@ -649,6 +678,8 @@
         chapter-title-font-size = \l_luatexcn_guji_chapter_title_font_size_tl,
         chapter-title-grid-height = \l_luatexcn_guji_chapter_title_grid_height_tl,
         jiazhu-font-size = \l_luatexcn_guji_jiazhu_font_size_tl,
+        jiazhu-font = { \l_luatexcn_guji_jiazhu_font_tl },
+        jiazhu-font-color = { \l_luatexcn_guji_jiazhu_font_color_tl },
         jiazhu-align = \l_luatexcn_guji_jiazhu_align_tl,
         font-size = \l_luatexcn_guji_font_size_tl,
         border = \bool_if:NTF \l_luatexcn_guji_border_bool {true} {false},
@@ -661,8 +692,19 @@
         banxin-divider = \bool_if:NTF \l_luatexcn_guji_banxin_divider_bool {true} {false},
         page-number-align = \l_luatexcn_guji_page_number_align_tl,
         page-number-font-size = \l_luatexcn_guji_page_number_font_size_tl,
-        page-number-grid-height = \l_luatexcn_guji_page_number_grid_height_tl
+        page-number-grid-height = \l_luatexcn_guji_page_number_grid_height_tl,
+        publisher = \l_luatexcn_guji_publisher_tl,
+        publisher-font-size = \l_luatexcn_guji_publisher_font_size_tl,
+        publisher-grid-height = \l_luatexcn_guji_publisher_grid_height_tl,
+        publisher-bottom-margin = \l_luatexcn_guji_publisher_bottom_margin_tl,
+        publisher-align = \l_luatexcn_guji_publisher_align_tl
       }
+    \RenewDocumentCommand{\newpage}{}{\penalty-10003 }
+    \RenewDocumentCommand{\clearpage}{}{\penalty-10003 }
+    \cs_set:Npn \chapter ##1 {
+      \directlua { vertical.insert_chapter_marker( "\luaescapestring{ \tl_to_str:n { ##1 } }" ) }
+      \box0\relax
+    }
     \nointerlineskip
     \__luatexcn_v_process_grid:n { \BODY }
     \group_end:
@@ -697,6 +739,7 @@
 % Command Aliases (CJK support)
 \NewCommandCopy{\JiaZhu}{\TextFlow}%
 \NewCommandCopy{\夹注}{\TextFlow}%
+\NewCommandCopy{\单行夹注}{\DanHangJiaZhu}%
 \NewCommandCopy{\印章}{\YinZhang}%
 %
 % Environment Aliases (CJK support)

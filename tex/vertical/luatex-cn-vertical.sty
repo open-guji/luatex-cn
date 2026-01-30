@@ -16,7 +16,7 @@
 % 这是 luatex_cn 的子包
 %
 \RequirePackage{expl3}
-\ProvidesExplPackage {vertical/luatex-cn-vertical} {2026/01/28} {0.1.5} {Chinese vertical typesetting for LuaTeX}
+\ProvidesExplPackage {vertical/luatex-cn-vertical} {2026/01/29} {0.1.6} {Chinese vertical typesetting for LuaTeX}
 
 % Check if LuaTeX is being used
 \sys_if_engine_luatex:TF
@@ -39,6 +39,9 @@
 \newluatexattribute\cnverticaltextboxdistribute
 \newluatexattribute\cnverticaljiazhu
 \newluatexattribute\cnverticaljiazhusub
+\newluatexattribute\cnverticaljiazhumode
+\newluatexattribute\cnverticalblockid
+\newluatexattribute\cnverticalfirstindent
 
 % Load the Lua modules
 % Robust Lua loader with error reporting is no longer needed since we use \lua_now:e
@@ -234,13 +237,13 @@
 \tl_new:N \l__luatexcn_v_pizhu_grid_height_tl
 \tl_new:N \l__luatexcn_v_pizhu_x_tl
 \tl_new:N \l__luatexcn_v_pizhu_y_tl
-\int_new:N \l__luatexcn_v_pizhu_height_int
+\tl_new:N \l__luatexcn_v_pizhu_height_tl
 
 \keys_define:nn { luatexcn / pizhu }
   {
     x .tl_set:N = \l__luatexcn_v_pizhu_x_tl,
     y .tl_set:N = \l__luatexcn_v_pizhu_y_tl,
-    height .int_set:N = \l__luatexcn_v_pizhu_height_int,
+    height .tl_set:N = \l__luatexcn_v_pizhu_height_tl,
     font-size .tl_set:N = \l__luatexcn_v_pizhu_font_size_tl,
     font-size .initial:n = {18pt},
     color .tl_set:N = \l__luatexcn_v_pizhu_color_tl,
@@ -254,17 +257,20 @@
 \NewDocumentCommand{\PiZhu}{ O{} +m }{%
   \group_begin:
     \keys_set:nn { luatexcn / pizhu } { #1 }
-    \TextBox[
+    % Build keyval list with expansion so token list values are expanded
+    \tl_set:Nx \l_tmpa_tl {
       floating=true,
       floating-paper-width=\l__luatexcn_v_paper_width_tl,
       x=\l__luatexcn_v_pizhu_x_tl,
       y=\l__luatexcn_v_pizhu_y_tl,
-      height=\l__luatexcn_v_pizhu_height_int,
-      font-color=\l__luatexcn_v_pizhu_color_tl,
+      height=\l__luatexcn_v_pizhu_height_tl,
+      font-color=\exp_not:V \l__luatexcn_v_pizhu_color_tl,
       font-size=\l__luatexcn_v_pizhu_font_size_tl,
       grid-width=\l__luatexcn_v_pizhu_grid_width_tl,
       grid-height=\l__luatexcn_v_pizhu_grid_height_tl
-    ]{#2}
+    }
+    % Use \use:x to properly expand the keyval list for xparse optional argument
+    \use:x { \exp_not:N \TextBox [\l_tmpa_tl]{\exp_not:n{#2}} }
   \group_end:
 }
 
@@ -364,6 +370,12 @@
     jiazhu-font-size .tl_set:N = \l__luatexcn_v_jiazhu_size_tl,
     jiazhu-font-size .initial:n = {},
 
+    jiazhu-font .tl_set:N = \l__luatexcn_v_jiazhu_font_tl,
+    jiazhu-font .initial:n = {},
+
+    jiazhu-font-color .tl_set:N = \l__luatexcn_v_jiazhu_font_color_tl,
+    jiazhu-font-color .initial:n = {},
+
     % Jiazhu alignment: outward (default), inward, center, left, right
     jiazhu-align .tl_set:N = \l__luatexcn_v_jiazhu_align_tl,
     jiazhu-align .initial:n = {outward},
@@ -444,6 +456,21 @@
 
     punct-mode .tl_set:N = \l__luatexcn_v_punct_mode_tl,
     punct-mode .initial:n = {normal},
+
+    publisher .tl_set:N = \l__luatexcn_v_publisher_tl,
+    publisher .initial:n = {},
+
+    publisher-font-size .tl_set:N = \l__luatexcn_v_publisher_font_size_tl,
+    publisher-font-size .initial:n = {10pt},
+
+    publisher-grid-height .tl_set:N = \l__luatexcn_v_publisher_grid_height_tl,
+    publisher-grid-height .initial:n = {},
+
+    publisher-bottom-margin .tl_set:N = \l__luatexcn_v_publisher_bottom_margin_tl,
+    publisher-bottom-margin .initial:n = {5pt},
+
+    publisher-align .tl_set:N = \l__luatexcn_v_publisher_align_tl,
+    publisher-align .initial:n = {right},
   }
 
 \tl_new:N \l__luatexcn_v_border_rgb_tl
@@ -555,7 +582,12 @@
         judou_pos~=~[=[\luaescapestring{\l__luatexcn_v_judou_pos_tl}]=],
         judou_size~=~[=[\luaescapestring{\l__luatexcn_v_judou_size_tl}]=],
         judou_color~=~[=[\luaescapestring{\l__luatexcn_v_judou_color_tl}]=],
-        punct_mode~=~[=[\luaescapestring{\l__luatexcn_v_punct_mode_tl}]=]
+        punct_mode~=~[=[\luaescapestring{\l__luatexcn_v_punct_mode_tl}]=],
+        publisher~=~[=[\luaescapestring{\l__luatexcn_v_publisher_tl}]=],
+        publisher_font_size~=~[=[\luaescapestring{\l__luatexcn_v_publisher_font_size_tl}]=],
+        publisher_grid_height~=~[=[\luaescapestring{\l__luatexcn_v_publisher_grid_height_tl}]=],
+        publisher_bottom_margin~=~[=[\luaescapestring{\l__luatexcn_v_publisher_bottom_margin_tl}]=],
+        publisher_align~=~[=[\luaescapestring{\l__luatexcn_v_publisher_align_tl}]=]
       })
     }
   }
@@ -635,7 +667,7 @@
 
 \keys_define:nn { luatexcn / v / textbox }
   {
-    height .int_set:N = \l__luatexcn_v_textbox_height_int,
+    height .tl_set:N = \l__luatexcn_v_textbox_height_tl,
     height .initial:n = 0,
     n-cols .int_set:N = \l__luatexcn_v_textbox_n_cols_int,
     n-cols .initial:n = 0,
@@ -681,21 +713,19 @@
     \keys_set:nn { luatexcn / v / textbox } { #1 }
     % Width is always 1 for outer layout (textbox occupies 1 column externally)
     \setluatexattribute\cnverticaltextboxwidth{1}
-    \setluatexattribute\cnverticaltextboxheight{\l__luatexcn_v_textbox_height_int}
     
     % Calculate inner grid dimensions (hybrid approach)
     % If inner-grid-width not specified, auto-calculate: outer_width / n_cols
     \tl_if_empty:NTF \l__luatexcn_v_textbox_inner_gw_tl
       {
         \int_compare:nNnTF \l__luatexcn_v_textbox_n_cols_int > 0
-          { \dim_set:Nn \l__luatexcn_v_textbox_inner_gw_dim { (\__luatexcn_to_dimen:n { \l__luatexcn_v_grid_width_tl }) / \l__luatexcn_v_textbox_n_cols_int } }
-          { \dim_set:Nn \l__luatexcn_v_textbox_inner_gw_dim { \__luatexcn_to_dimen:n {  \l__luatexcn_v_grid_width_tl } } }
+          { \dim_set:Nn \l__luatexcn_v_textbox_inner_gw_dim { (\l__luatexcn_v_grid_width_tl) / \l__luatexcn_v_textbox_n_cols_int } }
+          { \dim_set:Nn \l__luatexcn_v_textbox_inner_gw_dim { \l__luatexcn_v_grid_width_tl } }
       }
-      { \dim_set:Nn \l__luatexcn_v_textbox_inner_gw_dim { \__luatexcn_to_dimen:n { \l__luatexcn_v_textbox_inner_gw_tl } } }
-    % If inner-grid-height not specified, user outer grid-height directly (for alignment)
+      { \dim_set:Nn \l__luatexcn_v_textbox_inner_gw_dim { \l__luatexcn_v_textbox_inner_gw_tl } }
     \tl_if_empty:NTF \l__luatexcn_v_textbox_inner_gh_tl
-      { \dim_set:Nn \l__luatexcn_v_textbox_inner_gh_dim { \__luatexcn_to_dimen:n { \l__luatexcn_v_grid_height_tl } } }
-      { \dim_set:Nn \l__luatexcn_v_textbox_inner_gh_dim { \__luatexcn_to_dimen:n { \l__luatexcn_v_textbox_inner_gh_tl } } }
+      { \dim_set:Nn \l__luatexcn_v_textbox_inner_gh_dim { \l__luatexcn_v_grid_height_tl } }
+      { \dim_set:Nn \l__luatexcn_v_textbox_inner_gh_dim { \l__luatexcn_v_textbox_inner_gh_tl } }
     
     % Capture content in a box and process it via Lua for inner verticality
     \vbox_set:Nn \l_tmpa_box {
@@ -704,26 +734,31 @@
       % Reset indent for textbox internal content (textbox as a whole will be indented)
       \setluatexattribute\cnverticalindent{0}
       % Reset paragraph spacing to prevent unwanted glues in grid layout
-      \dim_set:Nn \l_tmpa_dim { \__luatexcn_to_dimen:n { \l__luatexcn_v_grid_height_tl } }
-      % Scale font size to match the inner grid width, but slightly smaller (0.85x) to avoid crowding
+      \dim_set:Nn \l_tmpa_dim { \l__luatexcn_v_grid_height_tl }
       % Scale font size
       \tl_if_empty:NTF \l__luatexcn_v_textbox_font_size_tl
         {
           % Default auto-scaling for multi-column boxes
           \int_compare:nNnT \l__luatexcn_v_textbox_n_cols_int > 1
             {
-              \fontsize{\dim_eval:n { 0.85 \l__luatexcn_v_textbox_inner_gw_dim }}{\l__luatexcn_v_textbox_inner_gw_dim}\selectfont
+              \dim_set:Nn \l_tmpa_dim { \l__luatexcn_v_textbox_inner_gw_dim * 85 / 100 }
+              \fontsize{\l_tmpa_dim}{\l__luatexcn_v_textbox_inner_gw_dim}\selectfont
             }
         }
         {
           % User-specified font size
-          \fontsize{\__luatexcn_to_dimen:n { \l__luatexcn_v_textbox_font_size_tl }}{\__luatexcn_to_dimen:n { \l__luatexcn_v_textbox_font_size_tl }}\selectfont
+          \dim_set:Nn \l_tmpa_dim { \l__luatexcn_v_textbox_font_size_tl }
+          \fontsize{\l_tmpa_dim}{\l_tmpa_dim}\selectfont
         }
-      % Inner line length: if height specified, constrain it; otherwise use max for auto-sizing
-      \int_compare:nNnTF \l__luatexcn_v_textbox_height_int > 0
-        { \hsize=\dim_eval:n { \l__luatexcn_v_textbox_inner_gh_dim * \int_use:N \l__luatexcn_v_textbox_height_int } }
-        { \hsize=\c_max_dim }
-      #2
+    % Inner line length: if height specified, constrain it; otherwise use max for auto-sizing
+    \tl_if_empty:NTF \l__luatexcn_v_textbox_height_tl
+      { \dim_set_eq:NN \hsize \c_max_dim }
+      {
+        \exp_args:NnV \regex_match:nnTF { [^0-9\.] } \l__luatexcn_v_textbox_height_tl
+          { \dim_set:Nn \hsize { \l__luatexcn_v_textbox_height_tl } }
+          { \dim_set:Nn \hsize { \l__luatexcn_v_textbox_inner_gh_dim * \l__luatexcn_v_textbox_height_tl } }
+      }
+    #2
     }
     
     % Expand variables to ensure they contain the color string, not a macro name
@@ -753,9 +788,10 @@
 
     \lua_now:e {vertical_textbox.process_inner_box(\int_value:w~\l_tmpa_box,~{
       n_cols~=~\int_use:N~\l__luatexcn_v_textbox_n_cols_int,
-      height~=~\int_use:N~\l__luatexcn_v_textbox_height_int,
-      grid_width~=~"\dim_to_decimal:n { \l__luatexcn_v_textbox_inner_gw_dim }~pt",
-      grid_height~=~"\dim_to_decimal:n { \l__luatexcn_v_textbox_inner_gh_dim }~pt",
+      height~=~[=[\luaescapestring{\tl_use:N \l__luatexcn_v_textbox_height_tl}]=],
+      grid_width~=~\dim_to_decimal_in_sp:n { \l__luatexcn_v_textbox_inner_gw_dim },
+      grid_height~=~\dim_to_decimal_in_sp:n { \l__luatexcn_v_textbox_inner_gh_dim },
+      outer_grid_height~=~\dim_to_decimal_in_sp:n { \l__luatexcn_v_grid_height_tl },
       box_align~=~"\luaescapestring{\tl_use:N~\l__luatexcn_v_textbox_box_align_tl}",
       column_aligns~=~"\luaescapestring{\tl_use:N~\l__luatexcn_v_textbox_col_align_tl}",
 
@@ -791,42 +827,100 @@
 % TextFlow Command (双行小注/夹注)
 % Syntax: \TextFlow{content}
 \makeatletter
-\NewDocumentCommand{\TextFlow}{ +m }
-  {
-    \group_begin:
     
-    % Get jiazhu font size: default to 70% of current font size, user can override with explicit size (must include unit like "14pt")
-    % Expand the tl first to check if it's really blank
-    \tl_set:Nx \l_tmpb_tl { \l__luatexcn_v_jiazhu_size_tl }
-    \tl_if_empty:NTF \l_tmpb_tl
+    \keys_define:nn { luatexcn / textflow }
       {
-        % Default: 0.7 * current font size
-        \tl_set:Nx \l_tmpa_tl { \fp_eval:n { 0.7 * \f@size } pt }
-      }
-      {
-        % User specified size (must include unit like "14pt")
-        \tl_set_eq:NN \l_tmpa_tl \l_tmpb_tl
-      }
-    % Capture attribute values using edef to avoid register limitations
-    \edef\savedindent{\the\cnverticalindent}
-    \edef\savedblockid{\the\cnverticalblockid}
-    \edef\savedfirst{\the\cnverticalfirstindent}
-    \edef\savedright{\the\cnverticalrightindent}
-    
-    \fontsize{\l_tmpa_tl}{\l_tmpa_tl}\selectfont
-    
-    % CRITICAL: Set jiazhu attribute AFTER selectfont
-    \setluatexattribute\cnverticaljiazhu{1}
+        only-column .choice:,
+        only-column / left .code:n = { \tl_set:Nn \l_tmpa_tl {2} },
+        only-column / right .code:n = { \tl_set:Nn \l_tmpa_tl {1} },
+        only-column / none .code:n = { \tl_set:Nn \l_tmpa_tl {0} },
+        only-column .initial:n = none,
 
-    % Restore
-    \cnverticalindent = \savedindent\relax
-    \cnverticalblockid = \savedblockid\relax
-    \cnverticalfirstindent = \savedfirst\relax
-    \cnverticalrightindent = \savedright\relax
+        font-size .tl_set:N = \l__luatexcn_v_jiazhu_local_size_tl,
+        font .tl_set:N = \l__luatexcn_v_jiazhu_local_font_tl,
+        font-color .tl_set:N = \l__luatexcn_v_jiazhu_local_color_tl,
+      }
     
-    #1
-    \group_end:
-  }
+    \NewDocumentCommand{\TextFlow}{ O{} +m }
+      {
+        \group_begin:
+        
+        % Initialize temp var for mode (0 = balanced/default)
+        \tl_set:Nn \l_tmpa_tl {0}
+        % Initialize local override variables
+        \tl_set:Nn \l__luatexcn_v_jiazhu_local_size_tl {}
+        \tl_set:Nn \l__luatexcn_v_jiazhu_local_font_tl {}
+        \tl_set:Nn \l__luatexcn_v_jiazhu_local_color_tl {}
+        
+        \keys_set:nn { luatexcn / textflow } { #1 }
+        
+        % Capture attribute values using edef BEFORE selectfont
+        \edef\savedindent{\the\cnverticalindent}
+        \edef\savedblockid{\the\cnverticalblockid}
+        \edef\savedfirst{\the\cnverticalfirstindent}
+        \edef\savedright{\the\cnverticalrightindent}
+
+        % 1. Determine Font Size (Local > Global > Default 0.7)
+        \tl_if_empty:NTF \l__luatexcn_v_jiazhu_local_size_tl
+          {
+            \tl_set:Nx \l_tmpb_tl { \l__luatexcn_v_jiazhu_size_tl }
+            \tl_if_empty:NTF \l_tmpb_tl
+              { \tl_set:Nx \l_tmpc_tl { \fp_eval:n { 0.7 * \f@size } pt } }
+              { \tl_set_eq:NN \l_tmpc_tl \l__luatexcn_v_jiazhu_size_tl }
+          }
+          { \tl_set_eq:NN \l_tmpc_tl \l__luatexcn_v_jiazhu_local_size_tl }
+
+        % 2. Determine Font (Local > Global)
+        \tl_if_empty:NTF \l__luatexcn_v_jiazhu_local_font_tl
+          { \tl_set_eq:NN \l_tmpb_tl \l__luatexcn_v_jiazhu_font_tl }
+          { \tl_set_eq:NN \l_tmpb_tl \l__luatexcn_v_jiazhu_local_font_tl }
+
+        % 3. Determine Color (Local > Global)
+        \tl_if_empty:NTF \l__luatexcn_v_jiazhu_local_color_tl
+          { \tl_set_eq:NN \l_tmpd_tl \l__luatexcn_v_jiazhu_font_color_tl }
+          { \tl_set_eq:NN \l_tmpd_tl \l__luatexcn_v_jiazhu_local_color_tl }
+
+        % Apply Font and Size
+        \tl_if_empty:NTF \l_tmpb_tl
+          { \fontsize{\l_tmpc_tl}{\l_tmpc_tl}\selectfont }
+          { \setmainfont{\l_tmpb_tl}[RawFeature={+vert,+vrt2}] \fontsize{\l_tmpc_tl}{\l_tmpc_tl}\selectfont }
+
+        % Apply Color
+        \tl_if_empty:NF \l_tmpd_tl
+          {
+            % Simple heuristic: if it contains a comma or space, it's numeric RGB
+            \tl_if_in:NnTF \l_tmpd_tl { , }
+              { \color[rgb]{\l_tmpd_tl} }
+              {
+                \tl_if_in:NnTF \l_tmpd_tl { ~ }
+                  {
+                    \tl_set:Nx \l_tmpc_tl { \l_tmpd_tl }
+                    \tl_replace_all:Nnn \l_tmpc_tl { ~ } { , }
+                    \color[rgb]{\l_tmpc_tl}
+                  }
+                  { \color{\l_tmpd_tl} }
+              }
+          }
+        
+        % CRITICAL: Set jiazhu attribute AFTER selectfont
+        \setluatexattribute\cnverticaljiazhu{1}
+        \setluatexattribute\cnverticaljiazhumode{\l_tmpa_tl}
+    
+        % Restore
+        \cnverticalindent = \savedindent\relax
+        \cnverticalblockid = \savedblockid\relax
+        \cnverticalfirstindent = \savedfirst\relax
+        \cnverticalrightindent = \savedright\relax
+        
+        #2
+        \group_end:
+      }
+
+    \NewDocumentCommand{\DanHangJiaZhu}{ O{right} +m }
+      {
+        \TextFlow[only-column=#1]{#2}
+      }
+
 \makeatother
 
 % Space Command - inserts a space that occupies grid cells in vertical layout
@@ -843,8 +937,6 @@
 % Paragraph Environment
 % Supports block indentation with first-line/hanging indent differentiation
 % Syntax: \begin{Paragraph}[indent=2, first-indent=0, bottom-indent=1]
-\newluatexattribute\cnverticalblockid
-\newluatexattribute\cnverticalfirstindent
 
 \int_new:N \g_luatexcn_v_block_id_int
 

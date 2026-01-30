@@ -6,14 +6,14 @@ local fontdetect = {}
 
 -- Font schemes for different platforms
 fontdetect.schemes = {
-    -- Windows fonts (中易字体)
+    -- Windows fonts (中易字体 / 微软雅黑)
     windows = {
         name = "windows",
         fonts = {
-            main = "SimSun",      -- 宋体
-            sans = "SimHei",      -- 黑体
-            kai = "KaiTi",        -- 楷体
-            fangsong = "FangSong" -- 仿宋
+            main = { "SimSun", "NSimSun", "Microsoft YaHei", "SimHei" }, -- 宋体, 新宋体, 微软雅黑, 黑体
+            sans = { "Microsoft YaHei", "SimHei" },                      -- 微软雅黑, 黑体
+            kai = { "KaiTi", "STKaiti", "SimKai" },                      -- 楷体, 华文楷体
+            fangsong = { "FangSong", "STFangsong", "SimFang" }           -- 仿宋, 华文仿宋
         },
         features = "RawFeature={+vert,+vrt2}"
     },
@@ -22,10 +22,10 @@ fontdetect.schemes = {
     mac = {
         name = "mac",
         fonts = {
-            main = "Songti SC",     -- 宋体-简
-            sans = "PingFang SC",   -- 苹方-简
-            kai = "Kaiti SC",       -- 楷体-简
-            fangsong = "STFangsong" -- 华文仿宋
+            main = { "Songti SC", "STSong", "PingFang SC" }, -- 宋体-简, 华文宋体, 苹方-简
+            sans = { "PingFang SC", "Heiti SC", "STHeiti" }, -- 苹方-简, 黑体-简, 华文黑体
+            kai = { "Kaiti SC", "STKaiti" },                 -- 楷体-简, 华文楷体
+            fangsong = { "STFangsong", "FangSong" }          -- 华文仿宋, 仿宋
         },
         features = "RawFeature={+vert,+vrt2}"
     },
@@ -34,10 +34,10 @@ fontdetect.schemes = {
     fandol = {
         name = "fandol",
         fonts = {
-            main = "FandolSong",
-            sans = "FandolHei",
-            kai = "FandolKai",
-            fangsong = "FandolFang"
+            main = { "FandolSong-Regular", "FandolSong" },
+            sans = { "FandolHei-Regular", "FandolHei" },
+            kai = { "FandolKai-Regular", "FandolKai" },
+            fangsong = { "FandolFang-Regular", "FandolFang" }
         },
         features = "RawFeature={+vert,+vrt2}"
     },
@@ -46,10 +46,10 @@ fontdetect.schemes = {
     ubuntu = {
         name = "ubuntu",
         fonts = {
-            main = "Noto Serif CJK SC",
-            sans = "Noto Sans CJK SC",
-            kai = "AR PL UKai CN", -- 文泉驿正黑
-            fangsong = "Noto Serif CJK SC"
+            main = { "Noto Serif CJK SC", "Source Han Serif SC" },
+            sans = { "Noto Sans CJK SC", "Source Han Sans SC" },
+            kai = { "AR PL UKai CN", "WenQuanYi Zen Hei" },
+            fangsong = { "Noto Serif CJK SC", "Source Han Serif SC" }
         },
         features = "RawFeature={+vert,+vrt2}"
     },
@@ -58,10 +58,10 @@ fontdetect.schemes = {
     common = {
         name = "common",
         fonts = {
-            main = "TW-Kai", -- 全字庫正楷體
-            sans = "Source Han Sans SC",
-            kai = "TW-Kai",
-            fangsong = "TW-Kai"
+            main = { "TW-Kai", "Source Han Serif SC", "Noto Serif CJK SC" },
+            sans = { "Source Han Sans SC", "Noto Sans CJK SC" },
+            kai = { "TW-Kai", "AR PL UKai CN" },
+            fangsong = { "TW-Kai", "Noto Serif CJK SC" }
         },
         features = "RawFeature={+vert,+vrt2}"
     }
@@ -90,75 +90,69 @@ function fontdetect.detect_os()
     return "linux"
 end
 
--- Check if a font is available
--- Note: Font detection in LuaTeX is tricky. We use a simplified approach:
--- Just return true and let fontspec/luaotfload handle font loading.
--- If the font doesn't exist, fontspec will give a clear error message.
+-- Check if a font is available (fallback simplified version)
 function fontdetect.font_exists(fontname)
-    -- For now, skip font existence checking and trust the OS-based selection
-    -- This ensures fonts like SimSun (which exist on Windows) are used
+    if not fontname or fontname == "" then return false end
+    local ok, res = pcall(require, "luaotfload")
+    local lotf = (type(res) == "table" and res) or _G.luaotfload
+    if ok and type(lotf) == "table" and type(lotf.find_file) == "function" then
+        return lotf.find_file(fontname) ~= nil
+    end
+    -- If we can't check, we return true to let TeX/fontspec handle it later
     return true
 end
 
--- Select best available font scheme
+-- Find the first available font in a list
+function fontdetect.resolve_font(font_list)
+    if type(font_list) == "string" then
+        if fontdetect.font_exists(font_list) then return font_list end
+        return nil
+    end
+
+    for _, name in ipairs(font_list) do
+        if fontdetect.font_exists(name) then return name end
+    end
+    return nil
+end
+
+-- Select best available font scheme (now returns the raw scheme with candidate lists)
 function fontdetect.auto_select_scheme()
     local os_name = fontdetect.detect_os()
     local scheme = nil
 
     texio.write_nl("term and log", "[Font Auto-Detect] Operating system detected: " .. os_name)
 
-    -- Try platform-specific scheme first
     if os_name == "windows" then
         scheme = fontdetect.schemes.windows
-        texio.write_nl("term and log", "[Font Auto-Detect] Trying Windows fonts (SimSun, KaiTi, etc.)")
     elseif os_name == "mac" then
         scheme = fontdetect.schemes.mac
-        texio.write_nl("term and log", "[Font Auto-Detect] Trying macOS fonts (Songti SC, PingFang SC, etc.)")
-    elseif os_name == "linux" then
-        -- Try Fandol first (open source)
+    else
         scheme = fontdetect.schemes.fandol
-        texio.write_nl("term and log", "[Font Auto-Detect] Trying Fandol fonts (open source)")
-
-        -- If Fandol not available, try Ubuntu/Noto fonts
-        if not fontdetect.font_exists(scheme.fonts.main) then
-            scheme = fontdetect.schemes.ubuntu
-            texio.write_nl("term and log", "[Font Auto-Detect] Fandol not found, trying Noto CJK fonts")
-        end
-    end
-
-    -- Verify the selected scheme's main font is available
-    if scheme and not fontdetect.font_exists(scheme.fonts.main) then
-        texio.write_nl("term and log", "[Font Auto-Detect] Platform font not found, trying common alternatives")
-        scheme = fontdetect.schemes.common
-    end
-
-    -- Final verification
-    if scheme and not fontdetect.font_exists(scheme.fonts.main) then
-        texio.write_nl("term and log", "[Font Auto-Detect] WARNING: No suitable Chinese font found!")
-        texio.write_nl("term and log",
-            "[Font Auto-Detect] Please install fonts or manually specify using \\usepackage{fontspec} and \\setmainfont")
-        return nil
     end
 
     if scheme then
-        texio.write_nl("term and log", "[Font Auto-Detect] Selected scheme: " .. scheme.name)
-        texio.write_nl("term and log", "[Font Auto-Detect] Main font: " .. scheme.fonts.main)
+        texio.write_nl("term and log", "[Font Auto-Detect] Selected candidate scheme: " .. scheme.name)
     end
 
     return scheme
 end
 
--- Get font command for LaTeX
+-- Get font setup information (returns lists as strings)
 function fontdetect.get_font_setup()
     local scheme = fontdetect.auto_select_scheme()
 
-    if not scheme then
-        return nil
+    if not scheme then return nil end
+
+    local function join_fonts(list)
+        if type(list) == "string" then return list end
+        return table.concat(list, ",")
     end
 
-    -- Return font setup information
     return {
-        name = scheme.fonts.main,
+        main = join_fonts(scheme.fonts.main),
+        sans = join_fonts(scheme.fonts.sans),
+        kai = join_fonts(scheme.fonts.kai),
+        fangsong = join_fonts(scheme.fonts.fangsong),
         features = scheme.features,
         scheme = scheme.name
     }

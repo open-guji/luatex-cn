@@ -108,13 +108,28 @@ local D = node.direct
 -- Helper function to safely convert dimension values to scaled points
 -- Handles both raw numbers and em unit tables returned by to_dimen
 local function safe_to_sp(val, base_size)
+    if not val or val == "" or val == "nil" then return nil end
     if type(val) == "table" and val.unit == "em" then
         return math.floor((val.value or 0) * (base_size or 655360) + 0.5)
     end
-    return tonumber(val) or 0
+    return tonumber(val)
 end
 
+function vertical.insert_chapter_marker(title)
+    local reg_id = utils.insert_chapter_marker(title)
+    -- Insert a zero-width kern with the chapter registry ID attribute
+    local n = D.new(node.id("kern"))
+    D.setfield(n, "kern", 0)
+    D.set_attribute(n, constants.ATTR_CHAPTER_REG_ID, reg_id)
 
+    -- Wrap in HLIST to be compatible with TeX box assignment
+    local h = D.new(node.id("hlist"))
+    D.setfield(h, "head", n)
+    D.setfield(h, "width", 0)
+    D.setfield(h, "height", 0)
+    D.setfield(h, "depth", 0)
+    tex.box[0] = D.tonode(h)
+end
 
 --- Main entry point called from TeX
 -- @param box_num (number) TeX box register number
@@ -146,11 +161,29 @@ function vertical.prepare_grid(box_num, params)
     local m_left = constants.to_dimen(params.margin_left) or 0
     local m_right = constants.to_dimen(params.margin_right) or 0
 
-    local h_dim = safe_to_sp(constants.to_dimen(params.height), g_height) or (65536 * 300)
+    local h_raw = params.height
+    local h_dim = 0
+    if type(h_raw) == "number" or (type(h_raw) == "string" and h_raw:match("^%d+$")) then
+        -- Numeric grid units: multiply by grid height
+        h_dim = (tonumber(h_raw) or 0) * g_height
+    else
+        -- Absolute dimension: parse to sp (safe_to_sp handles em unit conversion)
+        h_dim = safe_to_sp(constants.to_dimen(h_raw), g_height) or (65536 * 300)
+    end
+    -- Store for layout engine use (especially for non-integer spacing)
+    params.absolute_height = h_dim
+
+    local limit = tonumber(params.col_limit) or tonumber(params.line_limit)
+    if not limit or limit <= 0 then
+        -- Add small epsilon to handle floating point precision issues (e.g. 21.0 being slightly less)
+        limit = math.floor(h_dim / g_height + 0.1)
+    end
+    if limit <= 0 then limit = 20 end
+
     local b_padding_top_raw = constants.to_dimen(params.border_padding_top)
     local b_padding_bottom_raw = constants.to_dimen(params.border_padding_bottom)
-    local b_padding_top = safe_to_sp(b_padding_top_raw, g_height)
-    local b_padding_bottom = safe_to_sp(b_padding_bottom_raw, g_height)
+    local b_padding_top = safe_to_sp(b_padding_top_raw, g_height) or 0
+    local b_padding_bottom = safe_to_sp(b_padding_bottom_raw, g_height) or 0
     local b_thickness = safe_to_sp(constants.to_dimen(params.border_thickness), g_height) or 26214 -- 0.4pt
     local ob_thickness = safe_to_sp(constants.to_dimen(params.outer_border_thickness), g_height) or (65536 * 2)
     local ob_sep = safe_to_sp(constants.to_dimen(params.outer_border_sep), g_height) or (65536 * 2)
@@ -179,12 +212,6 @@ function vertical.prepare_grid(box_num, params)
             end
         end
     end
-
-    local limit = tonumber(params.col_limit) or tonumber(params.line_limit)
-    if not limit or limit <= 0 then
-        limit = math.floor(h_dim / g_height)
-    end
-    if limit <= 0 then limit = 20 end
 
     local is_textbox = (params.is_textbox == true)
     local half_thickness = math.floor(b_thickness / 2)
@@ -238,17 +265,21 @@ function vertical.prepare_grid(box_num, params)
     -- 4. Pipeline Stage 2: Calculate grid layout
     print(string.format("[LUA] Final Layout Settings: g_height=%.2f pt, limit=%d, p_cols=%d", g_height / 65536, limit,
         p_cols))
-    local layout_map, total_pages = layout.calculate_grid_positions(list, g_height, limit, b_interval, p_cols, {
-        distribute = params.distribute,
-        banxin_on = banxin_on,
-        -- Pass floating textbox info for center gap detection
-        floating = params.floating,
-        floating_x = params.floating_x,
-        floating_paper_width = params.floating_paper_width,
-        paper_width = p_width,
-        grid_width = g_width,
-        margin_right = m_right
-    })
+    local layout_map, total_pages, page_chapter_titles, banxin_registry = layout.calculate_grid_positions(list, g_height,
+        limit,
+        b_interval, p_cols, {
+            distribute = params.distribute,
+            banxin_on = banxin_on,
+            -- Pass floating textbox info for center gap detection
+            floating = params.floating,
+            floating_x = params.floating_x,
+            floating_paper_width = params.floating_paper_width,
+            paper_width = p_width,
+            grid_width = g_width,
+            margin_right = m_right,
+            chapter_title = params.chapter_title or "",
+            absolute_height = h_dim,
+        })
     print(string.format("[LUA] Laid out total_pages = %d", total_pages))
 
     -- 4a. Pipeline Stage 2.5: For textboxes, determine actual columns used
@@ -336,8 +367,14 @@ function vertical.prepare_grid(box_num, params)
         font_size = constants.to_dimen(params.font_size),
         is_textbox = is_textbox,
         banxin_on = banxin_on,
-        sidenote_map = sidenote_map, -- Pass sidenote map to render
-        floating_map = floating_map, -- Pass floating map to render
+        publisher = params.publisher,
+        publisher_font_size = safe_to_sp(constants.to_dimen(params.publisher_font_size), g_height),
+        publisher_grid_height = safe_to_sp(constants.to_dimen(params.publisher_grid_height), g_height),
+        publisher_bottom_margin = safe_to_sp(constants.to_dimen(params.publisher_bottom_margin), g_height),
+        sidenote_map = sidenote_map,               -- Pass sidenote map to render
+        floating_map = floating_map,               -- Pass floating map to render
+        page_chapter_titles = page_chapter_titles, -- Pass new chapter titles map
+        banxin_registry = banxin_registry,         -- Pass banxin columns per page
     }
 
     if is_debug then
@@ -345,16 +382,16 @@ function vertical.prepare_grid(box_num, params)
             tostring(is_textbox)))
     end
 
-    local rendered_pages = render.apply_positions(list, layout_map, r_params)
+    local pages = render.apply_positions(list, layout_map, r_params)
 
     -- Update global page number ONLY if this is a main document call
     if not is_textbox then
         local old_page_num = _G.vertical.current_page_number
-        _G.vertical.current_page_number = old_page_num + #rendered_pages
+        _G.vertical.current_page_number = old_page_num + #pages
 
         if is_debug then
             utils.debug_log(string.format("[core] Finished apply_positions. Pages: %d. Global page number: %d -> %d",
-                #rendered_pages, old_page_num, _G.vertical.current_page_number))
+                #pages, old_page_num, _G.vertical.current_page_number))
         end
     else
         if is_debug then
@@ -367,10 +404,10 @@ function vertical.prepare_grid(box_num, params)
     _G.vertical_pending_pages = {}
 
     local outer_shift = is_outer_border and (ob_thickness + ob_sep) or 0
-    local char_grid_height = limit * g_height
+    local char_grid_height = is_textbox and h_dim or (limit * g_height)
     local total_v_depth = char_grid_height + b_padding_top + b_padding_bottom + b_thickness + outer_shift * 2
 
-    for i, page_info in ipairs(rendered_pages) do
+    for i, page_info in ipairs(pages) do
         local new_box = node.new("hlist")
         new_box.dir = "TLT"
         new_box.list = page_info.head
@@ -475,7 +512,7 @@ function vertical.process_from_tex(box_num, params)
             end
 
             -- New page for second half
-            tex.print("\\newpage")
+            tex.print("\\vfill\\penalty-10000\\allowbreak")
             tex.print(cmd_dim)
             tex.print(cmd_dim_h)
 
@@ -491,7 +528,7 @@ function vertical.process_from_tex(box_num, params)
             end
 
             if i < total_pages - 1 then
-                tex.print("\\newpage")
+                tex.print("\\vfill\\penalty-10000\\allowbreak")
             end
         end
     else
@@ -501,7 +538,7 @@ function vertical.process_from_tex(box_num, params)
             tex.print("\\par\\nointerlineskip")
             tex.print(string.format("\\noindent\\hfill\\box%d", box_num))
             if i < total_pages - 1 then
-                tex.print("\\newpage")
+                tex.print("\\vfill\\penalty-10000\\allowbreak")
             end
         end
     end

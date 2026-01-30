@@ -128,6 +128,10 @@ local function calculate_render_context(params)
         judou_pos = params.judou_pos or "right-bottom",
         judou_size = params.judou_size or "1em",
         judou_color = params.judou_color or "red",
+        publisher = params.publisher,
+        publisher_font_size = params.publisher_font_size,
+        publisher_grid_height = params.publisher_grid_height,
+        publisher_bottom_margin = params.publisher_bottom_margin,
     }
 end
 
@@ -726,14 +730,33 @@ local function render_single_page(p_head, p_max_col, p, layout_map, params, ctx)
     local inner_width = p_total_cols * grid_width + border_thickness
     local inner_height = line_limit * grid_height + b_padding_top + b_padding_bottom + border_thickness
 
-    -- Reserved columns (via hooks - e.g., banxin)
+    -- Update chapter title for this page if provided
+    local current_chapter_title = params.chapter_title or ""
+    if params.page_chapter_titles and params.page_chapter_titles[p] then
+        current_chapter_title = params.page_chapter_titles[p]
+    end
+
+    -- Reserved columns (from banxin_registry or computed via hooks)
     local reserved_cols = {}
     local banxin_on = params.banxin_on
-    if draw_debug then
-        utils.debug_log(string.format(">>> LUA PAGE: interval=%d, p_total_cols=%d, banxin_on=%s", interval,
-            p_total_cols, tostring(banxin_on)))
-    end
-    if banxin_on and interval > 0 then
+
+    -- Use banxin_registry if provided (computed during layout phase)
+    if params.banxin_registry and params.banxin_registry[p] then
+        reserved_cols = params.banxin_registry[p]
+        if draw_debug then
+            local cols_list = {}
+            for col, _ in pairs(reserved_cols) do
+                table.insert(cols_list, col)
+            end
+            utils.debug_log(string.format(">>> LUA PAGE: interval=%d, p_total_cols=%d, banxin_on=%s (from registry: %s)",
+                interval, p_total_cols, tostring(banxin_on), table.concat(cols_list, ",")))
+        end
+    elseif banxin_on and interval > 0 then
+        -- Fallback: compute dynamically (for backwards compatibility)
+        if draw_debug then
+            utils.debug_log(string.format(">>> LUA PAGE: interval=%d, p_total_cols=%d, banxin_on=%s",
+                interval, p_total_cols, tostring(banxin_on)))
+        end
         for col = 0, p_total_cols - 1 do
             if _G.vertical.hooks.is_reserved_column(col, interval) then
                 reserved_cols[col] = true
@@ -770,7 +793,7 @@ local function render_single_page(p_head, p_max_col, p, layout_map, params, ctx)
                     b_padding_top = params.banxin_padding_top or 0,
                     b_padding_bottom = params.banxin_padding_bottom or 0,
                     lower_yuwei = params.lower_yuwei,
-                    chapter_title = params.chapter_title or "",
+                    chapter_title = current_chapter_title,
                     chapter_title_top_margin = params.chapter_title_top_margin or (65536 * 20),
                     chapter_title_cols = params.chapter_title_cols or 1,
                     chapter_title_font_size = params.chapter_title_font_size,
@@ -786,6 +809,10 @@ local function render_single_page(p_head, p_max_col, p, layout_map, params, ctx)
                     grid_height = grid_height,
                     font_size = params.font_size,
                     draw_border = draw_border,
+                    publisher = ctx.publisher,
+                    publisher_font_size = ctx.publisher_font_size,
+                    publisher_grid_height = ctx.publisher_grid_height,
+                    publisher_bottom_margin = ctx.publisher_bottom_margin,
                 })
             end
         end

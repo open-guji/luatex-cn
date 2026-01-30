@@ -51,17 +51,21 @@ constants.ATTR_FIRST_INDENT = luatexbase.attributes.cnverticalfirstindent or
 -- Attributes for Jiazhu (Interlinear Note)
 constants.ATTR_JIAZHU = luatexbase.attributes.cnverticaljiazhu or luatexbase.new_attribute("cnverticaljiazhu")
 constants.ATTR_JIAZHU_SUB = luatexbase.attributes.cnverticaljiazhusub or luatexbase.new_attribute("cnverticaljiazhusub")
+constants.ATTR_JIAZHU_MODE = luatexbase.attributes.cnverticaljiazhumode or
+    luatexbase.new_attribute("cnverticaljiazhumode")
 constants.ATTR_JUDOU_FONT = luatexbase.attributes.cnverticaljudoufont or luatexbase.new_attribute("cnverticaljudoufont")
 constants.ATTR_DECORATE_ID = 202610
--- Stores the visual center X coordinate (relative to glyph origin)
 constants.ATTR_DECORATE_VISUAL_CENTER = 202611
 constants.ATTR_DECORATE_FONT = 202612
+constants.ATTR_CHAPTER_REG_ID = 202613
 
 -- Constants for Side Pizhu
 constants.SIDENOTE_USER_ID = 202601
 constants.FLOATING_TEXTBOX_USER_ID = 202602
 constants.JUDOU_USER_ID = 202603
 constants.DECORATE_USER_ID = 202604
+constants.CHAPTER_MARKER_USER_ID = 202605
+constants.BANXIN_USER_ID = 202606
 
 --- 将 TeX 尺寸字符串转换为 scaled points (sp)
 local function to_dimen(dim_str)

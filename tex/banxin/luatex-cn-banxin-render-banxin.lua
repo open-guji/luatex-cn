@@ -30,6 +30,7 @@
 --      ├─ render_book_name() - 绘制书名文字
 --      ├─ render_chapter_title() - 绘制章节标题
 --      ├─ render_page_number() - 绘制页码
+--      ├─ render_publisher() - 绘制出版社/刊号
 --      └─ render_debug_rects() - 调试矩形
 --
 -- ============================================================================
@@ -589,6 +590,75 @@ local function render_page_number(p_head, params, upper_height, middle_height, y
     return p_head
 end
 
+--- 计算出版社的布局参数
+-- @param params (table) 输入参数
+-- @param height (number) 版心总高度
+-- @return (table|nil) 布局参数
+local function calculate_publisher_layout(params, height)
+    local publisher = params.publisher or ""
+    if publisher == "" then return nil end
+
+    -- Use resolve_dimen for safety
+    local base_f_size = constants.resolve_dimen(params.font_size, 655360) or 655360
+    local f_size = constants.resolve_dimen(params.publisher_font_size, base_f_size)
+    if not f_size or f_size <= 0 then
+        f_size = 65536 * 10 -- Default 10pt
+    end
+
+    local grid_h = constants.resolve_dimen(params.publisher_grid_height, f_size)
+    if not grid_h or grid_h <= 0 then
+        grid_h = math.floor(f_size * 1.2 + 0.5) -- Default 1.2 line height
+    end
+
+    local num_chars = count_utf8_chars(publisher)
+    local container_height = grid_h * num_chars
+    local bottom_margin = constants.resolve_dimen(params.publisher_bottom_margin, f_size) or (65536 * 5)
+
+    -- Position at the very bottom of the banxin area
+    local banxin_bottom_y = params.y - height
+    local y_top = banxin_bottom_y + bottom_margin + container_height
+
+    banxin_log(string.format("[banxin] Publisher text='%s' fs=%.2f height=%.2f y_top=%.2f",
+        publisher, f_size / 65536, container_height / 65536, y_top / 65536))
+
+    return {
+        text = publisher,
+        x = params.x,
+        y_top = y_top,
+        width = params.width,
+        height = container_height,
+        v_align = "bottom",
+        h_align = params.publisher_align == "center" and "center" or "right",
+        font_size = f_size,
+    }
+end
+
+--- 渲染出版社文字
+-- @param p_head (node) 当前链表头
+-- @param params (table) 输入参数
+-- @param height (number) 版心总高度
+-- @return (node) 新的链表头
+local function render_publisher(p_head, params, height)
+    local layout = calculate_publisher_layout(params, height)
+    if not layout then return p_head end
+
+    local pub_chain = text_position.create_vertical_text(layout.text, {
+        x = layout.x,
+        y_top = layout.y_top,
+        width = layout.width,
+        height = layout.height,
+        v_align = layout.v_align,
+        h_align = layout.h_align,
+        font_size = layout.font_size,
+    })
+
+    if pub_chain then
+        p_head = prepend_chain(p_head, pub_chain)
+    end
+
+    return p_head
+end
+
 -- ============================================================================
 -- Debug Functions (调试功能)
 -- ============================================================================
@@ -665,7 +735,10 @@ local function draw_banxin_column(p_head, params)
     -- 5. Render page number
     p_head = render_page_number(p_head, params, upper_height, middle_height, yuwei_dims)
 
-    -- 6. Debug rectangles
+    -- 6. Render publisher
+    p_head = render_publisher(p_head, params, height)
+
+    -- 7. Debug rectangles
     p_head = render_debug_rects(p_head, x, y, width, height)
 
     return p_head

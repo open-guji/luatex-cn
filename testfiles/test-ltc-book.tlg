@@ -12,12 +12,12 @@ TEST 1: Basic Modern Book
 ...\localleftbox=null
 ...\localrightbox=null
 ..\hbox(0.0+0.0)x0.0, direction TLT
-..\TU/FandolSong(0)/m/n/12 文
-..\TU/FandolSong(0)/m/n/12 字
-..\TU/FandolSong(0)/m/n/12 竖
-..\TU/FandolSong(0)/m/n/12 排
-..\TU/FandolSong(0)/m/n/12 测
-..\TU/FandolSong(0)/m/n/12 试
+..\TU/FandolSong-Regular(0)/m/n/12 文
+..\TU/FandolSong-Regular(0)/m/n/12 字
+..\TU/FandolSong-Regular(0)/m/n/12 竖
+..\TU/FandolSong-Regular(0)/m/n/12 排
+..\TU/FandolSong-Regular(0)/m/n/12 测
+..\TU/FandolSong-Regular(0)/m/n/12 试
 ..\penalty 10000
 ..\glue(\parfillskip) 0.0 plus 1.0fil
 ..\glue(\rightskip) 0.0

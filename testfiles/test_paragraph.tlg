@@ -191,12 +191,12 @@ DEBUG: banxin-padding-top is 2pt
 ^^[[33m[vertical]^^[[0m   [layout] Node=3497 ID=29 [p:0, c:0, r:20]
 ^^[[33m[vertical]^^[[0m   [layout] Node=2151 ID=12 [p:0, c:0, r:21]
 ^^[[33m[vertical]^^[[0m   [layout] SPACING: val=28.00pt IGNORED (at top or within indent)
-^^[[33m[vertical]^^[[0m   [layout] Node=2166 ID=29 [p:0, c:1, r:0]
-^^[[33m[vertical]^^[[0m   [layout] Node=2181 ID=29 [p:0, c:1, r:1]
-^^[[33m[vertical]^^[[0m   [layout] Node=2211 ID=29 [p:0, c:1, r:2]
-^^[[33m[vertical]^^[[0m   [layout] Node=3425 ID=29 [p:0, c:1, r:3]
-^^[[33m[vertical]^^[[0m   [layout] Node=1735 ID=14 [p:0, c:1, r:4]
-^^[[33m[vertical]^^[[0m   [layout] Node=1738 ID=14 [p:0, c:1, r:4]
+^^[[33m[vertical]^^[[0m   [layout] Node=2166 ID=29 [p:0, c:1, r:5]
+^^[[33m[vertical]^^[[0m   [layout] Node=2181 ID=29 [p:0, c:1, r:6]
+^^[[33m[vertical]^^[[0m   [layout] Node=2211 ID=29 [p:0, c:1, r:7]
+^^[[33m[vertical]^^[[0m   [layout] Node=3425 ID=29 [p:0, c:1, r:8]
+^^[[33m[vertical]^^[[0m   [layout] Node=1735 ID=14 [p:0, c:1, r:9]
+^^[[33m[vertical]^^[[0m   [layout] Node=1738 ID=14 [p:0, c:1, r:9]
 ^^[[33m[vertical]^^[[0m [layout] Layout map built. Total entries: 20, Total pages: 1
 ^^[[33m[vertical]^^[[0m [core] Calling apply_positions with start_page=2 (is_textbox=false)
 ^^[[33m[vertical]^^[[0m [render] apply_positions: border_rgb=0 0 0 -> 0.0000 0.0000 0.0000, font_rgb=0 0 0, font_size=1835008
@@ -240,13 +240,13 @@ DEBUG: banxin-padding-top is 2pt
 ^^[[33m[vertical]^^[[0m [VisualCenter] char=26360 GID=22332 size=28.00 units=1024 bbox=[195,-41,864,662] method=bbox v_center=14.48
 ^^[[33m[vertical]^^[[0m   [render] GLYPH char=26360 [c:0, r:20.00, s:nil] xoff=822.77 yoff=-594.69 w=28.00 h=20.95 fsize=28.00
 ^^[[33m[vertical]^^[[0m [VisualCenter] char=19968 GID=15940 size=28.00 units=1024 bbox=[56,-124,968,725] method=bbox v_center=14.00
-^^[[33m[vertical]^^[[0m   [render] GLYPH char=19968 [c:1, r:0.00, s:nil] xoff=772.94 yoff=-31.65 w=28.00 h=10.50 fsize=28.00
+^^[[33m[vertical]^^[[0m   [render] GLYPH char=19968 [c:1, r:5.00, s:nil] xoff=772.94 yoff=-171.68 w=28.00 h=10.50 fsize=28.00
 ^^[[33m[vertical]^^[[0m [VisualCenter] char=20108 GID=16080 size=28.00 units=1024 bbox=[51,-118,983,719] method=bbox v_center=14.14
-^^[[33m[vertical]^^[[0m   [render] GLYPH char=20108 [c:1, r:1.00, s:nil] xoff=772.80 yoff=-61.74 w=28.00 h=14.66 fsize=28.00
+^^[[33m[vertical]^^[[0m   [render] GLYPH char=20108 [c:1, r:6.00, s:nil] xoff=772.80 yoff=-201.76 w=28.00 h=14.66 fsize=28.00
 ^^[[33m[vertical]^^[[0m [VisualCenter] char=19977 GID=15949 size=28.00 units=1024 bbox=[93,-135,930,724] method=bbox v_center=13.99
-^^[[33m[vertical]^^[[0m   [render] GLYPH char=19977 [c:1, r:2.00, s:nil] xoff=772.95 yoff=-90.20 w=28.00 h=16.46 fsize=28.00
+^^[[33m[vertical]^^[[0m   [render] GLYPH char=19977 [c:1, r:7.00, s:nil] xoff=772.95 yoff=-230.23 w=28.00 h=16.46 fsize=28.00
 ^^[[33m[vertical]^^[[0m [VisualCenter] char=22235 GID=18207 size=28.00 units=1024 bbox=[101,-75,929,695] method=bbox v_center=14.08
-^^[[33m[vertical]^^[[0m   [render] GLYPH char=22235 [c:1, r:3.00, s:nil] xoff=772.86 yoff=-117.59 w=28.00 h=14.77 fsize=28.00
+^^[[33m[vertical]^^[[0m   [render] GLYPH char=22235 [c:1, r:8.00, s:nil] xoff=772.86 yoff=-257.62 w=28.00 h=14.77 fsize=28.00
 ^^[[33m[vertical]^^[[0m [core] Finished apply_positions. Pages: 1. Global page number: 2 -> 3
 ^^[[33m[vertical]^^[[0m --- [core] Layout Map Summary --- [3
 ] [4]

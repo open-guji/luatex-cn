@@ -44,6 +44,29 @@ local D = node.direct
 -- Helper Functions (辅助函数)
 -- ============================================================================
 
+--- 解析高度参数为网格单位
+-- @param height_raw (string|number) 高度参数
+-- @param grid_height_raw (string|number) 网格高度（单格尺寸）
+-- @return (number) 网格单位数
+local function resolve_grid_height(height_raw, grid_height_raw)
+    if not height_raw or height_raw == "" then return 0 end
+
+    -- 如果是纯数字或数字字符串，视为网格单位
+    if type(height_raw) == "number" or (type(height_raw) == "string" and height_raw:match("^%d+$")) then
+        return tonumber(height_raw) or 0
+    end
+
+    -- 否则视为尺寸字符串，转换为 sp 后除以网格高度
+    local h_sp = constants.to_dimen(height_raw)
+    local gh_sp = constants.to_dimen(grid_height_raw) or (65536 * 12)
+
+    if h_sp and type(h_sp) == "number" and gh_sp > 0 then
+        return math.ceil(h_sp / gh_sp)
+    end
+
+    return 0
+end
+
 --- 解析列对齐字符串
 -- @param column_aligns_str (string) 逗号分隔的对齐方式 (例如 "right,left")
 -- @return (table) 索引从 0 开始的对齐方式表
@@ -103,7 +126,8 @@ end
 local function build_sub_params(params, col_aligns)
     local ba = params.box_align or "top"
     local n_cols = get_effective_n_cols(params.n_cols)
-    local height = tonumber(params.height) or 0
+    local height = resolve_grid_height(params.height, params.grid_height)
+
     -- height=0 means auto: use large limit to fit content
     local col_limit = (height > 0) and height or 1000
 
@@ -111,6 +135,7 @@ local function build_sub_params(params, col_aligns)
         n_cols = n_cols,
         page_columns = n_cols,
         col_limit = col_limit,
+        height = params.height,
         grid_width = params.grid_width,
         grid_height = params.grid_height,
         box_align = params.box_align,
@@ -181,10 +206,26 @@ end
 local function apply_result_attributes(res_box, params, current_indent)
     if not res_box then return end
 
-    -- 获取实际渲染的列数
+    -- Determine total height in sp for external occupancy calculation
+    local h_raw = params.height
+    local inner_gh_sp = constants.to_dimen(params.grid_height) or (65536 * 12)
+    local outer_gh_sp = constants.to_dimen(params.outer_grid_height) or inner_gh_sp
+
+    local h_sp = 0
+    if type(h_raw) == "number" or (type(h_raw) == "string" and h_raw:match("^%d+$")) then
+        -- Pure number: multiply by inner grid height
+        h_sp = (tonumber(h_raw) or 0) * inner_gh_sp
+    else
+        -- Dimension string: convert to sp
+        h_sp = constants.to_dimen(h_raw) or 0
+    end
+
     local actual_cols = node.get_attribute(res_box, constants.ATTR_TEXTBOX_WIDTH) or 1
+    -- Occupancy in outer grid cells
+    local height_val = math.ceil(h_sp / outer_gh_sp)
+
     node.set_attribute(res_box, constants.ATTR_TEXTBOX_WIDTH, actual_cols)
-    node.set_attribute(res_box, constants.ATTR_TEXTBOX_HEIGHT, tonumber(params.height) or 1)
+    node.set_attribute(res_box, constants.ATTR_TEXTBOX_HEIGHT, height_val)
 
     -- 应用缩进属性
     if current_indent > 0 then

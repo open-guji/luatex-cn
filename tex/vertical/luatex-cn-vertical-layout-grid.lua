@@ -135,7 +135,7 @@ local function mark_occupied(occupancy, p, c, r)
 end
 
 local function create_grid_context(params, line_limit, p_cols)
-    return {
+    local ctx = {
         cur_page = 0,
         cur_col = 0,
         cur_row = 0,
@@ -144,23 +144,46 @@ local function create_grid_context(params, line_limit, p_cols)
         line_limit = line_limit,
         p_cols = p_cols,
         cur_column_indent = 0,
+        page_has_content = false,
+        chapter_title = params.chapter_title or "",
+        page_chapter_titles = {}, -- To store chapter title for each page
         -- Can add other state if needed
     }
+    ctx.page_chapter_titles[0] = ctx.chapter_title -- Initialize page 0 with the initial chapter title
+    return ctx
 end
 
 
-local function move_to_next_valid_position(ctx, interval, grid_height)
+local function apply_indentation(ctx, indent)
+    if not indent or indent <= 0 then return end
+    if ctx.cur_row < indent then ctx.cur_row = indent end
+    if indent > (ctx.cur_column_indent or 0) then ctx.cur_column_indent = indent end
+    if ctx.cur_row < (ctx.cur_column_indent or 0) then ctx.cur_row = ctx.cur_column_indent end
+end
+
+
+local function move_to_next_valid_position(ctx, interval, grid_height, indent)
     local changed = true
     while changed do
         changed = false
-        -- Skip Banxin
+        -- Skip Banxin and register it
         while is_reserved_col(ctx.cur_col, interval, ctx.params.banxin_on) do
+            -- Register this Banxin column for the current page
+            if not ctx.banxin_registry[ctx.cur_page] then
+                ctx.banxin_registry[ctx.cur_page] = {}
+            end
+            ctx.banxin_registry[ctx.cur_page][ctx.cur_col] = true
+
             ctx.cur_col = ctx.cur_col + 1
             if ctx.cur_col >= ctx.p_cols then
                 ctx.cur_col = 0
                 ctx.cur_page = ctx.cur_page + 1
             end
             changed = true
+            -- When wrapping column/page, row reset must honor indent
+            ctx.cur_row = 0
+            ctx.cur_column_indent = 0
+            if indent then apply_indentation(ctx, indent) end
         end
         -- Skip Center Gap
         while is_center_gap_col(ctx.cur_col, ctx.params, grid_height) do
@@ -170,6 +193,10 @@ local function move_to_next_valid_position(ctx, interval, grid_height)
                 ctx.cur_page = ctx.cur_page + 1
             end
             changed = true
+            -- When wrapping column/page, row reset must honor indent
+            ctx.cur_row = 0
+            ctx.cur_column_indent = 0
+            if indent then apply_indentation(ctx, indent) end
         end
         -- Skip Occupied
         if is_occupied(ctx.occupancy, ctx.cur_page, ctx.cur_col, ctx.cur_row) then
@@ -178,8 +205,13 @@ local function move_to_next_valid_position(ctx, interval, grid_height)
                 ctx.cur_row = 0
                 ctx.cur_col = ctx.cur_col + 1
                 changed = true
+                -- Reset column-specific indent tracker
+                ctx.cur_column_indent = 0
+                if indent then apply_indentation(ctx, indent) end
             else
                 changed = true
+                -- Row increment might need to re-check indent if we passed it then hit something?
+                -- Actually skip indent is handled before placement usually.
             end
         end
     end
@@ -190,7 +222,7 @@ _internal.move_to_next_valid_position = move_to_next_valid_position
 -- @param page_columns (number) Total columns before a page break
 -- @param params (table) Optional parameters:
 --   - distribute (boolean) If true, distribute nodes evenly in columns
--- @return (table, number) layout_map (node_ptr -> {page, col, row}), total_pages
+-- @return (table, number, table, table) layout_map, total_pages, page_chapter_titles, banxin_registry
 local function calculate_grid_positions(head, grid_height, line_limit, n_column, page_columns, params)
     local d_head = D.todirect(head)
     params = params or {}
@@ -210,13 +242,14 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
 
     -- Stateful cursor layout
     local ctx = create_grid_context(params, line_limit, p_cols)
+    ctx.banxin_registry = {} -- Track Banxin columns per page
     local layout_map = {}
 
     -- Buffer for distribution mode
     local col_buffer = {}
 
     -- Initial skip
-    move_to_next_valid_position(ctx, interval, grid_height)
+    move_to_next_valid_position(ctx, interval, grid_height, indent)
 
     -- Block tracking for First Indent
     local block_start_cols = {} -- map[block_id] -> {page=p, col=c}
@@ -238,29 +271,58 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
         if #col_buffer == 0 then return end
 
         local N = #col_buffer
-        local H = line_limit -- For inner layout, line_limit is total rows
+        local H = line_limit -- Default to integer grid cells
 
-        for i, entry in ipairs(col_buffer) do
-            local row
-            local v_scale = 1.0
+        -- If absolute height is provided and we are in distribution mode,
+        -- use the actual dimension to calculate distribution.
+        if distribute and ctx.params.absolute_height and ctx.params.absolute_height > 0 then
+            H = ctx.params.absolute_height / grid_height
+        end
 
-            if distribute and N > 1 then
-                if N < H then
-                    -- Evenly distribute: Row = (i-1) * (H-1)/(N-1)
-                    row = (i - 1) * (H - 1) / (N - 1)
-                else
-                    -- Vertical Squeezing: Place characters at compressed rows
-                    -- Each character should occupy exactly H/N of available space.
-                    -- Centering a character in a cell of size grid_height starting at 'row'
-                    -- follows: y = -(row + 0.5) * grid_height.
-                    -- We want center_i = -(i - 0.5) * (H/N) * grid_height.
-                    -- Solving (row + 0.5) = (i - 0.5) * (H/N) gives:
-                    row = (i - 0.5) * (H / N) - 0.5
-                    v_scale = H / N
+        local v_scale_all = 1.0
+        local distribute_rows = {}
+
+        if distribute and N > 1 then
+            local total_char_height = 0
+            for _, entry in ipairs(col_buffer) do
+                local ch = entry.height or grid_height
+                if ch <= 0 then ch = grid_height end
+                total_char_height = total_char_height + ch
+            end
+
+            local H_sp = H * grid_height
+            if total_char_height > H_sp then
+                -- Squeeze mode
+                v_scale_all = H_sp / total_char_height
+                local current_y = 0
+                for i = 1, N do
+                    local entry = col_buffer[i]
+                    local ch = (entry.height or grid_height)
+                    if ch <= 0 then ch = grid_height end
+                    ch = ch * v_scale_all
+                    local y_center = current_y + ch / 2
+                    distribute_rows[i] = y_center / grid_height - 0.5
+                    current_y = current_y + ch
                 end
             else
-                row = entry.relative_row
+                -- Distribute mode (No enlargement)
+                v_scale_all = 1.0
+                local gap = (H_sp - total_char_height) / (N - 1)
+                local current_y = 0
+                for i = 1, N do
+                    local entry = col_buffer[i]
+                    local ch = (entry.height or grid_height)
+                    if ch <= 0 then ch = grid_height end
+                    local y_center = current_y + ch / 2
+                    distribute_rows[i] = y_center / grid_height - 0.5
+                    current_y = current_y + ch + gap
+                end
             end
+        end
+
+        for i, entry in ipairs(col_buffer) do
+            local row = distribute_rows[i] or entry.relative_row
+            local v_scale = (distribute and N > 1) and v_scale_all or 1.0
 
             layout_map[entry.node] = {
                 page = entry.page,
@@ -276,10 +338,20 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
     end
 
     local t = d_head
-    move_to_next_valid_position(ctx, interval, grid_height)
+    move_to_next_valid_position(ctx, interval, grid_height, indent)
 
     local node_count = 0
     while t do
+        -- Check for dynamic chapter title marker via attribute
+        local reg_id = D.get_attribute(t, constants.ATTR_CHAPTER_REG_ID)
+        if reg_id and reg_id > 0 then
+            local new_title = _G.chapter_registry and _G.chapter_registry[reg_id]
+            if new_title then
+                ctx.chapter_title = new_title
+                ctx.page_chapter_titles[ctx.cur_page] = new_title
+            end
+        end
+
         ::start_of_loop::
         local id = D.getid(t)
 
@@ -326,14 +398,6 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
         -- Indent logic applying to current position
         -- Only apply column-level indent tracking when this node has indent > 0
         -- This prevents indent from "leaking" to non-indented content in the same column
-        -- Indent logic applying to current position
-        -- Only apply column-level indent tracking when this node has indent > 0
-        -- This prevents indent from "leaking" to non-indented content in the same column
-        if indent > 0 then
-            if ctx.cur_row < indent then ctx.cur_row = indent end
-            if indent > ctx.cur_column_indent then ctx.cur_column_indent = indent end
-            if ctx.cur_row < ctx.cur_column_indent then ctx.cur_row = ctx.cur_column_indent end
-        end
 
         local effective_limit = line_limit - r_indent
         if effective_limit < indent + 1 then effective_limit = indent + 1 end
@@ -350,12 +414,11 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
             end
 
             -- CRITICAL: Reset column indent when wrapping to new column
-            -- The next node will set it again if it has indent > 0
-            -- This prevents indent from "leaking" when column fills up exactly
             ctx.cur_column_indent = 0
-            move_to_next_valid_position(ctx, interval, grid_height)
-            move_to_next_valid_position(ctx, interval, grid_height)
+            move_to_next_valid_position(ctx, interval, grid_height, indent)
         end
+
+        apply_indentation(ctx, indent)
 
         local is_jiazhu = D.get_attribute(t, constants.ATTR_JIAZHU) == 1
         if is_jiazhu then
@@ -387,7 +450,7 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
                     ctx.cur_col = 0
                     ctx.cur_page = ctx.cur_page + 1
                 end
-                move_to_next_valid_position(ctx, interval, grid_height)
+                move_to_next_valid_position(ctx, interval, grid_height, indent)
             end
 
             -- Process via core_textflow
@@ -397,7 +460,10 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
             local available_in_first = effective_limit - ctx.cur_row
             local capacity_per_subsequent = line_limit - base_indent - r_indent -- Use base_indent for subsequent columns
 
-            local chunks = textflow.process_jiazhu_sequence(j_nodes, available_in_first, capacity_per_subsequent)
+            local jiazhu_mode = D.get_attribute(t, constants.ATTR_JIAZHU_MODE) or 0
+
+            local chunks = textflow.process_jiazhu_sequence(j_nodes, available_in_first, capacity_per_subsequent,
+                jiazhu_mode)
 
             for i, chunk in ipairs(chunks) do
                 -- If not the first chunk, move to next column
@@ -408,7 +474,7 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
                         ctx.cur_col = 0
                         ctx.cur_page = ctx.cur_page + 1
                     end
-                    move_to_next_valid_position(ctx, interval, grid_height)
+                    move_to_next_valid_position(ctx, interval, grid_height, indent)
 
                     -- Recalculate indentation and row start for new column
                     local chunk_indent = get_indent_for_current_pos(block_id, base_indent, first_indent)
@@ -443,7 +509,7 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
                     ctx.cur_col = 0
                     ctx.cur_page = ctx.cur_page + 1
                 end
-                move_to_next_valid_position(ctx, interval, grid_height)
+                move_to_next_valid_position(ctx, interval, grid_height, indent)
             end
 
             local fits_width = true
@@ -462,7 +528,7 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
                     ctx.cur_col = 0
                     ctx.cur_page = ctx.cur_page + 1
                 end
-                move_to_next_valid_position(ctx, interval, grid_height)
+                move_to_next_valid_position(ctx, interval, grid_height, indent)
             end
 
             for c = ctx.cur_col, ctx.cur_col + tb_w - 1 do
@@ -483,7 +549,7 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
                         tb_h
                 })
             ctx.cur_row = ctx.cur_row + tb_h
-            move_to_next_valid_position(ctx, interval, grid_height)
+            move_to_next_valid_position(ctx, interval, grid_height, indent)
         elseif id == constants.GLYPH then
             local dec_id = D.get_attribute(t, constants.ATTR_DECORATE_ID)
             if dec_id and dec_id > 0 then
@@ -496,9 +562,16 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
                 }
                 -- DO NOT increment cur_row - marker is zero-width overlay
             else
-                table.insert(col_buffer, { node = t, page = ctx.cur_page, col = ctx.cur_col, relative_row = ctx.cur_row })
+                table.insert(col_buffer, {
+                    node = t,
+                    page = ctx.cur_page,
+                    col = ctx.cur_col,
+                    relative_row = ctx.cur_row,
+                    height = (D.getfield(t, "height") or 0) + (D.getfield(t, "depth") or 0)
+                })
                 ctx.cur_row = ctx.cur_row + 1
-                move_to_next_valid_position(ctx, interval, grid_height)
+                ctx.page_has_content = true
+                move_to_next_valid_position(ctx, interval, grid_height, indent)
             end
         elseif id == constants.GLUE or id == constants.KERN then
             local net_width = 0
@@ -540,7 +613,7 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
                                 ctx.cur_page = ctx.cur_page + 1
                             end
                         end
-                        move_to_next_valid_position(ctx, interval, grid_height)
+                        move_to_next_valid_position(ctx, interval, grid_height, indent)
                     end
                 else
                     if utils and utils.debug_log then
@@ -555,8 +628,8 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
             goto start_of_loop
         elseif id == constants.PENALTY then
             local p_val = D.getfield(t, "penalty")
-            -- Internal Flatten logic uses -10001 for forced column break (paragraph end)
-            if p_val == -10001 then
+            -- Internal Flatten logic uses -10002 for forced column break (paragraph end)
+            if p_val == -10002 then
                 flush_buffer()
                 -- Column break only happens if there's content in current column
                 if ctx.cur_row > ctx.cur_column_indent then
@@ -565,23 +638,24 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
                     if ctx.cur_col >= p_cols then
                         ctx.cur_col = 0
                         ctx.cur_page = ctx.cur_page + 1
+                        ctx.page_has_content = false
                     end
-                    move_to_next_valid_position(ctx, interval, grid_height)
+                    move_to_next_valid_position(ctx, interval, grid_height, indent)
                 end
                 -- Always reset indent when paragraph ends, regardless of column break
                 ctx.cur_column_indent = 0
-                -- Standard TeX \newpage / \pagebreak / \clearpage uses -10000 or -20000
-                -- TODO: Handle page break logic later
-                -- elseif p_val <= -10000 then
-                --     flush_buffer()
-                --     -- Force Page Break if there is content on current page
-                --     if ctx.cur_col > 0 or ctx.cur_row > cur_column_indent then
-                --         ctx.cur_page = ctx.cur_page + 1
-                --         ctx.cur_col = 0
-                --         ctx.cur_row = 0
-                --         cur_column_indent = 0
-                --         move_to_next_valid_position(ctx, interval, grid_height)
-                --     end
+            elseif p_val == -10003 then
+                -- Our internal forced page break (set by redefined \newpage and \clearpage)
+                if ctx.page_has_content then
+                    flush_buffer()
+                    -- Force Page Break
+                    ctx.cur_page = ctx.cur_page + 1
+                    ctx.cur_col = 0
+                    ctx.cur_row = 0
+                    ctx.cur_column_indent = 0
+                    ctx.page_has_content = false
+                    move_to_next_valid_position(ctx, interval, grid_height, indent)
+                end
             end
         end
 
@@ -600,7 +674,7 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
             ctx.cur_page + 1))
     end
 
-    return layout_map, ctx.cur_page + 1
+    return layout_map, ctx.cur_page + 1, ctx.page_chapter_titles, ctx.banxin_registry
 end
 
 -- Create module table

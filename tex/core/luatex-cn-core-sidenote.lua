@@ -23,6 +23,8 @@ local debug = package.loaded['debug.luatex-cn-debug'] or
     require('debug.luatex-cn-debug')
 local style_registry = package.loaded['util.luatex-cn-style-registry'] or
     require('util.luatex-cn-style-registry')
+local judou = package.loaded['guji.luatex-cn-guji-judou'] or
+    require('guji.luatex-cn-guji-judou')
 local D = node.direct
 
 local dbg = debug.get_debugger('sidenote')
@@ -421,6 +423,12 @@ function sidenote.register_sidenote(box_num, metadata)
     local id = sidenote.registry_counter
 
     local content_head = node.copy_list(box.list)
+
+    -- Apply judou processing if enabled
+    local judou_ctx = judou.initialize({}, {})
+    if judou_ctx then
+        content_head = judou.flatten(content_head, {}, judou_ctx)
+    end
 
     -- Register style and set attribute on all nodes (Phase 2: Style registry)
     local font_color_str = metadata and metadata.font_color

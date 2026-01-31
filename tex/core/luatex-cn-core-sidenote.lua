@@ -87,15 +87,18 @@ function sidenote.render(head, layout_map, params, context, engine_ctx, page_idx
 
     local sidenote_x_offset = engine_ctx.g_width * 0.9
 
+    -- Build sidenote sublist first (using original reverse iteration to maintain correct order)
+    local sn_head = nil
+
     for i = #sidenote_for_page, 1, -1 do
         local item = sidenote_for_page[i]
         local curr = item.node
         D.setnext(curr, nil)
 
-        if not d_head then
-            d_head = curr
+        if not sn_head then
+            sn_head = curr
         else
-            d_head = D.insert_before(d_head, d_head, curr)
+            sn_head = D.insert_before(sn_head, sn_head, curr)
         end
 
         local pos = {
@@ -128,9 +131,9 @@ function sidenote.render(head, layout_map, params, context, engine_ctx, page_idx
 
             local k = D.new(constants.KERN)
             D.setfield(k, "kern", -w)
-            D.insert_after(d_head, curr, k)
+            D.insert_after(sn_head, curr, k)
         elseif id == constants.HLIST or id == constants.VLIST then
-            d_head = render_page._internal.handle_block_node(curr, d_head, pos, engine_ctx)
+            sn_head = render_page._internal.handle_block_node(curr, sn_head, pos, engine_ctx)
         else
             if id == constants.GLUE then
                 D.setfield(curr, "width", 0)
@@ -140,7 +143,20 @@ function sidenote.render(head, layout_map, params, context, engine_ctx, page_idx
         end
 
         if dbg.is_enabled() then
-            d_head = render_page._internal.handle_debug_drawing(curr, d_head, pos, engine_ctx)
+            sn_head = render_page._internal.handle_debug_drawing(curr, sn_head, pos, engine_ctx)
+        end
+    end
+
+    -- Append sidenote sublist to end of main list (so sidenotes render on top of borders)
+    if sn_head then
+        if not d_head then
+            d_head = sn_head
+        else
+            local d_tail = d_head
+            while D.getnext(d_tail) do
+                d_tail = D.getnext(d_tail)
+            end
+            D.setnext(d_tail, sn_head)
         end
     end
 

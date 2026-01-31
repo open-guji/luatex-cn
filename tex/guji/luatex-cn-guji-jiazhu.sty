@@ -23,7 +23,7 @@
 \RequirePackage{core/luatex-cn-core-textflow}
 
 % Load Lua module for global state
-\lua_now:e { jiazhu_mod = require('guji.luatex-cn-guji-jiazhu') }
+\lua_now:n { jiazhu_mod = require('guji.luatex-cn-guji-jiazhu') }
 
 % Global Jiazhu Parameters (moved from vertical.sty)
 \tl_new:N \l__luatexcn_jiazhu_size_tl

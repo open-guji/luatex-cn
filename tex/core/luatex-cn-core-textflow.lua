@@ -39,6 +39,30 @@ local style_registry = package.loaded['util.luatex-cn-style-registry'] or
 
 local textflow = {}
 
+--- Push jiazhu style to style stack
+-- @param font_color (string|nil) Font color string (e.g., "red" or "1 0 0")
+-- @param font_size (string|nil) Font size string (e.g., "14pt")
+-- @param font (string|nil) Font family name
+-- @return (number) Style ID
+function textflow.jiazhu_push_style(font_color, font_size, font)
+    local style = {}
+    if font_color and font_color ~= "" then
+        style.font_color = font_color
+    end
+    if font_size and font_size ~= "" then
+        style.font_size = constants.to_dimen(font_size)
+    end
+    if font and font ~= "" then
+        style.font = font
+    end
+    return style_registry.push(style)
+end
+
+--- Pop jiazhu style from style stack
+function textflow.jiazhu_pop_style()
+    return style_registry.pop()
+end
+
 --- 计算子列（如双行注 Jiazhu）的 X 偏移
 -- @param base_x (number) 基础 X 坐标 (sp)
 -- @param grid_width (number) 单元格总宽度 (sp)
@@ -235,28 +259,18 @@ function textflow.place_jiazhu_nodes(ctx, start_node, layout_map, params, callba
         params.jiazhu_mode)
 
     -- Place chunks into layout_map
-    -- Phase 2: Register style in Lua layer (using style_registry)
-    local font_color_str = (_G.jiazhu and _G.jiazhu.font_color) or nil
-    local font_size_str = (_G.jiazhu and _G.jiazhu.font_size) or nil
-    local font_str = (_G.jiazhu and _G.jiazhu.font) or nil
-
-    -- Build style table with all available attributes
-    local style = {}
-    if font_color_str then
-        style.font_color = font_color_str
-    end
-    if font_size_str then
-        style.font_size = constants.to_dimen(font_size_str)
-    end
-    if font_str then
-        style.font = font_str
-    end
-
-    -- Register style if any attributes are set
+    -- Phase 3: Read style from node attribute (set by TeX layer)
     local style_reg_id = nil
-    if next(style) then  -- Check if style table is not empty
-        style_reg_id = style_registry.register(style)
+    local current_style = nil
+    if #j_nodes > 0 then
+        style_reg_id = D.get_attribute(j_nodes[1], constants.ATTR_STYLE_REG_ID)
+        current_style = style_registry.get(style_reg_id)
     end
+
+    -- Extract style attributes for layout_map (backward compatibility)
+    local font_color_str = current_style and current_style.font_color or nil
+    local font_size_val = current_style and current_style.font_size or nil
+    local font_str = current_style and current_style.font or nil
 
     for i, chunk in ipairs(chunks) do
         if i > 1 then
@@ -265,10 +279,7 @@ function textflow.place_jiazhu_nodes(ctx, start_node, layout_map, params, callba
             if ctx.cur_row < chunk_indent then ctx.cur_row = chunk_indent end
         end
         for _, node_info in ipairs(chunk.nodes) do
-            -- Set style registry attribute
-            if style_reg_id then
-                D.set_attribute(node_info.node, constants.ATTR_STYLE_REG_ID, style_reg_id)
-            end
+            -- Note: ATTR_STYLE_REG_ID is already set by TeX layer
 
             local entry = {
                 page = ctx.cur_page,
@@ -281,8 +292,8 @@ function textflow.place_jiazhu_nodes(ctx, start_node, layout_map, params, callba
             if font_color_str then
                 entry.font_color = font_color_str
             end
-            if font_size_str then
-                entry.font_size = constants.to_dimen(font_size_str)
+            if font_size_val then
+                entry.font_size = font_size_val
             end
             if font_str then
                 entry.font = font_str

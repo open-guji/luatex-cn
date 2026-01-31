@@ -83,47 +83,38 @@
           { \fontsize{\l_tmpc_tl}{\l_tmpc_tl}\selectfont }
           { \setmainfont{\l_tmpb_tl}[RawFeature={+vert,+vrt2}] \fontsize{\l_tmpc_tl}{\l_tmpc_tl}\selectfont }
 
-        % Store font_size and font in Lua for cross-page preservation (Phase 2)
-        \lua_now:e {
-          _G.jiazhu = _G.jiazhu ~ or ~ {}
-          _G.jiazhu.font_size = [=[\luaescapestring{\tl_use:N \l_tmpc_tl}]=]
-          _G.jiazhu.font = \tl_if_empty:NTF \l_tmpb_tl { nil } { [=[\luaescapestring{\tl_use:N \l_tmpb_tl}]=] }
-        }
-
-        % Apply Color and store in Lua for cross-page preservation
+        % Apply Color (visual appearance)
         \tl_if_empty:NF \l_tmpd_tl
           {
-            % Store font_color in Lua (style registration handled in Lua layer)
-            \lua_now:e {
-              _G.jiazhu = _G.jiazhu ~ or ~ {}
-              _G.jiazhu.font_color = [=[\luaescapestring{\tl_use:N \l_tmpd_tl}]=]
-            }
             % Simple heuristic: if it contains a comma or space, it's numeric RGB
             \tl_if_in:NnTF \l_tmpd_tl { , }
               { \color[rgb]{\l_tmpd_tl} }
               {
                 \tl_if_in:NnTF \l_tmpd_tl { ~ }
                   {
-                    \tl_set:Nx \l_tmpc_tl { \l_tmpd_tl }
-                    \tl_replace_all:Nnn \l_tmpc_tl { ~ } { , }
-                    \color[rgb]{\l_tmpc_tl}
+                    \tl_set:Nx \l_tmpe_tl { \l_tmpd_tl }
+                    \tl_replace_all:Nnn \l_tmpe_tl { ~ } { , }
+                    \color[rgb]{\l_tmpe_tl}
                   }
                   { \color{\l_tmpd_tl} }
               }
           }
 
-        % Clear font_color if no color specified
-        \tl_if_empty:NT \l_tmpd_tl
-          {
-            \lua_now:n {
-              _G.jiazhu = _G.jiazhu ~ or ~ {}
-              _G.jiazhu.font_color = nil
-            }
-          }
+        % Push style to stack and get style ID (Phase 3: Style Stack Management)
+        \edef\jiazhu_style_id{\lua_now:e {
+          local ~ textflow = require('core.luatex-cn-textflow')
+          local ~ style_id = textflow.jiazhu_push_style(
+            \tl_if_empty:NTF \l_tmpd_tl { nil } { [=[\luaescapestring{\tl_use:N \l_tmpd_tl}]=] },
+            [=[\luaescapestring{\tl_use:N \l_tmpc_tl}]=],
+            \tl_if_empty:NTF \l_tmpb_tl { nil } { [=[\luaescapestring{\tl_use:N \l_tmpb_tl}]=] }
+          )
+          tex.print(tostring(style_id))
+        }}
 
         % CRITICAL: Set jiazhu attribute AFTER selectfont
         \setluatexattribute\cnverticaljiazhu{1}
         \setluatexattribute\cnverticaljiazhumode{\l_tmpa_tl}
+        \setluatexattribute\cnverticalstyle{\jiazhu_style_id}
 
         % Restore
         \cnverticalindent = \savedindent\relax
@@ -132,6 +123,13 @@
         \cnverticalrightindent = \savedright\relax
 
         #2
+
+        % Pop style from stack
+        \lua_now:n {
+          local ~ textflow = require('core.luatex-cn-textflow')
+          textflow.jiazhu_pop_style()
+        }
+
         \group_end:
       }
 

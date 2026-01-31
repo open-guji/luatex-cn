@@ -89,6 +89,23 @@ local function setup(params)
         _G.content.font_size = constants.to_dimen(params.font_size)
     end
 
+    -- Phase 3: Push content base style to style stack
+    local style_registry = package.loaded['util.luatex-cn-style-registry'] or
+        require('util.luatex-cn-style-registry')
+
+    local base_style = {}
+    if _G.content.font_color then
+        base_style.font_color = _G.content.font_color
+    end
+    if _G.content.font_size then
+        base_style.font_size = _G.content.font_size
+    end
+
+    -- Push content base style (bottom of stack)
+    if next(base_style) then
+        _G.content_style_id = style_registry.push(base_style)
+    end
+
     -- Store explicit page_columns if provided
     local explicit_page_cols = tonumber(params.page_columns) or 0
 

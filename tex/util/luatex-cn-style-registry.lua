@@ -30,6 +30,7 @@ if not _G.style_registry then
         next_id = 1,
         styles = {},         -- id -> {color, font_size, grid_height, ...}
         style_to_id = {},    -- reverse lookup for deduplication (serialized style -> id)
+        stack = {},          -- [id1, id2, ...] stack of active style IDs (Phase 3)
     }
 end
 
@@ -126,12 +127,64 @@ function style_registry.get_font(id)
     return style_registry.get_attr(id, "font")
 end
 
+-- ============================================================================
+-- Style Stack Functions (Phase 3: Style Inheritance)
+-- ============================================================================
+
+--- Get current style ID from stack top
+-- @return (number|nil) Current style ID, or nil if stack is empty
+function style_registry.current_id()
+    local stack = _G.style_registry.stack
+    return stack[#stack]
+end
+
+--- Get current style from stack top
+-- @return (table|nil) Current style table, or nil if stack is empty
+function style_registry.current()
+    local id = style_registry.current_id()
+    return style_registry.get(id)
+end
+
+--- Push a new style with inheritance from current style
+-- @param overrides (table) Style attributes to set/override
+-- @return (number) New style ID
+function style_registry.push(overrides)
+    overrides = overrides or {}
+
+    -- Get parent style (from stack top)
+    local parent = style_registry.current() or {}
+
+    -- Merge: inherit from parent + override with new values
+    local new_style = {}
+    for k, v in pairs(parent) do
+        new_style[k] = v
+    end
+    for k, v in pairs(overrides) do
+        new_style[k] = v
+    end
+
+    -- Register merged style (with deduplication)
+    local id = style_registry.register(new_style)
+
+    -- Push ID to stack
+    table.insert(_G.style_registry.stack, id)
+
+    return id
+end
+
+--- Pop current style from stack
+-- @return (number|nil) Popped style ID, or nil if stack was empty
+function style_registry.pop()
+    return table.remove(_G.style_registry.stack)
+end
+
 --- Clear the registry (useful for testing or document end)
 function style_registry.clear()
     _G.style_registry = {
         next_id = 1,
         styles = {},
         style_to_id = {},
+        stack = {},
     }
 end
 

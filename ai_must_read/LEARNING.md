@@ -266,6 +266,58 @@ D.insert_after(p_head, kern_node, box)
 D.insert_after(p_head, box, Kern(-(rel_x + box_width)))  -- 补偿
 ```
 
+### 4.5 跨页颜色保持
+
+**问题**：使用 `\color{}` 的内容（如侧批、夹注）在跨页时失去颜色。
+
+**根本原因**：
+- `group_nodes_by_page()` 将节点按页分组时会断开节点链接
+- 颜色堆栈节点（color push）可能在页 1，但文字节点在页 2
+- PDF 颜色状态不会自动跨页保持
+
+**错误方案**：
+```lua
+-- ❌ 在 handle_glyph_node 中检测属性并包裹颜色会破坏渲染
+if D.get_attribute(curr, ATTR_JIAZHU) == 1 then
+    -- 直接包裹会导致内容消失
+end
+```
+
+**正确方案**：通过 layout_map 传递颜色
+```latex
+% 1. TeX 层：存储颜色到 Lua 全局
+\lua_now:e { _G.comp.current_color = [=[#1]=] }
+\color{#1}  % 正常应用颜色
+```
+
+```lua
+-- 2. Layout 层：从全局读取并存入 layout_map
+local color = (_G.comp and _G.comp.current_color) or nil
+layout_map[node] = {
+    page = p, col = c, row = r,
+    comp_color = color  -- 传递颜色
+}
+```
+
+```lua
+-- 3. Render 层：从 layout_map 读取并独立应用
+local color = pos.comp_color
+if color and color ~= "" then
+    local rgb = utils.normalize_rgb(color)
+    local push = utils.create_pdf_literal("q " .. utils.create_color_literal(rgb, false))
+    local pop = utils.create_pdf_literal("Q")
+    p_head = D.insert_before(p_head, curr, push)
+    D.insert_after(p_head, kern, pop)  -- 包裹 glyph + kern
+end
+```
+
+**关键点**：
+- 颜色值通过 layout_map 传递，每页独立应用
+- 不依赖跨页的颜色堆栈状态
+- `q/Q` 确保颜色只影响当前包裹的内容
+
+**适用场景**：侧批、夹注、批注等可能跨页的有色组件
+
 ---
 
 ## 五、 参数传递链路

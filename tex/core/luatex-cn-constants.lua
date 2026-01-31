@@ -59,6 +59,9 @@ constants.ATTR_DECORATE_VISUAL_CENTER = 202611
 constants.ATTR_DECORATE_FONT = 202612
 constants.ATTR_CHAPTER_REG_ID = 202613
 
+-- Color Registry Attribute (for cross-page color preservation)
+constants.ATTR_COLOR_REG_ID = luatexbase.attributes.cnverticalcolor or luatexbase.new_attribute("cnverticalcolor")
+
 -- Constants for Side Pizhu
 constants.SIDENOTE_USER_ID = 202601
 constants.FLOATING_TEXTBOX_USER_ID = 202602

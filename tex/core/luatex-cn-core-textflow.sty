@@ -86,10 +86,10 @@
         % Apply Color and store in Lua for cross-page preservation
         \tl_if_empty:NF \l_tmpd_tl
           {
-            % Store color in Lua global for layout phase
+            % Store color string in Lua (color registration handled in Lua layer)
             \lua_now:e {
               _G.jiazhu = _G.jiazhu ~ or ~ {}
-              _G.jiazhu.current_color = [=[\luaescapestring{\tl_use:N \l_tmpd_tl}]=]
+              _G.jiazhu.color = [=[\luaescapestring{\tl_use:N \l_tmpd_tl}]=]
             }
             % Simple heuristic: if it contains a comma or space, it's numeric RGB
             \tl_if_in:NnTF \l_tmpd_tl { , }
@@ -105,12 +105,12 @@
               }
           }
 
-        % Clear Lua color if no color specified
+        % Clear color if no color specified
         \tl_if_empty:NT \l_tmpd_tl
           {
             \lua_now:n {
               _G.jiazhu = _G.jiazhu ~ or ~ {}
-              _G.jiazhu.current_color = nil
+              _G.jiazhu.color = nil
             }
           }
 

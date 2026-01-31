@@ -21,6 +21,8 @@ local utils = package.loaded['util.luatex-cn-utils'] or
     require('util.luatex-cn-utils')
 local debug = package.loaded['debug.luatex-cn-debug'] or
     require('debug.luatex-cn-debug')
+local color_registry = package.loaded['util.luatex-cn-color-registry'] or
+    require('util.luatex-cn-color-registry')
 local D = node.direct
 
 local dbg = debug.get_debugger('sidenote')
@@ -89,16 +91,19 @@ function sidenote.render(head, layout_map, params, context, engine_ctx, page_idx
 
     -- Build sidenote sublist first (using original reverse iteration to maintain correct order)
     local sn_head = nil
-    local sidenote_color = nil  -- Track color from first sidenote's metadata
+    local sidenote_color = nil  -- Track color from first sidenote node's attribute
 
     for i = #sidenote_for_page, 1, -1 do
         local item = sidenote_for_page[i]
         local curr = item.node
         D.setnext(curr, nil)
 
-        -- Extract color from metadata (from the first item)
-        if not sidenote_color and item.metadata and item.metadata.color then
-            sidenote_color = item.metadata.color
+        -- Extract color from node's ATTR_COLOR_REG_ID (Phase 1: General color mechanism)
+        if not sidenote_color then
+            local color_id = D.get_attribute(curr, constants.ATTR_COLOR_REG_ID)
+            if color_id then
+                sidenote_color = color_registry.get(color_id)
+            end
         end
 
         if not sn_head then
@@ -416,6 +421,17 @@ function sidenote.register_sidenote(box_num, metadata)
     local id = sidenote.registry_counter
 
     local content_head = node.copy_list(box.list)
+
+    -- Register color and set attribute on all nodes (Phase 1: Lua-side registration)
+    local color_str = metadata and metadata.color
+    if color_str and color_str ~= "" then
+        local color_reg_id = color_registry.register(color_str)
+        -- Traverse the node list and set ATTR_COLOR_REG_ID on all nodes
+        for n in node.traverse(content_head) do
+            node.set_attribute(n, constants.ATTR_COLOR_REG_ID, color_reg_id)
+        end
+    end
+
     sidenote.registry[id] = {
         head = content_head,
         metadata = metadata or {}

@@ -34,6 +34,8 @@
 local constants = package.loaded['core.luatex-cn-constants'] or
     require('core.luatex-cn-constants')
 local D = constants.D
+local color_registry = package.loaded['util.luatex-cn-color-registry'] or
+    require('util.luatex-cn-color-registry')
 
 local textflow = {}
 
@@ -233,7 +235,13 @@ function textflow.place_jiazhu_nodes(ctx, start_node, layout_map, params, callba
         params.jiazhu_mode)
 
     -- Place chunks into layout_map
-    local jiazhu_color = (_G.jiazhu and _G.jiazhu.current_color) or nil
+    -- Phase 1: Register color in Lua layer (cleaner than TeX layer registration)
+    local color_str = (_G.jiazhu and _G.jiazhu.color) or nil
+    local color_reg_id = nil
+    if color_str then
+        color_reg_id = color_registry.register(color_str)
+    end
+
     for i, chunk in ipairs(chunks) do
         if i > 1 then
             callbacks.wrap()
@@ -241,13 +249,24 @@ function textflow.place_jiazhu_nodes(ctx, start_node, layout_map, params, callba
             if ctx.cur_row < chunk_indent then ctx.cur_row = chunk_indent end
         end
         for _, node_info in ipairs(chunk.nodes) do
-            layout_map[node_info.node] = {
+            -- Set color registry attribute
+            if color_reg_id then
+                D.set_attribute(node_info.node, constants.ATTR_COLOR_REG_ID, color_reg_id)
+            end
+
+            local entry = {
                 page = ctx.cur_page,
                 col = ctx.cur_col,
                 row = ctx.cur_row + node_info.relative_row,
-                sub_col = node_info.sub_col,
-                jiazhu_color = jiazhu_color  -- Store color for cross-page preservation
+                sub_col = node_info.sub_col
             }
+
+            -- Only add color field if color is set (to maintain backward compatibility)
+            if color_str then
+                entry.color = color_str
+            end
+
+            layout_map[node_info.node] = entry
         end
         ctx.cur_row = ctx.cur_row + chunk.rows_used
     end

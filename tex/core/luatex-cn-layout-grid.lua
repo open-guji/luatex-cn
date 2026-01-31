@@ -71,6 +71,8 @@ local hooks = package.loaded['core.luatex-cn-hooks'] or
     require('core.luatex-cn-hooks')
 local debug = package.loaded['debug.luatex-cn-debug'] or
     require('debug.luatex-cn-debug')
+local color_registry = package.loaded['util.luatex-cn-color-registry'] or
+    require('util.luatex-cn-color-registry')
 
 local dbg = debug.get_debugger('layout')
 
@@ -123,6 +125,20 @@ _internal.get_banxin_on = get_banxin_on
 _internal.get_grid_width = get_grid_width
 _internal.get_margin_right = get_margin_right
 _internal.get_chapter_title = get_chapter_title
+
+-- =============================================================================
+-- Helper to get color from node's color registry attribute
+-- =============================================================================
+
+-- Extract color from node's ATTR_COLOR_REG_ID attribute
+-- Returns color string (e.g., "1 0 0" for red) or nil
+local function get_node_color(node)
+    local color_id = D.get_attribute(node, constants.ATTR_COLOR_REG_ID)
+    if color_id and color_id > 0 then
+        return color_registry.get(color_id)
+    end
+    return nil
+end
 
 -- =============================================================================
 -- Column validation functions
@@ -464,7 +480,10 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
             local row = distribute_rows[i] or entry.relative_row
             local v_scale = (distribute and N > 1) and v_scale_all or 1.0
 
-            layout_map[entry.node] = {
+            -- Get color from node's color registry attribute (Phase 1: Color Registry)
+            local color = get_node_color(entry.node)
+
+            local map_entry = {
                 page = entry.page,
                 col = entry.col,
                 row = row,
@@ -473,6 +492,13 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
                 height = entry.height,
                 v_scale = v_scale
             }
+
+            -- Only add color field if color is set (to maintain backward compatibility)
+            if color then
+                map_entry.color = color
+            end
+
+            layout_map[entry.node] = map_entry
         end
         col_buffer = {}
     end
@@ -499,11 +525,18 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
         -- print(string.format("[D-layout-trace] Node=%s ID=%d [WHATSIT_REF=%d]", tostring(t), id, constants.WHATSIT or -1))
         if id == constants.WHATSIT then
             -- Position transparently at current cursor
-            layout_map[t] = {
+            local map_entry = {
                 page = ctx.cur_page,
                 col = ctx.cur_col,
                 row = ctx.cur_row
             }
+
+            local color = get_node_color(t)
+            if color then
+                map_entry.color = color
+            end
+
+            layout_map[t] = map_entry
             -- print(string.format("[D-layout] WHATSIT Node=%s [p:%d, c:%d, r:%d]", tostring(t), ctx.cur_page, ctx.cur_col, ctx.cur_row))
             t = D.getnext(t)
             if not t then break end
@@ -612,11 +645,18 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
             if dec_id and dec_id > 0 then
                 -- Decorate Marker: position directly at current row WITHOUT entering col_buffer
                 -- This ensures the marker doesn't affect normal character layout
-                layout_map[t] = {
+                local map_entry = {
                     page = ctx.cur_page,
                     col = ctx.cur_col,
                     row = ctx.cur_row
                 }
+
+                local color = get_node_color(t)
+                if color then
+                    map_entry.color = color
+                end
+
+                layout_map[t] = map_entry
                 -- DO NOT increment cur_row - marker is zero-width overlay
             else
                 table.insert(col_buffer, {

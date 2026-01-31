@@ -3,6 +3,8 @@ Don't change this file in any respect.
 ============================================================
 TEST 1: Basic Jiazhu
 ============================================================
+Package geometry Warning: `paperwidth': not available in `\newgeometry'; skipped.
+Package geometry Warning: `paperheight': not available in `\newgeometry'; skipped.
 *geometry* verbose mode - [ newgeometry ] result:
 * driver: luatex
 * paper: custom
@@ -21,7 +23,7 @@ TEST 1: Basic Jiazhu
 * \headheight=12.0pt
 * \headsep=25.0pt
 * \topskip=0.0pt
-* \footskip=42.67912pt
+* \footskip=0.0pt
 * \marginparwidth=65.0pt
 * \marginparsep=11.0pt
 * \columnsep=10.0pt
@@ -61,7 +63,7 @@ TEST 1: Basic Jiazhu
 ..\glue(\rightskip) 0.0
 ! OK.
 <to be read again> 
-                   \scan_stop: 
+\scan_stop: 
 l. ...}
 [1
 ]
@@ -69,6 +71,8 @@ l. ...}
 ============================================================
 TEST 2: Jiazhu with multiple segments
 ============================================================
+Package geometry Warning: `paperwidth': not available in `\newgeometry'; skipped.
+Package geometry Warning: `paperheight': not available in `\newgeometry'; skipped.
 *geometry* verbose mode - [ newgeometry ] result:
 * driver: luatex
 * paper: custom
@@ -87,7 +91,7 @@ TEST 2: Jiazhu with multiple segments
 * \headheight=12.0pt
 * \headsep=25.0pt
 * \topskip=0.0pt
-* \footskip=42.67912pt
+* \footskip=0.0pt
 * \marginparwidth=65.0pt
 * \marginparsep=11.0pt
 * \columnsep=10.0pt
@@ -129,7 +133,7 @@ TEST 2: Jiazhu with multiple segments
 ..\glue(\rightskip) 0.0
 ! OK.
 <to be read again> 
-                   \scan_stop: 
+\scan_stop: 
 l. ...}
 [2
 ]

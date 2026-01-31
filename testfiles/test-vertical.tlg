@@ -3,6 +3,8 @@ Don't change this file in any respect.
 ============================================================
 TEST 1: Basic Vertical Layout
 ============================================================
+Package geometry Warning: `paperwidth': not available in `\newgeometry'; skipped.
+Package geometry Warning: `paperheight': not available in `\newgeometry'; skipped.
 *geometry* verbose mode - [ newgeometry ] result:
 * driver: luatex
 * paper: custom
@@ -21,7 +23,7 @@ TEST 1: Basic Vertical Layout
 * \headheight=12.0pt
 * \headsep=25.0pt
 * \topskip=0.0pt
-* \footskip=42.67912pt
+* \footskip=0.0pt
 * \marginparwidth=65.0pt
 * \marginparsep=11.0pt
 * \columnsep=10.0pt
@@ -40,6 +42,8 @@ TEST 1: Basic Vertical Layout
 ============================================================
 TEST 2: Vertical with multiple lines
 ============================================================
+Package geometry Warning: `paperwidth': not available in `\newgeometry'; skipped.
+Package geometry Warning: `paperheight': not available in `\newgeometry'; skipped.
 *geometry* verbose mode - [ newgeometry ] result:
 * driver: luatex
 * paper: custom
@@ -58,7 +62,7 @@ TEST 2: Vertical with multiple lines
 * \headheight=12.0pt
 * \headsep=25.0pt
 * \topskip=0.0pt
-* \footskip=42.67912pt
+* \footskip=0.0pt
 * \marginparwidth=65.0pt
 * \marginparsep=11.0pt
 * \columnsep=10.0pt

@@ -83,13 +83,20 @@
           { \fontsize{\l_tmpc_tl}{\l_tmpc_tl}\selectfont }
           { \setmainfont{\l_tmpb_tl}[RawFeature={+vert,+vrt2}] \fontsize{\l_tmpc_tl}{\l_tmpc_tl}\selectfont }
 
+        % Store font_size and font in Lua for cross-page preservation (Phase 2)
+        \lua_now:e {
+          _G.jiazhu = _G.jiazhu ~ or ~ {}
+          _G.jiazhu.font_size = [=[\luaescapestring{\tl_use:N \l_tmpc_tl}]=]
+          _G.jiazhu.font = \tl_if_empty:NTF \l_tmpb_tl { nil } { [=[\luaescapestring{\tl_use:N \l_tmpb_tl}]=] }
+        }
+
         % Apply Color and store in Lua for cross-page preservation
         \tl_if_empty:NF \l_tmpd_tl
           {
-            % Store color string in Lua (color registration handled in Lua layer)
+            % Store font_color in Lua (style registration handled in Lua layer)
             \lua_now:e {
               _G.jiazhu = _G.jiazhu ~ or ~ {}
-              _G.jiazhu.color = [=[\luaescapestring{\tl_use:N \l_tmpd_tl}]=]
+              _G.jiazhu.font_color = [=[\luaescapestring{\tl_use:N \l_tmpd_tl}]=]
             }
             % Simple heuristic: if it contains a comma or space, it's numeric RGB
             \tl_if_in:NnTF \l_tmpd_tl { , }
@@ -105,12 +112,12 @@
               }
           }
 
-        % Clear color if no color specified
+        % Clear font_color if no color specified
         \tl_if_empty:NT \l_tmpd_tl
           {
             \lua_now:n {
               _G.jiazhu = _G.jiazhu ~ or ~ {}
-              _G.jiazhu.color = nil
+              _G.jiazhu.font_color = nil
             }
           }
 

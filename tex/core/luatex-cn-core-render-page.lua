@@ -285,11 +285,11 @@ local function handle_glyph_node(curr, p_head, pos, params, ctx)
     D.setfield(k, "kern", -w)
     D.insert_after(p_head, curr, k)
 
-    -- Apply color if stored in layout_map (Phase 1: General color preservation)
-    -- This handles cross-page color preservation for all components (jiazhu, sidenote, etc.)
-    local color = pos.color
-    if color and color ~= "" then
-        local rgb_str = utils.normalize_rgb(color)
+    -- Apply font_color if stored in layout_map (Phase 2: General style preservation)
+    -- This handles cross-page font_color preservation for all components (jiazhu, sidenote, etc.)
+    local font_color = pos.font_color
+    if font_color and font_color ~= "" then
+        local rgb_str = utils.normalize_rgb(font_color)
         local color_cmd = utils.create_color_literal(rgb_str, false)  -- false = fill color (rg)
         local color_push = utils.create_pdf_literal("q " .. color_cmd)
         local color_pop = utils.create_pdf_literal("Q")

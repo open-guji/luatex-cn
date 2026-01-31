@@ -21,8 +21,8 @@ local utils = package.loaded['util.luatex-cn-utils'] or
     require('util.luatex-cn-utils')
 local debug = package.loaded['debug.luatex-cn-debug'] or
     require('debug.luatex-cn-debug')
-local color_registry = package.loaded['util.luatex-cn-color-registry'] or
-    require('util.luatex-cn-color-registry')
+local style_registry = package.loaded['util.luatex-cn-style-registry'] or
+    require('util.luatex-cn-style-registry')
 local D = node.direct
 
 local dbg = debug.get_debugger('sidenote')
@@ -98,11 +98,11 @@ function sidenote.render(head, layout_map, params, context, engine_ctx, page_idx
         local curr = item.node
         D.setnext(curr, nil)
 
-        -- Extract color from node's ATTR_COLOR_REG_ID (Phase 1: General color mechanism)
+        -- Extract font_color from node's ATTR_STYLE_REG_ID (Phase 2: Style registry)
         if not sidenote_color then
-            local color_id = D.get_attribute(curr, constants.ATTR_COLOR_REG_ID)
-            if color_id then
-                sidenote_color = color_registry.get(color_id)
+            local style_id = D.get_attribute(curr, constants.ATTR_STYLE_REG_ID)
+            if style_id then
+                sidenote_color = style_registry.get_font_color(style_id)
             end
         end
 
@@ -422,13 +422,25 @@ function sidenote.register_sidenote(box_num, metadata)
 
     local content_head = node.copy_list(box.list)
 
-    -- Register color and set attribute on all nodes (Phase 1: Lua-side registration)
-    local color_str = metadata and metadata.color
-    if color_str and color_str ~= "" then
-        local color_reg_id = color_registry.register(color_str)
-        -- Traverse the node list and set ATTR_COLOR_REG_ID on all nodes
+    -- Register style and set attribute on all nodes (Phase 2: Style registry)
+    local font_color_str = metadata and metadata.font_color
+    local font_size_str = metadata and metadata.font_size
+
+    -- Build style table with all available attributes
+    local style = {}
+    if font_color_str and font_color_str ~= "" then
+        style.font_color = font_color_str
+    end
+    if font_size_str and font_size_str ~= "" then
+        style.font_size = constants.to_dimen(font_size_str)
+    end
+
+    -- Register style and set attribute if any style attributes are present
+    if next(style) then  -- Check if style table is not empty
+        local style_reg_id = style_registry.register(style)
+        -- Traverse the node list and set ATTR_STYLE_REG_ID on all nodes
         for n in node.traverse(content_head) do
-            node.set_attribute(n, constants.ATTR_COLOR_REG_ID, color_reg_id)
+            node.set_attribute(n, constants.ATTR_STYLE_REG_ID, style_reg_id)
         end
     end
 

@@ -34,8 +34,8 @@
 local constants = package.loaded['core.luatex-cn-constants'] or
     require('core.luatex-cn-constants')
 local D = constants.D
-local color_registry = package.loaded['util.luatex-cn-color-registry'] or
-    require('util.luatex-cn-color-registry')
+local style_registry = package.loaded['util.luatex-cn-style-registry'] or
+    require('util.luatex-cn-style-registry')
 
 local textflow = {}
 
@@ -235,11 +235,27 @@ function textflow.place_jiazhu_nodes(ctx, start_node, layout_map, params, callba
         params.jiazhu_mode)
 
     -- Place chunks into layout_map
-    -- Phase 1: Register color in Lua layer (cleaner than TeX layer registration)
-    local color_str = (_G.jiazhu and _G.jiazhu.color) or nil
-    local color_reg_id = nil
-    if color_str then
-        color_reg_id = color_registry.register(color_str)
+    -- Phase 2: Register style in Lua layer (using style_registry)
+    local font_color_str = (_G.jiazhu and _G.jiazhu.font_color) or nil
+    local font_size_str = (_G.jiazhu and _G.jiazhu.font_size) or nil
+    local font_str = (_G.jiazhu and _G.jiazhu.font) or nil
+
+    -- Build style table with all available attributes
+    local style = {}
+    if font_color_str then
+        style.font_color = font_color_str
+    end
+    if font_size_str then
+        style.font_size = constants.to_dimen(font_size_str)
+    end
+    if font_str then
+        style.font = font_str
+    end
+
+    -- Register style if any attributes are set
+    local style_reg_id = nil
+    if next(style) then  -- Check if style table is not empty
+        style_reg_id = style_registry.register(style)
     end
 
     for i, chunk in ipairs(chunks) do
@@ -249,9 +265,9 @@ function textflow.place_jiazhu_nodes(ctx, start_node, layout_map, params, callba
             if ctx.cur_row < chunk_indent then ctx.cur_row = chunk_indent end
         end
         for _, node_info in ipairs(chunk.nodes) do
-            -- Set color registry attribute
-            if color_reg_id then
-                D.set_attribute(node_info.node, constants.ATTR_COLOR_REG_ID, color_reg_id)
+            -- Set style registry attribute
+            if style_reg_id then
+                D.set_attribute(node_info.node, constants.ATTR_STYLE_REG_ID, style_reg_id)
             end
 
             local entry = {
@@ -261,9 +277,15 @@ function textflow.place_jiazhu_nodes(ctx, start_node, layout_map, params, callba
                 sub_col = node_info.sub_col
             }
 
-            -- Only add color field if color is set (to maintain backward compatibility)
-            if color_str then
-                entry.color = color_str
+            -- Only add style fields if set (to maintain backward compatibility)
+            if font_color_str then
+                entry.font_color = font_color_str
+            end
+            if font_size_str then
+                entry.font_size = constants.to_dimen(font_size_str)
+            end
+            if font_str then
+                entry.font = font_str
             end
 
             layout_map[node_info.node] = entry

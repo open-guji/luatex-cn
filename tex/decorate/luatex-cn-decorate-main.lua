@@ -169,8 +169,26 @@ function decorate.handle_node(curr, p_head, pos, params, ctx, reg_id)
     local reg = _G.decorate_registry and _G.decorate_registry[reg_id]
     if not reg then return p_head end
 
+    -- Get style attributes from style_registry if available (Phase 2)
+    local style_registry = package.loaded['util.luatex-cn-style-registry']
+    local style_id = style_registry and D.get_attribute(curr, constants.ATTR_STYLE_REG_ID)
+    local style_font_color = style_id and style_registry.get_font_color(style_id)
+    local style_font_size = style_id and style_registry.get_font_size(style_id)
+
+    -- Augment reg with style registry values (priority: style_registry > reg)
+    local effective_reg = {}
+    for k, v in pairs(reg) do
+        effective_reg[k] = v
+    end
+    if style_font_color then
+        effective_reg.color = style_font_color
+    end
+    if style_font_size then
+        effective_reg.font_size = style_font_size
+    end
+
     -- 1. Resolve font and scale factor
-    local font_id, base_size, scale = resolve_decorate_font(curr, reg, params, ctx)
+    local font_id, base_size, scale = resolve_decorate_font(curr, effective_reg, params, ctx)
     local char = reg.char
 
     -- 2. Create glyph (unscaled in TeX stream)
@@ -191,13 +209,13 @@ function decorate.handle_node(curr, p_head, pos, params, ctx, reg_id)
     D.setfield(g, "depth", d)
 
     -- 3. Calculate position (BP)
-    local x_bp, y_bp = calculate_decorate_position(pos, reg, ctx, base_size, font_id, char, scale, h, d)
+    local x_bp, y_bp = calculate_decorate_position(pos, effective_reg, ctx, base_size, font_id, char, scale, h, d)
 
     -- 4. Render with scaled PDF matrix
     D.setfield(g, "xoffset", 0)
     D.setfield(g, "yoffset", 0)
 
-    local draw_rgb = (reg.color and color_map[reg.color]) or reg.color or "0 0 0"
+    local draw_rgb = (effective_reg.color and color_map[effective_reg.color]) or effective_reg.color or "0 0 0"
 
     -- Build scaled matrix: [scale 0 0 scale x y]
     local color_part = string.format("%s %s", utils.create_color_literal(draw_rgb, false),

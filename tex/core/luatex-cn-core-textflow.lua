@@ -246,12 +246,6 @@ function textflow.place_jiazhu_nodes(ctx, start_node, layout_map, params, callba
         callbacks.debug(string.format("  [layout] Collected %d jiazhu glyphs", #j_nodes))
     end
 
-    -- Ensure we have at least 2 rows available (prevent orphan rows)
-    if params.effective_limit - ctx.cur_row < 2 then
-        callbacks.flush()
-        callbacks.wrap()
-    end
-
     -- Process jiazhu sequence into chunks
     local available_in_first = params.effective_limit - ctx.cur_row
     local capacity_per_subsequent = params.line_limit - params.base_indent - params.r_indent

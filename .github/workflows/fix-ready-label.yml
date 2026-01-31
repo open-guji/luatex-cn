@@ -1,0 +1,42 @@
+name: Add fix-ready label
+
+on:
+  push:
+    branches: [main, dev]
+
+jobs:
+  label-fixed-issues:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - name: Add fix-ready label to referenced issues
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const commits = context.payload.commits || [];
+            const issueNumbers = new Set();
+
+            const pattern = /(?:fix|fixes|fixed|close|closes|closed)\s+#(\d+)/gi;
+
+            for (const commit of commits) {
+              const message = commit.message;
+              let match;
+              while ((match = pattern.exec(message)) !== null) {
+                issueNumbers.add(parseInt(match[1], 10));
+              }
+            }
+
+            for (const issueNumber of issueNumbers) {
+              try {
+                await github.rest.issues.addLabels({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: issueNumber,
+                  labels: ['fix-ready']
+                });
+                console.log(`Added fix-ready label to issue #${issueNumber}`);
+              } catch (error) {
+                console.log(`Failed to add label to issue #${issueNumber}: ${error.message}`);
+              }
+            }

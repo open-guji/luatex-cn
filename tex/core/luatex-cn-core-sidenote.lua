@@ -89,11 +89,17 @@ function sidenote.render(head, layout_map, params, context, engine_ctx, page_idx
 
     -- Build sidenote sublist first (using original reverse iteration to maintain correct order)
     local sn_head = nil
+    local sidenote_color = nil  -- Track color from first sidenote's metadata
 
     for i = #sidenote_for_page, 1, -1 do
         local item = sidenote_for_page[i]
         local curr = item.node
         D.setnext(curr, nil)
+
+        -- Extract color from metadata (from the first item)
+        if not sidenote_color and item.metadata and item.metadata.color then
+            sidenote_color = item.metadata.color
+        end
 
         if not sn_head then
             sn_head = curr
@@ -134,6 +140,10 @@ function sidenote.render(head, layout_map, params, context, engine_ctx, page_idx
             D.insert_after(sn_head, curr, k)
         elseif id == constants.HLIST or id == constants.VLIST then
             sn_head = render_page._internal.handle_block_node(curr, sn_head, pos, engine_ctx)
+        elseif id == constants.WHATSIT then
+            -- Preserve whatsit nodes (including pdf_colorstack for color preservation)
+            -- These nodes don't need position adjustment, just need to be kept in the list
+            -- This is crucial for maintaining color across page boundaries
         else
             if id == constants.GLUE then
                 D.setfield(curr, "width", 0)
@@ -149,6 +159,24 @@ function sidenote.render(head, layout_map, params, context, engine_ctx, page_idx
 
     -- Append sidenote sublist to end of main list (so sidenotes render on top of borders)
     if sn_head then
+        -- Wrap sidenote content with color nodes if color is specified
+        -- This ensures color is maintained across page boundaries
+        if sidenote_color and sidenote_color ~= "" then
+            local rgb_str = utils.normalize_rgb(sidenote_color)
+            -- Insert color push at the beginning (fill color)
+            local color_cmd = utils.create_color_literal(rgb_str, false)  -- false = fill color (rg)
+            local color_push = utils.create_pdf_literal("q " .. color_cmd)
+            sn_head = D.insert_before(sn_head, sn_head, color_push)
+
+            -- Find the tail and insert color pop at the end
+            local sn_tail = sn_head
+            while D.getnext(sn_tail) do
+                sn_tail = D.getnext(sn_tail)
+            end
+            local color_pop = utils.create_pdf_literal("Q")
+            D.insert_after(sn_head, sn_tail, color_pop)
+        end
+
         if not d_head then
             d_head = sn_head
         else

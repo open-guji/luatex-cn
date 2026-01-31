@@ -233,6 +233,7 @@ function textflow.place_jiazhu_nodes(ctx, start_node, layout_map, params, callba
         params.jiazhu_mode)
 
     -- Place chunks into layout_map
+    local jiazhu_color = (_G.jiazhu and _G.jiazhu.current_color) or nil
     for i, chunk in ipairs(chunks) do
         if i > 1 then
             callbacks.wrap()
@@ -244,7 +245,8 @@ function textflow.place_jiazhu_nodes(ctx, start_node, layout_map, params, callba
                 page = ctx.cur_page,
                 col = ctx.cur_col,
                 row = ctx.cur_row + node_info.relative_row,
-                sub_col = node_info.sub_col
+                sub_col = node_info.sub_col,
+                jiazhu_color = jiazhu_color  -- Store color for cross-page preservation
             }
         end
         ctx.cur_row = ctx.cur_row + chunk.rows_used

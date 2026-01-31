@@ -285,6 +285,18 @@ local function handle_glyph_node(curr, p_head, pos, params, ctx)
     D.setfield(k, "kern", -w)
     D.insert_after(p_head, curr, k)
 
+    -- Apply jiazhu color if stored in layout_map (for cross-page color preservation)
+    local jiazhu_color = pos.jiazhu_color
+    if jiazhu_color and jiazhu_color ~= "" then
+        local rgb_str = utils.normalize_rgb(jiazhu_color)
+        local color_cmd = utils.create_color_literal(rgb_str, false)  -- false = fill color (rg)
+        local color_push = utils.create_pdf_literal("q " .. color_cmd)
+        local color_pop = utils.create_pdf_literal("Q")
+
+        p_head = D.insert_before(p_head, curr, color_push)
+        D.insert_after(p_head, k, color_pop)  -- Insert after the kern
+    end
+
     return p_head
 end
 

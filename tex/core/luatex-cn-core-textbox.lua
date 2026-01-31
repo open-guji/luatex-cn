@@ -203,10 +203,20 @@ local function execute_layout_pipeline(box_num, sub_params, current_indent)
     local saved_pages = _G.vertical_pending_pages
     _G.vertical_pending_pages = {}
 
+    -- Save and clear indent state - Textbox should not inherit outer indent
+    local saved_leftskip = tex.leftskip
+    local saved_attr_indent = tex.attribute[constants.ATTR_INDENT]
+    tex.leftskip = 0
+    tex.attribute[constants.ATTR_INDENT] = -0x7FFFFFFF  -- Unset attribute
+
     dbg.log(string.format("Processing inner box %d (indent=%d)", box_num, current_indent))
 
     -- 调用三阶段流水线
     core.typeset(box_num, sub_params)
+
+    -- Restore indent state
+    tex.leftskip = saved_leftskip
+    tex.attribute[constants.ATTR_INDENT] = saved_attr_indent
 
     -- 获取渲染结果（应当只有 1 "页"）
     local res_box = _G.vertical_pending_pages[1]
@@ -402,8 +412,8 @@ function textbox.process_inner_box(box_num, params)
 
     -- dbg.log(string.format("process_inner_box: floating=%s", tostring(params.floating)))
 
-    -- 1. 获取缩进上下文
-    local current_indent = get_current_indent(params)
+    -- 1. Textbox should not inherit paragraph indent
+    local current_indent = 0
 
     -- 2. 解析列对齐 (from _G.textbox set by textbox.setup)
     local col_aligns = parse_column_aligns(_G.textbox.column_aligns or "")

@@ -685,7 +685,7 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
             local tb_params = {
                 effective_limit = effective_limit,
                 p_cols = p_cols,
-                indent = indent
+                indent = 0  -- Textbox should not inherit paragraph indent
             }
             local tb_callbacks = {
                 flush = flush_buffer,

@@ -130,16 +130,14 @@ def process_file(tex_file, mode):
             images_match = all_match
         
         if images_match:
-            # Images are identical - revert PDF and delete current PNGs
-            log_list.append(f"No visual changes - reverting PDF for {tex_file.name}")
-            # Delete temp PNGs to keep git history clean
+            # Images are identical - delete PDF and current PNGs
+            log_list.append(f"No visual changes - deleting PDF for {tex_file.name}")
+            # Delete temp PNGs
             for png in new_pngs:
                 png.unlink()
-            # Revert PDF using git checkout
-            try:
-                run_command(["git", "checkout", "--", str(pdf_file)], cwd=BASE_DIR, log_list=log_list)
-            except Exception:
-                pass  # If git fails, just leave the PDF as is
+            # Delete PDF (we already have PNG files)
+            if pdf_file.exists():
+                pdf_file.unlink()
             return True, f"No changes ({len(existing_baselines)} pages)", log_list
         else:
             # Images differ - move new PNGs to baseline and keep new PDF
@@ -185,11 +183,9 @@ def process_file(tex_file, mode):
             # Delete current PNGs (same as baseline, no need to store)
             for png in current_pngs:
                 png.unlink()
-            # Revert PDF to keep git history clean
-            try:
-                run_command(["git", "checkout", "--", str(pdf_file)], cwd=BASE_DIR, log_list=log_list)
-            except Exception:
-                pass
+            # Delete PDF (we already have PNG files)
+            if pdf_file.exists():
+                pdf_file.unlink()
             return True, 0, log_list
         elif total_diff_pixels < DIFF_THRESHOLD:
             log_list.append(f"WARNING: {tex_file.name} has minor differences ({total_diff_pixels} pixels), but they are below threshold ({DIFF_THRESHOLD}). Marking as PASSED.")
@@ -199,11 +195,9 @@ def process_file(tex_file, mode):
             for i in range(len(baseline_pngs)):
                 diff_png = DIFF_DIR / f"diff_{pdf_file.stem}-{i+1}.png"
                 if diff_png.exists(): diff_png.unlink()
-            # Revert PDF to keep git history clean
-            try:
-                run_command(["git", "checkout", "--", str(pdf_file)], cwd=BASE_DIR, log_list=log_list)
-            except Exception:
-                pass
+            # Delete PDF (test passed, we already have PNG files)
+            if pdf_file.exists():
+                pdf_file.unlink()
             return True, f"{total_diff_pixels} pixels (ignored)", log_list
         else:
             log_list.append(f"FAIL: {tex_file.name} differs on pages: {failing_pages}")

@@ -1,10 +1,7 @@
 -- luatex-cn-vertical-flatten-nodes-test.lua - Unit tests for flatten nodes
 local test_utils = require('test.test_utils')
-local flatten = require('vertical.luatex-cn-vertical-flatten-nodes')
-local constants = require('vertical.luatex-cn-vertical-base-constants')
-
-local flatten = require('vertical.luatex-cn-vertical-flatten-nodes')
-local constants = require('vertical.luatex-cn-vertical-base-constants')
+local flatten = require('luatex-cn-core-flatten-nodes')
+local constants = require('luatex-cn-constants')
 local internal = flatten._internal or {}
 
 test_utils.run_test("flatten-nodes - should_keep_node", function()

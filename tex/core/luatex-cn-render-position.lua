@@ -46,9 +46,54 @@
 -- ============================================================================
 
 -- Load dependencies
-local constants = package.loaded['vertical.luatex-cn-vertical-base-constants'] or
-    require('vertical.luatex-cn-vertical-base-constants')
+local constants = package.loaded['core.luatex-cn-constants'] or
+    require('core.luatex-cn-constants')
+local debug = package.loaded['debug.luatex-cn-debug'] or
+    require('debug.luatex-cn-debug')
+local dbg = debug.get_debugger('render')
 local D = constants.D
+
+
+--- 计算 RTL 布局中的物理列号和 X 坐标
+-- 在竖排 RTL 布局中，逻辑列号（从0开始向右）需要转换为物理列号（从右向左）。
+--
+-- @param col (number) 逻辑列号 (0-indexed)
+-- @param total_cols (number) 总列数
+-- @param grid_width (number) 网格宽度 (sp)
+-- @param half_thickness (number) 边框半厚度 (sp)
+-- @param shift_x (number) X 偏移量 (sp)
+-- @return (number, number) rtl_col, x_position
+local function calculate_rtl_position(col, total_cols, grid_width, half_thickness, shift_x)
+    local rtl_col = total_cols - 1 - col
+    local x_pos = rtl_col * grid_width + (half_thickness or 0) + (shift_x or 0)
+    return rtl_col, x_pos
+end
+
+--- 计算块级元素的 RTL X 坐标
+-- 块级元素可能跨越多列，需要计算其左边缘位置。
+--
+-- @param col (number) 起始列号
+-- @param width (number) 块宽度（列数）
+-- @param total_cols (number) 总列数
+-- @param grid_width (number) 网格宽度 (sp)
+-- @param half_thickness (number) 边框半厚度 (sp)
+-- @param shift_x (number) X 偏移量 (sp)
+-- @return (number) x_position
+local function calculate_rtl_block_position(col, width, total_cols, grid_width, half_thickness, shift_x)
+    -- Original: (total_cols - (col + (width or 1))) * grid_width + half_thickness + shift_x
+    local rtl_col_left = total_cols - (col + (width or 1))
+    return (rtl_col_left * grid_width) + (half_thickness or 0) + (shift_x or 0)
+end
+
+--- 计算 Y 坐标（基于行号）
+-- @param row (number) 行号 (0-indexed)
+-- @param grid_height (number) 网格高度 (sp)
+-- @param shift_y (number) Y 偏移量 (sp)
+-- @return (number) y_position
+local function calculate_y_position(row, grid_height, shift_y)
+    -- Original: -row * grid_height - shift_y
+    return (-row * grid_height) - (shift_y or 0)
+end
 
 --- 在指定坐标处定位单个字形节点
 -- 这是在精确位置放置字符的核心函数。
@@ -108,14 +153,8 @@ local function position_glyph(glyph_direct, x, y, params)
     D.setfield(glyph_direct, "xoffset", x_offset)
     D.setfield(glyph_direct, "yoffset", y_offset)
 
-    -- --- Trace Logging ---
-    if luatex_cn_debug and luatex_cn_debug.is_enabled("vertical") then
-        local u = package.loaded['vertical.luatex-cn-vertical-base-utils'] or
-            require('vertical.luatex-cn-vertical-base-utils')
-        u.debug_log(string.format("[GlyphPos] char=%d x=%.2f cw=%.2f gw=%.2f -> xoff=%.2f yoff=%.2f",
-            D.getfield(glyph_direct, "char"), x / (65536), cell_width / (65536), g_width / (65536), x_offset / (65536),
-            y_offset / (65536)))
-    end
+    -- --- Trace Logging (Removed for simplicity) ---
+    -- if debug.is_enabled("render") then ... end
 
     -- Create protected negative kern (subtype 1 = explicit kern, won't be zeroed)
     local kern = D.new(constants.KERN)
@@ -128,150 +167,6 @@ local function position_glyph(glyph_direct, x, y, params)
     return glyph_direct, kern
 end
 
---- 创建竖向排列的文字链
--- 将字符按从上到下的顺序排列在单列中。
--- 用于版心文字，也可用于任何竖排文字块。
---
--- @param text (string) 要渲染的 UTF-8 字符串
--- @param params (table) 参数表:
---   - x (number) 列左边缘的 X 坐标 (sp)
---   - y_top (number) 列顶边缘的 Y 坐标 (sp, 向下为负)
---   - width (number) 用于水平居中的列宽 (sp)
---   - height (number) 文字区域的总高度 (sp)
---   - num_cells (number) 可选：单元格数量 (默认: 字符数)
---   - v_align (string) 每个单元格内的垂直对齐: "top", "center", "bottom"
---   - h_align (string) 列内的水平对齐: "left", "center", "right"
---   - font_id (number) 可选：字体 ID (默认: 当前字体)
---   - shift_y (number) 可选：额外的 Y 轴偏移 (sp)
--- @return (node) 链接节点链的头部（直接节点引用），若无文字则返回 nil
-local function create_vertical_text(text, params)
-    if not text or text == "" then
-        return nil
-    end
-
-    -- Parse UTF-8 characters
-    local chars = {}
-    for char in text:gmatch("[%z\1-\127\194-\244][\128-\191]*") do
-        table.insert(chars, char)
-    end
-
-    local num_chars = #chars
-    if num_chars == 0 then
-        return nil
-    end
-
-    local x = params.x or 0
-    local y_top = params.y_top or 0
-    local width = params.width or 0
-    local height = params.height or 0
-    local num_cells = params.num_cells or num_chars
-    local v_align = params.v_align or "center"
-    local h_align = params.h_align or "center"
-    local font_id = params.font_id or font.current()
-    local shift_y = params.shift_y or 0
-
-    local font_scale_factor = 1.0
-    local base_font_data = font.getfont(font_id) -- Save original font data for character lookups
-
-    -- Handle font size if provided
-    if params.font_size then
-        local fs = constants.to_dimen(params.font_size)
-        if fs and fs > 0 then
-            local current_font_data = font.getfont(font_id)
-            if current_font_data then
-                font_scale_factor = fs / current_font_data.size
-                local new_font_data = {}
-                for k, v in pairs(current_font_data) do new_font_data[k] = v end
-                new_font_data.size = fs
-                font_id = font.define(new_font_data)
-            end
-        end
-    elseif params.font_scale then
-        font_scale_factor = params.font_scale
-        local current_font_data = font.getfont(font_id)
-        if current_font_data then
-            local new_font_data = {}
-            for k, v in pairs(current_font_data) do new_font_data[k] = v end
-            new_font_data.size = math.floor(new_font_data.size * params.font_scale + 0.5)
-            font_id = font.define(new_font_data)
-        end
-    end
-
-    -- Calculate cell height
-    local cell_height = height / num_cells
-
-    local u = package.loaded['vertical.luatex-cn-vertical-base-utils'] or
-        require('vertical.luatex-cn-vertical-base-utils')
-
-    local head = nil
-    local tail = nil
-
-    for i, char in ipairs(chars) do
-        -- Create glyph node
-        local glyph = node.new(node.id("glyph"))
-        glyph.char = utf8.codepoint(char)
-        glyph.font = font_id
-        glyph.lang = 0
-
-        local glyph_direct = D.todirect(glyph)
-
-        -- CRITICAL: Fetch glyph dimensions from base font data (before scaling)
-        -- Then apply font_scale_factor to get actual dimensions
-        local cp = utf8.codepoint(char)
-
-        -- Default dimensions if not in font (fallback to square em)
-        local gw = (base_font_data and base_font_data.size or (65536 * 10)) * font_scale_factor
-        local gh = gw * 0.8
-        local gd = gw * 0.2
-
-        if base_font_data and base_font_data.characters and base_font_data.characters[cp] then
-            local char_data = base_font_data.characters[cp]
-            -- Base font character dimensions need to be scaled by font_scale_factor
-            gw = (char_data.width or gw) * font_scale_factor
-            gh = (char_data.height or gh) * font_scale_factor
-            gd = (char_data.depth or gd) * font_scale_factor
-            D.setfield(glyph_direct, "width", math.floor(gw + 0.5))
-            D.setfield(glyph_direct, "height", math.floor(gh + 0.5))
-            D.setfield(glyph_direct, "depth", math.floor(gd + 0.5))
-        end
-
-        -- Calculate cell position (0-indexed row)
-        local row = i - 1
-        local cell_y = y_top - row * cell_height - shift_y
-
-        -- Position the glyph
-        local _, kern = position_glyph(glyph_direct, x, cell_y, {
-            cell_width = width,
-            cell_height = cell_height,
-            h_align = h_align,
-            v_align = v_align,
-            g_width = math.floor(gw + 0.5),
-            g_height = math.floor(gh + 0.5),
-            g_depth = math.floor(gd + 0.5),
-        })
-
-        -- Build the chain
-        if head == nil then
-            head = glyph_direct
-            tail = kern
-        else
-            D.setlink(tail, glyph_direct)
-            tail = kern
-        end
-
-        -- --- DEBUG: Draw blue box around each character ---
-        if luatex_cn_debug and luatex_cn_debug.is_enabled("vertical") then
-            local u = package.loaded['vertical.luatex-cn-vertical-base-utils'] or
-                require('vertical.luatex-cn-vertical-base-utils')
-            if u and u.draw_debug_rect then
-                -- Add debug box before the glyph so it's behind the text
-                head = u.draw_debug_rect(head, glyph_direct, x, cell_y, width, -cell_height, "0 0 1 RG")
-            end
-        end
-    end
-
-    return head
-end
 
 --- 在网格单元中定位字形（供主文本渲染使用）
 -- 这是一个便捷包装函数，用于在行列网格中定位字形。
@@ -353,17 +248,8 @@ local function get_visual_center(char_code, font_id)
         res = (c.width or 0) / 2
     end
 
-    -- --- DEBUG: Log the visual center calculation ---
-    if luatex_cn_debug and luatex_cn_debug.is_enabled("vertical") then
-        local u = package.loaded['vertical.luatex-cn-vertical-base-utils']
-        if u then
-            local bbox_str = bbox and string.format("[%d,%d,%d,%d]", bbox[1], bbox[2], bbox[3], bbox[4]) or "nil"
-            u.debug_log(string.format(
-                "[VisualCenter] char=%d GID=%s size=%.2f units=%d bbox=%s method=%s v_center=%.2f",
-                char_code, tostring(c.index), f.size / 65536, f.units_per_em or 1000, bbox_str, method,
-                res / 65536))
-        end
-    end
+    -- --- DEBUG: Log the visual center calculation (Removed) ---
+    -- if debug.is_enabled("render") then ... end
 
     return res
 end
@@ -392,8 +278,11 @@ local function calc_grid_position(col, row, glyph_dims, params)
     local h = glyph_dims.height or 0
     local d = glyph_dims.depth or 0
 
-    -- Calculate RTL column position
-    local rtl_col = total_cols - 1 - col
+    local textflow = package.loaded['core.luatex-cn-textflow'] or
+        require('core.luatex-cn-textflow')
+
+    -- Calculate RTL column position and base X
+    local rtl_col, base_x = calculate_rtl_position(col, total_cols, grid_width, half_thickness, shift_x)
     local sub_col = params.sub_col or 0
 
     -- Calculate visual center for alignment
@@ -408,96 +297,33 @@ local function calc_grid_position(col, row, glyph_dims, params)
     -- Calculate X offset based on horizontal alignment
     local x_offset
     if sub_col > 0 then
-        -- Jiazhu (dual-column note) logic (already handles its own alignment)
-        local sub_width = grid_width / 2
-        local inner_padding = sub_width * 0.05 -- 5% internal padding
-        local jiazhu_align = params.jiazhu_align or "outward"
-        local col_align = (sub_col == 1) and "right" or "left"
-        if jiazhu_align == "inward" then
-            col_align = (sub_col == 1) and "left" or "right"
-        elseif jiazhu_align == "center" then
-            col_align = "center"
-        elseif jiazhu_align == "left" then
-            col_align = "left"
-        elseif jiazhu_align == "right" then
-            col_align = "right"
-        end
-
-        local sub_base_x = rtl_col * grid_width + half_thickness + shift_x
-        if sub_col == 1 then sub_base_x = sub_base_x + sub_width end
-
-        if col_align == "right" then
-            x_offset = sub_base_x + (sub_width - w) - inner_padding
-        elseif col_align == "left" then
-            x_offset = sub_base_x + inner_padding
-        else -- center
-            -- Reuse the same visual centering logic for Jiazhu if needed?
-            -- For now stay with simple centering within sub-column
-            x_offset = sub_base_x + (sub_width - w) / 2
-        end
+        -- Jiazhu logic
+        x_offset = textflow.calculate_sub_column_x_offset(base_x, grid_width, w, sub_col, params.jiazhu_align)
     elseif h_align == "left" then
-        x_offset = rtl_col * grid_width + half_thickness + shift_x
+        x_offset = base_x
     elseif h_align == "right" then
-        x_offset = rtl_col * grid_width + (grid_width - w) + half_thickness + shift_x
+        x_offset = base_x + (grid_width - w)
     else -- center
-        x_offset = rtl_col * grid_width + center_offset + half_thickness + shift_x
+        x_offset = base_x + center_offset
     end
 
     -- Calculate Y offset based on vertical alignment
-    local y_offset
+    local y_offset = calculate_y_position(row, grid_height, shift_y)
+
     if v_align == "top" then
-        y_offset = -row * grid_height - h - shift_y
+        y_offset = y_offset - h
     elseif v_align == "center" then
         local char_total_height = h + d
         -- Note: we use char_total_height centering for Y
-        y_offset = -row * grid_height - (grid_height + char_total_height) / 2 + d - shift_y
+        y_offset = y_offset - (grid_height + char_total_height) / 2 + d
     else -- bottom
-        y_offset = -row * grid_height - grid_height + d - shift_y
+        y_offset = y_offset - grid_height + d
     end
 
     return x_offset, y_offset
 end
 
---- 计算 RTL 布局中的物理列号和 X 坐标
--- 在竖排 RTL 布局中，逻辑列号（从0开始向右）需要转换为物理列号（从右向左）。
---
--- @param col (number) 逻辑列号 (0-indexed)
--- @param total_cols (number) 总列数
--- @param grid_width (number) 网格宽度 (sp)
--- @param half_thickness (number) 边框半厚度 (sp)
--- @param shift_x (number) X 偏移量 (sp)
--- @return (number, number) rtl_col, x_position
-local function calculate_rtl_position(col, total_cols, grid_width, half_thickness, shift_x)
-    local rtl_col = total_cols - 1 - col
-    local x_pos = rtl_col * grid_width + (half_thickness or 0) + (shift_x or 0)
-    return rtl_col, x_pos
-end
 
---- 计算块级元素的 RTL X 坐标
--- 块级元素可能跨越多列，需要计算其左边缘位置。
---
--- @param col (number) 起始列号
--- @param width (number) 块宽度（列数）
--- @param total_cols (number) 总列数
--- @param grid_width (number) 网格宽度 (sp)
--- @param half_thickness (number) 边框半厚度 (sp)
--- @param shift_x (number) X 偏移量 (sp)
--- @return (number) x_position
-local function calculate_rtl_block_position(col, width, total_cols, grid_width, half_thickness, shift_x)
-    -- Original: (total_cols - (col + (width or 1))) * grid_width + half_thickness + shift_x
-    local rtl_col_left = total_cols - (col + (width or 1))
-    return (rtl_col_left * grid_width) + (half_thickness or 0) + (shift_x or 0)
-end
-
---- 计算 Y 坐标（基于行号）
--- @param row (number) 行号 (0-indexed)
--- @param grid_height (number) 网格高度 (sp)
--- @param shift_y (number) Y 偏移量 (sp)
--- @return (number) y_position
-local function calculate_y_position(row, grid_height, shift_y)
-    -- Original: -row * grid_height - shift_y
-    return (-row * grid_height) - (shift_y or 0)
-end
 
 -- Internal functions for unit testing
 local _internal = {
@@ -510,7 +336,6 @@ local _internal = {
 local text_position = {
     get_visual_center = get_visual_center,
     position_glyph = position_glyph,
-    create_vertical_text = create_vertical_text,
     position_glyph_in_grid = position_glyph_in_grid,
     calc_grid_position = calc_grid_position,
     calculate_rtl_position = calculate_rtl_position,
@@ -521,7 +346,7 @@ local text_position = {
 
 -- Register module in package.loaded for require() compatibility
 -- 注册模块到 package.loaded
-package.loaded['vertical.luatex-cn-vertical-render-position'] = text_position
+package.loaded['core.luatex-cn-render-position'] = text_position
 
 -- Return module exports
 return text_position

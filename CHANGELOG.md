@@ -1,7 +1,16 @@
 # 更新日志 (Changelog)
 
 本项目的所有重大更改都将记录在此文件中。
- 
+
+## [0.2.0] - 2026-01-31
+本次发布没有新的功能或修复bug。调整为全新架构，将来可以更快的进行开发。
+- 重构代码架构，引入全局状态表统一管理配置参数
+- 引入插件架构，将 sidenote、judou、textbox、banxin、decorate 模块重构为标准化插件
+- 提取独立设置命令：\contentSetup, \pageSetup, \jiazhuSetup, \judouSetup, \sidenoteSetup, \pizhuSetup 等
+- 重组模块目录结构，将相关功能移至 guji/、banxin/、core/ 等命名空间
+- 重构调试模块，采用 get_debugger 模式统一日志输出
+- 大规模代码清理：移除冗余参数传递，合并渲染函数，优化布局计算逻辑
+
 ## [0.1.6] - 2026-01-29
 - 修复网格布局分列时的溢出偏置及跨列缩进丢失问题 (fix #32)
 - 优化字体加载逻辑，支持更灵活的字体补全 (fix #33)

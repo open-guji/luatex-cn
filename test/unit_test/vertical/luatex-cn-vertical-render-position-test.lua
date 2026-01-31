@@ -1,5 +1,5 @@
 local test_utils = require('test.test_utils')
-local position = require('vertical.luatex-cn-vertical-render-position')
+local position = require('luatex-cn-render-position')
 
 local internal = position._internal or {}
 
@@ -10,11 +10,11 @@ local internal = position._internal or {}
 test_utils.run_test("calculate_rtl_position - basic", function()
     if not position.calculate_rtl_position then return end
     local rtl_col, x_pos = position.calculate_rtl_position(
-        0,      -- col
-        10,     -- total_cols
-        65536,  -- grid_width
-        1000,   -- half_thickness
-        500     -- shift_x
+        0,     -- col
+        10,    -- total_cols
+        65536, -- grid_width
+        1000,  -- half_thickness
+        500    -- shift_x
     )
     test_utils.assert_eq(rtl_col, 9, "RTL col for col 0 with 10 cols")
     -- x_pos = 9 * 65536 + 1000 + 500 = 590824 + 1500 = 591324
@@ -24,11 +24,11 @@ end)
 test_utils.run_test("calculate_rtl_position - last column", function()
     if not position.calculate_rtl_position then return end
     local rtl_col, x_pos = position.calculate_rtl_position(
-        9,      -- col (last)
-        10,     -- total_cols
-        65536,  -- grid_width
-        0,      -- half_thickness
-        0       -- shift_x
+        9,     -- col (last)
+        10,    -- total_cols
+        65536, -- grid_width
+        0,     -- half_thickness
+        0      -- shift_x
     )
     test_utils.assert_eq(rtl_col, 0, "RTL col for last col")
     test_utils.assert_eq(x_pos, 0, "X position at origin")
@@ -37,8 +37,8 @@ end)
 test_utils.run_test("calculate_rtl_position - middle column", function()
     if not position.calculate_rtl_position then return end
     local rtl_col, x_pos = position.calculate_rtl_position(
-        5,      -- col (middle)
-        10,     -- total_cols
+        5,          -- col (middle)
+        10,         -- total_cols
         65536 * 10, -- grid_width = 10pt
         0,
         0
@@ -53,8 +53,8 @@ test_utils.run_test("calculate_rtl_position - with shifts", function()
         0,
         5,
         65536,
-        65536 * 2,  -- half_thickness = 2pt
-        65536 * 3   -- shift_x = 3pt
+        65536 * 2, -- half_thickness = 2pt
+        65536 * 3  -- shift_x = 3pt
     )
     test_utils.assert_eq(rtl_col, 4, "RTL col")
     -- x_pos = 4 * 65536 + 2*65536 + 3*65536 = 9 * 65536
@@ -68,12 +68,12 @@ end)
 test_utils.run_test("calculate_rtl_block_position - basic", function()
     if not position.calculate_rtl_block_position then return end
     local x_pos = position.calculate_rtl_block_position(
-        5,      -- col
-        2,      -- width
-        10,     -- total_cols
-        65536,  -- grid_width
-        0,      -- half_thickness
-        0       -- shift_x
+        5,     -- col
+        2,     -- width
+        10,    -- total_cols
+        65536, -- grid_width
+        0,     -- half_thickness
+        0      -- shift_x
     )
     -- rtl_col_left = 10 - (5 + 2) = 3
     test_utils.assert_eq(x_pos, 3 * 65536, "Block X position")
@@ -82,10 +82,10 @@ end)
 test_utils.run_test("calculate_rtl_block_position - single column block", function()
     if not position.calculate_rtl_block_position then return end
     local x_pos = position.calculate_rtl_block_position(
-        0,      -- col
-        1,      -- width
-        10,     -- total_cols
-        65536,  -- grid_width
+        0,     -- col
+        1,     -- width
+        10,    -- total_cols
+        65536, -- grid_width
         0,
         0
     )
@@ -96,9 +96,9 @@ end)
 test_utils.run_test("calculate_rtl_block_position - full width block", function()
     if not position.calculate_rtl_block_position then return end
     local x_pos = position.calculate_rtl_block_position(
-        0,      -- col
-        10,     -- width (full page)
-        10,     -- total_cols
+        0,  -- col
+        10, -- width (full page)
+        10, -- total_cols
         65536,
         0,
         0
@@ -114,8 +114,8 @@ test_utils.run_test("calculate_rtl_block_position - with shifts", function()
         3,
         10,
         65536,
-        65536,      -- half_thickness = 1pt
-        65536 * 2   -- shift_x = 2pt
+        65536,    -- half_thickness = 1pt
+        65536 * 2 -- shift_x = 2pt
     )
     -- rtl_col_left = 10 - (2 + 3) = 5
     -- x_pos = 5 * 65536 + 65536 + 2*65536 = 8 * 65536

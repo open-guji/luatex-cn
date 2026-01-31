@@ -33,6 +33,8 @@ package.path = root .. "tex/?.lua;"
     .. root .. "tex/banxin/?.lua;"
     .. root .. "tex/fonts/?.lua;"
     .. root .. "tex/splitpage/?.lua;"
+    .. root .. "tex/core/?.lua;"
+    .. root .. "tex/util/?.lua;"
     .. root .. "tex/?/init.lua;"
     .. package.path
 

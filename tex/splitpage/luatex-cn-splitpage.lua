@@ -35,25 +35,16 @@ splitpage.source_height = 0
 splitpage.target_width = 0
 splitpage.target_height = 0
 splitpage.right_first = true
-local constants = require('vertical.luatex-cn-vertical-base-constants')
+local constants = package.loaded['core.luatex-cn-constants'] or
+    require('core.luatex-cn-constants')
+local debug = package.loaded['debug.luatex-cn-debug'] or
+    require('debug.luatex-cn-debug')
 
--- Convert sp to bp
-local function sp_to_bp(sp)
-    return sp / 65536 / 72.27 * 72
-end
+local dbg = debug.get_debugger('splitpage')
 
 local to_sp = constants.to_dimen
 
--- Register splitpage module if debug module is available
-if _G.luatex_cn_debug then
-    _G.luatex_cn_debug.register_module("splitpage", { color = "green" })
-end
-
-local function debug_log(msg)
-    if _G.luatex_cn_debug then
-        _G.luatex_cn_debug.log("splitpage", msg)
-    end
-end
+-- Convert sp to bp
 
 --- Configure split page parameters
 function splitpage.configure(params)
@@ -73,7 +64,7 @@ function splitpage.configure(params)
         splitpage.right_first = params.right_first
     end
 
-    debug_log(string.format("Configured: source=%.1fmm x %.1fmm, target=%.1fmm x %.1fmm",
+    dbg.log(string.format("Configured: source=%.1fmm x %.1fmm, target=%.1fmm x %.1fmm",
         splitpage.source_width / 65536 / 72.27 * 25.4,
         splitpage.source_height / 65536 / 72.27 * 25.4,
         splitpage.target_width / 65536 / 72.27 * 25.4,
@@ -87,7 +78,7 @@ function splitpage.process_page(box)
         return box
     end
 
-    debug_log("Processing page - passing through unchanged")
+    dbg.log("Processing page - passing through unchanged")
 
     -- Don't modify the box here - let TeX handle the splitting
     return box
@@ -96,7 +87,7 @@ end
 --- Enable the split page feature
 function splitpage.enable()
     if splitpage.enabled then
-        debug_log("Already enabled")
+        dbg.log("Already enabled")
         return
     end
 
@@ -106,13 +97,13 @@ function splitpage.enable()
     end
 
     splitpage.enabled = true
-    debug_log("Enabled - dimensions configured")
+    dbg.log("Enabled - dimensions configured")
 end
 
 --- Disable the split page feature
 function splitpage.disable()
     splitpage.enabled = false
-    debug_log("Disabled")
+    dbg.log("Disabled")
 end
 
 --- Get configuration for TeX
@@ -156,6 +147,67 @@ end
 -- Dummy function for compatibility
 function splitpage.flush_pending()
     -- No-op in this simplified version
+end
+
+--- Output pages in split mode (each page as two half-pages)
+-- @param box_num The TeX box number
+-- @param total_pages Total number of pages to output
+function splitpage.output_pages(box_num, total_pages)
+    local target_w = splitpage.get_target_width()
+    local target_h = splitpage.get_target_height()
+    local right_first = splitpage.is_right_first()
+
+    -- Convert sp to pt for TeX
+    local target_w_pt = target_w / 65536
+    local target_h_pt = target_h / 65536
+
+    for i = 0, total_pages - 1 do
+        -- For split page, we need to output each page twice (left half and right half)
+        -- First, load page into box (with copy=true so we can use it twice)
+        local cmd_load = string.format("\\directlua{core.load_page(%d, %d, true)}", box_num, i)
+        local cmd_dim = string.format("\\global\\pagewidth=%.5fpt", target_w_pt)
+        local cmd_dim_h = string.format("\\global\\pageheight=%.5fpt", target_h_pt)
+
+        dbg.log("TeX CMD: " .. cmd_load)
+        dbg.log("TeX CMD: " .. cmd_dim)
+
+        tex.print(cmd_load)
+
+        -- Set page dimensions to half width for first half
+        tex.print(cmd_dim)
+        tex.print(cmd_dim_h)
+
+        -- Output first half (right side if right_first)
+        tex.print("\\par\\nointerlineskip")
+        if right_first then
+            -- 右半页：将内容左移，使右半部分显示
+            tex.print(string.format("\\noindent\\kern-%.5fpt\\hbox to 0pt{\\smash{\\copy%d}\\hss}", target_w_pt,
+                box_num))
+        else
+            -- 左半页：不移动
+            tex.print(string.format("\\noindent\\hbox to 0pt{\\smash{\\copy%d}\\hss}", box_num))
+        end
+
+        -- New page for second half
+        tex.print("\\vfill\\penalty-10000\\allowbreak")
+        tex.print(cmd_dim)
+        tex.print(cmd_dim_h)
+
+        -- Output second half
+        tex.print("\\par\\nointerlineskip")
+        if right_first then
+            -- 左半页：不移动
+            tex.print(string.format("\\noindent\\hbox to 0pt{\\smash{\\copy%d}\\hss}", box_num))
+        else
+            -- 右半页：将内容左移
+            tex.print(string.format("\\noindent\\kern-%.5fpt\\hbox to 0pt{\\smash{\\copy%d}\\hss}", target_w_pt,
+                box_num))
+        end
+
+        if i < total_pages - 1 then
+            tex.print("\\vfill\\penalty-10000\\allowbreak")
+        end
+    end
 end
 
 -- Register module

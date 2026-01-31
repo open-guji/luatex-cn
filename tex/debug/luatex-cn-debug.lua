@@ -101,4 +101,23 @@ function debug.is_enabled(module_name)
     return mod == nil or mod.enabled
 end
 
+--- Get a debugger instance for a specific module
+-- @param module_name (string)
+-- @return (table) Debugger instance with .log(msg) and .is_enabled()
+function debug.get_debugger(module_name)
+    -- Auto-register if not exists
+    if not debug.modules[module_name] then
+        debug.register_module(module_name)
+    end
+
+    return {
+        log = function(msg)
+            debug.log(module_name, msg)
+        end,
+        is_enabled = function()
+            return debug.is_enabled(module_name)
+        end
+    }
+end
+
 return debug

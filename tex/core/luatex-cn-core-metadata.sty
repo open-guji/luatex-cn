@@ -1,0 +1,74 @@
+% Copyright 2026 Open-Guji (https://github.com/open-guji)
+%
+% Licensed under the Apache License, Version 2.0 (the "License");
+% you may not use this file except in compliance with the License.
+% You may obtain a copy of the License at
+%
+%     http://www.apache.org/licenses/LICENSE-2.0
+%
+% Unless required by applicable law or agreed to in writing, software
+% distributed under the License is distributed on an "AS IS" BASIS,
+% WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+% See the License for the specific language governing permissions and
+% limitations under the License.
+
+\RequirePackage{core/luatex-cn-core-base}
+\ProvidesExplPackage{core/luatex-cn-core-metadata}{2026/01/31} {0.2.0}{Book metadata management}
+
+% Load Lua module
+\lua_now:e { vertical_metadata = require('core.luatex-cn-core-metadata') }
+
+% ============================================================================
+% Centralized variables for book metadata
+% ============================================================================
+\tl_new:N \l__luatexcn_metadata_book_name_tl
+\tl_new:N \l__luatexcn_metadata_chapter_title_tl
+\tl_new:N \l__luatexcn_metadata_publisher_tl
+
+% ============================================================================
+% Key-Value Interface
+% ============================================================================
+\keys_define:nn { luatexcn / metadata }
+  {
+    book-name .tl_set:N = \l__luatexcn_metadata_book_name_tl,
+    book-name .initial:n = {},
+
+    chapter-title .tl_set:N = \l__luatexcn_metadata_chapter_title_tl,
+    chapter-title .initial:n = {},
+
+    publisher .tl_set:N = \l__luatexcn_metadata_publisher_tl,
+    publisher .initial:n = {},
+  }
+
+% ============================================================================
+% Setup Command
+% ============================================================================
+\NewDocumentCommand{\metadataSetup}{ m }
+  {
+    \keys_set:nn { luatexcn / metadata } { #1 }
+    \lua_now:e {
+      vertical_metadata.setup({
+        book_name~=~[=[\luaescapestring{\l__luatexcn_metadata_book_name_tl}]=],
+        chapter_title~=~[=[\luaescapestring{\l__luatexcn_metadata_chapter_title_tl}]=],
+        publisher~=~[=[\luaescapestring{\l__luatexcn_metadata_publisher_tl}]=]
+      })
+    }
+  }
+
+% ============================================================================
+% Chapter Marker Command
+% ============================================================================
+% Insert a chapter marker that will trigger chapter title change on subsequent pages
+\NewDocumentCommand{\ChapterMarker}{ m }
+  {
+    \lua_now:e { vertical_metadata.insert_chapter_marker_to_box([=[\luaescapestring{#1}]=]) }
+    \box_use:N \c_zero_int
+  }
+
+\ExplSyntaxOff
+
+% CJK Aliases
+\NewCommandCopy{\元数据设置}{\metadataSetup}
+\NewCommandCopy{\章节标记}{\ChapterMarker}
+
+\endinput

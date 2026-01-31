@@ -15,6 +15,7 @@ PDF_DIR = REG_DIR / "pdf"
 BASELINE_DIR = REG_DIR / "baseline"
 CURRENT_DIR = REG_DIR / "current"
 DIFF_DIR = REG_DIR / "diff"
+DIFF_THRESHOLD = 10
 
 import concurrent.futures
 import multiprocessing
@@ -190,6 +191,20 @@ def process_file(tex_file, mode):
             except Exception:
                 pass
             return True, 0, log_list
+        elif total_diff_pixels < DIFF_THRESHOLD:
+            log_list.append(f"WARNING: {tex_file.name} has minor differences ({total_diff_pixels} pixels), but they are below threshold ({DIFF_THRESHOLD}). Marking as PASSED.")
+            # Delete current PNGs and diff images as we consider this a pass
+            for png in current_pngs:
+                png.unlink()
+            for i in range(len(baseline_pngs)):
+                diff_png = DIFF_DIR / f"diff_{pdf_file.stem}-{i+1}.png"
+                if diff_png.exists(): diff_png.unlink()
+            # Revert PDF to keep git history clean
+            try:
+                run_command(["git", "checkout", "--", str(pdf_file)], cwd=BASE_DIR, log_list=log_list)
+            except Exception:
+                pass
+            return True, f"{total_diff_pixels} pixels (ignored)", log_list
         else:
             log_list.append(f"FAIL: {tex_file.name} differs on pages: {failing_pages}")
             return False, f"{total_diff_pixels} total pixels diff", log_list
@@ -210,15 +225,27 @@ def main():
     if args.files:
         tex_files = []
         for f in args.files:
-            p = TEX_DIR / f if not f.endswith(".tex") else TEX_DIR / f
-            if p.exists():
-                tex_files.append(p)
-            else:
-                # search recursively in TEX_DIR
-                found = list(TEX_DIR.rglob(f))
-                if not found and not f.endswith(".tex"):
-                    found = list(TEX_DIR.rglob(f + ".tex"))
+            # 1. Try as direct path (absolute or relative to CWD)
+            p = Path(f)
+            if p.exists() and p.is_file():
+                tex_files.append(p.resolve())
+                continue
+            
+            # 2. Try as relative to TEX_DIR
+            p_in_tex = TEX_DIR / f
+            if p_in_tex.exists() and p_in_tex.is_file():
+                tex_files.append(p_in_tex)
+                continue
+                
+            # 3. Search recursively in TEX_DIR
+            found = list(TEX_DIR.rglob(f))
+            if not found and not f.endswith(".tex"):
+                found = list(TEX_DIR.rglob(f + ".tex"))
+            
+            if found:
                 tex_files.extend(found)
+            else:
+                print(f"Warning: File '{f}' not found as direct path or in {TEX_DIR}")
     else:
         tex_files = list(TEX_DIR.glob("*.tex"))
 

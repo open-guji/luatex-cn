@@ -1,0 +1,126 @@
+% Copyright 2026 Open-Guji (https://github.com/open-guji)
+%
+% Licensed under the Apache License, Version 2.0 (the "License");
+% you may not use this file except in compliance with the License.
+% You may obtain a copy of the License at
+%
+%     http://www.apache.org/licenses/LICENSE-2.0
+%
+% Unless required by applicable law or agreed to in writing, software
+% distributed under the License is distributed on an "AS IS" BASIS,
+% WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+% See the License for the specific language governing permissions and
+% limitations under the License.
+% luatex-cn-guji-judou.sty
+% 句读（Judou）功能支持
+% 这是 luatex_cn 的子包
+%
+\RequirePackage{expl3}
+\RequirePackage{xparse}
+\ProvidesExplPackage {guji/luatex-cn-guji-judou} {2026/01/31} {0.2.0} {Judou (Punctuation Mode) Support}
+
+% Load Lua module for global state
+\lua_now:e { judou_mod = require('guji.luatex-cn-guji-judou') }
+
+% =============================================================================
+% Judou Key Definitions (luatexcn / judou namespace)
+% =============================================================================
+
+% --- Variable Declarations ---
+\bool_new:N \l__luatexcn_judou_on_bool
+\tl_new:N \l__luatexcn_judou_pos_tl
+\tl_new:N \l__luatexcn_judou_size_tl
+\tl_new:N \l__luatexcn_judou_color_tl
+\tl_new:N \l__luatexcn_judou_punct_mode_tl
+
+% --- Key Definitions ---
+\keys_define:nn { luatexcn / judou }
+  {
+    judou-on .bool_set:N = \l__luatexcn_judou_on_bool,
+    judou-on .initial:n = false,
+
+    judou-pos .tl_set:N = \l__luatexcn_judou_pos_tl,
+    judou-pos .initial:n = {right-bottom},
+
+    judou-size .tl_set:N = \l__luatexcn_judou_size_tl,
+    judou-size .initial:n = {1em},
+
+    judou-color .tl_set:N = \l__luatexcn_judou_color_tl,
+    judou-color .initial:n = {red},
+
+    punct-mode .tl_set:N = \l__luatexcn_judou_punct_mode_tl,
+    punct-mode .initial:n = {normal},
+  }
+
+% =============================================================================
+% Setup Command
+% =============================================================================
+% Internal helper to sync TeX keys to Lua global state
+\cs_new_protected:Nn \__luatexcn_judou_sync_lua:
+  {
+    \lua_now:e {
+      judou_mod.setup({
+        enabled~=~\bool_if:NTF \l__luatexcn_judou_on_bool {true} {false},
+        punct_mode~=~[=[\\luaescapestring{\\l__luatexcn_judou_punct_mode_tl}]=],
+        pos~=~[=[\\luaescapestring{\\l__luatexcn_judou_pos_tl}]=],
+        size~=~[=[\\luaescapestring{\\l__luatexcn_judou_size_tl}]=],
+        color~=~[=[\\luaescapestring{\\l__luatexcn_judou_color_tl}]=]
+      })
+    }
+  }
+
+\NewDocumentCommand{\judouSetup}{ m }
+  {
+    \keys_set:nn { luatexcn / judou } { #1 }
+    \__luatexcn_judou_sync_lua:
+  }
+
+% =============================================================================
+% Judou Mode Toggle Commands
+% =============================================================================
+% Usage: \JudouOn to enable, \JudouOff to disable
+\NewDocumentCommand{\JudouOn}{ O{} }
+  {
+    \keys_set:nn { luatexcn / judou } { judou-on = true, #1 }
+    \__luatexcn_judou_sync_lua:
+  }
+
+\NewDocumentCommand{\JudouOff}{ }
+  {
+    \keys_set:nn { luatexcn / judou } { judou-on = false }
+    \__luatexcn_judou_sync_lua:
+  }
+
+% =============================================================================
+% Convenience Commands for Punctuation Modes
+% =============================================================================
+\NewDocumentCommand{\NormalPunctuationMode}{ O{} }
+  {
+    \keys_set:nn { luatexcn / judou } { punct-mode = normal, #1 }
+    \__luatexcn_judou_sync_lua:
+  }
+\NewDocumentCommand{\正常标点模式}{ O{} } { \NormalPunctuationMode[#1] }
+
+\NewDocumentCommand{\JudouPunctuationMode}{ O{} }
+  {
+    \keys_set:nn { luatexcn / judou } { punct-mode = judou, #1 }
+    \__luatexcn_judou_sync_lua:
+  }
+\NewDocumentCommand{\句读模式}{ O{} } { \JudouPunctuationMode[#1] }
+
+\NewDocumentCommand{\NonePunctuationMode}{ O{} }
+  {
+    \keys_set:nn { luatexcn / judou } { punct-mode = none, #1 }
+    \__luatexcn_judou_sync_lua:
+  }
+\NewDocumentCommand{\无标点模式}{ O{} } { \NonePunctuationMode[#1] }
+
+% Chinese aliases
+\cs_new_eq:NN \开启句读模式 \JudouOn
+\cs_new_eq:NN \关闭句读模式 \JudouOff
+\cs_new_eq:NN \开启无标点模式 \NonePunctuationMode
+\cs_new_eq:NN \开启正常标点模式 \NormalPunctuationMode
+
+\ExplSyntaxOff%
+%
+\endinput%

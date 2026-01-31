@@ -1,5 +1,4 @@
 -- test/run_all.lua - Run all tests in the project
-local test_utils = require('test.test_utils')
 
 -- List of tests to run
 local tests = {

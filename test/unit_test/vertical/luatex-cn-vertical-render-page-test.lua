@@ -1,6 +1,6 @@
 local test_utils = require('test.test_utils')
-local render = require('vertical.luatex-cn-vertical-render-page')
-local constants = require('vertical.luatex-cn-vertical-base-constants')
+local render = require('luatex-cn-core-render-page')
+local constants = require('luatex-cn-constants')
 local D = node.direct
 
 local internal = render._internal
@@ -104,7 +104,7 @@ test_utils.run_test("group_nodes_by_page - multi page distribution", function()
     local nodes = {}
     for i = 1, 6 do
         nodes[i] = D.new(constants.GLYPH)
-        if i > 1 then D.setlink(nodes[i-1], nodes[i]) end
+        if i > 1 then D.setlink(nodes[i - 1], nodes[i]) end
     end
 
     local layout_map = {
@@ -654,7 +654,7 @@ test_utils.run_test("render-page - multi page rendering", function()
         D.setfield(nodes[i], "width", 65536 * 10)
         D.setfield(nodes[i], "char", 65)
         D.setfield(nodes[i], "font", 0)
-        if i > 1 then D.setlink(nodes[i-1], nodes[i]) end
+        if i > 1 then D.setlink(nodes[i - 1], nodes[i]) end
     end
 
     local map = {

@@ -103,29 +103,6 @@ local function normalize_rgb(s)
     return string.format("%.4f %.4f %.4f", r, g, b)
 end
 
--- Debug state (private)
-local _debug_enabled = false
-
---- 设置调试模式开启状态
--- @param enable boolean
-local function set_debug(enable)
-    _debug_enabled = (enable == true)
-end
-
---- 检查调试模式是否开启
--- @return boolean
-local function is_debug_enabled()
-    return _debug_enabled
-end
-
---- 如果开启了调试，则向日志输出调试消息
--- @param message string 调试消息内容
-local function debug_log(message)
-    if luatex_cn_debug then
-        luatex_cn_debug.log("vertical", message)
-    end
-end
-
 --- 使用 PDF literal 绘制调试矩形
 -- @param head node 节点列表头部（直接引用）
 -- @param anchor node 要在其前插入的节点（直接引用）。如果为 nil，则插入到头部。
@@ -339,12 +316,66 @@ local function insert_chapter_marker(title)
     return #_G.chapter_registry
 end
 
+-- =============================================================================
+-- TeX Variable Reading Helpers
+-- =============================================================================
+-- These functions allow Lua code to read LaTeX3 variables directly from TeX
+-- using LuaTeX's token interface.
+
+--- Read a TeX token list variable (tl) as a string
+-- @param var_name string The LaTeX3 variable name (e.g., "l__luatexcn_banxin_upper_ratio_tl")
+-- @return string|nil The value of the variable, or nil if not defined
+local function get_tex_tl(var_name)
+    local cs_name = var_name
+    -- Use token.get_macro to get the expansion of the macro
+    local value = token.get_macro(cs_name)
+    if value == nil or value == "" then return nil end
+    return value
+end
+
+--- Read a TeX boolean variable (bool) as a Lua boolean
+-- LaTeX3 bools are stored as \chardef tokens: 0 for false, 1 for true
+-- @param var_name string The LaTeX3 variable name (e.g., "l__luatexcn_banxin_on_bool")
+-- @return boolean The boolean value (defaults to false if not defined)
+local function get_tex_bool(var_name)
+    -- For LaTeX3 bool variables, check the chardef value
+    local tok = token.create(var_name)
+    if tok and tok.cmdname == "char_given" then
+        return tok.index == 1
+    end
+    return false
+end
+
+--- Read a TeX integer variable (int) as a Lua number
+-- @param var_name string The LaTeX3 variable name (e.g., "l__luatexcn_banxin_chapter_title_cols_int")
+-- @return number The integer value (defaults to 0 if not defined)
+local function get_tex_int(var_name)
+    local tok = token.create(var_name)
+    if tok and tok.cmdname == "assign_int" then
+        return tex.count[tok.index] or 0
+    elseif tok and tok.cmdname == "char_given" then
+        return tok.index or 0
+    end
+    return 0
+end
+
+--- Read a TeX dimension and convert to scaled points
+-- @param tl_value string The dimension string (e.g., "10pt", "2cm")
+-- @return number The dimension in scaled points
+local function parse_dim_to_sp(tl_value)
+    if not tl_value or tl_value == "" then return 0 end
+    -- Use tex.sp to parse dimension strings
+    local ok, result = pcall(tex.sp, tl_value)
+    if ok then return result end
+    return 0
+end
+
 -- Create module table
 -- 模块导出表
 local utils = {
     normalize_rgb = normalize_rgb,
     sp_to_bp = sp_to_bp,
-    debug_log = debug_log,
+
     draw_debug_rect = draw_debug_rect,
     draw_debug_grid = draw_debug_grid,
     create_pdf_literal = create_pdf_literal,
@@ -358,14 +389,19 @@ local utils = {
     create_border_literal = create_border_literal,
     create_graphics_state_end = create_graphics_state_end,
     to_chinese_numeral = to_chinese_numeral,
-    set_debug = set_debug,
-    is_debug_enabled = is_debug_enabled,
+
     insert_chapter_marker = insert_chapter_marker,
+
+    -- TeX variable reading helpers
+    get_tex_tl = get_tex_tl,
+    get_tex_bool = get_tex_bool,
+    get_tex_int = get_tex_int,
+    parse_dim_to_sp = parse_dim_to_sp,
 }
 
 -- Register module in package.loaded for require() compatibility
 -- 注册模块到 package.loaded
-package.loaded['vertical.luatex-cn-vertical-base-utils'] = utils
+package.loaded['util.luatex-cn-utils'] = utils
 
 -- Return module exports
 return utils

@@ -15,11 +15,128 @@
 -- judou.lua - 句读 (Judou) 处理模块 (Refactored to use Decorate Mechanism)
 -- ============================================================================
 
-local constants = package.loaded['vertical.luatex-cn-vertical-base-constants'] or
-    require('vertical.luatex-cn-vertical-base-constants')
+local constants = package.loaded['core.luatex-cn-constants'] or
+    require('core.luatex-cn-constants')
 local D = node.direct
+local debug = package.loaded['debug.luatex-cn-debug'] or
+    require('debug.luatex-cn-debug')
+
+local dbg = debug.get_debugger('judou')
 
 local judou = {}
+
+-- =============================================================================
+-- Global State (全局状态)
+-- =============================================================================
+-- Initialize global judou table
+_G.judou = _G.judou or {}
+_G.judou.enabled = _G.judou.enabled or false
+_G.judou.punct_mode = _G.judou.punct_mode or "normal"
+_G.judou.pos = _G.judou.pos or "right-bottom"
+_G.judou.size = _G.judou.size or "1em"
+_G.judou.color = _G.judou.color or "red"
+
+--- Setup global judou parameters from TeX
+-- @param params (table) Parameters from TeX keyvals
+local function setup(params)
+    params = params or {}
+    if params.enabled ~= nil then
+        _G.judou.enabled = (params.enabled == true or params.enabled == "true")
+    end
+    if params.punct_mode and params.punct_mode ~= "" then
+        _G.judou.punct_mode = params.punct_mode
+    end
+    if params.pos and params.pos ~= "" then
+        _G.judou.pos = params.pos
+    end
+    if params.size and params.size ~= "" then
+        _G.judou.size = params.size
+    end
+    if params.color and params.color ~= "" then
+        _G.judou.color = params.color
+    end
+end
+
+judou.setup = setup
+
+-- =============================================================================
+-- Parameter Reading (from _G.judou global)
+-- =============================================================================
+
+--- Read judou-related parameters from global state
+-- @return table A table containing judou configuration values
+local function read_judou_params()
+    return {
+        judou_on = _G.judou.enabled or false,
+        punct_mode = _G.judou.punct_mode or "normal",
+        judou_pos = _G.judou.pos or "right-bottom",
+        judou_size = _G.judou.size or "1em",
+        judou_color = _G.judou.color or "red",
+    }
+end
+
+-- ============================================================================
+-- Plugin Standard API
+-- ============================================================================
+
+--- Initialize Judou Plugin
+-- @param params (table) Parameters from TeX (no longer used for judou settings)
+-- @param engine_ctx (table) Shared engine context
+-- @return (table|nil) Plugin context or nil if disabled
+function judou.initialize(params, engine_ctx)
+    -- Read judou parameters directly from TeX variables
+    local jp = read_judou_params()
+
+    local mode = jp.punct_mode
+    if jp.judou_on then
+        mode = "judou"
+    end
+
+    if mode == "normal" then
+        return nil -- Plugin disabled for this run
+    end
+
+    return { mode = mode }
+end
+
+--- Process node list for Punctuation modes (Plugin Interface)
+-- @param head (direct node) The node list head
+-- @param params (table) Parameters containing punct_mode, etc.
+-- @param ctx (table) Plugin context
+-- @return (direct node) The modified head
+function judou.flatten(head, params, ctx)
+    if not ctx or not ctx.mode or ctx.mode == "normal" then
+        return head -- Return the node as is
+    end
+
+    local mode = ctx.mode
+    local d_head = D.todirect(head)
+    local t = d_head
+    local last_visible = nil
+
+    while t do
+        local id = D.getid(t)
+        local next_node = D.getnext(t)
+
+        if id == constants.GLYPH then
+            local char = D.getfield(t, "char")
+            local ptype = judou.get_punctuation_type(char)
+
+            if mode == "none" then
+                d_head, next_node, last_visible = judou.handle_none_mode(d_head, t, ptype, last_visible)
+            elseif mode == "judou" then
+                d_head, next_node, last_visible = judou.handle_judou_mode(d_head, t, ptype, last_visible)
+            else
+                last_visible = t
+            end
+        elseif id == constants.HLIST or id == constants.VLIST then
+            last_visible = t
+        end
+        t = next_node
+    end
+
+    return D.tonode(d_head)
+end
 
 -- Character sets for punctuation processing
 local SET_JU = {
@@ -196,13 +313,8 @@ function judou.handle_judou_mode(head, t, ptype, last_visible)
 
             if marker then
                 D.insert_after(head, last_visible, marker)
-                if luatex_cn_debug and luatex_cn_debug.is_enabled("vertical") then
-                    local utils = package.loaded['vertical.luatex-cn-vertical-base-utils']
-                    if utils and utils.debug_log then
-                        utils.debug_log(string.format("[judou] Added mark %s after anchor node %s",
-                            (replacement_code == REPLACEMENT_JU and "JU" or "DOU"), tostring(last_visible)))
-                    end
-                end
+                dbg.log(string.format("Added mark %s after anchor node %s",
+                    (replacement_code == REPLACEMENT_JU and "JU" or "DOU"), tostring(last_visible)))
             end
 
             -- Remove the processed glyphs
@@ -213,12 +325,7 @@ function judou.handle_judou_mode(head, t, ptype, last_visible)
             return head, next_node, last_visible
         else
             -- No visible character before punctuation - keep punctuation to avoid data loss
-            if luatex_cn_debug and luatex_cn_debug.is_enabled("vertical") then
-                local utils = package.loaded['vertical.luatex-cn-vertical-base-utils']
-                if utils and utils.debug_log then
-                    utils.debug_log(string.format("[judou] SKIP replacement for char %d: no last_visible anchor", char))
-                end
-            end
+            dbg.log(string.format("SKIP replacement for char %d: no last_visible anchor", char))
             return head, next_node, t -- Keep t as last_visible
         end
     end
@@ -226,46 +333,14 @@ function judou.handle_judou_mode(head, t, ptype, last_visible)
     return head, next_node, t -- Not a replacement candidate, treat as last_visible
 end
 
---- Process node list for Punctuation modes
--- @param head (direct node) The node list head
--- @param params (table) Parameters containing punct_mode, etc.
--- @return (direct node) The modified head
-function judou.process_judou(head, params)
-    local mode = params.punct_mode or "normal"
-    if params.judou_on == "true" or params.judou_on == true then
-        mode = "judou"
+-- Backward compatibility
+judou.process_judou = function(head, params)
+    local ctx = judou.initialize(params, {})
+    if ctx then
+        return judou.flatten(head, params, ctx)
     end
-
-    if mode == "normal" then
-        return head
-    end
-
-    local t = head
-    local last_visible = nil
-
-    while t do
-        local id = D.getid(t)
-        local next_node = D.getnext(t)
-
-        if id == constants.GLYPH then
-            local char = D.getfield(t, "char")
-            local ptype = judou.get_punctuation_type(char)
-
-            if mode == "none" then
-                head, next_node, last_visible = judou.handle_none_mode(head, t, ptype, last_visible)
-            elseif mode == "judou" then
-                head, next_node, last_visible = judou.handle_judou_mode(head, t, ptype, last_visible)
-            else
-                last_visible = t
-            end
-        elseif id == constants.HLIST or id == constants.VLIST then
-            last_visible = t
-        end
-        t = next_node
-    end
-
     return head
 end
 
-package.loaded['vertical.luatex-cn-vertical-judou'] = judou
+package.loaded['guji.luatex-cn-guji-judou'] = judou
 return judou

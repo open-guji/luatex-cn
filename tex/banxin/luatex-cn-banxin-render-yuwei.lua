@@ -34,10 +34,14 @@
 -- ============================================================================
 
 -- Load dependencies
-local constants = package.loaded['vertical.luatex-cn-vertical-base-constants'] or
-    require('vertical.luatex-cn-vertical-base-constants')
-local utils = package.loaded['vertical.luatex-cn-vertical-base-utils'] or
-    require('vertical.luatex-cn-vertical-base-utils')
+local constants = package.loaded['core.luatex-cn-constants'] or
+    require('core.luatex-cn-constants')
+local utils = package.loaded['util.luatex-cn-utils'] or
+    require('util.luatex-cn-utils')
+local debug = package.loaded['debug.luatex-cn-debug'] or
+    require('debug.luatex-cn-debug')
+
+local dbg = debug.get_debugger('yuwei')
 
 -- Conversion factor from scaled points to PDF big points
 local sp_to_bp = utils.sp_to_bp
@@ -266,10 +270,8 @@ local function draw_yuwei(params)
     local p = parse_params(params)
 
     -- 2. Debug logging
-    if luatex_cn_debug and luatex_cn_debug.is_enabled("vertical") then
-        utils.debug_log(string.format("[yuwei] Drawing yuwei with style=%s, direction=%d, color=%s",
-            tostring(p.style), p.direction, p.color_str))
-    end
+    dbg.log(string.format("Drawing yuwei with style=%s, direction=%d, color=%s",
+        tostring(p.style), p.direction, p.color_str))
 
     -- 3. Convert to bp coordinates
     local bp = convert_to_bp(p)

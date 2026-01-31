@@ -18,7 +18,7 @@
 %
 \NeedsTeXFormat{LaTeX2e}
 \RequirePackage{expl3}
-\ProvidesExplPackage {luatex-cn-core} {2026/01/29} {0.1.6} {Core features for luatex-cn}
+\ProvidesExplPackage {luatex-cn-core} {2026/01/31} {0.2.0} {Core features for luatex-cn}
 
 % Check if LuaTeX is being used
 \sys_if_engine_luatex:TF
@@ -35,8 +35,28 @@
 % Centralized debugging module
 \RequirePackage{debug/luatex-cn-debug}
 
-% Core vertical typesetting engine (always loaded)
-\RequirePackage{vertical/luatex-cn-vertical}
+% Load luatexbase for attributes
+\RequirePackage{luatexbase}
+\RequirePackage{xcolor}
+
+% Load core modules in order
+\RequirePackage{core/luatex-cn-core-base}
+\RequirePackage{core/luatex-cn-core-page}
+\RequirePackage{core/luatex-cn-core-content}
+\RequirePackage{core/luatex-cn-core-paragraph}
+\RequirePackage{core/luatex-cn-core-sidenote}
+\RequirePackage{decorate/luatex-cn-decorate}
+\RequirePackage{banxin/luatex-cn-banxin}
+\RequirePackage{guji/luatex-cn-guji-judou}
+\RequirePackage{core/luatex-cn-core-textbox}
+\RequirePackage{guji/luatex-cn-guji-pizhu}
+\RequirePackage{guji/luatex-cn-guji-jiazhu}
+
+% Define vertical namespace for backward compatibility
+\keys_define:nn { luatexcn / vertical }
+  {
+    unknown .code:n = { \keys_set:nx { luatexcn / content } { \l_keys_key_tl = { #1 } } },
+  }
 
 % Font auto-detection module
 \RequirePackage{fonts/luatex-cn-font-autodetect}
@@ -50,6 +70,9 @@
 % Main package initialization
 \PackageInfo { luatex_cn_core } { Chinese~typesetting~core~\tl_use:N \c_luatexcn_core_version_tl \space loaded }
 
-\ExplSyntaxOff%
-%
-\endinput%
+\ExplSyntaxOff
+
+% Support CJK environment alias for core LaTeX environments
+\NewEnvironmentCopy{列表}{itemize}
+
+\endinput

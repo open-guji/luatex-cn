@@ -1,0 +1,82 @@
+% Copyright 2026 Open-Guji (https://github.com/open-guji)
+%
+% Licensed under the Apache License, Version 2.0 (the "License");
+% you may not use this file except in compliance with the License.
+% You may obtain a copy of the License at
+%
+%     http://www.apache.org/licenses/LICENSE-2.0
+%
+% Unless required by applicable law or agreed to in writing, software
+% distributed under the License is distributed on an "AS IS" BASIS,
+% WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+% See the License for the specific language governing permissions and
+% limitations under the License.
+% luatex-cn-core-sidenote.sty
+% SideNode (侧批) support for vertical typesetting
+% This is a subpackage of luatex_cn
+%
+\RequirePackage{core/luatex-cn-core-base}
+\RequirePackage{expl3}
+\RequirePackage{xparse}
+\ProvidesExplPackage {core/luatex-cn-core-sidenote} {2026/01/31} {0.2.0} {SideNode Support for Vertical Typesetting}
+
+% Define keys for SideNode
+\tl_new:N \l__luatexcn_sidenote_yoffset_tl
+\tl_new:N \l__luatexcn_sidenote_grid_height_tl
+\tl_new:N \l__luatexcn_sidenote_font_size_tl
+\tl_new:N \l__luatexcn_sidenote_color_tl
+\tl_new:N \l__luatexcn_sidenote_padding_top_tl
+\tl_new:N \l__luatexcn_sidenote_padding_bottom_tl
+
+\keys_define:nn { luatexcn / sidenode }
+  {
+    yoffset .tl_set:N = \l__luatexcn_sidenote_yoffset_tl,
+    yoffset .initial:n = 0pt,
+    grid-height .tl_set:N = \l__luatexcn_sidenote_grid_height_tl,
+    font-size .tl_set:N = \l__luatexcn_sidenote_font_size_tl,
+    font-size .initial:n = 10pt,
+    color .tl_set:N = \l__luatexcn_sidenote_color_tl,
+    color .initial:n = red,
+    border-padding-top .tl_set:N = \l__luatexcn_sidenote_padding_top_tl,
+    border-padding-top .initial:n = 0pt,
+    border-padding-bottom .tl_set:N = \l__luatexcn_sidenote_padding_bottom_tl,
+    border-padding-bottom .initial:n = 0pt,
+  }
+
+\NewDocumentCommand{\sidenodeSetup}{ m }
+  {
+    \keys_set:nn { luatexcn / sidenode } { #1 }
+  }
+
+\NewDocumentCommand{\SideNode}{ O{} +m }{%
+  \group_begin:
+    \keys_set:nn { luatexcn / sidenode } { #1 }
+    % Use explicit font size
+    \tl_if_empty:NTF \l__luatexcn_sidenote_font_size_tl
+      { \dim_set:Nn \l_tmpa_dim { \f@size pt } }
+      { \dim_set:Nn \l_tmpa_dim { \__luatexcn_to_dimen:n { \l__luatexcn_sidenote_font_size_tl } } }
+    \fontsize{\l_tmpa_dim}{\l_tmpa_dim}\selectfont
+    % Color must be inside the box to be captured in the node list
+    \hbox_set:Nn \l_tmpa_box {\textcolor{\l__luatexcn_sidenote_color_tl}{#2}}%
+
+    % Prepare metadata
+    \dim_set:Nn \l_tmpb_dim { \__luatexcn_to_dimen:n { \l__luatexcn_sidenote_grid_height_tl } }
+    % If grid-height not set, default to font size (tight packing)
+    \dim_compare:nF { \l_tmpb_dim > 0pt } { \dim_set_eq:NN \l_tmpb_dim \l_tmpa_dim }
+
+    \lua_now:e { vertical_sidenote.register_sidenote(\int_value:w \l_tmpa_box, {
+      yoffset = vertical_constants.to_dimen([=[\luaescapestring{\tl_use:N \l__luatexcn_sidenote_yoffset_tl}]=]) ~ or ~ 0,
+      grid_height = \int_value:w \l_tmpb_dim,
+      padding_top = vertical_constants.to_dimen([=[\luaescapestring{\tl_use:N \l__luatexcn_sidenote_padding_top_tl}]=]) ~ or ~ 0,
+      padding_bottom = vertical_constants.to_dimen([=[\luaescapestring{\tl_use:N \l__luatexcn_sidenote_padding_bottom_tl}]=]) ~ or ~ 0
+    })}%
+  \group_end:
+}
+
+\ExplSyntaxOff%
+
+% Command Aliases for CJK
+\NewCommandCopy{\CePi}{\SideNode}
+\NewCommandCopy{\侧批}{\SideNode}
+
+\endinput%

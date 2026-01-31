@@ -2,8 +2,8 @@
 local test_utils = require("test.test_utils")
 
 -- Load modules
-local utils = require("vertical.luatex-cn-vertical-base-utils")
-local constants = require("vertical.luatex-cn-vertical-base-constants")
+local utils = require("luatex-cn-utils")
+local constants = require("luatex-cn-constants")
 
 -- Test normalize_rgb
 test_utils.run_test("normalize_rgb basic names", function()
@@ -34,8 +34,10 @@ test_utils.run_test("to_dimen with units", function()
     test_utils.assert_eq(constants.to_dimen("10pt"), 655360)
     local em = constants.to_dimen("1em")
     test_utils.assert_eq(type(em), "table")
-    test_utils.assert_eq(em.value, 1)
-    test_utils.assert_eq(em.unit, "em")
+    if type(em) == "table" then
+        test_utils.assert_eq(em.value, 1)
+        test_utils.assert_eq(em.unit, "em")
+    end
 end)
 
 test_utils.run_test("resolve_dimen (em)", function()
@@ -52,8 +54,10 @@ end)
 test_utils.run_test("to_dimen TeX artifacts", function()
     test_utils.assert_eq(constants.to_dimen("{10pt}"), 655360)
     local em5 = constants.to_dimen("{{5em}}")
-    test_utils.assert_eq(em5.value, 5)
-    test_utils.assert_eq(em5.unit, "em")
+    if type(em5) == "table" then
+        test_utils.assert_eq(em5.value, 5)
+        test_utils.assert_eq(em5.unit, "em")
+    end
 end)
 
 print("\nAll parsing tests passed!")

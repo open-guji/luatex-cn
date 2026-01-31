@@ -157,6 +157,6 @@ function text_utils.normalize_for_typesetting(text)
 end
 
 -- Register module
-package.loaded['vertical.luatex-cn-vertical-base-text-utils'] = text_utils
+package.loaded['util.luatex-cn-text-utils'] = text_utils
 
 return text_utils

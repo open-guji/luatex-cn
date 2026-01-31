@@ -1,8 +1,7 @@
 -- luatex-cn-vertical-render-test.lua - Unit tests for vertical rendering modules
 local test_utils = require('test.test_utils')
 -- We need to mock constants for render-position
-local constants = require('vertical.luatex-cn-vertical-base-constants')
-local render_pos = require('vertical.luatex-cn-vertical-render-position')
+local render_pos = require('luatex-cn-render-position')
 
 test_utils.run_test("render-position - create_vertical_text", function()
     local text = "测试"
@@ -29,7 +28,10 @@ test_utils.run_test("render-position - create_vertical_text", function()
     -- it will use the node.new mock from test_utils.
 
     -- Let's verify if nodes were created
-    test_utils.assert_eq(head.id, 29, "Mocked node id mismatch")
+    test_utils.assert_eq(head ~= nil, true, "Should return a node")
+    if head then
+        test_utils.assert_eq(head.id, 29, "Mocked node id mismatch")
+    end
 end)
 
 print("\nAll vertical-render tests passed!")

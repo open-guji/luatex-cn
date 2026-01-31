@@ -15,17 +15,137 @@
 -- core_sidenote.lua - 侧批（Side Annotation）处理模块
 -- ============================================================================
 
-local constants = package.loaded['vertical.luatex-cn-vertical-base-constants'] or
-    require('vertical.luatex-cn-vertical-base-constants')
-local utils = package.loaded['vertical.luatex-cn-vertical-base-utils'] or
-    require('vertical.luatex-cn-vertical-base-utils')
+local constants = package.loaded['core.luatex-cn-constants'] or
+    require('core.luatex-cn-constants')
+local utils = package.loaded['util.luatex-cn-utils'] or
+    require('util.luatex-cn-utils')
+local debug = package.loaded['debug.luatex-cn-debug'] or
+    require('debug.luatex-cn-debug')
 local D = node.direct
+
+local dbg = debug.get_debugger('sidenote')
 
 local sidenote = {}
 
 -- Registry to hold sidenote content
 sidenote.registry = {}
 sidenote.registry_counter = 0
+
+-- ============================================================================
+-- Plugin Standard API
+-- ============================================================================
+
+--- Initialize Sidenote Plugin
+-- @param params (table) Parameters from TeX
+-- @param engine_ctx (table) Shared engine context
+-- @return (table|nil) Plugin context or nil if disabled
+function sidenote.initialize(params, engine_ctx)
+    -- Sidenotes are currently always active if the module is loaded,
+    -- but we could add a 'sidenote_on' parameter check here later.
+    return {
+        map = {} -- This will store the results of calculate_sidenote_positions
+    }
+end
+
+--- Plugin integration for layout stage
+function sidenote.layout(list, layout_map, engine_ctx, context)
+    if not context then return end
+
+    local sidenote_map = sidenote.calculate_sidenote_positions(layout_map, {
+        list = list,
+        page_columns = engine_ctx.page_columns,
+        line_limit = engine_ctx.line_limit,
+        n_column = engine_ctx.n_column,
+        banxin_on = engine_ctx.banxin_on,
+        grid_height = engine_ctx.g_height
+    })
+
+    context.map = sidenote_map
+end
+
+--- Plugin integration for render stage
+function sidenote.render(head, layout_map, params, context, engine_ctx, page_idx, p_total_cols)
+    if not (context and context.map) then return head end
+
+    local sidenote_for_page = {}
+    for sid, sn_list in pairs(context.map) do
+        for _, node_info in ipairs(sn_list) do
+            if node_info.page == page_idx then
+                table.insert(sidenote_for_page, node_info)
+            end
+        end
+    end
+
+    if #sidenote_for_page == 0 then return head end
+
+    dbg.log(string.format("Rendering %d nodes on page %d", #sidenote_for_page, page_idx))
+
+    local d_head = D.todirect(head)
+
+    local render_page = package.loaded['core.luatex-cn-core-render-page'] or
+        require('core.luatex-cn-core-render-page')
+
+    local sidenote_x_offset = engine_ctx.g_width * 0.9
+
+    for i = #sidenote_for_page, 1, -1 do
+        local item = sidenote_for_page[i]
+        local curr = item.node
+        D.setnext(curr, nil)
+
+        if not d_head then
+            d_head = curr
+        else
+            d_head = D.insert_before(d_head, d_head, curr)
+        end
+
+        local pos = {
+            col = item.col,
+            row = item.row,
+            sidenote_offset = sidenote_x_offset,
+        }
+
+        local id = D.getid(curr)
+        if id == constants.GLYPH then
+            local d = D.getfield(curr, "depth") or 0
+            local h = D.getfield(curr, "height") or 0
+            local w = D.getfield(curr, "width") or 0
+
+            local rtl_col = p_total_cols - 1 - pos.col
+            local boundary_x = (rtl_col + 1) * engine_ctx.g_width + engine_ctx.half_thickness + engine_ctx.shift_x
+            local final_x = boundary_x - (w / 2)
+
+            local char_total_height = h + d
+            local effective_grid_height = engine_ctx.g_height
+            if item.metadata and item.metadata.grid_height then
+                effective_grid_height = tonumber(item.metadata.grid_height) or engine_ctx.g_height
+            end
+
+            local final_y = -pos.row * engine_ctx.g_height - (effective_grid_height + char_total_height) / 2 + d -
+                engine_ctx.shift_y
+
+            D.setfield(curr, "xoffset", final_x)
+            D.setfield(curr, "yoffset", final_y)
+
+            local k = D.new(constants.KERN)
+            D.setfield(k, "kern", -w)
+            D.insert_after(d_head, curr, k)
+        elseif id == constants.HLIST or id == constants.VLIST then
+            d_head = render_page._internal.handle_block_node(curr, d_head, pos, engine_ctx)
+        else
+            if id == constants.GLUE then
+                D.setfield(curr, "width", 0)
+                D.setfield(curr, "stretch", 0)
+                D.setfield(curr, "shrink", 0)
+            end
+        end
+
+        if dbg.is_enabled() then
+            d_head = render_page._internal.handle_debug_drawing(curr, d_head, pos, engine_ctx)
+        end
+    end
+
+    return D.tonode(d_head)
+end
 
 -- ============================================================================
 -- Internal Helpers
@@ -58,8 +178,8 @@ end
 local function is_reserved_column(col, banxin_on, interval)
     if not banxin_on then return false end
     if interval <= 0 then return false end
-    local hooks = package.loaded['vertical.luatex-cn-vertical-base-hooks'] or
-        require('vertical.luatex-cn-vertical-base-hooks')
+    local hooks = package.loaded['core.luatex-cn-hooks'] or
+        require('core.luatex-cn-hooks')
     return hooks.is_reserved_column(col, interval)
 end
 
@@ -156,7 +276,7 @@ local function place_individual_sidenote(sid, registry_item, last_node_pos, para
 
     local curr_p, curr_c = last_node_pos.page, last_node_pos.col
     local base_indent = last_node_pos.indent or 0
-    utils.debug_log(string.format("[sidenote] Placing sid=%d at p=%d, c=%d, anchor_r=%.2f, indent=%d",
+    dbg.log(string.format("Placing sid=%d at p=%d, c=%d, anchor_r=%.2f, indent=%d",
         sid, curr_p, curr_c, last_node_pos.row, base_indent))
 
     curr_p, curr_c = skip_to_valid_column(curr_p, curr_c, p_cols, config.banxin_on, config.interval)
@@ -196,7 +316,7 @@ local function find_sidenote_anchors(head, layout_map, on_sidenote_found)
         local id = D.getid(t)
         if id == constants.WHATSIT then
             local uid = D.getfield(t, "user_id")
-            utils.debug_log("[sidenote] Found whatsit, uid=" .. tostring(uid))
+            -- dbg.log("Found whatsit, uid=" .. tostring(uid))
             if uid == constants.SIDENOTE_USER_ID then
                 local sid = D.getfield(t, "value")
                 local indent = D.get_attribute(t, constants.ATTR_INDENT) or 0
@@ -244,7 +364,7 @@ sidenote._internal = {
 function sidenote.register_sidenote(box_num, metadata)
     local box = tex.box[box_num]
     if not box then
-        utils.debug_log("[sidenote] register_sidenote: box is nil!")
+        dbg.log("register_sidenote: box is nil!")
         return
     end
 
@@ -257,7 +377,7 @@ function sidenote.register_sidenote(box_num, metadata)
         metadata = metadata or {}
     }
 
-    utils.debug_log(string.format("[sidenote] Registered sidenote ID=%d, metadata=%s", id, serialize(metadata or {})))
+    dbg.log(string.format("Registered sidenote ID=%d, metadata=%s", id, serialize(metadata or {})))
 
     local n = node.new("whatsit", "user_defined")
     n.user_id = constants.SIDENOTE_USER_ID
@@ -280,7 +400,7 @@ function sidenote.calculate_sidenote_positions(layout_map, params)
         local placed_nodes = place_individual_sidenote(sid, registry_item, last_node_pos, params, tracker)
         if placed_nodes then
             sidenote_map[sid] = placed_nodes
-            utils.debug_log(string.format("[sidenote] Placed sidenote sid=%d with %d nodes", sid, #placed_nodes))
+            dbg.log(string.format("Placed sidenote sid=%d with %d nodes", sid, #placed_nodes))
         end
     end)
 
@@ -293,5 +413,5 @@ function sidenote.clear_registry()
     sidenote.registry_counter = 0
 end
 
-package.loaded['vertical.luatex-cn-vertical-core-sidenote'] = sidenote
+package.loaded['core.luatex-cn-core-sidenote'] = sidenote
 return sidenote

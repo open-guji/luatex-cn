@@ -1,0 +1,73 @@
+% Copyright 2026 Open-Guji (https://github.com/open-guji)
+%
+% Licensed under the Apache License, Version 2.0 (the "License");
+% you may not use this file except in compliance with the License.
+% You may obtain a copy of the License at
+%
+%     http://www.apache.org/licenses/LICENSE-2.0
+%
+% Unless required by applicable law or agreed to in writing, software
+% distributed under the License is distributed on an "AS IS" BASIS,
+% WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+% See the License for the specific language governing permissions and
+% limitations under the License.
+% luatex-cn-guji-jiazhu.sty
+% Jiazhu (夹注) support for vertical typesetting
+% This is a subpackage of luatex_cn
+%
+\RequirePackage{expl3}
+\RequirePackage{xparse}
+\ProvidesExplPackage {guji/luatex-cn-guji-jiazhu} {2026/01/31} {0.2.0} {Jiazhu (Dual-column notes) support}
+
+% Load the core textflow engine
+\RequirePackage{core/luatex-cn-core-textflow}
+
+% Load Lua module for global state
+\lua_now:e { jiazhu_mod = require('guji.luatex-cn-guji-jiazhu') }
+
+% Global Jiazhu Parameters (moved from vertical.sty)
+\tl_new:N \l__luatexcn_jiazhu_size_tl
+\tl_new:N \l__luatexcn_jiazhu_font_tl
+\tl_new:N \l__luatexcn_jiazhu_font_color_tl
+\tl_new:N \l__luatexcn_jiazhu_align_tl
+
+\keys_define:nn { luatexcn / jiazhu }
+  {
+    font-size .tl_set:N = \l__luatexcn_jiazhu_size_tl,
+    font-size .initial:n = {},
+    font .tl_set:N = \l__luatexcn_jiazhu_font_tl,
+    font .initial:n = {},
+    font-color .tl_set:N = \l__luatexcn_jiazhu_font_color_tl,
+    font-color .initial:n = {},
+    align .tl_set:N = \l__luatexcn_jiazhu_align_tl,
+    align .initial:n = {outward},
+  }
+
+\NewDocumentCommand{\jiazhuSetup}{ m }
+  {
+    \keys_set:nn { luatexcn / jiazhu } { #1 }
+    % Sync to Lua global state
+    \lua_now:e {
+      jiazhu_mod.setup({
+        align~=~[=[\\luaescapestring{\\l__luatexcn_jiazhu_align_tl}]=],
+        font_size~=~[=[\\luaescapestring{\\l__luatexcn_jiazhu_size_tl}]=],
+        font~=~[=[\\luaescapestring{\\l__luatexcn_jiazhu_font_tl}]=],
+        font_color~=~[=[\\luaescapestring{\\l__luatexcn_jiazhu_font_color_tl}]=]
+      })
+    }
+  }
+
+% Jiazhu Command (双行小注/夹注)
+% We define \jiazhu as the primary command name here, delegating to \TextFlow
+\NewDocumentCommand{\JiaZhu}{ O{} +m }
+  {
+    \TextFlow[#1]{#2}
+  }
+
+\ExplSyntaxOff%
+
+% Command Aliases for CJK
+\NewCommandCopy{\夹注}{\JiaZhu}
+\NewCommandCopy{\单行夹注}{\DanHangJiaZhu}
+
+\endinput%

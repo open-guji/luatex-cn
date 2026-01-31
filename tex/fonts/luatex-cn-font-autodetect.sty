@@ -93,7 +93,7 @@
 \RequirePackage{expl3}
 \RequirePackage{xparse}
 \RequirePackage{luatexbase}
-\ProvidesExplPackage {fonts/luatex-cn-font-autodetect} {2026/01/29} {0.1.6} {Automatic Chinese font detection for LuaLaTeX}
+\ProvidesExplPackage {fonts/luatex-cn-font-autodetect} {2026/01/31} {0.2.0} {Automatic Chinese font detection for LuaLaTeX}
 
 % Ensure we're using LuaTeX
 \sys_if_engine_luatex:TF
@@ -108,8 +108,9 @@
   fontdetect~=~require("fonts.luatex-cn-font-autodetect")
 }
 
-\tl_new:N \l__luatexcn_font_name_tl
-\tl_new:N \l__luatexcn_font_features_tl
+\tl_new:N \l__luatexcn_autodetect_font_name_tl
+
+
 
 % Internal helper to resolve first existing font from a comma-separated list
 \cs_new:Npn \__luatexcn_resolve_font:n #1
@@ -118,7 +119,7 @@
       {
         \fontspec_font_if_exist:nTF { ##1 }
           {
-            \tl_set:Nn \l__luatexcn_font_name_tl { ##1 }
+            \tl_set:Nn \l__luatexcn_autodetect_font_name_tl { ##1 }
             \clist_map_break:
           }
           { }
@@ -137,7 +138,7 @@
         if~font_setup~then~
           texio.write_nl("term~and~log",~"[Font~Auto-Detect]~Candidates:~"~..~font_setup.main);~
           token.set_macro("l_tmpa_tl",~font_setup.main);~
-          token.set_macro("l__luatexcn_font_features_tl",~font_setup.features);~
+          token.set_macro("l__luatexcn_content_font_features_tl",~font_setup.features);~
         else~
           token.set_macro("l_tmpa_tl",~"");~
         end;~
@@ -145,17 +146,17 @@
   }
   \tl_if_empty:NF \l_tmpa_tl
     {
-      \tl_clear:N \l__luatexcn_font_name_tl
+      \tl_clear:N \l__luatexcn_autodetect_font_name_tl
       \exp_args:NV \__luatexcn_resolve_font:n \l_tmpa_tl
-      \tl_if_empty:NTF \l__luatexcn_font_name_tl
+      \tl_if_empty:NTF \l__luatexcn_autodetect_font_name_tl
         {
           \iow_log:n { [Font~Auto-Detect]~No~fonts~found~in~candidate~list }
           \iow_term:n { [Font~Auto-Detect]~No~fonts~found~in~candidate~list }
         }
         {
-          \iow_log:x { [Font~Auto-Detect]~Applying~resolved~font:~ \l__luatexcn_font_name_tl }
-          \iow_term:x { [Font~Auto-Detect]~Applying~resolved~font:~ \l__luatexcn_font_name_tl }
-          \exp_args:NV \setmainfont \l__luatexcn_font_name_tl [\l__luatexcn_font_features_tl]
+          \iow_log:x { [Font~Auto-Detect]~Applying~resolved~font:~ \l__luatexcn_autodetect_font_name_tl }
+          \iow_term:x { [Font~Auto-Detect]~Applying~resolved~font:~ \l__luatexcn_autodetect_font_name_tl }
+          \exp_args:NV \setmainfont \l__luatexcn_autodetect_font_name_tl [\l__luatexcn_content_font_features_tl]
         }
     }
 }

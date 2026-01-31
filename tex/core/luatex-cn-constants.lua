@@ -122,6 +122,15 @@ end
 
 constants.resolve_dimen = resolve_dimen
 
+--- Register a decoration and create a marker node
+-- @param char_str (string) The decoration character (e.g., "。", "●")
+-- @param xoff_str (string) X offset (e.g., "-0.6em", "5pt")
+-- @param yoff_str (string) Y offset
+-- @param size_str (string) Font size (nil = inherit from text)
+-- @param color_str (string) Color (e.g., "red", "0.8 0 0")
+-- @param font_id (number) Font ID (nil = use current font)
+-- @param scale (number) Scale multiplier (default 1.0)
+-- @return (number) Registry ID for this decoration
 local function register_decorate(char_str, xoff_str, yoff_str, size_str, color_str, font_id, scale)
     _G.decorate_registry = _G.decorate_registry or {}
 
@@ -145,7 +154,7 @@ local function register_decorate(char_str, xoff_str, yoff_str, size_str, color_s
     local D = node.direct
     local g = D.new(constants.GLYPH)
     D.setfield(g, "char", reg.char)
-    D.setfield(g, "font", reg.font_id or font.current()) -- Placeholder for TeX box
+    D.setfield(g, "font", reg.font_id or font.current())
 
     -- Set glyph dimensions to zero so it doesn't take up horizontal space
     D.setfield(g, "width", 0)
@@ -169,5 +178,5 @@ end
 
 constants.register_decorate = register_decorate
 
-package.loaded['vertical.luatex-cn-vertical-base-constants'] = constants
+package.loaded['core.luatex-cn-constants'] = constants
 return constants

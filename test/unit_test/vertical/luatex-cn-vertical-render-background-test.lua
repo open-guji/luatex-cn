@@ -1,6 +1,7 @@
 -- luatex-cn-vertical-render-background-test.lua - Unit tests for render background
 local test_utils = require('test.test_utils')
-local background = require('vertical.luatex-cn-vertical-render-background')
+local render_page = require('core.luatex-cn-core-render-page')
+local draw_background = render_page._internal.draw_background
 
 test_utils.run_test("render-background - fill rect", function()
     local head = {}
@@ -12,7 +13,7 @@ test_utils.run_test("render-background - fill rect", function()
         is_textbox = true -- Force drawing even if paper_width is 0
     }
     -- draw_background returns the updated head
-    local new_head = background.draw_background(head, params)
+    local new_head = draw_background(head, params)
 
     -- The PDF literal node should be inserted before the head
     -- In our mock, n.next = anchor, and it returns n.

@@ -36,28 +36,23 @@
 -- ============================================================================
 
 -- Load dependencies
-local constants = package.loaded['vertical.luatex-cn-vertical-base-constants'] or
-    require('vertical.luatex-cn-vertical-base-constants')
+local constants = package.loaded['core.luatex-cn-constants'] or
+    require('core.luatex-cn-constants')
 local D = constants.D
-local utils = package.loaded['vertical.luatex-cn-vertical-base-utils'] or
-    require('vertical.luatex-cn-vertical-base-utils')
-local text_position = package.loaded['vertical.luatex-cn-vertical-render-position'] or
-    require('vertical.luatex-cn-vertical-render-position')
+local utils = package.loaded['util.luatex-cn-utils'] or
+    require('util.luatex-cn-utils')
+local text_position = package.loaded['core.luatex-cn-render-position'] or
+    require('luatex-cn-render-position')
 local yuwei = package.loaded['banxin.luatex-cn-banxin-render-yuwei'] or require('banxin.luatex-cn-banxin-render-yuwei')
 
 -- Register banxin module if debug module is available
-if _G.luatex_cn_debug then
-    _G.luatex_cn_debug.register_module("banxin", { color = "magenta" })
-end
+local debug = package.loaded['debug.luatex-cn-debug'] or
+    require('debug.luatex-cn-debug')
+
+local dbg = debug.get_debugger('banxin')
 
 -- Conversion factor from scaled points to PDF big points
 local sp_to_bp = utils.sp_to_bp
-
-local function banxin_log(msg)
-    if _G.luatex_cn_debug then
-        _G.luatex_cn_debug.log("banxin", msg)
-    end
-end
 
 -- ============================================================================
 -- Helper Functions (纯函数，只计算不产生副作用)
@@ -261,7 +256,6 @@ local function draw_banxin(params)
     local r2 = params.middle_ratio or 0.56
     local color_str = params.color_str or "0 0 0"
     local thickness = params.border_thickness or 26214
-
     local upper_height = total_height * r1
     local middle_height = total_height * r2
 
@@ -300,6 +294,125 @@ end
 -- Text Rendering Functions (文字渲染)
 -- ============================================================================
 
+--- 创建竖向排列的文字链
+-- 将字符按从上到下的顺序排列在单列中。
+local function create_vertical_text(text, params)
+    if not text or text == "" then
+        return nil
+    end
+
+    -- Parse UTF-8 characters
+    local chars = {}
+    for char in text:gmatch("[%z\1-\127\194-\244][\128-\191]*") do
+        table.insert(chars, char)
+    end
+
+    local num_chars = #chars
+    if num_chars == 0 then
+        return nil
+    end
+
+    local x = params.x or 0
+    local y_top = params.y_top or 0
+    local width = params.width or 0
+    local height = params.height or 0
+    local num_cells = params.num_cells or num_chars
+    local v_align = params.v_align or "center"
+    local h_align = params.h_align or "center"
+    local font_id = params.font_id or font.current()
+    local shift_y = params.shift_y or 0
+
+    local font_scale_factor = 1.0
+    local base_font_data = font.getfont(font_id)
+
+    -- Handle font size if provided
+    if params.font_size then
+        local fs = constants.to_dimen(params.font_size)
+        if fs and fs > 0 then
+            local current_font_data = font.getfont(font_id)
+            if current_font_data then
+                font_scale_factor = fs / current_font_data.size
+                local new_font_data = {}
+                for k, v in pairs(current_font_data) do new_font_data[k] = v end
+                new_font_data.size = fs
+                font_id = font.define(new_font_data)
+            end
+        end
+    elseif params.font_scale then
+        font_scale_factor = params.font_scale
+        local current_font_data = font.getfont(font_id)
+        if current_font_data then
+            local new_font_data = {}
+            for k, v in pairs(current_font_data) do new_font_data[k] = v end
+            new_font_data.size = math.floor(new_font_data.size * params.font_scale + 0.5)
+            font_id = font.define(new_font_data)
+        end
+    end
+
+    -- Calculate cell height
+    local cell_height = height / num_cells
+
+    local head = nil
+    local tail = nil
+
+    for i, char in ipairs(chars) do
+        -- Create glyph node
+        local glyph = node.new(node.id("glyph"))
+        glyph.char = utf8.codepoint(char)
+        glyph.font = font_id
+        glyph.lang = 0
+
+        local glyph_direct = D.todirect(glyph)
+
+        -- Fetch glyph dimensions
+        local cp = utf8.codepoint(char)
+        local gw = (base_font_data and base_font_data.size or (65536 * 10)) * font_scale_factor
+        local gh = gw * 0.8
+        local gd = gw * 0.2
+
+        if base_font_data and base_font_data.characters and base_font_data.characters[cp] then
+            local char_data = base_font_data.characters[cp]
+            gw = (char_data.width or gw) * font_scale_factor
+            gh = (char_data.height or gh) * font_scale_factor
+            gd = (char_data.depth or gd) * font_scale_factor
+            D.setfield(glyph_direct, "width", math.floor(gw + 0.5))
+            D.setfield(glyph_direct, "height", math.floor(gh + 0.5))
+            D.setfield(glyph_direct, "depth", math.floor(gd + 0.5))
+        end
+
+        local row = i - 1
+        local cell_y = y_top - row * cell_height - shift_y
+
+        -- Position the glyph using core utility
+        local _, kern = text_position.position_glyph(glyph_direct, x, cell_y, {
+            cell_width = width,
+            cell_height = cell_height,
+            h_align = h_align,
+            v_align = v_align,
+            g_width = math.floor(gw + 0.5),
+            g_height = math.floor(gh + 0.5),
+            g_depth = math.floor(gd + 0.5),
+        })
+
+        if head == nil then
+            head = glyph_direct
+            tail = kern
+        else
+            D.setlink(tail, glyph_direct)
+            tail = kern
+        end
+
+        -- Debug rects
+        if dbg.is_enabled() then
+            if utils and utils.draw_debug_rect then
+                head = utils.draw_debug_rect(head, glyph_direct, x, cell_y, width, -cell_height, "0 0 1 RG")
+            end
+        end
+    end
+
+    return head
+end
+
 --- 计算书名文字的渲染参数
 -- @param params (table) 输入参数
 -- @param upper_height (number) 上区域高度 (sp)
@@ -313,7 +426,6 @@ local function calculate_book_name_params(params, upper_height)
     local b_padding_top = constants.resolve_dimen(params.b_padding_top, f_size)
     local b_padding_bottom = constants.resolve_dimen(params.b_padding_bottom, f_size)
     local effective_b = params.draw_border and constants.resolve_dimen(params.border_thickness, f_size) or 0
-
     local adj_height = upper_height - effective_b - b_padding_top - b_padding_bottom
     local num_chars = count_utf8_chars(book_name)
 
@@ -336,8 +448,6 @@ local function calculate_book_name_params(params, upper_height)
         y_start = block_y_top - (adj_height - total_text_height) / 2
     end
 
-    banxin_log(string.format("[banxin] BookName='%s' fsize=%.2f height=%.2f adj_h=%.2f y_start=%.2f",
-        book_name, f_size / 65536, total_text_height / 65536, adj_height / 65536, y_start / 65536))
 
     return {
         text = book_name,
@@ -361,7 +471,7 @@ local function render_book_name(p_head, params, upper_height)
     local text_params = calculate_book_name_params(params, upper_height)
     if not text_params then return p_head end
 
-    local glyph_chain = text_position.create_vertical_text(text_params.text, {
+    local glyph_chain = create_vertical_text(text_params.text, {
         x = text_params.x,
         y_top = text_params.y_top,
         width = text_params.width,
@@ -373,7 +483,6 @@ local function render_book_name(p_head, params, upper_height)
     })
 
     if glyph_chain then
-        banxin_log("[banxin] Book name glyph chain created and centered.")
         p_head = prepend_chain(p_head, glyph_chain)
     end
 
@@ -384,7 +493,9 @@ end
 -- @param chapter_title (string) 章节标题
 -- @return (table) 标题部分数组
 local function parse_chapter_title(chapter_title)
-    local raw_title = (chapter_title or ""):gsub("\\\\", "\n")
+    if not chapter_title then return {} end
+    -- Handle both \\ and \\\\ (TeX vs Lua literal escaping)
+    local raw_title = chapter_title:gsub("\\\\+", "\n")
     local parts = {}
     for s in raw_title:gmatch("[^\n]+") do
         table.insert(parts, s)
@@ -410,12 +521,9 @@ local function calculate_chapter_title_layout(params, upper_height, middle_heigh
     local lower_yuwei_total = params.lower_yuwei ~= false and calculate_yuwei_total_height(yuwei_dims) or 0
 
     local middle_y_top = params.y - upper_height
+    local base_f_size = constants.resolve_dimen(params.font_size, 655360)
     local title_top_margin = constants.resolve_dimen(params.chapter_title_top_margin, base_f_size) or 0
 
-    banxin_log(string.format(
-        "[banxin] CalcTitleLayout title='%s' middle_h=%.2f upper_yuwei=%.2f lower_yuwei=%.2f margin=%.2f",
-        chapter_title, middle_height / 65536, upper_yuwei_total / 65536, lower_yuwei_total / 65536,
-        title_top_margin / 65536))
 
     local chapter_y_top = middle_y_top - upper_yuwei_total - title_top_margin
     local available_height = middle_height - upper_yuwei_total - lower_yuwei_total - title_top_margin
@@ -425,7 +533,6 @@ local function calculate_chapter_title_layout(params, upper_height, middle_heigh
 
     local n_cols = math.max(#parts, params.chapter_title_cols or 1)
 
-    banxin_log(string.format("[banxin] CalcTitleLayout avail_h=%.2f", available_height / 65536))
 
     return {
         parts = parts,
@@ -485,7 +592,7 @@ local function render_chapter_title(p_head, params, upper_height, middle_height,
         -- Top-align (respecting layout.y_top which already accounts for margin)
         local new_y_top = layout.y_top
 
-        local chapter_chain = text_position.create_vertical_text(sub_text, {
+        local chapter_chain = create_vertical_text(sub_text, {
             x = sub_x,
             y_top = new_y_top,
             width = col_width,
@@ -525,6 +632,7 @@ local function calculate_page_number_layout(params, upper_height, middle_height,
 
     local num_chars = count_utf8_chars(page_str)
 
+    local base_f_size = constants.resolve_dimen(params.font_size, 655360)
     local f_size = constants.resolve_dimen(params.page_number_font_size, base_f_size) or (65536 * 10)
     local grid_h = constants.resolve_dimen(params.page_number_grid_height, f_size)
     if not grid_h or grid_h <= 0 then
@@ -532,8 +640,6 @@ local function calculate_page_number_layout(params, upper_height, middle_height,
     end
     local container_height = grid_h * num_chars
 
-    banxin_log(string.format("[banxin] PageNumber text='%s' fs=%.2f grid_h=%.2f height=%.2f",
-        page_str, f_size / 65536, grid_h / 65536, container_height / 65536))
 
     local p_v_align = "bottom"
     local p_h_align = "right"
@@ -573,7 +679,7 @@ local function render_page_number(p_head, params, upper_height, middle_height, y
     local layout = calculate_page_number_layout(params, upper_height, middle_height, yuwei_dims)
     if not layout then return p_head end
 
-    local page_chain = text_position.create_vertical_text(layout.text, {
+    local page_chain = create_vertical_text(layout.text, {
         x = layout.x,
         y_top = layout.y_top,
         width = layout.width,
@@ -614,12 +720,9 @@ local function calculate_publisher_layout(params, height)
     local container_height = grid_h * num_chars
     local bottom_margin = constants.resolve_dimen(params.publisher_bottom_margin, f_size) or (65536 * 5)
 
-    -- Position at the very bottom of the banxin area
     local banxin_bottom_y = params.y - height
     local y_top = banxin_bottom_y + bottom_margin + container_height
 
-    banxin_log(string.format("[banxin] Publisher text='%s' fs=%.2f height=%.2f y_top=%.2f",
-        publisher, f_size / 65536, container_height / 65536, y_top / 65536))
 
     return {
         text = publisher,
@@ -642,7 +745,7 @@ local function render_publisher(p_head, params, height)
     local layout = calculate_publisher_layout(params, height)
     if not layout then return p_head end
 
-    local pub_chain = text_position.create_vertical_text(layout.text, {
+    local pub_chain = create_vertical_text(layout.text, {
         x = layout.x,
         y_top = layout.y_top,
         width = layout.width,
@@ -668,7 +771,7 @@ end
 -- @param x, y, width, height (number) 矩形位置和尺寸 (sp)
 -- @return (node) 新的链表头
 local function render_debug_rects(p_head, x, y, width, height)
-    if not (_G.luatex_cn_debug and _G.luatex_cn_debug.is_enabled("banxin")) then
+    if not (dbg.is_enabled()) then
         return p_head
     end
 
@@ -694,13 +797,10 @@ local function draw_banxin_column(p_head, params)
     local border_thickness = params.border_thickness
     local color_str = params.color_str or "0 0 0"
 
-    banxin_log(string.format("[banxin] input y=%.2f height=%.2f padding_top=%.2f draw_border=%s",
-        y / 65536, height / 65536, (params.b_padding_top or 0) / 65536, tostring(params.draw_border)))
 
     -- 1. Draw border
     if params.draw_border then
         local border_literal = create_border_literal(x, y, width, height, border_thickness, color_str)
-        banxin_log(string.format("[banxin] Border literal: %s", border_literal))
         p_head = D.insert_before(p_head, p_head, create_literal_node(border_literal))
     end
 

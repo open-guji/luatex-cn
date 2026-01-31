@@ -34,11 +34,46 @@
 --
 -- ============================================================================
 
-local constants = package.loaded['vertical.luatex-cn-vertical-base-constants'] or
-    require('vertical.luatex-cn-vertical-base-constants')
-local utils = package.loaded['vertical.luatex-cn-vertical-base-utils'] or
-    require('vertical.luatex-cn-vertical-base-utils')
+local constants = package.loaded['core.luatex-cn-constants'] or
+    require('core.luatex-cn-constants')
+local utils = package.loaded['util.luatex-cn-utils'] or
+    require('util.luatex-cn-utils')
+local debug = package.loaded['debug.luatex-cn-debug'] or
+    require('debug.luatex-cn-debug')
 local D = node.direct
+
+local dbg = debug.get_debugger('textbox')
+
+-- ============================================================================
+-- Global State (全局状态)
+-- ============================================================================
+-- Initialize global textbox table (similar to _G.content)
+_G.textbox = _G.textbox or {}
+_G.textbox.column_aligns = _G.textbox.column_aligns or ""
+_G.textbox.floating = _G.textbox.floating or false
+_G.textbox.floating_x = _G.textbox.floating_x or 0
+_G.textbox.floating_y = _G.textbox.floating_y or 0
+_G.textbox.floating_paper_width = _G.textbox.floating_paper_width or 0
+_G.textbox.outer_grid_height = _G.textbox.outer_grid_height or 0
+
+--- Setup global textbox parameters from TeX
+-- Called before process_inner_box() to pre-set per-textbox params
+-- @param params (table) Parameters from TeX keyvals
+local function textbox_setup(params)
+    params = params or {}
+    if params.column_aligns ~= nil then _G.textbox.column_aligns = params.column_aligns end
+    if params.floating ~= nil then
+        _G.textbox.floating = (params.floating == true or params.floating == "true")
+    end
+    if params.floating_x then _G.textbox.floating_x = constants.to_dimen(params.floating_x) or 0 end
+    if params.floating_y then _G.textbox.floating_y = constants.to_dimen(params.floating_y) or 0 end
+    if params.floating_paper_width then
+        _G.textbox.floating_paper_width = constants.to_dimen(params.floating_paper_width) or 0
+    end
+    if params.outer_grid_height then
+        _G.textbox.outer_grid_height = tonumber(params.outer_grid_height) or 0
+    end
+end
 
 -- ============================================================================
 -- Helper Functions (辅助函数)
@@ -121,7 +156,7 @@ end
 
 --- 构建子网格布局参数
 -- @param params (table) 原始参数
--- @param col_aligns (table) 列对齐表
+-- @param col_aligns (table) 列对齐表 (parsed from _G.textbox.column_aligns)
 -- @return (table) 子布局参数
 local function build_sub_params(params, col_aligns)
     local ba = params.box_align or "top"
@@ -140,7 +175,6 @@ local function build_sub_params(params, col_aligns)
         grid_height = params.grid_height,
         box_align = params.box_align,
         column_aligns = col_aligns,
-        debug_on = (params.debug == "true" or params.debug == true or (luatex_cn_debug and luatex_cn_debug.is_enabled("vertical"))),
         border_on = (params.border == "true" or params.border == true),
         background_color = params.background_color,
         font_color = params.font_color,
@@ -148,16 +182,8 @@ local function build_sub_params(params, col_aligns)
         is_textbox = true,
         distribute = (ba == "fill"),
         border_color = params.border_color,
-        floating = (params.floating == "true" or params.floating == true),
-        floating_x = constants.to_dimen(params.floating_x) or 0,
-        floating_y = constants.to_dimen(params.floating_y) or 0,
-        floating_paper_width = constants.to_dimen(params.floating_paper_width) or 0,
-        -- Judou mode parameters (inherited from parent environment)
-        judou_on = (params.judou_on == true or params.judou_on == "true"),
-        judou_pos = params.judou_pos,
-        judou_size = params.judou_size,
-        judou_color = params.judou_color,
-        punct_mode = params.punct_mode,
+        -- floating* now in _G.textbox (read via plugin context in main.lua)
+        -- judou params read directly from TeX vars by judou plugin
     }
 end
 
@@ -167,21 +193,20 @@ end
 -- @param current_indent (number) 当前缩进
 -- @return (node|nil) 渲染结果盒子
 local function execute_layout_pipeline(box_num, sub_params, current_indent)
-    local vertical = _G.vertical
-    if not vertical or not vertical.prepare_grid then
-        utils.debug_log("[textbox] Error: vertical.prepare_grid not found")
+    local core = _G.core
+    if not core or not core.typeset then
+        dbg.log("Error: core.typeset not found")
         return nil
     end
 
-    -- 临时保存并清空主文档的分页缓存
+    -- Temporary page buffering
     local saved_pages = _G.vertical_pending_pages
     _G.vertical_pending_pages = {}
 
-    utils.debug_log("--- textbox.process_inner_box: START (box=" ..
-        box_num .. ", indent=" .. tostring(current_indent) .. ") ---")
+    dbg.log(string.format("Processing inner box %d (indent=%d)", box_num, current_indent))
 
     -- 调用三阶段流水线
-    vertical.prepare_grid(box_num, sub_params)
+    core.typeset(box_num, sub_params)
 
     -- 获取渲染结果（应当只有 1 "页"）
     local res_box = _G.vertical_pending_pages[1]
@@ -209,7 +234,11 @@ local function apply_result_attributes(res_box, params, current_indent)
     -- Determine total height in sp for external occupancy calculation
     local h_raw = params.height
     local inner_gh_sp = constants.to_dimen(params.grid_height) or (65536 * 12)
-    local outer_gh_sp = constants.to_dimen(params.outer_grid_height) or inner_gh_sp
+    -- Read outer_grid_height from _G.textbox (set by textbox.setup)
+    local outer_gh_sp = _G.textbox.outer_grid_height
+    if not outer_gh_sp or outer_gh_sp <= 0 then
+        outer_gh_sp = inner_gh_sp
+    end
 
     local h_sp = 0
     if type(h_raw) == "number" or (type(h_raw) == "string" and h_raw:match("^%d+$")) then
@@ -274,7 +303,7 @@ local function find_floating_boxes(list, layout_map, registry)
                         x = item.x,
                         y = item.y
                     })
-                    utils.debug_log(string.format("[textbox] Placed floating box %d on page %d", fid, last_page))
+                    dbg.log(string.format("Placed floating box %d on page %d", fid, last_page))
                 end
             end
         else
@@ -299,6 +328,67 @@ local textbox = {}
 textbox.floating_registry = {}
 textbox.floating_counter = 0
 
+-- Export setup function
+textbox.setup = textbox_setup
+
+-- ============================================================================
+-- Plugin Standard API (插件标准接口)
+-- ============================================================================
+
+--- Initialize Textbox Plugin
+-- @param params (table) Parameters from TeX
+-- @param engine_ctx (table) Shared engine context
+-- @return (table|nil) Plugin context or nil if disabled
+function textbox.initialize(params, engine_ctx)
+    -- Textbox plugin is always active (it manages floating boxes)
+    -- Copy per-textbox params from _G.textbox to plugin context
+    return {
+        floating_map = nil, -- Will be populated in layout phase
+        column_aligns = parse_column_aligns(_G.textbox.column_aligns or ""),
+        floating = _G.textbox.floating or false,
+        floating_x = _G.textbox.floating_x or 0,
+        floating_y = _G.textbox.floating_y or 0,
+        floating_paper_width = _G.textbox.floating_paper_width or 0,
+        outer_grid_height = _G.textbox.outer_grid_height or 0,
+    }
+end
+
+--- Flatten hook (not used by textbox)
+-- @param head (node) Node list head
+-- @param params (table) Parameters
+-- @param ctx (table) Plugin context
+-- @return (node) Unchanged head
+function textbox.flatten(head, params, ctx)
+    return head
+end
+
+--- Layout hook for Textbox
+-- Calculate floating textbox positions based on layout_map
+-- @param list (node) Node list
+-- @param layout_map (table) Main layout map
+-- @param engine_ctx (table) Engine context
+-- @param ctx (table) Plugin context
+function textbox.layout(list, layout_map, engine_ctx, ctx)
+    if not ctx then return end
+    -- Calculate floating positions and store in context
+    ctx.floating_map = find_floating_boxes(list, layout_map, textbox.floating_registry)
+end
+
+--- Render hook for Textbox (currently unused - floating boxes rendered in render-page)
+-- @param head (node) Page list head
+-- @param layout_map (table) Main layout map
+-- @param params (table) Render parameters
+-- @param ctx (table) Plugin context
+-- @param engine_ctx (table) Engine context
+-- @param page_idx (number) Current page index (0-based)
+-- @param p_total_cols (number) Total columns on this page
+-- @return (node) Page head (unchanged)
+function textbox.render(head, layout_map, params, ctx, engine_ctx, page_idx, p_total_cols)
+    -- Floating box rendering is currently handled in render-page.lua
+    -- This hook is reserved for future refactoring
+    return head
+end
+
 -- ============================================================================
 -- Public Functions (公开函数)
 -- ============================================================================
@@ -310,15 +400,13 @@ function textbox.process_inner_box(box_num, params)
     local box = tex.box[box_num]
     if not box then return end
 
-    -- Debug log
-    utils.debug_log(string.format("[textbox] process_inner_box: floating=%s, floating_x=%s, floating_y=%s",
-        tostring(params.floating), tostring(params.floating_x), tostring(params.floating_y)))
+    -- dbg.log(string.format("process_inner_box: floating=%s", tostring(params.floating)))
 
     -- 1. 获取缩进上下文
     local current_indent = get_current_indent(params)
 
-    -- 2. 解析列对齐
-    local col_aligns = parse_column_aligns(params.column_aligns)
+    -- 2. 解析列对齐 (from _G.textbox set by textbox.setup)
+    local col_aligns = parse_column_aligns(_G.textbox.column_aligns or "")
 
     -- 3. 构建子参数
     local sub_params = build_sub_params(params, col_aligns)
@@ -352,7 +440,7 @@ function textbox.register_floating_box(box_num, params)
         y = constants.to_dimen(params.y) or 0
     }
 
-    utils.debug_log(string.format("[textbox] Registered floating box ID=%d at (%s, %s)",
+    dbg.log(string.format("Registered floating box ID=%d at (%s, %s)",
         id, tostring(params.x), tostring(params.y)))
 
     -- Write anchor node
@@ -365,6 +453,53 @@ end
 -- @return (table) Array of floating box positions
 function textbox.calculate_floating_positions(layout_map, params)
     return find_floating_boxes(params.list, layout_map, textbox.floating_registry)
+end
+
+--- Place a textbox node into the grid
+-- @param ctx (table) Grid context
+-- @param node (node) Textbox node
+-- @param tb_w (number) Textbox width
+-- @param tb_h (number) Textbox height
+-- @param params (table) { effective_limit, p_cols, interval, grid_height, indent }
+-- @param callbacks (table) { flush, wrap, is_reserved_col, mark_occupied, push_buffer, move_next }
+function textbox.place_textbox_node(ctx, node, tb_w, tb_h, params, callbacks)
+    -- Handle vertical overflow
+    if ctx.cur_row + tb_h > params.effective_limit then
+        callbacks.flush()
+        callbacks.wrap(false, false) -- reset_indent=false, reset_content=false
+        ctx.cur_row = params.indent  -- Textbox respects indent at start of new column
+    end
+
+    local fits_width = true
+    for c = ctx.cur_col, ctx.cur_col + tb_w - 1 do
+        if callbacks.is_reserved(c) or (c >= params.p_cols) then
+            fits_width = false
+            break
+        end
+    end
+
+    if not fits_width then
+        callbacks.flush()
+        callbacks.wrap(false, false)
+    end
+
+    for c = ctx.cur_col, ctx.cur_col + tb_w - 1 do
+        for r = ctx.cur_row, ctx.cur_row + tb_h - 1 do
+            callbacks.mark_occupied(ctx.occupancy, ctx.cur_page, c, r)
+        end
+    end
+
+    callbacks.push_buffer({
+        node = node,
+        page = ctx.cur_page,
+        col = ctx.cur_col,
+        relative_row = ctx.cur_row,
+        is_block = true,
+        width = tb_w,
+        height = tb_h
+    })
+    ctx.cur_row = ctx.cur_row + tb_h
+    callbacks.move_next()
 end
 
 --- Clear the floating textbox registry
@@ -389,6 +524,49 @@ textbox._internal = {
     find_floating_boxes = find_floating_boxes,
 }
 
-package.loaded['vertical.luatex-cn-vertical-core-textbox'] = textbox
+package.loaded['core.luatex-cn-core-textbox'] = textbox
+
+--- 定位并渲染浮动文本框
+-- @param p_head (node) 页面列表头
+-- @param item (table) 浮动盒子项 {box, x, y, page, ...}
+-- @param params (table) 渲染参数
+-- @return (node) 更新后的页面列表头
+function textbox.render_floating_box(p_head, item, params)
+    local curr = D.todirect(item.box)
+    local h = D.getfield(curr, "height") or 0
+    local w = D.getfield(curr, "width") or 0
+
+    -- Handle decoupled render_ctx or legacy params
+    local page = params.page or params
+    local p_width = (_G.page and _G.page.paper_width and _G.page.paper_width > 0) and _G.page.paper_width or
+        page.p_width or page.paper_width or page.width or 0
+    local m_left = (_G.page and _G.page.margin_left and _G.page.margin_left > 0) and _G.page.margin_left or
+        page.m_left or page.margin_left or 0
+    local m_top = (_G.page and _G.page.margin_top and _G.page.margin_top > 0) and _G.page.margin_top or
+        page.m_top or page.margin_top or 0
+
+    -- Calculate absolute positions relative to container
+    local rel_x = p_width - m_left - item.x - w
+    local rel_y = item.y - m_top
+
+    -- Apply Kern & Shift
+    local final_x = rel_x
+    D.setfield(curr, "shift", rel_y + h)
+
+    local k_pre = D.new(constants.KERN)
+    D.setfield(k_pre, "kern", final_x)
+
+    local k_post = D.new(constants.KERN)
+    D.setfield(k_post, "kern", -(final_x + w))
+
+    p_head = D.insert_before(p_head, p_head, k_pre)
+    D.insert_after(p_head, k_pre, curr)
+    D.insert_after(p_head, curr, k_post)
+
+    dbg.log(string.format(
+        "[render] Floating Box at x=%.2f, y=%.2f (rel: %.2f, %.2f)",
+        item.x / 65536, item.y / 65536, rel_x / 65536, rel_y / 65536))
+    return p_head
+end
 
 return textbox

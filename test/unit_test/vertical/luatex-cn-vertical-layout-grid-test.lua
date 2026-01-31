@@ -1,7 +1,6 @@
 -- luatex-cn-vertical-layout-grid-test.lua - Unit tests for layout grid
 local test_utils = require('test.test_utils')
-local test_utils = require('test.test_utils')
-local layout = require('vertical.luatex-cn-vertical-layout-grid')
+local layout = require('luatex-cn-layout-grid')
 local internal = layout._internal or {}
 
 test_utils.run_test("layout-grid - context creation", function()

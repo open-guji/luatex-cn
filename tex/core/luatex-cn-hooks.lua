@@ -72,20 +72,20 @@ function hooks.get_reserved_config()
 end
 
 -- Register in global namespace for access from TeX and other modules
-_G.vertical = _G.vertical or {}
-if not _G.vertical.hooks then
-    _G.vertical.hooks = hooks
+_G.core = _G.core or {}
+if not _G.core.hooks then
+    _G.core.hooks = hooks
 else
     -- Update existing hooks table with our defaults if they are missing
     for k, v in pairs(hooks) do
-        if _G.vertical.hooks[k] == nil then
-            _G.vertical.hooks[k] = v
+        if _G.core.hooks[k] == nil then
+            _G.core.hooks[k] = v
         end
     end
-    hooks = _G.vertical.hooks
+    hooks = _G.core.hooks
 end
 
 -- Register module
-package.loaded['vertical.luatex-cn-vertical-base-hooks'] = hooks
+package.loaded['core.luatex-cn-hooks'] = hooks
 
 return hooks

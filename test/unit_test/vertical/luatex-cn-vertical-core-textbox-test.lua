@@ -1,6 +1,6 @@
 -- luatex-cn-vertical-core-textbox-test.lua - Unit tests for core textbox
 local test_utils = require('test.test_utils')
-local textbox = require('vertical.luatex-cn-vertical-core-textbox')
+local textbox = require('luatex-cn-core-textbox')
 
 -- Access internal functions for unit testing
 local internal = textbox._internal or {}

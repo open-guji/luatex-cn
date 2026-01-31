@@ -1,6 +1,6 @@
 local test_utils = require('test.test_utils')
-local sidenote = require('vertical.luatex-cn-vertical-core-sidenote')
-local constants = require('vertical.luatex-cn-vertical-base-constants')
+local sidenote = require('luatex-cn-core-sidenote')
+local constants = require('luatex-cn-constants')
 
 local internal = sidenote._internal or {}
 

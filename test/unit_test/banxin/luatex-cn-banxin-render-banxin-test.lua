@@ -1,7 +1,7 @@
 -- luatex-cn-banxin-render-banxin.lua - Unit tests for banxin rendering
 local test_utils = require('test.test_utils')
-local banxin = require('banxin.luatex-cn-banxin-render-banxin')
-local render_pos = require('vertical.luatex-cn-vertical-render-position')
+local banxin = require('luatex-cn-banxin-render-banxin')
+local render_pos = require('luatex-cn-render-position')
 
 -- Mock create_vertical_text to return exactly 1 node for testing node counts
 render_pos.create_vertical_text = function(text, params)
@@ -110,8 +110,10 @@ test_utils.run_test("calculate_book_name_params - Valid name", function()
     local result = internal.calculate_book_name_params(params, 28 * 65536)
 
     test_utils.assert_eq(result ~= nil, true, "Should return params")
-    test_utils.assert_eq(result.text, "测试", "Text should match")
-    test_utils.assert_eq(result.num_cells, 2, "Should have 2 cells")
+    if result then
+        test_utils.assert_eq(result.text, "测试", "Text should match")
+        test_utils.assert_eq(result.num_cells, 2, "Should have 2 cells")
+    end
 end)
 
 test_utils.run_test("calculate_chapter_title_layout - Empty title", function()
@@ -147,8 +149,10 @@ test_utils.run_test("calculate_chapter_title_layout - Valid title", function()
     )
 
     test_utils.assert_eq(result ~= nil, true, "Should return layout")
-    test_utils.assert_eq(#result.parts, 1, "Should have 1 part")
-    test_utils.assert_eq(result.parts[1], "第一章", "Part content")
+    if result then
+        test_utils.assert_eq(#result.parts, 1, "Should have 1 part")
+        test_utils.assert_eq(result.parts[1], "第一章", "Part content")
+    end
 end)
 
 test_utils.run_test("calculate_page_number_layout - No page number", function()

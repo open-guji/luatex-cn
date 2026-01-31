@@ -18,7 +18,7 @@
 
 \RequirePackage{expl3}
 \RequirePackage{l3keys2e}
-\ProvidesExplClass {ltc-guji} {2026/01/29} {0.1.6} {Ancient Chinese Book Class (Template Support)}
+\ProvidesExplClass {ltc-guji} {2026/01/31} {0.2.0} {Ancient Chinese Book Class (Template Support)}
 
 \tl_new:N \l_luatexcn_guji_initial_template_tl
 \prop_new:N \g_luatexcn_guji_template_map_prop
@@ -74,6 +74,8 @@
 
 % Load banxin for 版心/鱼尾 features
 \RequirePackage{banxin/luatex-cn-banxin}
+% Enable banxin by default for guji class
+\banxinSetup{ banxin = true }
 
 % 3. Page Geometry - Will be applied dynamically via tsemplate
 % Default values stored in key-value system below
@@ -96,187 +98,29 @@
 \bool_new:N \l_luatexcn_guji_banxin_bool
 \bool_set_true:N \l_luatexcn_guji_banxin_bool
 
+% Variables for computed layout values (auto-layout computes grid-width, grid-height, height)
+
+
+
+
 \keys_define:nn { luatexcn / guji }
   {
-    % Page geometry settings (set by config files)
-    paper-width .tl_set:N = \l_luatexcn_guji_paper_width_tl,
-    paper-width .initial:n = {},
-
-    paper-height .tl_set:N = \l_luatexcn_guji_paper_height_tl,
-    paper-height .initial:n = {},
-
-    margin-top .tl_set:N = \l_luatexcn_guji_margin_top_tl,
-    margin-top .initial:n = {},
-
-    margin-bottom .tl_set:N = \l_luatexcn_guji_margin_bottom_tl,
-    margin-bottom .initial:n = {},
-
-    margin-left .tl_set:N = \l_luatexcn_guji_margin_left_tl,
-    margin-left .initial:n = {},
-
-    margin-right .tl_set:N = \l_luatexcn_guji_margin_right_tl,
-    margin-right .initial:n = {},
-
-    % Grid and font settings
-    font-size .tl_set:N = \l_luatexcn_guji_font_size_tl,
-    font-size .initial:n = {},
-    
-    line-spacing .tl_set:N = \l_luatexcn_guji_line_spacing_tl,
-    line-spacing .initial:n = {},
-
-    grid-width .tl_set:N = \l_luatexcn_guji_grid_width_tl,
-    grid-width .initial:n = {},
-
-    grid-height .tl_set:N = \l_luatexcn_guji_grid_height_tl,
-    grid-height .initial:n = {},
-
-    height .tl_set:N = \l_luatexcn_guji_height_tl,
-    height .initial:n = {},
-
-    jiazhu-font-size .tl_set:N = \l_luatexcn_guji_jiazhu_font_size_tl,
-    jiazhu-font-size .initial:n = {},
-
-    jiazhu-font .tl_set:N = \l_luatexcn_guji_jiazhu_font_tl,
-    jiazhu-font .initial:n = {},
-
-    jiazhu-font-color .tl_set:N = \l_luatexcn_guji_jiazhu_font_color_tl,
-    jiazhu-font-color .initial:n = {},
-
-    % Jiazhu alignment: "outward" (default, left col left-align, right col right-align)
-    %                   "inward" (left col right-align, right col left-align)
-    %                   "center" (both columns center-aligned)
-    %                   "left" (both columns left-aligned)
-    %                   "right" (both columns right-aligned)
-    jiazhu-align .tl_set:N = \l_luatexcn_guji_jiazhu_align_tl,
-    jiazhu-align .initial:n = {outward},
-
-    border .bool_set:N = \l_luatexcn_guji_border_bool,
-    border .initial:n = false,
-
-    outer-border .bool_set:N = \l_luatexcn_guji_outer_border_bool,
-    outer-border .initial:n = false,
-
-    banxin .bool_set:N = \l_luatexcn_guji_banxin_bool,
-    banxin .initial:n = true,
-
-    outer-border-thickness .tl_set:N = \l_luatexcn_guji_outer_border_thickness_tl,
-    outer-border-thickness .initial:n = {},
-
-    outer-border-sep .tl_set:N = \l_luatexcn_guji_outer_border_sep_tl,
-    outer-border-sep .initial:n = {},
+    % Grid and font settings - forward to content namespace
 
 
 
-    vertical-align .tl_set:N = \l_luatexcn_guji_valign_tl,
-    vertical-align .initial:n = {},
 
-    border-padding-top .tl_set:N = \l_luatexcn_guji_border_padding_top_tl,
-    border-padding-top .initial:n = {},
+    % Guji-specific settings
 
-    border-padding-bottom .tl_set:N = \l_luatexcn_guji_border_padding_bottom_tl,
-    border-padding-bottom .initial:n = {},
 
-    border-thickness .tl_set:N = \l_luatexcn_guji_border_thickness_tl,
-    border-thickness .initial:n = {},
+    banxin .code:n = { \keys_set:nn { luatexcn / banxin } { banxin = {#1} } },
 
-    n-column .int_set:N = \l_luatexcn_guji_n_column_int,
-    n-column .initial:n = 0,
+    font-name .code:n = { \keys_set:nn { luatexcn / content } { font-name = #1 } },
 
-    % Number of characters per column (e.g., 21 for Siku Quanshu)
-    % When set, grid-height and height are calculated automatically
-    n-char .int_set:N = \l_luatexcn_guji_n_char_int,
-    n-char .initial:n = 0,
-
-    border-color .tl_set:N = \l_luatexcn_guji_border_color_tl,
-    border-color .initial:n = {},
-
-    background-color .tl_set:N = \l_luatexcn_guji_background_color_tl,
-    background-color .initial:n = {},
-
-    font-color .tl_set:N = \l_luatexcn_guji_font_color_tl,
-    font-color .initial:n = {},
-
-    font-name .tl_set:N = \l_luatexcn_guji_font_name_tl,
-    font-name .initial:n = {},
     debug .bool_set:N = \g_luatexcn_debug_enabled_bool,
     debug .initial:n = false,
 
-    font-features .tl_set:N = \l_luatexcn_guji_font_features_tl,
-    font-features .initial:n = {},
-
-    % Banxin (版心) section ratios
-    banxin-upper-ratio .tl_set:N = \l_luatexcn_guji_banxin_upper_tl,
-    banxin-upper-ratio .initial:n = {},
-
-    banxin-middle-ratio .tl_set:N = \l_luatexcn_guji_banxin_middle_tl,
-    banxin-middle-ratio .initial:n = {},
-
-    book-name .tl_set:N = \l_luatexcn_guji_book_name_tl,
-    book-name .initial:n = {},
-
-    banxin-padding-top .tl_set:N = \l_luatexcn_guji_banxin_padding_top_tl,
-    banxin-padding-top .initial:n = {2pt},
-
-    banxin-padding-bottom .tl_set:N = \l_luatexcn_guji_banxin_padding_bottom_tl,
-    banxin-padding-bottom .initial:n = {10pt},
-
-    % Chapter title (章节标题) - displayed in section 2 of banxin
-    chapter-title .code:n = {
-      \tl_set:Nn \l_luatexcn_guji_chapter_title_tl { #1 }
-      \ResetPageNumber
-    },
-
-    chapter-title-top-margin .tl_set:N = \l_luatexcn_guji_chapter_title_top_margin_tl,
-    chapter-title-top-margin .initial:n = {},
-
-    chapter-title-cols .int_set:N = \l_luatexcn_guji_chapter_title_cols_int,
-    chapter-title-cols .initial:n = 1,
-
-    chapter-title-font-size .tl_set:N = \l_luatexcn_guji_chapter_title_font_size_tl,
-    chapter-title-font-size .initial:n = {},
-
-    chapter-title-grid-height .tl_set:N = \l_luatexcn_guji_chapter_title_grid_height_tl,
-    chapter-title-grid-height .initial:n = {},
-
-    % Lower Yuwei (下鱼尾) - optional decoration
-    lower-yuwei .bool_set:N = \l_luatexcn_guji_lower_yuwei_bool,
-    lower-yuwei .initial:n = false,
-
-    book-name-align .tl_set:N = \l_luatexcn_guji_book_name_align_tl,
-    book-name-align .initial:n = {center},
-
-    book-name-grid-height .tl_set:N = \l_luatexcn_guji_book_name_grid_height_tl,
-    book-name-grid-height .initial:n = {},
-
-    upper-yuwei .bool_set:N = \l_luatexcn_guji_upper_yuwei_bool,
-    upper-yuwei .initial:n = true,
-
-    publisher .tl_set:N = \l_luatexcn_guji_publisher_tl,
-    publisher .initial:n = {},
-
-    publisher-font-size .tl_set:N = \l_luatexcn_guji_publisher_font_size_tl,
-    publisher-font-size .initial:n = {},
-
-    publisher-grid-height .tl_set:N = \l_luatexcn_guji_publisher_grid_height_tl,
-    publisher-grid-height .initial:n = {},
-
-    publisher-bottom-margin .tl_set:N = \l_luatexcn_guji_publisher_bottom_margin_tl,
-    publisher-bottom-margin .initial:n = {},
-
-    publisher-align .tl_set:N = \l_luatexcn_guji_publisher_align_tl,
-    publisher-align .initial:n = {right},
-
-    banxin-divider .bool_set:N = \l_luatexcn_guji_banxin_divider_bool,
-    banxin-divider .initial:n = true,
-
-    page-number-align .tl_set:N = \l_luatexcn_guji_page_number_align_tl,
-    page-number-align .initial:n = {right-bottom},
-
-    page-number-font-size .tl_set:N = \l_luatexcn_guji_page_number_font_size_tl,
-    page-number-font-size .initial:n = {},
-
-    page-number-grid-height .tl_set:N = \l_luatexcn_guji_page_number_grid_height_tl,
-    page-number-grid-height .initial:n = {},
+    font-features .code:n = { \keys_set:nn { luatexcn / content } { font-features = #1 } },
 
     % Split page (筒子页) configuration
     split-page .bool_set:N = \l_luatexcn_guji_split_page_bool,
@@ -285,19 +129,6 @@
     split-page-right-first .bool_set:N = \l_luatexcn_guji_split_right_first_bool,
     split-page-right-first .initial:n = true,
 
-    % SideNode global configuration
-    sidenode-color .code:n = { \keys_set:nn { luatexcn / sidenode } { color = #1 } },
-    sidenode-font-size .code:n = { \keys_set:nn { luatexcn / sidenode } { font-size = #1 } },
-    sidenode-grid-height .code:n = { \keys_set:nn { luatexcn / sidenode } { grid-height = #1 } },
-    sidenode-yoffset .code:n = { \keys_set:nn { luatexcn / sidenode } { yoffset = #1 } },
-    sidenode-border-padding-top .code:n = { \keys_set:nn { luatexcn / sidenode } { border-padding-top = #1 } },
-    sidenode-border-padding-bottom .code:n = { \keys_set:nn { luatexcn / sidenode } { border-padding-bottom = #1 } },
-
-    % PiZhu global configuration
-    pizhu-color .code:n = { \keys_set:nn { luatexcn / pizhu } { color = #1 } },
-    pizhu-font-size .code:n = { \keys_set:nn { luatexcn / pizhu } { font-size = #1 } },
-    pizhu-grid-width .code:n = { \keys_set:nn { luatexcn / pizhu } { grid-width = #1 } },
-    pizhu-grid-height .code:n = { \keys_set:nn { luatexcn / pizhu } { grid-height = #1 } },
 
     template .code:n = {
       % Ensure standard catcodes for config files (preserve spaces)
@@ -311,37 +142,11 @@
       \ExplSyntaxOn 
     },
 
+    unknown .code:n = { \keys_set:nx { luatexcn / content } { \l_keys_key_tl = { #1 } } },
   }
 
 % 5. Logic to apply geometry
-\cs_new:Npn \__luatexcn_guji_apply_geometry:
-  {
-    % If in preamble, use \geometry
-    \if_meaning:w \@onlypreamble \@notprerr
-      % In document body
-      \newgeometry{
-        top=\l_luatexcn_guji_margin_top_tl,
-        bottom=\l_luatexcn_guji_margin_bottom_tl,
-        left=\l_luatexcn_guji_margin_left_tl,
-        right=\l_luatexcn_guji_margin_right_tl
-      }
-      % Manual paper size adjustment for LuaTeX if changed in body
-      \dim_set:Nn \pagewidth { \l_luatexcn_guji_paper_width_tl }
-      \dim_set:Nn \pageheight { \l_luatexcn_guji_paper_height_tl }
-    \else
-      % In preamble
-      \geometry{
-        paperwidth=\l_luatexcn_guji_paper_width_tl,
-        paperheight=\l_luatexcn_guji_paper_height_tl,
-        top=\l_luatexcn_guji_margin_top_tl,
-        bottom=\l_luatexcn_guji_margin_bottom_tl,
-        left=\l_luatexcn_guji_margin_left_tl,
-        right=\l_luatexcn_guji_margin_right_tl,
-        footskip=15mm
-      }
-      \skip_zero:N \topskip
-    \fi
-  }
+
 
 % 5b. Split page setup
 \cs_new:Npn \__luatexcn_guji_apply_split_page:
@@ -349,8 +154,8 @@
     \bool_if:NT \l_luatexcn_guji_split_page_bool
       {
         \exp_args:Nx \splitpageSetup{
-          source-width = \l_luatexcn_guji_paper_width_tl,
-          source-height = \l_luatexcn_guji_paper_height_tl,
+          source-width = \l__luatexcn_page_paper_width_tl,
+          source-height = \l__luatexcn_page_paper_height_tl,
           right-first = \bool_if:NTF \l_luatexcn_guji_split_right_first_bool {true} {false}
         }
         \enableSplitPage
@@ -361,9 +166,10 @@
   {
     \tl_set:Nn \l_tmpa_tl { #1 }
     \tl_replace_all:Nnn \l_tmpa_tl { \par } { }
+    \keys_set:nV { luatexcn / page } \l_tmpa_tl
     \keys_set:nV { luatexcn / guji } \l_tmpa_tl
     % Apply geometry updates
-    \__luatexcn_guji_apply_geometry:
+    \luatexcn_apply_geometry:
     % Apply split page if enabled
     \__luatexcn_guji_apply_split_page:
   }
@@ -374,35 +180,35 @@
 }
 
 % Define \title and \chapter metadata commands
-% These will be wrapped by banxin.sty if loaded
+% These forward to the banxin namespace
 \RenewDocumentCommand{\title}{ m }
   {
-    \tl_set:Nn \l_luatexcn_guji_book_name_tl { #1 }
+    \keys_set:nn { luatexcn / banxin } { book-name = {#1} }
     \gdef\@title{#1}
   }
 
 \NewDocumentCommand{\publisher}{ m }
   {
-    \tl_set:Nn \l_luatexcn_guji_publisher_tl { #1 }
+    \keys_set:nn { luatexcn / banxin } { publisher = {#1} }
   }
 \NewCommandCopy{\出版商}{\publisher}
 
 % Command to reset page number to 1
 \NewDocumentCommand{\ResetPageNumber}{ }
   {
-    \lua_now:e { vertical.reset_page_number(); }
+    \lua_now:e { core.reset_page_number(); }
   }
 
 % Command to set page number to arbitrary value
 \NewDocumentCommand{\SetPageNumber}{ m }
   {
-    \lua_now:e { vertical.set_page_number(#1); }
+    \lua_now:e { core.set_page_number(#1); }
   }
 \NewCommandCopy{\设置页码}{\SetPageNumber}
 
 \DeclareDocumentCommand{\chapter}{ m }
   {
-    \tl_set:Nn \l_luatexcn_guji_chapter_title_tl { #1 }
+    \keys_set:nn { luatexcn / banxin } { chapter-title = {#1} }
     \ResetPageNumber
   }
 
@@ -503,18 +309,18 @@
     % Font selection logic:
     % 1. If user specified font-name in the environment options, use it
     % 2. Otherwise, rely on the font set at class load or in preamble
-    \tl_if_empty:NF \l_luatexcn_guji_font_name_tl
+    \tl_if_empty:NF \l__luatexcn_content_font_name_tl
       {
-        \tl_if_empty:NTF \l_luatexcn_guji_font_features_tl
+        \tl_if_empty:NTF \l__luatexcn_content_font_features_tl
           {
             % No features specified, use default for CJK vertical
-            \exp_args:NV \setmainfont \l_luatexcn_guji_font_name_tl [RawFeature={+vert,+vrt2}]
+            \exp_args:NV \setmainfont \l__luatexcn_content_font_name_tl [RawFeature={+vert,+vrt2}]
           }
           {
-            \exp_args:NV \setmainfont \l_luatexcn_guji_font_name_tl [\l_luatexcn_guji_font_features_tl]
+            \exp_args:NV \setmainfont \l__luatexcn_content_font_name_tl [\l__luatexcn_content_font_features_tl]
           }
       }
-    \fontsize{\l_luatexcn_guji_font_size_tl}{\l_luatexcn_guji_line_spacing_tl}\selectfont
+    \fontsize{\l__luatexcn_content_font_size_tl}{\l__luatexcn_content_line_spacing_tl}\selectfont
     
     % global debug flag \g_luatexcn_debug_enabled_bool is already set by keys_set:nn { luatexcn / guji } { #1 } above
     % Zero out vertical skips for exact grid layout
@@ -535,47 +341,47 @@
 
     % I. Width Logic (Auto-calculated from n-column)
     % 1. Calculate raw content area width
-    \dim_set:Nn \l_tmpa_dim { \l_luatexcn_guji_paper_width_tl }
-    \dim_sub:Nn \l_tmpa_dim { \l_luatexcn_guji_margin_left_tl }
-    \dim_sub:Nn \l_tmpa_dim { \l_luatexcn_guji_margin_right_tl }
+    \dim_set:Nn \l_tmpa_dim { \l__luatexcn_page_paper_width_tl }
+    \dim_sub:Nn \l_tmpa_dim { \l__luatexcn_page_margin_left_tl }
+    \dim_sub:Nn \l_tmpa_dim { \l__luatexcn_page_margin_right_tl }
     % \l_tmpa_dim = content-width
 
-    % 2. Calculate border overhead (width)
+    % 2. Calculate border overhead (width) - using content variables
     \dim_set:Nn \l_tmpb_dim { 0pt }
-    \bool_if:NT \l_luatexcn_guji_outer_border_bool {
-      \dim_add:Nn \l_tmpb_dim { (\l_luatexcn_guji_outer_border_sep_tl + \l_luatexcn_guji_outer_border_thickness_tl) * 2 }
+    \bool_if:NT \l__luatexcn_content_outer_border_bool {
+      \dim_add:Nn \l_tmpb_dim { (\l__luatexcn_content_outer_border_sep_tl + \l__luatexcn_content_outer_border_thickness_tl) * 2 }
     }
-    \bool_if:NT \l_luatexcn_guji_border_bool {
-      \dim_add:Nn \l_tmpb_dim { \l_luatexcn_guji_border_thickness_tl }
+    \bool_if:NT \l__luatexcn_content_border_bool {
+      \dim_add:Nn \l_tmpb_dim { \l__luatexcn_content_border_thickness_tl }
     }
     % \l_tmpb_dim = border-overhead-width
 
     % 3. Calculate grid-width
     % total-cols = 2 * n-column + 1
-    \int_set:Nn \l_tmpa_int { 2 * \l_luatexcn_guji_n_column_int + 1 }
+    \int_set:Nn \l_tmpa_int { 2 * \l__luatexcn_content_n_column_int + 1 }
     
     % grid-width = (content-width - border-overhead) / total-cols
     \dim_sub:Nn \l_tmpa_dim { \l_tmpb_dim }
     % available-for-grids / total-cols
     \int_set:Nn \l_tmpb_int { \dim_to_decimal_in_sp:n { \l_tmpa_dim } / \l_tmpa_int }
-    \tl_set:Nx \l_luatexcn_guji_grid_width_tl { \dim_eval:n { \l_tmpb_int sp } }
+    \tl_set:Nx \l__luatexcn_content_grid_width_tl { \dim_eval:n { \l_tmpb_int sp } }
 
-    \bool_if:NT \g_luatexcn_debug_enabled_bool { \iow_term:x { Guji~Layout~Width:~total-cols=\int_use:N~\l_tmpa_int~,~grid-width=\l_luatexcn_guji_grid_width_tl } }
+    \bool_if:NT \g_luatexcn_debug_enabled_bool { \iow_term:x { Guji~Layout~Width:~total-cols=\int_use:N~\l_tmpa_int~,~grid-width=\l__luatexcn_content_grid_width_tl } }
 
     % II. Height Logic
     % 1. Calculate raw content area height
-    \dim_set:Nn \l_tmpa_dim { \l_luatexcn_guji_paper_height_tl }
-    \dim_sub:Nn \l_tmpa_dim { \l_luatexcn_guji_margin_top_tl }
-    \dim_sub:Nn \l_tmpa_dim { \l_luatexcn_guji_margin_bottom_tl }
+    \dim_set:Nn \l_tmpa_dim { \l__luatexcn_page_paper_height_tl }
+    \dim_sub:Nn \l_tmpa_dim { \l__luatexcn_page_margin_top_tl }
+    \dim_sub:Nn \l_tmpa_dim { \l__luatexcn_page_margin_bottom_tl }
     % \l_tmpa_dim = content-height
 
-    % 2. Calculate border overhead
+    % 2. Calculate border overhead - using content variables
     \dim_set:Nn \l_tmpb_dim { 0pt }
-    \bool_if:NT \l_luatexcn_guji_outer_border_bool {
-      \dim_add:Nn \l_tmpb_dim { (\l_luatexcn_guji_outer_border_sep_tl + \l_luatexcn_guji_outer_border_thickness_tl) * 2 }
+    \bool_if:NT \l__luatexcn_content_outer_border_bool {
+      \dim_add:Nn \l_tmpb_dim { (\l__luatexcn_content_outer_border_sep_tl + \l__luatexcn_content_outer_border_thickness_tl) * 2 }
     }
-    \bool_if:NT \l_luatexcn_guji_border_bool {
-      \dim_add:Nn \l_tmpb_dim { \l_luatexcn_guji_border_padding_top_tl + \l_luatexcn_guji_border_padding_bottom_tl + \l_luatexcn_guji_border_thickness_tl }
+    \bool_if:NT \l__luatexcn_content_border_bool {
+      \dim_add:Nn \l_tmpb_dim { \l__luatexcn_content_border_padding_top_tl + \l__luatexcn_content_border_padding_bottom_tl + \l__luatexcn_content_border_thickness_tl }
     }
     % \l_tmpb_dim = border-overhead
 
@@ -584,31 +390,31 @@
     % \l_tmpa_dim = available-height
 
     % 4. Determine mode and calculate grid dimensions
-    \int_compare:nNnTF { \l_luatexcn_guji_n_char_int } > { 0 }
+    \int_compare:nNnTF { \l__luatexcn_content_n_char_per_col_int } > { 0 }
       {
-        % Mode A: n-char specified, calculate grid-height (floor to avoid overflow)
-        % grid-height = floor(available-height / n-char)
-        \int_set:Nn \l_tmpa_int { \dim_to_decimal_in_sp:n { \l_tmpa_dim } / \l_luatexcn_guji_n_char_int }
+        % Mode A: n-char-per-col specified, calculate grid-height (floor to avoid overflow)
+        % grid-height = floor(available-height / n-char-per-col)
+        \int_set:Nn \l_tmpa_int { \dim_to_decimal_in_sp:n { \l_tmpa_dim } / \l__luatexcn_content_n_char_per_col_int }
         \dim_set:Nn \l_luatexcn_guji_grid_height_dim { \l_tmpa_int sp }
-        \tl_set:Nx \l_luatexcn_guji_grid_height_tl { \dim_use:N \l_luatexcn_guji_grid_height_dim }
-        % height = grid-height * n-char (may be slightly less than available)
-        \dim_set:Nn \l_tmpa_dim { \l_luatexcn_guji_grid_height_dim * \l_luatexcn_guji_n_char_int }
-        \tl_set:Nx \l_luatexcn_guji_height_tl { \dim_use:N \l_tmpa_dim }
-        \bool_if:NT \g_luatexcn_debug_enabled_bool { \iow_term:x { Guji~Mode~A:~n-char=\int_use:N~\l_luatexcn_guji_n_char_int~,~grid-height=\l_luatexcn_guji_grid_height_tl~,~height=\l_luatexcn_guji_height_tl } }
+        \tl_set:Nx \l__luatexcn_content_grid_height_tl { \dim_use:N \l_luatexcn_guji_grid_height_dim }
+        % height = grid-height * n-char-per-col (may be slightly less than available)
+        \dim_set:Nn \l_tmpa_dim { \l_luatexcn_guji_grid_height_dim * \l__luatexcn_content_n_char_per_col_int }
+        \tl_set:Nx \l__luatexcn_content_height_tl { \dim_use:N \l_tmpa_dim }
+        \bool_if:NT \g_luatexcn_debug_enabled_bool { \iow_term:x { Guji~Mode~A:~n-char-per-col=\int_use:N~\l__luatexcn_content_n_char_per_col_int~,~grid-height=\l__luatexcn_content_grid_height_tl~,~height=\l__luatexcn_content_height_tl } }
       }
       {
         % Mode B: grid-height specified, calculate fitting rows
-        \tl_if_empty:NTF \l_luatexcn_guji_grid_height_tl
+        \tl_if_empty:NTF \l__luatexcn_content_grid_height_tl
           {
             \msg_error:nn { guji } { missing-grid-param }
           }
           {
             % Calculate max rows: floor(available-height / grid-height)
-            \int_set:Nn \l_tmpa_int { \dim_ratio:nn { \l_tmpa_dim } { \l_luatexcn_guji_grid_height_tl } }
+            \int_set:Nn \l_tmpa_int { \dim_ratio:nn { \l_tmpa_dim } { \l__luatexcn_content_grid_height_tl } }
             % height = rows * grid-height
-            \dim_set:Nn \l_tmpa_dim { \l_luatexcn_guji_grid_height_tl * \l_tmpa_int }
-            \tl_set:Nx \l_luatexcn_guji_height_tl { \dim_use:N \l_tmpa_dim }
-            \bool_if:NT \g_luatexcn_debug_enabled_bool { \iow_term:x { Guji~Mode~B:~grid-height=\l_luatexcn_guji_grid_height_tl~,~rows=\int_use:N~\l_tmpa_int~,~height=\l_luatexcn_guji_height_tl } }
+            \dim_set:Nn \l_tmpa_dim { \l__luatexcn_content_grid_height_tl * \l_tmpa_int }
+            \tl_set:Nx \l__luatexcn_content_height_tl { \dim_use:N \l_tmpa_dim }
+            \bool_if:NT \g_luatexcn_debug_enabled_bool { \iow_term:x { Guji~Mode~B:~grid-height=\l__luatexcn_content_grid_height_tl~,~rows=\int_use:N~\l_tmpa_int~,~height=\l__luatexcn_content_height_tl } }
           }
       }
 
@@ -616,22 +422,22 @@
     \dim_set:Nn \l_tmpb_dim { \l_tmpa_dim + \l_tmpb_dim + 2pt }
 
     % 6. Adjust top margin to preserve bottom margin
-    \tl_set:Nx \l_luatexcn_guji_margin_top_tl {
-      \dim_eval:n { \l_luatexcn_guji_paper_height_tl - \l_luatexcn_guji_margin_bottom_tl - \l_tmpb_dim }
+    \tl_set:Nx \l__luatexcn_page_margin_top_tl {
+      \dim_eval:n { \l__luatexcn_page_paper_height_tl - \l__luatexcn_page_margin_bottom_tl - \l_tmpb_dim }
     }
 
     % Log final layout
-    \bool_if:NT \g_luatexcn_debug_enabled_bool { \iow_term:x { Guji~Layout:~TextHeight=\dim_use:N~\l_tmpb_dim~,~TopMargin=\l_luatexcn_guji_margin_top_tl } }
+    \bool_if:NT \g_luatexcn_debug_enabled_bool { \iow_term:x { Guji~Layout:~TextHeight=\dim_use:N~\l_tmpb_dim~,~TopMargin=\l__luatexcn_page_margin_top_tl } }
 
     % Update geometry for this environment
-    \__luatexcn_guji_apply_geometry:
+    \luatexcn_apply_geometry:
     
     % Apply background color if specified
-    \tl_if_empty:NF \l_luatexcn_guji_background_color_tl
+    \tl_if_empty:NF \l__luatexcn_page_background_color_tl
       {
-        \tl_if_in:NnTF \l_luatexcn_guji_background_color_tl { , }
-          { \pagecolor [RGB] { \l_luatexcn_guji_background_color_tl } }
-          { \pagecolor { \l_luatexcn_guji_background_color_tl } }
+        \tl_if_in:NnTF \l__luatexcn_page_background_color_tl { , }
+          { \pagecolor [RGB] { \l__luatexcn_page_background_color_tl } }
+          { \pagecolor { \l__luatexcn_page_background_color_tl } }
       }
     
     % Zap all vertical spacing
@@ -648,65 +454,29 @@
 
     \keys_set:nx { luatexcn / vertical }
       {
-        height = \l_luatexcn_guji_height_tl,
-        grid-width = \l_luatexcn_guji_grid_width_tl,
-        grid-height = \l_luatexcn_guji_grid_height_tl,
-        vertical-align = \l_luatexcn_guji_valign_tl,
-        border-thickness = \l_luatexcn_guji_border_thickness_tl,
-        border-padding-top = \l_luatexcn_guji_border_padding_top_tl,
-        border-padding-bottom = \l_luatexcn_guji_border_padding_bottom_tl,
-        outer-border-thickness = \l_luatexcn_guji_outer_border_thickness_tl,
-        outer-border-sep = \l_luatexcn_guji_outer_border_sep_tl,
-        n-column = \int_use:N \l_luatexcn_guji_n_column_int,
-        border-color = { \l_luatexcn_guji_border_color_tl },
-        background-color = { \l_luatexcn_guji_background_color_tl },
-        font-color = { \l_luatexcn_guji_font_color_tl },
-        paper-width = \l_luatexcn_guji_paper_width_tl,
-        paper-height = \l_luatexcn_guji_paper_height_tl,
-        margin-top = \l_luatexcn_guji_margin_top_tl,
-        margin-bottom = \l_luatexcn_guji_margin_bottom_tl,
-        margin-left = \l_luatexcn_guji_margin_left_tl,
-        margin-right = \l_luatexcn_guji_margin_right_tl,
-        banxin-upper-ratio = \l_luatexcn_guji_banxin_upper_tl,
-        banxin-middle-ratio = \l_luatexcn_guji_banxin_middle_tl,
-        banxin-padding-top = \l_luatexcn_guji_banxin_padding_top_tl,
-        banxin-padding-bottom = \l_luatexcn_guji_banxin_padding_bottom_tl,
-        book-name = \l_luatexcn_guji_book_name_tl,
-        chapter-title = \l_luatexcn_guji_chapter_title_tl,
-        chapter-title-top-margin = \l_luatexcn_guji_chapter_title_top_margin_tl,
-        chapter-title-cols = \int_use:N \l_luatexcn_guji_chapter_title_cols_int,
-        chapter-title-font-size = \l_luatexcn_guji_chapter_title_font_size_tl,
-        chapter-title-grid-height = \l_luatexcn_guji_chapter_title_grid_height_tl,
-        jiazhu-font-size = \l_luatexcn_guji_jiazhu_font_size_tl,
-        jiazhu-font = { \l_luatexcn_guji_jiazhu_font_tl },
-        jiazhu-font-color = { \l_luatexcn_guji_jiazhu_font_color_tl },
-        jiazhu-align = \l_luatexcn_guji_jiazhu_align_tl,
-        font-size = \l_luatexcn_guji_font_size_tl,
-        border = \bool_if:NTF \l_luatexcn_guji_border_bool {true} {false},
-        outer-border = \bool_if:NTF \l_luatexcn_guji_outer_border_bool {true} {false},
-        banxin = \bool_if:NTF \l_luatexcn_guji_banxin_bool {true} {false},
-        lower-yuwei = \bool_if:NTF \l_luatexcn_guji_lower_yuwei_bool {true} {false},
-        book-name-align = \l_luatexcn_guji_book_name_align_tl,
-        book-name-grid-height = \l_luatexcn_guji_book_name_grid_height_tl,
-        upper-yuwei = \bool_if:NTF \l_luatexcn_guji_upper_yuwei_bool {true} {false},
-        banxin-divider = \bool_if:NTF \l_luatexcn_guji_banxin_divider_bool {true} {false},
-        page-number-align = \l_luatexcn_guji_page_number_align_tl,
-        page-number-font-size = \l_luatexcn_guji_page_number_font_size_tl,
-        page-number-grid-height = \l_luatexcn_guji_page_number_grid_height_tl,
-        publisher = \l_luatexcn_guji_publisher_tl,
-        publisher-font-size = \l_luatexcn_guji_publisher_font_size_tl,
-        publisher-grid-height = \l_luatexcn_guji_publisher_grid_height_tl,
-        publisher-bottom-margin = \l_luatexcn_guji_publisher_bottom_margin_tl,
-        publisher-align = \l_luatexcn_guji_publisher_align_tl
+        height = \l__luatexcn_content_height_tl,
+        grid-width = \l__luatexcn_content_grid_width_tl,
+        grid-height = \l__luatexcn_content_grid_height_tl,
+        vertical-align = \l__luatexcn_content_valign_tl,
+        n-column = \int_use:N \l__luatexcn_content_n_column_int,
+        background-color = { \l__luatexcn_page_background_color_tl },
+        font-color = { \l__luatexcn_content_font_color_tl },
+        paper-width = \l__luatexcn_page_paper_width_tl,
+        paper-height = \l__luatexcn_page_paper_height_tl,
+        margin-top = \l__luatexcn_page_margin_top_tl,
+        margin-bottom = \l__luatexcn_page_margin_bottom_tl,
+        margin-left = \l__luatexcn_page_margin_left_tl,
+        margin-right = \l__luatexcn_page_margin_right_tl,
+        font-size = \l__luatexcn_content_font_size_tl,
       }
     \RenewDocumentCommand{\newpage}{}{\penalty-10003 }
     \RenewDocumentCommand{\clearpage}{}{\penalty-10003 }
     \cs_set:Npn \chapter ##1 {
-      \directlua { vertical.insert_chapter_marker( "\luaescapestring{ \tl_to_str:n { ##1 } }" ) }
+      \directlua { core.insert_chapter_marker( "\luaescapestring{ \tl_to_str:n { ##1 } }" ) }
       \box0\relax
     }
     \nointerlineskip
-    \__luatexcn_v_process_grid:n { \BODY }
+    \__luatexcn_content_process_grid:n { \BODY }
     \group_end:
     \clearpage
     % Restore geometry if needed? \restoregeometry resets to preamble settings.
@@ -723,23 +493,22 @@
 % Apply auto-detected font if no font-name is set and user hasn't set one
 % This is moved from \AtBeginDocument to here (class load) as requested.
 \AtEndOfClass{
-  \tl_if_empty:NTF \l_luatexcn_guji_font_name_tl 
+  \tl_if_empty:NTF \l__luatexcn_content_font_name_tl 
     { 
        \ApplyAutoFont 
     }
     {
        % If font-name was specified in class options or template, apply it now
-       \tl_if_empty:NTF \l_luatexcn_guji_font_features_tl
-         { \exp_args:NV \setmainfont \l_luatexcn_guji_font_name_tl [RawFeature={+vert,+vrt2}] }
-         { \exp_args:NV \setmainfont \l_luatexcn_guji_font_name_tl [\l_luatexcn_guji_font_features_tl] }
+       \tl_if_empty:NTF \l__luatexcn_content_font_features_tl
+         { \exp_args:NV \setmainfont \l__luatexcn_content_font_name_tl [RawFeature={+vert,+vrt2}] }
+         { \exp_args:NV \setmainfont \l__luatexcn_content_font_name_tl [\l__luatexcn_content_font_features_tl] }
     }
+    \luatexcn_apply_geometry:
+    \__luatexcn_guji_apply_split_page:
 }
 \ExplSyntaxOff
 %
 % Command Aliases (CJK support)
-\NewCommandCopy{\JiaZhu}{\TextFlow}%
-\NewCommandCopy{\夹注}{\TextFlow}%
-\NewCommandCopy{\单行夹注}{\DanHangJiaZhu}%
 \NewCommandCopy{\印章}{\YinZhang}%
 %
 % Environment Aliases (CJK support)

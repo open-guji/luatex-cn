@@ -31,11 +31,67 @@
 --
 -- ============================================================================
 
-local constants = package.loaded['vertical.luatex-cn-vertical-base-constants'] or
-    require('vertical.luatex-cn-vertical-base-constants')
+local constants = package.loaded['core.luatex-cn-constants'] or
+    require('core.luatex-cn-constants')
 local D = constants.D
 
 local textflow = {}
+
+--- 计算子列（如双行注 Jiazhu）的 X 偏移
+-- @param base_x (number) 基础 X 坐标 (sp)
+-- @param grid_width (number) 单元格总宽度 (sp)
+-- @param w (number) 字符宽度 (sp)
+-- @param sub_col (number) 子列号 (1: 右, 2: 左)
+-- @param align (string) 对齐方式 (outward, inward, center, left, right)
+-- @return (number) 物理 X 坐标 (sp)
+function textflow.calculate_sub_column_x_offset(base_x, grid_width, w, sub_col, align)
+    local sub_width = grid_width / 2
+    local inner_padding = sub_width * 0.05 -- 5% internal padding
+
+    align = align or "outward"
+
+    local col_align
+    if align == "inward" then
+        col_align = (sub_col == 1) and "left" or "right"
+    elseif align == "center" then
+        col_align = "center"
+    elseif align == "left" then
+        col_align = "left"
+    elseif align == "right" then
+        col_align = "right"
+    else -- outward (default)
+        col_align = (sub_col == 1) and "right" or "left"
+    end
+
+    local sub_base_x = base_x
+    if sub_col == 1 then sub_base_x = sub_base_x + sub_width end
+
+    if col_align == "right" then
+        return sub_base_x + (sub_width - w) - inner_padding
+    elseif col_align == "left" then
+        return sub_base_x + inner_padding
+    else -- center
+        return sub_base_x + (sub_width - w) / 2
+    end
+end
+
+--- Collect consecutive jiazhu glyph nodes starting from a given node
+-- @param start_node (direct node) Starting node (must have ATTR_JIAZHU == 1)
+-- @return (table, direct node) Array of jiazhu glyph nodes, next non-jiazhu node
+function textflow.collect_jiazhu_nodes(start_node)
+    local j_nodes = {}
+    local temp_t = start_node
+
+    while temp_t and D.get_attribute(temp_t, constants.ATTR_JIAZHU) == 1 do
+        local tid = D.getid(temp_t)
+        if tid == constants.GLYPH then
+            table.insert(j_nodes, temp_t)
+        end
+        temp_t = D.getnext(temp_t)
+    end
+
+    return j_nodes, temp_t
+end
 
 --- 将一段连续的夹注节点进行分块和平衡
 -- @param jiazhu_nodes (table) 连续的夹注节点列表 (direct nodes)
@@ -146,7 +202,58 @@ function textflow.process_jiazhu_sequence(jiazhu_nodes, available_rows, line_lim
     return chunks
 end
 
+--- Place jiazhu nodes into layout map
+-- @param ctx (table) Grid context
+-- @param start_node (node) The starting jiazhu node
+-- @param layout_map (table) The layout map to populate
+-- @param params (table) Layout parameters { effective_limit, line_limit, base_indent, r_indent, block_id, first_indent, jiazhu_mode }
+-- @param callbacks (table) Callbacks { flush, wrap, get_indent, debug }
+-- @return (node) The next node to process
+function textflow.place_jiazhu_nodes(ctx, start_node, layout_map, params, callbacks)
+    if callbacks.debug then
+        callbacks.debug(string.format("  [layout] JIAZHU DETECTED: node=%s", tostring(start_node)))
+    end
+    callbacks.flush()
+
+    local j_nodes, temp_t = textflow.collect_jiazhu_nodes(start_node)
+    if callbacks.debug then
+        callbacks.debug(string.format("  [layout] Collected %d jiazhu glyphs", #j_nodes))
+    end
+
+    -- Ensure we have at least 2 rows available (prevent orphan rows)
+    if params.effective_limit - ctx.cur_row < 2 then
+        callbacks.flush()
+        callbacks.wrap()
+    end
+
+    -- Process jiazhu sequence into chunks
+    local available_in_first = params.effective_limit - ctx.cur_row
+    local capacity_per_subsequent = params.line_limit - params.base_indent - params.r_indent
+    local chunks = textflow.process_jiazhu_sequence(j_nodes, available_in_first, capacity_per_subsequent,
+        params.jiazhu_mode)
+
+    -- Place chunks into layout_map
+    for i, chunk in ipairs(chunks) do
+        if i > 1 then
+            callbacks.wrap()
+            local chunk_indent = callbacks.get_indent(params.block_id, params.base_indent, params.first_indent)
+            if ctx.cur_row < chunk_indent then ctx.cur_row = chunk_indent end
+        end
+        for _, node_info in ipairs(chunk.nodes) do
+            layout_map[node_info.node] = {
+                page = ctx.cur_page,
+                col = ctx.cur_col,
+                row = ctx.cur_row + node_info.relative_row,
+                sub_col = node_info.sub_col
+            }
+        end
+        ctx.cur_row = ctx.cur_row + chunk.rows_used
+    end
+
+    return temp_t
+end
+
 -- Register module
-package.loaded['vertical.luatex-cn-vertical-core-textflow'] = textflow
+package.loaded['core.luatex-cn-textflow'] = textflow
 
 return textflow

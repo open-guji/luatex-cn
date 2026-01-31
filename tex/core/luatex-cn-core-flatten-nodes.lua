@@ -61,11 +61,15 @@
 
 -- Load dependencies
 -- Check if already loaded via dofile (package.loaded set manually)
-local constants = package.loaded['vertical.luatex-cn-vertical-base-constants'] or
-    require('vertical.luatex-cn-vertical-base-constants')
+local constants = package.loaded['core.luatex-cn-constants'] or
+    require('core.luatex-cn-constants')
 local D = constants.D
-local utils = package.loaded['vertical.luatex-cn-vertical-base-utils'] or
-    require('vertical.luatex-cn-vertical-base-utils')
+local utils = package.loaded['util.luatex-cn-utils'] or
+    require('util.luatex-cn-utils')
+local debug = package.loaded['debug.luatex-cn-debug'] or
+    require('debug.luatex-cn-debug')
+
+local dbg = debug.get_debugger('flatten')
 
 local _internal = {}
 
@@ -204,9 +208,6 @@ local function flatten_vbox(head, grid_width, char_width)
     -- @param n (direct node) 要追加的节点
     local function append_node(n)
         if not n then return end
-        -- if utils and utils.debug_log then
-        --     utils.debug_log("  [flatten] Appending Node=" .. tostring(n) .. " tid=" .. (D.getid(n) or "?"))
-        -- end
         D.setnext(n, nil)
         if not result_head_d then
             result_head_d = n
@@ -257,9 +258,7 @@ local function flatten_vbox(head, grid_width, char_width)
                 -- the main vertical flow. This prevents inline HLISTs (like \box0 in decorate)
                 -- from triggering unwanted column breaks.
                 if tid == constants.HLIST and inner_has_content and parent_is_vlist then
-                    if utils and utils.debug_log then
-                        utils.debug_log("  [flatten] Adding Column Break after Line=" .. tostring(t))
-                    end
+                    dbg.log("Adding Column Break after Line=" .. tostring(t))
                     local p = D.new(constants.PENALTY)
                     D.setfield(p, "penalty", -10002)
                     append_node(p)
@@ -296,7 +295,7 @@ local flatten = {
 
 -- Register module in package.loaded for require() compatibility
 -- 注册模块到 package.loaded
-package.loaded['vertical.luatex-cn-vertical-flatten-nodes'] = flatten
+package.loaded['core.luatex-cn-core-flatten-nodes'] = flatten
 
 -- Return module exports
 return flatten

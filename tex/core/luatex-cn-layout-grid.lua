@@ -62,45 +62,97 @@
 
 -- Load dependencies
 -- Check if already loaded via dofile (package.loaded set manually)
-local constants = package.loaded['vertical.luatex-cn-vertical-base-constants'] or
-    require('vertical.luatex-cn-vertical-base-constants')
+local constants = package.loaded['core.luatex-cn-constants'] or
+    require('core.luatex-cn-constants')
 local D = constants.D
-local utils = package.loaded['vertical.luatex-cn-vertical-base-utils'] or
-    require('vertical.luatex-cn-vertical-base-utils')
-local hooks = package.loaded['vertical.luatex-cn-vertical-base-hooks'] or
-    require('vertical.luatex-cn-vertical-base-hooks')
+local utils = package.loaded['util.luatex-cn-utils'] or
+    require('util.luatex-cn-utils')
+local hooks = package.loaded['core.luatex-cn-hooks'] or
+    require('core.luatex-cn-hooks')
+local debug = package.loaded['debug.luatex-cn-debug'] or
+    require('debug.luatex-cn-debug')
+
+local dbg = debug.get_debugger('layout')
 
 local _internal = {}
+
+-- =============================================================================
+-- Helper functions to get params with fallback to globals
+-- =============================================================================
+
+-- Helper to get banxin_on with fallback to _G.banxin.enabled
+local function get_banxin_on(params)
+    if params and params.banxin_on ~= nil then
+        return params.banxin_on
+    end
+    return _G.banxin and _G.banxin.enabled or false
+end
+
+-- Helper to get grid_width with fallback to _G.content.grid_width
+local function get_grid_width(params, fallback)
+    if params and params.grid_width and params.grid_width > 0 then
+        return params.grid_width
+    end
+    if _G.content and _G.content.grid_width and _G.content.grid_width > 0 then
+        return _G.content.grid_width
+    end
+    return fallback or (65536 * 20)
+end
+
+-- Helper to get margin_right with fallback to _G.page.margin_right
+local function get_margin_right(params)
+    if params and params.margin_right then
+        if type(params.margin_right) == "number" then
+            return params.margin_right
+        else
+            return constants.to_dimen(params.margin_right) or 0
+        end
+    end
+    return _G.page and _G.page.margin_right or 0
+end
+
+-- Helper to get chapter_title with fallback to _G.metadata.chapter_title
+local function get_chapter_title(params)
+    if params and params.chapter_title and params.chapter_title ~= "" then
+        return params.chapter_title
+    end
+    return _G.metadata and _G.metadata.chapter_title or ""
+end
+
+_internal.get_banxin_on = get_banxin_on
+_internal.get_grid_width = get_grid_width
+_internal.get_margin_right = get_margin_right
+_internal.get_chapter_title = get_chapter_title
+
+-- =============================================================================
+-- Column validation functions
+-- =============================================================================
 
 local function is_reserved_col(col, interval, banxin_on)
     if not banxin_on then return false end
     if interval <= 0 then return false end
-    return _G.vertical.hooks.is_reserved_column(col, interval)
+    return _G.core.hooks.is_reserved_column(col, interval)
 end
 
 local function is_center_gap_col(col, params, grid_height)
-    if not params.banxin_on then return false end
-    -- Use provided params if available
-    local g_width = params.grid_width or grid_height or (65536 * 20)
+    local banxin_on = get_banxin_on(params)
+    if not banxin_on then return false end
 
-    local paper_w = params.floating_paper_width or params.paper_width or 0
-    if paper_w <= 0 and _G.vertical and _G.vertical.main_paper_width then
-        paper_w = _G.vertical.main_paper_width
-    end
+    -- Use provided params if available, fall back to globals
+    local g_width = get_grid_width(params, grid_height)
+
+    -- Use global page width (set by page.setup via \pageSetup)
+    local paper_w = _G.page and _G.page.paper_width or 0
     if paper_w <= 0 then return false end
 
     local center = paper_w / 2
     local gap_half_width = 15 * 65536 -- 15pt in sp
 
-    local floating_x = params.floating_x or 0
-    if not params.floating then
+    local floating_x = params and params.floating_x or 0
+    if not (params and params.floating) then
         -- actually, main text col 0 is anchored to margin_right.
         -- So floating_x for main text's right origin is margin_right.
-        if type(params.margin_right) == "number" then
-            floating_x = params.margin_right
-        else
-            floating_x = constants.to_dimen(params.margin_right) or 0
-        end
+        floating_x = get_margin_right(params)
     end
 
     local col_right_x = floating_x + col * g_width
@@ -110,11 +162,6 @@ local function is_center_gap_col(col, params, grid_height)
     local gap_right = center + gap_half_width
 
     local overlaps = (col_right_x < gap_right) and (col_left_x > gap_left)
-
-    if overlaps then
-        utils.debug_log(string.format("[layout] Skipping center gap column %d", col))
-    end
-
 
     return overlaps
 end
@@ -135,6 +182,8 @@ local function mark_occupied(occupancy, p, c, r)
 end
 
 local function create_grid_context(params, line_limit, p_cols)
+    -- Use helper for chapter_title with fallback to _G.metadata
+    local initial_chapter = get_chapter_title(params)
     local ctx = {
         cur_page = 0,
         cur_col = 0,
@@ -145,7 +194,7 @@ local function create_grid_context(params, line_limit, p_cols)
         p_cols = p_cols,
         cur_column_indent = 0,
         page_has_content = false,
-        chapter_title = params.chapter_title or "",
+        chapter_title = initial_chapter,
         page_chapter_titles = {}, -- To store chapter title for each page
         -- Can add other state if needed
     }
@@ -164,10 +213,11 @@ end
 
 local function move_to_next_valid_position(ctx, interval, grid_height, indent)
     local changed = true
+    local banxin_on = get_banxin_on(ctx.params)
     while changed do
         changed = false
         -- Skip Banxin and register it
-        while is_reserved_col(ctx.cur_col, interval, ctx.params.banxin_on) do
+        while is_reserved_col(ctx.cur_col, interval, banxin_on) do
             -- Register this Banxin column for the current page
             if not ctx.banxin_registry[ctx.cur_page] then
                 ctx.banxin_registry[ctx.cur_page] = {}
@@ -219,6 +269,96 @@ end
 
 _internal.move_to_next_valid_position = move_to_next_valid_position
 
+--- Wrap cursor to next column (and page if needed)
+-- @param ctx (table) Grid context
+-- @param p_cols (number) Total columns per page
+-- @param interval (number) Banxin interval
+-- @param grid_height (number) Grid height in sp
+-- @param indent (number|nil) Current indent
+-- @param reset_indent (boolean) Whether to reset column indent
+-- @param reset_content (boolean) Whether to reset page_has_content flag
+local function wrap_to_next_column(ctx, p_cols, interval, grid_height, indent, reset_indent, reset_content)
+    ctx.cur_col = ctx.cur_col + 1
+    ctx.cur_row = 0
+    if ctx.cur_col >= p_cols then
+        ctx.cur_col = 0
+        ctx.cur_page = ctx.cur_page + 1
+        if reset_content then
+            ctx.page_has_content = false
+        end
+    end
+    if reset_indent then
+        ctx.cur_column_indent = 0
+    end
+    move_to_next_valid_position(ctx, interval, grid_height, indent)
+end
+
+_internal.wrap_to_next_column = wrap_to_next_column
+
+--- Accumulate consecutive glue/kern nodes and return total width
+-- @param start_node (direct node) Starting node
+-- @return (number, direct node) net_width in sp, and next non-spacing node
+local function accumulate_spacing(start_node)
+    local net_width = 0
+    local lookahead = start_node
+
+    while lookahead do
+        local lid = D.getid(lookahead)
+        if lid == constants.GLUE then
+            net_width = net_width + (D.getfield(lookahead, "width") or 0)
+        elseif lid == constants.KERN then
+            net_width = net_width + (D.getfield(lookahead, "kern") or 0)
+        elseif lid == constants.PENALTY then
+            if D.getfield(lookahead, "penalty") <= -10000 then break end
+        elseif lid == constants.WHATSIT then
+            -- Skip whatsit nodes
+        else
+            break
+        end
+        lookahead = D.getnext(lookahead)
+    end
+
+    return net_width, lookahead
+end
+
+_internal.accumulate_spacing = accumulate_spacing
+
+--- Handle penalty node for column/page breaks
+-- @param p_val (number) Penalty value
+-- @param ctx (table) Grid context
+-- @param flush_buffer (function) Buffer flush function
+-- @param p_cols (number) Columns per page
+-- @param interval (number) Banxin interval
+-- @param grid_height (number) Grid height
+-- @param indent (number) Current indent
+-- @return (boolean) true if handled, false otherwise
+local function handle_penalty_breaks(p_val, ctx, flush_buffer_fn, p_cols, interval, grid_height, indent)
+    if p_val == -10002 then
+        -- Forced column break (paragraph end)
+        flush_buffer_fn()
+        if ctx.cur_row > ctx.cur_column_indent then
+            wrap_to_next_column(ctx, p_cols, interval, grid_height, indent, false, true)
+        end
+        ctx.cur_column_indent = 0
+        return true
+    elseif p_val == -10003 then
+        -- Forced page break
+        if ctx.page_has_content then
+            flush_buffer_fn()
+            ctx.cur_page = ctx.cur_page + 1
+            ctx.cur_col = 0
+            ctx.cur_row = 0
+            ctx.cur_column_indent = 0
+            ctx.page_has_content = false
+            move_to_next_valid_position(ctx, interval, grid_height, indent)
+        end
+        return true
+    end
+    return false
+end
+
+_internal.handle_penalty_breaks = handle_penalty_breaks
+
 -- @param page_columns (number) Total columns before a page break
 -- @param params (table) Optional parameters:
 --   - distribute (boolean) If true, distribute nodes evenly in columns
@@ -236,7 +376,7 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
 
     -- Debug: Log floating textbox parameters
     if params.floating then
-        utils.debug_log(string.format("[layout] Floating textbox detected: floating_x=%.1fpt, paper_width=%.1fpt",
+        dbg.log(string.format("Floating textbox detected: floating_x=%.1fpt, paper_width=%.1fpt",
             (params.floating_x or 0) / 65536, (params.paper_width or 0) / 65536))
     end
 
@@ -249,7 +389,7 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
     local col_buffer = {}
 
     -- Initial skip
-    move_to_next_valid_position(ctx, interval, grid_height, indent)
+    move_to_next_valid_position(ctx, interval, grid_height, 0)
 
     -- Block tracking for First Indent
     local block_start_cols = {} -- map[block_id] -> {page=p, col=c}
@@ -338,7 +478,7 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
     end
 
     local t = d_head
-    move_to_next_valid_position(ctx, interval, grid_height, indent)
+    move_to_next_valid_position(ctx, interval, grid_height, 0)
 
     local node_count = 0
     while t do
@@ -370,8 +510,8 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
             goto start_of_loop
         end
 
-        if node_count < 200 and utils and utils.debug_log then
-            utils.debug_log(string.format("  [layout] Node=%s ID=%d [p:%d, c:%d, r:%d]", tostring(t), id, ctx.cur_page,
+        if node_count < 200 then
+            dbg.log(string.format("  Node=%s ID=%d [p:%d, c:%d, r:%d]", tostring(t), id, ctx.cur_page,
                 ctx.cur_col, ctx.cur_row))
         end
         node_count = node_count + 1
@@ -406,150 +546,67 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
         -- In distribution mode, we allow overflow so we can squeeze characters later
         if ctx.cur_row >= effective_limit and not distribute then
             flush_buffer()
-            ctx.cur_col = ctx.cur_col + 1
-            ctx.cur_row = 0
-            if ctx.cur_col >= p_cols then
-                ctx.cur_col = 0
-                ctx.cur_page = ctx.cur_page + 1
-            end
-
-            -- CRITICAL: Reset column indent when wrapping to new column
-            ctx.cur_column_indent = 0
-            move_to_next_valid_position(ctx, interval, grid_height, indent)
+            wrap_to_next_column(ctx, p_cols, interval, grid_height, indent, true, false)
         end
 
         apply_indentation(ctx, indent)
 
         local is_jiazhu = D.get_attribute(t, constants.ATTR_JIAZHU) == 1
         if is_jiazhu then
-            if utils and utils.debug_log then
-                utils.debug_log(string.format("  [layout] JIAZHU DETECTED: node=%s", tostring(t)))
-            end
-            flush_buffer()
-            -- Collect Jiazhu sequence
-            local j_nodes = {}
-            local temp_t = t
-            while temp_t and D.get_attribute(temp_t, constants.ATTR_JIAZHU) == 1 do
-                local tid = D.getid(temp_t)
-                if tid == constants.GLYPH then
-                    table.insert(j_nodes, temp_t)
-                end
-                temp_t = D.getnext(temp_t)
-            end
-            if utils and utils.debug_log then
-                utils.debug_log(string.format("  [layout] Collected %d jiazhu glyphs", #j_nodes))
-            end
-
-            -- Ensure we have at least 2 rows available before starting a Jiazhu sequence
-            -- This prevents "orphan" Jiazhu rows starting at the very bottom of a column.
-            if effective_limit - ctx.cur_row < 2 then
-                flush_buffer()
-                ctx.cur_col = ctx.cur_col + 1
-                ctx.cur_row = 0
-                if ctx.cur_col >= p_cols then
-                    ctx.cur_col = 0
-                    ctx.cur_page = ctx.cur_page + 1
-                end
-                move_to_next_valid_position(ctx, interval, grid_height, indent)
-            end
-
-            -- Process via core_textflow
-            -- Note: subsequent chunks must also account for indentation in their columns
-            local textflow = package.loaded['vertical.luatex-cn-vertical-core-textflow'] or
-                require('vertical.luatex-cn-vertical-core-textflow')
-            local available_in_first = effective_limit - ctx.cur_row
-            local capacity_per_subsequent = line_limit - base_indent - r_indent -- Use base_indent for subsequent columns
+            local textflow = package.loaded['core.luatex-cn-core-textflow'] or
+                require('core.luatex-cn-core-textflow')
 
             local jiazhu_mode = D.get_attribute(t, constants.ATTR_JIAZHU_MODE) or 0
+            local place_params = {
+                effective_limit = effective_limit,
+                line_limit = line_limit,
+                base_indent = base_indent,
+                r_indent = r_indent,
+                block_id = block_id,
+                first_indent = first_indent,
+                jiazhu_mode = jiazhu_mode
+            }
+            local callbacks = {
+                flush = flush_buffer,
+                wrap = function()
+                    wrap_to_next_column(ctx, p_cols, interval, grid_height, indent, false, false)
+                end,
+                get_indent = get_indent_for_current_pos,
+                debug = function(msg) dbg.log(msg) end
+            }
 
-            local chunks = textflow.process_jiazhu_sequence(j_nodes, available_in_first, capacity_per_subsequent,
-                jiazhu_mode)
+            t = textflow.place_jiazhu_nodes(ctx, t, layout_map, place_params, callbacks)
 
-            for i, chunk in ipairs(chunks) do
-                -- If not the first chunk, move to next column
-                if i > 1 then
-                    ctx.cur_col = ctx.cur_col + 1
-                    ctx.cur_row = 0
-                    if ctx.cur_col >= p_cols then
-                        ctx.cur_col = 0
-                        ctx.cur_page = ctx.cur_page + 1
-                    end
-                    move_to_next_valid_position(ctx, interval, grid_height, indent)
-
-                    -- Recalculate indentation and row start for new column
-                    local chunk_indent = get_indent_for_current_pos(block_id, base_indent, first_indent)
-                    if ctx.cur_row < chunk_indent then ctx.cur_row = chunk_indent end
-                end
-
-                -- Record positions
-                for _, node_info in ipairs(chunk.nodes) do
-                    layout_map[node_info.node] = {
-                        page = ctx.cur_page,
-                        col = ctx.cur_col,
-                        row = ctx.cur_row + node_info.relative_row,
-                        sub_col = node_info.sub_col
-                    }
-                end
-
-                ctx.cur_row = ctx.cur_row + chunk.rows_used
-            end
-
-            t = temp_t
             if not t then break end
             goto start_of_loop
         end
 
         if tb_w > 0 and tb_h > 0 then
             -- Handle Textbox Block
-            if ctx.cur_row + tb_h > effective_limit then
-                flush_buffer()
-                ctx.cur_col = ctx.cur_col + 1
-                ctx.cur_row = indent
-                if ctx.cur_col >= p_cols then
-                    ctx.cur_col = 0
-                    ctx.cur_page = ctx.cur_page + 1
-                end
-                move_to_next_valid_position(ctx, interval, grid_height, indent)
-            end
+            local textbox = package.loaded['core.luatex-cn-core-textbox'] or
+                require('core.luatex-cn-core-textbox')
 
-            local fits_width = true
-            for c = ctx.cur_col, ctx.cur_col + tb_w - 1 do
-                if is_reserved_col(c, interval, ctx.params.banxin_on) or (c >= p_cols) then
-                    fits_width = false
-                    break
+            local tb_params = {
+                effective_limit = effective_limit,
+                p_cols = p_cols,
+                indent = indent
+            }
+            local tb_callbacks = {
+                flush = flush_buffer,
+                wrap = function(ri, rc)
+                    wrap_to_next_column(ctx, p_cols, interval, grid_height, indent, ri, rc)
+                end,
+                is_reserved = function(c)
+                    return is_reserved_col(c, interval, ctx.params.banxin_on)
+                end,
+                mark_occupied = mark_occupied,
+                push_buffer = function(e) table.insert(col_buffer, e) end,
+                move_next = function()
+                    move_to_next_valid_position(ctx, interval, grid_height, indent)
                 end
-            end
+            }
 
-            if not fits_width then
-                flush_buffer()
-                ctx.cur_col = ctx.cur_col + 1
-                ctx.cur_row = 0
-                if ctx.cur_col >= p_cols then
-                    ctx.cur_col = 0
-                    ctx.cur_page = ctx.cur_page + 1
-                end
-                move_to_next_valid_position(ctx, interval, grid_height, indent)
-            end
-
-            for c = ctx.cur_col, ctx.cur_col + tb_w - 1 do
-                for r = ctx.cur_row, ctx.cur_row + tb_h - 1 do
-                    mark_occupied(ctx.occupancy, ctx.cur_page, c, r)
-                end
-            end
-
-            table.insert(col_buffer,
-                {
-                    node = t,
-                    page = ctx.cur_page,
-                    col = ctx.cur_col,
-                    relative_row = ctx.cur_row,
-                    is_block = true,
-                    width = tb_w,
-                    height =
-                        tb_h
-                })
-            ctx.cur_row = ctx.cur_row + tb_h
-            move_to_next_valid_position(ctx, interval, grid_height, indent)
+            textbox.place_textbox_node(ctx, t, tb_w, tb_h, tb_params, tb_callbacks)
         elseif id == constants.GLYPH then
             local dec_id = D.get_attribute(t, constants.ATTR_DECORATE_ID)
             if dec_id and dec_id > 0 then
@@ -574,24 +631,8 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
                 move_to_next_valid_position(ctx, interval, grid_height, indent)
             end
         elseif id == constants.GLUE or id == constants.KERN then
-            local net_width = 0
-            local lookahead = t
-
-            while lookahead do
-                local lid = D.getid(lookahead)
-                if lid == constants.GLUE then
-                    net_width = net_width + (D.getfield(lookahead, "width") or 0)
-                elseif lid == constants.KERN then
-                    net_width = net_width + (D.getfield(lookahead, "kern") or 0)
-                elseif lid == constants.PENALTY then
-                    if D.getfield(lookahead, "penalty") <= -10000 then break end
-                elseif lid == constants.WHATSIT or lid == constants.MARK then
-                    -- Skip
-                else
-                    break
-                end
-                lookahead = D.getnext(lookahead)
-            end
+            -- Accumulate consecutive spacing nodes
+            local net_width, lookahead = accumulate_spacing(t)
 
             local threshold = (grid_height or 655360) * 0.25
             if net_width > threshold then
@@ -599,27 +640,23 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
                 if num_cells < 1 then num_cells = 1 end
 
                 if ctx.cur_row > ctx.cur_column_indent then
-                    utils.debug_log(string.format("  [layout] SPACING: val=%.2fpt, grid_h=%.2fpt, num_cells=%d",
+                    dbg.log(string.format("  SPACING: val=%.2fpt, grid_h=%.2fpt, num_cells=%d",
                         net_width / 65536, (grid_height or 0) / 65536, num_cells))
 
                     for i = 1, num_cells do
                         ctx.cur_row = ctx.cur_row + 1
                         if ctx.cur_row >= effective_limit then
                             flush_buffer()
-                            ctx.cur_col = ctx.cur_col + 1
-                            ctx.cur_row = 0
-                            if ctx.cur_col >= p_cols then
-                                ctx.cur_col = 0
-                                ctx.cur_page = ctx.cur_page + 1
-                            end
+                            wrap_to_next_column(ctx, p_cols, interval, grid_height, indent, false, false)
+                        else
+                            move_to_next_valid_position(ctx, interval, grid_height, indent)
                         end
-                        move_to_next_valid_position(ctx, interval, grid_height, indent)
                     end
                 else
-                    if utils and utils.debug_log then
-                        utils.debug_log(string.format("  [layout] SPACING: val=%.2fpt IGNORED (at top or within indent)",
-                            net_width / 65536))
-                    end
+                    -- if debug.is_enabled("layout") then
+                    --     debug.log("layout", string.format("  SPACING: val=%.2fpt IGNORED (at top or within indent)",
+                    --         net_width / 65536))
+                    -- end
                 end
             end
 
@@ -628,35 +665,7 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
             goto start_of_loop
         elseif id == constants.PENALTY then
             local p_val = D.getfield(t, "penalty")
-            -- Internal Flatten logic uses -10002 for forced column break (paragraph end)
-            if p_val == -10002 then
-                flush_buffer()
-                -- Column break only happens if there's content in current column
-                if ctx.cur_row > ctx.cur_column_indent then
-                    ctx.cur_col = ctx.cur_col + 1
-                    ctx.cur_row = 0
-                    if ctx.cur_col >= p_cols then
-                        ctx.cur_col = 0
-                        ctx.cur_page = ctx.cur_page + 1
-                        ctx.page_has_content = false
-                    end
-                    move_to_next_valid_position(ctx, interval, grid_height, indent)
-                end
-                -- Always reset indent when paragraph ends, regardless of column break
-                ctx.cur_column_indent = 0
-            elseif p_val == -10003 then
-                -- Our internal forced page break (set by redefined \newpage and \clearpage)
-                if ctx.page_has_content then
-                    flush_buffer()
-                    -- Force Page Break
-                    ctx.cur_page = ctx.cur_page + 1
-                    ctx.cur_col = 0
-                    ctx.cur_row = 0
-                    ctx.cur_column_indent = 0
-                    ctx.page_has_content = false
-                    move_to_next_valid_position(ctx, interval, grid_height, indent)
-                end
-            end
+            handle_penalty_breaks(p_val, ctx, flush_buffer, p_cols, interval, grid_height, indent)
         end
 
         t = D.getnext(t)
@@ -667,12 +676,10 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
 
     local total_pages = ctx.cur_page + 1
 
-    if utils and utils.debug_log then
-        local map_count = 0
-        for _ in pairs(layout_map) do map_count = map_count + 1 end
-        utils.debug_log(string.format("[layout] Layout map built. Total entries: %d, Total pages: %d", map_count,
-            ctx.cur_page + 1))
-    end
+    local map_count = 0
+    for _ in pairs(layout_map) do map_count = map_count + 1 end
+    dbg.log(string.format("Layout map built. Total entries: %d, Total pages: %d", map_count,
+        ctx.cur_page + 1))
 
     return layout_map, ctx.cur_page + 1, ctx.page_chapter_titles, ctx.banxin_registry
 end
@@ -684,7 +691,7 @@ local layout = {
 
 -- Register module in package.loaded for require() compatibility
 -- 注册模块到 package.loaded
-package.loaded['vertical.luatex-cn-vertical-layout-grid'] = layout
+package.loaded['core.luatex-cn-layout-grid'] = layout
 
 -- Return module exports
 return layout

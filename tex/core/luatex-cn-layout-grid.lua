@@ -586,9 +586,36 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
         node_count = node_count + 1
 
         -- Advanced Indentation Logic
+        -- Priority: 1) Node attribute (from Paragraph), 2) Style stack (inherited)
         local block_id = D.get_attribute(t, constants.ATTR_BLOCK_ID)
-        local base_indent = D.get_attribute(t, constants.ATTR_INDENT) or 0
-        local first_indent = D.get_attribute(t, constants.ATTR_FIRST_INDENT) or -1
+        local node_indent = D.get_attribute(t, constants.ATTR_INDENT)
+        local node_first_indent = D.get_attribute(t, constants.ATTR_FIRST_INDENT)
+
+        -- Get indent from node attribute or style stack
+        local base_indent = node_indent or 0
+        local first_indent = node_first_indent or -1
+
+        -- If node doesn't have explicit indent, check style stack
+        if node_indent == nil or node_indent == 0 then
+            local style_id = D.get_attribute(t, constants.ATTR_STYLE_REG_ID)
+            if style_id then
+                local stack_indent = style_registry.get_indent(style_id)
+                if stack_indent and stack_indent > 0 then
+                    base_indent = stack_indent
+                end
+            end
+        end
+
+        -- If node doesn't have explicit first_indent, check style stack
+        if node_first_indent == nil or node_first_indent == -1 then
+            local style_id = D.get_attribute(t, constants.ATTR_STYLE_REG_ID)
+            if style_id then
+                local stack_first_indent = style_registry.get_first_indent(style_id)
+                if stack_first_indent and stack_first_indent ~= -1 then
+                    first_indent = stack_first_indent
+                end
+            end
+        end
 
         local current_indent = get_indent_for_current_pos(block_id, base_indent, first_indent)
 

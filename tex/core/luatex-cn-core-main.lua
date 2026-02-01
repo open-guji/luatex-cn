@@ -192,7 +192,8 @@ local function init_engine_context(box_num, params)
     local b_padding_top = _G.content.border_padding_top or 0
     local b_padding_bottom = _G.content.border_padding_bottom or 0
     local is_border = _G.content.border_on or false
-    local is_outer_border = _G.content.outer_border_on or false
+    -- TextBox never has outer border (content-only feature)
+    local is_outer_border = is_textbox and false or (_G.content.outer_border_on or false)
 
     -- 0.4 Visual Flags & Features (use global _G.banxin set by banxin.setup)
     local banxin_on = _G.banxin and _G.banxin.enabled or false
@@ -426,6 +427,11 @@ local function generate_physical_pages(list, params, engine_ctx, plugin_contexts
         visual_ctx.bg_rgb = params.background_color
         visual_ctx.font_rgb = params.font_color
         visual_ctx.font_size = constants.to_dimen(params.font_size)
+        -- Border shape parameters
+        visual_ctx.border_shape = params.border_shape or "none"
+        visual_ctx.border_color = params.border_color or ""
+        visual_ctx.border_width = params.border_width or "0.4pt"
+        visual_ctx.border_margin = params.border_margin or "1pt"
     end
     -- For non-textbox: render-page.lua will read from _G.content via calculate_render_context()
 
@@ -506,11 +512,33 @@ local function typeset(box_num, params)
     local list, engine_ctx, plugin_contexts, p_info = init_engine_context(box_num, params)
     if not list then return 0 end
 
+    -- For content (non-textbox): push border settings to style stack
+    local style_registry
+    local is_textbox = (params.is_textbox == true)
+    if not is_textbox then
+        style_registry = package.loaded['util.luatex-cn-style-registry'] or
+            require('util.luatex-cn-style-registry')
+        style_registry.push({
+            border = _G.content.border_on or false,
+            border_width = _G.content.border_thickness and
+                tostring(math.floor(_G.content.border_thickness / 65536 * 100 + 0.5) / 100) .. "pt" or "0.4pt",
+            border_color = _G.content.border_color or "",
+            outer_border = _G.content.outer_border_on or false,
+        })
+    end
+
     list = flatten_node_stream(list, params, engine_ctx, plugin_contexts, p_info)
 
     local layout_results = compute_grid_layout(list, params, engine_ctx, plugin_contexts, p_info)
 
-    return generate_physical_pages(list, params, engine_ctx, plugin_contexts, layout_results, p_info)
+    local total_pages = generate_physical_pages(list, params, engine_ctx, plugin_contexts, layout_results, p_info)
+
+    -- Pop style stack for content
+    if not is_textbox and style_registry then
+        style_registry.pop()
+    end
+
+    return total_pages
 end
 
 --- Load a prepared page into a TeX box register

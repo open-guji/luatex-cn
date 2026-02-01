@@ -140,14 +140,24 @@ local function calculate_render_context(ctx)
 
     -- Visual params: from _G.content for VerticalRTT, from ctx for textbox
     local vertical_align, background_rgb_str, text_rgb_str
+    local border_shape, border_color_str, border_width, border_margin
     if is_textbox then
         vertical_align = visual.vertical_align or "center"
         background_rgb_str = utils.normalize_rgb(visual.bg_rgb)
         text_rgb_str = utils.normalize_rgb(visual.font_rgb)
+        -- Border shape decoration parameters
+        border_shape = visual.border_shape or "none"
+        border_color_str = utils.normalize_rgb(visual.border_color) or "0 0 0"
+        border_width = constants.to_dimen(visual.border_width) or (65536 * 0.4)
+        border_margin = constants.to_dimen(visual.border_margin) or (65536 * 1)
     else
         vertical_align = _G.content.vertical_align or "center"
         background_rgb_str = utils.normalize_rgb(_G.content.background_color)
         text_rgb_str = utils.normalize_rgb(_G.content.font_color)
+        border_shape = "none"
+        border_color_str = nil
+        border_width = 0
+        border_margin = 0
     end
 
     -- Colors: border from engine (already normalized in main.lua)
@@ -178,6 +188,11 @@ local function calculate_render_context(ctx)
         judou_pos = (_G.judou and _G.judou.pos) or "right-bottom",
         judou_size = (_G.judou and _G.judou.size) or "1em",
         judou_color = (_G.judou and _G.judou.color) or "red",
+        -- Border shape decoration parameters (textbox only)
+        border_shape = border_shape,
+        border_color_str = border_color_str,
+        border_width = border_width,
+        border_margin = border_margin,
     }
 end
 
@@ -545,6 +560,33 @@ local function render_single_page(p_head, p_max_col, p, layout_map, params, ctx)
         outer_shift = outer_shift,
         is_textbox = page.is_textbox,
     })
+
+    -- Special border shape decoration (octagon / circle) for TextBox
+    local border_shape = ctx.border_shape
+    if border_shape and border_shape ~= "none" and border_shape ~= "rect" then
+        local border_color = ctx.border_color_str or ctx.b_rgb_str or "0 0 0"
+        local border_w = ctx.border_width or (65536 * 0.4)
+        local border_m = ctx.border_margin or (65536 * 1)
+
+        if border_shape == "octagon" then
+            p_head = content.draw_octagon_frame(p_head, {
+                x = -border_m,
+                y = border_m,
+                width = inner_width + 2 * border_m,
+                height = inner_height + 2 * border_m,
+                line_width = border_w,
+                color_str = border_color,
+            })
+        elseif border_shape == "circle" then
+            p_head = content.draw_circle_frame(p_head, {
+                cx = inner_width / 2,
+                cy = -inner_height / 2,
+                radius = math.max(inner_width, inner_height) / 2 + border_m,
+                line_width = border_w,
+                color_str = border_color,
+            })
+        end
+    end
 
     -- Node positions
     -- Update context with page-specific total_cols

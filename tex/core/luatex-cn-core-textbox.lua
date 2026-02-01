@@ -166,6 +166,41 @@ local function build_sub_params(params, col_aligns)
     -- height=0 means auto: use large limit to fit content
     local col_limit = (height > 0) and height or 1000
 
+    -- Get style registry for inheritance
+    local style_registry = package.loaded['util.luatex-cn-style-registry']
+    local current_id = style_registry and style_registry.current_id()
+
+    -- Resolve border: explicit param > inherited from style stack > default false
+    local border_on = false
+    if params.border == "true" or params.border == true then
+        border_on = true
+    elseif params.border == "false" or params.border == false then
+        border_on = false
+    elseif style_registry then
+        local inherited = style_registry.get_border(current_id)
+        if inherited ~= nil then
+            border_on = inherited
+        end
+    end
+
+    -- Resolve border_width: explicit param > inherited > default "0.4pt"
+    local border_width = params.border_width
+    if not border_width or border_width == "" then
+        if style_registry then
+            border_width = style_registry.get_border_width(current_id)
+        end
+        border_width = border_width or "0.4pt"
+    end
+
+    -- Resolve border_color: explicit param > inherited > default ""
+    local border_color = params.border_color
+    if not border_color or border_color == "" then
+        if style_registry then
+            border_color = style_registry.get_border_color(current_id)
+        end
+        border_color = border_color or ""
+    end
+
     return {
         n_cols = n_cols,
         page_columns = n_cols,
@@ -175,13 +210,17 @@ local function build_sub_params(params, col_aligns)
         grid_height = params.grid_height,
         box_align = params.box_align,
         column_aligns = col_aligns,
-        border_on = (params.border == "true" or params.border == true),
+        border_on = border_on,
         background_color = params.background_color,
         font_color = params.font_color,
         font_size = params.font_size,
         is_textbox = true,
         distribute = (ba == "fill"),
-        border_color = params.border_color,
+        -- Border parameters (resolved from params or style stack)
+        border_color = border_color,
+        border_shape = params.border_shape or "none",
+        border_width = border_width,
+        border_margin = params.border_margin or "1pt",
         -- floating* now in _G.textbox (read via plugin context in main.lua)
         -- judou params read directly from TeX vars by judou plugin
     }
@@ -227,10 +266,20 @@ local function execute_layout_pipeline(box_num, sub_params, current_indent)
     tex.leftskip = 0
     tex.attribute[constants.ATTR_INDENT] = -0x7FFFFFFF -- Unset attribute
 
-    -- Push zero-indent style to override any inherited paragraph indent (fix #37)
+    -- Push textbox style to override inherited styles (fix #37)
+    -- - indent/first_indent = 0: textbox content should not inherit paragraph indent
+    -- - border settings: push to style stack for nested components
+    -- - outer_border = false: textbox never has outer border (content-only feature)
     local style_registry = package.loaded['util.luatex-cn-style-registry'] or
         require('util.luatex-cn-style-registry')
-    style_registry.push({ indent = 0, first_indent = 0 })
+    style_registry.push({
+        indent = 0,
+        first_indent = 0,
+        border = sub_params.border_on,
+        border_width = sub_params.border_width,
+        border_color = sub_params.border_color,
+        outer_border = false,  -- TextBox never has outer border
+    })
 
     -- Clear indent attributes on all nodes in the textbox content (fix #37)
     -- ATTR_INDENT takes priority over style registry, so we must clear it

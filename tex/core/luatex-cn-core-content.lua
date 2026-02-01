@@ -299,12 +299,94 @@ local function draw_outer_border(p_head, params)
     return p_head
 end
 
+--- 绘制八角形边框
+-- @param p_head (node) 节点列表头部
+-- @param params (table) 参数表:
+--   - x: 左上角 X 坐标 (sp)
+--   - y: 左上角 Y 坐标 (sp，向下为负)
+--   - width: 宽度 (sp)
+--   - height: 高度 (sp)
+--   - line_width: 线宽 (sp)
+--   - color_str: RGB 颜色字符串
+-- @return (node) 更新后的头部
+local function draw_octagon_frame(p_head, params)
+    local sp_to_bp = utils.sp_to_bp
+    local x_bp = params.x * sp_to_bp
+    local y_bp = params.y * sp_to_bp
+    local w_bp = params.width * sp_to_bp
+    local h_bp = params.height * sp_to_bp
+    local lw_bp = params.line_width * sp_to_bp
+    local color_str = params.color_str or "0 0 0"
+
+    -- Calculate corner cut size (20% of smaller dimension)
+    local corner = math.min(w_bp, h_bp) * 0.2
+
+    local literal = string.format([[
+q %s RG %.2f w
+%.4f %.4f m
+%.4f %.4f l %.4f %.4f l %.4f %.4f l %.4f %.4f l
+%.4f %.4f l %.4f %.4f l %.4f %.4f l h S Q]],
+        color_str, lw_bp,
+        x_bp + corner, y_bp,
+        x_bp + w_bp - corner, y_bp,
+        x_bp + w_bp, y_bp - corner,
+        x_bp + w_bp, y_bp - h_bp + corner,
+        x_bp + w_bp - corner, y_bp - h_bp,
+        x_bp + corner, y_bp - h_bp,
+        x_bp, y_bp - h_bp + corner,
+        x_bp, y_bp - corner
+    )
+
+    return utils.insert_pdf_literal(p_head, literal)
+end
+
+--- 绘制圆形边框（使用贝塞尔曲线近似）
+-- @param p_head (node) 节点列表头部
+-- @param params (table) 参数表:
+--   - cx: 圆心 X 坐标 (sp)
+--   - cy: 圆心 Y 坐标 (sp)
+--   - radius: 半径 (sp)
+--   - line_width: 线宽 (sp)
+--   - color_str: RGB 颜色字符串
+-- @return (node) 更新后的头部
+local function draw_circle_frame(p_head, params)
+    local sp_to_bp = utils.sp_to_bp
+    local cx_bp = params.cx * sp_to_bp
+    local cy_bp = params.cy * sp_to_bp
+    local r_bp = params.radius * sp_to_bp
+    local lw_bp = params.line_width * sp_to_bp
+    local color_str = params.color_str or "0 0 0"
+
+    -- Bezier approximation constant: 4/3 * (sqrt(2) - 1)
+    local k = 0.5523
+    local kappa = r_bp * k
+
+    local literal = string.format([[
+q %s RG %.2f w
+%.4f %.4f m
+%.4f %.4f %.4f %.4f %.4f %.4f c
+%.4f %.4f %.4f %.4f %.4f %.4f c
+%.4f %.4f %.4f %.4f %.4f %.4f c
+%.4f %.4f %.4f %.4f %.4f %.4f c S Q]],
+        color_str, lw_bp,
+        cx_bp + r_bp, cy_bp,
+        cx_bp + r_bp, cy_bp + kappa, cx_bp + kappa, cy_bp + r_bp, cx_bp, cy_bp + r_bp,
+        cx_bp - kappa, cy_bp + r_bp, cx_bp - r_bp, cy_bp + kappa, cx_bp - r_bp, cy_bp,
+        cx_bp - r_bp, cy_bp - kappa, cx_bp - kappa, cy_bp - r_bp, cx_bp, cy_bp - r_bp,
+        cx_bp + kappa, cy_bp - r_bp, cx_bp + r_bp, cy_bp - kappa, cx_bp + r_bp, cy_bp
+    )
+
+    return utils.insert_pdf_literal(p_head, literal)
+end
+
 -- Create module table
 local content = {
     setup = setup,
     set_font_color = set_font_color,
     draw_column_borders = draw_column_borders,
     draw_outer_border = draw_outer_border,
+    draw_octagon_frame = draw_octagon_frame,
+    draw_circle_frame = draw_circle_frame,
 }
 
 -- Register module in package.loaded

@@ -14,15 +14,15 @@ Package geometry Warning: `paperheight': not available in `\newgeometry'; skippe
 * layout: <same size as paper>
 * layoutoffset:(h,v)=(0.0pt,0.0pt)
 * modes: 
-* h-part:(L,W,R)=(133.2pt, 301.6pt, 133.2pt)
-* v-part:(T,H,B)=(188.50003pt, 614.49997pt, 91.6pt)
+* h-part:(L,W,R)=(0.0pt, 568.0pt, 0.0pt)
+* v-part:(T,H,B)=(0.0pt, 894.6pt, 0.0pt)
 * \paperwidth=568.0pt
 * \paperheight=894.6pt
-* \textwidth=301.6pt
-* \textheight=614.49997pt
-* \oddsidemargin=60.93001pt
-* \evensidemargin=60.93001pt
-* \topmargin=79.23004pt
+* \textwidth=568.0pt
+* \textheight=894.6pt
+* \oddsidemargin=-72.26999pt
+* \evensidemargin=-72.26999pt
+* \topmargin=-109.26999pt
 * \headheight=12.0pt
 * \headsep=25.0pt
 * \topskip=0.0pt
@@ -100,15 +100,15 @@ Package geometry Warning: `paperheight': not available in `\newgeometry'; skippe
 * layout: <same size as paper>
 * layoutoffset:(h,v)=(0.0pt,0.0pt)
 * modes: 
-* h-part:(L,W,R)=(133.2pt, 301.6pt, 133.2pt)
-* v-part:(T,H,B)=(188.50003pt, 614.49997pt, 91.6pt)
+* h-part:(L,W,R)=(0.0pt, 568.0pt, 0.0pt)
+* v-part:(T,H,B)=(0.0pt, 894.6pt, 0.0pt)
 * \paperwidth=568.0pt
 * \paperheight=894.6pt
-* \textwidth=301.6pt
-* \textheight=614.49997pt
-* \oddsidemargin=60.93001pt
-* \evensidemargin=60.93001pt
-* \topmargin=79.23004pt
+* \textwidth=568.0pt
+* \textheight=894.6pt
+* \oddsidemargin=-72.26999pt
+* \evensidemargin=-72.26999pt
+* \topmargin=-109.26999pt
 * \headheight=12.0pt
 * \headsep=25.0pt
 * \topskip=0.0pt
@@ -127,32 +127,32 @@ Package geometry Warning: `paperheight': not available in `\newgeometry'; skippe
 * (1in=72.27pt=25.4mm, 1cm=28.453pt)
 ^^[[36m[banxin]^^[[0m Initialized. Active=true
 ^^[[36m[core]^^[[0m Stage 0: Initialized with g_height=28.00 pt, limit=21, p_cols=17
-^^[[36m[flatten]^^[[0m Adding Column Break after Line=2497
-^^[[36m[flatten]^^[[0m Adding Column Break after Line=619
-^^[[36m[core]^^[[0m Stage 1: Flattened head=<node    nil <   3389 >    890 : glyph 256>
+^^[[36m[flatten]^^[[0m Adding Column Break after Line=509
+^^[[36m[flatten]^^[[0m Adding Column Break after Line=2546
+^^[[36m[core]^^[[0m Stage 1: Flattened head=<node    nil <   3441 >    890 : glyph 256>
 ^^[[36m[core]^^[[0m Stage 1: Processed punctuation.
-^^[[36m[layout]^^[[0m   Node=3389 ID=29 [p:0, c:0, r:0]
+^^[[36m[layout]^^[[0m   Node=3441 ID=29 [p:0, c:0, r:0]
 ^^[[36m[layout]^^[[0m   Node=890 ID=29 [p:0, c:0, r:6]
-^^[[36m[layout]^^[[0m   Node=587 ID=29 [p:0, c:0, r:7]
-^^[[36m[layout]^^[[0m   Node=573 ID=29 [p:0, c:0, r:8]
+^^[[36m[layout]^^[[0m   Node=573 ID=29 [p:0, c:0, r:7]
+^^[[36m[layout]^^[[0m   Node=566 ID=29 [p:0, c:0, r:8]
 ^^[[36m[layout]^^[[0m   Node=628 ID=29 [p:0, c:0, r:9]
-^^[[36m[layout]^^[[0m   Node=580 ID=29 [p:0, c:0, r:10]
-^^[[36m[layout]^^[[0m   Node=818 ID=29 [p:0, c:0, r:11]
-^^[[36m[layout]^^[[0m   Node=649 ID=29 [p:0, c:0, r:12]
-^^[[36m[layout]^^[[0m   Node=666 ID=29 [p:0, c:0, r:13]
-^^[[36m[layout]^^[[0m   Node=673 ID=29 [p:0, c:0, r:14]
-^^[[36m[layout]^^[[0m   Node=680 ID=29 [p:0, c:0, r:15]
-^^[[36m[layout]^^[[0m   Node=687 ID=29 [p:0, c:0, r:16]
-^^[[36m[layout]^^[[0m   Node=3323 ID=29 [p:0, c:0, r:17]
-^^[[36m[layout]^^[[0m   Node=2115 ID=29 [p:0, c:0, r:18]
-^^[[36m[layout]^^[[0m   Node=2160 ID=29 [p:0, c:0, r:19]
-^^[[36m[layout]^^[[0m   Node=2130 ID=29 [p:0, c:0, r:20]
+^^[[36m[layout]^^[[0m   Node=587 ID=29 [p:0, c:0, r:10]
+^^[[36m[layout]^^[[0m   Node=580 ID=29 [p:0, c:0, r:11]
+^^[[36m[layout]^^[[0m   Node=818 ID=29 [p:0, c:0, r:12]
+^^[[36m[layout]^^[[0m   Node=649 ID=29 [p:0, c:0, r:13]
+^^[[36m[layout]^^[[0m   Node=666 ID=29 [p:0, c:0, r:14]
+^^[[36m[layout]^^[[0m   Node=673 ID=29 [p:0, c:0, r:15]
+^^[[36m[layout]^^[[0m   Node=680 ID=29 [p:0, c:0, r:16]
+^^[[36m[layout]^^[[0m   Node=687 ID=29 [p:0, c:0, r:17]
+^^[[36m[layout]^^[[0m   Node=3392 ID=29 [p:0, c:0, r:18]
+^^[[36m[layout]^^[[0m   Node=2115 ID=29 [p:0, c:0, r:19]
+^^[[36m[layout]^^[[0m   Node=2160 ID=29 [p:0, c:0, r:20]
 ^^[[36m[layout]^^[[0m   Node=1743 ID=14 [p:0, c:0, r:21]
 ^^[[36m[layout]^^[[0m   Node=1758 ID=14 [p:0, c:1, r:0]
-^^[[36m[layout]^^[[0m   Node=2145 ID=29 [p:0, c:1, r:0]
-^^[[36m[layout]^^[[0m   Node=2175 ID=29 [p:0, c:1, r:1]
-^^[[36m[layout]^^[[0m   Node=3251 ID=29 [p:0, c:1, r:2]
-^^[[36m[layout]^^[[0m   Node=2998 ID=29 [p:0, c:1, r:3]
+^^[[36m[layout]^^[[0m   Node=2130 ID=29 [p:0, c:1, r:0]
+^^[[36m[layout]^^[[0m   Node=2145 ID=29 [p:0, c:1, r:1]
+^^[[36m[layout]^^[[0m   Node=2175 ID=29 [p:0, c:1, r:2]
+^^[[36m[layout]^^[[0m   Node=3308 ID=29 [p:0, c:1, r:3]
 ^^[[36m[layout]^^[[0m   Node=1761 ID=14 [p:0, c:1, r:4]
 ^^[[36m[layout]^^[[0m   Node=1764 ID=14 [p:0, c:1, r:4]
 ^^[[36m[layout]^^[[0m Layout map built. Total entries: 20, Total pages: 1

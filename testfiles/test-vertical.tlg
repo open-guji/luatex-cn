@@ -11,15 +11,15 @@ Package geometry Warning: `paperheight': not available in `\newgeometry'; skippe
 * layout: <same size as paper>
 * layoutoffset:(h,v)=(0.0pt,0.0pt)
 * modes: 
-* h-part:(L,W,R)=(133.2pt, 301.6pt, 133.2pt)
-* v-part:(T,H,B)=(188.50003pt, 614.49997pt, 91.6pt)
+* h-part:(L,W,R)=(0.0pt, 568.0pt, 0.0pt)
+* v-part:(T,H,B)=(0.0pt, 894.6pt, 0.0pt)
 * \paperwidth=568.0pt
 * \paperheight=894.6pt
-* \textwidth=301.6pt
-* \textheight=614.49997pt
-* \oddsidemargin=60.93001pt
-* \evensidemargin=60.93001pt
-* \topmargin=79.23004pt
+* \textwidth=568.0pt
+* \textheight=894.6pt
+* \oddsidemargin=-72.26999pt
+* \evensidemargin=-72.26999pt
+* \topmargin=-109.26999pt
 * \headheight=12.0pt
 * \headsep=25.0pt
 * \topskip=0.0pt
@@ -50,15 +50,15 @@ Package geometry Warning: `paperheight': not available in `\newgeometry'; skippe
 * layout: <same size as paper>
 * layoutoffset:(h,v)=(0.0pt,0.0pt)
 * modes: 
-* h-part:(L,W,R)=(133.2pt, 301.6pt, 133.2pt)
-* v-part:(T,H,B)=(188.50003pt, 614.49997pt, 91.6pt)
+* h-part:(L,W,R)=(0.0pt, 568.0pt, 0.0pt)
+* v-part:(T,H,B)=(0.0pt, 894.6pt, 0.0pt)
 * \paperwidth=568.0pt
 * \paperheight=894.6pt
-* \textwidth=301.6pt
-* \textheight=614.49997pt
-* \oddsidemargin=60.93001pt
-* \evensidemargin=60.93001pt
-* \topmargin=79.23004pt
+* \textwidth=568.0pt
+* \textheight=894.6pt
+* \oddsidemargin=-72.26999pt
+* \evensidemargin=-72.26999pt
+* \topmargin=-109.26999pt
 * \headheight=12.0pt
 * \headsep=25.0pt
 * \topskip=0.0pt

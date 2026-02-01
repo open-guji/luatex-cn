@@ -85,8 +85,9 @@ local function read_banxin_params()
 
         -- Book name
         book_name = get_tl("l__luatexcn_banxin_book_name_tl") or "",
-        book_name_align = get_tl("l__luatexcn_banxin_book_name_align_tl") or "center",
+        book_name_font_size = parse_dim(get_tl("l__luatexcn_banxin_book_name_font_size_tl")),
         book_name_grid_height = parse_dim(get_tl("l__luatexcn_banxin_book_name_grid_height_tl")),
+        book_name_align = get_tl("l__luatexcn_banxin_book_name_align_tl") or "center",
 
         -- Chapter title
         chapter_title = get_tl("l__luatexcn_banxin_chapter_title_tl") or "",
@@ -190,8 +191,9 @@ function banxin_main.layout(list, layout_map, engine_ctx, context)
                     upper_ratio = bp.upper_ratio,
                     middle_ratio = bp.middle_ratio,
                     book_name = bp.book_name,
-                    book_name_align = bp.book_name_align,
+                    book_name_font_size = bp.book_name_font_size > 0 and bp.book_name_font_size or nil,
                     book_name_grid_height = bp.book_name_grid_height > 0 and bp.book_name_grid_height or nil,
+                    book_name_align = bp.book_name_align,
                     b_padding_top = b_padding_top,
                     b_padding_bottom = b_padding_bottom,
                     upper_yuwei = bp.upper_yuwei,

@@ -147,10 +147,12 @@ local function calculate_book_name_layout(params, regions)
     if book_name == "" then return nil end
 
     local upper_height = regions.upper.height
-    local f_size = constants.resolve_dimen(params.font_size, 655360)
-    local b_padding_top = constants.resolve_dimen(params.b_padding_top, f_size)
-    local b_padding_bottom = constants.resolve_dimen(params.b_padding_bottom, f_size)
-    local effective_b = params.draw_border and constants.resolve_dimen(params.border_thickness, f_size) or 0
+    local base_f_size = constants.resolve_dimen(params.font_size, 655360)
+    -- Use book_name_font_size if specified, otherwise fall back to base font size
+    local f_size = constants.resolve_dimen(params.book_name_font_size, base_f_size) or base_f_size
+    local b_padding_top = constants.resolve_dimen(params.b_padding_top, base_f_size)
+    local b_padding_bottom = constants.resolve_dimen(params.b_padding_bottom, base_f_size)
+    local effective_b = params.draw_border and constants.resolve_dimen(params.border_thickness, base_f_size) or 0
     local adj_height = upper_height - effective_b - b_padding_top - b_padding_bottom
     local num_chars = count_utf8_chars(book_name)
 

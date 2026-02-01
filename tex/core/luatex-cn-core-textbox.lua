@@ -187,6 +187,24 @@ local function build_sub_params(params, col_aligns)
     }
 end
 
+--- Recursively clear indent attributes on all nodes in a list
+-- This ensures textbox content does not inherit paragraph indent (fix #37)
+-- Clears ATTR_INDENT and ATTR_FIRST_INDENT since they take priority over style registry
+-- @param list (node) Node list head
+local function clear_indent_recursive(list)
+    if not list then return end
+    for n in node.traverse(list) do
+        -- Clear indent attributes - unset by setting to "unset" value
+        node.unset_attribute(n, constants.ATTR_INDENT)
+        node.unset_attribute(n, constants.ATTR_FIRST_INDENT)
+        -- Recursively process nested lists (hlist/vlist)
+        local id = n.id
+        if id == node.id("hlist") or id == node.id("vlist") then
+            clear_indent_recursive(n.list)
+        end
+    end
+end
+
 --- 执行核心排版流水线
 -- @param box_num (number) TeX 盒子编号
 -- @param sub_params (table) 子布局参数
@@ -209,10 +227,25 @@ local function execute_layout_pipeline(box_num, sub_params, current_indent)
     tex.leftskip = 0
     tex.attribute[constants.ATTR_INDENT] = -0x7FFFFFFF -- Unset attribute
 
+    -- Push zero-indent style to override any inherited paragraph indent (fix #37)
+    local style_registry = package.loaded['util.luatex-cn-style-registry'] or
+        require('util.luatex-cn-style-registry')
+    style_registry.push({ indent = 0, first_indent = 0 })
+
+    -- Clear indent attributes on all nodes in the textbox content (fix #37)
+    -- ATTR_INDENT takes priority over style registry, so we must clear it
+    local box = tex.box[box_num]
+    if box and box.list then
+        clear_indent_recursive(box.list)
+    end
+
     dbg.log(string.format("Processing inner box %d (indent=%d)", box_num, current_indent))
 
     -- 调用三阶段流水线
     core.typeset(box_num, sub_params)
+
+    -- Pop the textbox style
+    style_registry.pop()
 
     -- Restore indent state
     tex.leftskip = saved_leftskip

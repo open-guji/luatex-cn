@@ -564,26 +564,23 @@ function textbox.render_floating_box(p_head, item, params)
         split_page_offset = logical_page_width
     end
 
-    -- Get content area margins
+    -- Get content area margins (geometry is 0, but splitpage adds these offsets during output)
     local m_top = (_G.page and _G.page.margin_top) or 0
     local m_left = (_G.page and _G.page.margin_left) or 0
 
     -- Position calculation:
+    -- With geometry margins = 0, content origin is at paper edge (0, 0).
+    -- But splitpage.output_pages adds margin offsets when shipping out the page.
+    -- So the floating box (which is part of the content) will be shifted by (m_left, m_top).
+    -- To compensate and keep the floating box at absolute paper coordinates,
+    -- we SUBTRACT the margins from the position.
+    --
     -- x is measured from the right edge of the logical page
     -- Position from logical page left = logical_page_width - x - box_width
-    --
-    -- For split page (page 1 = right half):
-    --   - Physical position = split_page_offset + position_from_logical_left
-    --   - Kern = physical_position - m_left
-    -- For non-split page:
-    --   - split_page_offset = 0, so kern = position_from_logical_left - m_left
     local position_from_logical_left = logical_page_width - item.x - w
     local rel_x = split_page_offset + position_from_logical_left - m_left
 
-    -- For y: the floating box is inserted at shipout where content is positioned at m_top from paper top
-    -- The 1in TeX offset is already accounted for by the geometry package's margin calculation
-    -- We want the box at y from paper top, content starts at m_top from paper top
-    -- So rel_y = y - m_top (shift relative to content start)
+    -- For y: subtract m_top to compensate for the margin shift in splitpage output
     local rel_y = item.y - m_top
 
     -- Apply Kern & Shift
@@ -603,10 +600,13 @@ function textbox.render_floating_box(p_head, item, params)
     -- If debug grid is enabled, print actual coordinates
     local debug_mod = package.loaded['debug.luatex-cn-debug'] or _G.luatex_cn_debug
     if debug_mod and debug_mod.show_grid then
-        -- kern (rel_x) moves box from content origin (at m_left from paper left)
-        -- Box left edge at (m_left + rel_x) from logical page left
-        local actual_left_on_page = m_left + rel_x
-        local actual_x_from_right = logical_page_width - actual_left_on_page - w
+        -- After splitpage adds margin offset, the actual position on paper:
+        -- paper_x = m_left + rel_x + m_left = rel_x + 2*m_left? No...
+        -- Actually: content is shifted by m_left, so box at (m_left + rel_x) from paper left
+        -- Since rel_x = position_from_logical_left - m_left
+        -- Actual left = m_left + (position_from_logical_left - m_left) = position_from_logical_left
+        -- Actual x from right = logical_page_width - position_from_logical_left - w = item.x
+        local actual_x_from_right = item.x  -- Should equal the input x
 
         texio.write_nl("term and log", string.format(
             "[FLOATING BOX] Expected x=%.1fcm | Actual x=%.1fcm (kern=%.0fpt, m_left=%.0fpt)",

@@ -563,6 +563,16 @@ local function render_single_page(p_head, p_max_col, p, layout_map, params, ctx)
         end
     end
 
+    -- Draw debug ruler if debug mode is enabled (drawn last, on top of everything)
+    if debug.global_enabled and not page.is_textbox then
+        p_head = debug.draw_ruler(p_head, {
+            paper_width = _G.page and _G.page.paper_width,
+            paper_height = _G.page and _G.page.paper_height,
+            margin_left = _G.page and _G.page.margin_left,
+            margin_top = _G.page and _G.page.margin_top,
+        })
+    end
+
     return D.tonode(p_head), p_total_cols
 end
 

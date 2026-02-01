@@ -17,7 +17,6 @@ jobs:
             const commits = context.payload.commits || [];
             const issueNumbers = new Set();
 
-            // Match patterns: fix #123, fixes #123, fixed #123, close #123, closes #123, closed #123
             const pattern = /(?:fix|fixes|fixed|close|closes|closed)\s+#(\d+)/gi;
 
             for (const commit of commits) {

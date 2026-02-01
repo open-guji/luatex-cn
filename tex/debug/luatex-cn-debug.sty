@@ -28,23 +28,18 @@
     luatex_cn_debug~=~require("debug.luatex-cn-debug");
 }
 
-% Global toggle
-\bool_new:N \g_luatexcn_debug_enabled_bool
-
 % ============================================================================
 % Core Commands
 % ============================================================================
 
 \NewDocumentCommand{\LtcDebugOn}{ }
   {
-    \bool_gset_true:N \g_luatexcn_debug_enabled_bool
-    \lua_now:e { luatex_cn_debug.set_global_status(true) }
+    \lua_now:n { luatex_cn_debug.set_global_status(true) }
   }
 
 \NewDocumentCommand{\LtcDebugOff}{ }
   {
-    \bool_gset_false:N \g_luatexcn_debug_enabled_bool
-    \lua_now:e { luatex_cn_debug.set_global_status(false) }
+    \lua_now:n { luatex_cn_debug.set_global_status(false) }
   }
 
 \NewDocumentCommand{\LtcDebugModuleOn}{ m }
@@ -62,6 +57,17 @@
     \lua_now:e { luatex_cn_debug.modules["#1"].color = "#2" }
   }
 
+\NewDocumentCommand{\LtcDebugMeasure}{ m }
+  {
+    \lua_now:n { luatex_cn_debug.set_measure("#1") }
+  }
+
+% Conditional execution based on debug state (true branch only)
+\NewDocumentCommand{\LtcIfDebugT}{ +m }
+  {
+    \int_compare:nNnT { \lua_now:n { tex.print(luatex_cn_debug.global_enabled~and~1~or~0) } } = { 1 } { #1 }
+  }
+
 % ============================================================================
 % CJK Aliases
 % ============================================================================
@@ -70,6 +76,7 @@
 \NewCommandCopy{\关闭调试}{\LtcDebugOff}
 \NewCommandCopy{\开启调试模块}{\LtcDebugModuleOn}
 \NewCommandCopy{\关闭调试模块}{\LtcDebugModuleOff}
-% Keep legacy names if any (LtcDebugOn/Off are already standardized)
+\NewCommandCopy{\调试单位}{\LtcDebugMeasure}
+\NewCommandCopy{\标尺单位}{\LtcDebugMeasure}
 
 \endinput

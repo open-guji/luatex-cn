@@ -207,7 +207,7 @@ local function execute_layout_pipeline(box_num, sub_params, current_indent)
     local saved_leftskip = tex.leftskip
     local saved_attr_indent = tex.attribute[constants.ATTR_INDENT]
     tex.leftskip = 0
-    tex.attribute[constants.ATTR_INDENT] = -0x7FFFFFFF  -- Unset attribute
+    tex.attribute[constants.ATTR_INDENT] = -0x7FFFFFFF -- Unset attribute
 
     dbg.log(string.format("Processing inner box %d (indent=%d)", box_num, current_indent))
 
@@ -548,15 +548,42 @@ function textbox.render_floating_box(p_head, item, params)
 
     -- Handle decoupled render_ctx or legacy params
     local page = params.page or params
-    local p_width = (_G.page and _G.page.paper_width and _G.page.paper_width > 0) and _G.page.paper_width or
-        page.p_width or page.paper_width or page.width or 0
-    local m_left = (_G.page and _G.page.margin_left and _G.page.margin_left > 0) and _G.page.margin_left or
-        page.m_left or page.margin_left or 0
-    local m_top = (_G.page and _G.page.margin_top and _G.page.margin_top > 0) and _G.page.margin_top or
-        page.m_top or page.margin_top or 0
 
-    -- Calculate absolute positions relative to container
-    local rel_x = p_width - m_left - item.x - w
+    -- Get paper dimensions
+    local splitpage_mod = _G.splitpage
+    local full_paper_width = (_G.page and _G.page.paper_width and _G.page.paper_width > 0) and _G.page.paper_width or
+        page.p_width or page.paper_width or page.width or 0
+    local logical_page_width = full_paper_width
+
+    -- For split page: coordinates are relative to the logical page (half width)
+    local split_page_offset = 0
+    if splitpage_mod and splitpage_mod.enabled and splitpage_mod.target_width > 0 then
+        logical_page_width = splitpage_mod.target_width
+        -- For page 1 (right half), we need to offset content into the right half of physical page
+        -- Split page will then apply -logical_width shift to make right half visible
+        split_page_offset = logical_page_width
+    end
+
+    -- Get content area margins
+    local m_top = (_G.page and _G.page.margin_top) or 0
+    local m_left = (_G.page and _G.page.margin_left) or 0
+
+    -- Position calculation:
+    -- x is measured from the right edge of the logical page
+    -- Position from logical page left = logical_page_width - x - box_width
+    --
+    -- For split page (page 1 = right half):
+    --   - Physical position = split_page_offset + position_from_logical_left
+    --   - Kern = physical_position - m_left
+    -- For non-split page:
+    --   - split_page_offset = 0, so kern = position_from_logical_left - m_left
+    local position_from_logical_left = logical_page_width - item.x - w
+    local rel_x = split_page_offset + position_from_logical_left - m_left
+
+    -- For y: the floating box is inserted at shipout where content is positioned at m_top from paper top
+    -- The 1in TeX offset is already accounted for by the geometry package's margin calculation
+    -- We want the box at y from paper top, content starts at m_top from paper top
+    -- So rel_y = y - m_top (shift relative to content start)
     local rel_y = item.y - m_top
 
     -- Apply Kern & Shift
@@ -573,8 +600,22 @@ function textbox.render_floating_box(p_head, item, params)
     D.insert_after(p_head, k_pre, curr)
     D.insert_after(p_head, curr, k_post)
 
+    -- If debug grid is enabled, print actual coordinates
+    local debug_mod = package.loaded['debug.luatex-cn-debug'] or _G.luatex_cn_debug
+    if debug_mod and debug_mod.show_grid then
+        -- kern (rel_x) moves box from content origin (at m_left from paper left)
+        -- Box left edge at (m_left + rel_x) from logical page left
+        local actual_left_on_page = m_left + rel_x
+        local actual_x_from_right = logical_page_width - actual_left_on_page - w
+
+        texio.write_nl("term and log", string.format(
+            "[FLOATING BOX] Expected x=%.1fcm | Actual x=%.1fcm (kern=%.0fpt, m_left=%.0fpt)",
+            item.x / 65536 / 28.3465, actual_x_from_right / 65536 / 28.3465,
+            rel_x / 65536, m_left / 65536))
+    end
+
     dbg.log(string.format(
-        "[render] Floating Box at x=%.2f, y=%.2f (rel: %.2f, %.2f)",
+        "[render] Floating Box at x=%.2fpt, y=%.2fpt (rel_x=%.2fpt, rel_y=%.2fpt)",
         item.x / 65536, item.y / 65536, rel_x / 65536, rel_y / 65536))
     return p_head
 end

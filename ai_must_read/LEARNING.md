@@ -407,6 +407,104 @@ end
 
 **适用场景**：侧批、夹注、批注等可能跨页的有色组件
 
+### 4.6 悬浮框坐标定位（筒子页模式）
+
+**日期**: 2026-01-31
+
+**问题**：悬浮框（`\批注`）的 x 坐标设为 4cm，但实际显示位置偏差约 2cm。
+
+**根本原因**：
+
+1. **错误使用 TeX 默认偏移**：最初使用 `tex_offset = 72.27pt (1in = 2.54cm)` 作为内容起点偏移
+2. **实际内容起点不同**：真正的内容起点是 `margin_left`（由页面设置决定，本例为 133pt ≈ 4.7cm）
+3. **筒子页模式的复杂性**：物理页面 40cm 宽，分割为两个 20cm 逻辑页面
+
+**坐标系统理解**：
+
+```
+物理页面（40cm 宽）:
+┌─────────────────────────────────────────────┐
+│    左半 (20cm)      │     右半 (20cm)       │
+│   → 输出为 Page 2   │   → 输出为 Page 1     │
+│                     │                       │
+│                     │  ← split_page_offset  │
+└─────────────────────────────────────────────┘
+
+逻辑页面坐标（从右向左）:
+  x=0 ─────────────────────────────────→ x=20cm
+  (右边缘)                              (左边缘)
+
+内容区域起点：margin_left (133pt ≈ 4.7cm) 从逻辑页面左边缘
+```
+
+**错误代码**：
+```lua
+-- ❌ 错误：使用 TeX 默认偏移（72.27pt）
+local tex_offset = 72.27 * 65536  -- 1 inch in sp
+local rel_x = position_from_logical_left - tex_offset
+```
+
+**正确代码**：
+```lua
+-- ✅ 正确：使用实际页面边距 + 筒子页偏移
+local m_left = (_G.page and _G.page.margin_left) or 0
+
+-- 筒子页模式：需要偏移到物理页面右半部分
+local split_page_offset = 0
+if splitpage_mod and splitpage_mod.enabled then
+    split_page_offset = splitpage_mod.target_width  -- 逻辑页宽（20cm）
+end
+
+-- 从逻辑页右边缘计算到左边缘的位置
+local position_from_logical_left = logical_page_width - item.x - box_width
+
+-- 最终 kern = 筒子页偏移 + 逻辑位置 - 内容边距
+local rel_x = split_page_offset + position_from_logical_left - m_left
+```
+
+**关键公式解析**：
+
+| 变量 | 含义 | 示例值 |
+|------|------|--------|
+| `item.x` | 用户指定的 x 坐标（从右边缘） | 4cm = 113.8pt |
+| `logical_page_width` | 逻辑页面宽度 | 20cm = 568pt |
+| `box_width` | 悬浮框宽度 | ~28pt |
+| `position_from_logical_left` | 从逻辑页左边缘的位置 | 568 - 113.8 - 28 ≈ 426pt |
+| `split_page_offset` | 筒子页偏移（右半页） | 568pt |
+| `m_left` | 内容区边距 | 133pt |
+| `rel_x` | 最终 kern 值 | 568 + 426 - 133 ≈ 861pt |
+
+**调试方法**：
+```lua
+-- 启用坐标网格后输出实际位置
+if debug_mod and debug_mod.show_grid then
+    local actual_x = logical_page_width - (m_left + rel_x) - box_width
+    texio.write_nl("term and log", string.format(
+        "[FLOATING BOX] Expected x=%.1fcm | Actual x=%.1fcm",
+        item.x / 65536 / 28.3465, actual_x / 65536 / 28.3465))
+end
+```
+
+**验证方法**：
+```latex
+\documentclass[debug=true]{ltc-guji}
+\显示坐标  % 启用坐标网格
+\begin{document}
+\begin{正文}
+第一页\批注[x=4cm,y=2cm]{批注内容}
+\end{正文}
+\end{document}
+```
+
+**教训**：
+1. **不要假设 TeX 默认偏移**：不同文档类/页面设置的边距不同，应从 `_G.page.margin_left` 获取
+2. **筒子页需要额外偏移**：Page 1 在物理页面右半，需要加 `target_width` 偏移
+3. **坐标调试必备网格**：使用 `\显示坐标` 可视化验证，配合日志输出定位问题
+
+**参考文件**：
+- `tex/core/luatex-cn-core-textbox.lua` (`render_floating_box` 函数)
+- `tex/debug/luatex-cn-debug.lua` (坐标网格实现)
+
 ---
 
 ## 五、 参数传递链路

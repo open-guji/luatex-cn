@@ -185,19 +185,8 @@
   \PackageWarning{luatex-cn-guji}{Config file~configs/luatex-cn-guji-default.cfg~not~found}
 }
 
-% Define \title and \chapter metadata commands
-% These forward to the banxin namespace
-\RenewDocumentCommand{\title}{ m }
-  {
-    \keys_set:nn { luatexcn / banxin } { book-name = {#1} }
-    \gdef\@title{#1}
-  }
-
-\NewDocumentCommand{\publisher}{ m }
-  {
-    \keys_set:nn { luatexcn / banxin } { publisher = {#1} }
-  }
-\NewCommandCopy{\出版商}{\publisher}
+% Note: \title and \publisher are defined in core/luatex-cn-core-metadata.sty
+% They forward to banxin namespace automatically
 
 % Command to reset page number to 1
 \NewDocumentCommand{\ResetPageNumber}{ }

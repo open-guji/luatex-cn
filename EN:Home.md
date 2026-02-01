@@ -4,7 +4,7 @@ English | [中文版](Home)
 
 A LuaTeX package for Chinese character typesetting, covering horizontal/vertical, traditional/modern layout. Currently focused on Ancient Book replication with implemented core logic of vertical typesetting, decorative elements of traditional Chinese books, and interlinear notes.
 
-> **Current Version**: [v0.1.4](https://github.com/open-guji/luatex-cn/releases) | **CTAN**: [v0.1.1](https://ctan.org/pkg/luatex-cn)
+> **Current Version**: [v0.2.2](https://github.com/open-guji/luatex-cn/releases) | **CTAN**: [v0.1.1](https://ctan.org/pkg/luatex-cn)
 
 ## Features
 
@@ -36,10 +36,10 @@ Demonstrates side notes, marginal notes, punctuation marks, and manuscript-style
 
 ## Roadmap
 
-- ✅ Implemented: Vertical typesetting, page center, interlinear notes, side notes, seals, punctuation
-- 🔜 v0.1.5: Continue fixing issues found in Dream of the Red Chamber Chapter 1, add marginal note command
-- 📋 v0.1.x: Complete typesetting of Dream of the Red Chamber Chapter 1 and Records of the Grand Historian. Further refactor code structure. Complete detailed user and developer documentation.
-- 🎯 v0.2.0: Implement modern traditional vertical typesetting with punctuation support.
+- ✅ Implemented: Vertical typesetting, page center, interlinear notes, side notes, seals, punctuation, correction & decoration
+- ✅ v0.2.x: Plugin architecture refactoring, style registry, cross-page color preservation, metadata system
+- 🔜 v0.3.0: Complete style stack architecture (Phase 3), full context nesting inheritance support
+- 📋 Planned: Modern traditional vertical typesetting, improved CTAN release version
 
 ## Quick Start
 

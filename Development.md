@@ -15,6 +15,51 @@
    - **布局 (`layout`)**：计算每个字符及其附属元素的网格坐标。
    - **渲染 (`render`)**：根据坐标将内容重新组装并输出 PDF 指令。
 
+### 模块目录结构（v0.2.0+）
+
+```
+tex/
+├── core/              # 核心竖排引擎（26 个文件）
+├── guji/              # 古籍特有功能（6 个文件）
+├── banxin/            # 版心系统（5 个文件）
+├── splitpage/         # 筒子页分割（2 个文件）
+├── fonts/             # 字体自动检测
+├── util/              # 工具模块（含样式注册表）
+├── decorate/          # 文本装饰
+├── debug/             # 调试工具
+└── configs/           # 预设配置文件
+```
+
+### 插件系统（v0.2.0+）
+
+v0.2.0 引入了标准化插件 API，每个模块统一实现三阶段接口：
+
+```lua
+plugin = {
+  initialize = function(params, engine_ctx) end,  -- 初始化
+  layout = function(list, layout_map, engine_ctx, context) end,  -- 布局
+  render = function(head, layout_map, params, context, ...) end   -- 渲染
+}
+```
+
+### 样式注册表（v0.2.1+）
+
+`luatex-cn-style-registry.lua` 提供多属性样式存储：
+
+```lua
+-- 注册样式，返回唯一 ID
+local style_id = style_registry.register({
+  color = {1, 0, 0},
+  font_size = 19,
+  grid_height = 20
+})
+
+-- 通过 ID 获取样式
+local style = style_registry.get(style_id)
+```
+
+支持的属性：`color`、`font_size`、`grid_height`、`font` 等。
+
 ## 2. 参与开发
 
 我们欢迎任何形式的贡献和 Pull Request (PR)。

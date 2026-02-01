@@ -71,6 +71,29 @@
 新的一列开始
 ```
 
+### 元数据设置（v0.2.0+）
+
+```latex
+\title{书名}
+\publisher{出版社}
+\ChapterMarker{卷一}
+```
+
+或使用中文命令：
+```latex
+\metadataSetup{
+  title = 书名,
+  publisher = 出版社
+}
+```
+
+### 调试模式（v0.2.2+）
+
+```latex
+\LtcDebugOn   % 开启调试标尺，显示网格坐标
+\LtcDebugOff  % 关闭调试模式
+```
+
 ## 预设样式
 
 通过文档类选项选择预设样式：

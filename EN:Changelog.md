@@ -4,6 +4,36 @@ English | [中文版](Changelog)
 
 All notable changes to this project will be documented here.
 
+## [0.2.2] - 2026-01-31
+
+- 🐛 **Bug Fix**: Fixed preamble chapter display on first page (fix #45)
+- 🐛 **Bug Fix**: Fixed jiazhu column jumping at column end (fix #42)
+- ✨ **Judou Enhancement**: Support for more Chinese punctuation symbols (fix #40)
+- 🐛 **Bug Fix**: Fixed TextBox and annotation inheriting paragraph indent (fix #37)
+- ✨ **Debug Feature**: Added debug ruler showing page grid coordinates (fix #31)
+- ✨ **Font Detection**: Support simplified/traditional Chinese font names (fix #35)
+- ♻️ **Refactoring**: Consolidated banxin text rendering logic
+- ♻️ **Refactoring**: Moved title/publisher commands to metadata.sty
+- ✅ **Module Cleanup**: Cleaned up banxin, guji, yinzhang module dependencies
+
+## [0.2.1] - 2026-01-31
+
+- ✨ **Color Preservation**: Sidenote color preservation across pages (fix #38, #44)
+- ✨ **Style Stack Architecture**: Implemented Phase 3 style stack for multi-attribute support
+- ✨ **Style Registry**: Phase 2 multi-attribute style storage (color, font_size, grid_height)
+- 🐛 **Bug Fix**: Fixed sidenote rendering order, now correctly displays above silk columns (fix #38)
+- 🐛 **Bug Fix**: Punctuation mode now correctly applies to sidenote content (fix #39)
+- ♻️ **Jiazhu Migration**: Migrated jiazhu functionality to style stack architecture
+- ♻️ **Refactoring**: Unified color registration mechanism
+
+## [0.2.0] - 2026-01-31
+
+- ✨ **Plugin Architecture**: Refactored to standardized plugin API for consistent component behavior
+- ✨ **Global State Management**: Unified configuration via global tables for all modules
+- ✨ **Metadata System**: Centralized book metadata management (title, publisher, chapter markers)
+- ♻️ **Module Namespace**: Clear separation of core/, guji/, banxin/, util/, decorate/
+- ♻️ **Major Refactoring**: Plugin system refactoring with standardized module interfaces
+
 ## [0.1.5] - 2026-01-28
 
 - ✨ **Multi-font Support**: Added multi-font fallback chain and Chinese font setting commands (fix #23).

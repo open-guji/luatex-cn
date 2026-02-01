@@ -26,6 +26,7 @@ The `\批注` command allows placing floating annotation boxes anywhere on the p
 - **Auto-Columnizing**: If content exceeds the set `height`, it automatically starts a new column within the box.
 - **Clip Prevention**: Position calculations account for Banxin (page center) to prevent content being cut off by borders.
 - **Multi-column Support**: Internal columns can be precisely controlled via `n-cols`.
+- **Independent Indentation** (v0.2.2+): Annotation content no longer inherits paragraph indentation from main text (fix #37).
 
 ## Technical Implementation
 Under the hood, annotations are based on `core_textbox.lua`. Content is rendered into an independent vertical grid system. This produced box is then overlaid during the page rendering stage using `shipout` logic in `render_page.lua`.

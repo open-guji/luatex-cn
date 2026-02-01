@@ -71,6 +71,29 @@ End of this column\\\\
 Start of new column
 ```
 
+### Metadata Setup (v0.2.0+)
+
+```latex
+\title{Book Title}
+\publisher{Publisher Name}
+\ChapterMarker{Volume 1}
+```
+
+Or using the setup command:
+```latex
+\metadataSetup{
+  title = Book Title,
+  publisher = Publisher Name
+}
+```
+
+### Debug Mode (v0.2.2+)
+
+```latex
+\LtcDebugOn   % Enable debug ruler, shows grid coordinates
+\LtcDebugOff  % Disable debug mode
+```
+
 ## Preset Styles
 
 Choose preset styles via document class options:

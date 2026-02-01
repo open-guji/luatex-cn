@@ -10,6 +10,12 @@ Traditional ancient books typically do not use modern full-width punctuation mar
 - **Ju (句)**: Corresponds to periods (.), question marks (?), and exclamation marks (!). Rendered as a small circle (○).
 - **Dou (读)**: Corresponds to commas (,), semicolons (;), and enumeration commas (、). Rendered as a small dot or tick (●).
 
+### Supported Punctuation (v0.2.1+)
+Since v0.2.1, the range of supported punctuation has been extended to include:
+- Basic punctuation: periods, commas, enumeration commas, semicolons, colons
+- Paired punctuation: quotation marks (「」『』""''), book title marks (《》〈〉), parentheses
+- Special punctuation: dashes, ellipses, interpuncts, etc.
+
 ## Usage
 
 ### 1. Global Activation
@@ -53,11 +59,13 @@ Fine-tune Judou appearance via parameters:
 | `judou-pos` | Position relative to character | `right-bottom` |
 
 ## Technical Details
-Implemented via `vertical-judou.lua`:
+Implemented via `luatex-cn-guji-judou.lua`:
 1. **Identification**: Scans node stream for punctuation Unicode code points.
 2. **Conversion**: In `judou` mode, punctuation nodes are removed and replaced by a `WHATSIT` node attached to the preceding CJK character.
 3. **Rendering**: The renderer draws the circle/dot at the specified anchor point (usually bottom-right) of the character.
    - v0.1.5 optimized the positioning algorithm to ensure marks adhere closely to the character bounding box without extra gaps.
+   - v0.2.1 fixed punctuation mode application for sidenote content (fix #39).
+   - v0.2.2 extended the range of supported Chinese punctuation symbols (fix #40).
 
 ---
 

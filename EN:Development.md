@@ -15,6 +15,51 @@ This document summarizes the core design philosophy, modular architecture, and t
    - **Layout**: Calculates grid coordinates for each character and its associated elements.
    - **Rendering**: Reassembles content based on coordinates and outputs PDF instructions.
 
+### Module Directory Structure (v0.2.0+)
+
+```
+tex/
+├── core/              # Core vertical engine (26 files)
+├── guji/              # Ancient book specific features (6 files)
+├── banxin/            # Page center system (5 files)
+├── splitpage/         # Tube page splitting (2 files)
+├── fonts/             # Font auto-detection
+├── util/              # Utility modules (including style registry)
+├── decorate/          # Text decoration
+├── debug/             # Debug tools
+└── configs/           # Preset configuration files
+```
+
+### Plugin System (v0.2.0+)
+
+v0.2.0 introduced a standardized plugin API where each module implements a three-phase interface:
+
+```lua
+plugin = {
+  initialize = function(params, engine_ctx) end,  -- Initialization
+  layout = function(list, layout_map, engine_ctx, context) end,  -- Layout
+  render = function(head, layout_map, params, context, ...) end   -- Rendering
+}
+```
+
+### Style Registry (v0.2.1+)
+
+`luatex-cn-style-registry.lua` provides multi-attribute style storage:
+
+```lua
+-- Register a style, returns unique ID
+local style_id = style_registry.register({
+  color = {1, 0, 0},
+  font_size = 19,
+  grid_height = 20
+})
+
+-- Retrieve style by ID
+local style = style_registry.get(style_id)
+```
+
+Supported attributes: `color`, `font_size`, `grid_height`, `font`, etc.
+
 ## 2. Participating in Development
 
 We welcome contributions and Pull Requests (PRs).

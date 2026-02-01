@@ -32,7 +32,6 @@
     * [[Fonts | EN:Fonts]]
     * [[Textbox | EN:Textbox]]
     * [[Correction & Decoration | EN:Correction]]
-    * [[Correction & Decoration | EN:Correction]]
 * [[Changelog | EN:Changelog]]
 
 ### 🌎 Developer Manual

@@ -27,6 +27,7 @@ The `\TextBox` (or `\文本框`) command creates an independent vertical text ar
 ### Features
 - **Auto-Extension**: If `height` is 0, the box extends naturally.
 - **Compression (Flat Text)**: If `height` is fixed and content is too long, text is vertically compressed (v0.1.5).
+- **Independent Indentation** (v0.2.2+): Textbox content no longer inherits paragraph indentation from main text, ensuring layout independence (fix #37).
 
 ## Fill Textbox
 

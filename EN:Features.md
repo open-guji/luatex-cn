@@ -24,12 +24,18 @@ Multiple ways to add comments to the text:
 
 ## 4. Decorations & Utilities
 - **[[Seals | EN:Seal]]**: Add collection or personal seals anywhere with opacity support.
-- **[[Judou | EN:Judou]]**: Traditional punctuation marks (circles and dots).
-- **[[Fonts | EN:Fonts]]**: Auto-detection, font families, and fallback chains for rare characters.
+- **[[Judou | EN:Judou]]**: Traditional punctuation marks (circles and dots). Enhanced support for more Chinese punctuation since v0.2.1.
+- **[[Fonts | EN:Fonts]]**: Auto-detection, font families, and fallback chains for rare characters. Supports simplified/traditional Chinese font names since v0.2.2.
 - **[[Textbox | EN:Textbox]]**: Grid-based layout with auto-compression and filling.
 - **[[Correction & Decoration | EN:Correction]]**: Correction marks (\fix) and character decoration (\decorate).
 
-## 5. Template System
+## 5. Architecture & Debug Features (v0.2.0+)
+- **Style Registry**: Phase 2 multi-attribute style storage (color, font_size, grid_height), supports cross-page style preservation.
+- **Metadata System**: Centralized book metadata management (`\title`, `\publisher`, `\ChapterMarker`).
+- **Debug Ruler**: `\LtcDebugOn` displays page grid coordinates for layout debugging.
+- **Plugin Architecture**: Standardized plugin API with unified initialize/layout/render three-phase interfaces.
+
+## 6. Template System
 Preset classical styles available out-of-the-box:
 - `四库全书` (Siku Quanshu): Qing Dynasty imperial style.
 - `红楼梦甲戌本`: Manuscript style with extensive annotations.

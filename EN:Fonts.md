@@ -17,6 +17,18 @@ To manually trigger and apply the auto-detected font:
 \ApplyAutoFont
 ```
 
+### Chinese Font Name Support (v0.2.2+)
+
+Since v0.2.2, font detection supports simplified and traditional Chinese font names:
+
+```latex
+\设置字体{宋体}          % Simplified Chinese name
+\设置字体{標楷體}        % Traditional Chinese name
+\设置字体{思源宋体}      % Open source font Chinese name
+```
+
+The system automatically maps Chinese font names to corresponding system fonts.
+
 ## 2. Font Family & Fallback
 
 v0.1.5 introduces the concept of **Font Family**. By setting a font family, the system establishes a "fallback chain". When the main font lacks a specific character (e.g., a rare CJK ideograph), it automatically looks for it in the next font in the chain.

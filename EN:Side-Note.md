@@ -34,12 +34,30 @@ Main text\\侧批[yoffset=10pt, color=red]{This is the side note content}continu
 - `color`: Annotation color (default: red).
 - `font-size`: Font size for the note.
 - `grid-height`: Custom grid height for the note block.
+- `border-padding-top`: Top border padding.
+- `border-padding-bottom`: Bottom border padding.
+
+### Global Configuration
+```latex
+\sidenoteSetup{
+  color = red,
+  font-size = 19pt,
+  grid-height = 20pt,
+  yoffset = 0em,
+  border-padding-top = 0.5em,
+  border-padding-bottom = 0.5em
+}
+```
+
+### Cross-Page Color Preservation (v0.2.1+)
+v0.2.1 introduced the style registry mechanism. Side note color settings now persist correctly across pages. Even when side note content spans multiple pages, colors remain consistent.
 
 ---
 
 ## Technical Implementation (For Developers)
-- **Interlinear Notes**: Uses LuaTeX attributes to mark nodes. During layout, the system detects these attributes, pauses normal typesetting, and calls `core_textflow.lua` for column splitting and re-mapping to the grid.
-- **Side Notes**: Managed by `core_sidenote.lua`. It captures the content as an independent box and calculates the offset based on the current reference character's coordinates.
+- **Interlinear Notes**: Uses LuaTeX attributes to mark nodes. During layout, the system detects these attributes, pauses normal typesetting, and calls `core_textflow.lua` for column splitting and re-mapping to the grid. Migrated to style stack architecture since v0.2.1.
+- **Side Notes**: Managed by `core_sidenote.lua`. It captures the content as an independent box and calculates the offset based on the current reference character's coordinates. Supports Phase 2 style registry for color preservation since v0.2.1.
+- **Style Registry**: `luatex-cn-style-registry.lua` provides multi-attribute style storage, supporting deduplication and cross-page preservation for color, font_size, grid_height, and other attributes.
 
 ---
 

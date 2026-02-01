@@ -226,6 +226,8 @@
 \DeclareDocumentCommand{\chapter}{ m }
   {
     \keys_set:nn { luatexcn / banxin } { chapter-title = {#1} }
+    % Also set global metadata for layout phase (fixes issue #45 - chapter not showing on first page)
+    \metadataSetup{ chapter-title = {#1} }
     \ResetPageNumber
   }
 

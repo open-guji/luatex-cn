@@ -536,6 +536,135 @@ textbox._internal = {
 
 package.loaded['core.luatex-cn-core-textbox'] = textbox
 
+--- 绘制数字（用于调试坐标显示）
+-- @param num (number) 要绘制的数字
+-- @param x (number) X 位置 (bp)
+-- @param y (number) Y 位置 (bp)
+-- @param scale (number) 缩放因子
+-- @return (string) PDF 路径命令
+local function draw_debug_number(num, x, y, scale)
+    scale = scale or 0.7
+    local str = tostring(num)
+    local cmds = {}
+    local digit_width = 3 * scale
+    local digit_height = 5 * scale
+    local spacing = 1.5 * scale
+
+    -- 7段数字样式
+    local segments = {
+        [0] = {true, false, true, true, true, true, true},
+        [1] = {false, false, false, false, true, false, true},
+        [2] = {true, true, true, false, true, true, false},
+        [3] = {true, true, true, false, true, false, true},
+        [4] = {false, true, false, true, true, false, true},
+        [5] = {true, true, true, true, false, false, true},
+        [6] = {true, true, true, true, false, true, true},
+        [7] = {true, false, false, false, true, false, true},
+        [8] = {true, true, true, true, true, true, true},
+        [9] = {true, true, true, true, true, false, true},
+    }
+
+    local digit_index = 0
+    for i = 1, #str do
+        local char = str:sub(i, i)
+        local digit = tonumber(char)
+        if digit ~= nil then
+            local seg = segments[digit]
+            if seg ~= nil then
+                local dx = x + digit_index * (digit_width + spacing)
+                local w_d, h_d, m = digit_width, digit_height, digit_height / 2
+
+                if seg[1] then table.insert(cmds, string.format("%.4f %.4f m %.4f %.4f l S", dx, y + h_d, dx + w_d, y + h_d)) end
+                if seg[2] then table.insert(cmds, string.format("%.4f %.4f m %.4f %.4f l S", dx, y + m, dx + w_d, y + m)) end
+                if seg[3] then table.insert(cmds, string.format("%.4f %.4f m %.4f %.4f l S", dx, y, dx + w_d, y)) end
+                if seg[4] then table.insert(cmds, string.format("%.4f %.4f m %.4f %.4f l S", dx, y + m, dx, y + h_d)) end
+                if seg[5] then table.insert(cmds, string.format("%.4f %.4f m %.4f %.4f l S", dx + w_d, y + m, dx + w_d, y + h_d)) end
+                if seg[6] then table.insert(cmds, string.format("%.4f %.4f m %.4f %.4f l S", dx, y, dx, y + m)) end
+                if seg[7] then table.insert(cmds, string.format("%.4f %.4f m %.4f %.4f l S", dx + w_d, y, dx + w_d, y + m)) end
+                digit_index = digit_index + 1
+            end
+        end
+    end
+
+    return table.concat(cmds, " "), digit_index * (digit_width + spacing)
+end
+
+--- 绘制浮动框调试标记（红色十字和坐标）- 相对定位版本
+-- 使用 mode=0，坐标相对于当前位置，这样标记会跟随内容移动
+-- @param item (table) 浮动盒子项 {x, y, ...}
+-- @param box_height (number) 盒子高度 (sp)
+-- @param shift (number) 盒子垂直偏移 (sp)
+-- @return (node) PDF literal 节点
+local function create_floating_debug_node_relative(item, box_height, shift)
+    local sp_to_bp = 1 / 65536
+
+    -- 调试节点插入在盒子之后，此时当前位置在盒子右边缘、基线位置
+    -- 盒子的 shift 将内容向下移动了 shift 量
+    -- 盒子顶部相对于基线的位置 = height - shift
+    -- 需要向上移动到顶部
+    local offset_x = 0  -- 已经在右边缘
+    local offset_y = (box_height - shift) * sp_to_bp  -- 从基线移动到顶部
+
+    -- 获取调试模块的度量单位设置
+    local debug_mod = package.loaded['debug.luatex-cn-debug'] or _G.luatex_cn_debug
+    local measure = (debug_mod and debug_mod.grid_measure) or "cm"
+
+    -- 根据度量单位转换坐标
+    local x_val, y_val
+    if measure == "pt" then
+        -- sp to pt: 1pt = 65536sp
+        x_val = math.floor(item.x / 65536 + 0.5)
+        y_val = math.floor(item.y / 65536 + 0.5)
+    elseif measure == "mm" then
+        -- sp to mm: 1mm ≈ 2.83465pt = 185771sp
+        x_val = math.floor(item.x / 65536 / 2.83465 + 0.5)
+        y_val = math.floor(item.y / 65536 / 2.83465 + 0.5)
+    else
+        -- sp to cm (default): 1cm ≈ 28.3465pt
+        x_val = math.floor(item.x / 65536 / 28.3465 + 0.5)
+        y_val = math.floor(item.y / 65536 / 28.3465 + 0.5)
+    end
+
+    local cmds = {}
+    table.insert(cmds, "q")  -- 保存图形状态
+    table.insert(cmds, "1 0 0 RG 0.8 w")  -- 红色，线宽 0.8
+
+    -- 绘制红色十字标记（相对于当前位置）
+    local cross_size = 4  -- bp
+    local cx, cy = offset_x, offset_y
+    table.insert(cmds, string.format("%.4f %.4f m %.4f %.4f l S",
+        cx - cross_size, cy, cx + cross_size, cy))
+    table.insert(cmds, string.format("%.4f %.4f m %.4f %.4f l S",
+        cx, cy - cross_size, cx, cy + cross_size))
+
+    -- 绘制红色坐标数字
+    table.insert(cmds, "1 0 0 RG 0.5 w")  -- 稍细的线条用于数字
+
+    -- X 坐标显示在十字标记右侧
+    local x_num_cmds, x_width = draw_debug_number(x_val, cx + cross_size + 2, cy + 2, 0.8)
+    table.insert(cmds, x_num_cmds)
+
+    -- 绘制逗号分隔符
+    local comma_x = cx + cross_size + 2 + x_width + 1
+    local comma_y = cy + 2
+    table.insert(cmds, string.format("%.4f %.4f m %.4f %.4f l S", comma_x, comma_y + 1, comma_x, comma_y + 2))
+    table.insert(cmds, string.format("%.4f %.4f m %.4f %.4f l S", comma_x, comma_y + 1, comma_x - 0.5, comma_y - 1))
+
+    local y_num_cmds, _ = draw_debug_number(y_val, comma_x + 2, cy + 2, 0.8)
+    table.insert(cmds, y_num_cmds)
+
+    table.insert(cmds, "Q")  -- 恢复图形状态
+
+    -- 创建 PDF literal 节点
+    local whatsit_id = node.id("whatsit")
+    local pdf_literal_id = node.subtype("pdf_literal")
+    local n = node.new(whatsit_id, pdf_literal_id)
+    n.data = table.concat(cmds, " ")
+    n.mode = 0  -- 相对坐标模式（跟随内容移动）
+
+    return n
+end
+
 --- 定位并渲染浮动文本框
 -- @param p_head (node) 页面列表头
 -- @param item (table) 浮动盒子项 {box, x, y, page, ...}
@@ -553,6 +682,8 @@ function textbox.render_floating_box(p_head, item, params)
     local splitpage_mod = _G.splitpage
     local full_paper_width = (_G.page and _G.page.paper_width and _G.page.paper_width > 0) and _G.page.paper_width or
         page.p_width or page.paper_width or page.width or 0
+    local full_paper_height = (_G.page and _G.page.paper_height and _G.page.paper_height > 0) and _G.page.paper_height or
+        page.p_height or page.paper_height or page.height or 0
     local logical_page_width = full_paper_width
 
     -- For split page: coordinates are relative to the logical page (half width)
@@ -597,21 +728,17 @@ function textbox.render_floating_box(p_head, item, params)
     D.insert_after(p_head, k_pre, curr)
     D.insert_after(p_head, curr, k_post)
 
-    -- If debug grid is enabled, print actual coordinates
+    -- If debug grid is enabled, draw coordinate marker at top-right corner
+    -- Use mode=0 (relative to content) so marker only appears on the correct split page half
     local debug_mod = package.loaded['debug.luatex-cn-debug'] or _G.luatex_cn_debug
     if debug_mod and debug_mod.show_grid then
-        -- After splitpage adds margin offset, the actual position on paper:
-        -- paper_x = m_left + rel_x + m_left = rel_x + 2*m_left? No...
-        -- Actually: content is shifted by m_left, so box at (m_left + rel_x) from paper left
-        -- Since rel_x = position_from_logical_left - m_left
-        -- Actual left = m_left + (position_from_logical_left - m_left) = position_from_logical_left
-        -- Actual x from right = logical_page_width - position_from_logical_left - w = item.x
-        local actual_x_from_right = item.x  -- Should equal the input x
-
-        texio.write_nl("term and log", string.format(
-            "[FLOATING BOX] Expected x=%.1fcm | Actual x=%.1fcm (kern=%.0fpt, m_left=%.0fpt)",
-            item.x / 65536 / 28.3465, actual_x_from_right / 65536 / 28.3465,
-            rel_x / 65536, m_left / 65536))
+        -- Create debug marker that draws relative to box position
+        -- Pass box height and shift value for correct positioning
+        local box_shift = rel_y + h
+        local debug_node = create_floating_debug_node_relative(item, h, box_shift)
+        local debug_direct = D.todirect(debug_node)
+        -- Insert debug marker right after the box (before k_post)
+        D.insert_after(p_head, curr, debug_direct)
     end
 
     dbg.log(string.format(

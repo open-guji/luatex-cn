@@ -121,10 +121,8 @@
     \dim_zero:N \parskip
     \dim_zero:N \parindent
 
-    \tl_if_empty:NT \l__luatexcn_content_height_tl
-      {
-        \tl_set:Nx \l__luatexcn_content_height_tl { \dim_eval:n { \l__luatexcn_page_paper_height_tl - \l__luatexcn_page_margin_top_tl - \l__luatexcn_page_margin_bottom_tl } }
-      }
+    % Calculate height if not set
+    \__luatexcn_content_calc_height:
 
 
     \luatexcn_apply_geometry:

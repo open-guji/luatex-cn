@@ -41,10 +41,14 @@ _G.content.outer_border_sep = _G.content.outer_border_sep or (65536 * 2)
 _G.content.border_padding_top = _G.content.border_padding_top or 0
 _G.content.border_padding_bottom = _G.content.border_padding_bottom or 0
 _G.content.n_column = _G.content.n_column or 8
+_G.content.n_char_per_col = _G.content.n_char_per_col or 0
 _G.content.page_columns = _G.content.page_columns or 0
 _G.content.grid_width = _G.content.grid_width or 0
 _G.content.grid_height = _G.content.grid_height or 0
+_G.content.content_height = _G.content.content_height or 0
 _G.content.available_width = _G.content.available_width or 0
+_G.content.available_height = _G.content.available_height or 0
+_G.content.border_overhead_height = _G.content.border_overhead_height or 0
 
 -- Visual params (colors already converted to RGB strings by TeX)
 _G.content.vertical_align = _G.content.vertical_align or "center"
@@ -65,6 +69,7 @@ local function setup(params)
     if params.border_padding_top then _G.content.border_padding_top = constants.to_dimen(params.border_padding_top) end
     if params.border_padding_bottom then _G.content.border_padding_bottom = constants.to_dimen(params.border_padding_bottom) end
     if params.n_column then _G.content.n_column = tonumber(params.n_column) or 8 end
+    if params.n_char_per_col then _G.content.n_char_per_col = tonumber(params.n_char_per_col) or 0 end
     if params.grid_width then _G.content.grid_width = constants.to_dimen(params.grid_width) end
     if params.grid_height then _G.content.grid_height = constants.to_dimen(params.grid_height) end
 
@@ -144,6 +149,56 @@ local function setup(params)
         if _G.content.page_columns <= 0 then _G.content.page_columns = 1 end
     else
         _G.content.page_columns = math.max(1, n_column)
+    end
+
+    -- =========================================================================
+    -- Auto-Layout: Calculate grid_width, grid_height, and content_height
+    -- =========================================================================
+
+    -- Get page height dimensions
+    local p_height = _G.page and _G.page.paper_height or 0
+    local m_top = _G.page and _G.page.margin_top or 0
+    local m_bottom = _G.page and _G.page.margin_bottom or 0
+    local b_padding_top = _G.content.border_padding_top or 0
+    local b_padding_bottom = _G.content.border_padding_bottom or 0
+
+    -- Calculate border overhead for height
+    local border_overhead_height = 0
+    if is_outer_border then
+        border_overhead_height = border_overhead_height + 2 * (ob_thickness + ob_sep)
+    end
+    if _G.content.border_on then
+        border_overhead_height = border_overhead_height + b_padding_top + b_padding_bottom + b_thickness
+    end
+    _G.content.border_overhead_height = border_overhead_height
+
+    -- Calculate available height for text
+    local available_height = p_height - m_top - m_bottom - border_overhead_height
+    _G.content.available_height = available_height
+
+    -- Auto-calculate grid_width if banxin is on AND no explicit grid_width was provided
+    -- Note: We only calculate if grid_width is 0 or empty (not explicitly set)
+    if banxin_on and _G.content.page_columns > 0 and (_G.content.grid_width or 0) == 0 then
+        local border_overhead_width = b_thickness
+        if is_outer_border then
+            border_overhead_width = border_overhead_width + 2 * (ob_thickness + ob_sep)
+        end
+        local raw_width = p_width - m_left - m_right - border_overhead_width
+        _G.content.grid_width = math.floor(raw_width / _G.content.page_columns)
+    end
+
+    -- Auto-calculate grid_height and content_height based on n_char_per_col
+    local n_char = _G.content.n_char_per_col or 0
+    local grid_h = _G.content.grid_height or 0
+
+    if n_char > 0 and available_height > 0 then
+        -- Mode A: n-char-per-col specified, calculate grid-height
+        _G.content.grid_height = math.floor(available_height / n_char)
+        _G.content.content_height = _G.content.grid_height * n_char
+    elseif grid_h > 0 and available_height > 0 then
+        -- Mode B: grid-height specified, calculate fitting rows
+        local rows = math.floor(available_height / grid_h)
+        _G.content.content_height = grid_h * rows
     end
 end
 

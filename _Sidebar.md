@@ -2,6 +2,7 @@
 * [[首页 | Home]]
 * [[安装指南 | Installation]]
 * [[快速入门 | Quick-Start]]
+* [[模板与自定义 | Templates]]
 * [[示例 | Examples]]
 * [[功能详解 | Features]]
     * [[夹注 | Side-Note]]
@@ -11,6 +12,7 @@
     * [[字体设置 | Fonts]]
     * [[文本框 | Textbox]]
     * [[改字与装饰 | Correction]]
+* [[调试模式 | Debug]]
 * [[更新日志 | Changelog]]
 ---
 
@@ -23,6 +25,7 @@
 * [[Home (EN) | EN:Home]]
 * [[Installation | EN:Installation]]
 * [[Quick Start | EN:Quick-Start]]
+* [[Templates | EN:Templates]]
 * [[Examples | EN:Examples]]
 * [[Features | EN:Features]]
     * [[Side-Note | EN:Side-Note]]
@@ -32,6 +35,7 @@
     * [[Fonts | EN:Fonts]]
     * [[Textbox | EN:Textbox]]
     * [[Correction & Decoration | EN:Correction]]
+* [[Debug Mode | EN:Debug]]
 * [[Changelog | EN:Changelog]]
 
 ### 🌎 Developer Manual

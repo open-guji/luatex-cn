@@ -32,14 +32,15 @@ Multiple ways to add comments to the text:
 ## 5. Architecture & Debug Features (v0.2.0+)
 - **Style Registry**: Phase 2 multi-attribute style storage (color, font_size, grid_height), supports cross-page style preservation.
 - **Metadata System**: Centralized book metadata management (`\title`, `\publisher`, `\ChapterMarker`).
-- **Debug Ruler**: `\LtcDebugOn` displays page grid coordinates for layout debugging.
+- **[[Debug Mode | EN:Debug]]**: `\LtcDebugOn` displays page grid coordinates, `\LtcShowGrid` shows coordinate grid for layout debugging.
 - **Plugin Architecture**: Standardized plugin API with unified initialize/layout/render three-phase interfaces.
 
 ## 6. Template System
-Preset classical styles available out-of-the-box:
+Preset classical styles available out-of-the-box. See [[Templates | EN:Templates]] for details.
 - `四库全书` (Siku Quanshu): Qing Dynasty imperial style.
+- `四库全书彩色`: Colored version of Siku Quanshu style.
 - `红楼梦甲戌本`: Manuscript style with extensive annotations.
 
 ---
 
-👉 Next Steps: Check [[Quick Start | EN:Quick-Start]] or [[Examples | EN:Examples]].
+👉 Next Steps: Check [[Templates | EN:Templates]] | [[Debug Mode | EN:Debug]] | [[Examples | EN:Examples]]

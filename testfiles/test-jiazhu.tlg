@@ -65,8 +65,6 @@ Package geometry Warning: `paperheight': not available in `\newgeometry'; skippe
 <to be read again> 
 \scan_stop: 
 l. ...}
-[1
-]
 ============================================================
 ============================================================
 TEST 2: Jiazhu with multiple segments
@@ -135,6 +133,4 @@ Package geometry Warning: `paperheight': not available in `\newgeometry'; skippe
 <to be read again> 
 \scan_stop: 
 l. ...}
-[2
-]
 ============================================================

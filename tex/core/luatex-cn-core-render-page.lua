@@ -573,25 +573,49 @@ local function render_single_page(p_head, p_max_col, p_max_row, p, layout_map, p
 
     -- Colors & Background
     p_head = content.set_font_color(p_head, ctx.text_rgb_str)
-    p_head = page_mod.draw_background(p_head, {
-        bg_rgb_str = ctx.background_rgb_str,
-        inner_width = inner_width,
-        inner_height = inner_height,
-        outer_shift = outer_shift,
-        is_textbox = page.is_textbox,
-    })
 
     -- Special border shape decoration (rect / octagon / circle) for TextBox
     -- Use actual content size, not the expanded page dimensions
     local border_shape = ctx.border_shape
+    local shape_width = actual_cols * grid_width
+    local shape_height = actual_rows * grid_height
+
+    -- Draw background: use shaped fill for octagon/circle, rectangular for others
+    if border_shape == "octagon" and ctx.background_rgb_str then
+        -- Octagon-shaped background
+        local border_m = ctx.border_margin or 0
+        p_head = content.draw_octagon_fill(p_head, {
+            x = -border_m,
+            y = border_m,
+            width = shape_width + 2 * border_m,
+            height = shape_height + 2 * border_m,
+            color_str = ctx.background_rgb_str,
+        })
+    elseif border_shape == "circle" and ctx.background_rgb_str then
+        -- Circle-shaped background
+        local border_m = ctx.border_margin or 0
+        p_head = content.draw_circle_fill(p_head, {
+            cx = shape_width / 2,
+            cy = -shape_height / 2,
+            radius = math.max(shape_width, shape_height) / 2 + border_m,
+            color_str = ctx.background_rgb_str,
+        })
+    else
+        -- Rectangular background (default)
+        p_head = page_mod.draw_background(p_head, {
+            bg_rgb_str = ctx.background_rgb_str,
+            inner_width = inner_width,
+            inner_height = inner_height,
+            outer_shift = outer_shift,
+            is_textbox = page.is_textbox,
+        })
+    end
+
+    -- Draw border frame
     if border_shape and border_shape ~= "none" then
         local border_color = ctx.border_color_str or ctx.b_rgb_str or "0 0 0"
         local border_w = ctx.border_width or (65536 * 0.4)
-        local border_m = ctx.border_margin or (65536 * 1)
-
-        -- Calculate actual content dimensions for special border shapes
-        local shape_width = actual_cols * grid_width
-        local shape_height = actual_rows * grid_height
+        local border_m = ctx.border_margin or 0
 
         if border_shape == "rect" then
             -- Rectangular frame: simple stroke rectangle

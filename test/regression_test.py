@@ -278,6 +278,12 @@ def main():
         print(f"{status:8} {name:20} (Info: {info})")
     print("="*40)
 
+    # Clean up: delete all files in PDF_DIR after save or check
+    for f in PDF_DIR.iterdir():
+        if f.is_file():
+            f.unlink()
+    print(f"Cleaned up {PDF_DIR}")
+
     if not all_passed:
         sys.exit(1)
 

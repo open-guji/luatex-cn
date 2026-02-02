@@ -193,10 +193,28 @@ local function draw_number(num, x, y, scale)
                 end
                 digit_index = digit_index + 1
             end
+        elseif char == "." then
+            -- Draw decimal point as a small filled circle
+            local dx = x + digit_index * (digit_width + spacing)
+            local dot_radius = 0.8 * scale
+            local dot_x = dx + digit_width / 2
+            local dot_y = y + dot_radius
+            local k = 0.5522847498
+            table.insert(cmds, string.format("%.4f %.4f m", dot_x + dot_radius, dot_y))
+            table.insert(cmds, string.format("%.4f %.4f %.4f %.4f %.4f %.4f c",
+                dot_x + dot_radius, dot_y + k * dot_radius, dot_x + k * dot_radius, dot_y + dot_radius, dot_x, dot_y + dot_radius))
+            table.insert(cmds, string.format("%.4f %.4f %.4f %.4f %.4f %.4f c",
+                dot_x - k * dot_radius, dot_y + dot_radius, dot_x - dot_radius, dot_y + k * dot_radius, dot_x - dot_radius, dot_y))
+            table.insert(cmds, string.format("%.4f %.4f %.4f %.4f %.4f %.4f c",
+                dot_x - dot_radius, dot_y - k * dot_radius, dot_x - k * dot_radius, dot_y - dot_radius, dot_x, dot_y - dot_radius))
+            table.insert(cmds, string.format("%.4f %.4f %.4f %.4f %.4f %.4f c",
+                dot_x + k * dot_radius, dot_y - dot_radius, dot_x + dot_radius, dot_y - k * dot_radius, dot_x + dot_radius, dot_y))
+            table.insert(cmds, "f")
+            digit_index = digit_index + 1
         end
     end
 
-    return table.concat(cmds, " ")
+    return table.concat(cmds, " "), digit_index * (digit_width + spacing)
 end
 
 --- Draw a single letter at given position
@@ -359,7 +377,8 @@ local function generate_grid_pdf(paper_width_sp, paper_height_sp, x_offset_unit,
         local pdf_x = W - x - num_width - 2
         local pdf_y = H - 12
 
-        table.insert(cmds, draw_number(label_val, pdf_x, pdf_y, label_scale))
+        local num_cmds = draw_number(label_val, pdf_x, pdf_y, label_scale)
+        table.insert(cmds, num_cmds)
 
         -- Add unit label for large marks
         if is_large_mark then
@@ -383,7 +402,8 @@ local function generate_grid_pdf(paper_width_sp, paper_height_sp, x_offset_unit,
         local pdf_x = W - num_width - 3
         local pdf_y = H - y - 4
 
-        table.insert(cmds, draw_number(label_val, pdf_x, pdf_y, label_scale))
+        local num_cmds = draw_number(label_val, pdf_x, pdf_y, label_scale)
+        table.insert(cmds, num_cmds)
 
         -- Add unit label for large marks
         if is_large_mark then
@@ -530,5 +550,90 @@ function debug.disable_grid()
     debug.show_grid = false
     -- Note: We don't remove the callback; it will just be a no-op when show_grid is false
 end
+
+-- ============================================================================
+-- Floating Box Debug Marker
+-- ============================================================================
+
+--- Format coordinate value based on unit with appropriate decimal places
+-- @param value_sp (number) Value in scaled points
+-- @param measure (string) Unit: "cm", "pt", or "mm"
+-- @return (string) Formatted value string
+function debug.format_coordinate(value_sp, measure)
+    measure = measure or debug.grid_measure or "cm"
+    if measure == "pt" then
+        -- sp to pt: 1pt = 65536sp, 1 decimal place
+        return string.format("%.1f", value_sp / 65536)
+    elseif measure == "mm" then
+        -- sp to mm: 1mm ≈ 2.83465pt, 1 decimal place
+        return string.format("%.1f", value_sp / 65536 / 2.83465)
+    else
+        -- sp to cm (default): 1cm ≈ 28.3465pt, 2 decimal places
+        return string.format("%.2f", value_sp / 65536 / 28.3465)
+    end
+end
+
+--- Create floating box debug marker node (red cross and coordinates)
+-- Uses mode=0 (relative coordinates) so marker follows content
+-- @param item (table) Floating box item {x, y, ...} in sp
+-- @param box_height (number) Box height in sp
+-- @param shift (number) Box vertical shift in sp
+-- @return (node) PDF literal node
+function debug.create_floating_debug_node(item, box_height, shift)
+    local sp_to_bp = 1 / 65536
+
+    -- Debug node is inserted after the box, current position is at box right edge, baseline
+    -- Box shift moves content down by shift amount
+    -- Box top relative to baseline = height - shift
+    local offset_x = 0  -- Already at right edge
+    local offset_y = (box_height - shift) * sp_to_bp  -- Move from baseline to top
+
+    -- Get coordinate values formatted according to current measure
+    local x_val = debug.format_coordinate(item.x)
+    local y_val = debug.format_coordinate(item.y)
+
+    local cmds = {}
+    table.insert(cmds, "q")  -- Save graphics state
+    table.insert(cmds, "1 0 0 RG 0.8 w")  -- Red color, line width 0.8
+
+    -- Draw red cross marker (relative to current position)
+    local cross_size = 4  -- bp
+    local cx, cy = offset_x, offset_y
+    table.insert(cmds, string.format("%.4f %.4f m %.4f %.4f l S",
+        cx - cross_size, cy, cx + cross_size, cy))
+    table.insert(cmds, string.format("%.4f %.4f m %.4f %.4f l S",
+        cx, cy - cross_size, cx, cy + cross_size))
+
+    -- Draw red coordinate numbers
+    table.insert(cmds, "1 0 0 RG 0.5 w")  -- Thinner lines for numbers
+
+    -- X coordinate displayed to the right of cross marker
+    local x_num_cmds, x_width = draw_number(x_val, cx + cross_size + 2, cy + 2, 0.8)
+    table.insert(cmds, x_num_cmds)
+
+    -- Draw comma separator
+    local comma_x = cx + cross_size + 2 + x_width + 1
+    local comma_y = cy + 2
+    table.insert(cmds, string.format("%.4f %.4f m %.4f %.4f l S", comma_x, comma_y + 1, comma_x, comma_y + 2))
+    table.insert(cmds, string.format("%.4f %.4f m %.4f %.4f l S", comma_x, comma_y + 1, comma_x - 0.5, comma_y - 1))
+
+    -- Y coordinate after comma
+    local y_num_cmds, _ = draw_number(y_val, comma_x + 2, cy + 2, 0.8)
+    table.insert(cmds, y_num_cmds)
+
+    table.insert(cmds, "Q")  -- Restore graphics state
+
+    -- Create PDF literal node
+    local whatsit_id = node.id("whatsit")
+    local pdf_literal_id = node.subtype("pdf_literal")
+    local n = node.new(whatsit_id, pdf_literal_id)
+    n.data = table.concat(cmds, " ")
+    n.mode = 0  -- Relative coordinate mode (follows content)
+
+    return n
+end
+
+-- Export draw_number for external use
+debug.draw_number = draw_number
 
 return debug

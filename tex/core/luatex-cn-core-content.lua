@@ -329,6 +329,82 @@ q %s RG %.2f w
     return utils.insert_pdf_literal(p_head, literal)
 end
 
+--- 绘制填充八角形（背景）
+-- @param p_head (node) 节点列表头部
+-- @param params (table) 参数表:
+--   - x: 左上角 X 坐标 (sp)
+--   - y: 左上角 Y 坐标 (sp，向下为负)
+--   - width: 宽度 (sp)
+--   - height: 高度 (sp)
+--   - color_str: RGB 填充颜色字符串
+-- @return (node) 更新后的头部
+local function draw_octagon_fill(p_head, params)
+    local sp_to_bp = utils.sp_to_bp
+    local x_bp = params.x * sp_to_bp
+    local y_bp = params.y * sp_to_bp
+    local w_bp = params.width * sp_to_bp
+    local h_bp = params.height * sp_to_bp
+    local color_str = params.color_str or "0.5 0.5 0.5"
+
+    -- Calculate corner cut size (20% of smaller dimension)
+    local corner = math.min(w_bp, h_bp) * 0.2
+
+    local literal = string.format([[
+q %s rg
+%.4f %.4f m
+%.4f %.4f l %.4f %.4f l %.4f %.4f l %.4f %.4f l
+%.4f %.4f l %.4f %.4f l %.4f %.4f l h f Q]],
+        color_str,
+        x_bp + corner, y_bp,
+        x_bp + w_bp - corner, y_bp,
+        x_bp + w_bp, y_bp - corner,
+        x_bp + w_bp, y_bp - h_bp + corner,
+        x_bp + w_bp - corner, y_bp - h_bp,
+        x_bp + corner, y_bp - h_bp,
+        x_bp, y_bp - h_bp + corner,
+        x_bp, y_bp - corner
+    )
+
+    return utils.insert_pdf_literal(p_head, literal)
+end
+
+--- 绘制填充圆形（背景）
+-- @param p_head (node) 节点列表头部
+-- @param params (table) 参数表:
+--   - cx: 圆心 X 坐标 (sp)
+--   - cy: 圆心 Y 坐标 (sp)
+--   - radius: 半径 (sp)
+--   - color_str: RGB 填充颜色字符串
+-- @return (node) 更新后的头部
+local function draw_circle_fill(p_head, params)
+    local sp_to_bp = utils.sp_to_bp
+    local cx_bp = params.cx * sp_to_bp
+    local cy_bp = params.cy * sp_to_bp
+    local r_bp = params.radius * sp_to_bp
+    local color_str = params.color_str or "0.5 0.5 0.5"
+
+    -- Bezier approximation constant: 4/3 * (sqrt(2) - 1)
+    local k = 0.5523
+    local kappa = r_bp * k
+
+    local literal = string.format([[
+q %s rg
+%.4f %.4f m
+%.4f %.4f %.4f %.4f %.4f %.4f c
+%.4f %.4f %.4f %.4f %.4f %.4f c
+%.4f %.4f %.4f %.4f %.4f %.4f c
+%.4f %.4f %.4f %.4f %.4f %.4f c f Q]],
+        color_str,
+        cx_bp + r_bp, cy_bp,
+        cx_bp + r_bp, cy_bp + kappa, cx_bp + kappa, cy_bp + r_bp, cx_bp, cy_bp + r_bp,
+        cx_bp - kappa, cy_bp + r_bp, cx_bp - r_bp, cy_bp + kappa, cx_bp - r_bp, cy_bp,
+        cx_bp - r_bp, cy_bp - kappa, cx_bp - kappa, cy_bp - r_bp, cx_bp, cy_bp - r_bp,
+        cx_bp + kappa, cy_bp - r_bp, cx_bp + r_bp, cy_bp - kappa, cx_bp + r_bp, cy_bp
+    )
+
+    return utils.insert_pdf_literal(p_head, literal)
+end
+
 --- 绘制八角形边框
 -- @param p_head (node) 节点列表头部
 -- @param params (table) 参数表:
@@ -416,7 +492,9 @@ local content = {
     draw_column_borders = draw_column_borders,
     draw_outer_border = draw_outer_border,
     draw_rect_frame = draw_rect_frame,
+    draw_octagon_fill = draw_octagon_fill,
     draw_octagon_frame = draw_octagon_frame,
+    draw_circle_fill = draw_circle_fill,
     draw_circle_frame = draw_circle_frame,
 }
 

@@ -93,6 +93,9 @@
 % Load yinzhang (印章/seal stamp) module
 \RequirePackage{guji/luatex-cn-guji-yinzhang}
 
+% Load meipi (眉批/headnote) module
+\RequirePackage{guji/luatex-cn-guji-meipi}
+
 % 3. Page Geometry - Will be applied dynamically via tsemplate
 % Default values stored in key-value system below
 

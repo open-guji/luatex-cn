@@ -83,7 +83,6 @@
 \RequirePackage{debug/luatex-cn-debug}
 % Apply debug setting from class options (after debug package is loaded)
 \bool_if:NT \g__luatexcn_guji_debug_pending_bool { \LtcDebugOn }
-\RequirePackage{splitpage/luatex-cn-splitpage}
 
 % Load banxin for 版心/鱼尾 features
 \RequirePackage{banxin/luatex-cn-banxin}
@@ -133,13 +132,6 @@
 
     font-features .code:n = { \keys_set:nn { luatexcn / content } { font-features = #1 } },
 
-    % Split page (筒子页) configuration - forward to splitpage namespace
-    split-page .code:n = { \keys_set:nn { luatexcn / splitpage } { enabled = #1 } },
-    split-page .default:n = true,
-
-    split-page-right-first .code:n = { \keys_set:nn { luatexcn / splitpage } { right-first = #1 } },
-    split-page-right-first .default:n = true,
-
     template .code:n = {
       % Ensure standard catcodes for config files (preserve spaces)
       \ExplSyntaxOff
@@ -161,12 +153,8 @@
 % 5b. Split page setup
 \cs_new:Npn \__luatexcn_guji_apply_split_page:
   {
-    \bool_if:NT \l__luatexcn_sp_enabled_bool
+    \bool_if:NT \l__luatexcn_page_split_enabled_bool
       {
-        \exp_args:Nx \splitpageSetup{
-          source-width = \l__luatexcn_page_paper_width_tl,
-          source-height = \l__luatexcn_page_paper_height_tl,
-        }
         \enableSplitPage
       }
   }
@@ -190,19 +178,6 @@
 
 % Note: \title and \publisher are defined in core/luatex-cn-core-metadata.sty
 % They forward to banxin namespace automatically
-
-% Command to reset page number to 1
-\NewDocumentCommand{\ResetPageNumber}{ }
-  {
-    \lua_now:e { core.reset_page_number(); }
-  }
-
-% Command to set page number to arbitrary value
-\NewDocumentCommand{\SetPageNumber}{ m }
-  {
-    \lua_now:e { core.set_page_number(#1); }
-  }
-\NewCommandCopy{\设置页码}{\SetPageNumber}
 
 \DeclareDocumentCommand{\chapter}{ m }
   {
@@ -326,9 +301,6 @@
     \nointerlineskip
     \__luatexcn_content_process_grid:n { \BODY }
     \group_end:
-    \clearpage
-    % Restore geometry if needed? \restoregeometry resets to preamble settings.
-    \restoregeometry
 }
 
 

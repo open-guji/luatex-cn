@@ -585,11 +585,11 @@ local function process(box_num, params)
     -- Check if split page is enabled
     -- CRITICAL: Do NOT enable split page output for textboxes (VerticalRTT, etc.)
     local is_textbox = (params.is_textbox == true)
-    local split_enabled = _G.splitpage and _G.splitpage.is_enabled and _G.splitpage.is_enabled()
+    local split_enabled = page.split and page.split.is_enabled and page.split.is_enabled()
 
     if split_enabled and not is_textbox then
-        -- Split page mode: delegate to splitpage module
-        _G.splitpage.output_pages(box_num, total_pages)
+        -- Split page mode: delegate to page.split module
+        page.split.output_pages(box_num, total_pages)
     else
         -- Normal mode: delegate to page module
         page.output_pages(box_num, total_pages)

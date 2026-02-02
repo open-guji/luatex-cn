@@ -462,11 +462,12 @@ local function create_grid_node()
 
     -- Calculate X offset for split page support (in the current unit)
     local x_offset_unit = 0
-    local splitpage_mod = _G.splitpage
-    if splitpage_mod and splitpage_mod.is_enabled and splitpage_mod.is_enabled() then
+    local page_mod = package.loaded['core.luatex-cn-core-page']
+    local split_mod = page_mod and page_mod.split
+    if split_mod and split_mod.is_enabled and split_mod.is_enabled() then
         debug.current_page = debug.current_page + 1
         local page_num = debug.current_page
-        local is_right_first = splitpage_mod.is_right_first and splitpage_mod.is_right_first()
+        local is_right_first = split_mod.is_right_first and split_mod.is_right_first()
 
         -- Calculate offset based on page number and right_first setting
         -- Convert page width to the current unit

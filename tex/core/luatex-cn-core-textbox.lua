@@ -669,7 +669,8 @@ function textbox.render_floating_box(p_head, item, params)
     local page = params.page or params
 
     -- Get paper dimensions
-    local splitpage_mod = _G.splitpage
+    local page_mod = package.loaded['core.luatex-cn-core-page']
+    local split_mod = page_mod and page_mod.split
     local full_paper_width = (_G.page and _G.page.paper_width and _G.page.paper_width > 0) and _G.page.paper_width or
         page.p_width or page.paper_width or page.width or 0
     local full_paper_height = (_G.page and _G.page.paper_height and _G.page.paper_height > 0) and _G.page.paper_height or
@@ -678,20 +679,21 @@ function textbox.render_floating_box(p_head, item, params)
 
     -- For split page: coordinates are relative to the logical page (half width)
     local split_page_offset = 0
-    if splitpage_mod and splitpage_mod.enabled and splitpage_mod.target_width > 0 then
-        logical_page_width = splitpage_mod.target_width
+    local split_target_width = split_mod and split_mod.get_target_width and split_mod.get_target_width() or 0
+    if split_mod and split_mod.is_enabled and split_mod.is_enabled() and split_target_width > 0 then
+        logical_page_width = split_target_width
         -- For page 1 (right half), we need to offset content into the right half of physical page
         -- Split page will then apply -logical_width shift to make right half visible
         split_page_offset = logical_page_width
     end
 
-    -- Get content area margins (geometry is 0, but splitpage adds these offsets during output)
+    -- Get content area margins (geometry is 0, but page.split adds these offsets during output)
     local m_top = (_G.page and _G.page.margin_top) or 0
     local m_left = (_G.page and _G.page.margin_left) or 0
 
     -- Position calculation:
     -- With geometry margins = 0, content origin is at paper edge (0, 0).
-    -- But splitpage.output_pages adds margin offsets when shipping out the page.
+    -- But page.split.output_pages adds margin offsets when shipping out the page.
     -- So the floating box (which is part of the content) will be shifted by (m_left, m_top).
     -- To compensate and keep the floating box at absolute paper coordinates,
     -- we SUBTRACT the margins from the position.
@@ -701,7 +703,7 @@ function textbox.render_floating_box(p_head, item, params)
     local position_from_logical_left = logical_page_width - item.x - w
     local rel_x = split_page_offset + position_from_logical_left - m_left
 
-    -- For y: subtract m_top to compensate for the margin shift in splitpage output
+    -- For y: subtract m_top to compensate for the margin shift in page.split output
     local rel_y = item.y - m_top
 
     -- Apply Kern & Shift

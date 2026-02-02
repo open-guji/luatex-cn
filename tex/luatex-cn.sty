@@ -46,21 +46,17 @@
 % Load Sub-packages
 % ============================================================================
 
-% 1. Load Core (Vertical + Typesetting + Base Utils)
+% 1. Load Core (Vertical + Typesetting + Base Utils + Page/SplitPage)
 \RequirePackage{luatex-cn-core}
 
-% 2. Load SplitPage (筒子页) - Always available in bundle
-\RequirePackage{splitpage/luatex-cn-splitpage}
-
-% 3. Load Banxin (版心) - Conditional
+% 2. Load Banxin (版心) - Conditional
 \RequirePackage{banxin/luatex-cn-banxin}
 
 % ============================================================================
 % Interface Documentation
 % ============================================================================
 % This package now serves as a bundle loading:
-% - luatex-cn-core
-% - luatex-cn-splitpage
+% - luatex-cn-core (includes page split functionality)
 % - luatex-cn-banxin
 %
 % ============================================================================

@@ -22,6 +22,9 @@ local constants = package.loaded['core.luatex-cn-constants'] or
 
 local page = {}
 
+-- Load split sub-module
+page.split = require('core.luatex-cn-core-page-split')
+
 _G.page = _G.page or {}
 _G.page.current_page_number = _G.page.current_page_number or 1
 _G.page.paper_height = _G.page.paper_height or 0
@@ -30,6 +33,9 @@ _G.page.margin_top = _G.page.margin_top or 0
 _G.page.margin_bottom = _G.page.margin_bottom or 0
 _G.page.margin_left = _G.page.margin_left or 0
 _G.page.margin_right = _G.page.margin_right or 0
+
+-- Stack for saving/restoring page settings
+_G.page.saved_stack = _G.page.saved_stack or {}
 
 --- Setup global page parameters from TeX
 -- @param params (table) Parameters from TeX keyvals
@@ -41,6 +47,65 @@ function page.setup(params)
     if params.margin_bottom then _G.page.margin_bottom = constants.to_dimen(params.margin_bottom) end
     if params.margin_left then _G.page.margin_left = constants.to_dimen(params.margin_left) end
     if params.margin_right then _G.page.margin_right = constants.to_dimen(params.margin_right) end
+end
+
+--- Save current page settings to stack
+function page.save()
+    local saved = {
+        paper_width = _G.page.paper_width,
+        paper_height = _G.page.paper_height,
+        margin_top = _G.page.margin_top,
+        margin_bottom = _G.page.margin_bottom,
+        margin_left = _G.page.margin_left,
+        margin_right = _G.page.margin_right,
+        -- Split page state
+        split_enabled = _G.page.split.enabled,
+        split_right_first = _G.page.split.right_first,
+    }
+    table.insert(_G.page.saved_stack, saved)
+end
+
+--- Restore page settings from stack
+-- Returns the restored values so TeX can sync token lists
+function page.restore()
+    local saved = table.remove(_G.page.saved_stack)
+    if saved then
+        _G.page.paper_width = saved.paper_width
+        _G.page.paper_height = saved.paper_height
+        _G.page.margin_top = saved.margin_top
+        _G.page.margin_bottom = saved.margin_bottom
+        _G.page.margin_left = saved.margin_left
+        _G.page.margin_right = saved.margin_right
+        -- Restore split page state
+        _G.page.split.enabled = saved.split_enabled
+        _G.page.split.right_first = saved.split_right_first
+        -- Apply the restored split state
+        if saved.split_enabled then
+            page.split.enable()
+        else
+            page.split.disable()
+        end
+    end
+end
+
+--- Get restored dimension as string for TeX
+-- @param key The dimension key (paper_width, paper_height, etc.)
+-- @return String representation of the dimension in pt
+function page.get_dim_str(key)
+    local val = _G.page[key] or 0
+    return string.format("%.5fpt", val / 65536)
+end
+
+--- Get split state for TeX
+-- @param key The split key (enabled, right_first)
+-- @return "true" or "false" string
+function page.get_split_str(key)
+    if key == "enabled" then
+        return _G.page.split.enabled and "true" or "false"
+    elseif key == "right_first" then
+        return _G.page.split.right_first and "true" or "false"
+    end
+    return "false"
 end
 
 --- 绘制背景色矩形

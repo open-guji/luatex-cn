@@ -202,7 +202,7 @@ _internal.calculate_render_context = calculate_render_context
 local function group_nodes_by_page(d_head, layout_map, total_pages)
     local page_nodes = {}
     for p = 0, total_pages - 1 do
-        page_nodes[p] = { head = nil, tail = nil, max_col = 0 }
+        page_nodes[p] = { head = nil, tail = nil, max_col = 0, max_row = 0 }
     end
 
     local t = d_head
@@ -221,6 +221,12 @@ local function group_nodes_by_page(d_head, layout_map, total_pages)
                 end
                 page_nodes[p].tail = t
                 if pos.col > page_nodes[p].max_col then page_nodes[p].max_col = pos.col end
+                -- Track max row for actual content height calculation
+                -- Note: pos.row can be fractional (from distribute_rows), use math.ceil
+                -- Note: pos.height is in sp (physical), NOT grid row count
+                local row = pos.row or 0
+                local row_ceil = math.ceil(row)
+                if row_ceil > page_nodes[p].max_row then page_nodes[p].max_row = row_ceil end
             else
                 node.flush_node(D.tonode(t))
             end
@@ -488,7 +494,7 @@ _internal.process_page_nodes = process_page_nodes
 _internal.position_floating_box = textbox_mod.render_floating_box
 
 -- 辅助函数：渲染单个页面
-local function render_single_page(p_head, p_max_col, p, layout_map, params, ctx)
+local function render_single_page(p_head, p_max_col, p_max_row, p, layout_map, params, ctx)
     if not p_head then return nil, 0 end
 
     local p_total_cols = p_max_col + 1
@@ -497,6 +503,10 @@ local function render_single_page(p_head, p_max_col, p, layout_map, params, ctx)
     if p_cols > 0 and p_total_cols < p_cols then
         p_total_cols = p_cols
     end
+
+    -- Actual content dimensions (for special border shapes)
+    local actual_cols = p_max_col + 1
+    local actual_rows = p_max_row + 1
 
     local grid_width = ctx.grid_width
     local grid_height = ctx.grid_height
@@ -515,8 +525,18 @@ local function render_single_page(p_head, p_max_col, p, layout_map, params, ctx)
     local outer_shift = ctx.outer_shift
     local b_rgb_str = ctx.b_rgb_str
 
-    local inner_width = p_total_cols * grid_width + border_thickness
-    local inner_height = line_limit * grid_height + b_padding_top + b_padding_bottom + border_thickness
+    -- For TextBox: use actual content dimensions, not expanded page dimensions
+    -- For regular content: use full page dimensions
+    local content_width, content_height
+    if page.is_textbox then
+        content_width = (actual_cols > 0 and actual_cols or 1) * grid_width
+        content_height = (actual_rows > 0 and actual_rows or 1) * grid_height
+    else
+        content_width = p_total_cols * grid_width
+        content_height = line_limit * grid_height + b_padding_top + b_padding_bottom
+    end
+    local inner_width = content_width + border_thickness
+    local inner_height = content_height + border_thickness
 
     -- Reserved columns (computed via engine_ctx helper function)
     local reserved_cols = grid.get_reserved_cols and grid.get_reserved_cols(p, p_total_cols) or {}
@@ -561,27 +581,42 @@ local function render_single_page(p_head, p_max_col, p, layout_map, params, ctx)
         is_textbox = page.is_textbox,
     })
 
-    -- Special border shape decoration (octagon / circle) for TextBox
+    -- Special border shape decoration (rect / octagon / circle) for TextBox
+    -- Use actual content size, not the expanded page dimensions
     local border_shape = ctx.border_shape
-    if border_shape and border_shape ~= "none" and border_shape ~= "rect" then
+    if border_shape and border_shape ~= "none" then
         local border_color = ctx.border_color_str or ctx.b_rgb_str or "0 0 0"
         local border_w = ctx.border_width or (65536 * 0.4)
         local border_m = ctx.border_margin or (65536 * 1)
 
-        if border_shape == "octagon" then
+        -- Calculate actual content dimensions for special border shapes
+        local shape_width = actual_cols * grid_width
+        local shape_height = actual_rows * grid_height
+
+        if border_shape == "rect" then
+            -- Rectangular frame: simple stroke rectangle
+            p_head = content.draw_rect_frame(p_head, {
+                x = -border_m,
+                y = border_m,
+                width = shape_width + 2 * border_m,
+                height = shape_height + 2 * border_m,
+                line_width = border_w,
+                color_str = border_color,
+            })
+        elseif border_shape == "octagon" then
             p_head = content.draw_octagon_frame(p_head, {
                 x = -border_m,
                 y = border_m,
-                width = inner_width + 2 * border_m,
-                height = inner_height + 2 * border_m,
+                width = shape_width + 2 * border_m,
+                height = shape_height + 2 * border_m,
                 line_width = border_w,
                 color_str = border_color,
             })
         elseif border_shape == "circle" then
             p_head = content.draw_circle_frame(p_head, {
-                cx = inner_width / 2,
-                cy = -inner_height / 2,
-                radius = math.max(inner_width, inner_height) / 2 + border_m,
+                cx = shape_width / 2,
+                cy = -shape_height / 2,
+                radius = math.max(shape_width, shape_height) / 2 + border_m,
                 line_width = border_w,
                 color_str = border_color,
             })
@@ -605,7 +640,11 @@ local function render_single_page(p_head, p_max_col, p, layout_map, params, ctx)
         end
     end
 
-    return D.tonode(p_head), p_total_cols
+    -- For TextBox: return actual content dimensions, not expanded page dimensions
+    -- This ensures TextBox output box has correct dimensions in main document flow
+    local return_cols = page.is_textbox and actual_cols or p_total_cols
+    local return_rows = page.is_textbox and actual_rows or line_limit
+    return D.tonode(p_head), return_cols, return_rows
 end
 
 _internal.render_single_page = render_single_page
@@ -631,9 +670,10 @@ local function apply_positions(head, layout_map, params)
     for p = 0, params.total_pages - 1 do
         local p_head = page_nodes[p].head
         local p_max_col = page_nodes[p].max_col
-        local rendered_head, cols = render_single_page(p_head, p_max_col, p, layout_map, params, ctx)
+        local p_max_row = page_nodes[p].max_row
+        local rendered_head, cols, rows = render_single_page(p_head, p_max_col, p_max_row, p, layout_map, params, ctx)
         if rendered_head then
-            result_pages[p + 1] = { head = rendered_head, cols = cols }
+            result_pages[p + 1] = { head = rendered_head, cols = cols, rows = rows }
         end
     end
 

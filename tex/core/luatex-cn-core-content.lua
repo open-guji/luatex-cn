@@ -299,6 +299,36 @@ local function draw_outer_border(p_head, params)
     return p_head
 end
 
+--- 绘制矩形边框
+-- @param p_head (node) 节点列表头部
+-- @param params (table) 参数表:
+--   - x: 左上角 X 坐标 (sp)
+--   - y: 左上角 Y 坐标 (sp，向下为负)
+--   - width: 宽度 (sp)
+--   - height: 高度 (sp)
+--   - line_width: 线宽 (sp)
+--   - color_str: RGB 颜色字符串
+-- @return (node) 更新后的头部
+local function draw_rect_frame(p_head, params)
+    local sp_to_bp = utils.sp_to_bp
+    local x_bp = params.x * sp_to_bp
+    local y_bp = params.y * sp_to_bp
+    local w_bp = params.width * sp_to_bp
+    local h_bp = params.height * sp_to_bp
+    local lw_bp = params.line_width * sp_to_bp
+    local color_str = params.color_str or "0 0 0"
+
+    -- Simple rectangular stroke
+    local literal = string.format([[
+q %s RG %.2f w
+%.4f %.4f %.4f %.4f re S Q]],
+        color_str, lw_bp,
+        x_bp, y_bp - h_bp, w_bp, h_bp
+    )
+
+    return utils.insert_pdf_literal(p_head, literal)
+end
+
 --- 绘制八角形边框
 -- @param p_head (node) 节点列表头部
 -- @param params (table) 参数表:
@@ -385,6 +415,7 @@ local content = {
     set_font_color = set_font_color,
     draw_column_borders = draw_column_borders,
     draw_outer_border = draw_outer_border,
+    draw_rect_frame = draw_rect_frame,
     draw_octagon_frame = draw_octagon_frame,
     draw_circle_frame = draw_circle_frame,
 }

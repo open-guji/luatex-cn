@@ -423,11 +423,10 @@ local function generate_physical_pages(list, params, engine_ctx, plugin_contexts
     if p_info.is_textbox then
         -- TextBox: pass explicit visual params (no global fallback)
         visual_ctx.vertical_align = params.vertical_align or "center"
-        visual_ctx.border_rgb = params.border_color
         visual_ctx.bg_rgb = params.background_color
         visual_ctx.font_rgb = params.font_color
         visual_ctx.font_size = constants.to_dimen(params.font_size)
-        -- Border shape parameters
+        -- Border shape parameters (resolved from style stack in textbox.lua)
         visual_ctx.border_shape = params.border_shape or "none"
         visual_ctx.border_color = params.border_color or ""
         visual_ctx.border_width = params.border_width or "0.4pt"
@@ -486,14 +485,34 @@ local function generate_physical_pages(list, params, engine_ctx, plugin_contexts
     for i, page_info in ipairs(pages) do
         local new_box = node.new("hlist")
         new_box.dir = "TLT"
-        new_box.list = page_info.head
+
+        -- For TextBox: wrap content with q/Q to scope any color changes
+        -- This prevents font_color from leaking to subsequent text in the outer document
+        local content_head = page_info.head
+        if p_info.is_textbox then
+            local D = node.direct
+            local d_head = D.todirect(content_head)
+            -- Insert "q" (save state) at beginning
+            d_head = utils.insert_pdf_literal(d_head, "q")
+            -- Find tail and insert "Q" (restore state) at end
+            local tail = d_head
+            while D.getnext(tail) do
+                tail = D.getnext(tail)
+            end
+            local q_restore = utils.create_pdf_literal("Q")
+            D.insert_after(d_head, tail, q_restore)
+            content_head = D.tonode(d_head)
+        end
+
+        new_box.list = content_head
         new_box.width = page_info.cols * engine_ctx.g_width + engine_ctx.border_thickness + outer_shift * 2
         new_box.height = 0
         new_box.depth = total_v_depth
 
         if p_info.is_textbox then
             node.set_attribute(new_box, constants.ATTR_TEXTBOX_WIDTH, page_info.cols)
-            node.set_attribute(new_box, constants.ATTR_TEXTBOX_HEIGHT, engine_ctx.line_limit)
+            -- Use actual content rows for auto-height, or line_limit for fixed-height
+            node.set_attribute(new_box, constants.ATTR_TEXTBOX_HEIGHT, page_info.rows or engine_ctx.line_limit)
         else
             node.set_attribute(new_box, constants.ATTR_TEXTBOX_WIDTH, 0)
             node.set_attribute(new_box, constants.ATTR_TEXTBOX_HEIGHT, 0)

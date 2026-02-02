@@ -342,8 +342,18 @@ local function apply_result_attributes(res_box, params, current_indent)
     end
 
     local actual_cols = node.get_attribute(res_box, constants.ATTR_TEXTBOX_WIDTH) or 1
-    -- Occupancy in outer grid cells
-    local height_val = math.ceil(h_sp / outer_gh_sp)
+    -- Height calculation: use actual content rows from render (already set by main.lua)
+    -- only recalculate if user specified explicit height
+    local height_val
+    if h_sp > 0 then
+        -- User specified height: calculate occupancy in outer grid cells
+        height_val = math.ceil(h_sp / outer_gh_sp)
+    else
+        -- Auto height: use actual content rows from render phase
+        height_val = node.get_attribute(res_box, constants.ATTR_TEXTBOX_HEIGHT) or 1
+    end
+    -- Ensure at least 1 row to pass flatten check (tb_w > 0 && tb_h > 0)
+    if height_val <= 0 then height_val = 1 end
 
     node.set_attribute(res_box, constants.ATTR_TEXTBOX_WIDTH, actual_cols)
     node.set_attribute(res_box, constants.ATTR_TEXTBOX_HEIGHT, height_val)

@@ -93,7 +93,7 @@
     border-width .tl_set:N = \l__luatexcn_textbox_border_width_tl,
     border-width .initial:n = {0.4pt},
     border-margin .tl_set:N = \l__luatexcn_textbox_border_margin_tl,
-    border-margin .initial:n = {1pt},
+    border-margin .initial:n = {0pt},
   }
 
 \NewDocumentCommand{\TextBox}{ O{} +m }
@@ -245,13 +245,17 @@
 \NewCommandCopy{\填充文本框}{\FillTextBox}
 
 % Border shape shortcuts
-\NewDocumentCommand{\反白}{ m }{\TextBox[background-color=black, font-color=white]{#1}}
+% 反白 uses dark gray (#333) instead of pure black for better visibility
+\NewDocumentCommand{\反白}{ m }{\TextBox[background-color={0.2 0.2 0.2}, font-color=white]{#1}}
 \NewDocumentCommand{\八角框}{ m }{\TextBox[border-shape=octagon]{#1}}
 \NewDocumentCommand{\带圈}{ m }{\TextBox[border-shape=circle]{#1}}
+% 反白八角框 uses white border for visibility on dark background
+\NewDocumentCommand{\反白八角框}{ m }{\TextBox[background-color={0.2 0.2 0.2}, font-color=white, border-shape=octagon, border-color=white]{#1}}
 
 % English aliases
 \NewCommandCopy{\inverted}{\反白}
 \NewCommandCopy{\octagon}{\八角框}
 \NewCommandCopy{\circled}{\带圈}
+\NewCommandCopy{\invertedOctagon}{\反白八角框}
 
 \endinput%

@@ -33,4 +33,52 @@ Under the hood, annotations are based on `core_textbox.lua`. Content is rendered
 
 ---
 
+# Marginal Notes (MeiPi / 眉批) <sup>v0.2.3+</sup>
+
+The `\眉批` command places annotations at the top of the page (above the main text), a common format in traditional Chinese book annotations. Unlike `\批注`, MeiPi automatically calculates positions, arranging from right to left to avoid overlap.
+
+## Usage
+
+```latex
+% Auto-positioning (recommended)
+\眉批[height=5]{Marginal note content}
+
+% Manual Y coordinate
+\眉批[height=5, y=50pt]{Marginal note content}
+
+% Fully manual positioning
+\眉批[height=5, x=100pt, y=50pt]{Marginal note content}
+```
+
+## Parameters
+
+- `height`: Number of grid rows (height) for the note, **required**.
+- `x`: Horizontal position. Auto-calculated if not specified, arranging right-to-left.
+- `y`: Vertical position. Auto-calculated if not specified, aligning bottom edge to main text top.
+- `color`: Color, default red `{1 0 0}`.
+- `font-size`: Font size, default 18pt.
+- `grid-width`: Grid width, default 20pt.
+- `grid-height`: Grid height, default 19pt.
+
+## Features
+
+- **Auto-arrangement** (v0.2.3+): Multiple MeiPi notes automatically arrange right-to-left. Spacing configurable via `\meipiSetup{spacing=...}`.
+- **Smart Positioning**: Y coordinate auto-calculated so bottom edge aligns with main text top.
+- **Cross-page Support** (v0.2.3+): MeiPi correctly appears on the page where its anchor is located, not the previous page.
+- **Independent Indentation**: MeiPi content does not inherit paragraph indentation from main text.
+
+## Configuration
+
+```latex
+\meipiSetup{
+  spacing = 10pt,  % Spacing between MeiPi notes
+  gap = 0pt        % Gap between MeiPi bottom and main text top
+}
+```
+
+## Technical Implementation
+MeiPi is based on `guji/luatex-cn-guji-meipi.lua`. It inserts anchor nodes into the node list to record positions, then during layout phase determines which page the MeiPi should appear on based on the **first node with layout information after** the anchor.
+
+---
+
 👉 Next Steps: Check [[Seals | EN:Seal]] or [[Judou | EN:Judou]].

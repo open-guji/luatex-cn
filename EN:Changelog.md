@@ -4,6 +4,16 @@ English | [中文版](Changelog)
 
 All notable changes to this project will be documented here.
 
+## [0.2.3] - 2026-02-01
+
+- ✨ **MeiPi (Marginal Notes)**: Added `\眉批` command with auto-positioning and manual coordinate support (fix #46)
+- ✨ **Special TextBox**: TextBox frame feature with border shape customization (fix #25)
+- ✨ **Publisher Display**: Added publisher display below banxin with customizable font (fix #26)
+- 🐛 **Bug Fix**: Fixed annotation and textbox incorrectly inheriting paragraph indentation (fix #37)
+- 🐛 **Bug Fix**: Fixed MeiPi appearing on wrong page when crossing page boundaries
+- 🐛 **Bug Fix**: Fixed font detection support for simplified/traditional Chinese names (fix #35)
+- ♻️ **Refactoring**: Refactored border style system with style stack management for border, outer_border attributes
+
 ## [0.2.2] - 2026-01-31
 
 - 🐛 **Bug Fix**: Fixed preamble chapter display on first page (fix #45)

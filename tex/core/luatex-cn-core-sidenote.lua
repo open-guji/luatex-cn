@@ -279,9 +279,9 @@ local function calculate_next_node_pos(curr_p, curr_c, curr_r, node_id, config)
     local next_p, next_c, next_r = curr_p, curr_c, curr_r
 
     -- Determine if this node consumes a row
+    -- Note: GLUE nodes (spaces) should NOT consume rows in vertical typesetting
     if node_id == constants.GLYPH or node_id == constants.HLIST or
-        node_id == constants.VLIST or node_id == constants.RULE or
-        node_id == constants.GLUE then
+        node_id == constants.VLIST or node_id == constants.RULE then
         next_r = curr_r + config.step
     end
 

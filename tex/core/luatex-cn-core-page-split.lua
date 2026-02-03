@@ -56,10 +56,14 @@ function split.enable()
     dbg.log("Enabled - using page dimensions from _G.page")
 
     -- Set TeX dimensions: width is half of source, height stays same
+    -- Must set both pagewidth/pageheight AND paperwidth/paperheight
+    -- TikZ overlays (seals, backgrounds) use \paperwidth/\paperheight for positioning
     local target_w = split.get_target_width()
     local target_h = split.get_target_height()
     tex.set("pagewidth", target_w)
     tex.set("pageheight", target_h)
+    tex.set("paperwidth", target_w)
+    tex.set("paperheight", target_h)
 end
 
 --- Disable the split page feature and restore TeX dimensions
@@ -67,14 +71,16 @@ function split.disable()
     _G.page.split.enabled = false
     dbg.log("Disabled")
 
-    -- Restore TeX dimensions to source values
+    -- Restore TeX dimensions to source values (both pagewidth/height and paperwidth/height)
     local sw = (_G.page and _G.page.paper_width) or 0
     local sh = (_G.page and _G.page.paper_height) or 0
     if sw > 0 then
         tex.set("pagewidth", sw)
+        tex.set("paperwidth", sw)
     end
     if sh > 0 then
         tex.set("pageheight", sh)
+        tex.set("paperheight", sh)
     end
 end
 
@@ -130,8 +136,9 @@ function split.output_pages(box_num, total_pages)
     for i = 0, total_pages - 1 do
         -- For split page, we need to output each page twice (left half and right half)
         local cmd_load = string.format("\\directlua{core.load_page(%d, %d, true)}", box_num, i)
-        local cmd_dim = string.format("\\global\\pagewidth=%.5fpt", target_w_pt)
-        local cmd_dim_h = string.format("\\global\\pageheight=%.5fpt", target_h_pt)
+        -- Must set both pagewidth/height AND paperwidth/height for TikZ overlays (seals, backgrounds)
+        local cmd_dim = string.format("\\global\\pagewidth=%.5fpt\\global\\paperwidth=%.5fpt", target_w_pt, target_w_pt)
+        local cmd_dim_h = string.format("\\global\\pageheight=%.5fpt\\global\\paperheight=%.5fpt", target_h_pt, target_h_pt)
 
         dbg.log("TeX CMD: " .. cmd_load)
         dbg.log("TeX CMD: " .. cmd_dim)

@@ -92,26 +92,12 @@
     % The actual margin values are stored in token lists and passed to Lua for positioning.
     \if_meaning:w \@onlypreamble \@notprerr
       % In document body
-      \bool_if:NTF \g__luatexcn_geometry_initialized_bool
-        {
-          % Geometry already initialized - just set paper dimensions directly
-          % This avoids \newgeometry which does \clearpage and creates empty pages
-          \dim_set:Nn \pagewidth { \l__luatexcn_page_paper_width_tl }
-          \dim_set:Nn \pageheight { \l__luatexcn_page_paper_height_tl }
-          \dim_set:Nn \topskip { \l__luatexcn_page_topskip_tl }
-        }
+      \bool_if:NF \g__luatexcn_geometry_initialized_bool
         {
           % First time - need to set margins to 0 via \newgeometry
           \newgeometry{
-            top=0pt,
-            bottom=0pt,
-            left=0pt,
-            right=0pt,
-            footskip=0pt
+            top=0pt, bottom=0pt, left=0pt, right=0pt, footskip=0pt
           }
-          \dim_set:Nn \pagewidth { \l__luatexcn_page_paper_width_tl }
-          \dim_set:Nn \pageheight { \l__luatexcn_page_paper_height_tl }
-          \dim_set:Nn \topskip { \l__luatexcn_page_topskip_tl }
           \bool_gset_true:N \g__luatexcn_geometry_initialized_bool
         }
     \else
@@ -119,15 +105,17 @@
       \geometry{
         paperwidth=\l__luatexcn_page_paper_width_tl,
         paperheight=\l__luatexcn_page_paper_height_tl,
-        top=0pt,
-        bottom=0pt,
-        left=0pt,
-        right=0pt,
-        footskip=0pt
+        top=0pt, bottom=0pt, left=0pt, right=0pt, footskip=0pt
       }
-      \dim_set:Nn \topskip { \l__luatexcn_page_topskip_tl }
       \bool_gset_true:N \g__luatexcn_geometry_initialized_bool
     \fi
+    % Set paper/page dimensions and topskip (common for all branches)
+    % Must set both \paperwidth and \pagewidth for TikZ overlays (e.g. seal stamps)
+    \dim_set:Nn \paperwidth { \l__luatexcn_page_paper_width_tl }
+    \dim_set:Nn \paperheight { \l__luatexcn_page_paper_height_tl }
+    \dim_set:Nn \pagewidth { \l__luatexcn_page_paper_width_tl }
+    \dim_set:Nn \pageheight { \l__luatexcn_page_paper_height_tl }
+    \dim_set:Nn \topskip { \l__luatexcn_page_topskip_tl }
   }
 
 % ============================================================================

@@ -235,9 +235,10 @@ local function is_reserved_column(col, banxin_on, interval)
 end
 
 local function skip_to_valid_column(p, c, p_cols, banxin_on, interval)
-    while is_reserved_column(c, banxin_on, interval) or
-        is_reserved_column(c - 1, banxin_on, interval) or
-        (c >= p_cols) do
+    -- Only skip reserved columns (banxin), not the column right after banxin
+    -- Sidenotes are offset to the right of the main text column, so they won't
+    -- overlap with the banxin on the left
+    while is_reserved_column(c, banxin_on, interval) or (c >= p_cols) do
         if c >= p_cols then
             c = 0
             p = p + 1

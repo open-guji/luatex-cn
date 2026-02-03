@@ -44,6 +44,7 @@
         font-size .tl_set:N = \l__luatexcn_textflow_local_size_tl,
         font .tl_set:N = \l__luatexcn_textflow_local_font_tl,
         font-color .tl_set:N = \l__luatexcn_textflow_local_color_tl,
+        align .tl_set:N = \l__luatexcn_textflow_local_align_tl,
       }
 
     \NewDocumentCommand{\TextFlow}{ O{} +m }
@@ -56,6 +57,7 @@
         \tl_set:Nn \l__luatexcn_textflow_local_size_tl {}
         \tl_set:Nn \l__luatexcn_textflow_local_font_tl {}
         \tl_set:Nn \l__luatexcn_textflow_local_color_tl {}
+        \tl_set:Nn \l__luatexcn_textflow_local_align_tl {}
 
         \keys_set:nn { luatexcn / textflow } { #1 }
 
@@ -81,6 +83,11 @@
         \tl_if_empty:NTF \l__luatexcn_textflow_local_color_tl
           { \tl_set_eq:NN \l_tmpd_tl \l__luatexcn_textflow_default_color_tl }
           { \tl_set_eq:NN \l_tmpd_tl \l__luatexcn_textflow_local_color_tl }
+
+        % 4. Determine Align (Local > Core Default)
+        \tl_if_empty:NTF \l__luatexcn_textflow_local_align_tl
+          { \tl_set_eq:NN \l__luatexcn_textflow_resolved_align_tl \l__luatexcn_textflow_default_align_tl }
+          { \tl_set_eq:NN \l__luatexcn_textflow_resolved_align_tl \l__luatexcn_textflow_local_align_tl }
 
         % Apply Font and Size
         \tl_if_empty:NTF \l_tmpb_tl
@@ -110,7 +117,8 @@
           local ~ style_id = textflow.push_style(
             \tl_if_empty:NTF \l_tmpd_tl { nil } { [=[\luaescapestring{\tl_use:N \l_tmpd_tl}]=] },
             [=[\luaescapestring{\tl_use:N \l_tmpc_tl}]=],
-            \tl_if_empty:NTF \l_tmpb_tl { nil } { [=[\luaescapestring{\tl_use:N \l_tmpb_tl}]=] }
+            \tl_if_empty:NTF \l_tmpb_tl { nil } { [=[\luaescapestring{\tl_use:N \l_tmpb_tl}]=] },
+            \tl_if_empty:NTF \l__luatexcn_textflow_resolved_align_tl { nil } { [=[\luaescapestring{\tl_use:N \l__luatexcn_textflow_resolved_align_tl}]=] }
           )
           tex.print(tostring(style_id))
         }}

@@ -280,38 +280,6 @@
     \LtcIfDebugT { \iow_term:x { Guji~Layout:~grid-width=\l__luatexcn_content_grid_width_tl~,~grid-height=\l__luatexcn_content_grid_height_tl~,~height=\l__luatexcn_content_height_tl } }
   }
 
-% ============================================================================
-% Base Content Environment (ltc-content)
-% A minimal content environment that classes can extend
-% ============================================================================
-
-\RequirePackage{environ}
-
-\NewEnviron{ltc-content}[1][]{%
-    \group_begin:
-    \keys_set:nn { luatexcn / content } { #1 }
-
-    % Setup font
-    \__luatexcn_content_setup_font:
-
-    % Zero skips
-    \__luatexcn_content_zero_skips:
-
-    % Calculate height if not set
-    \__luatexcn_content_calc_height:
-
-    % Apply geometry
-    \luatexcn_apply_geometry:
-
-    % Apply background color
-    \__luatexcn_content_apply_background:
-
-    % Process content
-    \nointerlineskip
-    \__luatexcn_content_process_grid:n { \BODY }
-    \group_end:
-}
-
 \ExplSyntaxOff
 \NewCommandCopy{\空格}{\Space}
 

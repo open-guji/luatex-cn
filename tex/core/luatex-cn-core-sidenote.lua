@@ -288,8 +288,9 @@ local function calculate_next_node_pos(curr_p, curr_c, curr_r, node_id, config)
     -- Handle overflow
     if next_r + config.padding_bottom_grid >= config.line_limit then
         next_c = curr_c + 1
-        -- Reset to base_indent instead of just padding_top
-        next_r = math.max(config.base_indent, config.padding_top_grid)
+        -- Use base_indent directly for column wrap alignment (fix for issue #47)
+        -- padding_top_grid is only for the first column start, not for wrapped columns
+        next_r = config.base_indent
         next_p, next_c = skip_to_valid_column(next_p, next_c, config.p_cols, config.banxin_on, config.interval)
 
         local filled = config.tracker.get(next_p, next_c)

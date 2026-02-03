@@ -14,7 +14,7 @@
 -- ============================================================================
 -- decorate_main.lua - Decorate Plugin for Vertical Engine
 -- ============================================================================
--- File: luatex-cn-decorate-main.lua
+-- File: luatex-cn-decorate.lua
 -- Layer: Extension Layer - Text Decoration (circles, dots, etc.)
 --
 -- Module Purpose:
@@ -239,6 +239,6 @@ function decorate.handle_node(curr, p_head, pos, params, ctx, reg_id)
     return p_head
 end
 
-package.loaded['decorate.luatex-cn-decorate-main'] = decorate
+package.loaded['decorate.luatex-cn-decorate'] = decorate
 
 return decorate

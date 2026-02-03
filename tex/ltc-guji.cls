@@ -84,19 +84,11 @@
 % Apply debug setting from class options (after debug package is loaded)
 \bool_if:NT \g__luatexcn_guji_debug_pending_bool { \LtcDebugOn }
 
-% Load banxin for 版心/鱼尾 features
-\RequirePackage{banxin/luatex-cn-banxin}
+% Load all guji-specific features (句读, 夹注, 批注, 眉批, 印章, 单页)
+\RequirePackage{guji/luatex-cn-guji}
+
 % Enable banxin by default for guji class
 \banxinSetup{ banxin = true }
-
-% Load yinzhang (印章/seal stamp) module
-\RequirePackage{guji/luatex-cn-guji-yinzhang}
-
-% Load meipi (眉批/headnote) module
-\RequirePackage{guji/luatex-cn-guji-meipi}
-
-% Load danye (单页/single page) module
-\RequirePackage{guji/luatex-cn-guji-danye}
 
 % 3. Page Geometry - Will be applied dynamically via tsemplate
 % Default values stored in key-value system below

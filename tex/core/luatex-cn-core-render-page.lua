@@ -75,8 +75,8 @@ local content = package.loaded['core.luatex-cn-core-content'] or
     require('core.luatex-cn-core-content')
 local text_position = package.loaded['core.luatex-cn-render-position'] or
     require('luatex-cn-render-position')
-local decorate_mod = package.loaded['decorate.luatex-cn-decorate-main'] or
-    require('decorate.luatex-cn-decorate-main')
+local decorate_mod = package.loaded['decorate.luatex-cn-decorate'] or
+    require('decorate.luatex-cn-decorate')
 local debug = package.loaded['debug.luatex-cn-debug'] or
     require('debug.luatex-cn-debug')
 

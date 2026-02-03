@@ -485,6 +485,105 @@ q %s RG %.2f w
     return utils.insert_pdf_literal(p_head, literal)
 end
 
+-- ============================================================================
+-- Guji Auto-Layout: Calculate grid dimensions from page geometry and n-column
+-- This is a pure calculation function with no side effects (no style push)
+-- ============================================================================
+
+--- Calculate guji auto-layout dimensions
+-- @param params Table with layout parameters (passed from TeX)
+-- @return table with grid_width, grid_height, content_height, margin_top (all in sp)
+local function guji_calc_layout(params)
+    params = params or {}
+
+    -- Get page dimensions from _G.page (already synced)
+    local p_width = _G.page and _G.page.paper_width or 0
+    local p_height = _G.page and _G.page.paper_height or 0
+    local m_left = _G.page and _G.page.margin_left or 0
+    local m_right = _G.page and _G.page.margin_right or 0
+    local m_top = _G.page and _G.page.margin_top or 0
+    local m_bottom = _G.page and _G.page.margin_bottom or 0
+
+    -- Get content parameters from params (passed from TeX)
+    local n_column = tonumber(params.n_column) or 8
+    local n_char_per_col = tonumber(params.n_char_per_col) or 0
+    local border_on = params.border_on
+    local outer_border_on = params.outer_border_on
+    local b_thickness = border_on and constants.to_dimen(params.border_thickness or "0pt") or 0
+    local ob_thickness = constants.to_dimen(params.outer_border_thickness or "0pt")
+    local ob_sep = constants.to_dimen(params.outer_border_sep or "0pt")
+    local b_padding_top = constants.to_dimen(params.border_padding_top or "0pt")
+    local b_padding_bottom = constants.to_dimen(params.border_padding_bottom or "0pt")
+    local existing_grid_height = constants.to_dimen(params.grid_height or "0pt")
+
+    -- I. Width Logic: Calculate grid-width from n-column
+    local available_width = p_width - m_left - m_right
+    local border_overhead_width = 0
+    if outer_border_on then
+        border_overhead_width = border_overhead_width + 2 * (ob_thickness + ob_sep)
+    end
+    if border_on then
+        border_overhead_width = border_overhead_width + b_thickness
+    end
+    available_width = available_width - border_overhead_width
+
+    -- For guji with banxin: 2 * n_column + 1 columns
+    local total_cols = 2 * n_column + 1
+    local grid_width = math.floor(available_width / total_cols)
+
+    -- II. Height Logic: Calculate available height
+    local available_height = p_height - m_top - m_bottom
+    local border_overhead_height = 0
+    if outer_border_on then
+        border_overhead_height = border_overhead_height + 2 * (ob_thickness + ob_sep)
+    end
+    if border_on then
+        border_overhead_height = border_overhead_height + b_padding_top + b_padding_bottom + b_thickness
+    end
+    available_height = available_height - border_overhead_height
+
+    -- Calculate grid-height and content-height
+    local grid_height, content_height
+    if n_char_per_col > 0 then
+        -- Mode A: n-char-per-col specified, calculate grid-height
+        grid_height = math.floor(available_height / n_char_per_col)
+        content_height = grid_height * n_char_per_col
+    elseif existing_grid_height > 0 then
+        -- Mode B: grid-height specified, calculate fitting rows
+        grid_height = existing_grid_height
+        local rows = math.floor(available_height / grid_height)
+        content_height = grid_height * rows
+    else
+        -- Fallback: use available height
+        grid_height = 0
+        content_height = available_height
+    end
+
+    -- Calculate total box height and adjusted margin-top (bottom-aligned content)
+    local total_box_height = content_height + border_overhead_height + 2 * 65536 -- +2pt
+    local adjusted_margin_top = p_height - m_bottom - total_box_height
+
+    return {
+        grid_width = grid_width,
+        grid_height = grid_height,
+        content_height = content_height,
+        margin_top = adjusted_margin_top,
+    }
+end
+
+--- Calculate guji layout and set TeX token lists directly
+-- @param params Table with layout parameters
+local function guji_auto_layout(params)
+    local layout = guji_calc_layout(params)
+    -- Convert sp to pt string
+    local function to_pt(sp) return string.format("%.5fpt", sp / 65536) end
+    -- Set TeX token lists directly using token.set_macro
+    token.set_macro("l__luatexcn_content_grid_width_tl", to_pt(layout.grid_width))
+    token.set_macro("l__luatexcn_content_grid_height_tl", to_pt(layout.grid_height))
+    token.set_macro("l__luatexcn_content_height_tl", to_pt(layout.content_height))
+    token.set_macro("l__luatexcn_page_margin_top_tl", to_pt(layout.margin_top))
+end
+
 -- Create module table
 local content = {
     setup = setup,
@@ -496,6 +595,7 @@ local content = {
     draw_octagon_frame = draw_octagon_frame,
     draw_circle_fill = draw_circle_fill,
     draw_circle_frame = draw_circle_frame,
+    guji_auto_layout = guji_auto_layout,
 }
 
 -- Register module in package.loaded

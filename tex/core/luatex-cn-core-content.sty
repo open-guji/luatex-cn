@@ -259,6 +259,27 @@
       }
   }
 
+% Helper: Auto-layout calculation for guji-style content
+% Calls Lua to compute grid dimensions based on page and content parameters
+\cs_new_protected:Npn \__luatexcn_content_auto_layout:
+  {
+    \lua_now:e {
+      require('core.luatex-cn-core-content').guji_auto_layout({
+        border_on~=~\bool_if:NTF~\l__luatexcn_content_border_bool~{true}~{false},
+        outer_border_on~=~\bool_if:NTF~\l__luatexcn_content_outer_border_bool~{true}~{false},
+        border_thickness~=~"\l__luatexcn_content_border_thickness_tl",
+        outer_border_thickness~=~"\l__luatexcn_content_outer_border_thickness_tl",
+        outer_border_sep~=~"\l__luatexcn_content_outer_border_sep_tl",
+        border_padding_top~=~"\l__luatexcn_content_border_padding_top_tl",
+        border_padding_bottom~=~"\l__luatexcn_content_border_padding_bottom_tl",
+        n_column~=~\int_use:N~\l__luatexcn_content_n_column_int,
+        n_char_per_col~=~\int_use:N~\l__luatexcn_content_n_char_per_col_int,
+        grid_height~=~"\l__luatexcn_content_grid_height_tl",
+      })
+    }
+    \LtcIfDebugT { \iow_term:x { Guji~Layout:~grid-width=\l__luatexcn_content_grid_width_tl~,~grid-height=\l__luatexcn_content_grid_height_tl~,~height=\l__luatexcn_content_height_tl } }
+  }
+
 % ============================================================================
 % Base Content Environment (ltc-content)
 % A minimal content environment that classes can extend

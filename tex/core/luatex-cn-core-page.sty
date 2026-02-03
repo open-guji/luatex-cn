@@ -227,6 +227,13 @@
 \NewCommandCopy{\启用分页裁剪}{\enableSplitPage}
 \NewCommandCopy{\禁用分页裁剪}{\disableSplitPage}
 
+% Helper: apply split page if enabled
+\cs_new:Npn \__luatexcn_page_apply_split:
+  {
+    \bool_if:NT \l__luatexcn_page_split_enabled_bool
+      { \enableSplitPage }
+  }
+
 % ============================================================================
 % Page Number Commands
 % ============================================================================
@@ -243,5 +250,19 @@
     \lua_now:e { core.set_page_number(#1); }
   }
 \NewCommandCopy{\设置页码}{\SetPageNumber}
+
+% ============================================================================
+% Override page break commands for grid content
+% ============================================================================
+
+\cs_new_protected:Npn \__luatexcn_page_override_pagebreak:
+  {
+    \RenewDocumentCommand{\newpage}{}{\penalty-10003 }
+    \RenewDocumentCommand{\clearpage}{}{\penalty-10003 }
+    \cs_set:Npn \chapter ##1 {
+      \directlua { core.insert_chapter_marker( "\luaescapestring{ \tl_to_str:n { ##1 } }" ) }
+      \box0\relax
+    }
+  }
 
 \endinput

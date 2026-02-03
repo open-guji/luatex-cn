@@ -95,6 +95,9 @@
 % Load meipi (眉批/headnote) module
 \RequirePackage{guji/luatex-cn-guji-meipi}
 
+% Load danye (单页/single page) module
+\RequirePackage{guji/luatex-cn-guji-danye}
+
 % 3. Page Geometry - Will be applied dynamically via tsemplate
 % Default values stored in key-value system below
 

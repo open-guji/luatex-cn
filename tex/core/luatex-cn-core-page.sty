@@ -157,7 +157,7 @@
       { \bool_set_false:N \l__luatexcn_page_split_right_first_bool }
   }
 
-\NewEnviron{page}[1][]{%
+\NewEnviron{Page}[1][]{%
     \clearpage
     % Save current settings in Lua (includes split state)
     \lua_now:n { require('core.luatex-cn-core-page').save() }
@@ -191,6 +191,9 @@
     % Do NOT call \luatexcn_apply_geometry: here - it uses \newgeometry which does \clearpage
     % and would create an empty page. The dimensions are already set by split.enable/disable.
 }
+
+% CJK alias for Page environment
+\NewEnvironmentCopy{页}{Page}
 
 % ============================================================================
 % Page Split (筒子页) - splits each page into two half-pages

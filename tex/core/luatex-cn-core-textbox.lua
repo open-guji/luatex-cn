@@ -210,6 +210,7 @@ local function build_sub_params(params, col_aligns)
         background_color = params.background_color,
         font_color = params.font_color,
         font_size = params.font_size,
+        vertical_align = params.vertical_align,
         is_textbox = true,
         distribute = (ba == "fill"),
         -- Border parameters (resolved from params or style stack)
@@ -285,6 +286,10 @@ local function execute_layout_pipeline(box_num, sub_params, current_indent)
     end
     if sub_params.font_size and sub_params.font_size ~= "" then
         style_overrides.font_size = sub_params.font_size
+    end
+    -- Only include vertical_align if explicitly set
+    if sub_params.vertical_align and sub_params.vertical_align ~= "" then
+        style_overrides.vertical_align = sub_params.vertical_align
     end
     style_registry.push(style_overrides)
 

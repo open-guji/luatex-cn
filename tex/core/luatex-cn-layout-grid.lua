@@ -647,12 +647,12 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
 
         apply_indentation(ctx, indent)
 
-        local is_jiazhu = D.get_attribute(t, constants.ATTR_JIAZHU) == 1
-        if is_jiazhu then
+        local is_textflow = D.get_attribute(t, constants.ATTR_JIAZHU) == 1
+        if is_textflow then
             local textflow = package.loaded['core.luatex-cn-core-textflow'] or
                 require('core.luatex-cn-core-textflow')
 
-            local jiazhu_mode = D.get_attribute(t, constants.ATTR_JIAZHU_MODE) or 0
+            local textflow_mode = D.get_attribute(t, constants.ATTR_JIAZHU_MODE) or 0
             local place_params = {
                 effective_limit = effective_limit,
                 line_limit = line_limit,
@@ -660,7 +660,7 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
                 r_indent = r_indent,
                 block_id = block_id,
                 first_indent = first_indent,
-                jiazhu_mode = jiazhu_mode
+                textflow_mode = textflow_mode
             }
             local callbacks = {
                 flush = flush_buffer,
@@ -671,7 +671,7 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
                 debug = function(msg) dbg.log(msg) end
             }
 
-            t = textflow.place_jiazhu_nodes(ctx, t, layout_map, place_params, callbacks)
+            t = textflow.place_nodes(ctx, t, layout_map, place_params, callbacks)
 
             if not t then break end
             goto start_of_loop

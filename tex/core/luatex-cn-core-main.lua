@@ -431,7 +431,7 @@ local function generate_physical_pages(list, params, engine_ctx, plugin_contexts
         -- TextBox: read visual params from style stack
         local style_registry = package.loaded['util.luatex-cn-style-registry']
         local current_style = style_registry and style_registry.current() or {}
-        visual_ctx.vertical_align = params.vertical_align or "center"
+        visual_ctx.vertical_align = current_style.vertical_align or "center"
         visual_ctx.bg_rgb = params.background_color
         visual_ctx.font_rgb = current_style.font_color
         visual_ctx.font_size = constants.to_dimen(current_style.font_size)

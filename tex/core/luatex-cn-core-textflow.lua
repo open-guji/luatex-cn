@@ -12,21 +12,21 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 -- ============================================================================
--- core_textflow.lua - 夹注（Jiazhu）平衡与分段逻辑
+-- core_textflow.lua - TextFlow balancing and segmentation logic
 -- ============================================================================
--- 文件名: core_textflow.lua
--- 层级: 协调层 (Core Layer)
+-- File: core_textflow.lua
+-- Layer: Core Layer
 --
--- 【模块功能 / Module Purpose】
--- 本模块负责处理夹注（双行小注）的逻辑：
---   1. 将一段夹注节点平衡分配到左右两个子列（Sub-column）。
---   2. 处理夹注跨列（Continuous Break）逻辑，根据剩余空间进行切分。
---   3. 为节点添加 ATTR_JIAZHU_SUB 属性（1: 右/先行, 2: 左/后行）。
+-- Module Purpose:
+-- This module handles textflow (dual-column small notes) logic:
+--   1. Balances textflow nodes across left/right sub-columns.
+--   2. Handles continuous break logic based on remaining space.
+--   3. Sets ATTR_JIAZHU_SUB attribute (1: right/first, 2: left/second).
 --
--- 【主要算法 / Main Algorithm】
---   设可用高度为 H，则容量为 C = H * 2。
---   如果夹注长度 L <= C，则进行平衡分配：右方 = ceil(L/2)，左方 = L - ceil(L/2)。
---   如果 L > C，则填满当前列（右方 = H，左方 = H），剩余部分跨到下一列。
+-- Main Algorithm:
+--   Given available height H, capacity C = H * 2.
+--   If textflow length L <= C, balance: right = ceil(L/2), left = L - ceil(L/2).
+--   If L > C, fill current column (right = H, left = H), overflow to next.
 --
 --
 -- ============================================================================
@@ -39,12 +39,13 @@ local style_registry = package.loaded['util.luatex-cn-style-registry'] or
 
 local textflow = {}
 
---- Push jiazhu style to style stack
+--- Push textflow style to style stack
 -- @param font_color (string|nil) Font color string (e.g., "red" or "1 0 0")
 -- @param font_size (string|nil) Font size string (e.g., "14pt")
 -- @param font (string|nil) Font family name
+-- @param textflow_align (string|nil) TextFlow alignment (outward, inward, center, left, right)
 -- @return (number) Style ID
-function textflow.jiazhu_push_style(font_color, font_size, font)
+function textflow.push_style(font_color, font_size, font, textflow_align)
     local style = {}
     if font_color and font_color ~= "" then
         style.font_color = font_color
@@ -55,21 +56,26 @@ function textflow.jiazhu_push_style(font_color, font_size, font)
     if font and font ~= "" then
         style.font = font
     end
+    -- Only set textflow_align if explicitly provided
+    -- Inheritance handled by style_registry
+    if textflow_align and textflow_align ~= "" then
+        style.textflow_align = textflow_align
+    end
     return style_registry.push(style)
 end
 
---- Pop jiazhu style from style stack
-function textflow.jiazhu_pop_style()
+--- Pop textflow style from style stack
+function textflow.pop_style()
     return style_registry.pop()
 end
 
---- 计算子列（如双行注 Jiazhu）的 X 偏移
--- @param base_x (number) 基础 X 坐标 (sp)
--- @param grid_width (number) 单元格总宽度 (sp)
--- @param w (number) 字符宽度 (sp)
--- @param sub_col (number) 子列号 (1: 右, 2: 左)
--- @param align (string) 对齐方式 (outward, inward, center, left, right)
--- @return (number) 物理 X 坐标 (sp)
+--- Calculate sub-column X offset for textflow
+-- @param base_x (number) Base X coordinate (sp)
+-- @param grid_width (number) Total cell width (sp)
+-- @param w (number) Character width (sp)
+-- @param sub_col (number) Sub-column number (1: right, 2: left)
+-- @param align (string) Alignment (outward, inward, center, left, right)
+-- @return (number) Physical X coordinate (sp)
 function textflow.calculate_sub_column_x_offset(base_x, grid_width, w, sub_col, align)
     local sub_width = grid_width / 2
     local inner_padding = sub_width * 0.05 -- 5% internal padding
@@ -101,31 +107,31 @@ function textflow.calculate_sub_column_x_offset(base_x, grid_width, w, sub_col, 
     end
 end
 
---- Collect consecutive jiazhu glyph nodes starting from a given node
+--- Collect consecutive textflow glyph nodes starting from a given node
 -- @param start_node (direct node) Starting node (must have ATTR_JIAZHU == 1)
--- @return (table, direct node) Array of jiazhu glyph nodes, next non-jiazhu node
-function textflow.collect_jiazhu_nodes(start_node)
-    local j_nodes = {}
+-- @return (table, direct node) Array of textflow glyph nodes, next non-textflow node
+function textflow.collect_nodes(start_node)
+    local nodes = {}
     local temp_t = start_node
 
     while temp_t and D.get_attribute(temp_t, constants.ATTR_JIAZHU) == 1 do
         local tid = D.getid(temp_t)
         if tid == constants.GLYPH then
-            table.insert(j_nodes, temp_t)
+            table.insert(nodes, temp_t)
         end
         temp_t = D.getnext(temp_t)
     end
 
-    return j_nodes, temp_t
+    return nodes, temp_t
 end
 
---- 将一段连续的夹注节点进行分块和平衡
--- @param jiazhu_nodes (table) 连续的夹注节点列表 (direct nodes)
--- @param available_rows (number) 当前列剩余的可选行数
--- @param line_limit (number) 每列的总行数限制
+--- Process textflow nodes into chunks with balanced distribution
+-- @param textflow_nodes (table) Consecutive textflow node list (direct nodes)
+-- @param available_rows (number) Remaining rows in current column
+-- @param line_limit (number) Total row limit per column
 -- @return (table) chunks: { {nodes_with_attr, rows_used, is_full_column}, ... }
-function textflow.process_jiazhu_sequence(jiazhu_nodes, available_rows, line_limit, mode)
-    local total_nodes = #jiazhu_nodes
+function textflow.process_sequence(textflow_nodes, available_rows, line_limit, mode)
+    local total_nodes = #textflow_nodes
     if total_nodes == 0 then return {} end
 
     local chunks = {}
@@ -151,7 +157,6 @@ function textflow.process_jiazhu_sequence(jiazhu_nodes, available_rows, line_lim
         local is_full = false
 
         if remaining <= capacity then
-            -- 能够在本块（列）内排完
             chunk_size = remaining
             if is_single_column then
                 rows_used = remaining
@@ -159,14 +164,12 @@ function textflow.process_jiazhu_sequence(jiazhu_nodes, available_rows, line_lim
                 rows_used = math.ceil(chunk_size / 2)
             end
         else
-            -- 排不完，填满当前块（列）
             chunk_size = capacity
             rows_used = h
             is_full = true
         end
 
         local chunk_nodes = {}
-        -- 计算平衡界限
         local right_count
         if is_single_column then
             if mode == 1 then            -- Right only
@@ -180,19 +183,18 @@ function textflow.process_jiazhu_sequence(jiazhu_nodes, available_rows, line_lim
 
         for i = 0, chunk_size - 1 do
             local node_idx = current_idx + i
-            local n = jiazhu_nodes[node_idx]
+            local n = textflow_nodes[node_idx]
 
             local sub_col
             local relative_row
 
             if i < right_count then
-                -- 右小行 (先行)
+                -- Right sub-row (first)
                 sub_col = 1
                 relative_row = i
             else
-                -- 左小行 (后行)
+                -- Left sub-row (second)
                 if is_single_column then
-                    -- If left only mode, relative_row is just i, because there are no right nodes
                     sub_col = 2
                     relative_row = i
                 else
@@ -201,11 +203,7 @@ function textflow.process_jiazhu_sequence(jiazhu_nodes, available_rows, line_lim
                 end
             end
 
-            -- if is_single_column then
-            --    texio.write_nl("term_and_log", string.format("DEBUG: Mode=%s, NodeIdx=%d, Assigned SubCol=%d", tostring(mode), node_idx, sub_col))
-            -- end
-
-            -- 设置属性以便渲染层识别
+            -- Set attribute for render layer
             D.set_attribute(n, constants.ATTR_JIAZHU_SUB, sub_col)
 
             table.insert(chunk_nodes, {
@@ -228,43 +226,44 @@ function textflow.process_jiazhu_sequence(jiazhu_nodes, available_rows, line_lim
     return chunks
 end
 
---- Place jiazhu nodes into layout map
+--- Place textflow nodes into layout map
 -- @param ctx (table) Grid context
--- @param start_node (node) The starting jiazhu node
+-- @param start_node (node) The starting textflow node
 -- @param layout_map (table) The layout map to populate
--- @param params (table) Layout parameters { effective_limit, line_limit, base_indent, r_indent, block_id, first_indent, jiazhu_mode }
+-- @param params (table) Layout parameters { effective_limit, line_limit, base_indent, r_indent, block_id, first_indent, textflow_mode }
 -- @param callbacks (table) Callbacks { flush, wrap, get_indent, debug }
 -- @return (node) The next node to process
-function textflow.place_jiazhu_nodes(ctx, start_node, layout_map, params, callbacks)
+function textflow.place_nodes(ctx, start_node, layout_map, params, callbacks)
     if callbacks.debug then
-        callbacks.debug(string.format("  [layout] JIAZHU DETECTED: node=%s", tostring(start_node)))
+        callbacks.debug(string.format("  [layout] TEXTFLOW DETECTED: node=%s", tostring(start_node)))
     end
     callbacks.flush()
 
-    local j_nodes, temp_t = textflow.collect_jiazhu_nodes(start_node)
+    local nodes, temp_t = textflow.collect_nodes(start_node)
     if callbacks.debug then
-        callbacks.debug(string.format("  [layout] Collected %d jiazhu glyphs", #j_nodes))
+        callbacks.debug(string.format("  [layout] Collected %d textflow glyphs", #nodes))
     end
 
-    -- Process jiazhu sequence into chunks
+    -- Process textflow sequence into chunks
     local available_in_first = params.effective_limit - ctx.cur_row
     local capacity_per_subsequent = params.line_limit - params.base_indent - params.r_indent
-    local chunks = textflow.process_jiazhu_sequence(j_nodes, available_in_first, capacity_per_subsequent,
-        params.jiazhu_mode)
+    local chunks = textflow.process_sequence(nodes, available_in_first, capacity_per_subsequent,
+        params.textflow_mode)
 
     -- Place chunks into layout_map
-    -- Phase 3: Read style from node attribute (set by TeX layer)
+    -- Read style from node attribute (set by TeX layer)
     local style_reg_id = nil
     local current_style = nil
-    if #j_nodes > 0 then
-        style_reg_id = D.get_attribute(j_nodes[1], constants.ATTR_STYLE_REG_ID)
+    if #nodes > 0 then
+        style_reg_id = D.get_attribute(nodes[1], constants.ATTR_STYLE_REG_ID)
         current_style = style_registry.get(style_reg_id)
     end
 
-    -- Extract style attributes for layout_map (backward compatibility)
+    -- Extract style attributes for layout_map
     local font_color_str = current_style and current_style.font_color or nil
     local font_size_val = current_style and current_style.font_size or nil
     local font_str = current_style and current_style.font or nil
+    local textflow_align_str = current_style and current_style.textflow_align or nil
 
     for i, chunk in ipairs(chunks) do
         if i > 1 then
@@ -282,7 +281,7 @@ function textflow.place_jiazhu_nodes(ctx, start_node, layout_map, params, callba
                 sub_col = node_info.sub_col
             }
 
-            -- Only add style fields if set (to maintain backward compatibility)
+            -- Only add style fields if set
             if font_color_str then
                 entry.font_color = font_color_str
             end
@@ -291,6 +290,9 @@ function textflow.place_jiazhu_nodes(ctx, start_node, layout_map, params, callba
             end
             if font_str then
                 entry.font = font_str
+            end
+            if textflow_align_str then
+                entry.textflow_align = textflow_align_str
             end
 
             layout_map[node_info.node] = entry

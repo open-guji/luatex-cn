@@ -297,8 +297,8 @@ local function calc_grid_position(col, row, glyph_dims, params)
     -- Calculate X offset based on horizontal alignment
     local x_offset
     if sub_col > 0 then
-        -- Jiazhu logic
-        x_offset = textflow.calculate_sub_column_x_offset(base_x, grid_width, w, sub_col, params.jiazhu_align)
+        -- TextFlow logic
+        x_offset = textflow.calculate_sub_column_x_offset(base_x, grid_width, w, sub_col, params.textflow_align)
     elseif h_align == "left" then
         x_offset = base_x
     elseif h_align == "right" then

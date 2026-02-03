@@ -182,8 +182,8 @@ local function calculate_render_context(ctx)
         grid_width = grid_width,
         grid_height = grid_height,
         vertical_align = vertical_align,
-        -- Jiazhu align from _G.jiazhu global (set by jiazhu.setup)
-        jiazhu_align = (_G.jiazhu and _G.jiazhu.align) or "outward",
+        -- TextFlow align default (per-node align from style stack takes precedence)
+        textflow_align = (_G.jiazhu and _G.jiazhu.align) or "outward",
         -- Judou parameters from _G.judou global (set by judou.setup)
         judou_pos = (_G.judou and _G.judou.pos) or "right-bottom",
         judou_size = (_G.judou and _G.judou.size) or "1em",
@@ -275,7 +275,7 @@ local function handle_glyph_node(curr, p_head, pos, params, ctx)
             h_align = h_align,
             half_thickness = ctx.half_thickness,
             sub_col = pos.sub_col,
-            jiazhu_align = ctx.jiazhu_align,
+            textflow_align = pos.textflow_align or ctx.textflow_align,
         }
     )
 

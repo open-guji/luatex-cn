@@ -170,17 +170,13 @@ local function build_sub_params(params, col_aligns)
     local style_registry = package.loaded['util.luatex-cn-style-registry']
     local current_id = style_registry and style_registry.current_id()
 
-    -- Resolve border: explicit param > inherited from style stack > default false
-    local border_on = false
+    -- Track if border was explicitly set (for style stack push)
+    -- nil = not set (inherit), true/false = explicitly set
+    local border_explicit = nil
     if params.border == "true" or params.border == true then
-        border_on = true
+        border_explicit = true
     elseif params.border == "false" or params.border == false then
-        border_on = false
-    elseif style_registry then
-        local inherited = style_registry.get_border(current_id)
-        if inherited ~= nil then
-            border_on = inherited
-        end
+        border_explicit = false
     end
 
     -- Resolve border_width: explicit param > inherited > default "0.4pt"
@@ -210,7 +206,7 @@ local function build_sub_params(params, col_aligns)
         grid_height = params.grid_height,
         box_align = params.box_align,
         column_aligns = col_aligns,
-        border_on = border_on,
+        border_explicit = border_explicit,  -- nil=inherit, true/false=explicit
         background_color = params.background_color,
         font_color = params.font_color,
         font_size = params.font_size,
@@ -268,18 +264,29 @@ local function execute_layout_pipeline(box_num, sub_params, current_indent)
 
     -- Push textbox style to override inherited styles (fix #37)
     -- - indent/first_indent = 0: textbox content should not inherit paragraph indent
-    -- - border settings: push to style stack for nested components
+    -- - border: only push if explicitly set (nil = inherit from parent)
     -- - outer_border = false: textbox never has outer border (content-only feature)
     local style_registry = package.loaded['util.luatex-cn-style-registry'] or
         require('util.luatex-cn-style-registry')
-    style_registry.push({
+    local style_overrides = {
         indent = 0,
         first_indent = 0,
-        border = sub_params.border_on,
         border_width = sub_params.border_width,
         border_color = sub_params.border_color,
         outer_border = false,  -- TextBox never has outer border
-    })
+    }
+    -- Only include border if explicitly set (nil means inherit from parent)
+    if sub_params.border_explicit ~= nil then
+        style_overrides.border = sub_params.border_explicit
+    end
+    -- Only include font params if explicitly set
+    if sub_params.font_color and sub_params.font_color ~= "" then
+        style_overrides.font_color = sub_params.font_color
+    end
+    if sub_params.font_size and sub_params.font_size ~= "" then
+        style_overrides.font_size = sub_params.font_size
+    end
+    style_registry.push(style_overrides)
 
     -- Clear indent attributes on all nodes in the textbox content (fix #37)
     -- ATTR_INDENT takes priority over style registry, so we must clear it

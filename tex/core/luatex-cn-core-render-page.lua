@@ -92,7 +92,7 @@ local _internal = {}
 
 
 -- 辅助函数：计算渲染上下文（尺寸、偏移、列数等）
--- For non-textbox (VerticalRTT), reads static values from _G.content
+-- For non-textbox (Content), reads static values from _G.content
 -- For textbox, reads from passed ctx params
 local function calculate_render_context(ctx)
     -- Unpack nested contexts
@@ -102,7 +102,7 @@ local function calculate_render_context(ctx)
     local visual = ctx.visual
     local is_textbox = page.is_textbox
 
-    -- Static values: from _G.content for VerticalRTT, from ctx for textbox
+    -- Static values: from _G.content for Content, from ctx for textbox
     local border_thickness, half_thickness, ob_thickness_val, ob_sep_val
     local b_padding_top, b_padding_bottom
     local grid_width, grid_height
@@ -118,7 +118,7 @@ local function calculate_render_context(ctx)
         grid_width = grid.width
         grid_height = grid.height
     else
-        -- VerticalRTT: read static values from _G.content
+        -- Content: read static values from _G.content
         border_thickness = _G.content.border_thickness or 26214
         half_thickness = math.floor(border_thickness / 2)
         ob_thickness_val = _G.content.outer_border_thickness or (65536 * 2)
@@ -138,7 +138,7 @@ local function calculate_render_context(ctx)
     local p_cols = grid.cols
     local line_limit = grid.line_limit
 
-    -- Visual params: from _G.content for VerticalRTT, from ctx for textbox
+    -- Visual params: from _G.content for Content, from ctx for textbox
     local vertical_align, background_rgb_str, text_rgb_str
     local border_shape, border_color_str, border_width, border_margin
     if is_textbox then

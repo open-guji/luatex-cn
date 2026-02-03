@@ -181,8 +181,8 @@
   }
 
 % Define Main Command with Key-Value interface
-% Syntax: \VerticalRTT[key=val]{text}
-\NewDocumentCommand{\VerticalRTT}{ O{} +m }
+% Syntax: \Content[key=val]{text}
+\NewDocumentCommand{\Content}{ O{} +m }
   {
     \par\noindent
     \group_begin:
@@ -190,6 +190,8 @@
     \__luatexcn_content_process_grid:n { #2 }
     \group_end:
   }
+% Backward compatibility alias
+\NewCommandCopy{\VerticalRTT}{\Content}
 
 % Space Command - inserts a space that occupies grid cells in vertical layout
 % In CJK text, normal ASCII spaces are often absorbed; use this for explicit spacing

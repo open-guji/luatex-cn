@@ -178,9 +178,20 @@ local function push_content_base_style()
     local style_registry = package.loaded['util.luatex-cn-style-registry'] or
         require('util.luatex-cn-style-registry')
 
+    -- Helper to convert sp to pt string for style registry
+    local function sp_to_pt_str(sp)
+        if not sp or sp == 0 then return nil end
+        return string.format("%.5fpt", sp / 65536)
+    end
+
     local base_style = {
         indent = 0,
         first_indent = -1,  -- -1 means inherit from indent
+        -- Border parameters (boolean flags and style values)
+        border = _G.content.border_on or false,
+        border_width = sp_to_pt_str(_G.content.border_thickness),
+        border_color = _G.content.border_color or "0 0 0",
+        outer_border = _G.content.outer_border_on or false,
     }
     if _G.content.font_color then
         base_style.font_color = _G.content.font_color

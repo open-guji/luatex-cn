@@ -56,15 +56,6 @@
 
 \keys_define:nn { luatexcn / book }
   {
-    unknown .code:n = { \keys_set:nx { luatexcn / content } { \l_keys_key_tl = { #1 } } },
-  }
-
-\NewDocumentCommand{\bookSetup}{ +m }
-  {
-    \tl_set:Nn \l_tmpa_tl { #1 }
-    \tl_replace_all:Nnn \l_tmpa_tl { \par } { }
-    \keys_set:nV { luatexcn / book } \l_tmpa_tl
-    \luatexcn_apply_geometry:
   }
 
 % Load default configuration
@@ -73,14 +64,7 @@
 }
 
 % 4. Main content environment
-\NewEnviron{ltc-book-content}[1][]{%
-    \group_begin:
-    \keys_set:nn { luatexcn / book } { #1 }
-    \luatexcn_apply_geometry:
-    \nointerlineskip
-    \Content{\BODY}
-    \group_end:
-}
+
 
 % 5. Apply initial template if specified
 \tl_if_empty:NF \l_luatexcn_book_initial_template_tl
@@ -89,9 +73,6 @@
   }
 
 \pagestyle{plain}
-
-% Environment Aliases (CJK support)
-\NewEnvironmentCopy{正文}{ltc-book-content}
 
 % Apply auto-detected font if no font-name is set
 \AtEndOfClass{

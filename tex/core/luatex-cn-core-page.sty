@@ -80,6 +80,10 @@
         margin_right~=~"\l__luatexcn_page_margin_right_tl"
       })
     }
+    % Apply geometry when called in preamble (sets paper size)
+    \luatexcn_apply_geometry:
+    % Apply split page settings if enabled
+    \__luatexcn_page_apply_split:
   }
 
 % Flag to track if geometry has been initialized (margins set to 0)

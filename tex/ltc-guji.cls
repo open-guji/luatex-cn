@@ -90,32 +90,6 @@
 % Enable banxin by default for guji class
 \banxinSetup{ banxin = true }
 
-% 3. Page Geometry - Will be applied dynamically via tsemplate
-% Default values stored in key-value system below
-
-% Storage for Book Name (formerly Banxin text)
-\tl_new:N \l_luatexcn_guji_book_name_tl
-\tl_set:Nn \l_luatexcn_guji_book_name_tl {}
-
-% Dimension for calculated grid-height
-\dim_new:N \l_luatexcn_guji_grid_height_dim
-
-% Error messages
-\msg_new:nnn { guji } { missing-grid-param }
-  { Either~n-char~or~grid-height~must~be~specified. }
-
-% Storage for Chapter Title (章节标题)
-\tl_new:N \l_luatexcn_guji_chapter_title_tl
-\tl_set:Nn \l_luatexcn_guji_chapter_title_tl {}
-
-\bool_new:N \l_luatexcn_guji_banxin_bool
-\bool_set_true:N \l_luatexcn_guji_banxin_bool
-
-% Variables for computed layout values (auto-layout computes grid-width, grid-height, height)
-
-
-
-
 \keys_define:nn { luatexcn / guji }
   {
     template .code:n = {
@@ -129,8 +103,6 @@
       }
       \ExplSyntaxOn
     },
-
-    unknown .code:n = { \keys_set:nx { luatexcn / content } { \l_keys_key_tl = { #1 } } },
   }
 
 % 5. Logic to apply geometry
@@ -141,17 +113,12 @@
     \tl_set:Nn \l_tmpa_tl { #1 }
     \tl_replace_all:Nnn \l_tmpa_tl { \par } { }
     \keys_set:nV { luatexcn / guji } \l_tmpa_tl
-    \luatexcn_apply_geometry:
-    \__luatexcn_page_apply_split:
   }
 
 % Load default config (after gujiSetup is defined)
 \InputIfFileExists{configs/luatex-cn-guji-default.cfg}{}{
   \PackageWarning{luatex-cn-guji}{Config file~configs/luatex-cn-guji-default.cfg~not~found}
 }
-
-% Note: \title, \publisher, and \chapter are defined in core/luatex-cn-core-metadata.sty
-% They forward to banxin namespace automatically
 
 % Command to define templates
 \NewDocumentCommand{\defineGujiTemplate}{ m +m }
@@ -161,24 +128,10 @@
         #1 .code:n = { \keys_set:nn { luatexcn / guji } { #2 } }
       }
   }
-
-% 6. Load Common Templates (if any)
-\InputIfFileExists{guji_common.def}{}{}
-
 % ============================================================================
 % Guji-specific Helper Commands (extracted from guji-content environment)
 % ============================================================================
 
-% 8. High-level Interface
-\NewEnviron{guji-content}[1][]{%
-    \group_begin:
-    \keys_set:nn { luatexcn / guji } { #1 }
-    \__luatexcn_content_auto_layout:
-    \luatexcn_apply_geometry:
-    \nointerlineskip
-    \Content{\BODY}
-    \group_end:
-}
 
 
 % 9. Apply Initial Template if specified in class options
@@ -200,13 +153,9 @@
          { \exp_args:NV \setmainfont \l__luatexcn_content_font_name_tl [RawFeature={+vert,+vrt2}] }
          { \exp_args:NV \setmainfont \l__luatexcn_content_font_name_tl [\l__luatexcn_content_font_features_tl] }
     }
-    \luatexcn_apply_geometry:
-    \__luatexcn_page_apply_split:
 }
+
 \ExplSyntaxOff
-%
-% Environment Aliases (CJK support)
-\NewEnvironmentCopy{正文}{guji-content}%
 %
 % 8. Remove page numbers by default
 \pagestyle{empty}%

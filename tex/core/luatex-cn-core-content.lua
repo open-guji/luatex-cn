@@ -192,6 +192,11 @@ local function push_content_base_style()
         border_width = sp_to_pt_str(_G.content.border_thickness),
         border_color = _G.content.border_color or "0 0 0",
         outer_border = _G.content.outer_border_on or false,
+        -- Outer border dimensions (stored as sp for direct use)
+        outer_border_thickness = _G.content.outer_border_thickness or (65536 * 2),
+        outer_border_sep = _G.content.outer_border_sep or (65536 * 2),
+        -- Background color (nil means no background)
+        background_color = _G.content.background_color,
     }
     if _G.content.font_color then
         base_style.font_color = _G.content.font_color

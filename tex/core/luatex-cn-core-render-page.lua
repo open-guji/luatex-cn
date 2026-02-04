@@ -151,9 +151,12 @@ local function calculate_render_context(ctx)
         border_width = constants.to_dimen(visual.border_width) or (65536 * 0.4)
         border_margin = constants.to_dimen(visual.border_margin) or (65536 * 1)
     else
+        -- Content: read from style stack (values pushed by content.init_style)
+        local style_registry = package.loaded['util.luatex-cn-style-registry']
+        local current_style = style_registry and style_registry.current() or {}
         vertical_align = _G.content.vertical_align or "center"
-        background_rgb_str = utils.normalize_rgb(_G.content.background_color)
-        text_rgb_str = utils.normalize_rgb(_G.content.font_color)
+        background_rgb_str = utils.normalize_rgb(current_style.background_color)
+        text_rgb_str = utils.normalize_rgb(current_style.font_color)
         border_shape = "none"
         border_color_str = nil
         border_width = 0

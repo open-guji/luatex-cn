@@ -198,9 +198,9 @@ local function init_engine_context(box_num, params)
     if current_style.border_width then
         b_thickness = constants.to_dimen(current_style.border_width) or 26214
     end
-    -- Outer border params (not in style stack - content-only feature)
-    local ob_thickness = _G.content.outer_border_thickness or (65536 * 2)
-    local ob_sep = _G.content.outer_border_sep or (65536 * 2)
+    -- Outer border params (now from style stack)
+    local ob_thickness = current_style.outer_border_thickness or (65536 * 2)
+    local ob_sep = current_style.outer_border_sep or (65536 * 2)
     local b_padding_top = _G.content.border_padding_top or 0
     local b_padding_bottom = _G.content.border_padding_bottom or 0
 
@@ -435,14 +435,14 @@ local function generate_physical_pages(list, params, engine_ctx, plugin_contexts
         local style_registry = package.loaded['util.luatex-cn-style-registry']
         local current_style = style_registry and style_registry.current() or {}
         visual_ctx.vertical_align = current_style.vertical_align or "center"
-        visual_ctx.bg_rgb = params.background_color
+        visual_ctx.bg_rgb = current_style.background_color or params.background_color
         visual_ctx.font_rgb = current_style.font_color
         visual_ctx.font_size = constants.to_dimen(current_style.font_size)
-        -- Border shape decoration (uses border params from style stack)
-        visual_ctx.border_shape = params.border_shape or "none"
+        -- Border shape decoration (from style stack with params fallback)
+        visual_ctx.border_shape = current_style.border_shape or params.border_shape or "none"
         visual_ctx.border_color = current_style.border_color or "0 0 0"
         visual_ctx.border_width = current_style.border_width or "0.4pt"
-        visual_ctx.border_margin = params.border_margin or "1pt"
+        visual_ctx.border_margin = current_style.border_margin or params.border_margin or "1pt"
     end
     -- For non-textbox: render-page.lua will read from _G.content via calculate_render_context()
 

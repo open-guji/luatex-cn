@@ -291,6 +291,18 @@ local function execute_layout_pipeline(box_num, sub_params, current_indent)
     if sub_params.vertical_align and sub_params.vertical_align ~= "" then
         style_overrides.vertical_align = sub_params.vertical_align
     end
+    -- Only include background_color if explicitly set
+    if sub_params.background_color and sub_params.background_color ~= "" then
+        style_overrides.background_color = sub_params.background_color
+    end
+    -- Only include border_shape if explicitly set and not "none"
+    if sub_params.border_shape and sub_params.border_shape ~= "" and sub_params.border_shape ~= "none" then
+        style_overrides.border_shape = sub_params.border_shape
+    end
+    -- Only include border_margin if explicitly set
+    if sub_params.border_margin and sub_params.border_margin ~= "" then
+        style_overrides.border_margin = sub_params.border_margin
+    end
     style_registry.push(style_overrides)
 
     -- Clear indent attributes on all nodes in the textbox content (fix #37)

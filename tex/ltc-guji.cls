@@ -18,7 +18,7 @@
 
 \RequirePackage{expl3}
 \RequirePackage{l3keys2e}
-\ProvidesExplClass {ltc-guji} {2026/02/01} {0.2.3} {Ancient Chinese Book Class (Template Support)}
+\ProvidesExplClass {ltc-guji} {2026/02/03} {0.2.4} {Ancient Chinese Book Class (Template Support)}
 
 \tl_new:N \l_luatexcn_guji_initial_template_tl
 \prop_new:N \g_luatexcn_guji_template_map_prop

@@ -4,7 +4,7 @@
 
 致力于基于 LuaTeX 引擎实现最纯粹、最高质量的中文排版支持。长期愿景希望完整支持中文排版，包括横排/竖排，古籍/现代版式。目前主要实现古籍复刻，已完整覆盖竖排核心逻辑、版心装饰及夹注处理。
 
-> **当前版本**: [v0.2.2](https://github.com/open-guji/luatex-cn/releases) | **CTAN**: [v0.1.1](https://ctan.org/pkg/luatex-cn)
+> **当前版本**: [v0.2.4](https://github.com/open-guji/luatex-cn/releases) | **CTAN**: [v0.1.1](https://ctan.org/pkg/luatex-cn)
 
 ## 功能特性
 

@@ -4,6 +4,16 @@ English | [中文版](Changelog)
 
 All notable changes to this project will be documented here.
 
+## [0.2.4] - 2026-02-03
+
+- ✨ **Underline Support**: Added underline feature using `|` character (fix #5)
+- ✨ **Book Title & Proper Name Marks**: Added support for book title underline (书名号) and proper name underline (专名号) (fix #16)
+- 🐛 **Bug Fix**: Fixed sidenote column alignment when switching columns (fix #47)
+- 🐛 **Bug Fix**: Fixed sidenote going to second column when crossing pages (fix #49)
+- 🐛 **Bug Fix**: Fixed jiazhu alignment issue (fix #51)
+- 🐛 **Bug Fix**: Fixed `\newgeometry` not supporting paperwidth/paperheight (fix #52)
+- 🐛 **Bug Fix**: Fixed sidenote color leakage causing banxin to turn red when crossing pages
+
 ## [0.2.3] - 2026-02-01
 
 - ✨ **MeiPi (Marginal Notes)**: Added `\眉批` command with auto-positioning and manual coordinate support (fix #46)

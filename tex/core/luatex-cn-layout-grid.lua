@@ -584,16 +584,24 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
 
         -- Advanced Indentation Logic
         -- Priority: 1) Node attribute (from Paragraph), 2) Style stack (inherited)
+        -- Special value -2 means "force 0, bypass style stack" (used by TextBox)
         local block_id = D.get_attribute(t, constants.ATTR_BLOCK_ID)
         local node_indent = D.get_attribute(t, constants.ATTR_INDENT)
         local node_first_indent = D.get_attribute(t, constants.ATTR_FIRST_INDENT)
 
-        -- Get indent from node attribute or style stack
-        local base_indent = node_indent or 0
-        local first_indent = node_first_indent or -1
+        -- Sentinel value for "force indent to 0, don't check style stack"
+        local FORCE_ZERO_INDENT = -2
 
-        -- If node doesn't have explicit indent, check style stack
-        if node_indent == nil or node_indent == 0 then
+        -- Handle sentinel value: -2 means "force 0"
+        local indent_is_forced = (node_indent == FORCE_ZERO_INDENT)
+        local first_indent_is_forced = (node_first_indent == FORCE_ZERO_INDENT)
+
+        -- Get indent from node attribute or style stack
+        local base_indent = indent_is_forced and 0 or (node_indent or 0)
+        local first_indent = first_indent_is_forced and 0 or (node_first_indent or -1)
+
+        -- If node doesn't have explicit indent (and not forced), check style stack
+        if not indent_is_forced and (node_indent == nil or node_indent == 0) then
             local style_id = D.get_attribute(t, constants.ATTR_STYLE_REG_ID)
             if style_id then
                 local stack_indent = style_registry.get_indent(style_id)
@@ -603,8 +611,8 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
             end
         end
 
-        -- If node doesn't have explicit first_indent, check style stack
-        if node_first_indent == nil or node_first_indent == -1 then
+        -- If node doesn't have explicit first_indent (and not forced), check style stack
+        if not first_indent_is_forced and (node_first_indent == nil or node_first_indent == -1) then
             local style_id = D.get_attribute(t, constants.ATTR_STYLE_REG_ID)
             if style_id then
                 local stack_first_indent = style_registry.get_first_indent(style_id)

@@ -423,28 +423,23 @@ local function generate_physical_pages(list, params, engine_ctx, plugin_contexts
 
     local start_page = params.start_page_number or _G.page.current_page_number
 
-    -- Build visual params - for non-textbox, render-page.lua reads from _G.content directly
-    -- Only populate for textbox which has no global fallback
+    -- Build visual params - now always from style stack for both textbox and content
+    local style_registry = package.loaded['util.luatex-cn-style-registry']
+    local current_style = style_registry and style_registry.current() or {}
     local visual_ctx = {
         -- column_aligns is textbox-specific, always from plugin context
         column_aligns = plugin_contexts["textbox"] and plugin_contexts["textbox"].column_aligns or nil,
-    }
-
-    if p_info.is_textbox then
-        -- TextBox: read visual params from style stack
-        local style_registry = package.loaded['util.luatex-cn-style-registry']
-        local current_style = style_registry and style_registry.current() or {}
-        visual_ctx.vertical_align = current_style.vertical_align or "center"
-        visual_ctx.bg_rgb = current_style.background_color or params.background_color
-        visual_ctx.font_rgb = current_style.font_color
-        visual_ctx.font_size = constants.to_dimen(current_style.font_size)
+        -- Visual params from style stack (unified for both textbox and content)
+        vertical_align = current_style.vertical_align or _G.content.vertical_align or "center",
+        bg_rgb = current_style.background_color or params.background_color,
+        font_rgb = current_style.font_color,
+        font_size = constants.to_dimen(current_style.font_size),
         -- Border shape decoration (from style stack with params fallback)
-        visual_ctx.border_shape = current_style.border_shape or params.border_shape or "none"
-        visual_ctx.border_color = current_style.border_color or "0 0 0"
-        visual_ctx.border_width = current_style.border_width or "0.4pt"
-        visual_ctx.border_margin = current_style.border_margin or params.border_margin or "1pt"
-    end
-    -- For non-textbox: render-page.lua will read from _G.content via calculate_render_context()
+        border_shape = current_style.border_shape or params.border_shape or "none",
+        border_color = current_style.border_color or "0 0 0",
+        border_width = current_style.border_width or "0.4pt",
+        border_margin = current_style.border_margin or params.border_margin or "1pt",
+    }
 
     local render_ctx = {
         grid = {

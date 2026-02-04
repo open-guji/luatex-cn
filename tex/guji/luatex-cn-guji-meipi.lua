@@ -24,6 +24,8 @@
 
 local constants = package.loaded['core.luatex-cn-constants'] or
     require('core.luatex-cn-constants')
+local style_registry = package.loaded['util.luatex-cn-style-registry'] or
+    require('util.luatex-cn-style-registry')
 
 local meipi = {}
 
@@ -64,10 +66,11 @@ end
 function meipi.calculate_x(width)
     local margin_right = _G.page and _G.page.margin_right or (20 * 65536)
 
-    -- Check for outer border to align with *content* inside the border
-    local outer_border = _G.content and _G.content.outer_border_on
-    local ob_thickness = _G.content and _G.content.outer_border_thickness or 0
-    local ob_sep = _G.content and _G.content.outer_border_sep or 0
+    -- Get outer border settings from style stack
+    local current_id = style_registry.current_id()
+    local outer_border = style_registry.get_outer_border(current_id)
+    local ob_thickness = style_registry.get_outer_border_thickness(current_id) or 0
+    local ob_sep = style_registry.get_outer_border_sep(current_id) or 0
 
     -- Start offset from the right edge of the paper
     -- If there is an outer border, we need to push further in (increase x from right)
@@ -91,10 +94,14 @@ end
 -- @return (number) Y coordinate in sp (from top edge of paper)
 function meipi.calculate_y(height)
     local margin_top = _G.page and _G.page.margin_top or (20 * 65536)
+    -- border_padding_top is page-level config, still from _G.content
     local border_padding_top = _G.content and _G.content.border_padding_top or 0
-    local outer_border = _G.content and _G.content.outer_border_on
-    local ob_thickness = _G.content and _G.content.outer_border_thickness or 0
-    local ob_sep = _G.content and _G.content.outer_border_sep or 0
+
+    -- Get outer border settings from style stack
+    local current_id = style_registry.current_id()
+    local outer_border = style_registry.get_outer_border(current_id)
+    local ob_thickness = style_registry.get_outer_border_thickness(current_id) or 0
+    local ob_sep = style_registry.get_outer_border_sep(current_id) or 0
 
     -- Calculate where the main text starts
     local text_top = margin_top

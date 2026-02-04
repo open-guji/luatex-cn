@@ -249,6 +249,22 @@ function style_registry.push(overrides)
     return id
 end
 
+--- Push indent style (convenience function for Paragraph environment)
+-- @param indent (number) Base indent value (grid units)
+-- @param first_indent (number) First line indent, -1 means use indent value
+-- @return (number) New style ID
+function style_registry.push_indent(indent, first_indent)
+    indent = tonumber(indent) or 0
+    first_indent = tonumber(first_indent) or -1
+    if first_indent == -1 then
+        first_indent = indent
+    end
+    return style_registry.push({
+        indent = indent,
+        first_indent = first_indent
+    })
+end
+
 --- Pop current style from stack
 -- @return (number|nil) Popped style ID, or nil if stack was empty
 function style_registry.pop()

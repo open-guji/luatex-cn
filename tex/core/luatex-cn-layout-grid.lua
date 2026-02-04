@@ -185,9 +185,9 @@ local function is_center_gap_col(col, params, grid_height)
     local gap_half_width = 15 * 65536 -- 15pt in sp
 
     local floating_x = params and params.floating_x or 0
-    if not (params and params.floating) then
-        -- actually, main text col 0 is anchored to margin_right.
-        -- So floating_x for main text's right origin is margin_right.
+    if floating_x <= 0 then
+        -- No explicit floating_x provided, use margin_right as the right origin
+        -- (main text col 0 is anchored to margin_right)
         floating_x = get_margin_right(params)
     end
 

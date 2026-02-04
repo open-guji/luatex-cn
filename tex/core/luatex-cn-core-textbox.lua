@@ -728,9 +728,16 @@ function textbox.render_floating_box(p_head, item, params)
     local k_post = D.new(constants.KERN)
     D.setfield(k_post, "kern", -(final_x + w))
 
-    p_head = D.insert_before(p_head, p_head, k_pre)
+    -- Wrap floating box with q/Q to isolate graphics state (prevent color leakage)
+    local utils = package.loaded['util.luatex-cn-utils'] or require('util.luatex-cn-utils')
+    local q_push = utils.create_pdf_literal("q")
+    local q_pop = utils.create_pdf_literal("Q")
+
+    p_head = D.insert_before(p_head, p_head, q_push)
+    D.insert_after(p_head, q_push, k_pre)
     D.insert_after(p_head, k_pre, curr)
     D.insert_after(p_head, curr, k_post)
+    D.insert_after(p_head, k_post, q_pop)
 
     -- If debug grid is enabled, draw coordinate marker at top-right corner
     -- Use mode=0 (relative to content) so marker only appears on the correct split page half

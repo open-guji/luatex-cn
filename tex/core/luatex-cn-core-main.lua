@@ -365,7 +365,10 @@ local function compute_grid_layout(list, params, engine_ctx, plugin_contexts, p_
 
     -- For textbox: pass explicit values (no global fallback)
     if p_info.is_textbox then
-        layout_params.banxin_on = false             -- no banxin in textbox
+        -- Enable center gap detection if there's a global banxin AND textbox has floating position
+        -- This ensures meipi skips the center gap when crossing banxin
+        local global_banxin_on = _G.banxin and _G.banxin.enabled or false
+        layout_params.banxin_on = global_banxin_on and (floating_x > 0)
         layout_params.grid_width = engine_ctx.g_width
         layout_params.margin_right = p_info.m_right
         layout_params.chapter_title = params.chapter_title or ""

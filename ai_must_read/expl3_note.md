@@ -92,7 +92,54 @@
 \keys_set:nx { target_module } { option = \bool_if:NTF \l_my_bool { true } { false } }
 ```
 
-### 4. 解决 IDE 警告
+### 4. 条件判断必须使用 TF 组合形式
+
+**问题**：分开使用 `\xxx_if_...:...T` 和 `\xxx_if_...:...F` 会导致条件被计算两次，可能出现逻辑错误。
+
+**错误写法**：
+```tex
+% ❌ 分开判断 - 条件计算两次！
+\str_if_in:NnT \l_my_tl { p }
+{
+    % 包含 p 时执行
+}
+\str_if_in:NnF \l_my_tl { p }
+{
+    % 不包含 p 时执行
+}
+```
+
+**问题**：
+1. 条件被计算两次，浪费性能
+2. 如果 `\l_my_tl` 在第一个判断后被修改，第二个判断的结果会不一致
+3. 代码冗长，不符合 expl3 风格
+
+**正确写法**：
+```tex
+% ✅ 使用 TF 组合形式 - 条件只计算一次
+\str_if_in:NnTF \l_my_tl { p }
+{
+    % 包含 p 时执行
+}
+{
+    % 不包含 p 时执行
+}
+```
+
+**适用范围**：所有条件判断函数
+- `\tl_if_empty:NTF` (不是分开的 T 和 F)
+- `\str_if_eq:nnTF`
+- `\int_compare:nTF`
+- `\bool_if:NTF`
+- 等等
+
+**例外**：如果只需要一个分支，可以单独使用 T 或 F：
+```tex
+% ✅ 只需要一个分支时可以单独使用
+\tl_if_empty:NT \l_my_tl { \tl_set:Nn \l_my_tl { default } }
+```
+
+### 5. 解决 IDE 警告
 
 -   **"Need check nil"**: Lua 中 `io.popen` 可能失败返回 `nil`，必须显式检查：
     ```lua

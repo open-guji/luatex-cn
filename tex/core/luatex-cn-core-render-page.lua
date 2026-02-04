@@ -319,7 +319,7 @@ end
 
 _internal.handle_block_node = handle_block_node
 
--- Expose decorate.handle_node for backward compatibility in tests
+-- Expose decorate.handle_node for unit testing
 _internal.handle_decorate_node = decorate_mod.handle_node
 
 -- 辅助函数：绘制调试网格/框

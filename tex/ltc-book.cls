@@ -74,17 +74,12 @@
 
 % 4. Main content environment
 \NewEnviron{ltc-book-content}[1][]{%
-    \clearpage
     \group_begin:
     \keys_set:nn { luatexcn / book } { #1 }
-    \__luatexcn_content_setup_font:
-    \__luatexcn_content_zero_skips:
-    \__luatexcn_content_calc_height:
     \luatexcn_apply_geometry:
     \nointerlineskip
-    \__luatexcn_content_process_grid:n { \BODY }
+    \Content{\BODY}
     \group_end:
-    \clearpage
 }
 
 % 5. Apply initial template if specified

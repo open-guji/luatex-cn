@@ -344,14 +344,5 @@ function judou.handle_judou_mode(head, t, ptype, last_visible)
     return head, next_node, t -- Not a replacement candidate, treat as last_visible
 end
 
--- Backward compatibility
-judou.process_judou = function(head, params)
-    local ctx = judou.initialize(params, {})
-    if ctx then
-        return judou.flatten(head, params, ctx)
-    end
-    return head
-end
-
 package.loaded['guji.luatex-cn-guji-judou'] = judou
 return judou

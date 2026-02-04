@@ -187,11 +187,17 @@
     \par\noindent
     \group_begin:
     \keys_set:nn { luatexcn / content } { #1 }
+    % Common setup (font, skips, height fallback)
+    \__luatexcn_content_setup_font:
+    \__luatexcn_content_zero_skips:
+    \__luatexcn_content_calc_height:
+    % Apply background color if set
+    \__luatexcn_content_apply_background:
+    % Override \clearpage/\newpage for grid processing (scoped to this group)
+    \__luatexcn_page_override_pagebreak:
     \__luatexcn_content_process_grid:n { #2 }
     \group_end:
   }
-% Backward compatibility alias
-\NewCommandCopy{\VerticalRTT}{\Content}
 
 % Space Command - inserts a space that occupies grid cells in vertical layout
 % In CJK text, normal ASCII spaces are often absorbed; use this for explicit spacing

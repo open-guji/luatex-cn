@@ -118,15 +118,6 @@
 
 \keys_define:nn { luatexcn / guji }
   {
-    debug .code:n = {
-      \str_if_eq:nnTF { #1 } { true }
-        { \LtcDebugOn }
-        { \LtcDebugOff }
-    },
-    debug .default:n = true,
-
-    font-features .code:n = { \keys_set:nn { luatexcn / content } { font-features = #1 } },
-
     template .code:n = {
       % Ensure standard catcodes for config files (preserve spaces)
       \ExplSyntaxOff
@@ -136,7 +127,7 @@
         \keys_set:nn { luatexcn / guji / templates } { #1 }
         \ExplSyntaxOff
       }
-      \ExplSyntaxOn 
+      \ExplSyntaxOn
     },
 
     unknown .code:n = { \keys_set:nx { luatexcn / content } { \l_keys_key_tl = { #1 } } },
@@ -182,14 +173,10 @@
 \NewEnviron{guji-content}[1][]{%
     \group_begin:
     \keys_set:nn { luatexcn / guji } { #1 }
-    \__luatexcn_content_setup_font:
     \__luatexcn_content_auto_layout:
     \luatexcn_apply_geometry:
-    \__luatexcn_content_apply_background:
-    \__luatexcn_content_zero_skips:
-    \__luatexcn_page_override_pagebreak:
     \nointerlineskip
-    \__luatexcn_content_process_grid:n { \BODY }
+    \Content{\BODY}
     \group_end:
 }
 

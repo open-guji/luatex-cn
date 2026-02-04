@@ -515,7 +515,7 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
                 v_scale = v_scale
             }
 
-            -- Only add style fields if they are set (to maintain backward compatibility)
+            -- Only add optional style fields if they are set
             if font_color then
                 map_entry.font_color = font_color
             end

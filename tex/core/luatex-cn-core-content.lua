@@ -12,16 +12,19 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 -- ============================================================================
--- core_content.lua - 内容渲染模块
+-- core_content.lua - 内容配置与布局模块
 -- ============================================================================
 -- 文件名: luatex-cn-core-content.lua
--- 层级: 第三阶段 - 渲染层 (Stage 3: Render Layer)
+-- 层级: 配置层 (Configuration Layer)
 --
 -- 【模块功能 / Module Purpose】
--- 本模块负责内容区域的渲染功能：
---   1. set_font_color: 设置后续所有文字的填充颜色
---   2. draw_column_borders: 绘制普通列的边框（跳过版心列）
---   3. draw_outer_border: 绘制整个内容区域的外围边框
+-- 本模块负责内容区域的配置和布局计算：
+--   1. sync_params: 从 TeX 同步内容参数到 Lua (_G.content)
+--   2. init_style: 初始化 style stack 基础样式
+--   3. set_font_color: 设置后续所有文字的填充颜色
+--   4. guji_auto_layout: 古籍自动布局计算（网格尺寸等）
+--
+-- 注意：边框绘制已移至 luatex-cn-core-render-border.lua
 --
 -- ============================================================================
 
@@ -30,8 +33,6 @@ local utils = package.loaded['util.luatex-cn-utils'] or
     require('util.luatex-cn-utils')
 local constants = package.loaded['core.luatex-cn-constants'] or
     require('core.luatex-cn-constants')
-local drawing = package.loaded['util.luatex-cn-drawing'] or
-    require('util.luatex-cn-drawing')
 
 -- ============================================================================
 -- Shared Layout Calculation Helpers
@@ -379,25 +380,12 @@ local function guji_auto_layout(params)
     token.set_macro("l__luatexcn_page_margin_top_tl", to_pt(margin_top))
 end
 
--- Import border functions from render-border module (for backward compatibility re-export)
-local render_border = package.loaded['core.luatex-cn-core-render-border'] or
-    require('core.luatex-cn-core-render-border')
-
 -- Create module table
 local content = {
     sync_params = sync_params,
     init_style = init_style,
     set_font_color = set_font_color,
     guji_auto_layout = guji_auto_layout,
-    -- Re-export border functions for backward compatibility
-    draw_column_borders = render_border.draw_column_borders,
-    draw_outer_border = render_border.draw_outer_border,
-    -- Re-export drawing functions for backward compatibility
-    draw_rect_frame = drawing.draw_rect_frame,
-    draw_octagon_fill = drawing.draw_octagon_fill,
-    draw_octagon_frame = drawing.draw_octagon_frame,
-    draw_circle_fill = drawing.draw_circle_fill,
-    draw_circle_frame = drawing.draw_circle_frame,
 }
 
 -- Register module in package.loaded

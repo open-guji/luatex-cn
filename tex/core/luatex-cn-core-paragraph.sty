@@ -52,7 +52,7 @@
     }}
     \setluatexattribute\cnverticalstyle{\paragraph_style_id}
 
-    % Also set ATTR_INDENT for backward compatibility (some code paths still use it)
+    % Set indent attributes (used by layout-grid.lua)
     \setluatexattribute\cnverticalindent{\l__luatexcn_paragraph_indent_int}
     \int_compare:nNnTF \l__luatexcn_paragraph_first_indent_int = {-1}
       { \setluatexattribute\cnverticalfirstindent{\l__luatexcn_paragraph_indent_int} }
@@ -70,7 +70,7 @@
       tex.print(current_id)
     }}
     \setluatexattribute\cnverticalstyle{\parent_style_id}
-    % Reset indent attributes for backward compatibility
+    % Reset indent attributes
     \setluatexattribute\cnverticalindent{0}
     \setluatexattribute\cnverticalfirstindent{-1}
     \setluatexattribute\cnverticalrightindent{0}

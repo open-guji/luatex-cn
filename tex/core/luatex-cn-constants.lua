@@ -167,7 +167,6 @@ local function register_decorate(char_str, xoff_str, yoff_str, size_str, color_s
         yoffset = to_dimen(yoff_str) or 0,
         scale = tonumber(scale) or 1.0, -- Multiplier for font size
         font_id = font_id,               -- Store provided ID (may be nil)
-        -- Backward compatibility: also store in reg for now
         font_size = to_dimen(size_str),
         color = color_str,
     }

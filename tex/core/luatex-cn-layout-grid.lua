@@ -652,6 +652,53 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
 
         apply_indentation(ctx, indent)
 
+        -- Check for Column (单列排版) first
+        local is_column = D.get_attribute(t, constants.ATTR_COLUMN) == 1
+        if is_column then
+            local column_mod = package.loaded['core.luatex-cn-core-column'] or
+                require('core.luatex-cn-core-column')
+
+            -- Get align mode to check for LastColumn (align >= 4)
+            local align_mode = D.get_attribute(t, constants.ATTR_COLUMN_ALIGN) or 0
+            local is_last_column = align_mode >= 4
+
+            -- Column always starts on a new column
+            flush_buffer()
+            if ctx.cur_row > 0 then
+                wrap_to_next_column(ctx, p_cols, interval, grid_height, 0, true, false)
+            end
+
+            -- For LastColumn, jump to the last column of current half-page
+            if is_last_column then
+                -- Calculate last column before banxin (or page end)
+                local last_col = column_mod.find_last_column_in_half_page(
+                    ctx.cur_col, p_cols, interval, get_banxin_on(params))
+                if last_col > ctx.cur_col then
+                    ctx.cur_col = last_col
+                    ctx.cur_row = 0
+                end
+            end
+
+            local column_params = {
+                line_limit = line_limit,
+                grid_height = grid_height,
+                p_cols = p_cols,
+                interval = interval
+            }
+            local column_callbacks = {
+                flush = flush_buffer,
+                wrap = function()
+                    wrap_to_next_column(ctx, p_cols, interval, grid_height, 0, true, false)
+                end,
+                debug = function(msg) dbg.log(msg) end
+            }
+
+            t = column_mod.place_nodes(ctx, t, layout_map, column_params, column_callbacks)
+
+            if not t then break end
+            goto start_of_loop
+        end
+
         local is_textflow = D.get_attribute(t, constants.ATTR_JIAZHU) == 1
         if is_textflow then
             local textflow = package.loaded['core.luatex-cn-core-textflow'] or

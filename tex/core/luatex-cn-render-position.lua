@@ -178,13 +178,15 @@ local function get_visual_center(char_code, font_id)
         end
     end
 
+    -- This function is used ONLY for decoration symbols (●, │, ︴, etc.)
+    -- Main text uses simple width-based centering in calc_grid_position
     local res
     if bbox and #bbox >= 3 then
         local units_per_em = f.units_per_em or 1000
         local raw_v_center = (bbox[1] + bbox[3]) / 2
         res = raw_v_center * (f.size / units_per_em)
     else
-        -- Fallback: EM-width centering
+        -- Fallback: width-based centering
         res = (c.width or 0) / 2
     end
 
@@ -222,14 +224,9 @@ local function calc_grid_position(col, row, glyph_dims, params)
     local rtl_col, base_x = calculate_rtl_position(col, total_cols, grid_width, half_thickness, shift_x)
     local sub_col = params.sub_col or 0
 
-    -- Calculate visual center for alignment
+    -- Width-based centering for main text (simple and reliable)
+    -- Visual centering is only used for decoration symbols (in decorate.lua)
     local center_offset = (grid_width - w) / 2
-    if h_align == "center" and glyph_dims.char and glyph_dims.font then
-        local v_center = get_visual_center(glyph_dims.char, glyph_dims.font)
-        if v_center then
-            center_offset = (grid_width / 2) - v_center
-        end
-    end
 
     -- Calculate X offset based on horizontal alignment
     local x_offset

@@ -97,22 +97,9 @@
           { \fontsize{\l_tmpc_tl}{\l_tmpc_tl}\selectfont }
           { \setmainfont{\l_tmpb_tl}[RawFeature={+vert,+vrt2}] \fontsize{\l_tmpc_tl}{\l_tmpc_tl}\selectfont }
 
-        % Apply Color (visual appearance)
-        \tl_if_empty:NF \l_tmpd_tl
-          {
-            % Simple heuristic: if it contains a comma or space, it's numeric RGB
-            \tl_if_in:NnTF \l_tmpd_tl { , }
-              { \color[rgb]{\l_tmpd_tl} }
-              {
-                \tl_if_in:NnTF \l_tmpd_tl { ~ }
-                  {
-                    \tl_set:Nx \l_tmpe_tl { \l_tmpd_tl }
-                    \tl_replace_all:Nnn \l_tmpe_tl { ~ } { , }
-                    \color[rgb]{\l_tmpe_tl}
-                  }
-                  { \color{\l_tmpd_tl} }
-              }
-          }
+        % DO NOT apply color here via \color - it creates pdf_colorstack nodes
+        % that cause color leakage when textflow spans across page boundaries.
+        % Color is handled entirely in the Lua render layer via PDF literals.
 
         % Push style to stack and get style ID (Phase 3: Style Stack Management)
         \edef\textflow_style_id{\lua_now:e {

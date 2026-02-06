@@ -316,7 +316,7 @@ _internal.move_to_next_valid_position = move_to_next_valid_position
 local function wrap_to_next_column(ctx, p_cols, interval, grid_height, indent, reset_indent, reset_content)
     ctx.cur_col = ctx.cur_col + 1
     ctx.cur_row = 0
-    ctx.just_wrapped_column = true  -- Flag for issue #54 fix
+    ctx.just_wrapped_column = true -- Flag for issue #54 fix
     if ctx.cur_col >= p_cols then
         ctx.cur_col = 0
         ctx.cur_page = ctx.cur_page + 1
@@ -738,7 +738,7 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
             local tb_params = {
                 effective_limit = effective_limit,
                 p_cols = p_cols,
-                indent = 0  -- Textbox should not inherit paragraph indent
+                indent = 0 -- Textbox should not inherit paragraph indent
             }
             local tb_callbacks = {
                 flush = flush_buffer,
@@ -757,6 +757,13 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
 
             textbox.place_textbox_node(ctx, t, tb_w, tb_h, tb_params, tb_callbacks)
         elseif id == constants.GLYPH then
+            -- Flush pending textflow state before processing regular glyph
+            -- This ensures "后续文字" continues after textflow, not from start
+            if ctx.textflow_pending_sub_col and ctx.textflow_pending_row_used then
+                ctx.cur_row = ctx.cur_row + ctx.textflow_pending_row_used
+                ctx.textflow_pending_sub_col = nil
+                ctx.textflow_pending_row_used = nil
+            end
             local dec_id = D.get_attribute(t, constants.ATTR_DECORATE_ID)
             if dec_id and dec_id > 0 then
                 -- Decorate Marker: position for the PREVIOUS character
@@ -770,7 +777,7 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
                     -- Column just wrapped - use previous character's position
                     dec_page = ctx.last_char_page or ctx.cur_page
                     dec_col = ctx.last_char_col or ctx.cur_col
-                    dec_row = ctx.last_char_row + 1  -- +1 because render subtracts 1
+                    dec_row = ctx.last_char_row + 1 -- +1 because render subtracts 1
                 end
 
                 local map_entry = {

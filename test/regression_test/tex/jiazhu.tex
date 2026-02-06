@@ -51,7 +51,13 @@
 
 
 % 长夹注 不自动平衡 
-一二三四五六七八九一二三四五六七八九\夹注[auto-balance=false]{夹注应该自动换列到下一列并且不自动平衡}十
+一二三四五六七八九一二三四五六七八九\夹注[auto-balance=false]{夹注应该自动换列到下一列并且不自动平衡}后续文字
+
+% 不自动平衡夹注 连续排列
+\夹注[auto-balance=false]{第一列夹注小字}\夹注[auto-balance=false]{连续夹注小字}
+
+\begin{段落}[indent=2]\夹注[auto-balance=false]{第二列夹注小字一二三四五六七八九十一二三四五六七八九十一二三四五六七八九十一二三四五六七八九十}\end{段落}
+
 
 \end{正文}
 \end{document}

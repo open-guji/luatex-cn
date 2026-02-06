@@ -58,8 +58,8 @@
 % User Commands
 % ============================================================================
 
-% \條目[level]{content} - Output a column entry with level-based indent
-\NewDocumentCommand{\條目}{ O{1} +m }
+% \条目[level]{content} - Output a column entry with level-based indent
+\NewDocumentCommand{\条目}{ O{1} +m }
   {
     \__luatexcn_mulu_output_column:nn { #1 } { #2 }
   }
@@ -68,26 +68,12 @@
 % Environment (currently just a grouping wrapper)
 % ============================================================================
 
-\NewDocumentEnvironment{目錄}{ }
-  { \group_begin: }
-  { \group_end: }
-
-% ============================================================================
-% Semantic Commands (Chinese)
-% ============================================================================
-
-\NewDocumentCommand{\卷}{ m }{ \條目[1]{卷#1} }
-\NewDocumentCommand{\部}{ m }{ \條目[2]{#1} }
-\NewDocumentCommand{\類}{ m }{ \條目[3]{#1} }
-
 \ExplSyntaxOff
 
 % ============================================================================
 % Simplified Chinese Aliases (简体中文别名)
 % ============================================================================
 
-\NewCommandCopy{\条目}{\條目}
-\NewCommandCopy{\类}{\類}
-\NewEnvironmentCopy{目录}{目錄}
+\NewCommandCopy{\條目}{\条目}
 
 \endinput

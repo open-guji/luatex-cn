@@ -21,25 +21,60 @@ The `\fix` (or `\改`) command marks corrections in classical text editing. It r
 ```latex
 This has a \fix{correct}wrong text.
 ```
-In this example, "wrong" will have a deletion mark (、), and "correct" will appear at smaller size in the bottom-right corner.
+In this example, "wrong" is marked with a deletion symbol, and "correct" is placed at its bottom-right corner at 60% size.
 
 ### Technical Details
-- **Deletion Mark**: Automatically overlays a deletion point (、) on the character
-- **Replacement Text**: Placed at bottom-right corner at 60% of original font size
-- **Non-destructive**: Does not affect the original grid layout
+- **Deletion Mark**: Automatically overlays a deletion point (、) on the character.
+- **Replacement Text**: Placed at bottom-right corner at 60% of original font size.
+- **Non-destructive**: Does not affect the original grid layout.
 
 ---
 
-## Decoration
+## Text Decoration
 
-The `\decorate` (or `\装饰`) command overlays decoration characters on **each character in the content**.
+Preset commands for marking text according to classical or modern standards.
+
+### 1. Underline Marks
+
+| Command | Alias | Description | Use Case |
+|---------|-------|-------------|----------|
+| `\Underline` | `\下划线` | Straight line on the left | General highlighting |
+| `\专名号` | - | Straight line on the left | Proper names (Person, Place) |
+| `\WavyUnderline` | `\波浪线` | Wavy line on the left | General highlighting |
+| `\书名号` | - | Wavy line on the left | Book/Article titles |
+
+**Options (`[options]`)**:
+- `color`: Line color (default: `red`).
+- `offset`: Distance from text (default: `0.6em`).
+
+**Example**:
+```latex
+\专名号[color=black]{Confucius}
+\书名号{The Analects}
+```
+
+### 2. Emphasis Marks
+
+| Command | Alias | Description |
+|---------|-------|-------------|
+| `\EmphasisMark` | `\着重号` | Add small circles (。) to the right of each char |
+| `\圈点` | - | Same as above |
+
+**Example**:
+```latex
+\EmphasisMark{Very Important}
+```
+
+---
+
+## Generic Decoration
+
+The `\decorate` (or `\装饰`) command allows overlaying arbitrary content on **each character**.
 
 ### Usage
 
 ```latex
 \decorate[options]{content}
-% or Chinese alias
-\装饰[参数]{内容}
 ```
 
 ### Parameters
@@ -47,9 +82,9 @@ The `\decorate` (or `\装饰`) command overlays decoration characters on **each 
 | Key | Description | Default |
 |-----|-------------|---------|
 | `char` | Decoration character | `。` |
-| `color` | Decoration color | `red` |
-| `xoffset` / `xshift` | Horizontal offset | `0pt` |
-| `yoffset` / `yshift` | Vertical offset | `0pt` |
+| `color` | Color | `red` |
+| `xoffset` | Horizontal offset (xshift) | `0pt` |
+| `yoffset` | Vertical offset (yshift) | `0pt` |
 | `scale` | Scale factor | `1.0` |
 | `font-size` | Force specific font size | auto |
 
@@ -58,99 +93,6 @@ The `\decorate` (or `\装饰`) command overlays decoration characters on **each 
 ```latex
 % Add a red circle on each character in "important"
 \decorate[char=○, scale=0.8, color=red]{important}
-```
-
----
-
-## Emphasis Mark (ZhaoZhongHao / QuanDian)
-
-A convenience wrapper for adding circle marks to the right side of characters.
-
-### Usage
-
-```latex
-\EmphasisMark[color=red]{content}
-% or Chinese aliases
-\着重号[color=red]{内容}
-\圈点{内容}
-```
-
-### Parameters
-
-| Key | Description | Default |
-|-----|-------------|---------|
-| `color` | Mark color | `red` |
-
-### Example
-
-```latex
-This is \EmphasisMark{important} content.
-% or classical style
-\圈点{要旨}
-```
-
----
-
-## Underline / Proper Name Mark (ZhuanMingHao)
-
-In vertical typesetting, underlines appear as vertical lines on the left side of characters, used to mark proper nouns like personal names and place names.
-
-### Usage
-
-```latex
-\Underline[color=red, offset=0.6em]{content}
-% or Chinese aliases
-\下划线[color=red]{内容}
-\下劃線{内容}
-\专名号{内容}
-```
-
-### Parameters
-
-| Key | Description | Default |
-|-----|-------------|---------|
-| `color` | Line color | `red` |
-| `offset` | Offset distance | `0.6em` |
-
-### Example
-
-```latex
-% Mark a person's name
-Know \专名号{Sima Qian}.
-% or use underline command
-\Underline{Confucius} said: Learn and practice.
-```
-
----
-
-## Wavy Underline / Book Title Mark (ShuMingHao)
-
-In vertical typesetting, wavy underlines appear as wavy vertical lines on the left side of characters, used to mark book titles and chapter names.
-
-### Usage
-
-```latex
-\WavyUnderline[color=red, offset=0.6em]{content}
-% or Chinese aliases
-\波浪线[color=red]{内容}
-\波浪線{内容}
-\书名号{内容}
-```
-
-### Parameters
-
-| Key | Description | Default |
-|-----|-------------|---------|
-| `color` | Line color | `red` |
-| `offset` | Offset distance | `0.6em` |
-
-### Example
-
-```latex
-% Mark a book title
-Read \书名号{Records of the Grand Historian}.
-% or use wavy underline command
-\WavyUnderline{The Analerta} is a Confucian classic.
 ```
 
 ---

@@ -21,8 +21,14 @@ Multiple ways to add comments to the text:
 - **[[Interlinear Notes | EN:Side-Note]]**: Double-line small text within main body with auto-balancing.
 - **[[Side Notes | EN:Side-Note]]**: Vertical annotations between text columns.
 - **[[Annotations | EN:Annotation]]**: Floating annotation boxes placed anywhere on the page.
+- **[[TOC Entries | EN:Features]]**: Added `\条目` (v0.2.5+) with hierarchical indentation for table of contents.
 
-## 4. Decorations & Utilities
+## 4. Layout Control & Commands
+- **Force Column**: `\列` (or `\Column`) forces content to start in a new column.
+- **Last Column**: `\末列` (or `\LastColumn`) places content in the last column of the current page.
+- **Page Breaks**: Supports standard `\newpage` and `\clearpage`.
+
+## 5. Decorations & Utilities
 - **[[Seals | EN:Seal]]**: Add collection or personal seals anywhere with opacity support.
 - **[[Judou | EN:Judou]]**: Traditional punctuation marks (circles and dots). Enhanced support for more Chinese punctuation since v0.2.1.
 - **[[Fonts | EN:Fonts]]**: Auto-detection, font families, and fallback chains for rare characters. Supports simplified/traditional Chinese font names since v0.2.2.

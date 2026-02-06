@@ -14,7 +14,7 @@ All notable changes to this project will be documented here.
 
 ## [0.2.4] - 2026-02-03
 
-- ✨ **Underline Support**: Added `\Underline` / `\下划线` commands (fix #5)
+- ✨ **Underline Support**: Added `\Underline` / `\下划线` commands, implemented with the `|` character (fix #5)
 - ✨ **Book Title & Proper Name Marks**: Added `\书名号` (wavy line) and `\专名号` (straight line) commands (fix #16)
 - 🐛 **Bug Fix**: Fixed sidenote column alignment when switching columns (fix #47)
 - 🐛 **Bug Fix**: Fixed sidenote going to second column when crossing pages (fix #49)

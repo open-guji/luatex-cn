@@ -50,9 +50,14 @@
         \tl_set_eq:NN \l_tmpa_tl \l_keys_key_tl
         \prop_get:NVNT \g_luatexcn_guji_template_map_prop \l_tmpa_tl \l_tmpb_tl
           { \tl_set_eq:NN \l_tmpa_tl \l_tmpb_tl }
-        \file_if_exist:nTF { configs/luatex-cn-guji- \l_tmpa_tl .cfg }
+        % First try local .cfg file, then try configs/ directory
+        \file_if_exist:nTF { \l_tmpa_tl .cfg }
           { \tl_set_eq:NN \l_luatexcn_guji_initial_template_tl \l_tmpa_tl }
-          { \PassOptionsToClass { \l_tmpa_tl } { article } }
+          {
+            \file_if_exist:nTF { configs/luatex-cn-guji- \l_tmpa_tl .cfg }
+              { \tl_set_eq:NN \l_luatexcn_guji_initial_template_tl \l_tmpa_tl }
+              { \PassOptionsToClass { \l_tmpa_tl } { article } }
+          }
       }
   }
 
@@ -87,10 +92,13 @@
   {
     template .code:n = {
       \ExplSyntaxOff
-      \InputIfFileExists{configs/luatex-cn-guji-#1.cfg}{}{
-        \ExplSyntaxOn
-        \keys_set:nn { luatexcn / guji / templates } { #1 }
-        \ExplSyntaxOff
+      % First try local .cfg file, then try configs/ directory
+      \InputIfFileExists{#1.cfg}{}{
+        \InputIfFileExists{configs/luatex-cn-guji-#1.cfg}{}{
+          \ExplSyntaxOn
+          \keys_set:nn { luatexcn / guji / templates } { #1 }
+          \ExplSyntaxOff
+        }
       }
       \ExplSyntaxOn
     },

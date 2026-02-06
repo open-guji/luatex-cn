@@ -4,6 +4,14 @@ English | [中文版](Changelog)
 
 All notable changes to this project will be documented here.
 
+## [0.2.5] - 2026-02-05
+
+- ✨ **Catalog Entry Command**: Added `\条目` command with hierarchical indentation for table of contents
+- ✨ **Column Control Commands**: Added `\列` (Column) and `\末列` (LastColumn) commands for better layout control (fix #30)
+- 🐛 **Bug Fix**: Fixed decoration underlines (专名号/书名号) not drawn on last character at column end (fix #54)
+- 🐛 **Bug Fix**: Fixed character centering offset for some characters (e.g., "漢"), main text now uses width-based centering (fix #55)
+- 🐛 **Bug Fix**: Fixed sidenote color leakage to banxin when crossing page boundaries (fix #48)
+
 ## [0.2.4] - 2026-02-03
 
 - ✨ **Underline Support**: Added `\Underline` / `\下划线` commands (fix #5)

@@ -44,8 +44,9 @@ local textflow = {}
 -- @param font_size (string|nil) Font size string (e.g., "14pt")
 -- @param font (string|nil) Font family name
 -- @param textflow_align (string|nil) TextFlow alignment (outward, inward, center, left, right)
+-- @param auto_balance (boolean|nil) Whether to auto-balance last column (default true)
 -- @return (number) Style ID
-function textflow.push_style(font_color, font_size, font, textflow_align)
+function textflow.push_style(font_color, font_size, font, textflow_align, auto_balance)
     local style = {}
     if font_color and font_color ~= "" then
         style.font_color = font_color
@@ -60,6 +61,12 @@ function textflow.push_style(font_color, font_size, font, textflow_align)
     -- Inheritance handled by style_registry
     if textflow_align and textflow_align ~= "" then
         style.textflow_align = textflow_align
+    end
+    -- auto_balance defaults to true if not specified
+    if auto_balance == false then
+        style.auto_balance = false
+    else
+        style.auto_balance = true
     end
     return style_registry.push(style)
 end
@@ -129,10 +136,15 @@ end
 -- @param textflow_nodes (table) Consecutive textflow node list (direct nodes)
 -- @param available_rows (number) Remaining rows in current column
 -- @param line_limit (number) Total row limit per column
+-- @param mode (number) Mode: 1=right only, 2=left only, 0=balanced
+-- @param auto_balance (boolean) Whether to auto-balance last chunk (default true)
 -- @return (table) chunks: { {nodes_with_attr, rows_used, is_full_column}, ... }
-function textflow.process_sequence(textflow_nodes, available_rows, line_limit, mode)
+function textflow.process_sequence(textflow_nodes, available_rows, line_limit, mode, auto_balance)
     local total_nodes = #textflow_nodes
     if total_nodes == 0 then return {} end
+
+    -- Default auto_balance to true
+    if auto_balance == nil then auto_balance = true end
 
     local chunks = {}
     local current_idx = 1
@@ -155,13 +167,19 @@ function textflow.process_sequence(textflow_nodes, available_rows, line_limit, m
         local chunk_size
         local rows_used
         local is_full = false
+        local is_last_chunk = (remaining <= capacity)
 
-        if remaining <= capacity then
+        if is_last_chunk then
             chunk_size = remaining
             if is_single_column then
                 rows_used = remaining
-            else
+            elseif auto_balance then
+                -- Auto-balance: split evenly between right and left
                 rows_used = math.ceil(chunk_size / 2)
+            else
+                -- No auto-balance: rows_used = chunk_size (each node on its own row, alternating right/left)
+                -- But we fill right first, then left
+                rows_used = chunk_size
             end
         else
             chunk_size = capacity
@@ -177,6 +195,9 @@ function textflow.process_sequence(textflow_nodes, available_rows, line_limit, m
             else                         -- Left only (mode 2)
                 right_count = 0          -- None go to right
             end
+        elseif is_last_chunk and not auto_balance then
+            -- No auto-balance for last chunk: all nodes go to right column only
+            right_count = chunk_size
         else
             right_count = math.ceil(chunk_size / 2)
         end
@@ -247,8 +268,19 @@ function textflow.place_nodes(ctx, start_node, layout_map, params, callbacks)
     -- Process textflow sequence into chunks
     local available_in_first = params.effective_limit - ctx.cur_row
     local capacity_per_subsequent = params.line_limit - params.base_indent - params.r_indent
+
+    -- Get auto_balance from style (read from first node)
+    local auto_balance = true
+    if #nodes > 0 then
+        local style_id = D.get_attribute(nodes[1], constants.ATTR_STYLE_REG_ID)
+        local style = style_registry.get(style_id)
+        if style and style.auto_balance == false then
+            auto_balance = false
+        end
+    end
+
     local chunks = textflow.process_sequence(nodes, available_in_first, capacity_per_subsequent,
-        params.textflow_mode)
+        params.textflow_mode, auto_balance)
 
     -- Place chunks into layout_map
     -- Read style from node attribute (set by TeX layer)

@@ -41,6 +41,9 @@
         only-column / none .code:n = { \tl_set:Nn \l_tmpa_tl {0} },
         only-column .initial:n = none,
 
+        auto-balance .bool_set:N = \l__luatexcn_textflow_auto_balance_bool,
+        auto-balance .initial:n = true,
+
         font-size .tl_set:N = \l__luatexcn_textflow_local_size_tl,
         font .tl_set:N = \l__luatexcn_textflow_local_font_tl,
         font-color .tl_set:N = \l__luatexcn_textflow_local_color_tl,
@@ -118,7 +121,8 @@
             \tl_if_empty:NTF \l_tmpd_tl { nil } { [=[\luaescapestring{\tl_use:N \l_tmpd_tl}]=] },
             [=[\luaescapestring{\tl_use:N \l_tmpc_tl}]=],
             \tl_if_empty:NTF \l_tmpb_tl { nil } { [=[\luaescapestring{\tl_use:N \l_tmpb_tl}]=] },
-            \tl_if_empty:NTF \l__luatexcn_textflow_resolved_align_tl { nil } { [=[\luaescapestring{\tl_use:N \l__luatexcn_textflow_resolved_align_tl}]=] }
+            \tl_if_empty:NTF \l__luatexcn_textflow_resolved_align_tl { nil } { [=[\luaescapestring{\tl_use:N \l__luatexcn_textflow_resolved_align_tl}]=] },
+            \bool_if:NTF \l__luatexcn_textflow_auto_balance_bool { true } { false }
           )
           tex.print(tostring(style_id))
         }}

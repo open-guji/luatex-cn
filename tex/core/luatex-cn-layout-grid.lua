@@ -232,6 +232,7 @@ local function create_grid_context(params, line_limit, p_cols)
         page_has_content = false,
         chapter_title = initial_chapter,
         page_chapter_titles = {}, -- To store chapter title for each page
+        last_glyph_row = -1, -- Track last glyph row for detecting line changes
         -- Can add other state if needed
     }
     ctx.page_chapter_titles[0] = ctx.chapter_title -- Initialize page 0 with the initial chapter title
@@ -314,6 +315,9 @@ _internal.move_to_next_valid_position = move_to_next_valid_position
 -- @param reset_indent (boolean) Whether to reset column indent
 -- @param reset_content (boolean) Whether to reset page_has_content flag
 local function wrap_to_next_column(ctx, p_cols, interval, grid_height, indent, reset_indent, reset_content)
+    -- Pop temporary indents when changing column
+    style_registry.pop_temporary()
+
     ctx.cur_col = ctx.cur_col + 1
     ctx.cur_row = 0
     ctx.just_wrapped_column = true -- Flag for issue #54 fix
@@ -802,6 +806,12 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
                 layout_map[t] = map_entry
                 -- DO NOT increment cur_row - marker is zero-width overlay
             else
+                -- Detect line change and clear temporary indents
+                if ctx.cur_row ~= ctx.last_glyph_row then
+                    style_registry.pop_temporary()
+                    ctx.last_glyph_row = ctx.cur_row
+                end
+
                 -- Track last character position for decoration markers
                 ctx.last_char_page = ctx.cur_page
                 ctx.last_char_col = ctx.cur_col

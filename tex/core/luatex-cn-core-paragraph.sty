@@ -60,9 +60,22 @@
 
     % Set Bottom Indent (still via attribute, as it's less common)
     \setluatexattribute\cnverticalrightindent{\l__luatexcn_paragraph_bottom_indent_int}
+
+    % Redefine \\ to restore temporary indent after line break
+    \cs_set_eq:NN \__luatexcn_original_newline: \\
+    \cs_set:Npn \\ {
+      \__luatexcn_restore_temp_indent:
+      \__luatexcn_original_newline:
+    }
   }
   {
-    % Pop style from stack and reset cnverticalstyle to parent
+    % Restore \\ to original definition
+    \cs_set_eq:NN \\ \__luatexcn_original_newline:
+
+    % First restore any temporary indent
+    \__luatexcn_restore_temp_indent:
+
+    % Pop paragraph style from stack and reset cnverticalstyle to parent
     \edef\parent_style_id{\lua_now:n {
       local ~ style_registry = require('util.luatex-cn-style-registry')
       style_registry.pop()
@@ -77,9 +90,67 @@
     \par
   }
 
+% ============================================================================
+% Temporary Indent Command
+% ============================================================================
+% \SetIndent{<value>} - Temporarily set indent for current line
+% The indent will be automatically restored after \\ or at column end
+
+\bool_new:N \l__luatexcn_setindent_active_bool
+
+\NewDocumentCommand{\SetIndent}{ m }
+  {
+    % Push temporary indent to style stack
+    \edef\temp_style_id{\lua_now:e {
+      local ~ sr = require('util.luatex-cn-style-registry')
+      tex.print(sr.push_indent(#1, ~ -1, ~ true)) ~ -- ~ third ~ arg ~ marks ~ as ~ temporary
+    }}
+    \setluatexattribute\cnverticalstyle{\temp_style_id}
+
+    % Update indent attributes
+    \setluatexattribute\cnverticalindent{#1}
+    \setluatexattribute\cnverticalfirstindent{#1}
+
+    % Mark that SetIndent is active (for \\ to restore)
+    \bool_set_true:N \l__luatexcn_setindent_active_bool
+  }
+
+% Helper to restore indent (called by \\ and paragraph end)
+\cs_new:Nn \__luatexcn_restore_temp_indent:
+  {
+    \bool_if:NT \l__luatexcn_setindent_active_bool
+      {
+        % Pop temporary indent and restore to parent style
+        \edef\parent_style_id{\lua_now:n {
+          local ~ sr = require('util.luatex-cn-style-registry')
+          sr.pop_temporary()
+          local ~ current_id = sr.current_id() ~ or ~ 0
+          tex.print(current_id)
+        }}
+        \setluatexattribute\cnverticalstyle{\parent_style_id}
+
+        % Restore indent attributes from parent style
+        \edef\parent_indent{\lua_now:n {
+          local ~ sr = require('util.luatex-cn-style-registry')
+          local ~ indent = sr.get_indent(sr.current_id())
+          tex.print(indent ~ or ~ 0)
+        }}
+        \edef\parent_first_indent{\lua_now:n {
+          local ~ sr = require('util.luatex-cn-style-registry')
+          local ~ first_indent = sr.get_first_indent(sr.current_id())
+          tex.print(first_indent ~ or ~ -1)
+        }}
+        \setluatexattribute\cnverticalindent{\parent_indent}
+        \setluatexattribute\cnverticalfirstindent{\parent_first_indent}
+
+        \bool_set_false:N \l__luatexcn_setindent_active_bool
+      }
+  }
+
 \ExplSyntaxOff
 
 % Support CJK environment alias
 \NewEnvironmentCopy{段落}{Paragraph}
+\let\设置缩进\SetIndent
 
 \endinput

@@ -252,23 +252,47 @@ end
 --- Push indent style (convenience function for Paragraph environment)
 -- @param indent (number) Base indent value (grid units)
 -- @param first_indent (number) First line indent, -1 means use indent value
+-- @param temporary (boolean) Whether this is a temporary indent (auto-pop on column change)
 -- @return (number) New style ID
-function style_registry.push_indent(indent, first_indent)
+function style_registry.push_indent(indent, first_indent, temporary)
     indent = tonumber(indent) or 0
     first_indent = tonumber(first_indent) or -1
     if first_indent == -1 then
         first_indent = indent
     end
-    return style_registry.push({
+    local style = {
         indent = indent,
         first_indent = first_indent
-    })
+    }
+    if temporary then
+        style.temporary = true
+    end
+    return style_registry.push(style)
 end
 
 --- Pop current style from stack
 -- @return (number|nil) Popped style ID, or nil if stack was empty
 function style_registry.pop()
     return table.remove(_G.style_registry.stack)
+end
+
+--- Pop all temporary styles from stack (called on column change)
+-- @return (number) Number of temporary styles popped
+function style_registry.pop_temporary()
+    local count = 0
+    while true do
+        local id = style_registry.current_id()
+        if not id then break end
+
+        local style = style_registry.get(id)
+        if not style or not style.temporary then
+            break
+        end
+
+        style_registry.pop()
+        count = count + 1
+    end
+    return count
 end
 
 --- Clear the registry (useful for testing or document end)

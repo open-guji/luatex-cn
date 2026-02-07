@@ -20,6 +20,13 @@
 \RequirePackage{core/luatex-cn-core-base}
 \ExplSyntaxOn
 
+% ============================================================================
+% Penalty Constants (synchronized with constants.lua)
+% ============================================================================
+\int_const:Nn \c__luatexcn_penalty_smart_break_int { -10001 }
+\int_const:Nn \c__luatexcn_penalty_force_column_int { -10002 }
+\int_const:Nn \c__luatexcn_penalty_force_page_int { -10003 }
+
 % Paragraph Environment
 % Supports block indentation with first-line/hanging indent differentiation
 % Syntax: \begin{Paragraph}[indent=2, first-indent=0, bottom-indent=1]
@@ -88,6 +95,9 @@
     \setluatexattribute\cnverticalfirstindent{-1}
     \setluatexattribute\cnverticalrightindent{0}
     \par
+    % Insert smart column break marker: check next node type
+    % If next node is textflow, don't break; if regular text, break to new column
+    \penalty \int_use:N \c__luatexcn_penalty_smart_break_int \scan_stop:
   }
 
 % ============================================================================
@@ -189,6 +199,19 @@
       tex.setattribute(constants.ATTR_INDENT, ~ constants.INDENT_FORCE_ZERO)
       tex.setattribute(constants.ATTR_FIRST_INDENT, ~ constants.INDENT_FORCE_ZERO)
     }
+  }
+
+% ============================================================================
+% 换列 Command
+% ============================================================================
+% \换列 - Force column break
+% Inserts PENALTY_FORCE_COLUMN to force wrapping to the next column
+% Useful for starting new sections or book entries in a fresh column
+
+\NewDocumentCommand{\换列}{}
+  {
+    \par
+    \penalty \int_use:N \c__luatexcn_penalty_force_column_int \scan_stop:
   }
 
 \ExplSyntaxOff

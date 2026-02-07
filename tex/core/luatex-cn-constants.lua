@@ -262,5 +262,27 @@ function constants.encode_forced_indent(indent_value)
     end
 end
 
+-- ============================================================================
+-- Penalty Constants for Column/Page Breaks
+-- ============================================================================
+-- Special penalty values to control column and page breaking behavior
+
+--- Smart column break: Check next node type before deciding
+--- If next is textflow, don't break; if next is regular text, break to new column
+--- Used by: Paragraph environment end
+constants.PENALTY_SMART_BREAK = -10001
+
+--- Force column break: Unconditionally wrap to next column
+--- Used by: \换列 command, some \\ commands
+constants.PENALTY_FORCE_COLUMN = -10002
+
+--- Force page break: Unconditionally wrap to new page
+--- Used by: \newpage, \clearpage commands
+constants.PENALTY_FORCE_PAGE = -10003
+
+--- Page fill marker: Allow page break, used in page splitting
+--- Note: This keeps standard TeX value for compatibility
+constants.PENALTY_PAGE_FILL = -10000
+
 package.loaded['core.luatex-cn-constants'] = constants
 return constants

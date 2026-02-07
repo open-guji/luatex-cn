@@ -1,0 +1,681 @@
+<scanbegin file="60824" page="24" />*經部一
+
+**易類就 
+
+***《<entity entityid="456872" type="work">子夏易傳</entity>》十一卷
+
+舊本題卜子夏撰，實後人輾轉依托，非其原書。然唐、宋以來，流傳已久，今仍錄冠易類之首。凡托名之書，仍從其所托之時代，《漢書·藝文志》例也。
+
+謹案：唐<entity entityid="729322" type="person">徐堅</entity>《<entity entityid="415308" type="work">初學記</entity>》以太宗御制升列歷代之前，蓋尊尊之大義。<entity entityid="410552" type="person">焦竑</entity>《<entity entityid="136022" type="work">國史經籍志</entity>》，<entity entityid="799917" type="person">朱彞尊</entity>《<entity entityid="224681" type="work">經義考</entity>》並踵前規。臣等編摩《四庫》，初亦恭錄《御定易經通注》《御纂周易折中》《<scanbreak file="60824" />御纂周易述義》，弁冕諸經。仰蒙<scanbreak file="60824" />指示，命冠於<scanbreak file="60824" y="1" /><entity entityid="385056" type="dynasty">國朝</entity>著述之首，俾尊卑有序，而時代不淆。<scanbreak file="60824" />聖度謙沖，酌中立憲，實為千古之大公。謹恪遵<scanbreak file="60824" />彞訓，仍託始於《子夏易傳》。並發凡於此，著《四庫》之通例<scanbreak file="60824" y="4" />焉。
+
+***《<scanbreak file="60824" /><entity entityid="831255" type="work">周易鄭康成注</entity>》一卷
+
+<scanbreak file="60824" y="2" />漢鄭玄撰。原本散佚，此本乃宋末<entity entityid="470957" type="person">王應麟</entity>采諸書<scanbreak file="60824" y="2" />所引，裒合而成。
+
+<scanbreak file="60824" y="4" />謹案：前代佚書而後人重編者，如有所竄改，<scanbreak file="60824" y="4" />則從重編之時代。如全輯舊文者，則仍從原<scanbreak file="60824" y="4" />書之時代。故此書雖宋人所輯，而列於漢代<scanbreak file="60824" y="4" />之中。後皆仿此。
+
+***《<scanend file="60824" page="24" /><scanbegin file="60824" page="25" /><entity entityid="425954" type="work">新本鄭氏周易</entity>》三卷
+
+<scanbreak file="60824" y="2" />漢鄭玄撰，<scanbreak file="60824" y="1" /><entity entityid="385056" type="dynasty">國朝</entity><entity entityid="727123" type="person">惠棟</entity>編，因<entity entityid="470957" type="person">王應麟</entity>之本，採摭未備，又不註其所<scanbreak file="60824" y="2" />出，因重為補正，凡增入九十二條。又據鄭氏《周禮》《<scanbreak file="60824" y="2" />禮記》註，作十二月爻辰及爻辰直二十八宿圖，以<scanbreak file="60824" y="2" />闡明漢學。
+
+***《<scanbreak file="60824" /><entity entityid="469458" type="work">陸氏易解</entity>》一卷
+
+<scanbreak file="60824" y="2" />吳<entity entityid="852508" type="person">陸績</entity>撰。原本散佚，明<entity entityid="284823" type="person">姚士粦</entity>採<entity entityid="809098" type="person">陸氏</entity>《<entity entityid="368919" type="work">經典釋文</entity>》、<scanbreak file="60824" y="2" /><entity entityid="402946" type="person">李氏</entity>《<entity entityid="485488" type="work">周易集解</entity>》及績《京氏易傳註》輯為此本，凡一<scanbreak file="60824" y="2" />百五十條。
+
+***《<scanbreak file="60824" /><entity entityid="697337" type="work">周易註</entity>》十卷
+
+<scanend file="60824" page="25" /><scanbegin file="60824" page="26" y="2" />魏<entity entityid="987361" type="person">王弼</entity>註。其《繫辭》以下，則韓康伯註也。漢氏《易》學<scanbreak file="60824" y="2" />皆明象數，至弼始黜象數而言義理，足以糾讖緯<scanbreak file="60824" y="2" />之失，而語涉老、莊，亦開後來玄虛之漸。
+
+***《<scanbreak file="60824" /><entity entityid="335535" type="work">周易正義</entity>》十卷
+
+<scanbreak file="60824" y="2" />唐<entity entityid="581200" type="person">孔穎達</entity>撰。<entity entityid="581200" type="person">穎達</entity>諸經正義，皆元元本本，引據詳<scanbreak file="60824" y="2" />明，惟《周易》罕徵典籍。蓋所疏者，王、韓之註；而王、韓<scanbreak file="60824" y="2" />皆掃棄舊聞，自標新解，故不能以漢儒古義與之<scanbreak file="60824" y="2" />證明，非其考訂之疏也。
+
+***《<scanbreak file="60824" /><entity entityid="485488" type="work">周易集解</entity>》十七卷
+
+<scanbreak file="60824" y="2" />唐<entity entityid="402946" type="person">李鼎祚</entity>撰。凡採《子夏易傳》以下三十五家之說。<scanbreak file="60824" y="2" />鼎祚自序稱：「刊輔嗣之野文，補康成之逸象。」蓋發<scanend file="60824" page="26" /><scanbegin file="60824" page="27" />明漢學者也。
+
+***《<entity entityid="848292" type="work">周易口訣義</entity>》六卷
+
+<scanbreak file="60824" y="2" />唐<entity entityid="985433" type="person">史徵</entity>撰。大旨與<entity entityid="402946" type="person">李鼎祚</entity>書相類，而與李書互有<scanbreak file="60824" y="2" />詳略，且多李書所未載。世無傳本，今從《<entity entityid="251405" type="work">永樂大典</entity>》<scanbreak file="60824" y="2" />錄出，為罕觀之祕笈。
+
+***《<scanbreak file="60824" /><entity entityid="762836" type="work">周易舉正</entity>》三卷
+
+<scanbreak file="60824" y="2" />舊本題唐郭京撰。自序稱：「得晉王弼、韓康伯手寫《<scanbreak file="60824" y="2" />周易》真本，刊正今本訛脫一百三十五條。」<entity entityid="597351" type="person">朱子</entity>《本<scanbreak file="60824" y="2" />義》亦採用其說。然《唐書·藝文志》不著錄，至北宋始<scanbreak file="60824" y="2" />出，<entity entityid="345086" type="person">晁公武</entity>等多疑其依托。
+
+***《<scanbreak file="60824" /><entity entityid="219184" type="work">易數鉤隱圖</entity>》三卷，附《遺論九事》一卷
+
+<scanbreak file="60824" y="2" />宋<entity entityid="475806" type="person">劉牧</entity>撰。其說出於陳摶與<entity entityid="569699" type="person">邵子</entity>先天之學，異派<scanbreak file="60824" y="2" />同源，惟以九數為《河圖》，十數為《洛書》，與<entity entityid="569699" type="person">邵子</entity>異。宋<scanend file="60824" page="27" /><scanbegin file="60824" page="28" y="2" />人《易》數以此書為首。其「遺論九事」，皆奇偶陰陽之<scanbreak file="60824" y="2" />說，先儒之所未言者也。
+
+***《<scanbreak file="60824" /><entity entityid="751814" type="work">周易口義</entity>》十二卷
+
+<scanbreak file="60824" y="2" />宋<entity entityid="522817" type="person">倪天隱</entity>述其師胡瑗之說，故曰「口義」。大旨主闡<scanbreak file="60824" y="2" />明義理，<entity entityid="802160" type="person">程子</entity>之《易源》從此出。
+
+***《<scanbreak file="60824" /><entity entityid="257776" type="work">溫公易說</entity>》六卷
+
+<scanbreak file="60824" y="2" />宋<entity entityid="506404" type="person">司馬光</entity>撰。其書宋代有兩本，皆已散佚，此本為《<scanbreak file="60824" y="2" /><entity entityid="251405" type="work">永樂大典</entity>》所載，即《<entity entityid="956748" type="work">朱子語錄</entity>》所謂「北方互市之完<scanbreak file="60824" y="2" />本」也。大旨在闡明人事，不主空虛玄妙之說。
+
+***《<scanbreak file="60824" /><entity entityid="367159" type="work">橫渠易說</entity>》二卷
+
+<scanbreak file="60824" y="2" />宋<entity entityid="544813" type="person">張載</entity>撰。文頗簡略，蓋無可發揮新義者，即不橫<scanbreak file="60824" y="2" />生枝節，強為敷衍，猶有先儒篤實之遺。間有引用《<scanend file="60824" page="28" /><scanbegin file="60824" page="29" y="2" />老》《莊》語者，蓋借以旁證，非祖其虛無之談。
+
+***《<scanbreak file="60824" /><entity entityid="396342" type="work">東坡易傳</entity>》九卷
+
+<scanbreak file="60824" y="2" />宋<entity entityid="291374" type="person">蘇軾</entity>撰。其大體近於王弼，然弼說惟暢玄風，軾<scanbreak file="60824" y="2" />說多切人事，實不相同。<entity entityid="597351" type="person">朱子</entity>作《雜學辨》，嘗摘駁其<scanbreak file="60824" y="2" />中十九條，然不害其全書也。
+
+***《<scanbreak file="60824" /><entity entityid="867985" type="work">伊川易傳</entity>》四卷
+
+<scanbreak file="60824" y="2" />宋<entity entityid="802160" type="person">程頤</entity>撰，其門人楊時校正。經文用王弼之本，惟<scanbreak file="60824" y="2" />解《上下經》彖象及文言亦與弼同。大旨黜數而崇<scanbreak file="60824" y="2" />理，與<entity entityid="569699" type="person">邵子</entity>各明一義。
+
+***《<scanbreak file="60824" /><entity entityid="658002" type="work">易學辨惑</entity>》一卷
+
+<scanend file="60824" page="29" /><scanbegin file="60824" page="30" y="1" />宋<entity entityid="936994" type="person">邵伯溫</entity>撰。<entity entityid="936994" type="person">伯溫</entity>，<entity entityid="569699" type="person">邵子</entity>之子也。以同時鄭夬詭稱<scanbreak file="60824" y="2" />得<entity entityid="569699" type="person">邵子</entity>之傳，所作說《易》諸書，支離破碎，多乖經義，<scanbreak file="60824" y="2" />因作此書以辨其誣。原本久佚，今從《<entity entityid="251405" type="work">永樂大典</entity>》錄<scanbreak file="60824" y="2" />出。
+
+***《<scanbreak file="60824" /><entity entityid="834872" type="work">了翁易說</entity>》一卷
+
+<scanbreak file="60824" y="2" />宋<entity entityid="356652" type="person">陳瓘</entity>撰。<entity entityid="356652" type="person">瓘</entity>之學出於邵氏，又常質於劉安世。故<scanbreak file="60824" y="2" />其說，理數兼推。<entity entityid="967596" type="person">陳振孫</entity>《<entity entityid="947121" type="work">書錄解題</entity>》頗病其詞旨深<scanbreak file="60824" y="2" />晦，然<entity entityid="345086" type="person">晁公武</entity>《<entity entityid="567234" type="work">讀書志</entity>》則稱其數之多驗云。
+
+***《<scanbreak file="60824" /><entity entityid="422170" type="work">吳園易解</entity>》九卷
+
+<scanbreak file="60824" y="2" />宋<entity entityid="757766" type="person">張根</entity>撰。不主漢儒象數之說，亦不主宋代河洛<scanbreak file="60824" y="2" />之學，詮釋經文，頗為簡切。末附《泰卦論》一篇，深著<scanbreak file="60824" y="2" />滿盈之戒，蓋作於徽宗之世，有為而發也。
+
+***《<scanend file="60824" page="30" /><scanbegin file="60824" page="31" /><entity entityid="518297" type="work">周易新講義</entity>》十卷
+
+<scanbreak file="60824" y="2" />宋<entity entityid="812833" type="person">耿南仲</entity>撰。<entity entityid="812833" type="person">南仲</entity>當欽宗之時，力主割地，為史傳<scanbreak file="60824" y="2" />所譏。然是書因象詮理，隨事示戒，乃頗有可取。自<scanbreak file="60824" y="2" />序謂「《易》主於無咎，無咎在於善補過」，而大旨歸於<scanbreak file="60824" y="2" />無拂天道。
+
+***《<scanbreak file="60824" /><entity entityid="693996" type="work">紫巖易傳</entity>》十卷
+
+<scanbreak file="60824" y="2" />宋<entity entityid="710911" type="person">張浚</entity>撰。其說發揮《易》理，頗為醇正明白。惟末卷《<scanbreak file="60824" y="2" />雜論》，以九數為《河圖》，主<entity entityid="475806" type="person">劉牧</entity>之說，與朱、蔡異，然亦<scanbreak file="60824" y="2" />無關宏旨也。
+
+***《<scanbreak file="60824" /><entity entityid="878342" type="work">讀易詳說</entity>》十卷
+
+<scanbreak file="60824" y="2" />宋<entity entityid="430180" type="person">李光</entity>撰。舊本散佚，今從《<entity entityid="251405" type="work">永樂大典</entity>》錄出。書中於<scanbreak file="60824" y="2" />卦爻之辭，皆引証史事，以君臣立論，或不免有所<scanend file="60824" page="31" /><scanbegin file="60824" page="32" y="2" />牽合。然意存法戒，究勝空談，援古事以證爻象，始<scanbreak file="60824" y="2" />自鄭玄；若全經皆證以史，則光書其始也。
+
+***《<scanbreak file="60824" /><entity entityid="238711" type="work">易小傳</entity>》六卷
+
+<scanbreak file="60824" y="2" />宋<entity entityid="427467" type="person">沈該</entity>撰。其書以正體發明爻象之旨，以變體擬<scanbreak file="60824" y="2" />議變動之意。其占則全用《左傳》所載筮例。在南宋<scanbreak file="60824" y="2" />人《易》說之中，為獨存古法。
+
+***《<scanbreak file="60824" /><entity entityid="91991" type="work">漢上易集傳</entity>》十一卷，《卦圖》三卷，《叢說》一卷
+
+<scanbreak file="60824" y="2" />宋<entity entityid="339540" type="person">朱震</entity>撰。其書以數為宗，闡陳、邵河洛先天之學，<scanbreak file="60824" y="2" />而兼採漢以來卦變、互體、伏卦、反卦諸說。頗為蕪<scanbreak file="60824" y="2" />雜。然得失互陳，存之亦可資參考。
+
+***《<scanbreak file="60824" /><entity entityid="130964" type="work">周易窺餘</entity>》十五卷
+
+<scanend file="60824" page="32" /><scanbegin file="60824" page="33" y="2" />宋<entity entityid="365274" type="person">鄭剛中</entity>撰。其書以《伊川易傳》主理，《漢上易傳》主<scanbreak file="60824" y="2" />數，參取兩家，發所未盡，故名曰「窺餘」。大旨兼採漢<scanbreak file="60824" y="2" />學，而增以新義，不甚拘守成說，然往往愜當於理。<scanbreak file="60824" y="2" />原本久佚，今從《<entity entityid="251405" type="work">永樂大典</entity>》錄出。
+
+***《<scanbreak file="60824" /><entity entityid="846783" type="work">易璇璣</entity>》三卷
+
+<scanbreak file="60824" y="2" />宋<entity entityid="718777" type="person">吳沆</entity>撰。自序謂：上卷明天理之自然，中卷講人<scanbreak file="60824" y="2" />事之修，下卷備傳疏之失。凡論二十七篇。其曰「璇<scanbreak file="60824" y="2" />璣」者，取《易略例》，處「璇璣以觀大運」語也。
+
+***《<scanbreak file="60824" /><entity entityid="791451" type="work">易變體義</entity>》十二卷
+
+<scanbreak file="60824" y="2" />宋<entity entityid="111591" type="person">都潔</entity>撰。其書專明變體，即《左傳》所載諸占、某卦<scanbreak file="60824" y="2" />之某卦者是也。原本久佚，今從《<entity entityid="251405" type="work">永樂大典</entity>》錄出。
+
+***《<scanbreak file="60824" /><entity entityid="158353" type="work">周易經傳集解</entity>》三十六卷
+
+<scanend file="60824" page="33" /><scanbegin file="60824" page="34" y="2" />宋林慄撰。其說每卦必兼言互體約象複卦。嘗與<scanbreak file="60824" y="2" /><entity entityid="597351" type="person">朱子</entity>論太極、兩儀、四象、八卦不合，至於互劾。故講<scanbreak file="60824" y="2" />學家最惡其書，幾於不傳。然《易》道廣大，各明一義，<scanbreak file="60824" y="2" />不必定執門戶之見也。
+
+***《<scanbreak file="60824" /><entity entityid="297878" type="work">易原</entity>》八卷
+
+<scanbreak file="60824" y="2" />宋<entity entityid="719359" type="person">程大昌</entity>撰。其書推闡數學，故謂之《易原》。於京、焦<scanbreak file="60824" y="2" />卦氣，馬、鄭爻辰，以及<entity entityid="569699" type="person">邵子</entity>、張行成諸說，皆一一掊<scanbreak file="60824" y="2" />擊，務申己說，未免失之好辨。而根據《繫辭》，於《易》義<scanbreak file="60824" y="2" />亦有所發明，非盡鑿空立異。舊本久佚，今從《<entity entityid="251405" type="work">永樂<scanbreak file="60824" y="2" />大典</entity>》錄出。
+
+***《<scanbreak file="60824" /><entity entityid="947952" type="work">周易古占法</entity>》一卷，《古周易章句外編》一卷
+
+<scanbreak file="60824" y="2" />宋<entity entityid="93403" type="person">程迥</entity>撰。舊本傳寫，混二書為一。今考《<entity entityid="545989" type="work">宋史</entity>》釐正。<scanbreak file="60824" y="2" />前卷論占法，後卷雜說《易》義及占驗。其說用邵子<scanend file="60824" page="34" /><scanbegin file="60824" page="35" y="1" />加一倍法，據《繫辭》《說卦》，發明其義，用逆數以尚占<scanbreak file="60824" y="2" />知來。
+
+***《<scanbreak file="60824" /><entity entityid="2692372" type="work">原本周易本義</entity>》十二卷
+
+<scanbreak file="60824" y="2" />宋<entity entityid="597351" type="person">朱熹</entity>撰。坊刻此書，皆改從《程傳》之次第。此本以《<scanbreak file="60824" y="2" />經》為二卷，《十翼》為十卷，猶<entity entityid="597351" type="person">朱子</entity>之原本也。
+
+***《<scanbreak file="60824" />別本周易本義》四卷
+
+<scanbreak file="60824" y="2" />{{{謹案：《總目》此部不存。}}}明成矩撰。割裂<entity entityid="597351" type="person">朱子</entity>《易本義》，以附《程傳》之後，始元<scanbreak file="60824" y="2" /><entity entityid="985560" type="person">董楷</entity>，而明永樂《大全》因之。後場屋專用《本義》，而《大<scanbreak file="60824" y="1" />全》以官本不敢改。矩因刊為是本，以調停其間，相<scanbreak file="60824" y="1" />沿日久，今亦姑與原本存焉。
+
+***《<scanbreak file="60824" /><entity entityid="873026" type="work">郭氏傳家易說</entity>》十一卷
+
+<scanbreak file="60824" y="1" />宋<entity entityid="719417" type="person">郭雍</entity>撰，以述其父<entity entityid="403312" type="person">忠孝</entity>「<entity entityid="792800" type="work">兼山易解</entity>」之旨，故名曰「<scanbreak file="60824" y="2" />傳家」。自序謂：《易》之為書，其道其詞，皆由象出，未有<scanend file="60824" page="35" /><scanbegin file="60824" page="36" />忘象而知《易》者。大旨以觀象為主，然剖析義理，猶<scanbreak file="60824" y="1" />守程門之規範，蓋其父忠孝，即<entity entityid="802160" type="person">程子</entity>之門人也。
+
+***《<scanbreak file="60824" /><entity entityid="794398" type="work">周易義海撮要</entity>》十二卷
+
+<scanbreak file="60824" y="1" />宋<entity entityid="919225" type="person">李衡</entity>刪定。初，<entity entityid="479677" type="era">熙寧</entity>中，蜀人<entity entityid="1967881" type="person">房審權</entity>病《易》說多岐，<scanbreak file="60824" y="1" />摘取專明人事者，由鄭玄迄王安石凡一百家，共<scanbreak file="60824" y="1" />為一百卷，名《周易義海》。衡病其蕪雜重複，乃刪掇<scanbreak file="60824" y="1" />精要，以成此書，故名曰「撮要」。
+
+***《<scanbreak file="60824" /><entity entityid="851894" type="work">南軒易說</entity>》三卷
+
+<scanbreak file="60824" y="1" />宋<entity entityid="933866" type="person">張栻</entity>撰。原本十一卷。此本出自曹溶家，《上下經》<scanbreak file="60824" y="1" />全佚，惟存繫辭。然《繫辭傳》托始於「天一地二」一章，<scanbreak file="60824" y="1" />亦非完本。蓋元人刊本，以<entity entityid="802160" type="person">程子</entity>《易傳》缺《繫辭》，割栻<scanbreak file="60824" y="1" />書補之，後又佚其前半也。
+
+***《<scanbreak file="60824" /><entity entityid="441123" type="work">復齋易說</entity>》六卷
+
+<scanend file="60824" page="36" /><scanbegin file="60824" page="37" y="2" />宋<entity entityid="229869" type="person">趙彥肅</entity>撰。其說推尋卦畫，即象數以求其理。<entity entityid="597351" type="person">朱子</entity>《語錄》，<scanbreak file="60824" y="2" />頗病其取義太密；然研索於《易》中，究勝支離於易外也。
+
+***《<scanbreak file="60824" /><entity entityid="715679" type="work">楊氏易傳</entity>》二十卷
+
+<scanbreak file="60824" y="2" />宋<entity entityid="566895" type="person">楊簡</entity>撰。<entity entityid="566895" type="person">簡</entity>為<entity entityid="815940" type="person">陸九淵</entity>之弟子，故其說《易》，略象數而談心性，多<scanbreak file="60824" y="1" />入於禪。錄存其書，見以佛理詁《易》，自斯人始，著經學別派之由也。
+
+***《<scanbreak file="60824" /><entity entityid="849281" type="work">周易玩詞</entity>》十六卷
+
+<scanbreak file="60824" y="2" />宋<entity entityid="609545" type="person">項安世</entity>撰。前有自述，稱其學以伊川《易傳》為宗。<scanbreak file="60824" y="2" />然立說頗與伊川異，蓋伊川務闡義理，安世則兼<scanbreak file="60824" y="2" />言象數以補所遺，故與尺寸步趨者殊焉。
+
+***《<scanbreak file="60824" /><entity entityid="986934" type="work">趙氏易說</entity>》四卷
+
+<scanbreak file="60824" y="2" />宋<entity entityid="70853" type="person">趙善譽</entity>撰。舊本二卷久佚，今從《<entity entityid="251405" type="work">永樂大典</entity>》錄出，<scanbreak file="60824" y="2" />釐為四卷。其書推畫卦命名之意，以貫通六爻之<scanend file="60824" page="37" /><scanbegin file="60824" page="38" y="2" />旨。於諸卦取義相似者，參互以盡其變，往往具有<scanbreak file="60824" y="2" />精理。
+
+***《<scanbreak file="60824" /><entity entityid="942856" type="work">誠齋易傳</entity>》二十卷
+
+<scanbreak file="60824" y="2" />宋<entity entityid="553062" type="person">楊萬里</entity>撰。其書大旨本程氏，而參引史傳以證<scanbreak file="60824" y="2" />之，則與李光之書相同。講學家如<entity entityid="834045" type="person">吳澄</entity>、陳櫟、<entity entityid="339212" type="person">胡一<scanbreak file="60824" y="2" />桂</entity>等，皆不滿之。蓋門戶之見，不足據也。
+
+***《<scanbreak file="60824" /><entity entityid="238274" type="work">大易粹言</entity>》十卷
+
+<scanbreak file="60824" y="2" />宋<entity entityid="672430" type="person">方聞一</entity>編。《宋史·藝文志》作曾穜者誤也。是書採二<scanbreak file="60824" y="3" /><entity entityid="802160" type="person">程子</entity>、張子、楊時、游酢、<entity entityid="403312" type="person">郭忠孝</entity>、<entity entityid="719417" type="person">郭雍</entity>七家之說，皆<scanbreak file="60824" y="2" />程氏之宗派，知其以洛學為主矣。
+
+***《<scanbreak file="60824" /><entity entityid="389666" type="work">易圖說</entity>》三卷
+
+<scanend file="60824" page="38" /><scanbegin file="60824" page="39" y="2" />宋<entity entityid="545768" type="person">吳仁傑</entity>撰。其說以六十四正卦，伏羲所作；卦外<scanbreak file="60824" y="1" />六爻及六十四複卦，文王所作。又謂《序卦》為伏羲<scanbreak file="60824" y="1" />作，《雜卦》為文王作；今之爻辭，當為《系辭傳》；《<scanbreak file="60824" y="2" />系辭傳》，當為《說卦傳》。皆故為異說。宋人舊帙，姑存備一解云爾。
+
+***《<scanbreak file="60824" /><entity entityid="194589" type="work">古周易</entity>》一卷
+
+<scanbreak file="60824" y="2" />宋<entity entityid="540309" type="person">呂祖謙</entity>編。自王弼以後，《周易》皆以傳附經。呂大<scanbreak file="60824" y="2" />防以下諸家互有考定，而小有異同。祖謙乃以《上<scanbreak file="60824" y="1" />下經》《十翼》各為一篇，復古本之舊。<entity entityid="597351" type="person">朱子</entity>《本義》，即用<scanbreak file="60824" y="1" />此本也。
+
+***《<scanbreak file="60824" /><entity entityid="579749" type="work">易傳燈</entity>》四卷
+
+<scanbreak file="60824" y="2" />是書世無傳本，諸家書目皆不著錄，《<entity entityid="251405" type="work">永樂大典</entity>》收<scanbreak file="60824" y="2" />之，題曰「宋徐總幹撰」，亦不著其名。惟據原序，知為<scanbreak file="60824" y="1" /><entity entityid="540309" type="person">呂祖謙</entity>之門人耳。其以釋氏「傳燈」命名，頗為乖剌；<scanbreak file="60824" y="2" />參以五行家言，亦為駁雜。然其「八卦總論」十六篇，<scanend file="60824" page="39" /><scanbegin file="60824" page="40" y="2" />參互以求，頗能得《易》之類例。
+
+***《<scanbreak file="60824" /><entity entityid="207393" type="work">易裨傳</entity>》二卷
+
+<scanbreak file="60824" y="2" />宋<entity entityid="486368" type="person">林至</entity>撰。上卷凡三篇，一曰法象，一曰極數，一曰<scanbreak file="60824" y="2" />觀變。下卷題曰外篇。
+
+***《<scanbreak file="60824" /><entity entityid="785646" type="work">厚齋易學</entity>》五十二卷
+
+<scanbreak file="60824" y="2" />宋<entity entityid="299625" type="person">馮椅</entity>撰。舊本散佚，今從《<entity entityid="251405" type="work">永樂大典</entity>》錄出。從其自<scanbreak file="60824" y="2" />序，釐為《輯注》四卷、《輯傳》三十卷、《外傳》十八卷。《輯注》惟<scanbreak file="60824" y="2" />解彖象；《輯傳》則以彖象為經，而《十翼》為傳；《外傳》則<scanbreak file="60824" y="1" />以《十翼》為經。各附先儒之說，而斷以己意。
+
+***《<scanbreak file="60824" /><entity entityid="388415" type="work">童溪易傳</entity>》三十卷
+
+<scanend file="60824" page="40" /><scanbegin file="60824" page="41" y="2" />宋<entity entityid="909837" type="person">王宗傳</entity>撰。其說力排象數，而不免涉於虛無。大<scanbreak file="60824" y="2" />旨與<entity entityid="566895" type="person">楊簡</entity>相類，二人同時，未知孰倡孰和也。
+
+***《<scanbreak file="60824" /><entity entityid="158868" type="work">周易總義</entity>》二十卷
+
+<scanbreak file="60824" y="2" />宋<entity entityid="553242" type="person">易祓</entity>撰。<entity entityid="553242" type="person">祓</entity>本蘇師旦之黨人，不足道。然其說《易》，<scanbreak file="60824" y="2" />兼該理數，折中眾論。每卦先括為總論，復於六爻<scanbreak file="60824" y="2" />之下，詳為詮釋，於經義乃頗有發明。
+
+***《<scanbreak file="60824" /><entity entityid="407170" type="work">西溪易說</entity>》十二卷
+
+<scanbreak file="60824" y="2" />宋<entity entityid="884233" type="person">李過</entity>撰。其書首為序說一卷，次詮釋經文，而不<scanbreak file="60824" y="2" />及《繫辭》以下。<entity entityid="339212" type="person">胡一桂</entity>譏其於經文多所竄亂，<entity entityid="299625" type="person">馮椅<scanbreak file="60824" y="2" /></entity>則稱其多所發明，蓋瑕瑜不掩之書也。
+
+***《<scanbreak file="60824" /><entity entityid="240585" type="work">丙子學易編</entity>》一卷
+
+<scanend file="60824" page="41" /><scanbegin file="60824" page="42" y="2" />宋<entity entityid="60570" type="person">李心傳</entity>撰。書成於嘉定丙子，因以為名。所取惟王<scanbreak file="60824" y="2" />弼、張子、<entity entityid="802160" type="person">程子</entity>、<entity entityid="719417" type="person">郭雍</entity>、<entity entityid="597351" type="person">朱子</entity>五家之說，而以其父舜臣<scanbreak file="60824" y="2" />之說證之，亦間附以己意。原本十五卷，歲久散佚，此<scanbreak file="60824" y="2" />本乃宋末<entity entityid="394154" type="person">俞琰</entity>所節抄，略存梗概而已。
+
+***《<scanbreak file="60824" /><entity entityid="905705" type="work">易通</entity>》六卷
+
+<scanbreak file="60824" y="2" />宋<entity entityid="470492" type="person">趙以夫</entity>撰，或以為莆田黃績所代作。趙汝騰至<scanbreak file="60824" y="2" />見彈章，莫能詳也。大旨以不易、變易二義參互，以<scanbreak file="60824" y="2" />明人事動靜之準。
+
+***《<scanend file="60824" page="42" /><scanbegin file="60824" page="43" /><entity entityid="611599" type="work">周易經傳訓解</entity>》二卷
+
+<scanbreak file="60824" y="1" />宋<entity entityid="491763" type="person">蔡淵</entity>撰。原本四卷，今佚其二卷，惟存《上經》《下經》。<scanbreak file="60824" y="1" />其經文以大象置卦辭下，以彖傳置大象後，以小<scanbreak file="60824" y="1" />象置爻辭後，皆低一字，以別卦爻。與舊本小異。其<scanbreak file="60824" y="1" />訓釋則明義理者居多。
+
+***《<scanbreak file="60824" /><entity entityid="221669" type="work">易象意言</entity>》一卷
+
+宋<entity entityid="491763" type="person">蔡淵</entity>撰。原本久佚，今從《<entity entityid="251405" type="work">永樂大典</entity>》錄出。淵，元定之子，而從學於<entity entityid="597351" type="person">朱子</entity>。故此書闡發名理，多從師說；兼言數學，則本其家傳。其兼用互體，則取裁古義，與講學家持論又殊。
+
+***《<entity entityid="672771" type="work">周易要義</entity>》十卷
+
+<scanbreak file="60824" y="1" />宋<entity entityid="766416" type="person">魏了翁</entity>撰，其《<entity entityid="900181" type="work">九經要義</entity>》之一也。即<entity entityid="581200" type="person">孔穎達</entity>《<entity entityid="335535" type="work">周易<scanbreak file="60824" />正義</entity>》，刪繁舉要，以便循覽，體例頗為簡當。
+
+***《<scanbreak file="60824" /><entity entityid="655162" type="work">東谷易翼傳</entity>》二卷
+
+宋<scanbreak file="60824" y="1" /><entity entityid="738975" type="person">鄭汝諧</entity>撰。所謂「翼傳」者，翼伊川《易傳》也。然於<entity entityid="802160" type="person">程<scanbreak file="60824" y="1" />子</entity>之說，亦時有異同，蓋糾正其失，補苴其闕，亦所<scanbreak file="60824" y="1" />以羽翼之，可謂無朋黨之私<scanend file="60824" page="43" /><scanbegin file="60824" page="44" />矣。
+
+***《<entity entityid="23815" type="work">文公易說</entity>》二十三卷
+
+<scanbreak file="60824" y="1" />宋朱鑒編。鑑為<entity entityid="597351" type="person">朱子</entity>之長孫，是書裒輯<entity entityid="597351" type="person">朱子</entity>平日<scanbreak file="60824" y="1" />論《易》之語，見於《語錄》《文集》者，共為一編，以發明《本<scanbreak file="60824" y="2" />義》之旨。
+
+***《<scanbreak file="60824" /><entity entityid="622565" type="work">易學啟蒙小傳</entity>》一卷
+
+<scanbreak file="60824" y="2" />宋<entity entityid="55170" type="person">稅與權</entity>撰。<entity entityid="597351" type="person">朱子</entity>作《易學啟蒙》，多發明<entity entityid="569699" type="person">邵子</entity>《先天<scanbreak file="60824" y="2" />圖》義，至於後天之易，則以為不得文王所以安排<scanbreak file="60824" y="1" />之意。與權研求<entity entityid="569699" type="person">邵子</entity>之說，知易有不易之八卦為<scanbreak file="60824" y="2" />乾，有互易之五十六卦為用，反複觀之，《上下經》皆<scanbreak file="60824" y="1" />十八卦，羲、文之《易》似異而同。因作此書，以補<scanbreak file="60824" y="2" /><entity entityid="597351" type="person">朱子</entity>之所遺。
+
+***《<scanbreak file="60824" /><entity entityid="291317" type="work">周易輯聞</entity>》六卷，附《易雅》一卷、《筮宗》一卷
+
+<scanend file="60824" page="44" /><scanbegin file="60824" page="45" y="2" />宋<entity entityid="911119" type="person">趙汝楳</entity>撰。《<entity entityid="291317" type="work">周易輯聞</entity>》，但解上、下經，多所發揮，惟<scanbreak file="60824" y="2" />竄亂經文，是其一失。《易雅》，總釋名義，凡十八篇，如《<scanbreak file="60824" y="2" />爾雅》之釋詩，故名曰「雅」。《筮宗》凡三篇，其中推闡大<scanbreak file="60824" y="2" />衍之數，頗為明皙。
+
+***《<scanbreak file="60824" /><entity entityid="503685" type="work">周易詳解</entity>》十六卷
+
+<scanbreak file="60824" y="2" />宋<entity entityid="867747" type="person">李杞</entity>撰。以《易》為有用之學，故名「用易」。自序甚明。<scanbreak file="60824" y="1" /><entity entityid="410552" type="person">焦竑</entity>《<entity entityid="136022" type="work">經籍志</entity>》作「<entity entityid="503685" type="work">周易詳解</entity>」者，誤也。原本二十卷，久<scanbreak file="60824" y="1" />已散佚，今從《<entity entityid="251405" type="work">永樂大典</entity>》錄出，編為十六卷。其書多<scanbreak file="60824" y="2" />證以史事，與<entity entityid="430180" type="person">李光</entity>、<entity entityid="553062" type="person">楊萬里</entity>書同，惟頗參以老、莊之<scanbreak file="60824" y="2" />說，不免駁雜。
+
+***《<scanbreak file="60824" /><entity entityid="302762" type="work">淙山讀周易記</entity>》二十一卷
+
+<scanbreak file="60824" y="2" />宋<entity entityid="987847" type="person">方實孫</entity>撰。其說多主爻象，不涉虛無。其《易卦變<scanbreak file="60824" y="2" />合圖》，補<entity entityid="597351" type="person">朱子</entity>《啟蒙》所未備。
+
+***《<scanend file="60824" page="45" /><scanbegin file="60824" page="46" /><entity entityid="618909" type="work">周易傳義附錄</entity>》十四卷
+
+<scanbreak file="60824" y="2" />宋<entity entityid="985560" type="person">董楷</entity>撰。以<entity entityid="802160" type="person">程子</entity>之《傳》、<entity entityid="597351" type="person">朱子</entity>之《<entity entityid="859253" type="work">本義</entity>》，合為一書。又<scanbreak file="60824" y="2" />博採程、朱之說，附錄其下，使互相發明。惟割裂《本<scanbreak file="60824" y="2" />義》，以附《程傳》，自楷此書始。舊傳始於<entity entityid="964794" type="person">胡廣</entity>等修《<entity entityid="277287" type="work">周<scanbreak file="60824" y="2" />易大全</entity>》者，非也。
+
+***《<scanbreak file="60824" /><entity entityid="324874" type="work">易學啟蒙通釋</entity>》二卷
+
+<scanbreak file="60824" y="2" />宋<entity entityid="441245" type="person">胡方平</entity>撰。是書發明<entity entityid="597351" type="person">朱子</entity>《<entity entityid="545766" type="work">易學啟蒙</entity>》之義，所採<scanbreak file="60824" y="1" />諸說，<entity entityid="491763" type="person">蔡淵</entity>等六家，皆<entity entityid="597351" type="person">朱子</entity>之門人。蔡模即淵之子，<scanbreak file="60824" y="2" />徐幾、翁詠，又皆淵之門人。所謂一家之學也。
+
+***《<scanbreak file="60824" />三易備遺》十卷
+
+<scanbreak file="60824" y="2" />宋朱元升撰。首為《河圖》《洛書》一卷，祖<entity entityid="475806" type="person">劉牧</entity>之說。次《<scanbreak file="60824" y="2" />連山》三卷，以卦位配《夏時》之節氣。次《歸藏》三卷，以<scanend file="60824" page="46" /><scanbegin file="60824" page="47" y="2" />干支納音配卦爻。次《周易》三卷，皆發反對互體之<scanbreak file="60824" y="2" />旨。
+
+***《<scanbreak file="60824" /><entity entityid="594646" type="work">周易集說</entity>》四十卷
+
+<scanbreak file="60824" y="2" />宋<entity entityid="394154" type="person">俞琰</entity>撰。<entity entityid="394154" type="person">琰</entity>初裒諸家《易》說，為《大易會要》一百三<scanbreak file="60824" y="2" />十卷。後乃掇其精華，以成是書。初惟主程、朱之說，<scanbreak file="60824" y="2" />後乃研索經文，浚發新義，自為一家之言。
+
+***《<scanbreak file="60824" /><entity entityid="984760" type="work">讀易舉要</entity>》四卷
+
+<scanbreak file="60824" y="2" />宋<entity entityid="394154" type="person">俞琰</entity>撰。<entity entityid="394154" type="person">琰</entity>所著說易之書，凡十一種，今多散佚，<scanbreak file="60824" y="2" />此書乃從《<entity entityid="251405" type="work">永樂大典</entity>》錄出者也。琰說《易》多主<entity entityid="597351" type="person">朱子</entity>，<scanbreak file="60824" y="2" />而此書論剛柔往來，不主<entity entityid="597351" type="person">朱子</entity>卦變之說。其易圖<scanbreak file="60824" y="2" />多主<entity entityid="569699" type="person">邵子</entity>，而此書論元亨利貞，不主起數於四之<scanbreak file="60824" y="2" />說。亦可謂不苟異、不苟同矣。
+
+***《<scanend file="60824" page="47" /><scanbegin file="60824" page="48" /><entity entityid="368588" type="work">易象義</entity>》十六卷
+
+<scanbreak file="60824" y="2" />宋<entity entityid="121417" type="person">丁易東</entity>撰。是書因象以明義，故曰「象義」。其取象<scanbreak file="60824" y="2" />之例，凡十有二，大抵以<entity entityid="402946" type="person">李鼎祚</entity>、<entity entityid="339540" type="person">朱震</entity>二家為宗。而<scanbreak file="60824" y="2" />卦變則取<entity entityid="597351" type="person">朱子</entity>，變卦則取<entity entityid="111591" type="person">都潔</entity>、沈該，筮占則取<entity entityid="597351" type="person">朱<scanbreak file="60824" y="2" />子</entity>、<entity entityid="491763" type="person">蔡淵</entity>、<entity entityid="299625" type="person">馮椅</entity>，亦不偏主於二家。
+
+***《<scanbreak file="60824" /><entity entityid="394281" type="work">易圖通變</entity>》五卷，《<entity entityid="4790253" type="work">易筮通變</entity>》三卷
+
+<scanbreak file="60824" y="2" />宋<entity entityid="87660" type="person">雷思齊</entity>撰。其《<entity entityid="394281" type="work">易圖通變</entity>》，以八卦配《河圖》，天一至<scanbreak file="60824" y="2" />地八，而以五十為虛數，與先儒之說頗異。其《<entity entityid="4790253" type="work">易筮<scanbreak file="60824" y="2" />通變</entity>》分五篇，亦多自出新意，蓋奇偶相生，變化不<scanbreak file="60824" y="2" />窮，隨意錯綜，無不可以成理也。
+
+***《<scanbreak file="60824" /><entity entityid="695718" type="work">讀易私言</entity>》一卷
+
+<scanbreak file="60824" y="2" />元<entity entityid="531539" type="person">許衡</entity>撰。是書論六爻之德位，大旨多發明《繫辭<scanbreak file="60824" y="2" />傳》同功異位、柔危剛勝之義。其謂各卦畫之居六<scanend file="60824" page="48" /><scanbegin file="60824" page="49" y="2" />位者，吉凶悔吝，視乎其時，而歸於正而得中；又彖<scanbreak file="60824" y="2" />傳當位、不當位得中、行中之義也。
+
+***《<scanbreak file="60824" /><entity entityid="273684" type="work">易本義附錄纂注</entity>》十五卷
+
+<scanbreak file="60824" y="2" />元<entity entityid="339212" type="person">胡一桂</entity>撰。是書以<entity entityid="597351" type="person">朱子</entity>《<entity entityid="859253" type="work">本義</entity>》為宗，取<entity entityid="597351" type="person">朱子</entity>《文集》《<scanbreak file="60824" y="2" />語錄》之說《易》者附之，謂之「附錄」。又纂諸儒之說不<scanbreak file="60824" y="2" />悖於《本義》者，謂之「纂注」。蓋宋末、元初<entity entityid="597351" type="person">朱子</entity>之學盛<scanbreak file="60824" y="1" />行，儒者惟守一先生之言矣。
+
+***《<scanbreak file="60824" /><entity entityid="323068" type="work">易學啟蒙翼傳</entity>》四卷
+
+<scanbreak file="60824" y="2" />元<entity entityid="339212" type="person">胡一桂</entity>撰。<entity entityid="339212" type="person">一桂</entity>之父<entity entityid="441245" type="person">方平</entity>嘗作《<entity entityid="324874" type="work">易學啟蒙通釋</entity>》。<scanbreak file="60824" y="1" />一桂更推闡辨別之，故曰「翼傳」。凡為內篇者三，皆<scanbreak file="60824" y="2" />發<entity entityid="597351" type="person">朱子</entity>占筮圖書之說；為外篇者一，皆雜論《易》學<scanbreak file="60824" y="2" />之支流。
+
+***《<scanbreak file="60824" /><entity entityid="418658" type="work">易纂言</entity>》十卷
+
+<scanend file="60824" page="49" /><scanbegin file="60824" page="50" y="2" />元<entity entityid="834045" type="person">吳澄</entity>撰。<entity entityid="834045" type="person">澄</entity>於諸經多臆為竄亂，惟此經所改，大<scanbreak file="60824" y="2" />抵依據先儒，較為有本。其注釋經義，亦詞簡而理<scanbreak file="60824" y="2" />明。
+
+***《<scanbreak file="60824" /><entity entityid="523442" type="work">易纂言外翼</entity>》八卷
+
+<scanbreak file="60824" y="2" />元<entity entityid="834045" type="person">吳澄</entity>撰。<entity entityid="834045" type="person">澄</entity>所作《<entity entityid="418658" type="work">易纂言</entity>》，義例散見各卦，不相統<scanbreak file="60824" y="2" />貫；卷首所列卦圖，亦粗具梗概，乃復作此書暢明<scanbreak file="60824" y="2" />之。凡十二篇，原本久佚，今從《<entity entityid="251405" type="work">永樂大典</entity>》錄出，尚缺<scanbreak file="60824" y="2" />其卦變、變卦、互卦三篇。易流、易原二篇，亦缺其半。<scanbreak file="60824" y="2" />然大旨亦可睹矣。
+
+***《<scanbreak file="60824" /><entity entityid="169177" type="work">易源奧義</entity>》一卷，《<entity entityid="778152" type="work">周易原旨</entity>》六卷
+
+<scanbreak file="60824" y="2" />元<entity entityid="638680" type="person">寶巴</entity>撰。案：「<entity entityid="638680" type="person">寶巴</entity>」原本作「保八」，今改正 。是書原名「<scanbreak file="60824" y="2" />易體用」，分為三種，今佚其「周易尚占」三卷，僅存其<scanend file="60824" page="50" /><scanbegin file="60824" page="51" y="3" />二，大旨皆祖述程、朱。
+
+***《<scanbreak file="60824" /><entity entityid="874703" type="work">周易程朱傳義折衷</entity>》三十三卷
+
+<scanbreak file="60824" y="2" />元<entity entityid="2174437" type="person">趙采</entity>撰。是書節錄<entity entityid="802160" type="person">程子</entity>《<entity entityid="700638" type="work">易傳</entity>》、<entity entityid="597351" type="person">朱子</entity>《<entity entityid="859253" type="work">本義</entity>》之文，益<scanbreak file="60824" y="1" />以《語錄》諸書，而各以己說附於後。所註惟上、下經，<scanbreak file="60824" y="2" />或以<entity entityid="802160" type="person">程子</entity>未注《系辭》以下故也。大旨雖宗宋學，而<scanbreak file="60824" y="2" />於象數變互尚頗存古義，所謂「折衷」者，殆在是歟。
+
+***《<scanbreak file="60824" /><entity entityid="362795" type="work">周易衍義</entity>》十六卷
+
+<scanbreak file="60824" y="1" />元<entity entityid="504200" type="person">胡震</entity>撰，其子廣大，《<entity entityid="882634" type="work">四庫總目</entity>》作光大，凡兩見 。續成之。於經文次序，臆為顛<scanbreak file="60824" y="2" />倒，殊嫌乖剌。其雜引史事，亦稍傷泛濫，然持論尚<scanbreak file="60824" y="1" />不失為醇正。
+
+***《<scanbreak file="60824" /><entity entityid="545230" type="work">易學濫觴</entity>》一卷
+
+<scanend file="60824" page="51" /><scanbegin file="60824" page="52" y="2" />元<entity entityid="811576" type="person">黃澤</entity>撰。其說《易》以明象為本，其明象以《序卦》為本，<scanbreak file="60824" y="2" />其占法則以《左傳》為主。大旨不取王弼之玄虛，亦<scanbreak file="60824" y="2" />不取漢儒之附會，故折中以酌其平。其歷陳《易》學<scanbreak file="60824" y="2" />不能復古者十三事，亦具有根據。
+
+***《<scanbreak file="60824" /><entity entityid="592706" type="work">大<scanbreak file="60824" y="2" />易<scanbreak file="60824" />緝說</entity>》十卷
+
+<scanbreak file="60824" y="2" />元主申子撰。前二卷論數學，於陳、邵諸家之說，概<scanbreak file="60824" y="2" />斥其有誤；其所取者，自《河圖》《洛書》外，惟伏羲、文王、<scanbreak file="60824" y="2" />周公、孔子、周子五人，未免好為高論。然自三卷以<scanbreak file="60824" y="2" />下，詮釋經文，仍以辭變象占、乘承比應為說，又未嘗<scanbreak file="60824" y="2" />不平正切實。
+
+***《<scanend file="60824" page="52" /><scanbegin file="60824" page="53" /><entity entityid="814844" type="work">周易本義通釋</entity>》十二卷
+
+<scanbreak file="60824" y="2" />元<entity entityid="924700" type="person">胡炳文</entity>撰。大旨以<entity entityid="597351" type="person">朱子</entity>《<entity entityid="859253" type="work">本義</entity>》為宗，而參以眾說。<scanbreak file="60824" y="2" />原本殘缺，惟上、下經僅存。其《十翼》，乃炳文九世孫<scanbreak file="60824" y="2" />珙、玠雜採他書所引炳文之說，以補之也。
+
+***《<scanbreak file="60824" /><entity entityid="579990" type="work">周易本義集成</entity>》十二卷
+
+<scanbreak file="60824" y="2" />元<entity entityid="722770" type="person">熊良輔</entity>撰。是書成於延佑復科舉之後。元制，程<scanbreak file="60824" y="2" />試《易》用程氏、朱氏，而亦兼用古注疏。故是書雖以<scanbreak file="60824" y="2" />羽翼《本義》為主，而亦不盡墨守《本義》焉。
+
+***《<scanbreak file="60824" /><entity entityid="768411" type="work">大易象數鉤深圖</entity>》三卷
+
+元<entity entityid="768777" type="person">張理</entity>撰。其書皆即陳摶、<entity entityid="569699" type="person">邵子</entity>之說，推廣成圖。<entity entityid="597351" type="person">朱子</entity>所謂「易外別傳」者是也。
+
+***《<entity entityid="988647" type="work">學易記</entity>》九卷
+
+<scanbreak file="60824" y="2" />元李簡撰。是書仿<entity entityid="402946" type="person">李鼎祚</entity>《集解》，<entity entityid="1967881" type="person">房審權</entity>《義海》之例，<scanbreak file="60824" y="2" />採《子夏易傳》以下六十四家之說，亦間附以己意。<scanend file="60824" page="53" /><scanbegin file="60824" page="54" y="1" />諸家之書，今十不存一，其佚文惟賴此書以存。
+
+***《<scanbreak file="60824" /><entity entityid="379363" type="work">周易集傳</entity>》八卷
+
+<scanbreak file="60824" y="2" />元<entity entityid="647392" type="person">龍仁夫</entity>撰。每卦之下，各分象變辭占，雖大旨根<scanbreak file="60824" y="2" />據程、朱，而於卦象、爻象反複推闡，頗能自抒心得。<scanbreak file="60824" y="2" />故《元史》稱其「發前儒所未發」。原書十八卷，今佚十<scanbreak file="60824" y="2" />卷，然上、下經，彖、象傳皆尚完具，未可以殘缺廢也。
+
+***《<scanbreak file="60824" /><entity entityid="667820" type="work">讀易考原</entity>》一卷
+
+<scanbreak file="60824" y="2" />元<entity entityid="109389" type="person">蕭漢中</entity>撰。是書凡三篇：一論分卦，一論合卦，一<scanbreak file="60824" y="2" />論序卦，不敢顯攻《序卦傳》，而亦不用序卦之說。大<scanbreak file="60824" y="2" />旨雖亦出陳、邵，而推衍頗有精理，尚不失為依經<scanbreak file="60824" y="2" />立義。
+
+***《<scanbreak file="60824" /><entity entityid="251620" type="work">易精蘊大義</entity>》十二卷
+
+<scanend file="60824" page="54" /><scanbegin file="60824" page="55" y="1" />元<entity entityid="70884" type="person">解蒙</entity>撰。原本散佚，今從《<entity entityid="251405" type="work">永樂大典</entity>》錄出。其例於<scanbreak file="60824" y="2" />彖爻之下，採輯舊說，末乃發明以己意。雖為程試<scanbreak file="60824" y="1" />而作，然薈萃群言，頗有持擇，所自注亦皆簡明。
+
+***《<scanbreak file="60824" /><entity entityid="425988" type="work">易學變通</entity>》六卷
+
+元<entity entityid="717729" type="person">曾貫</entity>撰。原本散佚，今從《<entity entityid="251405" type="work">永樂大典</entity>》錄出。其例每篇統論一卦六爻之義，又舉他卦辭義之相近者，參互以求異同之故，頗為融貫。其兼取互體，亦能存古義。
+
+***《<entity entityid="124864" type="work">周易會通</entity>》十四卷
+
+<scanbreak file="60824" y="1" />元<entity entityid="744594" type="person">董真卿</entity>撰。<entity entityid="744594" type="person">真卿</entity>受業於<entity entityid="339212" type="person">胡一桂</entity>，此書即因一桂《纂<scanbreak file="60824" y="1" />疏》而廣之。然一桂堅持門戶，真卿則謂諸家之《易》，<scanbreak file="60824" y="2" />途雖殊而歸則同，故兼採象數、義理兩家，以持其<scanbreak file="60824" y="2" />平。即<entity entityid="291374" type="person">蘇軾</entity>、林栗之書，<entity entityid="597351" type="person">朱子</entity>所不取者，亦不掩其長，<scanbreak file="60824" y="2" />則所見視其師為廣矣。
+
+***《<scanend file="60824" page="55" /><scanbegin file="60824" page="56" /><entity entityid="69715" type="work">周易圖說</entity>》二卷
+
+<scanbreak file="60824" y="2" />元<entity entityid="635211" type="person">錢義方</entity>撰。是書凡二十七圖，大抵衍陳、邵之緒<scanbreak file="60824" y="2" />餘。然如謂「《繫辭》兼言《河圖》《洛書》，乃言其理相通，非<scanbreak file="60824" y="2" />據《洛書》以作《易》」；又謂「陳摶因《易》而演《圖》，非伏羲據《<scanbreak file="60824" y="2" />圖》以畫卦」。皆篤論也。
+
+***《<scanbreak file="60824" /><entity entityid="719429" type="work">周易爻變義蘊</entity>》四卷
+
+<scanbreak file="60824" y="1" />元<entity entityid="793192" type="person">陳應潤</entity>撰。大旨謂王弼所注，乃老、莊虛渺之談；<scanbreak file="60824" y="2" />陳摶所圖，乃《參同契》爐火之術，均非《易》之本旨。又<scanbreak file="60824" y="2" />謂：周子《太極圖》，別自一家之說，不可以釋《易》。皆能<scanbreak file="60824" y="2" />不域於門戶。所注惟六十四卦，其曰「爻變」，即衍《左傳》「<scanbreak file="60824" y="2" />某卦之某卦」之古義；其謂一卦可變六十四卦，亦<scanbreak file="60824" y="2" />焦、京舊法也。
+
+***《<scanend file="60824" page="56" /><scanbegin file="60824" page="57" /><entity entityid="574238" type="work">周易參義</entity>》十二卷
+
+<scanbreak file="60824" y="2" />元<entity entityid="274321" type="person">梁寅</entity>撰。其說皆即日用常行之事，以示進退得<scanbreak file="60824" y="2" />失之機，頗為平易近人，勝於諸家之 。
+
+***《<scanbreak file="60824" /><entity entityid="853487" type="work">周易文詮</entity>》四卷
+
+<scanbreak file="60824" y="2" />元<entity entityid="667003" type="person">趙汸</entity>撰。<entity entityid="667003" type="person">汸</entity>於《易》學，不及《春秋》之深邃；然原本宋<scanbreak file="60824" y="2" />儒詮釋義理，於進退存亡之故，吉凶悔吝之理，推<scanbreak file="60824" y="2" />闡頗明。與梁寅書，皆切於人事者也。
+
+***《<scanbreak file="60824" /><entity entityid="570526" type="work">周易傳義大全</entity>》二十四卷
+
+<scanbreak file="60824" y="2" />明<entity entityid="456908" type="era">永樂</entity>中<entity entityid="667858" type="office">翰林院學士</entity><entity entityid="964794" type="person">胡廣</entity>等奉敕撰。其書魯莽<scanbreak file="60824" y="1" />而成，僅割裂<entity entityid="985560" type="person">董楷</entity>、<entity entityid="744594" type="person">董真卿</entity>、<entity entityid="339212" type="person">胡一桂</entity>、<entity entityid="924700" type="person">胡炳文</entity>四家之<scanbreak file="60824" y="2" />書，餖飣成編。以其為一代取士之制，故錄之以見<scanbreak file="60824" y="1" />經學盛衰之由焉。
+
+***《<scanend file="60824" page="57" /><scanbegin file="60824" page="58" /><entity entityid="946966" type="work">易經蒙引</entity>》十二卷
+
+<scanbreak file="60824" y="2" />明<entity entityid="409541" type="person">蔡清</entity>撰。<entity entityid="409541" type="person">清</entity>篤信<entity entityid="597351" type="person">朱子</entity>之學，故是書體例，以《本義》<scanbreak file="60824" y="2" />與經文並書，但每條之首，加一圈以示別。然其立<scanbreak file="60824" y="2" />說，乃或與《本義》異同，蓋研索者深，故一一明其得<scanbreak file="60824" y="2" />失。猶陸游謂<entity entityid="597351" type="person">朱子</entity>尊<entity entityid="802160" type="person">程子</entity>，而說《易》乃與<entity entityid="802160" type="person">程子</entity>《傳》異<scanbreak file="60824" y="2" />同也。
+
+***《<scanbreak file="60824" /><entity entityid="83927" type="work">讀易餘言</entity>》五卷
+
+<scanbreak file="60824" y="2" />明<entity entityid="712302" type="person">崔銑</entity>撰。凡《上下經卦略》二卷，《大象說》《繫辭輯說》《<scanbreak file="60824" y="2" />卦訓》各一卷。大旨以《程傳》為主，而兼採王弼、<entity entityid="834045" type="person">吳澄<scanbreak file="60824" y="2" /></entity>之說，不甚依附《本義》，論多切實。惟點竄《說卦》，而刪<scanbreak file="60824" y="2" />除《序卦》《文言》，未免勇於改經耳。
+
+***《<scanbreak file="60824" /><entity entityid="86604" type="work">易學啟蒙意見</entity>》五卷
+
+<scanend file="60824" page="58" /><scanbegin file="60824" page="59" y="2" />明<entity entityid="678065" type="person">韓邦奇</entity>撰。凡五篇。前四篇皆推衍<entity entityid="569699" type="person">邵子</entity>、<entity entityid="597351" type="person">朱子</entity>之<scanbreak file="60824" y="2" />緒論。末一篇曰七占，凡六爻不變、六爻俱變及一<scanbreak file="60824" y="2" />爻變者，皆仍舊法，其二爻、三爻、四爻、五爻變者，則<scanbreak file="60824" y="2" />邦奇所立之新法也。
+
+***《<scanbreak file="60824" /><entity entityid="189482" type="work">易經存疑</entity>》十二卷
+
+<scanbreak file="60824" y="2" />明<entity entityid="427406" type="person">林希元</entity>撰。是書繼蔡清《蒙引》而作，然小有異同。<scanbreak file="60824" y="2" />大旨為科舉而設，故謂漢學不可行於今。後來坊<scanbreak file="60824" y="2" />刻講章，此其濫觴。然明白篤實，終非後來講章所<scanbreak file="60824" y="2" />及也。
+
+***《<scanbreak file="60824" /><entity entityid="349563" type="work">周易辨錄</entity>》四卷
+
+<scanbreak file="60824" y="2" />明<entity entityid="413565" type="person">楊爵</entity>撰。是書乃嘉靖乙巳，爵以建言下詔獄時所<scanbreak file="60824" y="2" />作。注惟六十四卦，經文但載卦辭，然注乃併解<scanbreak file="60824" y="1" />六爻、彖傳、象傳。其說多明人事，頗為剴切。
+
+***《<scanend file="60824" page="59" /><scanbegin file="60824" page="60" /><entity entityid="805373" type="work">易象鈔</entity>》四卷
+
+<scanbreak file="60824" y="2" />明<entity entityid="958859" type="person">胡居仁</entity>撰。自序稱：讀《易》二十年，有所得輒抄積<scanbreak file="60824" y="2" />之。後二卷則皆與人論《易》之語，及自記所學，併為 <scanbreak file="60824" y="2" />栝歌詞以舉其要。考萬歷乙酉，御史李頤請以<scanbreak file="60824" y="2" />居仁從祀，疏稱「所著《易傳》已散佚」，此本或後人所<scanbreak file="60824" y="2" />裒輯歟。
+
+***《<scanbreak file="60824" /><entity entityid="329046" type="work">周易象旨決錄</entity>》七卷
+
+<scanbreak file="60824" y="2" />明<entity entityid="931546" type="person">熊過</entity>撰。據其自序，蓋因蔡清《蒙引》陳義而不及<scanbreak file="60824" y="2" />象，故作此書。名「決錄」者，猶言「定本」也。其說遠溯漢<scanbreak file="60824" y="2" />學，雖未必遽追梁、孟，然義必考古，終勝明人幻渺<scanbreak file="60824" y="2" />之談。
+
+***《<scanbreak file="60824" /><entity entityid="898596" type="work">易象鉤解</entity>》四卷
+
+<scanend file="60824" page="60" /><scanbegin file="60824" page="61" y="2" />明<entity entityid="215212" type="person">陳士元</entity>撰。其說謂《易》以卜筮為用，卜筮以象為<scanbreak file="60824" y="2" />宗。雖或涉穿鑿，然犂然有當者居多。惟謂言象為<scanbreak file="60824" y="2" />京房之學，則殊舛誤。《京氏易》乃納甲飛伏之學，非<scanbreak file="60824" y="2" />以象為占也。
+
+***《<scanbreak file="60824" /><entity entityid="630564" type="work">周易集注</entity>》十六卷
+
+<scanbreak file="60824" y="2" />明<entity entityid="647197" type="person">來知德</entity>撰。乃其空山獨處，研思二十九年而成。<scanbreak file="60824" y="2" />專取《繫辭》錯綜其數之說，以錯卦、綜卦論《易》象。其<scanbreak file="60824" y="2" />注皆先釋象義、字義及錯綜義，然後訓本卦、本爻<scanbreak file="60824" y="1" />正義。頗傷繁碎，而亦自成一家之學。
+
+***《<scanbreak file="60824" /><entity entityid="560828" type="work">讀易紀聞</entity>》六卷
+
+<scanbreak file="60824" y="2" />明張獻翼撰。是書但隨筆札記，不載經文。其為人<scanbreak file="60824" y="2" />蕩檢踰閑，殆有狂疾，而說《易》乃篤實不支，多得聖<scanbreak file="60824" y="2" />人示戒之旨。蓋其早年力學，猶未放誕時作也。
+
+***《<scanend file="60824" page="61" /><scanbegin file="60824" page="62" /><entity entityid="929667" type="work">葉八白易傳</entity>》十六卷
+
+<scanbreak file="60824" y="2" />明<entity entityid="966064" type="person">葉山</entity>撰。八白，其字也。惟釋六十四卦爻辭，大旨<scanbreak file="60824" y="2" />以誠齋《易傳》為宗，出入子史，佐以博辨。蓋借《易》以<scanbreak file="60824" y="2" />言人事，不必盡為經義之所有。然所言亦往往可<scanbreak file="60824" y="1" />昭法戒。
+
+***《<scanbreak file="60824" /><entity entityid="95312" type="work">洗心齋讀易述</entity>》十七卷
+
+<scanbreak file="60824" y="2" />明<entity entityid="736910" type="person">潘士藻</entity>撰。每條皆先發己意，而採掇舊說列於<scanbreak file="60824" y="1" />後。<entity entityid="410552" type="person">焦竑</entity>序稱所採舊說，惟李氏《集解》、房氏《義海》二<scanbreak file="60824" y="2" />書。今觀所引，房書較多於李書。蓋李書主象，漢學<scanbreak file="60824" y="2" />之遺；房書主理，宋學之總。士藻所主者，宋學也。
+
+***《<scanbreak file="60824" /><entity entityid="896137" type="work">周易像象管見</entity>》九卷
+
+<scanbreak file="60824" y="2" />明<entity entityid="830746" type="person">錢一本</entity>撰。<entity entityid="830746" type="person">一本</entity>所著《象抄》六卷，推衍陳摶之學，<scanbreak file="60824" y="2" />支離 ，殊無可觀。此書作於《象抄》之前，惟即卦<scanend file="60824" page="62" /><scanbegin file="60824" page="63" y="2" />爻以求象，即象以明人事，雖間有支蔓，而篤實近<scanbreak file="60824" y="2" />理者多。
+
+***《<scanbreak file="60824" /><entity entityid="820480" type="work">周易札記</entity>》三卷
+
+<scanbreak file="60824" y="2" />明<entity entityid="990517" type="person">逯中立</entity>撰。是書不載經文，但以卦名、篇名為標<scanbreak file="60824" y="2" />識。採舊說者十之六，出新義者十之四。大旨以義<scanbreak file="60824" y="2" />理為主，而複、姤、中孚諸卦，亦兼用六日七分之說。
+
+***《<scanbreak file="60824" /><entity entityid="652659" type="work">周易易簡說</entity>》三卷
+
+<scanbreak file="60824" y="2" />明<entity entityid="232184" type="person">高攀龍</entity>撰。其詮解《易》義，每條不過數言，故名曰「<scanbreak file="60824" y="2" />易簡」。亦頗闡明心學。然主於學《易》以檢心，非如<entity entityid="566895" type="person">楊<scanbreak file="60824" y="2" />簡</entity>、<entity entityid="909837" type="person">王宗傳</entity>輩，引《易》歸心，又引心歸禪也。
+
+***《<scanbreak file="60824" /><entity entityid="913984" type="work">易義古象通</entity>》八卷
+
+<scanend file="60824" page="63" /><scanbegin file="60824" page="64" y="2" />明<entity entityid="861256" type="person">魏濬</entity>撰。前有《明象總論》八篇。大旨謂文周之《易》，<scanbreak file="60824" y="2" />即象著理；孔子之《易》，以理明象。因取漢、魏、晉、唐諸<scanbreak file="60824" y="2" />儒所論象義，取其近正者錄之。故名曰「易義古象<scanbreak file="60824" y="2" />通」，言即象以通義也。
+
+***《<scanbreak file="60824" /><entity entityid="674181" type="work">周易像象述</entity>》五卷
+
+<scanbreak file="60824" y="2" />明<entity entityid="74350" type="person">吳桂森</entity>撰。乃踵其師<entity entityid="830746" type="person">錢一本</entity>《<entity entityid="896137" type="work">像象管見</entity>》而作，故<scanbreak file="60824" y="2" />以「述」為名。首列「像象金鍼」一篇，標舉大旨。卷中所<scanbreak file="60824" y="2" />注，皆一字一句，推尋義理，頗有新意。
+
+***《<scanbreak file="60824" /><entity entityid="344720" type="work">易用</entity>》五卷
+
+<scanbreak file="60824" y="2" />明<entity entityid="253177" type="person">陳祖念</entity>撰。<entity entityid="253177" type="person">祖念</entity>，<entity entityid="443723" type="person">陳第</entity>子也，學不逮其父，而此書<scanbreak file="60824" y="2" />則勝其父《<entity entityid="242191" type="work">伏羲圖贊</entity>》遠甚。書中不載經文，但每卦、<scanbreak file="60824" y="2" />每章詳論其義，務以切於人事為主，故名曰「用」。每<scanbreak file="60824" y="2" />卦之末，總論取象之義，多取互體，蓋於漢學、宋學，<scanend file="60824" page="64" /><scanbegin file="60824" page="65" y="2" />無所偏主云。
+
+***《<scanbreak file="60824" /><entity entityid="158354" type="work">易象正</entity>》十六卷
+
+<scanbreak file="60824" y="2" />明<entity entityid="895490" type="person">黃道周</entity>撰。於每卦六爻，皆即之卦以觀其變。蓋<scanbreak file="60824" y="2" />即《左傳》所載之古法。前列日次一卷，用漢人分爻<scanbreak file="60824" y="2" />直日之法。按文王卦序，以推世運。後二卷以《河圖》《<scanbreak file="60824" y="2" />洛書》自相乘除，推為三十五圖。則均《易》外之別傳<scanbreak file="60824" y="2" />矣。
+
+<scanbreak file="60824" y="4" />謹案：此書及《三易洞璣》，皆《皇極經世》之支流。《三<scanbreak file="60824" y="5" />易洞璣》，全推衍於《易》外，故入之術數類。此<scanbreak file="60824" y="4" />及倪元璐《兒易》，有 於《易》外者，猶有據經<scanbreak file="60824" y="4" />立義，發揮於《易》中者。且皆忠節之士，宜因人<scanbreak file="60824" y="4" />以重其書。故此二編仍著錄於經部，非通例<scanend file="60824" page="65" /><scanbegin file="60824" page="66" />也。
+
+***《<entity entityid="688588" type="work">兒易內儀以</entity>》六卷，《<entity entityid="767680" type="work">兒易外儀</entity>》十五卷
+
+<scanbreak file="60824" y="2" />明<entity entityid="453493" type="person">倪元璐</entity>撰。名「兒易」者，據元璐自序，蓋取孩始之<scanbreak file="60824" y="1" />義。其「內儀以」專以大象釋經，以六十四卦大象皆<scanbreak file="60824" y="2" />有「以」字，故「以」為名也。《外儀》分六目，六目又各分子<scanbreak file="60824" y="2" />目，皆以《繫辭》中字義名篇，篇各有圖，大抵憂時傷亂，<scanbreak file="60824" y="2" />借《易》以抒其意，不必盡為經義之所有。
+
+***《<scanbreak file="60824" /><entity entityid="651472" type="work">卦變考略</entity>》一卷
+
+<scanbreak file="60824" y="2" />明<entity entityid="935154" type="person">董守諭</entity>撰。以<entity entityid="597351" type="person">朱子</entity>《卦變圖》與《本義》自相矛盾，因<scanbreak file="60824" y="2" />考郎 、京房、蜀才、虞翻諸家之說，推衍成圖，以存<scanbreak file="60824" y="2" />古義。
+
+***《<scanbreak file="60824" /><entity entityid="417272" type="work">古周易訂詁</entity>》十六卷
+
+<scanend file="60824" page="66" /><scanbegin file="60824" page="67" y="3" />明<entity entityid="882580" type="person">何楷</entity>撰。前六卷以傳附經，用王弼本。七卷以下，<scanbreak file="60824" y="3" />則仍以《十翼》原文，存田、何之舊。其學雖博而不精，<scanbreak file="60824" y="3" />然取材宏富，詞必有據。漢、晉以來之古義，頗藉以<scanbreak file="60824" y="3" />見梗概。
+
+***《<scanbreak file="60824" y="1" /><entity entityid="644528" type="work">周易玩詞困學記</entity>》十五卷
+
+<scanbreak file="60824" y="3" />明<entity entityid="776461" type="person">張次仲</entity>撰。自序謂不敢侈談象數，又雅不信讖<scanbreak file="60824" y="3" />緯之說，惟於語言文字間，求其有益於身心者，持<scanbreak file="60824" y="3" />論頗為篤實。其鏟除諸圖，亦具有廓清之力。
+
+***《<scanbreak file="60824" y="1" /><entity entityid="184199" type="work">易經通註</entity>》九卷
+
+<scanbreak file="60824" y="2" /><entity entityid="385056" type="dynasty">國朝</entity><entity entityid="843807" type="office">大學士</entity><entity entityid="663744" type="person">傅以漸</entity>等奉<scanbreak file="60824" />敕撰。<entity entityid="875738" type="era">順治</entity><entity entityid="875738" month="12" type="date" year="13">十三年十二月</entity>，<scanbreak file="60824" /><entity entityid="264659" type="person">世祖</entity>章皇帝以永樂《易經大全》繁而可刪，華而寡要，因<scanbreak file="60824" />命以漸等刊其舛訛，補其缺漏，勒為是書。以順治十五年<scanend file="60824" page="67" /><scanbegin file="60824" page="68" y="3" />十月告成。
+
+***《<scanbreak file="60824" /><entity entityid="759265" type="work">日講易經解義</entity>》十八卷
+
+康<scanbreak file="60824" y="2" />熙二十二年，<entity entityid="843807" type="office">大學士</entity><entity entityid="420269" type="person">牛鈕</entity>等奉<scanbreak file="60824" />敕編。用宋代經筵講義之體，發揮要旨，疏通證明，不取莊、<scanbreak file="60824" y="3" />老之虛無，亦不取焦、京之術數。惟即辭占象變，敷<scanbreak file="60824" />陳人事，以明法天建極之實功。故<scanbreak file="60824" />御製序文，特揭以經學為治法之義焉。
+
+***《<scanbreak file="60824" /><entity entityid="973052" type="work">御纂周易折中</entity>》二十二卷
+
+<scanbreak file="60824" y="3" /><entity entityid="651619" type="era">康熙</entity><entity entityid="651619" type="date" year="54">五十四年</entity>，<entity entityid="843807" type="office">大學士</entity><entity entityid="71740" type="person">李光地</entity>等奉<scanbreak file="60824" />敕撰。自<entity entityid="985560" type="person">董楷</entity>析<entity entityid="597351" type="person">朱子</entity>《<entity entityid="859253" type="work">周易本義</entity>》，附於《程傳》，十二篇舊第復<scanbreak file="60824" y="3" />淆。是編恭稟聖<scanbreak file="60824" />裁，改從古本，足正千古之訛。大旨雖根據程、朱，而參考<scanend file="60824" page="68" /><scanbegin file="60824" page="69" y="2" />群言，務求至當，實不偏主一家，允為說《易》之准繩。
+
+***《<scanbreak file="60824" /><entity entityid="651486" type="work">御纂周易述義</entity>》十卷
+
+<scanbreak file="60824" y="2" /><entity entityid="901967" type="era">乾隆</entity><entity entityid="901967" type="date" year="20">二十年</entity>，<entity entityid="843807" type="office">大學士</entity>傅恒等奉<scanbreak file="60824" />敕撰。以本「<scanbreak file="60824" /><entity entityid="973052" type="work">御纂周易折中</entity>」而推闡之，故名「述義」。大旨謂《易》因人事以<scanbreak file="60824" y="2" />立象，故不涉虛渺之說與術數之學。其觀象多取<scanbreak file="60824" y="2" />於互體，尤能發明古義。漢《易》、宋《易》，至是而集其成<scanbreak file="60824" y="2" />矣。
+
+***《<scanbreak file="60824" /><entity entityid="139888" type="work">讀易大旨</entity>》五卷
+
+<scanbreak file="60824" y="1" /><entity entityid="385056" type="dynasty">國朝</entity><entity entityid="152324" type="person">孫奇逢</entity>撰。皆其讀《易》有得，錄示門人之語。其說<scanbreak file="60824" y="2" />不顯攻《圖》《書》，亦無一字及《圖》《書》，惟以象傳通一卦<scanbreak file="60824" y="2" />之旨，以一卦通六十四卦之義，皆切近人事，發明<scanbreak file="60824" y="2" />義理。末附「兼山堂問答」，及與李崶論《易》之語，別為<scanend file="60824" page="69" /><scanbegin file="60824" page="70" y="1" />一卷。崶即奇逢所從受《易》者也。
+
+***《<scanbreak file="60824" /><entity entityid="730570" type="work">周易稗疏</entity>》四卷，附《考異》一卷
+
+<scanbreak file="60824" y="1" /><entity entityid="385056" type="dynasty">國朝</entity><entity entityid="642056" type="person">王夫之</entity>撰。皆隨筆札記，以剖析疑義。大旨不信<scanbreak file="60824" y="2" />焦、京，亦不信陳、邵，亦不取王弼之清言。惟引據訓<scanbreak file="60824" y="2" />詁，考求古義，所謂徵實之學也。
+
+***《<scanbreak file="60824" /><entity entityid="616488" type="work">易酌</entity>》十四卷
+
+<scanbreak file="60824" y="1" /><entity entityid="385056" type="dynasty">國朝</entity><entity entityid="470251" type="person">刁包</entity>撰。大旨以<entity entityid="802160" type="person">程子</entity>《傳》、<entity entityid="597351" type="person">朱子</entity>《本義》為主，雖亦兼<scanbreak file="60824" y="2" />言象數，然皆陳摶、李之才之學，非漢以來之舊學<scanbreak file="60824" y="1" />也。取其持論篤實而已。
+
+***《<scanbreak file="60824" /><entity entityid="889496" type="work">田間易學</entity>》十二卷
+
+<scanend file="60824" page="70" /><scanbegin file="60824" page="71" y="1" /><entity entityid="385056" type="dynasty">國朝</entity><entity entityid="862445" type="person">錢澄之</entity>撰。<entity entityid="862445" type="person">澄之</entity>初問《易》於黃道周，故頗詳於數<scanbreak file="60824" y="2" />學。後乃兼求義理，參取於王弼、<entity entityid="581200" type="person">孔穎達</entity>、<entity entityid="802160" type="person">程子</entity>、<entity entityid="597351" type="person">朱子<scanbreak file="60824" y="2" /></entity>之間。其謂《先天》《河》《洛》，皆因《易》而作圖，用<entity entityid="635211" type="person">錢義方</entity>之<scanbreak file="60824" y="2" />說；謂圖中奇偶乃揲蓍之法，非畫卦之本，用陳應<scanbreak file="60824" y="2" />潤之說也。
+
+***《<scanbreak file="60824" /><entity entityid="411464" type="work">易學象數論</entity>》六卷
+
+<scanbreak file="60824" y="1" /><entity entityid="385056" type="dynasty">國朝</entity><entity entityid="828421" type="person">黃宗羲</entity>撰。<entity entityid="828421" type="person">宗羲</entity>以《易》至焦、京而流為方術，至陳<scanbreak file="60824" y="2" />摶而歧入道家，九流百氏，罔弗依託，因作此以糾<scanbreak file="60824" y="2" />其失。前三卷論《河圖》《洛書》、先天方位、納甲、納音、月<scanbreak file="60824" y="2" />建、卦氣、卦變、互卦、筮法、占法，附以所作原象，為內<scanbreak file="60824" y="2" />篇；後三卷論太玄、乾鑿度、元包、潛虛、洞極、洪範數、<scanbreak file="60824" y="2" />皇極數，以及六壬、太乙、遁甲，為外篇。
+
+***《<scanbreak file="60824" /><entity entityid="84596" type="work">周易象辭</entity>》二十一卷，附《<entity entityid="675134" type="work">尋門餘論</entity>》二卷，《<entity entityid="382401" type="work">圖書辨惑</entity>》一卷
+
+<scanend file="60824" page="71" /><scanbegin file="60824" page="72" y="1" /><entity entityid="385056" type="dynasty">國朝</entity><entity entityid="445186" type="person">黃宗炎</entity>撰。<entity entityid="445186" type="person">宗炎</entity>力闢陳摶之學，故所解惟主義<scanbreak file="60824" y="2" />理，然根據經典，不涉空談。「尋門餘論」兼排釋氏，未<scanbreak file="60824" y="1" />免蔓衍於《易》外，而其他持論多醇正。「圖書辨惑」論《<scanbreak file="60824" y="2" />先天圖》，與陳應潤所言合；論《太極圖》，與<entity entityid="799917" type="person">朱彞尊</entity>、<entity entityid="269312" type="person">毛<scanbreak file="60824" y="2" />奇齡</entity>所考合。亦皆明確也。
+
+***《<scanbreak file="60824" /><entity entityid="34718" type="work">周易筮述</entity>》八卷
+
+<scanbreak file="60824" y="1" /><entity entityid="385056" type="dynasty">國朝</entity><entity entityid="244529" type="person">王宏撰</entity>撰。以<entity entityid="597351" type="person">朱子</entity>謂《易》本卜筮之書，因作此編，<scanbreak file="60824" y="1" />以明其義。凡十五篇。雖端為揲蓍而作，然闢焦、京<scanbreak file="60824" y="1" />之小術，闡羲、文、周、孔之宏旨，立論悉本經義，與方<scanbreak file="60824" y="2" />技家所說迥殊，故進之列於《易》類，不以術數論焉。
+
+***《<scanbreak file="60824" /><entity entityid="398533" type="work">仲氏易</entity>》三十卷
+
+<scanbreak file="60824" y="1" /><entity entityid="385056" type="dynasty">國朝</entity><entity entityid="269312" type="person">毛奇齡</entity>撰。是書述其兄錫齡之遺說，故以「仲氏」<scanbreak file="60824" y="2" />為名。大旨謂《易》兼五義，一曰變易，一曰交易，為先<scanend file="60824" page="72" /><scanbegin file="60824" page="73" y="2" />儒之所知；一曰反易，一曰對易，一曰移易，皆先儒<scanbreak file="60824" y="2" />之所未知。其言甚辨，然大致有所根據，非純構虛<scanbreak file="60824" y="2" />詞。
+
+***《<scanbreak file="60824" /><entity entityid="26298" type="work">推易始末</entity>》四卷
+
+<scanbreak file="60824" y="1" /><entity entityid="385056" type="dynasty">國朝</entity><entity entityid="269312" type="person">毛奇齡</entity>撰。<entity entityid="269312" type="person">奇齡</entity>既作《仲氏易》，因採漢以來諸儒<scanbreak file="60824" y="2" />之言卦變者，別加綜核，以成是書。其名「推易」，蓋本《<scanbreak file="60824" y="2" />繫辭》剛柔相推之文，即《仲氏易》所謂「移易」也。
+
+***《<scanbreak file="60824" /><entity entityid="503777" type="work">春秋占筮書</entity>》三卷
+
+<scanbreak file="60824" y="1" /><entity entityid="385056" type="dynasty">國朝</entity><entity entityid="269312" type="person">毛奇齡</entity>撰。摭《春秋傳》所載占筮，以明古人之《易》<scanbreak file="60824" y="2" />學。實為《易》作，非為《春秋》作也。
+
+***《<scanbreak file="60824" /><entity entityid="145986" type="work">易小帖</entity>》五卷
+
+<entity entityid="385056" type="dynasty">國<scanend file="60824" page="73" /><scanbegin file="60824" page="74" y="1" />朝</entity><entity entityid="269312" type="person">毛奇齡</entity>說《易》之語，其門人記錄成書者也。凡一<scanbreak file="60824" y="2" />百四十三條，與《仲氏易》互相發明。大抵徵引古義，<scanbreak file="60824" y="2" />以糾近代說《易》之失。於王弼、陳摶二派，掊擊尤力。
+
+***《<scanbreak file="60824" /><entity entityid="679225" type="work">喬氏易俟</entity>》十八卷
+
+<scanbreak file="60824" y="1" /><entity entityid="385056" type="dynasty">國朝</entity><entity entityid="245236" type="person">喬萊</entity>撰。前列諸圖，不取陳摶之說。於卦變亦不<scanbreak file="60824" y="2" />取虞翻諸家之說，而取來知德之反對。其解經多<scanbreak file="60824" y="2" />推求人事，證以史文，蓋<entity entityid="430180" type="person">李光</entity>、<entity entityid="553062" type="person">楊萬里</entity>之支流也。
+
+***《<scanbreak file="60824" /><entity entityid="632834" type="work">讀易日抄</entity>》六卷
+
+<scanbreak file="60824" y="1" /><entity entityid="385056" type="dynasty">國朝</entity><entity entityid="958084" type="person">張烈</entity>撰。一以<entity entityid="597351" type="person">朱子</entity>《<entity entityid="859253" type="work">本義</entity>》為宗。因象設事，就事陳<scanbreak file="60824" y="2" />理，猶近時《易》說之不枝蔓者。
+
+***《<scanbreak file="60824" /><entity entityid="782423" type="work">周易通論</entity>》四卷
+
+<scanend file="60824" page="74" /><scanbegin file="60824" page="75" y="1" /><entity entityid="385056" type="dynasty">國朝</entity><entity entityid="71740" type="person">李光地</entity>撰。一卷、二卷，發明上、下經大旨，三卷、四<scanbreak file="60824" y="2" />卷，發明繫辭、說卦、序卦、雜卦之義。冠以「易本」「易教」<scanbreak file="60824" y="2" />二篇，次論卦爻象彖、時位德應、《河圖》《洛書》，以及占<scanbreak file="60824" y="2" />筮掛扐、正變環互，皆一一詳悉。其於宋易，可謂融<scanbreak file="60824" y="2" />會貫通矣。
+
+***《<scanbreak file="60824" /><entity entityid="540632" type="work">周易觀彖</entity>》十二卷
+
+<scanbreak file="60824" y="1" /><entity entityid="385056" type="dynasty">國朝</entity><entity entityid="71740" type="person">李光地</entity>撰。是書取《繫辭》「觀其彖辭，則思過半」之義，<scanbreak file="60824" y="2" />實注全經，非止解彖辭。其《語錄》《文集》，頗申明先天<scanbreak file="60824" y="2" />諸圖，此書則惟《說卦傳》「天地定位」一章，略及斯義，<scanbreak file="60824" y="2" />餘無一字及之，則亦知非畫卦之本矣。經中脫文<scanbreak file="60824" y="2" />誤字，惟《繫辭》「侯之」二字作衍文，餘皆不從《程傳》《本<scanbreak file="60824" y="2" />義》。其說皆自抒心得，亦不甚附合程、朱也。
+
+***《<scanbreak file="60824" /><entity entityid="958740" type="work">周易淺述</entity>》八卷
+
+<scanend file="60824" page="75" /><scanbegin file="60824" page="76" y="1" /><entity entityid="385056" type="dynasty">國朝</entity><entity entityid="643840" type="person">陳夢雷</entity>撰。乃康熙甲戌夢雷戍尚陽堡時所作。<scanbreak file="60824" y="2" />大旨主《本義》，而參以王弼、<entity entityid="581200" type="person">孔穎達</entity>、<entity entityid="291374" type="person">蘇軾</entity>、來知德及<scanbreak file="60824" y="2" />永樂《大全》，蓋行篋乏書，故所據止此。其說多即象<scanbreak file="60824" y="2" />以明人事。末附三十圖，則其友楊道聲作也。
+
+***《<scanbreak file="60824" /><entity entityid="937452" type="work">易原就正</entity>》十二卷
+
+<scanbreak file="60824" y="1" /><entity entityid="385056" type="dynasty">國朝</entity><entity entityid="53312" type="person">包儀</entity>撰。其學從《先天圖》入，故自序謂，《皇極經世》<scanbreak file="60824" y="2" />為《易》之本旨。然每爻注變卦，猶用古法，詮釋簡明，<scanbreak file="60824" y="2" />亦不繳繞奇偶，排比黑白，與自序實不相應也。
+
+***《<scanbreak file="60824" /><entity entityid="960570" type="work">大易通解</entity>》十五卷
+
+<scanbreak file="60824" y="1" /><entity entityid="385056" type="dynasty">國朝</entity><entity entityid="342770" type="person">魏荔彤</entity>撰。其論畫卦，謂：《河圖》《洛書》，只可云其理<scanbreak file="60824" y="2" />相通，不必穿鑿附會。謂《先天圖》，非生卦之次序。論<scanbreak file="60824" y="2" />爻謂：當兼變爻。謂泰、否、損、益四卦，為上下經之樞<scanbreak file="60824" y="2" />紐，皆具有理解。惟不取扶陽抑陰之說，則未審姤、<scanend file="60824" page="76" /><scanbegin file="60824" page="77" y="1" />復之初爻矣。
+
+***《<scanbreak file="60824" /><entity entityid="293865" type="work">易經衷論</entity>》二卷
+
+<scanbreak file="60824" y="1" /><entity entityid="385056" type="dynasty">國朝</entity><entity entityid="391026" type="person">張英</entity>撰。所釋惟六十四卦，每卦為論一篇。其立<scanbreak file="60824" y="1" />說主於顯易，不務艱深，頗能掃眾說之糾結。
+
+***《<scanbreak file="60824" /><entity entityid="309811" type="work">易圖明辨</entity>》十卷
+
+<scanbreak file="60824" y="1" /><entity entityid="385056" type="dynasty">國朝</entity><entity entityid="811445" type="person">胡渭</entity>撰。其一卷辨《河圖》《洛書》，二卷辨五行九宮，三<scanbreak file="60824" y="2" />卷辨《參同契》《先天圖》《太極圖》，四卷辨《龍圖》《易數<scanbreak file="60824" y="1" />鉤隱圖》，五卷辨《啟蒙》《圖書》，六卷、七卷辨先天古易，<scanbreak file="60824" y="1" />八卷辨後天之學，九卷辨卦變，十卷辨象數流弊。<scanbreak file="60824" y="2" />並引據經典，元元本本，於《易》學深為有功。
+
+***《<scanbreak file="60824" /><entity entityid="407702" type="work">合訂刪補大易集義粹言</entity>》八十卷
+
+<scanend file="60824" page="77" /><scanbegin file="60824" page="78" /><entity entityid="385056" type="dynasty">國朝</entity><entity entityid="868619" type="person">納喇性德</entity>撰。是書取宋陳友文《大易集義》、<entity entityid="672430" type="person">方聞一</entity>《大易粹貫》，案：原本訛「<entity entityid="672430" type="person">方聞一</entity>」為「曾穜」，今考正 。刪<scanbreak file="60824" y="1" />除重複，刊削繁蕪，合為一編。宋儒易說，略具於斯。
+
+***《<scanbreak file="60824" /><entity entityid="771081" type="work">周易傳註</entity>》七卷，附《<entity entityid="287269" type="work">周易筮考</entity>》一卷
+
+<scanbreak file="60824" /><entity entityid="385056" type="dynasty">國朝</entity><entity entityid="490710" type="person">李塨</entity>撰。其說以《易》卦本以人事立言，陳摶、<entity entityid="475806" type="person">劉牧<scanbreak file="60824" y="1" /></entity>諸圖，皆使《易》道入於無用；《參同契》《三易洞璣》之類，<scanbreak file="60824" y="1" />皆以異端方技闌入經學；即漢儒卦氣直日之類，<scanbreak file="60824" y="1" />亦經外別生枝節。故惟以觀象為主，第不廢互體<scanbreak file="60824" y="1" />耳。
+
+***《<scanbreak file="60824" /><entity entityid="904968" type="work">周易札<scanend file="60824" page="78" /><scanbegin file="60824" page="79" />記</entity>》二卷
+
+<scanbreak file="60824" y="1" /><entity entityid="385056" type="dynasty">國朝</entity><entity entityid="289359" type="person">楊名時</entity>撰。<entity entityid="289359" type="person">名時</entity>《易》學，多得之其師李光地。是書<scanbreak file="60824" y="2" />惟《說卦傳》及附論《啟蒙》之類，頗推衍《先天》諸圖，餘<scanbreak file="60824" y="2" />皆發揮《易》理者也。
+
+***《<scanbreak file="60824" /><entity entityid="247013" type="work">周易傳義合訂</entity>》十二卷
+
+<scanbreak file="60824" y="1" /><entity entityid="385056" type="dynasty">國朝</entity><entity entityid="417146" type="person">朱軾</entity>撰。凡《程傳》《本義》，互有異同者，務折中以歸<scanbreak file="60824" y="1" />一，使不涉兩岐。惟兩義並行不悖者，乃兼存其說，<scanbreak file="60824" y="2" />附以諸儒之論；或有實勝程、朱者，亦舍程、朱以從<scanbreak file="60824" y="2" />之。蓋不株守門戶之見也。
+
+***《<scanbreak file="60824" /><entity entityid="568181" type="work">周易玩詞集解</entity>》十卷
+
+<entity entityid="385056" type="dynasty">國朝</entity><entity entityid="641919" type="person">查慎行</entity>撰。<entity entityid="641919" type="person">慎行</entity>受業於黃宗羲，故於《易》家一切雜學，灼然不惑。其河圖說、卦變說、天根月窟考、八卦相錯說、闢卦說、中爻互體說、廣八卦說，辨証具有根據。詮釋經文，亦明切不支。
+
+***《<entity entityid="754147" type="work">惠氏易說</entity>》六卷
+
+<scanend file="60824" page="79" /><scanbegin file="60824" page="80" y="1" /><entity entityid="385056" type="dynasty">國朝</entity><entity entityid="315672" type="person">惠士奇</entity>撰。其書雜釋卦爻，專明漢學，大抵以象<scanbreak file="60824" y="2" />為主，而訓詁尤所加意。惟欲矯王弼等空言之弊，<scanbreak file="60824" y="2" />採掇未免駁雜，然其精核者，終不可廢也。
+
+***《<scanbreak file="60824" /><entity entityid="610776" type="work">周易函書約存</entity>》十八卷，《約註》十八卷，《別集》十六卷
+
+<scanbreak file="60824" y="1" /><entity entityid="385056" type="dynasty">國朝</entity><entity entityid="491072" type="person">胡煦</entity>撰。原本一百十八卷，稿本浩繁，漸有散佚，<scanbreak file="60824" y="2" />其已刻者，亦編次無緒。此本乃其子季堂，以其論《<scanbreak file="60824" y="2" />易》之語，分為原圖、原卦、原爻、原占者，編為《約存》；以<scanbreak file="60824" y="2" />其依經釋義者，編為《約注》；而以「篝燈約旨」「易解辨<scanbreak file="60824" y="2" />異」「易學須知」，編為《別集》。其持論酌於漢學、宋學之<scanbreak file="60824" y="2" />間，與<entity entityid="597351" type="person">朱子</entity>頗有異同。
+
+***《<scanbreak file="60824" /><entity entityid="918898" type="work">易箋</entity>》八卷
+
+<scanbreak file="60824" y="1" /><entity entityid="385056" type="dynasty">國朝</entity><entity entityid="623324" type="person">陳法</entity>撰。其書以《易》為專明人事，其駁來知德錯綜<scanbreak file="60824" y="2" />之說，最為明皙。其論筮法，亦具有理解。
+
+***《<scanend file="60824" page="80" /><scanbegin file="60824" page="81" /><entity entityid="705558" type="work">楚蒙山房易經解</entity>》十六卷
+
+<scanbreak file="60824" y="1" /><entity entityid="385056" type="dynasty">國朝</entity><entity entityid="52509" type="person">晏斯盛</entity>撰，凡《易學初津》二卷，不取圖書之說，乃<scanbreak file="60824" y="2" />併卦變互體而廢之，未免主持稍過。《易翼宗》六卷，<scanbreak file="60824" y="2" />詮釋經文，附以《十翼》。《易翼說》八卷，詮釋《十翼》，又各<scanbreak file="60824" y="2" />自為篇，與<entity entityid="882580" type="person">何楷</entity>《<entity entityid="417272" type="work">古周易訂詁</entity>》例同，亦嫌繁複。然所<scanbreak file="60824" y="2" />解斟酌於言理、言數之間，則頗能持其平。
+
+***《<scanbreak file="60824" /><entity entityid="548669" type="work">周易孔義集說</entity>》二十卷
+
+<entity entityid="385056" type="dynasty">國<scanbreak file="60824" y="1" />朝</entity><entity entityid="663252" type="person">沈起元</entity>撰。以孔子《十翼》為主，定眾說之是非。前<scanbreak file="60824" y="2" />列三圖：一曰八卦方位，一曰乾坤生六子，一曰因<scanbreak file="60824" y="2" />重。皆據《繫辭》《說卦》，其先天諸圖，則以為陳、邵之《易》，<scanbreak file="60824" y="2" />非孔子之《易》，概從芟剃，持論特確，所解亦多能推<scanbreak file="60824" y="2" />驗舊詁，引申新義。惟既用王弼散附之本，而又以<scanbreak file="60824" y="2" />大象、文言析出自為一傳，則自我作古耳。
+
+***《<scanend file="60824" page="81" /><scanbegin file="60824" page="82" /><entity entityid="299040" type="work">易翼述信</entity>》十二卷
+
+<scanbreak file="60824" y="1" /><entity entityid="385056" type="dynasty">國朝</entity><entity entityid="309924" type="person">王又樸</entity>撰。其說亦以《十翼》為主。深以<entity entityid="597351" type="person">朱子</entity>所云「<scanbreak file="60824" y="2" />不可以孔子之《易》，為文王之《易》者」為非。其所徵引，<scanbreak file="60824" y="2" />惟李光地之說為多，亦不甚墨守《本義》也。
+
+***《<scanbreak file="60824" /><entity entityid="177590" type="work">周易淺釋</entity>》四卷
+
+<scanbreak file="60824" y="1" /><entity entityid="385056" type="dynasty">國朝</entity><entity entityid="263581" type="person">潘思矩</entity>撰。大旨即象明理，而即互體卦變以求<scanbreak file="60824" y="2" />象，每卦皆註自某卦來，謂之「時來」；是亦《易》中之一<scanbreak file="60824" y="2" />義，不足盡《易》，而不可謂之非《易》，固可存備一家也。
+
+***《<scanbreak file="60824" /><entity entityid="900684" type="work">周易洗心</entity>》九卷
+
+<scanbreak file="60824" y="1" /><entity entityid="385056" type="dynasty">國朝</entity><entity entityid="625515" type="person">任啟運</entity>撰。其說多發明圖學，謂《論語》之「五十學《<scanbreak file="60824" y="2" />易》」，即指《河圖》之五十，立論殊為新異。其詮釋經文，<scanend file="60824" page="82" /><scanbegin file="60824" page="83" y="2" />則觀象玩詞，時標精理；其考定文句，亦根據先儒。<scanbreak file="60824" y="2" />然則啟運之講圖學，特好語精微耳，非如張行成<scanbreak file="60824" y="2" />等，竟舍經而言數也。
+
+***《<scanbreak file="60824" /><entity entityid="943109" type="work">豐川易說</entity>》十卷
+
+<scanbreak file="60824" y="1" /><entity entityid="385056" type="dynasty">國朝</entity><entity entityid="236705" type="person">王心敬</entity>撰。<entity entityid="236705" type="person">心敬</entity>所註諸經，皆好為異論。是書闡<scanbreak file="60824" y="2" />發《易》理，乃取諸人事，謂陰陽消長，不過借作影子，<scanbreak file="60824" y="2" />特為切實。惟排斥雜學，併《左傳》占法而詆之，為主<scanbreak file="60824" y="2" />持太過耳。
+
+***《<scanbreak file="60824" /><entity entityid="438572" type="work">周易述</entity>》二十三卷
+
+<scanbreak file="60824" y="1" /><entity entityid="385056" type="dynasty">國朝</entity><entity entityid="727123" type="person">惠棟</entity>撰。其書主發揮漢儒之學，以荀爽、虞翻為<scanbreak file="60824" y="2" />主，而參以鄭玄、宋咸、干寶諸家之說，自為註而自<scanbreak file="60824" y="2" />疏之。凡二十一卷，中闕《下經》一卷，又闕序卦、雜卦<scanbreak file="60824" y="2" />傳，蓋未完之本。末二卷為《易微言》，雜抄經典論易<scanend file="60824" page="83" /><scanbegin file="60824" page="84" y="2" />之語，叢冗無緒，亦未及排纂之稿本也。
+
+***《<scanbreak file="60824" /><entity entityid="112746" type="work">易漢學</entity>》八卷
+
+<scanbreak file="60824" y="1" /><entity entityid="385056" type="dynasty">國朝</entity><entity entityid="727123" type="person">惠棟</entity>撰。考漢《易》宗派源流，掇拾緒論，以見大凡。<scanbreak file="60824" y="2" />凡《孟長卿易》二卷；《虞仲翔易》一卷；《京君明易》二卷，<scanbreak file="60824" y="2" />干寶附焉；《鄭康成易》一卷；《荀慈明易》一卷。其末一<scanbreak file="60824" y="2" />卷，則棟發明漢《易》之理，以辨正《河圖》《洛書》、先天太<scanbreak file="60824" y="2" />極之學。
+
+***《<scanbreak file="60824" /><entity entityid="756804" type="work">易例</entity>》二卷
+
+<scanbreak file="60824" y="1" /><entity entityid="385056" type="dynasty">國朝</entity><entity entityid="727123" type="person">惠棟</entity>撰。皆考究漢儒之傳，以發明《易》之本例。凡<scanbreak file="60824" y="2" />九十類。其中有錄無書者，十三類。所分門目，頗多<scanbreak file="60824" y="1" />牽混，蓋亦未成之稿。然棟於諸經，精研古義，其所<scanbreak file="60824" y="2" />採摭，多專門授受之學。儻因而排纂，猶可見作《易》<scanend file="60824" page="84" /><scanbegin file="60824" page="85" y="2" />之大綱，未可以冗雜棄也。
+
+***《<scanbreak file="60824" /><entity entityid="574617" type="work">易象大意存解</entity>》一<scanbreak file="60824" />卷
+
+<scanbreak file="60824" y="1" /><entity entityid="385056" type="dynasty">國朝</entity><entity entityid="370400" type="person">任陳晉</entity>撰。多申尚象之旨，不載經文，惟折中諸<scanbreak file="60824" y="2" />家之說，明其大意。首論太極、五行、先天、河洛，皆鏟<scanbreak file="60824" y="2" />除 ；次論彖、論爻、論象；次論六十四卦，多指陳<scanbreak file="60824" y="2" />法戒；終以系辭、說卦、序卦、雜卦，其文頗略，以所重<scanbreak file="60824" y="2" />在六十四卦也。
+
+***《<scanbreak file="60824" /><entity entityid="83712" type="work">大易擇言</entity>》三十六卷
+
+<scanbreak file="60824" y="1" /><entity entityid="385056" type="dynasty">國朝</entity><entity entityid="222151" type="person">程廷祚</entity>撰。因桐城方苞《緒論》，以六例編纂諸家<scanbreak file="60824" y="2" />之說。一曰正義，二曰辨正，三曰通論，四曰餘論，五<scanbreak file="60824" y="2" />曰存疑，六曰存異。大抵力排象數，惟以義理為宗。
+
+***《<scanend file="60824" page="85" /><scanbegin file="60824" page="86" /><entity entityid="296370" type="work">周易辨畫</entity>》四十卷
+
+<scanbreak file="60824" y="1" /><entity entityid="385056" type="dynasty">國朝</entity>連斗山撰。大旨謂一卦之義，在於爻；爻畫有剛、<scanbreak file="60824" y="2" />有柔，因剛柔之畫而立之象，即因剛柔之畫而繫<scanbreak file="60824" y="2" />以辭，其道先在於辨畫，故以為名。雖不免或涉穿<scanbreak file="60824" y="2" />鑿，然逐卦剖析互體，亦時有精理。
+
+***《<scanbreak file="60824" /><entity entityid="749785" type="work">周易圖書質疑</entity>》二十四卷
+
+<scanbreak file="60824" y="1" /><entity entityid="385056" type="dynasty">國朝</entity><entity entityid="6532924" type="person">趙繼序</entity>撰。其書以象數言《易》，而不主先天河洛<scanbreak file="60824" y="2" />之說。首為古經十二篇，次逐節詮釋經義，而不載<scanbreak file="60824" y="2" />經文，蓋用經傳別行之古例。次為圖三十有二，為<scanbreak file="60824" y="2" />說五。其詁經多從卦變起象，而兼取漢、宋之說，無<scanbreak file="60824" y="2" />所偏主。
+
+***《<scanbreak file="60824" /><entity entityid="930450" type="work">周易章句證異</entity>》十一卷
+
+<scanend file="60824" page="86" /><scanbegin file="60824" page="87" y="1" /><entity entityid="385056" type="dynasty">國朝</entity><entity entityid="598806" type="person">翟均廉</entity>撰。皆考究諸本，辨《周易》篇章字句之同<scanbreak file="60824" y="2" />異，校勘頗為精密。
+
+<scanbreak file="60824" y="3" />附錄
+
+***《<scanbreak file="60824" /><entity entityid="403122" type="work">乾坤鑿度</entity>》二卷
+
+<scanbreak file="60824" y="2" />是書為《<entity entityid="251405" type="work">永樂大典</entity>》所載《易緯》八種之一。分上、下二<scanbreak file="60824" y="2" />篇。上篇論四門四正取象取物，以至卦爻蓍策之<scanbreak file="60824" y="2" />數；下篇論坤有十性，而推及於蕩配凌配。又雜引諸<scanbreak file="60824" y="2" />緯書之詞，佶屈聱牙，頗不易曉。
+
+***《<scanbreak file="60824" /><entity entityid="659075" type="work">周易乾鑿度</entity>》二卷
+
+<scanbreak file="60824" y="2" />是書為《易緯》八種之二。舊本標鄭康成注。唐以前<scanbreak file="60824" y="2" />說經之家，恒相引用。其太乙行九宮法，即後世《洛<scanbreak file="60824" y="2" />書》所從出。在緯書之中，特為醇正。
+
+***《<scanend file="60824" page="87" /><scanbegin file="60824" page="88" /><entity entityid="466875" type="work">易緯稽覽圖</entity>》二卷
+
+<scanbreak file="60824" y="2" />是書為《易緯》八種之三。首言卦氣起中孚，而以坎、<scanbreak file="60824" y="2" />離、震、兌為四正卦。六十卦，卦主六日七分。又以自坤<scanbreak file="60824" y="2" />至複十二卦為消息。餘雜卦，主公卿侯大夫，候風<scanbreak file="60824" y="2" />雨寒溫以為征。應即孟喜、京房之學。至所稱軌<scanbreak file="60824" y="2" />之數，以及世應游歸，乃兼通日家推步之法。唐一<scanbreak file="60824" y="2" />行《大衍歷議》，即演其術。惟所紀年號至唐元和，疑<scanbreak file="60824" y="2" />術家所附益也。
+
+***《<scanbreak file="60824" /><entity entityid="222410" type="work">易緯辨終備</entity>》一卷
+
+<scanbreak file="60824" y="2" />是書為《易緯》八種之四。一作「辨中備」，傳寫異文也。<scanbreak file="60824" y="2" />今《<entity entityid="251405" type="work">永樂大典</entity>》所載，僅數十言，似非完本。以古來著<scanend file="60824" page="88" /><scanbegin file="60824" page="89" />錄，姑存以備考核。
+
+***《<entity entityid="937957" type="work">易緯通卦驗</entity>》二卷
+
+<scanbreak file="60824" y="2" />是書為《易緯》八種之五。《宋史·藝文志》作二卷，《<entity entityid="251405" type="work">永樂<scanbreak file="60824" y="2" />大典</entity>》所載合為一篇。今核其文義，定「人主動而得<scanbreak file="60824" y="2" />天地之道，則萬物之精盡矣」以上為上卷。曰「凡易<scanbreak file="60824" y="2" />八卦之氣，驗應各如其法度」以下為下卷。上言稽<scanbreak file="60824" y="2" />應之理，下言卦氣之徵驗也。
+
+***《<scanbreak file="60824" /><entity entityid="101323" type="work">易緯乾元序制記</entity>》一卷
+
+<scanbreak file="60824" y="2" />是書為《易緯》八種之六。唐以前史不著錄，<entity entityid="967596" type="person">陳振孫</entity>《<scanbreak file="60824" y="2" /><entity entityid="947121" type="work">書錄解題</entity>》始載之。然其文乃與諸書所引《是類謀》《<scanbreak file="60824" y="2" />坤靈圖》《稽覽圖》之文相同，疑後人割裂緯書，偽題<scanbreak file="60824" y="1" />此名也。
+
+***《<scanbreak file="60824" /><entity entityid="76324" type="work">易緯是類謀</entity>》一卷
+
+<scanend file="60824" page="89" /><scanbegin file="60824" page="90" y="2" />是書為《易緯》八種之七。通體以韻語成文，多言禨<scanbreak file="60824" y="2" />祥推驗，並及於姓輔名號，與《乾鑿度》所引易歷義<scanbreak file="60824" y="2" />相發明。
+
+***《<scanbreak file="60824" /><entity entityid="789559" type="work">易緯坤靈圖</entity>》一卷
+
+<scanbreak file="60824" />是書為《易緯》八種之八。殘缺不完，僅存論乾、大蓄、<scanbreak file="60824" />無妄卦辭，及史注所引「日月合璧」數語而已。
+
+<scanbreak file="60824" />右易類。共一百五十八部，一千七百五十七卷。附錄<scanend file="60824" page="90" /><scanbegin file="60828" page="2" />八部，十<scanbreak file="60828" y="6" />二卷。<scanend file="60828" page="2" />

@@ -374,16 +374,16 @@ _internal.accumulate_spacing = accumulate_spacing
 -- @param indent (number) Current indent
 -- @return (boolean) true if handled, false otherwise
 local function handle_penalty_breaks(p_val, ctx, flush_buffer_fn, p_cols, interval, grid_height, indent)
-    if p_val == -10002 then
-        -- Forced column break (paragraph end)
+    if p_val == constants.PENALTY_FORCE_COLUMN then
+        -- Forced column break (explicit \换列 command)
         flush_buffer_fn()
         if ctx.cur_row > ctx.cur_column_indent then
             wrap_to_next_column(ctx, p_cols, interval, grid_height, indent, false, true)
         end
         ctx.cur_column_indent = 0
         return true
-    elseif p_val == -10003 then
-        -- Forced page break
+    elseif p_val == constants.PENALTY_FORCE_PAGE then
+        -- Forced page break (\newpage, \clearpage)
         if ctx.page_has_content then
             flush_buffer_fn()
             ctx.cur_page = ctx.cur_page + 1
@@ -892,7 +892,32 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
             goto start_of_loop
         elseif id == constants.PENALTY then
             local p_val = D.getfield(t, "penalty")
-            handle_penalty_breaks(p_val, ctx, flush_buffer, p_cols, interval, grid_height, indent)
+
+            -- Smart column break: Check next node type before deciding
+            if p_val == constants.PENALTY_SMART_BREAK then
+                local next_node = D.getnext(t)
+                if next_node then
+                    local next_is_textflow = D.get_attribute(next_node, constants.ATTR_JIAZHU) == 1
+                    if not next_is_textflow then
+                        -- Flush pending textflow state before checking cur_row
+                        -- (auto-balance=false textflow may have rows_used=0, leaving cur_row un-advanced)
+                        if ctx.textflow_pending_sub_col and ctx.textflow_pending_row_used then
+                            ctx.cur_row = ctx.cur_row + ctx.textflow_pending_row_used
+                            ctx.textflow_pending_sub_col = nil
+                            ctx.textflow_pending_row_used = nil
+                        end
+                        -- Next node is regular text, break to new column
+                        flush_buffer()
+                        if ctx.cur_row > ctx.cur_column_indent then
+                            wrap_to_next_column(ctx, p_cols, interval, grid_height, indent, false, true)
+                        end
+                        ctx.cur_column_indent = 0
+                    end
+                    -- If next is textflow, don't break - let textflow continue naturally
+                end
+            else
+                handle_penalty_breaks(p_val, ctx, flush_buffer, p_cols, interval, grid_height, indent)
+            end
         end
 
         t = D.getnext(t)

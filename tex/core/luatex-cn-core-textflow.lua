@@ -397,10 +397,24 @@ function textflow.place_nodes(ctx, start_node, layout_map, params, callbacks)
         for _, node_info in ipairs(chunk.nodes) do
             -- Note: ATTR_STYLE_REG_ID is already set by TeX layer
 
+            -- Check if this node has forced indent (e.g., from \平抬 command)
+            local node_indent_attr = D.get_attribute(node_info.node, constants.ATTR_INDENT)
+            local is_forced, forced_indent_value = constants.is_forced_indent(node_indent_attr)
+
+            -- Calculate row: if forced indent=0, override cur_row; otherwise use normal calculation
+            local node_row
+            if is_forced and type(forced_indent_value) == "number" and forced_indent_value == 0 then
+                -- \平抬 case: force to row 0 (flush left)
+                node_row = node_info.relative_row
+            else
+                -- Normal case: offset by cur_row
+                node_row = ctx.cur_row + node_info.relative_row
+            end
+
             local entry = {
                 page = ctx.cur_page,
                 col = ctx.cur_col,
-                row = ctx.cur_row + node_info.relative_row,
+                row = node_row,
                 sub_col = node_info.sub_col
             }
 

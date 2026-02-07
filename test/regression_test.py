@@ -135,6 +135,9 @@ def process_file(tex_file, mode):
             # Delete temp PNGs
             for png in new_pngs:
                 png.unlink()
+            # Clean up corresponding diff files (from previous failed checks)
+            for diff_png in DIFF_DIR.glob(f"diff_{pdf_file.stem}-*.png"):
+                diff_png.unlink()
             # Delete PDF (we already have PNG files)
             if pdf_file.exists():
                 pdf_file.unlink()
@@ -147,6 +150,9 @@ def process_file(tex_file, mode):
             # Move new PNGs to baseline
             for png in new_pngs:
                 shutil.move(str(png), str(BASELINE_DIR / png.name))
+            # Clean up corresponding diff files
+            for diff_png in DIFF_DIR.glob(f"diff_{pdf_file.stem}-*.png"):
+                diff_png.unlink()
             log_list.append(f"Saved {len(new_pngs)} baseline pages.")
             return True, f"Saved {len(new_pngs)} pages", log_list
         

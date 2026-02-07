@@ -237,7 +237,7 @@ local function register_line_mark(type_str, color_str, offset_str, amplitude_str
         color = color_str or "black",
         offset = to_dimen(offset_str) or { value = 0.6, unit = "em" },
         amplitude = amplitude_str or "medium",
-        linewidth = to_dimen(linewidth_str) or tex.sp("0.4pt"),
+        linewidth = to_dimen(linewidth_str) or tex.sp("0.8pt"),
         style = style_str or "standard",
     }
 

@@ -90,30 +90,70 @@ local function build_straight_line(x_bp, y_start_bp, y_end_bp, rgb, lw_bp)
         rgb, lw_bp, x_bp, y_start_bp, x_bp, y_end_bp)
 end
 
---- Build PDF command string for a wavy line segment
--- @param x_bp (number) Base X position (center of wave)
--- @param y_start_bp (number) Y start (top) in big points
--- @param period_bp (number) One wave period height in big points
--- @param count (number) Number of complete periods
--- @param amp_bp (number) Wave amplitude in big points
--- @param rgb (string) Color "r g b"
--- @param lw_bp (number) Line width in big points
--- @return (string) PDF literal command
-local function build_wavy_line(x_bp, y_start_bp, period_bp, count, amp_bp, rgb, lw_bp)
+--- Build PDF command for a standard wavy line (smooth sine wave)
+-- Uses 4 cubic Bézier curves per period (one per quarter), with control
+-- points derived from the parametric derivative of sin(). This ensures:
+--   - At peaks (±amplitude): tangent is purely vertical
+--   - At center crossings: tangent is diagonal (matching sine slope)
+--   - Tangent continuity (C1) at all junctions
+local function build_wavy_standard(x_bp, y_start_bp, period_bp, count, amp_bp, rgb, lw_bp)
     local parts = {}
     parts[#parts + 1] = string.format("q %s RG %.4f w", rgb, lw_bp)
     parts[#parts + 1] = string.format("%.4f %.4f m", x_bp, y_start_bp)
 
-    local ctrl = amp_bp * 0.55 -- control point offset for smooth sine approximation
+    -- Control point offsets derived from sin() parametric derivative:
+    -- cx = π*A/6 (horizontal handle at zero crossings)
+    -- cy = P/12  (vertical handle, = quarter_period / 3)
+    local cx = math.pi * amp_bp / 6
+    local cy = period_bp / 12
+    local h = period_bp / 4 -- quarter period
+    local A = amp_bp
 
     for i = 1, count do
         local y0 = y_start_bp - (i - 1) * period_bp
-        -- First half-period: bulge to the right (+x direction)
+        -- Q1: center → right peak
+        parts[#parts + 1] = string.format("%.4f %.4f %.4f %.4f %.4f %.4f c",
+            x_bp + cx, y0 - cy,
+            x_bp + A, y0 - h + cy,
+            x_bp + A, y0 - h)
+        -- Q2: right peak → center
+        parts[#parts + 1] = string.format("%.4f %.4f %.4f %.4f %.4f %.4f c",
+            x_bp + A, y0 - h - cy,
+            x_bp + cx, y0 - 2 * h + cy,
+            x_bp, y0 - 2 * h)
+        -- Q3: center → left peak
+        parts[#parts + 1] = string.format("%.4f %.4f %.4f %.4f %.4f %.4f c",
+            x_bp - cx, y0 - 2 * h - cy,
+            x_bp - A, y0 - 3 * h + cy,
+            x_bp - A, y0 - 3 * h)
+        -- Q4: left peak → center
+        parts[#parts + 1] = string.format("%.4f %.4f %.4f %.4f %.4f %.4f c",
+            x_bp - A, y0 - 3 * h - cy,
+            x_bp - cx, y0 - 4 * h + cy,
+            x_bp, y0 - 4 * h)
+    end
+
+    parts[#parts + 1] = "S Q"
+    return table.concat(parts, " ")
+end
+
+--- Build PDF command for a cursive wavy line (expressive, calligraphic feel)
+-- Asymmetric Bézier curves with hand-drawn character.
+local function build_wavy_cursive(x_bp, y_start_bp, period_bp, count, amp_bp, rgb, lw_bp)
+    local parts = {}
+    parts[#parts + 1] = string.format("q %s RG %.4f w", rgb, lw_bp)
+    parts[#parts + 1] = string.format("%.4f %.4f m", x_bp, y_start_bp)
+
+    local ctrl = amp_bp * 0.55
+
+    for i = 1, count do
+        local y0 = y_start_bp - (i - 1) * period_bp
+        -- First half: bulge right with expressive control points
         parts[#parts + 1] = string.format("%.4f %.4f %.4f %.4f %.4f %.4f c",
             x_bp + ctrl, y0 - period_bp * 0.07,
             x_bp + amp_bp, y0 - period_bp * 0.25,
             x_bp + amp_bp * 0.5, y0 - period_bp * 0.5)
-        -- Second half-period: bulge to the left (-x direction)
+        -- Second half: bulge left
         parts[#parts + 1] = string.format("%.4f %.4f %.4f %.4f %.4f %.4f c",
             x_bp, y0 - period_bp * 0.75,
             x_bp - ctrl, y0 - period_bp * 0.93,
@@ -177,28 +217,17 @@ function linemark.render_line_marks(p_head, entries, ctx)
             local rgb = resolve_color(reg.color)
             local base_font_size = ctx.grid_height or 655360
 
-            -- Resolve offset (distance from character center to line)
-            local offset_sp = constants.resolve_dimen(reg.offset, base_font_size) or
-                math.floor(base_font_size * 0.6 + 0.5)
-
-            -- Resolve line width
-            local lw_sp = reg.linewidth
-            if type(lw_sp) == "table" then
-                lw_sp = constants.resolve_dimen(lw_sp, base_font_size)
-            end
-            lw_sp = lw_sp or tex.sp("0.4pt")
-            local lw_bp = lw_sp * sp_to_bp
-
-            -- Resolve amplitude for wavy lines (depends on style)
+            -- Style and amplitude fraction (shared across segments)
             local style = reg.style or "standard"
             local style_amps = amplitude_presets[style] or amplitude_presets.standard
             local amp_fraction = style_amps[reg.amplitude] or style_amps.medium
-            local amp_sp = math.floor(base_font_size * amp_fraction + 0.5)
-            local amp_bp = amp_sp * sp_to_bp
 
-            -- Gap between different groups: font_size * 3/10
-            local gap_sp = math.floor(base_font_size * 0.3 + 0.5)
-            local gap_half_bp = (gap_sp / 2) * sp_to_bp
+            -- Base linewidth in sp (absolute value, scaled per-segment)
+            local base_lw_sp = reg.linewidth
+            if type(base_lw_sp) == "table" then
+                base_lw_sp = constants.resolve_dimen(base_lw_sp, base_font_size)
+            end
+            base_lw_sp = base_lw_sp or tex.sp("0.8pt")
 
             -- Draw each segment
             for _, seg in ipairs(segments) do
@@ -206,52 +235,46 @@ function linemark.render_line_marks(p_head, entries, ctx)
                 local last = seg[#seg]
                 local col = first.col
 
-                -- Font size scaling for smaller text (jiazhu, sidenote)
-                local font_scale = 1.0
-                if first.font_size and first.font_size > 0 and base_font_size > 0 then
-                    font_scale = first.font_size / base_font_size
-                end
-                local seg_lw_bp = lw_bp
-                local seg_amp_bp = amp_bp
-                local seg_offset = offset_sp
-                local seg_gap = gap_sp
-                if font_scale < 0.9 then
-                    seg_lw_bp = lw_bp * font_scale
-                    seg_amp_bp = amp_bp * font_scale
-                    seg_offset = offset_sp * font_scale
-                    seg_gap = gap_sp * font_scale
-                end
+                -- Effective font size: use entry's font_size when available,
+                -- so all parameters automatically scale with the environment
+                -- (jiazhu ≈ half, sidenote ≈ smaller, normal text = base)
+                local efs = (first.font_size and first.font_size > 0)
+                    and first.font_size or base_font_size
+                local scale = efs / base_font_size
 
-                -- Calculate X position (left side of character in vertical typesetting)
-                -- In RTL layout, "left of text" = smaller x values (toward next column)
+                -- All em-based parameters computed from effective font size
+                local seg_offset = constants.resolve_dimen(reg.offset, efs) or
+                    math.floor(efs * 0.6 + 0.5)
+                local seg_lw_bp = base_lw_sp * scale * sp_to_bp
+                local seg_amp_bp = math.floor(efs * amp_fraction + 0.5) * sp_to_bp
+
+                -- Gap: center line on the character within the grid cell
+                -- For normal text (efs ≈ grid_height), centering is zero
+                -- For smaller text (jiazhu/sidenote), adds centering offset
+                local centering = math.max(0, ctx.grid_height - efs)
+                local padding = math.floor(efs * 0.15 + 0.5)
+                local seg_gap = centering + 2 * padding
+
+                -- Calculate X position
+                -- Line is always on the LEFT side of the character (smaller x in RTL layout)
                 local sub_col = first.sub_col or 0
                 local effective_offset = seg_offset
-                local cell_center_x
+                local char_center_x
 
                 if first.x_center_sp then
-                    -- Pre-calculated center (e.g., sidenote with non-standard positioning)
-                    cell_center_x = first.x_center_sp
-                elseif sub_col > 0 then
-                    -- Jiazhu sub-column: use half-width positioning
-                    local rtl_col = ctx.p_total_cols - 1 - col
-                    local cell_left_x = rtl_col * ctx.grid_width + (ctx.half_thickness or 0) + (ctx.shift_x or 0)
-                    local half_w = ctx.grid_width / 2
-                    if sub_col == 1 then
-                        -- Right sub-column (physically right half of cell)
-                        cell_center_x = cell_left_x + half_w + half_w / 2
-                    else
-                        -- Left sub-column (physically left half of cell)
-                        cell_center_x = cell_left_x + half_w / 2
-                    end
-                    -- Scale offset for smaller text
-                    effective_offset = seg_offset / 2
+                    -- Pre-calculated character center (jiazhu sub-column, sidenote, etc.)
+                    -- This already accounts for textflow alignment (outward/inward/left/right)
+                    -- Reduce offset in tight environments (jiazhu/sidenote have smaller margins)
+                    char_center_x = first.x_center_sp
+                    effective_offset = math.floor(seg_offset * 0.8 + 0.5)
                 else
+                    -- Normal full-width cell: center of cell
                     local rtl_col = ctx.p_total_cols - 1 - col
                     local cell_left_x = rtl_col * ctx.grid_width + (ctx.half_thickness or 0) + (ctx.shift_x or 0)
-                    cell_center_x = cell_left_x + ctx.grid_width / 2
+                    char_center_x = cell_left_x + ctx.grid_width / 2
                 end
-                -- Line is at: cell center - offset (to the left of text in physical coordinates)
-                local line_x_sp = cell_center_x - effective_offset
+                -- Line is at: character center - offset (to the left in physical coordinates)
+                local line_x_sp = char_center_x - effective_offset
                 local line_x_bp = line_x_sp * sp_to_bp
 
                 -- Calculate Y range
@@ -260,17 +283,21 @@ function linemark.render_line_marks(p_head, entries, ctx)
                 -- Bottom of last character cell
                 local y_bot_sp = -(last.row + 1) * ctx.grid_height - (ctx.shift_y or 0)
 
-                -- Apply gap (shrink from edges)
-                local y_start_bp = (y_top_sp + seg_gap / 2) * sp_to_bp
-                local y_end_bp = (y_bot_sp - seg_gap / 2) * sp_to_bp
+                -- Apply gap (shrink inward from edges, centered on character)
+                -- In PDF coords: Y+ is up, y_top > y_bot
+                -- Shrink top down: y_top - gap/2; Shrink bottom up: y_bot + gap/2
+                local y_start_bp = (y_top_sp - seg_gap / 2) * sp_to_bp
+                local y_end_bp = (y_bot_sp + seg_gap / 2) * sp_to_bp
 
                 local pdf_cmd
                 if reg.type == "wavy" then
-                    local char_height_bp = ctx.grid_height * sp_to_bp
+                    -- Wave must fit exactly within y_start..y_end (same range as straight line)
+                    local total_length_bp = y_start_bp - y_end_bp
                     local ppc = periods_per_char[style] or 3
-                    local period_bp = char_height_bp / ppc
                     local wave_count = #seg * ppc
-                    pdf_cmd = build_wavy_line(line_x_bp, y_start_bp, period_bp, wave_count, seg_amp_bp, rgb, seg_lw_bp)
+                    local period_bp = total_length_bp / wave_count
+                    local build_wave = style == "cursive" and build_wavy_cursive or build_wavy_standard
+                    pdf_cmd = build_wave(line_x_bp, y_start_bp, period_bp, wave_count, seg_amp_bp, rgb, seg_lw_bp)
                 else
                     -- straight line
                     pdf_cmd = build_straight_line(line_x_bp, y_start_bp, y_end_bp, rgb, seg_lw_bp)
@@ -280,8 +307,8 @@ function linemark.render_line_marks(p_head, entries, ctx)
                 local lit = utils.create_pdf_literal(pdf_cmd)
                 p_head = D.insert_before(p_head, p_head, lit)
 
-                dbg.log(string.format("gid=%d type=%s col=%d rows=%.1f-%.1f sub_col=%s x=%.2fbp y=%.2f..%.2fbp",
-                    gid, reg.type, col, first.row, last.row, tostring(sub_col), line_x_bp, y_start_bp, y_end_bp))
+                dbg.log(string.format("gid=%d type=%s col=%d rows=%.1f-%.1f sub_col=%s efs=%d x=%.2fbp y=%.2f..%.2fbp",
+                    gid, reg.type, col, first.row, last.row, tostring(sub_col), efs, line_x_bp, y_start_bp, y_end_bp))
             end
         end
     end

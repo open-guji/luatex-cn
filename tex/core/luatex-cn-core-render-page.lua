@@ -399,13 +399,21 @@ local function process_page_nodes(p_head, layout_map, params, ctx)
                             end
                             -- Collect line mark entries for batch rendering
                             if pos.line_mark_id then
-                                ctx.line_mark_entries[#ctx.line_mark_entries + 1] = {
+                                local lm_entry = {
                                     group_id = pos.line_mark_id,
                                     col = pos.col,
                                     row = pos.row,
                                     font_size = pos.font_size,
                                     sub_col = pos.sub_col,
                                 }
+                                -- For sub-column chars, capture actual X center from rendered position
+                                -- so linemark doesn't need to recalculate textflow alignment
+                                if pos.sub_col and pos.sub_col > 0 then
+                                    local gw = D.getfield(curr, "width") or 0
+                                    local gx = D.getfield(curr, "xoffset") or 0
+                                    lm_entry.x_center_sp = gx + gw / 2
+                                end
+                                ctx.line_mark_entries[#ctx.line_mark_entries + 1] = lm_entry
                             end
                         end
                     else

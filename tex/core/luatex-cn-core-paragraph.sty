@@ -183,21 +183,63 @@
   }
 
 % ============================================================================
-% 平抬 Command
+% 抬头命令体系 (Taitou Command System)
 % ============================================================================
-% \平抬 - Break line and set indent to 0 (flush left)
-% Used in classical Chinese texts for honorific or emphatic content
-% Works in both Paragraph and TextFlow (夹注) environments
+% 古籍行文中表示尊敬的排版规范，将文字放到列的顶端甚至伸入天头区域。
+%
+% \抬头[N]  - 另起一列，比正常顶端高出N格（N=0为平抬，N>0伸入天头）
+% \平抬     - = \抬头[0]，顶格书写（向后兼容）
+% \单抬     - = \抬头[1]，高出1格
+% \双抬     - = \抬头[2]，高出2格
+% \三抬     - = \抬头[3]，高出3格
 
-\NewDocumentCommand{\平抬}{}
+\NewDocumentCommand{\抬头}{ O{0} }
   {
     \\
-    % Use INDENT_FORCE_ZERO constant to force 0 indent, bypassing style stack
-    % This is critical for TextFlow/夹注 where style stack may override
-    \lua_now:n {
-      local ~ constants = require('core.luatex-cn-constants')
-      tex.setattribute(constants.ATTR_INDENT, ~ constants.INDENT_FORCE_ZERO)
-      tex.setattribute(constants.ATTR_FIRST_INDENT, ~ constants.INDENT_FORCE_ZERO)
+    \lua_now:e {
+      local~constants = require('core.luatex-cn-constants')
+      local~forced_val = constants.encode_forced_indent(-\int_eval:n{#1})
+      tex.setattribute(constants.ATTR_INDENT,~forced_val)
+      tex.setattribute(constants.ATTR_FIRST_INDENT,~forced_val)
+    }
+  }
+
+\NewDocumentCommand{\平抬}{}{ \抬头[0] }
+\NewDocumentCommand{\单抬}{}{ \抬头[1] }
+\NewDocumentCommand{\双抬}{}{ \抬头[2] }
+\NewDocumentCommand{\三抬}{}{ \抬头[3] }
+
+% ============================================================================
+% 挪抬/空抬 Command (不换列，插入空格)
+% ============================================================================
+% \挪抬[N] - 在当前位置前插入N格空白（默认1格），不换列
+% \空抬    - = \挪抬[1]
+
+\NewDocumentCommand{\挪抬}{ O{1} }
+  {
+    \Space[#1]
+  }
+
+\NewDocumentCommand{\空抬}{}{ \挪抬[1] }
+
+% ============================================================================
+% 相对抬头 Command (相对当前缩进上移)
+% ============================================================================
+% \相对抬头[N] - 相对当前缩进位置上移N格（默认1格）
+% 例：当前 indent=2 时，\相对抬头[1] → 目标 indent=1
+%     当前 indent=2 时，\相对抬头[3] → 目标 indent=-1（伸入天头1格）
+
+\NewDocumentCommand{\相对抬头}{ O{1} }
+  {
+    \\
+    \lua_now:e {
+      local~constants = require('core.luatex-cn-constants')
+      local~sr = require('util.luatex-cn-style-registry')
+      local~current_indent = sr.get_indent(sr.current_id())~or~0
+      local~target = current_indent - \int_eval:n{#1}
+      local~forced_val = constants.encode_forced_indent(target)
+      tex.setattribute(constants.ATTR_INDENT,~forced_val)
+      tex.setattribute(constants.ATTR_FIRST_INDENT,~forced_val)
     }
   }
 

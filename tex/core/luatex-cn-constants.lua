@@ -278,7 +278,7 @@ function constants.is_forced_indent(attr_value)
         return true, 0
     end
 
-    if attr_value <= constants.INDENT_FORCE_BASE then
+    if attr_value < constants.INDENT_FORCE_ZERO then
         local value = constants.INDENT_FORCE_BASE - attr_value
         return true, value
     end

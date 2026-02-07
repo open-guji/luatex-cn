@@ -241,7 +241,15 @@ end
 
 
 local function apply_indentation(ctx, indent)
-    if not indent or indent <= 0 then return end
+    if not indent or indent == 0 then return end
+    if indent < 0 then
+        -- 负缩进（抬头）：允许 cur_row 为负值，只在列起始时应用
+        if ctx.cur_row <= 0 then
+            ctx.cur_row = indent
+        end
+        return
+    end
+    -- 正缩进：保持原有逻辑
     if ctx.cur_row < indent then ctx.cur_row = indent end
     if indent > (ctx.cur_column_indent or 0) then ctx.cur_column_indent = indent end
     if ctx.cur_row < (ctx.cur_column_indent or 0) then ctx.cur_row = ctx.cur_column_indent end

@@ -531,6 +531,12 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
                 map_entry.font = font
             end
 
+            -- Check for line mark attribute (专名号/书名号)
+            local lm_id = D.get_attribute(entry.node, constants.ATTR_LINE_MARK_ID)
+            if lm_id and lm_id > 0 then
+                map_entry.line_mark_id = lm_id
+            end
+
             layout_map[entry.node] = map_entry
         end
         col_buffer = {}

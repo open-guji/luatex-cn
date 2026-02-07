@@ -58,6 +58,7 @@ constants.ATTR_DECORATE_ID = 202610
 constants.ATTR_DECORATE_VISUAL_CENTER = 202611
 constants.ATTR_DECORATE_FONT = 202612
 constants.ATTR_CHAPTER_REG_ID = 202613
+constants.ATTR_LINE_MARK_ID = luatexbase.attributes.cnverticallinemark or luatexbase.new_attribute("cnverticallinemark")
 
 -- Style Registry Attribute (for cross-page style preservation - Phase 2)
 constants.ATTR_STYLE_REG_ID = luatexbase.attributes.cnverticalstyle or luatexbase.new_attribute("cnverticalstyle")
@@ -212,6 +213,40 @@ local function register_decorate(char_str, xoff_str, yoff_str, size_str, color_s
 end
 
 constants.register_decorate = register_decorate
+
+-- ============================================================================
+-- Line Mark Registration (for 专名号/书名号 - PDF-drawn lines)
+-- ============================================================================
+_G.line_mark_registry = _G.line_mark_registry or {}
+_G.line_mark_group_counter = _G.line_mark_group_counter or 0
+
+--- Register a line mark group and return group_id
+-- @param type_str (string) "straight" or "wavy"
+-- @param color_str (string) Color name or RGB (e.g., "red", "0 0 0")
+-- @param offset_str (string) Offset from text center (e.g., "0.6em")
+-- @param amplitude_str (string) Wavy amplitude: "small", "medium", "large"
+-- @param linewidth_str (string) Line width (e.g., "0.4pt")
+-- @param style_str (string) Wavy style: "standard" (tight, like U+FE34) or "cursive" (wide, expressive)
+-- @return (number) group_id
+local function register_line_mark(type_str, color_str, offset_str, amplitude_str, linewidth_str, style_str)
+    _G.line_mark_group_counter = _G.line_mark_group_counter + 1
+    local gid = _G.line_mark_group_counter
+
+    _G.line_mark_registry[gid] = {
+        type = type_str or "straight",
+        color = color_str or "black",
+        offset = to_dimen(offset_str) or { value = 0.6, unit = "em" },
+        amplitude = amplitude_str or "medium",
+        linewidth = to_dimen(linewidth_str) or tex.sp("0.4pt"),
+        style = style_str or "standard",
+    }
+
+    -- Pass group_id back to TeX via macro
+    token.set_macro("g__luatexcn_line_mark_gid", tostring(gid))
+    return gid
+end
+
+constants.register_line_mark = register_line_mark
 
 -- ============================================================================
 -- Indent Constants

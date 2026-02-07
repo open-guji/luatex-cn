@@ -432,6 +432,12 @@ function textflow.place_nodes(ctx, start_node, layout_map, params, callbacks)
                 entry.textflow_align = textflow_align_str
             end
 
+            -- Check for line mark attribute (专名号/书名号)
+            local lm_id = D.get_attribute(node_info.node, constants.ATTR_LINE_MARK_ID)
+            if lm_id and lm_id > 0 then
+                entry.line_mark_id = lm_id
+            end
+
             layout_map[node_info.node] = entry
         end
 

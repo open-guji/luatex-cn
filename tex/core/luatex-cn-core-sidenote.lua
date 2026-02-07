@@ -94,6 +94,7 @@ function sidenote.render(head, layout_map, params, context, engine_ctx, page_idx
     -- Build sidenote sublist first (using original reverse iteration to maintain correct order)
     local sn_head = nil
     local sidenote_color = nil  -- Track color from first sidenote node's attribute
+    local linemark_entries = {}  -- Collect linemark entries for batch rendering
 
     for i = #sidenote_for_page, 1, -1 do
         local item = sidenote_for_page[i]
@@ -142,6 +143,18 @@ function sidenote.render(head, layout_map, params, context, engine_ctx, page_idx
             D.setfield(curr, "xoffset", final_x)
             D.setfield(curr, "yoffset", final_y)
 
+            -- Collect linemark entries (专名号/书名号)
+            local lm_id = D.get_attribute(curr, constants.ATTR_LINE_MARK_ID)
+            if lm_id and lm_id > 0 then
+                linemark_entries[#linemark_entries + 1] = {
+                    group_id = lm_id,
+                    col = item.col,
+                    row = item.row,
+                    x_center_sp = boundary_x,
+                    font_size = effective_grid_height,
+                }
+            end
+
             local k = D.new(constants.KERN)
             D.setfield(k, "kern", -w)
             D.insert_after(sn_head, curr, k)
@@ -162,6 +175,21 @@ function sidenote.render(head, layout_map, params, context, engine_ctx, page_idx
         if dbg.is_enabled() then
             sn_head = render_page._internal.handle_debug_drawing(curr, sn_head, pos, engine_ctx)
         end
+    end
+
+    -- Render linemark lines for sidenote characters (专名号/书名号)
+    if #linemark_entries > 0 and sn_head then
+        local linemark_mod = package.loaded['decorate.luatex-cn-linemark'] or
+            require('decorate.luatex-cn-linemark')
+        local lm_ctx = {
+            grid_width = engine_ctx.g_width,
+            grid_height = engine_ctx.g_height,
+            p_total_cols = p_total_cols,
+            shift_x = engine_ctx.shift_x,
+            shift_y = engine_ctx.shift_y,
+            half_thickness = engine_ctx.half_thickness,
+        }
+        sn_head = linemark_mod.render_line_marks(sn_head, linemark_entries, lm_ctx)
     end
 
     -- Append sidenote sublist to end of main list (so sidenotes render on top of borders)

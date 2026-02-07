@@ -138,6 +138,85 @@
         \TextFlow[only-column=#1]{#2}
       }
 
+    % TextFlow Environment - Allows command expansion (e.g., \平抬)
+    % Same functionality as \TextFlow command but content is not captured
+    \NewDocumentEnvironment{TextFlowEnv}{ O{} }
+      {
+        \group_begin:
+
+        % Initialize temp var for mode (0 = balanced/default)
+        \tl_set:Nn \l_tmpa_tl {0}
+        % Initialize local override variables
+        \tl_set:Nn \l__luatexcn_textflow_local_size_tl {}
+        \tl_set:Nn \l__luatexcn_textflow_local_font_tl {}
+        \tl_set:Nn \l__luatexcn_textflow_local_color_tl {}
+        \tl_set:Nn \l__luatexcn_textflow_local_align_tl {}
+
+        \keys_set:nn { luatexcn / textflow } { #1 }
+
+        % Capture attribute values using edef BEFORE selectfont
+        \edef\savedblockid{\the\cnverticalblockid}
+
+        % 1. Determine Font Size (Local > Core Default > Default 0.7)
+        \tl_if_empty:NTF \l__luatexcn_textflow_local_size_tl
+          {
+            \tl_if_empty:NTF \l__luatexcn_textflow_default_size_tl
+              { \tl_set:Nx \l_tmpc_tl { \fp_eval:n { 0.7 * \f@size } pt } }
+              { \tl_set_eq:NN \l_tmpc_tl \l__luatexcn_textflow_default_size_tl }
+          }
+          { \tl_set_eq:NN \l_tmpc_tl \l__luatexcn_textflow_local_size_tl }
+
+        % 2. Determine Font (Local > Core Default)
+        \tl_if_empty:NTF \l__luatexcn_textflow_local_font_tl
+          { \tl_set_eq:NN \l_tmpb_tl \l__luatexcn_textflow_default_font_tl }
+          { \tl_set_eq:NN \l_tmpb_tl \l__luatexcn_textflow_local_font_tl }
+
+        % 3. Determine Color (Local > Core Default)
+        \tl_if_empty:NTF \l__luatexcn_textflow_local_color_tl
+          { \tl_set_eq:NN \l_tmpd_tl \l__luatexcn_textflow_default_color_tl }
+          { \tl_set_eq:NN \l_tmpd_tl \l__luatexcn_textflow_local_color_tl }
+
+        % 4. Determine Align (Local > Core Default)
+        \tl_if_empty:NTF \l__luatexcn_textflow_local_align_tl
+          { \tl_set_eq:NN \l__luatexcn_textflow_resolved_align_tl \l__luatexcn_textflow_default_align_tl }
+          { \tl_set_eq:NN \l__luatexcn_textflow_resolved_align_tl \l__luatexcn_textflow_local_align_tl }
+
+        % Apply Font and Size
+        \tl_if_empty:NTF \l_tmpb_tl
+          { \fontsize{\l_tmpc_tl}{\l_tmpc_tl}\selectfont }
+          { \setmainfont{\l_tmpb_tl}[RawFeature={+vert,+vrt2}] \fontsize{\l_tmpc_tl}{\l_tmpc_tl}\selectfont }
+
+        % Push style to stack and get style ID
+        \edef\textflow_style_id{\lua_now:e {
+          local ~ textflow = require('core.luatex-cn-textflow')
+          local ~ style_id = textflow.push_style(
+            \tl_if_empty:NTF \l_tmpd_tl { nil } { [=[\luaescapestring{\tl_use:N \l_tmpd_tl}]=] },
+            [=[\luaescapestring{\tl_use:N \l_tmpc_tl}]=],
+            \tl_if_empty:NTF \l_tmpb_tl { nil } { [=[\luaescapestring{\tl_use:N \l_tmpb_tl}]=] },
+            \tl_if_empty:NTF \l__luatexcn_textflow_resolved_align_tl { nil } { [=[\luaescapestring{\tl_use:N \l__luatexcn_textflow_resolved_align_tl}]=] },
+            \bool_if:NTF \l__luatexcn_textflow_auto_balance_bool { true } { false }
+          )
+          tex.print(tostring(style_id))
+        }}
+
+        % Set textflow attributes
+        \setluatexattribute\cnverticaljiazhu{1}
+        \setluatexattribute\cnverticaljiazhumode{\l_tmpa_tl}
+        \setluatexattribute\cnverticalstyle{\textflow_style_id}
+
+        % Restore block ID
+        \cnverticalblockid = \savedblockid\relax
+      }
+      {
+        % Pop style from stack
+        \lua_now:n {
+          local ~ textflow = require('core.luatex-cn-textflow')
+          textflow.pop_style()
+        }
+
+        \group_end:
+      }
+
 \makeatother
 
 \ExplSyntaxOff%

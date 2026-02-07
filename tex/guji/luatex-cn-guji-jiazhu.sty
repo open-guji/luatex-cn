@@ -57,10 +57,23 @@
     \TextFlow[#1]{#2}
   }
 
+% Jiazhu Environment - Allows command expansion (e.g., \平抬)
+% Same as \JiaZhu but uses environment form to allow content expansion
+\NewDocumentEnvironment{JiaZhuEnv}{ O{} }
+  {
+    \TextFlowEnv[#1]
+  }
+  {
+    \endTextFlowEnv
+  }
+
 \ExplSyntaxOff%
 
 % Command Aliases for CJK
 \NewCommandCopy{\夹注}{\JiaZhu}
 \NewCommandCopy{\单行夹注}{\DanHangJiaZhu}
+
+% Environment Aliases for CJK
+\NewEnvironmentCopy{夹注环境}{JiaZhuEnv}
 
 \endinput%

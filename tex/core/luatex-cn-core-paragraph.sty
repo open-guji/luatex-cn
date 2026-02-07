@@ -147,6 +147,22 @@
       }
   }
 
+% ============================================================================
+% 平抬 Command
+% ============================================================================
+% \平抬 - Break line and set indent to 0 (flush left)
+% Used in classical Chinese texts for honorific or emphatic content
+% Works in both Paragraph and TextFlow (夹注) environments
+
+\NewDocumentCommand{\平抬}{}
+  {
+    \\
+    % FORCE_ZERO_INDENT = -2 (forces 0 indent, bypassing style stack)
+    % This is critical for TextFlow/夹注 where style stack may override
+    \setluatexattribute\cnverticalindent{-2}
+    \setluatexattribute\cnverticalfirstindent{-2}
+  }
+
 \ExplSyntaxOff
 
 % Support CJK environment alias

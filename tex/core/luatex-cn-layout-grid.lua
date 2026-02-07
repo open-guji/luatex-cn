@@ -243,9 +243,12 @@ end
 local function apply_indentation(ctx, indent)
     if not indent or indent == 0 then return end
     if indent < 0 then
-        -- 负缩进（抬头）：允许 cur_row 为负值，只在列起始时应用
-        if ctx.cur_row <= 0 then
+        -- 负缩进（抬头）：列起始时设置 cur_row 为负值
+        -- 用 cur_column_indent 追踪是否已应用，防止每个字符都重置
+        -- （因为 -1+1=0，若用 cur_row<=0 判断会反复触发）
+        if (ctx.cur_column_indent or 0) == 0 then
             ctx.cur_row = indent
+            ctx.cur_column_indent = indent
         end
         return
     end

@@ -223,20 +223,16 @@ local function build_sub_params(params, col_aligns)
     }
 end
 
--- Sentinel value for "force indent to 0, don't check style stack"
--- This value bypasses the style stack fallback in layout-grid.lua
-local FORCE_ZERO_INDENT = -2
-
 --- Recursively set indent attributes to force zero on all nodes in a list
 -- This ensures textbox content does not inherit paragraph indent (fix #37)
--- Uses special sentinel value -2 to mean "force 0, bypass style stack"
+-- Uses constants.INDENT_FORCE_ZERO to force 0, bypassing style stack
 -- @param list (node) Node list head
 local function clear_indent_recursive(list)
     if not list then return end
     for n in node.traverse(list) do
-        -- Set indent to sentinel value that means "force 0"
-        node.set_attribute(n, constants.ATTR_INDENT, FORCE_ZERO_INDENT)
-        node.set_attribute(n, constants.ATTR_FIRST_INDENT, FORCE_ZERO_INDENT)
+        -- Set indent to force zero (uses constant from core.luatex-cn-constants)
+        node.set_attribute(n, constants.ATTR_INDENT, constants.INDENT_FORCE_ZERO)
+        node.set_attribute(n, constants.ATTR_FIRST_INDENT, constants.INDENT_FORCE_ZERO)
         -- Recursively process nested lists (hlist/vlist)
         local id = n.id
         if id == node.id("hlist") or id == node.id("vlist") then

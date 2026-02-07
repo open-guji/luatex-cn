@@ -213,5 +213,54 @@ end
 
 constants.register_decorate = register_decorate
 
+-- ============================================================================
+-- Indent Constants
+-- ============================================================================
+-- Special values for indent attributes to control indent behavior
+
+--- Force indent to be exactly 0, bypassing style stack inheritance
+constants.INDENT_FORCE_ZERO = -2
+
+--- Inherit indent from style stack (default when attribute is 0 or unset)
+constants.INDENT_INHERIT = 0
+
+--- Base value for encoding forced indent values
+--- Forced indent value N is encoded as: INDENT_FORCE_BASE - N
+--- Example: Force indent=3 => attribute = -1000 - 3 = -1003
+--- This allows forcing any positive indent value, not just 0
+constants.INDENT_FORCE_BASE = -1000
+
+--- Check if an indent attribute value represents a forced indent
+--- @param attr_value number The indent attribute value
+--- @return boolean is_forced Whether this is a forced indent
+--- @return number|nil forced_value The forced indent value if forced, nil otherwise
+function constants.is_forced_indent(attr_value)
+    if not attr_value then
+        return false, nil
+    end
+
+    if attr_value == constants.INDENT_FORCE_ZERO then
+        return true, 0
+    end
+
+    if attr_value <= constants.INDENT_FORCE_BASE then
+        local value = constants.INDENT_FORCE_BASE - attr_value
+        return true, value
+    end
+
+    return false, nil
+end
+
+--- Encode a forced indent value to an attribute value
+--- @param indent_value number The indent value to force
+--- @return number The encoded attribute value
+function constants.encode_forced_indent(indent_value)
+    if indent_value == 0 then
+        return constants.INDENT_FORCE_ZERO
+    else
+        return constants.INDENT_FORCE_BASE - indent_value
+    end
+end
+
 package.loaded['core.luatex-cn-constants'] = constants
 return constants

@@ -93,23 +93,46 @@
 % ============================================================================
 % Temporary Indent Command
 % ============================================================================
-% \SetIndent{<value>} - Temporarily set indent for current line
-% The indent will be automatically restored after \\ or at column end
+% \SetIndent{<value>} - Forcefully set indent for current line
+%
+% IMPORTANT (Breaking Change as of 2026-02-06 Refactor):
+% - \SetIndent is now FULLY FORCEFUL and bypasses style stack inheritance
+% - \SetIndent{0} will force indent to 0, not inherit from parent
+% - \SetIndent{3} will force indent to 3, regardless of context
+% - The indent is automatically restored after \\ or at line end
+%
+% Examples:
+%   \begin{段落}[indent=2]
+%     \SetIndent{1}第一列缩进一格\\     % Forces indent to 1
+%     第二列缩进两格\\                   % Restores to 2 (段落 base)
+%   \end{段落}
+%
+%   \夹注{内容 \SetIndent{0} 顶格}      % Forces indent to 0 in 夹注
+%
+% Implementation: Uses forced indent encoding (constants.encode_forced_indent)
+% to set a special attribute value that bypasses style stack lookup.
+% ============================================================================
 
 \bool_new:N \l__luatexcn_setindent_active_bool
 
 \NewDocumentCommand{\SetIndent}{ m }
   {
-    % Push temporary indent to style stack
+    % Push temporary indent to style stack for restoration on \\
     \edef\temp_style_id{\lua_now:e {
       local ~ sr = require('util.luatex-cn-style-registry')
       tex.print(sr.push_indent(#1, ~ -1, ~ true)) ~ -- ~ third ~ arg ~ marks ~ as ~ temporary
     }}
     \setluatexattribute\cnverticalstyle{\temp_style_id}
 
-    % Update indent attributes
-    \setluatexattribute\cnverticalindent{#1}
-    \setluatexattribute\cnverticalfirstindent{#1}
+    % IMPORTANT: Use forced indent encoding to bypass style stack inheritance
+    % This makes \SetIndent fully forceful - it sets the exact value regardless
+    % of style stack, fixing the issue where \SetIndent{0} was ignored
+    \lua_now:n {
+      local ~ constants = require('core.luatex-cn-constants')
+      local ~ forced_value = constants.encode_forced_indent(#1)
+      tex.setattribute(constants.ATTR_INDENT, ~ forced_value)
+      tex.setattribute(constants.ATTR_FIRST_INDENT, ~ forced_value)
+    }
 
     % Mark that SetIndent is active (for \\ to restore)
     \bool_set_true:N \l__luatexcn_setindent_active_bool
@@ -129,19 +152,21 @@
         }}
         \setluatexattribute\cnverticalstyle{\parent_style_id}
 
-        % Restore indent attributes from parent style
-        \edef\parent_indent{\lua_now:n {
+        % Restore indent attributes from parent style (using forced encoding)
+        % This ensures restored indent is also forceful, not overridden by outer stack
+        \lua_now:n {
           local ~ sr = require('util.luatex-cn-style-registry')
-          local ~ indent = sr.get_indent(sr.current_id())
-          tex.print(indent ~ or ~ 0)
-        }}
-        \edef\parent_first_indent{\lua_now:n {
-          local ~ sr = require('util.luatex-cn-style-registry')
-          local ~ first_indent = sr.get_first_indent(sr.current_id())
-          tex.print(first_indent ~ or ~ -1)
-        }}
-        \setluatexattribute\cnverticalindent{\parent_indent}
-        \setluatexattribute\cnverticalfirstindent{\parent_first_indent}
+          local ~ constants = require('core.luatex-cn-constants')
+          local ~ indent = sr.get_indent(sr.current_id()) ~ or ~ 0
+          local ~ first_indent = sr.get_first_indent(sr.current_id()) ~ or ~ -1
+
+          -- Use forced encoding for restored values too
+          local ~ forced_indent = constants.encode_forced_indent(indent)
+          local ~ forced_first = first_indent == -1 ~ and ~ forced_indent ~ or ~ constants.encode_forced_indent(first_indent)
+
+          tex.setattribute(constants.ATTR_INDENT, ~ forced_indent)
+          tex.setattribute(constants.ATTR_FIRST_INDENT, ~ forced_first)
+        }
 
         \bool_set_false:N \l__luatexcn_setindent_active_bool
       }
@@ -157,10 +182,13 @@
 \NewDocumentCommand{\平抬}{}
   {
     \\
-    % FORCE_ZERO_INDENT = -2 (forces 0 indent, bypassing style stack)
+    % Use INDENT_FORCE_ZERO constant to force 0 indent, bypassing style stack
     % This is critical for TextFlow/夹注 where style stack may override
-    \setluatexattribute\cnverticalindent{-2}
-    \setluatexattribute\cnverticalfirstindent{-2}
+    \lua_now:n {
+      local ~ constants = require('core.luatex-cn-constants')
+      tex.setattribute(constants.ATTR_INDENT, ~ constants.INDENT_FORCE_ZERO)
+      tex.setattribute(constants.ATTR_FIRST_INDENT, ~ constants.INDENT_FORCE_ZERO)
+    }
   }
 
 \ExplSyntaxOff

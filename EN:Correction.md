@@ -60,28 +60,13 @@ Preset commands for marking text according to classical or modern standards.
 
 ---
 
+---
+
 ## Elevation (Taitou / 抬头) <sup>v0.2.6+</sup>
 
-`luatex-cn` provides full support for "Taitou" (Elevation/Rising), a traditional formatting used in ancient Chinese texts to show respect by starting a new line and raising the text height.
+`luatex-cn` provides full support for "Taitou" (Elevation/Rising). See: **[[Elevation | EN:Taitou]]**.
 
-### Usage
-
-| Command | Effect | Description |
-|---------|--------|-------------|
-| `\抬头[N]` | New line, raised by N cells | Core command, N can be pos/neg |
-| `\平抬` | New line, top-aligned | Equivalent to `\抬头[0]` |
-| `\单抬` | New line, 1 cell higher | Equivalent to `\抬头[1]` |
-| `\双抬` | New line, 2 cells higher | Equivalent to `\抬头[2]` |
-| `\三抬` | New line, 3 cells higher | Equivalent to `\抬头[3]` |
-| `\相对抬头[N]` | Raise by N cells relative to indent | Used in indented contexts like Jiazhu |
-
-### Automatic Border Wrapping
-Taitou is deeply integrated with the Banxin (page frame) system. When text "breaks out" of the normal layout into the margin, `luatex-cn` automatically draws stepped border lines to ensure the silk frames correctly wrap the elevated text.
-
-### Example
-```latex
-The Great\单抬 Sage Confucius
-```
+---
 
 
 ### 2. Emphasis Marks

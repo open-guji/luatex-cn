@@ -12,6 +12,7 @@
     * [[字体设置 | Fonts]]
     * [[文本框 | Textbox]]
     * [[改字与装饰 | Correction]]
+    * [[抬头 | Taitou]]
 * [[调试模式 | Debug]]
 * [[更新日志 | Changelog]]
 ---
@@ -35,6 +36,7 @@
     * [[Fonts | EN:Fonts]]
     * [[Textbox | EN:Textbox]]
     * [[Correction & Decoration | EN:Correction]]
+    * [[Elevation | EN:Taitou]]
 * [[Debug Mode | EN:Debug]]
 * [[Changelog | EN:Changelog]]
 

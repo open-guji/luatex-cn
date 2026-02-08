@@ -255,7 +255,38 @@ local function handle_glyph_node(curr, p_head, pos, params, ctx)
     -- Verbose glyph logging removed for performance and clarity
     -- debug.log("render", string.format("  [render] GLYPH char=%d [c:%.0f, r:%.2f] ...", ...))
 
-    if v_scale == 1.0 then
+    -- Check if glyph needs vertical rotation (font lacks vertical form)
+    local needs_rotate = D.get_attribute(curr, constants.ATTR_VERT_ROTATE) == 1
+
+    if needs_rotate then
+        -- Rotate 90° CW and translate glyph to its grid position.
+        -- The glyph is at text-space origin (xoffset=yoffset=0).
+        -- Mode 0 pdf_literal wraps with T(node)/T(-node), so our matrix
+        -- operates in node-relative space.
+        -- We need matrix M = [0 -1 1 0 e f] such that glyph center
+        -- (gc_x, gc_y) maps to intended center (fx+gc_x, fy+gc_y):
+        --   e = fx + gc_x - gc_y
+        --   f = fy + gc_x + gc_y
+        local sp2bp = utils.sp_to_bp
+        local fx = final_x * sp2bp
+        local fy = final_y * sp2bp
+        local gc_x = (w / 2) * sp2bp           -- glyph center x (from reference point)
+        local gc_y = ((h - d) / 2) * sp2bp     -- glyph center y (from reference point)
+
+        D.setfield(curr, "xoffset", 0)
+        D.setfield(curr, "yoffset", 0)
+
+        local e = fx + gc_x - gc_y
+        local f = fy + gc_x + gc_y
+        local literal_str = string.format(
+            "q 0 -1 1 0 %.4f %.4f cm", e, f
+        )
+        local n_start = utils.create_pdf_literal(literal_str)
+        local n_end = utils.create_pdf_literal(utils.create_graphics_state_end())
+
+        p_head = D.insert_before(p_head, curr, n_start)
+        D.insert_after(p_head, curr, n_end)
+    elseif v_scale == 1.0 then
         D.setfield(curr, "xoffset", final_x)
         D.setfield(curr, "yoffset", final_y)
     else
@@ -284,12 +315,12 @@ local function handle_glyph_node(curr, p_head, pos, params, ctx)
     local font_color = pos.font_color
     if font_color and font_color ~= "" then
         local rgb_str = utils.normalize_rgb(font_color)
-        local color_cmd = utils.create_color_literal(rgb_str, false)  -- false = fill color (rg)
+        local color_cmd = utils.create_color_literal(rgb_str, false) -- false = fill color (rg)
         local color_push = utils.create_pdf_literal("q " .. color_cmd)
         local color_pop = utils.create_pdf_literal("Q")
 
         p_head = D.insert_before(p_head, curr, color_push)
-        D.insert_after(p_head, k, color_pop)  -- Insert after the kern
+        D.insert_after(p_head, k, color_pop) -- Insert after the kern
     end
 
     return p_head

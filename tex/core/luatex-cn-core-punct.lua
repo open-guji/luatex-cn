@@ -102,12 +102,40 @@ local CL_NOBREAK = {
     [0x2026] = true, -- … horizontal ellipsis
 }
 
--- Vertical quote replacement map (horizontal → vertical)
-local VERT_QUOTE_MAP = {
-    [0x201C] = 0xFE43, -- " → ﹃ (left double → vertical left white corner)
-    [0x201D] = 0xFE44, -- " → ﹄ (right double → vertical right white corner)
-    [0x2018] = 0xFE41, -- ' → ﹁ (left single → vertical left corner)
-    [0x2019] = 0xFE42, -- ' → ﹂ (right single → vertical right corner)
+-- Vertical form replacement map (horizontal → vertical presentation forms)
+-- Replaces CJK brackets/parentheses with their Unicode Vertical Presentation
+-- Forms (U+FE30–U+FE4F) for correct display in vertical text.
+-- Also replaces curly quotes with corner bracket vertical forms.
+local VERT_FORM_MAP = {
+    -- CJK corner brackets → vertical forms
+    [0x300C] = 0xFE41, -- 「 → ﹁ (left corner bracket)
+    [0x300D] = 0xFE42, -- 」 → ﹂ (right corner bracket)
+    [0x300E] = 0xFE43, -- 『 → ﹃ (left white corner bracket)
+    [0x300F] = 0xFE44, -- 』 → ﹄ (right white corner bracket)
+    -- Fullwidth parentheses → vertical forms
+    [0xFF08] = 0xFE35, -- （ → ︵ (left parenthesis)
+    [0xFF09] = 0xFE36, -- ） → ︶ (right parenthesis)
+    -- Angle brackets → vertical forms
+    [0x3008] = 0xFE3F, -- 〈 → ︿ (left angle bracket)
+    [0x3009] = 0xFE40, -- 〉 → ﹀ (right angle bracket)
+    -- Double angle brackets → vertical forms
+    [0x300A] = 0xFE3D, -- 《 → ︽ (left double angle bracket)
+    [0x300B] = 0xFE3E, -- 》 → ︾ (right double angle bracket)
+    -- Lenticular brackets → vertical forms
+    [0x3010] = 0xFE3B, -- 【 → ︻ (left black lenticular bracket)
+    [0x3011] = 0xFE3C, -- 】 → ︼ (right black lenticular bracket)
+    -- Tortoise shell brackets → vertical forms
+    [0x3014] = 0xFE39, -- 〔 → ︹ (left tortoise shell bracket)
+    [0x3015] = 0xFE3A, -- 〕 → ︺ (right tortoise shell bracket)
+    -- Em dash and ellipsis → vertical forms
+    [0x2014] = 0xFE31, -- — → ︱ (em dash → vertical em dash)
+    [0x2026] = 0xFE19, -- … → ︙ (horizontal ellipsis → vertical ellipsis)
+    -- Curly quotes → corner bracket vertical forms (mainland convention)
+    -- Mainland: "" = first level → 「」, '' = second level → 『』
+    [0x201C] = 0xFE41, -- " → ﹁ (left double → vertical left corner bracket)
+    [0x201D] = 0xFE42, -- " → ﹂ (right double → vertical right corner bracket)
+    [0x2018] = 0xFE43, -- ' → ﹃ (left single → vertical left white corner bracket)
+    [0x2019] = 0xFE44, -- ' → ﹄ (right single → vertical right white corner bracket)
 }
 
 -- Punctuation type numeric codes (for ATTR_PUNCT_TYPE attribute)
@@ -134,12 +162,12 @@ end
 -- @param char_code (number) Unicode code point
 -- @return (string|nil) "open", "close", "fullstop", "comma", "middle", "nobreak", or nil
 function punct.classify(char_code)
-    if CL_OPEN[char_code]     then return "open" end
-    if CL_CLOSE[char_code]    then return "close" end
+    if CL_OPEN[char_code] then return "open" end
+    if CL_CLOSE[char_code] then return "close" end
     if CL_FULLSTOP[char_code] then return "fullstop" end
-    if CL_COMMA[char_code]    then return "comma" end
-    if CL_MIDDLE[char_code]   then return "middle" end
-    if CL_NOBREAK[char_code]  then return "nobreak" end
+    if CL_COMMA[char_code] then return "comma" end
+    if CL_MIDDLE[char_code] then return "middle" end
+    if CL_NOBREAK[char_code] then return "nobreak" end
     return nil
 end
 
@@ -191,7 +219,7 @@ local function find_next_glyph(current_node)
             or nid == constants.PENALTY or nid == constants.WHATSIT then
             n = D.getnext(n)
         else
-            return nil  -- Unknown node type, stop looking
+            return nil -- Unknown node type, stop looking
         end
     end
     return nil
@@ -309,9 +337,9 @@ function punct.initialize(params, engine_ctx)
 
     local ctx = {
         style   = (_G.punct and _G.punct.style) or "mainland",
-        squeeze = not (_G.punct and _G.punct.squeeze == false),   -- default true
-        hanging = (_G.punct and _G.punct.hanging) or false,       -- default false
-        kinsoku = not (_G.punct and _G.punct.kinsoku == false),   -- default true
+        squeeze = not (_G.punct and _G.punct.squeeze == false), -- default true
+        hanging = (_G.punct and _G.punct.hanging) or false,     -- default false
+        kinsoku = not (_G.punct and _G.punct.kinsoku == false), -- default true
     }
 
     dbg.log(string.format("punct plugin: enabled (style=%s, squeeze=%s, kinsoku=%s, hanging=%s)",
@@ -341,22 +369,38 @@ function punct.flatten(head, params, ctx)
         local next_node = D.getnext(t)
 
         if id == constants.GLYPH then
-            local char = D.getfield(t, "char")
+            -- Skip decoration characters (e.g. 。、used as decorate markers)
+            local dec_id = D.get_attribute(t, constants.ATTR_DECORATE_ID)
+            if not (dec_id and dec_id > 0) then
+                local char = D.getfield(t, "char")
 
-            -- 1. Vertical quote replacement: ""'' → ﹁﹂﹃﹄
-            local vert_char = VERT_QUOTE_MAP[char]
-            if vert_char then
-                D.setfield(t, "char", vert_char)
-                char = vert_char
-                count_replaced = count_replaced + 1
-            end
+                -- 1. Vertical form replacement: brackets/quotes → vertical presentation forms
+                local vert_char = VERT_FORM_MAP[char]
+                if vert_char then
+                    -- Check font has the target glyph before replacing
+                    local fid = D.getfont(t)
+                    local fdata = font.getfont(fid)
+                    if fdata and fdata.characters and fdata.characters[vert_char] then
+                        D.setfield(t, "char", vert_char)
+                        char = vert_char
+                        count_replaced = count_replaced + 1
+                    else
+                        -- Font lacks vertical glyph - mark for rotation fallback
+                        -- Only rotate horizontally-oriented glyphs (ellipsis, em dash)
+                        if char == 0x2026 or char == 0x2014 then
+                            D.set_attribute(t, constants.ATTR_VERT_ROTATE, 1)
+                            dbg.log(string.format("marked for rotation: char=0x%04X", char))
+                        end
+                    end
+                end
 
-            -- 2. Classify punctuation and set attribute
-            local ptype = punct.classify(char)
-            if ptype then
-                local code = PUNCT_CODES[ptype]
-                D.set_attribute(t, constants.ATTR_PUNCT_TYPE, code)
-                count_classified = count_classified + 1
+                -- 2. Classify punctuation and set attribute
+                local ptype = punct.classify(char)
+                if ptype then
+                    local code = PUNCT_CODES[ptype]
+                    D.set_attribute(t, constants.ATTR_PUNCT_TYPE, code)
+                    count_classified = count_classified + 1
+                end
             end
         end
 
@@ -375,44 +419,47 @@ end
 -- Punctuation Squeeze (CLREQ Standard)
 -- ============================================================================
 
+--- Check if a punctuation type has trailing half-width space
+-- (close brackets, fullstop, comma all have glyph in first half, space in second)
+local function has_trailing_space(ptype)
+    return ptype == "close" or ptype == "fullstop" or ptype == "comma"
+end
+
+--- Check if a punctuation type has leading half-width space
+-- (open brackets have space in first half, glyph in second)
+local function has_leading_space(ptype)
+    return ptype == "open"
+end
+
 --- Check if two adjacent punctuation types should be squeezed
 -- Returns the squeeze amount (negative = squeeze)
+-- Based on CLREQ: remove half-width space between adjacent punctuation
 -- @param prev_ptype (string|nil) Previous character's punct type
 -- @param curr_ptype (string|nil) Current character's punct type
 -- @return (number) Squeeze amount in grid units (0 or -0.5)
 local function get_squeeze_amount(prev_ptype, curr_ptype)
     if not prev_ptype or not curr_ptype then return 0 end
 
-    -- Rule 1: close + fullstop/comma/middle → squeeze
-    if prev_ptype == "close" and
-        (curr_ptype == "fullstop" or curr_ptype == "comma" or curr_ptype == "middle") then
+    -- Rules for prev with trailing space (close/fullstop/comma)
+    if has_trailing_space(prev_ptype) then
+        -- trailing + leading (close/fullstop/comma + open) → squeeze
+        if curr_ptype == "open" then return -0.5 end
+        -- trailing + close → squeeze (e.g. 。」，」)
+        if curr_ptype == "close" then return -0.5 end
+        -- trailing + fullstop/comma → squeeze (e.g. 」。」，)
+        if curr_ptype == "fullstop" or curr_ptype == "comma" then return -0.5 end
+        -- trailing + middle → squeeze (e.g. 」！ ←close+middle already works)
+        if curr_ptype == "middle" then return -0.5 end
+    end
+
+    -- Rules for curr with leading space (open)
+    if has_leading_space(curr_ptype) then
+        -- middle/nobreak + open → squeeze (e.g. ？「)
         return -0.5
     end
 
-    -- Rule 2: fullstop/comma/middle + open → squeeze
-    if (prev_ptype == "fullstop" or prev_ptype == "comma" or prev_ptype == "middle") and
-        curr_ptype == "open" then
-        return -0.5
-    end
-
-    -- Rule 3: open + open → squeeze
+    -- open + open → squeeze (e.g. 「「)
     if prev_ptype == "open" and curr_ptype == "open" then
-        return -0.5
-    end
-
-    -- Rule 4: close + close → squeeze
-    if prev_ptype == "close" and curr_ptype == "close" then
-        return -0.5
-    end
-
-    -- Rule 5: close + open → squeeze
-    if prev_ptype == "close" and curr_ptype == "open" then
-        return -0.5
-    end
-
-    -- Rule 6: fullstop/comma + fullstop/comma → squeeze
-    if (prev_ptype == "fullstop" or prev_ptype == "comma") and
-        (curr_ptype == "fullstop" or curr_ptype == "comma") then
         return -0.5
     end
 
@@ -444,7 +491,7 @@ function punct.layout(list, layout_map, engine_ctx, ctx)
     -- This will be implemented in a future version.
 
     -- Collect all layout entries with their node references, grouped by (page, col)
-    local columns = {}  -- key: "page:col" → sorted list of {node, pos, ptype}
+    local columns = {} -- key: "page:col" → sorted list of {node, pos, ptype}
 
     for node_d, pos in pairs(layout_map) do
         -- Only process nodes that have a row (actual positioned content)
@@ -457,7 +504,7 @@ function punct.layout(list, layout_map, engine_ctx, ctx)
             table.insert(columns[key], {
                 node = node_d,
                 pos = pos,
-                ptype = ptype,  -- may be nil for non-punct
+                ptype = ptype, -- may be nil for non-punct
             })
         end
     end
@@ -472,8 +519,9 @@ function punct.layout(list, layout_map, engine_ctx, ctx)
         end)
 
         -- Scan for squeeze opportunities
-        local offset = 0  -- accumulated squeeze offset
+        local offset = 0             -- accumulated squeeze offset
         local prev_ptype = nil
+        local in_squeeze_seq = false -- whether we're inside a squeezed punctuation sequence
 
         for i, entry in ipairs(col_entries) do
             local curr_ptype = entry.ptype
@@ -489,6 +537,7 @@ function punct.layout(list, layout_map, engine_ctx, ctx)
                 entry.pos.punct_squeeze = -0.5
                 offset = offset - 0.5
                 total_squeezed = total_squeezed + 1
+                in_squeeze_seq = true
             end
 
             -- Check for consecutive punctuation squeeze
@@ -500,6 +549,24 @@ function punct.layout(list, layout_map, engine_ctx, ctx)
                     -- Re-apply offset to current node
                     entry.pos.row = entry.pos.row + squeeze
                     total_squeezed = total_squeezed + 1
+                    in_squeeze_seq = true
+                end
+
+                -- End of punctuation sequence: squeeze trailing space of last punct
+                -- When a punct with trailing space is followed by a non-punct char,
+                -- and we've been squeezing in this sequence, also remove the trailing space.
+                -- This makes e.g. 。」 occupy exactly 1 grid (0.5 + 0.5) instead of 1.5.
+                if in_squeeze_seq and prev_ptype and not curr_ptype then
+                    if has_trailing_space(prev_ptype) then
+                        offset = offset - 0.5
+                        entry.pos.row = entry.pos.row - 0.5
+                        total_squeezed = total_squeezed + 1
+                    end
+                end
+
+                -- Reset sequence tracking when hitting non-punct
+                if not curr_ptype then
+                    in_squeeze_seq = false
                 end
             end
 
@@ -534,8 +601,8 @@ end
 --   y offset > 0 = upward
 -- The offset is expressed as a fraction of grid dimensions.
 local MAINLAND_OFFSETS = {
-    fullstop = { x = 0.20, y = 0.25 },  -- 。sentence-ending period
-    comma    = { x = 0.20, y = 0.25 },  -- ，、 comma and enumeration comma
+    fullstop = { x = 0.20, y = 0.25 }, -- 。sentence-ending period
+    comma    = { x = 0.20, y = 0.25 }, -- ，、 comma and enumeration comma
 }
 
 -- Taiwan style: all punctuation centered in the grid cell (no extra offset)

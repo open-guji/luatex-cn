@@ -68,6 +68,12 @@ constants.ATTR_STYLE_REG_ID = luatexbase.attributes.cnverticalstyle or luatexbas
 constants.ATTR_PUNCT_TYPE = luatexbase.attributes.cnverticalpuncttype or
     luatexbase.new_attribute("cnverticalpuncttype")
 
+-- Vertical rotation attribute (for glyphs that need 90° clockwise rotation)
+-- Used when font lacks vertical glyph forms (e.g., ellipsis, em dash)
+-- Value: 1 = needs rotation, 0 or unset = normal
+constants.ATTR_VERT_ROTATE = luatexbase.attributes.cnverticalrotate or
+    luatexbase.new_attribute("cnverticalrotate")
+
 -- Attributes for Column (单列排版)
 -- ATTR_COLUMN: 1 = 标记为 Column 内容
 -- ATTR_COLUMN_ALIGN: 对齐方式 0=top, 1=bottom, 2=center, 3=stretch
@@ -180,7 +186,7 @@ local function register_decorate(char_str, xoff_str, yoff_str, size_str, color_s
         xoffset = to_dimen(xoff_str) or 0,
         yoffset = to_dimen(yoff_str) or 0,
         scale = tonumber(scale) or 1.0, -- Multiplier for font size
-        font_id = font_id,               -- Store provided ID (may be nil)
+        font_id = font_id,              -- Store provided ID (may be nil)
         font_size = to_dimen(size_str),
         color = color_str,
     }

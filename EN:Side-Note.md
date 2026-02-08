@@ -17,6 +17,19 @@ Main text\\夹注{This is interlinear note content. If it is long, it will autom
 - **Auto-Balancing Algorithm**: The system calculates the remaining space in the current column and splits the note content evenly into right and left sub-columns.
 - **Cross-Column/Page Flow**: When a note doesn't fit in one column, it flows to the next column or page automatically.
 - **Alignment Control**: Supports `left`, `right`, `center`, `inward`, and `outward` (default) alignment modes.
+- **Balance Control (v0.2.6+)**: Use `auto-balance=false` to disable the automatic balancing algorithm. Useful for manual line breaks or replicating specific historical manuscript styles.
+
+### Jiazhu Configuration
+```latex
+\jiazhuSetup{
+  font-size = 12pt,
+  font = {FandolSong-Regular},
+  font-color = red,
+  auto-balance = true, % Whether to auto-balance sub-column lengths
+  align = outward      % Alignment mode
+}
+```
+
 
 ---
 

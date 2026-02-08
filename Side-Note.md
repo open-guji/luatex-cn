@@ -17,6 +17,19 @@
 - **自动平衡算法**：系统会自动计算当前列的剩余空间，并将夹注内容平分为左右两列。
 - **跨列/跨页流动**：当夹注在一列内排不下时，会自动流向下一列或下一页。
 - **对齐控制**：默认外侧对齐，支持 `left`, `right`, `center`, `inward`, `outward` 模式。
+- **平衡控制（v0.2.6+）**：通过 `auto-balance=false` 选项可以禁用自动平衡算法。此模式常用于手动分行或特定古籍样式的复现。
+
+### 夹注配置
+```latex
+\jiazhuSetup{
+  font-size = 12pt,
+  font = {FandolSong-Regular},
+  font-color = red,
+  auto-balance = true, % 是否自动平衡左右列长度
+  align = outward      % 对齐方式
+}
+```
+
 
 ---
 

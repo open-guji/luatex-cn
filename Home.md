@@ -4,7 +4,7 @@
 
 欢迎来到 LuaTeX-CN Wiki。这里旨在为用户和开发者提供详实的文档支持，帮助您充分利用 LuaTeX-CN 实现高质量的古籍排版。
 
-> **当前版本**: [v0.2.5](https://github.com/open-guji/luatex-cn/releases) | **CTAN**: [v0.1.1](https://ctan.org/pkg/luatex-cn)
+> **当前版本**: [v0.2.6](https://github.com/open-guji/luatex-cn/releases) | **CTAN**: [v0.1.1](https://ctan.org/pkg/luatex-cn)
 
 ## 快速入口
 

@@ -4,6 +4,16 @@ English | [中文版](Changelog)
 
 All notable changes to this project will be documented here.
 
+## [0.2.6] - 2026-02-07
+
+- ✨ **Taitou Support**: Added `\抬头[N]` system (Single/Double/Triple/Flat/Relative Taitou) with automatic border wrapping
+- ✨ **Proper Name/Book Title Marks**: Re-implemented using PDF graphics, solving connectivity and font compatibility issues (fix #53, #56, #57)
+- ✨ **Jiazhu Balance Control**: Added `auto-balance` option for non-balanced layouts
+- 🐛 **Glyph Rotation Fix**: Added automatic 90° rotation for ellipsis and em dash when font lacks vertical forms
+- 🐛 **Bug Fix**: Fixed sidenote color leakage across page boundaries (fix #44)
+- 🐛 **Bug Fix**: Fixed jiazhu column switching logic
+
+
 ## [0.2.5] - 2026-02-05
 
 - ✨ **Catalog Entry Command**: Added `\条目` command with hierarchical indentation for table of contents

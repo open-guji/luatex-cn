@@ -131,8 +131,8 @@ register_plugin("judou", judou)
 register_plugin("sidenote", sidenote)
 register_plugin("textbox", textbox)
 
-local footnote_plugin = package.loaded['guji.luatex-cn-guji-footnote'] or
-    require('guji.luatex-cn-guji-footnote')
+local footnote_plugin = package.loaded['core.luatex-cn-footnote'] or
+    require('core.luatex-cn-footnote')
 register_plugin("footnote", footnote_plugin)
 
 -- Helper function to safely convert dimension values to scaled points

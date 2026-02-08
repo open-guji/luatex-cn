@@ -52,6 +52,7 @@
 \RequirePackage{environ}
 \RequirePackage{xparse}
 \RequirePackage{luatex-cn-core}
+\RequirePackage{core/luatex-cn-footnote}
 
 % ============================================================================
 % Initialization

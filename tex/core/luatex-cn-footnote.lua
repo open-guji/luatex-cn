@@ -12,7 +12,7 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 -- ============================================================================
--- luatex-cn-guji-footnote.lua - Footnote/Jiaokan Plugin
+-- luatex-cn-footnote.lua - Footnote/Jiaokan Plugin
 -- ============================================================================
 -- Mode 1 (endnote): TeX handles everything via expl3 sequences
 -- Mode 2 (page footnote): Uses WHATSIT anchors + per-page collection + render
@@ -300,5 +300,5 @@ function footnote.clear_registry()
 end
 
 -- Register module
-package.loaded['guji.luatex-cn-guji-footnote'] = footnote
+package.loaded['core.luatex-cn-footnote'] = footnote
 return footnote

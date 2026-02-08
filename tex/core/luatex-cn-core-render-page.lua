@@ -534,6 +534,21 @@ local function render_single_page(p_head, p_max_col, p_max_row, p, layout_map, p
     -- Reserved columns (computed via engine_ctx helper function)
     local reserved_cols = grid.get_reserved_cols and grid.get_reserved_cols(p, p_total_cols) or {}
 
+    -- Scan layout_map for taitou columns (negative row = raised border)
+    local col_min_rows = {}
+    local scan_t = p_head
+    while scan_t do
+        local pos = layout_map[scan_t]
+        if pos then
+            local col = pos.col
+            local row = math.floor(pos.row or 0)
+            if row < 0 and (not col_min_rows[col] or row < col_min_rows[col]) then
+                col_min_rows[col] = row
+            end
+        end
+        scan_t = D.getnext(scan_t)
+    end
+
     -- Borders, background, and decorative frames (handled by render_border module)
     p_head = render_border.render_borders(p_head, {
         -- Grid and dimensions
@@ -563,6 +578,8 @@ local function render_single_page(p_head, p_max_col, p_max_row, p, layout_map, p
         border_width = ctx.border_width,
         border_margin = ctx.border_margin,
         background_rgb_str = ctx.background_rgb_str,
+        -- Taitou raised border
+        col_min_rows = col_min_rows,
     })
 
     -- Font color

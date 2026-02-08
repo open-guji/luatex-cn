@@ -89,6 +89,7 @@ constants.JUDOU_USER_ID = 202603
 constants.DECORATE_USER_ID = 202604
 constants.CHAPTER_MARKER_USER_ID = 202605
 constants.BANXIN_USER_ID = 202606
+constants.FOOTNOTE_USER_ID = 202607
 
 --- 将 TeX 尺寸字符串转换为 scaled points (sp)
 local function to_dimen(dim_str)

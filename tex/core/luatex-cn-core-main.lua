@@ -131,6 +131,10 @@ register_plugin("judou", judou)
 register_plugin("sidenote", sidenote)
 register_plugin("textbox", textbox)
 
+local footnote_plugin = package.loaded['guji.luatex-cn-guji-footnote'] or
+    require('guji.luatex-cn-guji-footnote')
+register_plugin("footnote", footnote_plugin)
+
 -- Helper function to safely convert dimension values to scaled points
 -- Handles both raw numbers and em unit tables returned by to_dimen
 local function safe_to_sp(val, base_size)
@@ -230,7 +234,7 @@ local function init_engine_context(box_num, params)
     local b_interval, p_cols
     if is_textbox then
         -- TextBox: use params directly (n_cols -> page_columns from build_sub_params)
-        b_interval = 0  -- no banxin in textbox
+        b_interval = 0 -- no banxin in textbox
         p_cols = tonumber(params.page_columns) or 100
     else
         -- Content: read from _G.content (calculated by content.setup)
@@ -369,12 +373,12 @@ local function compute_grid_layout(list, params, engine_ctx, plugin_contexts, p_
     end
 
     local layout_params = {
-        distribute = params.distribute,             -- textbox-specific
-        floating = is_floating,                     -- textbox-specific
-        floating_x = floating_x,                    -- textbox-specific
-        absolute_height = p_info.h_dim,             -- textbox-specific
+        distribute = params.distribute, -- textbox-specific
+        floating = is_floating,         -- textbox-specific
+        floating_x = floating_x,        -- textbox-specific
+        absolute_height = p_info.h_dim, -- textbox-specific
         plugin_contexts = plugin_contexts,
-        hooks = hooks,                              -- kinsoku hook for layout-grid
+        hooks = hooks,                  -- kinsoku hook for layout-grid
     }
 
     -- For textbox: pass explicit values (no global fallback)

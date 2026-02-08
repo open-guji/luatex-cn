@@ -233,7 +233,7 @@ function decorate.handle_node(curr, p_head, pos, params, ctx, reg_id)
     D.insert_after(p_head, g, k)
     D.insert_after(p_head, k, n_end)
 
-    dbg.log(string.format("char=%d [c:%d, r:%d] scale=%.2f pos_x=%.4f pos_y=%.4f",
+    dbg.log(string.format("char=%d [c:%d, r:%.2f] scale=%.2f pos_x=%.4f pos_y=%.4f",
         char, pos.col, pos.row, scale, x_bp, y_bp))
 
     return p_head

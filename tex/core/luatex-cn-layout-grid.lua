@@ -550,7 +550,10 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
 
             layout_map[entry.node] = map_entry
         end
-        col_buffer = {}
+        -- Clear buffer in-place to preserve reference for external hooks (kinsoku)
+        for i = #col_buffer, 1, -1 do
+            col_buffer[i] = nil
+        end
     end
 
     local t = d_head
@@ -872,6 +875,18 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
                 })
                 ctx.cur_row = ctx.cur_row + 1
                 ctx.page_has_content = true
+
+                -- Kinsoku (line-breaking rules) hook:
+                -- When column is about to wrap, check if we need to adjust
+                -- to prevent forbidden characters at column start/end
+                if not distribute and params and params.hooks
+                    and params.hooks.check_kinsoku then
+                    params.hooks.check_kinsoku(
+                        t, ctx, effective_limit, col_buffer,
+                        flush_buffer, wrap_to_next_column,
+                        p_cols, interval, grid_height, indent)
+                end
+
                 move_to_next_valid_position(ctx, interval, grid_height, indent)
             end
         elseif id == constants.GLUE or id == constants.KERN then

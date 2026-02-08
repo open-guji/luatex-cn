@@ -91,6 +91,8 @@ local textbox = package.loaded['core.luatex-cn-core-textbox'] or
     require('core.luatex-cn-core-textbox')
 local sidenote = package.loaded['core.luatex-cn-core-sidenote'] or
     require('core.luatex-cn-core-sidenote')
+local punct = package.loaded['core.luatex-cn-core-punct'] or
+    require('core.luatex-cn-core-punct')
 local judou = package.loaded['guji.luatex-cn-guji-judou'] or
     require('guji.luatex-cn-guji-judou')
 local page = package.loaded['core.luatex-cn-core-page'] or
@@ -123,7 +125,8 @@ local function set_page_number(n)
     _G.page.current_page_number = tonumber(n) or 1
 end
 
--- 加载子模块
+-- 加载子模块 (punct must be before judou - they are mutually exclusive)
+register_plugin("punct", punct)
 register_plugin("judou", judou)
 register_plugin("sidenote", sidenote)
 register_plugin("textbox", textbox)
@@ -355,12 +358,23 @@ local function compute_grid_layout(list, params, engine_ctx, plugin_contexts, p_
 
     -- Build layout params - for non-textbox, layout-grid.lua will use global fallbacks
     -- Only pass values that are explicitly needed or textbox-specific
+    -- Build kinsoku hook from punct plugin if active
+    local hooks = nil
+    local punct_ctx = plugin_contexts["punct"]
+    if punct_ctx and punct.make_kinsoku_hook then
+        local kinsoku_fn = punct.make_kinsoku_hook(punct_ctx)
+        if kinsoku_fn then
+            hooks = { check_kinsoku = kinsoku_fn }
+        end
+    end
+
     local layout_params = {
         distribute = params.distribute,             -- textbox-specific
         floating = is_floating,                     -- textbox-specific
         floating_x = floating_x,                    -- textbox-specific
         absolute_height = p_info.h_dim,             -- textbox-specific
         plugin_contexts = plugin_contexts,
+        hooks = hooks,                              -- kinsoku hook for layout-grid
     }
 
     -- For textbox: pass explicit values (no global fallback)

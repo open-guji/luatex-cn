@@ -63,6 +63,11 @@ constants.ATTR_LINE_MARK_ID = luatexbase.attributes.cnverticallinemark or luatex
 -- Style Registry Attribute (for cross-page style preservation - Phase 2)
 constants.ATTR_STYLE_REG_ID = luatexbase.attributes.cnverticalstyle or luatexbase.new_attribute("cnverticalstyle")
 
+-- Punctuation type attribute (for modern punctuation plugin)
+-- Values: 0=none, 1=open, 2=close, 3=fullstop, 4=comma, 5=middle, 6=nobreak
+constants.ATTR_PUNCT_TYPE = luatexbase.attributes.cnverticalpuncttype or
+    luatexbase.new_attribute("cnverticalpuncttype")
+
 -- Attributes for Column (单列排版)
 -- ATTR_COLUMN: 1 = 标记为 Column 内容
 -- ATTR_COLUMN_ALIGN: 对齐方式 0=top, 1=bottom, 2=center, 3=stretch

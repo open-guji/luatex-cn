@@ -268,9 +268,6 @@ local function handle_glyph_node(curr, p_head, pos, params, ctx)
         }
     )
 
-    -- Verbose glyph logging removed for performance and clarity
-    -- debug.log("render", string.format("  [render] GLYPH char=%d [c:%.0f, r:%.2f] ...", ...))
-
     -- Check if glyph needs vertical rotation (font lacks vertical form)
     local needs_rotate = D.get_attribute(curr, constants.ATTR_VERT_ROTATE) == 1
 

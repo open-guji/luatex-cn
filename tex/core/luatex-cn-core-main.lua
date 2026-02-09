@@ -274,6 +274,10 @@ local function init_engine_context(box_num, params)
         b_padding_bottom = b_padding_bottom,
         -- Body font size (for footnote marker alignment)
         body_font_size = current_fs,
+        -- Layout mode: "grid" (fixed grid) or "natural" (variable cell height)
+        layout_mode = (not is_textbox) and (_G.content.layout_mode or "grid") or "grid",
+        col_height_sp = limit * g_height,
+        inter_cell_gap = (not is_textbox) and (_G.content.inter_cell_gap or 0) or 0,
         -- Registry data (set after layout)
     }
 
@@ -389,6 +393,9 @@ local function compute_grid_layout(list, params, engine_ctx, plugin_contexts, p_
         absolute_height = p_info.h_dim, -- textbox-specific
         plugin_contexts = plugin_contexts,
         hooks = hooks,                  -- kinsoku hook for layout-grid
+        layout_mode = engine_ctx.layout_mode,
+        col_height_sp = engine_ctx.col_height_sp,
+        inter_cell_gap = engine_ctx.inter_cell_gap,
     }
 
     -- For textbox: pass explicit values (no global fallback)

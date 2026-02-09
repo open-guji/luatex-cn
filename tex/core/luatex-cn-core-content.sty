@@ -45,6 +45,8 @@
 \tl_new:N \l__luatexcn_content_font_color_tl
 \tl_new:N \l__luatexcn_content_font_name_tl
 \tl_new:N \l__luatexcn_content_font_features_tl
+\tl_new:N \l__luatexcn_content_layout_mode_tl
+\tl_new:N \l__luatexcn_content_inter_cell_gap_tl
 
 \keys_define:nn { luatexcn / content }
   {
@@ -116,6 +118,12 @@
     banxin-ratio .tl_set:N = \l__luatexcn_content_banxin_ratio_tl,
     banxin-ratio .initial:n = {0.7},
 
+    layout-mode .tl_set:N = \l__luatexcn_content_layout_mode_tl,
+    layout-mode .initial:n = {grid},
+
+    inter-cell-gap .tl_set:N = \l__luatexcn_content_inter_cell_gap_tl,
+    inter-cell-gap .initial:n = {0pt},
+
     unknown .code:n = { \keys_set:nx { luatexcn / page } { \l_keys_key_tl = { #1 } } },
   }
 
@@ -145,7 +153,9 @@
         border_color~=~[=[\l__luatexcn_content_border_rgb_tl]=],
         background_color~=~[=[\l__luatexcn_content_background_rgb_tl]=],
         font_color~=~[=[\l__luatexcn_content_font_rgb_tl]=],
-        font_size~=~[=[\luaescapestring{\l__luatexcn_content_font_size_tl}]=]
+        font_size~=~[=[\luaescapestring{\l__luatexcn_content_font_size_tl}]=],
+        layout_mode~=~[=[\luaescapestring{\l__luatexcn_content_layout_mode_tl}]=],
+        inter_cell_gap~=~[=[\luaescapestring{\l__luatexcn_content_inter_cell_gap_tl}]=]
       })
     }
   }

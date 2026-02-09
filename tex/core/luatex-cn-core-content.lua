@@ -131,6 +131,8 @@ _G.content.border_color = _G.content.border_color or "0 0 0"
 _G.content.background_color = _G.content.background_color or nil
 _G.content.font_color = _G.content.font_color or nil
 _G.content.font_size = _G.content.font_size or 0
+_G.content.layout_mode = _G.content.layout_mode or "grid"
+_G.content.inter_cell_gap = _G.content.inter_cell_gap or 0
 
 -- ============================================================================
 -- Setup Helper Functions
@@ -173,6 +175,12 @@ local function parse_visual_params(params)
     end
     if params.font_size then
         _G.content.font_size = constants.to_dimen(params.font_size)
+    end
+    if params.layout_mode and params.layout_mode ~= "" then
+        _G.content.layout_mode = params.layout_mode
+    end
+    if params.inter_cell_gap then
+        _G.content.inter_cell_gap = constants.to_dimen(params.inter_cell_gap) or 0
     end
 end
 

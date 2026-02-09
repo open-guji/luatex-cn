@@ -541,6 +541,9 @@ end
 function punct.layout(list, layout_map, engine_ctx, ctx)
     if not ctx then return end
     if not ctx.squeeze then return end
+    -- Natural mode handles punctuation sizing via get_cell_height() in layout-grid;
+    -- squeeze post-processing would overwrite those carefully computed values.
+    if engine_ctx.layout_mode == "natural" then return end
     -- Note: punct-hanging requires deeper integration with layout-grid.lua
     -- to allow dot-class punctuation to overflow beyond effective_limit.
     -- This will be implemented in a future version.

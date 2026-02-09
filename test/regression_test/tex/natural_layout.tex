@@ -1,0 +1,18 @@
+\documentclass{ltc-guji}
+\setmainfont{TW-Kai}
+\禁用分页裁剪
+
+\begin{document}
+
+% Natural layout test: variable cell height based on font size
+% Use n-char-per-col=10 so 12pt chars fill a column quickly and trigger wrapping
+\Content[
+    layout-mode = natural,
+    font-size = 12pt,
+    n-column = 8,
+    n-char-per-col = 10,
+]{
+    這是自然排版模式的測試文本。每個字的格高由字號決定，而不是固定的網格高度。自動換列功能應該正常工作。標點符號只佔半格，這樣可以節省空間。
+}
+
+\end{document}

@@ -113,6 +113,8 @@ local function calculate_render_context(ctx)
     local b_padding_bottom = engine.b_padding_bottom
     local grid_width = grid.width
     local grid_height = grid.height
+    local banxin_width = grid.banxin_width or 0
+    local body_font_size = grid.body_font_size or grid_width
 
     -- Dynamic values from ctx (calculated per-invocation in main.lua)
     local outer_shift = engine.outer_shift
@@ -154,6 +156,8 @@ local function calculate_render_context(ctx)
         text_rgb_str = text_rgb_str,
         grid_width = grid_width,
         grid_height = grid_height,
+        banxin_width = banxin_width,
+        body_font_size = body_font_size,
         vertical_align = vertical_align,
         -- TextFlow align default (per-node align from style stack takes precedence)
         textflow_align = (_G.jiazhu and _G.jiazhu.align) or "outward",
@@ -257,6 +261,9 @@ local function handle_glyph_node(curr, p_head, pos, params, ctx)
             half_thickness = ctx.half_thickness,
             sub_col = pos.sub_col,
             textflow_align = pos.textflow_align or ctx.textflow_align,
+            banxin_width = ctx.banxin_width,
+            interval = ctx.interval,
+            body_font_size = ctx.body_font_size,
         }
     )
 
@@ -342,7 +349,8 @@ local function handle_block_node(curr, p_head, pos, ctx)
     local w = D.getfield(curr, "width") or 0
 
     local rtl_col_left = ctx.p_total_cols - (pos.col + (pos.width or 1))
-    local final_x = rtl_col_left * ctx.grid_width + ctx.half_thickness + ctx.shift_x
+    local final_x = text_position.get_column_x(rtl_col_left, ctx.grid_width, ctx.banxin_width or 0, ctx.interval or 0)
+        + ctx.half_thickness + ctx.shift_x
 
     local final_y_top = -pos.row * ctx.grid_height - ctx.shift_y
     D.setfield(curr, "shift", -final_y_top + h)
@@ -381,9 +389,9 @@ local function handle_debug_drawing(curr, p_head, pos, ctx)
 
     if show_me then
         local _, tx_sp = text_position.calculate_rtl_position(pos.col, ctx.p_total_cols, ctx.grid_width,
-            ctx.half_thickness, ctx.shift_x)
+            ctx.half_thickness, ctx.shift_x, ctx.banxin_width, ctx.interval)
         local ty_sp = text_position.calculate_y_position(pos.row, ctx.grid_height, ctx.shift_y)
-        local tw_sp = ctx.grid_width
+        local tw_sp = text_position.get_column_width(pos.col, ctx.grid_width, ctx.banxin_width or 0, ctx.interval or 0)
         local th_sp = -ctx.grid_height
 
         if pos.sub_col and pos.sub_col > 0 then
@@ -482,7 +490,7 @@ local function process_page_nodes(p_head, layout_map, params, ctx)
 
                 -- Calculate grid position (same logic as glyph but simpler - no centering needed)
                 local _, final_x = text_position.calculate_rtl_position(pos.col, ctx.p_total_cols, ctx.grid_width,
-                    ctx.half_thickness, ctx.shift_x)
+                    ctx.half_thickness, ctx.shift_x, ctx.banxin_width, ctx.interval)
                 local final_y = text_position.calculate_y_position(pos.row, ctx.grid_height, ctx.shift_y)
 
                 -- Insert kern to move to correct position, then kern back
@@ -564,7 +572,15 @@ local function render_single_page(p_head, p_max_col, p_max_row, p, layout_map, p
         content_width = (actual_cols > 0 and actual_cols or 1) * grid_width
         content_height = (actual_rows > 0 and actual_rows or 1) * grid_height
     else
-        content_width = p_total_cols * grid_width
+        local banxin_w = ctx.banxin_width or 0
+        local interval = ctx.interval or 0
+        if interval > 0 and banxin_w > 0 and banxin_w ~= grid_width then
+            local n_banxin = math.floor(p_total_cols / (interval + 1))
+            local n_content = p_total_cols - n_banxin
+            content_width = n_content * grid_width + n_banxin * banxin_w
+        else
+            content_width = p_total_cols * grid_width
+        end
         content_height = line_limit * grid_height + b_padding_top + b_padding_bottom
     end
     local inner_width = content_width + border_thickness
@@ -596,6 +612,8 @@ local function render_single_page(p_head, p_max_col, p_max_row, p, layout_map, p
         actual_rows = actual_rows,
         grid_width = grid_width,
         grid_height = grid_height,
+        banxin_width = ctx.banxin_width,
+        interval = ctx.interval,
         line_limit = line_limit,
         -- Border params
         border_thickness = border_thickness,

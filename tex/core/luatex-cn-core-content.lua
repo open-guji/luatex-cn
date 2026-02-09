@@ -122,6 +122,8 @@ _G.content.content_height = _G.content.content_height or 0
 _G.content.available_width = _G.content.available_width or 0
 _G.content.available_height = _G.content.available_height or 0
 _G.content.border_overhead_height = _G.content.border_overhead_height or 0
+_G.content.banxin_width = _G.content.banxin_width or 0
+_G.content.banxin_ratio = _G.content.banxin_ratio or 0.7
 
 -- Visual params (colors already converted to RGB strings by TeX)
 _G.content.vertical_align = _G.content.vertical_align or "center"
@@ -240,7 +242,9 @@ local function calc_page_columns(explicit_page_cols)
     elseif banxin_on then
         _G.content.page_columns = (2 * n_column + 1)
     elseif g_width > 0 and available_width > 0 then
-        _G.content.page_columns = math.floor(available_width / g_width + 0.1)
+        -- Use +0.5 rounding to handle banxin_ratio-induced fractional column counts
+        -- e.g. available / (available / 16.7) = 16.7 → round to 17
+        _G.content.page_columns = math.floor(available_width / g_width + 0.5)
         if _G.content.page_columns <= 0 then _G.content.page_columns = 1 end
     else
         _G.content.page_columns = math.max(1, n_column)
@@ -278,7 +282,10 @@ local function calc_auto_layout()
         local border_overhead_width = calc_border_overhead_width(
             _G.content.border_on, is_outer_border, b_thickness, ob_thickness, ob_sep)
         local raw_width = p_width - m_left - m_right - border_overhead_width
-        _G.content.grid_width = math.floor(raw_width / _G.content.page_columns)
+        local ratio = _G.content.banxin_ratio or 0.7
+        local n_col = _G.content.n_column or 8
+        _G.content.grid_width = math.floor(raw_width / (2 * n_col + ratio))
+        _G.content.banxin_width = math.floor(_G.content.grid_width * ratio)
     end
 
     -- Auto-calculate grid_height and content_height
@@ -357,11 +364,13 @@ local function guji_auto_layout(params)
     local b_padding_bottom = constants.to_dimen(params.border_padding_bottom or "0pt")
     local existing_grid_height = constants.to_dimen(params.grid_height or "0pt")
 
-    -- I. Width Logic: Calculate grid-width from n-column
+    -- I. Width Logic: Calculate grid-width from n-column (with banxin ratio)
+    local banxin_ratio = tonumber(params.banxin_ratio) or 0.7
     local border_overhead_width = calc_border_overhead_width(border_on, outer_border_on, b_thickness, ob_thickness, ob_sep)
     local available_width = p_width - m_left - m_right - border_overhead_width
-    local total_cols = 2 * n_column + 1  -- guji with banxin
-    local grid_width = math.floor(available_width / total_cols)
+    -- cw * (2 * n_column + ratio) = available_width
+    local grid_width = math.floor(available_width / (2 * n_column + banxin_ratio))
+    local banxin_width = math.floor(grid_width * banxin_ratio)
 
     -- II. Height Logic: Calculate available height
     local border_overhead_height = calc_border_overhead_height(border_on, outer_border_on, b_thickness, ob_thickness, ob_sep, b_padding_top, b_padding_bottom)
@@ -371,6 +380,10 @@ local function guji_auto_layout(params)
     -- Calculate adjusted margin-top (bottom-aligned content)
     local total_box_height = content_height + border_overhead_height + 2 * 65536 -- +2pt
     local margin_top = p_height - m_bottom - total_box_height
+
+    -- Store banxin dimensions in global state
+    _G.content.banxin_width = banxin_width
+    _G.content.banxin_ratio = banxin_ratio
 
     -- Convert sp to pt string and set TeX token lists
     local function to_pt(sp) return string.format("%.5fpt", sp / 65536) end

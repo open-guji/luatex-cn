@@ -248,10 +248,14 @@ local function init_engine_context(box_num, params)
     end
 
     -- 0.8 Engine Context (Shared state for plugins)
+    local banxin_w = _G.content.banxin_width
+    if not banxin_w or banxin_w <= 0 then banxin_w = g_width end
+
     local engine_ctx = {
         -- Grid dimensions
         g_width = g_width,
         g_height = g_height,
+        banxin_width = banxin_w,
         -- Layout parameters
         banxin_on = banxin_on,
         line_limit = limit,
@@ -268,17 +272,23 @@ local function init_engine_context(box_num, params)
         border_rgb_str = utils.normalize_rgb(border_color) or "0 0 0",
         b_padding_top = b_padding_top,
         b_padding_bottom = b_padding_bottom,
+        -- Body font size (for footnote marker alignment)
+        body_font_size = current_fs,
         -- Registry data (set after layout)
     }
 
     -- Helper function to calculate reserved column coordinates
+    local text_position = package.loaded['core.luatex-cn-render-position'] or
+        require('core.luatex-cn-render-position')
     engine_ctx.get_reserved_column_coords = function(col, total_cols)
         local rtl_col = total_cols - 1 - col
         local effective_half = engine_ctx.draw_border and engine_ctx.half_thickness or 0
+        local col_x = text_position.get_column_x(rtl_col, engine_ctx.g_width,
+            engine_ctx.banxin_width, engine_ctx.n_column)
         return {
-            x = rtl_col * engine_ctx.g_width + effective_half + engine_ctx.shift_x,
+            x = col_x + effective_half + engine_ctx.shift_x,
             y = -(effective_half + engine_ctx.outer_shift),
-            width = engine_ctx.g_width,
+            width = engine_ctx.banxin_width,
             height = engine_ctx.line_limit * engine_ctx.g_height + engine_ctx.b_padding_top + engine_ctx
                 .b_padding_bottom,
         }
@@ -463,6 +473,8 @@ local function generate_physical_pages(list, params, engine_ctx, plugin_contexts
         grid = {
             width = engine_ctx.g_width,
             height = engine_ctx.g_height,
+            banxin_width = engine_ctx.banxin_width,
+            body_font_size = engine_ctx.body_font_size,
             line_limit = engine_ctx.line_limit,
             -- n_column is mainly for banxin/layout, but might be needed for some calc
             n_column = engine_ctx.n_column,

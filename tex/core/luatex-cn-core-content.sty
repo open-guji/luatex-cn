@@ -37,6 +37,7 @@
 \tl_new:N \l__luatexcn_content_height_tl
 \tl_new:N \l__luatexcn_content_col_spacing_tl
 \tl_new:N \l__luatexcn_content_line_spacing_tl
+\tl_new:N \l__luatexcn_content_banxin_ratio_tl
 
 \tl_new:N \l__luatexcn_content_border_rgb_tl
 \tl_new:N \l__luatexcn_content_background_rgb_tl
@@ -111,6 +112,9 @@
 
     line-spacing .tl_set:N = \l__luatexcn_content_line_spacing_tl,
     line-spacing .initial:n = { \baselineskip },
+
+    banxin-ratio .tl_set:N = \l__luatexcn_content_banxin_ratio_tl,
+    banxin-ratio .initial:n = {0.7},
 
     unknown .code:n = { \keys_set:nx { luatexcn / page } { \l_keys_key_tl = { #1 } } },
   }
@@ -306,6 +310,7 @@
             n_column~=~\int_use:N~\l__luatexcn_content_n_column_int,
             n_char_per_col~=~\int_use:N~\l__luatexcn_content_n_char_per_col_int,
             grid_height~=~"\l__luatexcn_content_grid_height_tl",
+            banxin_ratio~=~"\l__luatexcn_content_banxin_ratio_tl",
           })
         }
         \LtcIfDebugT { \iow_term:x { Guji~Layout:~grid-width=\l__luatexcn_content_grid_width_tl~,~grid-height=\l__luatexcn_content_grid_height_tl~,~height=\l__luatexcn_content_height_tl } }

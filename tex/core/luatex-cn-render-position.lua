@@ -51,6 +51,44 @@ local dbg = debug.get_debugger('render')
 local D = constants.D
 
 
+--- 计算列的 X 偏移（支持版心列窄化）
+-- 当版心列宽度与正文列不同时，不能用 rtl_col * grid_width。
+-- @param rtl_col (number) 物理列号（RTL 转换后，从左数，0-indexed）
+-- @param grid_width (number) 正文列宽 (sp)
+-- @param banxin_width (number) 版心列宽 (sp)，0 表示等宽
+-- @param interval (number) 版心间隔（n_column），0 表示无版心
+-- @return (number) X 偏移 (sp)
+local function get_column_x(rtl_col, grid_width, banxin_width, interval)
+    if interval <= 0 or banxin_width <= 0 or banxin_width == grid_width then
+        return rtl_col * grid_width
+    end
+    local group_size = interval + 1
+    local full_groups = math.floor(rtl_col / group_size)
+    local remainder = rtl_col % group_size
+    local x = full_groups * (interval * grid_width + banxin_width)
+    if remainder < interval then
+        x = x + remainder * grid_width
+    else
+        x = x + interval * grid_width
+    end
+    return x
+end
+
+--- 获取指定逻辑列的宽度
+-- @param col (number) 逻辑列号 (0-indexed)
+-- @param grid_width (number) 正文列宽 (sp)
+-- @param banxin_width (number) 版心列宽 (sp)
+-- @param interval (number) 版心间隔
+-- @return (number) 列宽 (sp)
+local function get_column_width(col, grid_width, banxin_width, interval)
+    if interval > 0 and banxin_width > 0 and banxin_width ~= grid_width then
+        if (col % (interval + 1)) == interval then
+            return banxin_width
+        end
+    end
+    return grid_width
+end
+
 --- 计算 RTL 布局中的物理列号和 X 坐标
 -- 在竖排 RTL 布局中，逻辑列号（从0开始向右）需要转换为物理列号（从右向左）。
 --
@@ -59,10 +97,13 @@ local D = constants.D
 -- @param grid_width (number) 网格宽度 (sp)
 -- @param half_thickness (number) 边框半厚度 (sp)
 -- @param shift_x (number) X 偏移量 (sp)
+-- @param banxin_width (number) 版心列宽 (sp, optional)
+-- @param interval (number) 版心间隔 (optional)
 -- @return (number, number) rtl_col, x_position
-local function calculate_rtl_position(col, total_cols, grid_width, half_thickness, shift_x)
+local function calculate_rtl_position(col, total_cols, grid_width, half_thickness, shift_x, banxin_width, interval)
     local rtl_col = total_cols - 1 - col
-    local x_pos = rtl_col * grid_width + (half_thickness or 0) + (shift_x or 0)
+    local x_pos = get_column_x(rtl_col, grid_width, banxin_width or 0, interval or 0)
+        + (half_thickness or 0) + (shift_x or 0)
     return rtl_col, x_pos
 end
 
@@ -220,23 +261,32 @@ local function calc_grid_position(col, row, glyph_dims, params)
     local textflow = package.loaded['core.luatex-cn-textflow'] or
         require('core.luatex-cn-textflow')
 
+    local banxin_width = params.banxin_width or 0
+    local interval = params.interval or 0
+
     -- Calculate RTL column position and base X
-    local rtl_col, base_x = calculate_rtl_position(col, total_cols, grid_width, half_thickness, shift_x)
+    local rtl_col, base_x = calculate_rtl_position(col, total_cols, grid_width, half_thickness, shift_x,
+        banxin_width, interval)
     local sub_col = params.sub_col or 0
+
+    -- Get actual column width (may differ for banxin columns)
+    local col_width = get_column_width(col, grid_width, banxin_width, interval)
 
     -- Width-based centering for main text (simple and reliable)
     -- Visual centering is only used for decoration symbols (in decorate.lua)
-    local center_offset = (grid_width - w) / 2
+    local center_offset = (col_width - w) / 2
 
     -- Calculate X offset based on horizontal alignment
     local x_offset
     if sub_col > 0 then
         -- TextFlow logic
-        x_offset = textflow.calculate_sub_column_x_offset(base_x, grid_width, w, sub_col, params.textflow_align)
+        x_offset = textflow.calculate_sub_column_x_offset(base_x, col_width, w, sub_col, params.textflow_align)
     elseif h_align == "left" then
         x_offset = base_x
     elseif h_align == "right" then
-        x_offset = base_x + (grid_width - w)
+        -- Align right edge to body text's right edge (body text is centered in cell)
+        local body_fs = params.body_font_size or col_width
+        x_offset = base_x + (col_width + body_fs) / 2 - w
     else -- center
         x_offset = base_x + center_offset
     end
@@ -272,6 +322,8 @@ local text_position = {
     calc_grid_position = calc_grid_position,
     calculate_rtl_position = calculate_rtl_position,
     calculate_y_position = calculate_y_position,
+    get_column_x = get_column_x,
+    get_column_width = get_column_width,
     _internal = _internal,
 }
 

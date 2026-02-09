@@ -35,6 +35,8 @@ local drawing = package.loaded['util.luatex-cn-drawing'] or
     require('util.luatex-cn-drawing')
 local page_mod = package.loaded['core.luatex-cn-core-page'] or
     require('core.luatex-cn-core-page')
+local text_position = package.loaded['core.luatex-cn-render-position'] or
+    require('core.luatex-cn-render-position')
 
 -- ============================================================================
 -- Column Border Drawing
@@ -70,6 +72,8 @@ local function draw_column_borders(p_head, params)
     local border_rgb_str = params.border_rgb_str
     local banxin_cols = params.banxin_cols or {} -- Set of column indices to skip
     local col_min_rows = params.col_min_rows or {} -- Per-column min row for taitou raised border
+    local banxin_width = params.banxin_width or 0
+    local interval = params.interval or 0
 
     local b_thickness_bp = border_thickness * sp_to_bp
     local half_thickness = math.floor(border_thickness / 2)
@@ -78,9 +82,9 @@ local function draw_column_borders(p_head, params)
         -- Skip banxin columns (they are drawn separately by banxin module)
         if not banxin_cols[col] then
             local rtl_col = total_cols - 1 - col
-            local tx_bp = (rtl_col * grid_width + half_thickness + shift_x) * sp_to_bp
+            local tx_bp = (text_position.get_column_x(rtl_col, grid_width, banxin_width, interval) + half_thickness + shift_x) * sp_to_bp
             local ty_bp = -(half_thickness + outer_shift) * sp_to_bp
-            local tw_bp = grid_width * sp_to_bp
+            local tw_bp = text_position.get_column_width(col, grid_width, banxin_width, interval) * sp_to_bp
             local th_bp = -(line_limit * grid_height + b_padding_top + b_padding_bottom) * sp_to_bp
 
             -- Taitou raised border: extend column upward for negative row columns
@@ -174,10 +178,11 @@ local function draw_outer_border(p_head, params)
         end
     end
 
-    -- Column boundary X positions:
-    -- cb[b] = (b * grid_width + half_thickness + shift_x) * sp_to_bp
+    -- Column boundary X positions (supports mixed column widths)
+    local banxin_width = params.banxin_width or 0
+    local interval = params.interval or 0
     local function cb(b)
-        return (b * grid_width + half_thickness + shift_x) * sp_to_bp
+        return (text_position.get_column_x(b, grid_width, banxin_width, interval) + half_thickness + shift_x) * sp_to_bp
     end
 
     -- Construct path: counter-clockwise from bottom-left
@@ -283,13 +288,22 @@ local function render_borders(p_head, params)
     local b_padding_bottom = params.b_padding_bottom
     local is_textbox = params.is_textbox
 
+    local banxin_width = params.banxin_width or 0
+    local interval = params.interval or 0
+
     -- Calculate content dimensions
     local content_width, content_height
     if is_textbox then
         content_width = (actual_cols > 0 and actual_cols or 1) * grid_width
         content_height = (actual_rows > 0 and actual_rows or 1) * grid_height
     else
-        content_width = p_total_cols * grid_width
+        if interval > 0 and banxin_width > 0 and banxin_width ~= grid_width then
+            local n_banxin = math.floor(p_total_cols / (interval + 1))
+            local n_content = p_total_cols - n_banxin
+            content_width = n_content * grid_width + n_banxin * banxin_width
+        else
+            content_width = p_total_cols * grid_width
+        end
         content_height = line_limit * grid_height + b_padding_top + b_padding_bottom
     end
     local inner_width = content_width + border_thickness
@@ -301,6 +315,8 @@ local function render_borders(p_head, params)
             total_cols = p_total_cols,
             grid_width = grid_width,
             grid_height = grid_height,
+            banxin_width = banxin_width,
+            interval = interval,
             line_limit = line_limit,
             border_thickness = border_thickness,
             b_padding_top = b_padding_top,
@@ -326,6 +342,8 @@ local function render_borders(p_head, params)
             total_cols = p_total_cols,
             grid_width = grid_width,
             grid_height = grid_height,
+            banxin_width = banxin_width,
+            interval = interval,
             half_thickness = math.floor(border_thickness / 2),
             shift_x = params.shift_x,
         })

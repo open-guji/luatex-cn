@@ -59,6 +59,25 @@
   }
 
 % ============================================================================
+% Internal: Apply footnote font size (always from content base font-size)
+% ============================================================================
+\dim_new:N \l__luatexcn_footnote_resolved_size_dim
+\cs_new_protected:Nn \__luatexcn_footnote_apply_font_size:
+  {
+    % First, temporarily set font to base content size so that relative units
+    % (like 0.8em) resolve correctly against the base, not the current font.
+    \fontsize { \l__luatexcn_content_font_size_tl } { \l__luatexcn_content_font_size_tl } \selectfont
+    % Now resolve the footnote font-size (may contain em units)
+    \dim_set:Nn \l__luatexcn_footnote_resolved_size_dim
+      { \l__luatexcn_footnote_font_size_tl }
+    % Apply the resolved absolute size
+    \fontsize
+      { \dim_use:N \l__luatexcn_footnote_resolved_size_dim }
+      { \dim_use:N \l__luatexcn_footnote_resolved_size_dim }
+    \selectfont
+  }
+
+% ============================================================================
 % Global Storage (Mode 1)
 % ============================================================================
 \seq_new:N  \g__luatexcn_footnote_content_seq
@@ -149,14 +168,41 @@
           { \seq_count:N \g__luatexcn_footnote_content_seq } > { 0 }
           {
             \__luatexcn_footnote_separator:
+            % Group to contain font-size change (prevent leaking to subsequent text)
+            \group_begin:
+            % Apply footnote font-size using absolute value from content base font-size
+            % (avoid relative em units which compound across multiple FlushFootnote calls)
+            \tl_if_empty:NF \l__luatexcn_footnote_font_size_tl
+              {
+                \__luatexcn_footnote_apply_font_size:
+              }
             \int_step_inline:nn
               { \seq_count:N \g__luatexcn_footnote_content_seq }
               {
-                \hspace{\l__luatexcn_footnote_indent_dim}
+                \int_compare:nNnTF { ##1 } > { 1 }
+                  {
+                    % Column break with post-break indent via attribute
+                    \lua_now:e {
+                      local~constants~=~require('core.luatex-cn-constants')
+                      local~indent_sp~=~\dim_to_decimal_in_sp:n { \l__luatexcn_footnote_indent_dim }
+                      local~grid_h_sp~=~\dim_to_decimal_in_sp:n { \l__luatexcn_content_grid_height_tl }
+                      local~cells~=~math.max(1,~math.floor(indent_sp~/~grid_h_sp~+~0.5))
+                      tex.setattribute(constants.ATTR_COLUMN_BREAK_INDENT,~cells)
+                    }
+                    \penalty -10002\relax
+                    \lua_now:e {
+                      local~constants~=~require('core.luatex-cn-constants')
+                      tex.setattribute(constants.ATTR_COLUMN_BREAK_INDENT,~-0x7FFFFFFF)
+                    }
+                  }
+                  {
+                    % First footnote: use normal indent space
+                    \hspace{\l__luatexcn_footnote_indent_dim}
+                  }
                 \__luatexcn_footnote_write_marker:n { ##1 }
                 \seq_item:Nn \g__luatexcn_footnote_content_seq { ##1 }
-                \hspace{\l__luatexcn_footnote_spacing_dim}
               }
+            \group_end:
             \seq_gclear:N \g__luatexcn_footnote_content_seq
             \int_gzero:N  \g__luatexcn_footnote_counter_int
           }

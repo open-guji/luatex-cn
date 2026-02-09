@@ -82,6 +82,10 @@ constants.ATTR_COLUMN = luatexbase.attributes.cnverticalcolumn or luatexbase.new
 constants.ATTR_COLUMN_ALIGN = luatexbase.attributes.cnverticalcolumnalign or
     luatexbase.new_attribute("cnverticalcolumnalign")
 
+-- Column break with indent: value = number of grid cells to skip after column break
+constants.ATTR_COLUMN_BREAK_INDENT = luatexbase.attributes.cnverticalcolbreakindent or
+    luatexbase.new_attribute("cnverticalcolbreakindent")
+
 -- Constants for Side Pizhu
 constants.SIDENOTE_USER_ID = 202601
 constants.FLOATING_TEXTBOX_USER_ID = 202602

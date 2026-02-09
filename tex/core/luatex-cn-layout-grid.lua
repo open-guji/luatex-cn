@@ -384,14 +384,26 @@ _internal.accumulate_spacing = accumulate_spacing
 -- @param grid_height (number) Grid height
 -- @param indent (number) Current indent
 -- @return (boolean) true if handled, false otherwise
-local function handle_penalty_breaks(p_val, ctx, flush_buffer_fn, p_cols, interval, grid_height, indent)
+local function handle_penalty_breaks(p_val, ctx, flush_buffer_fn, p_cols, interval, grid_height, indent, penalty_node)
     if p_val == constants.PENALTY_FORCE_COLUMN then
         -- Forced column break (explicit \换列 command)
         flush_buffer_fn()
-        if ctx.cur_row > ctx.cur_column_indent then
-            wrap_to_next_column(ctx, p_cols, interval, grid_height, indent, false, true)
+        -- Check for post-break indent (e.g., footnote indentation)
+        local post_indent = penalty_node and D.get_attribute(penalty_node, constants.ATTR_COLUMN_BREAK_INDENT)
+        if post_indent and post_indent > 0 then
+            -- Footnote column break: wrap to new column only if current column
+            -- has actual content (not just indentation space)
+            if ctx.cur_row > ctx.cur_column_indent then
+                wrap_to_next_column(ctx, p_cols, interval, grid_height, indent, false, true)
+            end
+            ctx.cur_row = post_indent
+            ctx.cur_column_indent = 0
+        else
+            if ctx.cur_row > ctx.cur_column_indent then
+                wrap_to_next_column(ctx, p_cols, interval, grid_height, indent, false, true)
+            end
+            ctx.cur_column_indent = 0
         end
-        ctx.cur_column_indent = 0
         return true
     elseif p_val == constants.PENALTY_FORCE_PAGE then
         -- Forced page break (\newpage, \clearpage)
@@ -924,7 +936,6 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
             goto start_of_loop
         elseif id == constants.PENALTY then
             local p_val = D.getfield(t, "penalty")
-
             -- Smart column break: Check next node type before deciding
             if p_val == constants.PENALTY_SMART_BREAK then
                 local next_node = D.getnext(t)
@@ -948,7 +959,7 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
                     -- If next is textflow, don't break - let textflow continue naturally
                 end
             else
-                handle_penalty_breaks(p_val, ctx, flush_buffer, p_cols, interval, grid_height, indent)
+                handle_penalty_breaks(p_val, ctx, flush_buffer, p_cols, interval, grid_height, indent, t)
             end
         end
 

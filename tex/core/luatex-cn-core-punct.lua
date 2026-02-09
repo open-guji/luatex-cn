@@ -431,40 +431,17 @@ local function has_leading_space(ptype)
     return ptype == "open"
 end
 
---- Check if two adjacent punctuation types should be squeezed
--- Returns the squeeze amount (negative = squeeze)
--- Based on CLREQ: remove half-width space between adjacent punctuation
--- @param prev_ptype (string|nil) Previous character's punct type
--- @param curr_ptype (string|nil) Current character's punct type
--- @return (number) Squeeze amount in grid units (0 or -0.5)
-local function get_squeeze_amount(prev_ptype, curr_ptype)
-    if not prev_ptype or not curr_ptype then return 0 end
+--- Default squeeze amount (0.5 = half grid cell)
+local DEFAULT_SQUEEZE = 0.5
 
-    -- Rules for prev with trailing space (close/fullstop/comma)
-    if has_trailing_space(prev_ptype) then
-        -- trailing + leading (close/fullstop/comma + open) → squeeze
-        if curr_ptype == "open" then return -0.5 end
-        -- trailing + close → squeeze (e.g. 。」，」)
-        if curr_ptype == "close" then return -0.5 end
-        -- trailing + fullstop/comma → squeeze (e.g. 」。」，)
-        if curr_ptype == "fullstop" or curr_ptype == "comma" then return -0.5 end
-        -- trailing + middle → squeeze (e.g. 」！ ←close+middle already works)
-        if curr_ptype == "middle" then return -0.5 end
-    end
-
-    -- Rules for curr with leading space (open)
-    if has_leading_space(curr_ptype) then
-        -- middle/nobreak + open → squeeze (e.g. ？「)
-        return -0.5
-    end
-
-    -- open + open → squeeze (e.g. 「「)
-    if prev_ptype == "open" and curr_ptype == "open" then
-        return -0.5
-    end
-
-    return 0
-end
+--- Per-character squeeze overrides
+-- 【】/︻︼ (black lenticular brackets) are extra tight: 0.75 = occupy 0.25 grid cell
+local CHAR_SQUEEZE = {
+    [0x3010] = 0.75, -- 【
+    [0x3011] = 0.75, -- 】
+    [0xFE3B] = 0.75, -- ︻
+    [0xFE3C] = 0.75, -- ︼
+}
 
 --- Get the punctuation type for a node from its attribute
 -- @param node_d (direct node) The node
@@ -518,68 +495,33 @@ function punct.layout(list, layout_map, engine_ctx, ctx)
             return a.pos.row < b.pos.row
         end)
 
-        -- Scan for squeeze opportunities
-        local offset = 0             -- accumulated squeeze offset
-        local prev_ptype = nil
-        local in_squeeze_seq = false -- whether we're inside a squeezed punctuation sequence
+        -- Always-squeeze mode: every punctuation with leading/trailing space
+        -- is squeezed to half a grid cell, regardless of neighbors.
+        -- Leading space (open brackets): squeeze before placing current char.
+        -- Trailing space (close/fullstop/comma): squeeze after placing current char.
+        local offset = 0
 
-        for i, entry in ipairs(col_entries) do
+        for _, entry in ipairs(col_entries) do
             local curr_ptype = entry.ptype
 
-            -- Apply accumulated offset from previous squeezes
+            -- Leading space squeeze: open brackets have empty space before glyph.
+            if curr_ptype and has_leading_space(curr_ptype) then
+                local char = D.getfield(entry.node, "char")
+                local squeeze = (char and CHAR_SQUEEZE[char]) or DEFAULT_SQUEEZE
+                offset = offset - squeeze
+                total_squeezed = total_squeezed + 1
+            end
+
+            -- Apply accumulated offset
             if offset ~= 0 then
                 entry.pos.row = entry.pos.row + offset
             end
 
-            -- Check for line-start squeeze (first char in column is open bracket)
-            if i == 1 and curr_ptype == "open" then
-                -- Opening bracket at column start: squeeze its leading space
-                entry.pos.punct_squeeze = -0.5
-                offset = offset - 0.5
-                total_squeezed = total_squeezed + 1
-                in_squeeze_seq = true
-            end
-
-            -- Check for consecutive punctuation squeeze
-            if i > 1 then
-                local squeeze = get_squeeze_amount(prev_ptype, curr_ptype)
-                if squeeze ~= 0 then
-                    entry.pos.punct_squeeze = squeeze
-                    offset = offset + squeeze
-                    -- Re-apply offset to current node
-                    entry.pos.row = entry.pos.row + squeeze
-                    total_squeezed = total_squeezed + 1
-                    in_squeeze_seq = true
-                end
-
-                -- End of punctuation sequence: squeeze trailing space of last punct
-                -- When a punct with trailing space is followed by a non-punct char,
-                -- and we've been squeezing in this sequence, also remove the trailing space.
-                -- This makes e.g. 。」 occupy exactly 1 grid (0.5 + 0.5) instead of 1.5.
-                if in_squeeze_seq and prev_ptype and not curr_ptype then
-                    if has_trailing_space(prev_ptype) then
-                        offset = offset - 0.5
-                        entry.pos.row = entry.pos.row - 0.5
-                        total_squeezed = total_squeezed + 1
-                    end
-                end
-
-                -- Reset sequence tracking when hitting non-punct
-                if not curr_ptype then
-                    in_squeeze_seq = false
-                end
-            end
-
-            prev_ptype = curr_ptype
-        end
-
-        -- Check for line-end squeeze (last char is close/fullstop/comma)
-        if #col_entries > 0 then
-            local last = col_entries[#col_entries]
-            local ltype = last.ptype
-            if ltype == "close" or ltype == "fullstop" or ltype == "comma" then
-                last.pos.punct_squeeze = (last.pos.punct_squeeze or 0) - 0.5
-                -- No offset change needed since there are no more chars after this
+            -- Trailing space squeeze: close/fullstop/comma have empty space after glyph.
+            if curr_ptype and has_trailing_space(curr_ptype) then
+                local char = D.getfield(entry.node, "char")
+                local squeeze = (char and CHAR_SQUEEZE[char]) or DEFAULT_SQUEEZE
+                offset = offset - squeeze
                 total_squeezed = total_squeezed + 1
             end
         end
@@ -603,6 +545,8 @@ end
 local MAINLAND_OFFSETS = {
     fullstop = { x = 0.20, y = 0.25 }, -- 。sentence-ending period
     comma    = { x = 0.20, y = 0.25 }, -- ，、 comma and enumeration comma
+    open     = { x = 0, y = -0.25 },   -- 「【（ shift down toward enclosed content
+    close    = { x = 0, y = 0.25 },    -- 」】）shift up toward enclosed content
 }
 
 -- Taiwan style: all punctuation centered in the grid cell (no extra offset)

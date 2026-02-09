@@ -101,16 +101,16 @@
   }
 
 % ============================================================================
-% Internal: Write Footnote Marker (〔一〕 or ①)
+% Internal: Write Footnote Marker (【一】 or ①)
 % ============================================================================
 \cs_new:Nn \__luatexcn_footnote_write_marker:n
   {
     \str_case:VnF \l__luatexcn_footnote_number_style_tl
       {
-        {lujiao}  { 〔\lua_now:e{ tex.print(vertical_utils.to_chinese_numeral(#1)) }〕 }
+        {lujiao}  { 【\lua_now:e{ tex.print(vertical_utils.to_chinese_numeral(#1)) }】 }
         {circled} { \lua_now:e{ tex.print(vertical_utils.to_circled_numeral(#1)) } }
       }
-      { 〔\lua_now:e{ tex.print(vertical_utils.to_chinese_numeral(#1)) }〕 }
+      { 【\lua_now:e{ tex.print(vertical_utils.to_chinese_numeral(#1)) }】 }
   }
 
 % ============================================================================
@@ -151,9 +151,17 @@
           % Mode 1: Store in sequence for paragraph-end output
           \seq_gput_right:Nn \g__luatexcn_footnote_content_seq { #2 }
         }
-      % Write inline marker
-      \__luatexcn_footnote_write_marker:n
-        { \int_use:N \g__luatexcn_footnote_counter_int }
+      % Write inline marker with smaller font + right-align
+      \group_begin:
+        \tl_if_empty:NF \l__luatexcn_footnote_font_size_tl
+          { \__luatexcn_footnote_apply_font_size: }
+        \lua_now:e {
+          local~constants~=~require('core.luatex-cn-constants')
+          tex.setattribute(constants.ATTR_HALIGN,~3)
+        }
+        \__luatexcn_footnote_write_marker:n
+          { \int_use:N \g__luatexcn_footnote_counter_int }
+      \group_end:
     \group_end:
   }
 

@@ -1,0 +1,202 @@
+% Copyright 2026 Open-Guji (https://github.com/open-guji)
+%
+% Licensed under the Apache License, Version 2.0 (the "License");
+% you may not use this file except in compliance with the License.
+% You may obtain a copy of the License at
+%
+%     http://www.apache.org/licenses/LICENSE-2.0
+%
+% Unless required by applicable law or agreed to in writing, software
+% distributed under the License is distributed on an "AS IS" BASIS,
+% WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+% See the License for the specific language governing permissions and
+% limitations under the License.
+
+% luatex-cn-guji-titlepage.sty
+% Book title page (书名页) support for vertical typesetting
+% Provides multi-column title page layout with flexible alignment
+
+\RequirePackage{expl3}
+\RequirePackage{xparse}
+\ProvidesExplPackage {guji/luatex-cn-guji-titlepage} {2026/02/08} {0.2.6} {Book Title Page Support}
+
+% ============================================================================
+% Variables
+% ============================================================================
+
+% Environment options
+\int_new:N  \l__luatexcn_titlepage_columns_int
+\tl_new:N   \l__luatexcn_titlepage_column_widths_tl
+\dim_new:N  \l__luatexcn_titlepage_gap_dim
+
+% Column storage - separate sequences for each property
+\seq_new:N  \g__luatexcn_titlepage_col_aligns_seq
+\seq_new:N  \g__luatexcn_titlepage_col_fontsizes_seq
+\seq_new:N  \g__luatexcn_titlepage_col_contents_seq
+\int_new:N  \g__luatexcn_titlepage_current_col_int
+
+% Column options (temporary)
+\tl_new:N   \l__luatexcn_titlepage_col_align_tl
+\tl_new:N   \l__luatexcn_titlepage_col_font_size_tl
+\tl_new:N   \l__luatexcn_titlepage_col_font_tl
+
+% ============================================================================
+% Key-value Configuration
+% ============================================================================
+
+\keys_define:nn { luatexcn / titlepage }
+  {
+    columns .int_set:N = \l__luatexcn_titlepage_columns_int,
+    columns .initial:n = {3},
+    column-widths .tl_set:N = \l__luatexcn_titlepage_column_widths_tl,
+    column-widths .initial:n = {},
+    gap .dim_set:N = \l__luatexcn_titlepage_gap_dim,
+    gap .initial:n = {0pt},
+  }
+
+\keys_define:nn { luatexcn / titlepage / column }
+  {
+    align .tl_set:N = \l__luatexcn_titlepage_col_align_tl,
+    align .initial:n = {center},
+    font-size .tl_set:N = \l__luatexcn_titlepage_col_font_size_tl,
+    font-size .initial:n = {},
+    font .tl_set:N = \l__luatexcn_titlepage_col_font_tl,
+    font .initial:n = {},
+  }
+
+% ============================================================================
+% TitleColumn Command - Store column content with options
+% ============================================================================
+\NewDocumentCommand{\TitleColumn}{ O{} +m }
+  {
+    \group_begin:
+      % Reset to defaults then apply options
+      \keys_set:nn { luatexcn / titlepage / column } { align=center, font-size={}, font={} }
+      \keys_set:nn { luatexcn / titlepage / column } { #1 }
+      
+      % Increment column counter
+      \int_gincr:N \g__luatexcn_titlepage_current_col_int
+      
+      % Store each property separately
+      \seq_gput_right:Nx \g__luatexcn_titlepage_col_aligns_seq
+        { \l__luatexcn_titlepage_col_align_tl }
+      \seq_gput_right:Nx \g__luatexcn_titlepage_col_fontsizes_seq
+        { \l__luatexcn_titlepage_col_font_size_tl }
+      \seq_gput_right:Nn \g__luatexcn_titlepage_col_contents_seq { #2 }
+    \group_end:
+  }
+
+% ============================================================================
+% Internal: Render all columns
+% ============================================================================
+\int_new:N \l__luatexcn_titlepage_total_width_int
+\int_new:N \l__luatexcn_titlepage_col_width_int
+
+\cs_new_protected:Nn \__luatexcn_titlepage_render_columns:
+  {
+    % Use the titlepage columns option directly (default 3)
+    \int_set_eq:NN \l__luatexcn_titlepage_total_width_int \l__luatexcn_titlepage_columns_int
+    
+    % Each column gets 1 grid cell (equal distribution)
+    \int_set:Nn \l__luatexcn_titlepage_col_width_int { 1 }
+    
+    % Render each column
+    \int_step_inline:nn { \seq_count:N \g__luatexcn_titlepage_col_contents_seq }
+      {
+        \__luatexcn_titlepage_render_single_column:n { ##1 }
+      }
+  }
+
+% ============================================================================
+% Internal: Render a single column
+% ============================================================================
+\tl_new:N \l__luatexcn_titlepage_this_align_tl
+\tl_new:N \l__luatexcn_titlepage_this_fontsize_tl
+\tl_new:N \l__luatexcn_titlepage_this_boxalign_tl
+
+\cs_new_protected:Nn \__luatexcn_titlepage_render_single_column:n
+  % #1 = column index (1-based)
+  {
+    % Get properties for this column
+    \tl_set:Nx \l__luatexcn_titlepage_this_align_tl
+      { \seq_item:Nn \g__luatexcn_titlepage_col_aligns_seq { #1 } }
+    \tl_set:Nx \l__luatexcn_titlepage_this_fontsize_tl
+      { \seq_item:Nn \g__luatexcn_titlepage_col_fontsizes_seq { #1 } }
+    
+    % Map alignment to box-align value
+    \str_case:VnF \l__luatexcn_titlepage_this_align_tl
+      {
+        {top}    { \tl_set:Nn \l__luatexcn_titlepage_this_boxalign_tl { top } }
+        {center} { \tl_set:Nn \l__luatexcn_titlepage_this_boxalign_tl { center } }
+        {bottom} { \tl_set:Nn \l__luatexcn_titlepage_this_boxalign_tl { bottom } }
+      }
+      { \tl_set:Nn \l__luatexcn_titlepage_this_boxalign_tl { center } }
+    
+    % Build and output TextBox
+    \tl_if_empty:NTF \l__luatexcn_titlepage_this_fontsize_tl
+      {
+        % No font-size specified
+        \TextBox[
+          n-cols = \int_use:N \l__luatexcn_titlepage_col_width_int,
+          box-align = \l__luatexcn_titlepage_this_boxalign_tl
+        ]{ \seq_item:Nn \g__luatexcn_titlepage_col_contents_seq { #1 } }
+      }
+      {
+        % With font-size
+        \TextBox[
+          n-cols = \int_use:N \l__luatexcn_titlepage_col_width_int,
+          box-align = \l__luatexcn_titlepage_this_boxalign_tl,
+          font-size = \l__luatexcn_titlepage_this_fontsize_tl
+        ]{ \seq_item:Nn \g__luatexcn_titlepage_col_contents_seq { #1 } }
+      }
+  }
+
+% ============================================================================
+% TitlePage Environment - Uses SinglePage logic directly (not nesting environ)
+% ============================================================================
+\NewDocumentEnvironment{TitlePage}{ O{} }
+  {
+    % Clear previous data
+    \seq_gclear:N \g__luatexcn_titlepage_col_aligns_seq
+    \seq_gclear:N \g__luatexcn_titlepage_col_fontsizes_seq
+    \seq_gclear:N \g__luatexcn_titlepage_col_contents_seq
+    \int_gzero:N  \g__luatexcn_titlepage_current_col_int
+    
+    % Apply options (default columns=3)
+    \keys_set:nn { luatexcn / titlepage } { #1 }
+  }
+  {
+    % End of environment - apply single page settings directly
+    \clearpage
+    % Save current settings in Lua
+    \lua_now:n { require('core.luatex-cn-core-page').save() }
+    % Apply single page settings with columns from titlepage option
+    \keys_set:nn { luatexcn / page }
+      {
+        columns = \int_use:N \l__luatexcn_titlepage_columns_int,
+        page-split-enabled = false
+      }
+    % Sync to Lua
+    \lua_now:e {
+      local~page~=~require('core.luatex-cn-core-page');~
+      page.setup({
+        columns~=~\int_use:N \l__luatexcn_titlepage_columns_int
+      });~
+    }
+    % Render content
+    \begin{正文}
+      \__luatexcn_titlepage_render_columns:
+    \end{正文}
+    \clearpage
+    % Restore previous settings
+    \lua_now:n { require('core.luatex-cn-core-page').restore() }
+    \__luatexcn_page_sync_from_lua:
+  }
+
+% ============================================================================
+% CJK Aliases
+% ============================================================================
+\NewEnvironmentCopy{书名页}{TitlePage}
+\NewCommandCopy{\书名页列}{\TitleColumn}
+
+\endinput

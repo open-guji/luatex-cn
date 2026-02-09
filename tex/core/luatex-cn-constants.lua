@@ -86,6 +86,11 @@ constants.ATTR_COLUMN_ALIGN = luatexbase.attributes.cnverticalcolumnalign or
 constants.ATTR_COLUMN_BREAK_INDENT = luatexbase.attributes.cnverticalcolbreakindent or
     luatexbase.new_attribute("cnverticalcolbreakindent")
 
+-- Horizontal alignment override for individual glyphs
+-- Values: 0=unset, 1=left, 2=center, 3=right
+constants.ATTR_HALIGN = luatexbase.attributes.cnverticalhalign or
+    luatexbase.new_attribute("cnverticalhalign")
+
 -- Constants for Side Pizhu
 constants.SIDENOTE_USER_ID = 202601
 constants.FLOATING_TEXTBOX_USER_ID = 202602

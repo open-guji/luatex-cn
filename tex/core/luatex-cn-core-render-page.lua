@@ -230,6 +230,14 @@ local function handle_glyph_node(curr, p_head, pos, params, ctx)
         h_align = visual.column_aligns[pos.col]
     end
 
+    -- Per-glyph h_align override (e.g. footnote markers use right-align)
+    local halign_attr = D.get_attribute(curr, constants.ATTR_HALIGN)
+    if halign_attr and halign_attr > 0 then
+        if halign_attr == 1 then h_align = "left"
+        elseif halign_attr == 3 then h_align = "right"
+        end
+    end
+
     local final_x, final_y = text_position.calc_grid_position(pos.col, pos.row,
         {
             width = w,

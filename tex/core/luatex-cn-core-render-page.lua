@@ -264,6 +264,7 @@ local function handle_glyph_node(curr, p_head, pos, params, ctx)
             banxin_width = ctx.banxin_width,
             interval = ctx.interval,
             body_font_size = ctx.body_font_size,
+            cell_height = pos.cell_height,
         }
     )
 
@@ -392,7 +393,7 @@ local function handle_debug_drawing(curr, p_head, pos, ctx)
             ctx.half_thickness, ctx.shift_x, ctx.banxin_width, ctx.interval)
         local ty_sp = text_position.calculate_y_position(pos.row, ctx.grid_height, ctx.shift_y)
         local tw_sp = text_position.get_column_width(pos.col, ctx.grid_width, ctx.banxin_width or 0, ctx.interval or 0)
-        local th_sp = -ctx.grid_height
+        local th_sp = -(pos.cell_height or ctx.grid_height)
 
         if pos.sub_col and pos.sub_col > 0 then
             tw_sp = ctx.grid_width / 2

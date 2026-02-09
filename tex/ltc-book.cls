@@ -23,6 +23,14 @@
 % ============================================================================
 
 \tl_new:N \l_luatexcn_book_initial_template_tl
+\prop_new:N \g_luatexcn_book_template_map_prop
+
+% Template name mappings (Chinese -> Internal config name)
+\prop_gset_from_keyval:Nn \g_luatexcn_book_template_map_prop
+  {
+    中华书局 = zhonghuashuju,
+    中華書局 = zhonghuashuju,
+  }
 
 % ============================================================================
 % Class Options
@@ -33,6 +41,9 @@
     unknown .code:n =
       {
         \tl_set_eq:NN \l_tmpa_tl \l_keys_key_tl
+        % Look up Chinese name mapping
+        \prop_get:NVNT \g_luatexcn_book_template_map_prop \l_tmpa_tl \l_tmpb_tl
+          { \tl_set_eq:NN \l_tmpa_tl \l_tmpb_tl }
         \file_if_exist:nTF { configs/luatex-cn-book- \l_tmpa_tl .cfg }
           { \tl_set_eq:NN \l_luatexcn_book_initial_template_tl \l_tmpa_tl }
           { \PassOptionsToClass { \l_tmpa_tl } { article } }
@@ -59,15 +70,15 @@
 % Initialization
 % ============================================================================
 
-% Load default config
-\InputIfFileExists{configs/luatex-cn-book-default.cfg}{}{
-  \PackageWarning{luatex-cn-book}{Config~file~configs/luatex-cn-book-default.cfg~not~found}
-}
-
-% Apply initial template from class options
-\tl_if_empty:NF \l_luatexcn_book_initial_template_tl
+% Load config: use template-specific config if specified, otherwise use default
+\tl_if_empty:NTF \l_luatexcn_book_initial_template_tl
   {
-    \keys_set:nx { luatexcn / book } { template = \l_luatexcn_book_initial_template_tl }
+    \InputIfFileExists{configs/luatex-cn-book-default.cfg}{}{
+      \PackageWarning{luatex-cn-book}{Config~file~configs/luatex-cn-book-default.cfg~not~found}
+    }
+  }
+  {
+    \InputIfFileExists { configs/luatex-cn-book- \l_luatexcn_book_initial_template_tl .cfg } {} {}
   }
 
 % Apply font at end of class loading

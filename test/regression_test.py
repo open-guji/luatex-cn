@@ -6,6 +6,8 @@ import sys
 import argparse
 import re
 from pathlib import Path
+from PIL import Image
+import numpy as np
 
 # Paths relative to the project root
 BASE_DIR = Path(__file__).parent.parent.resolve()
@@ -76,26 +78,55 @@ def pdf_to_pngs(pdf_file, output_dir, log_list):
     return pngs
 
 def compare_images(baseline_png, current_png, diff_png, log_list):
-    """Compare two PNG images and generate a diff if they differ."""
-    # Metric AE counts different pixels.
-    res = run_command([
-        "compare", "-metric", "AE", 
-        str(baseline_png), str(current_png), str(diff_png)
-    ], log_list=log_list)
-    
-    # compare outputs the number of different pixels to stderr (sometimes stdout)
-    output = (res.stderr + res.stdout).strip()
-    if not output:
-        return 0 if res.returncode == 0 else -1
-        
-    try:
-        # Find the first number (handles "123", "123 (0.123)", etc.)
-        match = re.search(r"(\d+(\.\d+)?)", output)
-        if match:
-            return int(float(match.group(1)))
-        return 0 if res.returncode == 0 else -1
-    except (ValueError, IndexError):
-        return 0 if res.returncode == 0 else -1
+    """Compare two PNG images and generate a single composite diff image.
+
+    Composite: identical pixels in gray, baseline-only diffs in blue,
+    current-only diffs in red, overlapping diffs in purple/dark.
+    """
+    baseline_img = Image.open(baseline_png).convert("RGB")
+    current_img = Image.open(current_png).convert("RGB")
+
+    # Ensure same size (pad smaller if needed)
+    w = max(baseline_img.width, current_img.width)
+    h = max(baseline_img.height, current_img.height)
+    if baseline_img.size != (w, h):
+        padded = Image.new("RGB", (w, h), (255, 255, 255))
+        padded.paste(baseline_img, (0, 0))
+        baseline_img = padded
+    if current_img.size != (w, h):
+        padded = Image.new("RGB", (w, h), (255, 255, 255))
+        padded.paste(current_img, (0, 0))
+        current_img = padded
+
+    baseline_arr = np.array(baseline_img)
+    current_arr = np.array(current_img)
+
+    # Find pixels that differ (any channel)
+    diff_mask = np.any(baseline_arr != current_arr, axis=2)
+    diff_count = int(np.sum(diff_mask))
+
+    if diff_count > 0:
+        # Grayscale luminance
+        b_gray = np.mean(baseline_arr, axis=2)
+        c_gray = np.mean(current_arr, axis=2)
+
+        # Same pixels: grayscale
+        result = np.stack([b_gray, b_gray, b_gray], axis=2).astype(np.uint8)
+
+        # Different pixels: blue (baseline) + red (current) on white background
+        # Darkness = content strength: 0 = white/empty, 255 = black/full
+        bs = (255 - b_gray[diff_mask]).astype(np.float32)
+        cs = (255 - c_gray[diff_mask]).astype(np.float32)
+
+        # Blue subtracts from R,G; Red subtracts from G,B
+        result[diff_mask, 0] = np.clip(255 - bs, 0, 255).astype(np.uint8)
+        result[diff_mask, 1] = np.clip(255 - bs - cs, 0, 255).astype(np.uint8)
+        result[diff_mask, 2] = np.clip(255 - cs, 0, 255).astype(np.uint8)
+
+        diff_img = Image.fromarray(result)
+        diff_img.save(str(diff_png))
+
+    return diff_count
 
 def process_file(tex_file, mode):
     log_list = [f"\nProcessing {tex_file.name}..."]

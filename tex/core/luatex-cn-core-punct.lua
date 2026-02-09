@@ -26,6 +26,75 @@ local debug_mod = require('debug.luatex-cn-debug')
 local dbg = debug_mod.get_debugger('punct')
 
 -- ============================================================================
+-- Font ink-center cache for punctuation auto-centering
+-- ============================================================================
+-- Some fonts (e.g. FZShuSong-Z01) have punctuation glyphs whose ink is not
+-- centered in the advance width. This cache stores the ink center ratio
+-- (ink_center_x / advance_width) so we can compensate at render time.
+-- Key: font_id, Value: { [charcode] = ratio (0..1), ... }
+local font_ink_center_cache = {}
+
+-- Characters whose ink center we need to measure
+local INK_CENTER_CHARS = {
+    [0xFF0C] = true, -- ，
+    [0x3001] = true, -- 、
+    [0x3002] = true, -- 。
+    [0xFF0E] = true, -- ．
+    [0xFF1A] = true, -- ：
+    [0xFF1B] = true, -- ；
+    [0xFF01] = true, -- ！
+    [0xFF1F] = true, -- ？
+}
+
+--- Get ink center ratio for a glyph in a given font.
+-- Returns the horizontal center of the glyph ink as a ratio of advance width.
+-- For a perfectly centered glyph this is 0.5.
+-- @param fid (number) Font ID
+-- @param charcode (number) Unicode codepoint
+-- @return (number) Ink center ratio (0..1), or 0.5 if unknown
+local function get_ink_center_ratio(fid, charcode)
+    -- Check cache first
+    local font_cache = font_ink_center_cache[fid]
+    if font_cache then
+        local ratio = font_cache[charcode]
+        if ratio then return ratio end
+        -- Already analyzed this font but char not found
+        if font_cache._analyzed then return 0.5 end
+    end
+
+    -- Analyze font using fontloader
+    font_ink_center_cache[fid] = font_ink_center_cache[fid] or {}
+    font_cache = font_ink_center_cache[fid]
+    font_cache._analyzed = true
+
+    local f = font.getfont(fid)
+    if not f or not f.filename then return 0.5 end
+
+    local ok, raw = pcall(fontloader.open, f.filename)
+    if not ok or not raw then return 0.5 end
+
+    local ok2, info = pcall(fontloader.to_table, raw)
+    fontloader.close(raw)
+    if not ok2 or not info or not info.glyphs then return 0.5 end
+
+    -- Scan all glyphs for target characters
+    for i = 0, (info.glyphcnt or 0) - 1 do
+        local g = info.glyphs[i]
+        if g and g.unicode and INK_CENTER_CHARS[g.unicode] and g.width and g.width > 0 then
+            if g.boundingbox then
+                local cx = (g.boundingbox[1] + g.boundingbox[3]) / 2
+                font_cache[g.unicode] = cx / g.width
+            end
+        end
+    end
+
+    dbg.log(string.format("punct: analyzed font %d ink centers: %s",
+        fid, f.filename))
+
+    return font_cache[charcode] or 0.5
+end
+
+-- ============================================================================
 -- Punctuation Character Classification (CLREQ / JLREQ reference)
 -- ============================================================================
 
@@ -262,6 +331,12 @@ function punct.make_kinsoku_hook(punct_ctx)
                 if pulled then
                     flush_buffer()
                     wrap_to_next_column(ctx, p_cols, interval, grid_height, indent, false, false)
+                    -- Apply indent: wrap_to_next_column resets cur_row to 0 but
+                    -- does not apply paragraph indentation for the new column
+                    if indent and indent > 0 and ctx.cur_row < indent then
+                        ctx.cur_row = indent
+                        ctx.cur_column_indent = indent
+                    end
                     pulled.page = ctx.cur_page
                     pulled.col = ctx.cur_col
                     pulled.relative_row = ctx.cur_row
@@ -288,6 +363,12 @@ function punct.make_kinsoku_hook(punct_ctx)
                 local pulled = table.remove(col_buffer)
                 flush_buffer()
                 wrap_to_next_column(ctx, p_cols, interval, grid_height, indent, false, false)
+                -- Apply indent: wrap_to_next_column resets cur_row to 0 but
+                -- does not apply paragraph indentation for the new column
+                if indent and indent > 0 and ctx.cur_row < indent then
+                    ctx.cur_row = indent
+                    ctx.cur_column_indent = indent
+                end
                 pulled.page = ctx.cur_page
                 pulled.col = ctx.cur_col
                 pulled.relative_row = ctx.cur_row
@@ -434,13 +515,10 @@ end
 --- Default squeeze amount (0.5 = half grid cell)
 local DEFAULT_SQUEEZE = 0.5
 
---- Per-character squeeze overrides
--- 【】/︻︼ (black lenticular brackets) are extra tight: 0.75 = occupy 0.25 grid cell
+--- Per-character squeeze overrides (default is 0.5 = occupy half grid cell)
 local CHAR_SQUEEZE = {
-    [0x3010] = 0.75, -- 【
-    [0x3011] = 0.75, -- 】
-    [0xFE3B] = 0.75, -- ︻
-    [0xFE3C] = 0.75, -- ︼
+    [0x3002] = 0,  -- 。fullstop: full cell (no squeeze)
+    [0xFF0E] = 0,  -- ．fullstop: full cell (no squeeze)
 }
 
 --- Get the punctuation type for a node from its attribute
@@ -487,6 +565,7 @@ function punct.layout(list, layout_map, engine_ctx, ctx)
     end
 
     local total_squeezed = 0
+    local grid_height = engine_ctx.g_height
 
     -- Process each column
     for _, col_entries in pairs(columns) do
@@ -495,35 +574,52 @@ function punct.layout(list, layout_map, engine_ctx, ctx)
             return a.pos.row < b.pos.row
         end)
 
-        -- Always-squeeze mode: every punctuation with leading/trailing space
-        -- is squeezed to half a grid cell, regardless of neighbors.
-        -- Leading space (open brackets): squeeze before placing current char.
-        -- Trailing space (close/fullstop/comma): squeeze after placing current char.
-        local offset = 0
+        -- Sequential cell placement: each character occupies a cell of a certain
+        -- height. Punctuation cells are shorter (squeezed), but cells NEVER overlap.
+        -- accumulated_squeeze tracks total grid rows saved so far, so subsequent
+        -- characters shift up by that amount.
+        local accumulated_squeeze = 0
+        local prev_orig_row = nil
+        local prev_ptype = nil
 
         for _, entry in ipairs(col_entries) do
             local curr_ptype = entry.ptype
+            local squeeze_amount = 0
 
-            -- Leading space squeeze: open brackets have empty space before glyph.
-            if curr_ptype and has_leading_space(curr_ptype) then
-                local char = D.getfield(entry.node, "char")
-                local squeeze = (char and CHAR_SQUEEZE[char]) or DEFAULT_SQUEEZE
-                offset = offset - squeeze
-                total_squeezed = total_squeezed + 1
+            -- Close row gaps caused by invisible spacing nodes (e.g. TeX newlines
+            -- between sentences). Only close gaps that follow punctuation marks,
+            -- as these are almost always interword spaces rather than intentional
+            -- paragraph spacing.
+            local orig_row = entry.pos.row
+            if prev_orig_row and prev_ptype then
+                local gap = orig_row - prev_orig_row - 1
+                if gap > 0 then
+                    accumulated_squeeze = accumulated_squeeze + gap
+                end
+            end
+            prev_orig_row = orig_row
+            prev_ptype = curr_ptype
+
+            -- Determine squeeze for this entry
+            if curr_ptype then
+                if has_leading_space(curr_ptype) or has_trailing_space(curr_ptype) then
+                    local char = D.getfield(entry.node, "char")
+                    squeeze_amount = (char and CHAR_SQUEEZE[char]) or DEFAULT_SQUEEZE
+                    total_squeezed = total_squeezed + 1
+                end
             end
 
-            -- Apply accumulated offset
-            if offset ~= 0 then
-                entry.pos.row = entry.pos.row + offset
-            end
+            -- Cell height for this entry (in grid units: 1.0 = full cell)
+            local cell_height_grid = 1.0 - squeeze_amount
 
-            -- Trailing space squeeze: close/fullstop/comma have empty space after glyph.
-            if curr_ptype and has_trailing_space(curr_ptype) then
-                local char = D.getfield(entry.node, "char")
-                local squeeze = (char and CHAR_SQUEEZE[char]) or DEFAULT_SQUEEZE
-                offset = offset - squeeze
-                total_squeezed = total_squeezed + 1
-            end
+            -- Shift row up by accumulated squeeze (cells are sequential, no overlap)
+            entry.pos.row = entry.pos.row - accumulated_squeeze
+
+            -- Store cell height (sp) for render stage to use for centering
+            entry.pos.cell_height = math.floor(cell_height_grid * grid_height + 0.5)
+
+            -- Accumulate squeeze for subsequent entries
+            accumulated_squeeze = accumulated_squeeze + squeeze_amount
         end
     end
 
@@ -543,10 +639,11 @@ end
 --   y offset > 0 = upward
 -- The offset is expressed as a fraction of grid dimensions.
 local MAINLAND_OFFSETS = {
-    fullstop = { x = 0.20, y = 0.25 }, -- 。sentence-ending period
-    comma    = { x = 0.20, y = 0.25 }, -- ，、 comma and enumeration comma
-    open     = { x = 0, y = -0.25 },   -- 「【（ shift down toward enclosed content
-    close    = { x = 0, y = 0.25 },    -- 」】）shift up toward enclosed content
+    fullstop = { x = 0.20, y = 0.25 }, -- 。full cell, upper-right
+    comma    = { x = 0.20, y = 0 },   -- ，、 half cell, right-shifted
+    middle   = { x = 0.20, y = 0 },   -- ：；！？ right-shifted
+    open     = { x = 0, y = 0 },       -- 「【（ centered in cell by calc_grid_position
+    close    = { x = 0, y = 0 },       -- 」】）centered in cell by calc_grid_position
 }
 
 -- Taiwan style: all punctuation centered in the grid cell (no extra offset)
@@ -590,6 +687,27 @@ function punct.render(head, layout_map, render_ctx, ctx, engine_ctx, page_idx, p
                     -- Read current offsets and add style adjustment
                     local cur_x = D.getfield(t, "xoffset") or 0
                     local cur_y = D.getfield(t, "yoffset") or 0
+
+                    -- Font ink-center compensation: some fonts have punctuation
+                    -- glyphs whose ink is not centered in the advance width.
+                    -- Compensate so the glyph visually centers before applying
+                    -- the mainland style offset.
+                    local char = D.getfield(t, "char")
+                    local fid = D.getfield(t, "font")
+                    local glyph_width = grid_width -- fallback
+                    if fid and char then
+                        local fi = font.getfont(fid)
+                        local ci = fi and fi.characters and fi.characters[char]
+                        if ci and ci.width then glyph_width = ci.width end
+
+                        if INK_CENTER_CHARS[char] then
+                            local ratio = get_ink_center_ratio(fid, char)
+                            -- compensation = how far the ink center is from advance center
+                            -- ratio < 0.5 means ink is left of center → shift right
+                            local comp_x = math.floor((0.5 - ratio) * glyph_width + 0.5)
+                            cur_x = cur_x + comp_x
+                        end
+                    end
 
                     local dx = math.floor(grid_width * style_offset.x + 0.5)
                     local dy = math.floor(grid_height * style_offset.y + 0.5)

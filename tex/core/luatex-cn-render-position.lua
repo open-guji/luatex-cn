@@ -292,16 +292,18 @@ local function calc_grid_position(col, row, glyph_dims, params)
     end
 
     -- Calculate Y offset based on vertical alignment
+    -- cell_height: actual cell height for this glyph (may differ from grid_height
+    -- for squeezed punctuation). Falls back to grid_height if not specified.
+    local cell_height = params.cell_height or grid_height
     local y_offset = calculate_y_position(row, grid_height, shift_y)
 
     if v_align == "top" then
         y_offset = y_offset - h
     elseif v_align == "center" then
         local char_total_height = h + d
-        -- Note: we use char_total_height centering for Y
-        y_offset = y_offset - (grid_height + char_total_height) / 2 + d
+        y_offset = y_offset - (cell_height + char_total_height) / 2 + d
     else -- bottom
-        y_offset = y_offset - grid_height + d
+        y_offset = y_offset - cell_height + d
     end
 
     return x_offset, y_offset

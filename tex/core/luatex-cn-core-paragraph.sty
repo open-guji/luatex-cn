@@ -213,11 +213,12 @@
 % 挪抬/空抬 Command (不换列，插入空格)
 % ============================================================================
 % \挪抬[N] - 在当前位置前插入N格空白（默认1格），不换列
+% Uses GLUE (not \Space) since this is a layout operation, not user-visible text
 % \空抬    - = \挪抬[1]
 
 \NewDocumentCommand{\挪抬}{ O{1} }
   {
-    \Space[#1]
+    \skip_horizontal:n { \__luatexcn_to_dimen:n { \l__luatexcn_content_grid_height_tl } * #1 }
   }
 
 \NewDocumentCommand{\空抬}{}{ \挪抬[1] }

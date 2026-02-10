@@ -226,15 +226,11 @@
 }
 \NewEnvironmentCopy{正文}{BodyText}
 
-% Space Command - inserts a space that occupies grid cells in vertical layout
-% In CJK text, normal ASCII spaces are often absorbed; use this for explicit spacing
-% Syntax: \Space or \Space[width]
-% Default width is 1em (one grid cell)
-\NewDocumentCommand{\Space}{ O{1em} }
+% Space Command - inserts ideographic space characters (U+3000) for vertical layout
+% Syntax: \Space or \Space[n]  (n = number of grid cells, default 1)
+\NewDocumentCommand{\Space}{ O{1} }
   {
-    \regex_match:nnTF { ^[0-9\.]+$ } { #1 }
-      { \skip_horizontal:n { \__luatexcn_to_dimen:n { \l__luatexcn_content_grid_height_tl } * #1 } }
-      { \skip_horizontal:n { \__luatexcn_to_dimen:n { #1 } } }
+    \prg_replicate:nn { #1 } { \char"3000\relax }
   }
 
 % ============================================================================

@@ -1,0 +1,116 @@
+% Copyright 2026 Open-Guji (https://github.com/open-guji)
+%
+% Licensed under the Apache License, Version 2.0 (the "License");
+% you may not use this file except in compliance with the License.
+% You may obtain a copy of the License at
+%
+%     http://www.apache.org/licenses/LICENSE-2.0
+%
+% Unless required by applicable law or agreed to in writing, software
+% distributed under the License is distributed on an "AS IS" BASIS,
+% WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+% See the License for the specific language governing permissions and
+% limitations under the License.
+
+% luatex-cn-debug.sty
+% Centralized debugging interface for luatex-cn
+%
+\NeedsTeXFormat{LaTeX2e}
+\RequirePackage{expl3}
+\ProvidesExplPackage {debug/luatex-cn-debug} {2026/02/10} {0.2.7} {Centralized debugging for luatex-cn}
+
+% ============================================================================
+% Initialization
+% ============================================================================
+
+\lua_now:n {
+    package.loaded["debug.luatex-cn-debug"]~=~nil;
+    luatex_cn_debug~=~require("debug.luatex-cn-debug");
+}
+
+% ============================================================================
+% Core Commands
+% ============================================================================
+
+\NewDocumentCommand{\LtcDebugOn}{ }
+  {
+    \lua_now:n { luatex_cn_debug.set_global_status(true) }
+  }
+
+\NewDocumentCommand{\LtcDebugOff}{ }
+  {
+    \lua_now:n { luatex_cn_debug.set_global_status(false) }
+  }
+
+\NewDocumentCommand{\LtcDebugModuleOn}{ m }
+  {
+    \lua_now:e { luatex_cn_debug.set_module_status("#1", true) }
+  }
+
+\NewDocumentCommand{\LtcDebugModuleOff}{ m }
+  {
+    \lua_now:e { luatex_cn_debug.set_module_status("#1", false) }
+  }
+
+\NewDocumentCommand{\LtcDebugColor}{ m m }
+  {
+    \lua_now:e { luatex_cn_debug.modules["#1"].color = "#2" }
+  }
+
+% Conditional execution based on debug state (true branch only)
+\NewDocumentCommand{\LtcIfDebugT}{ +m }
+  {
+    \int_compare:nNnT { \lua_now:n { tex.print(luatex_cn_debug.global_enabled~and~1~or~0) } } = { 1 } { #1 }
+  }
+
+% Show frame around text area (uses showframe package)
+\NewDocumentCommand{\LtcShowFrame}{ }
+  {
+    \RequirePackage{showframe}
+  }
+
+% ============================================================================
+% Full Page Grid with Coordinates (origin at top-right)
+% Implemented entirely in Lua using PDF literals (no TikZ dependency)
+% Supports units: cm (default), pt, mm
+% ============================================================================
+
+% Key-value options for grid
+\keys_define:nn { luatexcn / debug / grid }
+  {
+    measure .tl_set:N = \l__luatexcn_debug_grid_measure_tl,
+    measure .initial:n = {},
+  }
+
+\NewDocumentCommand{\LtcShowGrid}{ O{} }
+  {
+    \keys_set:nn { luatexcn / debug / grid } { #1 }
+    \tl_if_empty:NTF \l__luatexcn_debug_grid_measure_tl
+      {
+        \lua_now:n { luatex_cn_debug.enable_grid() }
+      }
+      {
+        \lua_now:e { luatex_cn_debug.enable_grid("\l__luatexcn_debug_grid_measure_tl") }
+      }
+  }
+
+\NewDocumentCommand{\LtcHideGrid}{ }
+  {
+    \lua_now:n { luatex_cn_debug.disable_grid() }
+  }
+
+% ============================================================================
+% CJK Aliases
+% ============================================================================
+
+\NewCommandCopy{\开启调试}{\LtcDebugOn}
+\NewCommandCopy{\关闭调试}{\LtcDebugOff}
+\NewCommandCopy{\开启调试模块}{\LtcDebugModuleOn}
+\NewCommandCopy{\关闭调试模块}{\LtcDebugModuleOff}
+\NewCommandCopy{\显示边框}{\LtcShowFrame}
+\NewDocumentCommand{\显示网格}{ O{} }{ \LtcShowGrid[#1] }
+\NewCommandCopy{\隐藏网格}{\LtcHideGrid}
+\NewDocumentCommand{\显示坐标}{ O{} }{ \LtcShowGrid[#1] }
+\NewCommandCopy{\隐藏坐标}{\LtcHideGrid}
+
+\endinput

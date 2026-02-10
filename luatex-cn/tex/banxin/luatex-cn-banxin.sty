@@ -1,0 +1,247 @@
+% Copyright 2026 Open-Guji (https://github.com/open-guji)
+%
+% Licensed under the Apache License, Version 2.0 (the "License");
+% you may not use this file except in compliance with the License.
+% You may obtain a copy of the License at
+%
+%     http://www.apache.org/licenses/LICENSE-2.0
+%
+% Unless required by applicable law or agreed to in writing, software
+% distributed under the License is distributed on an "AS IS" BASIS,
+% WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+% See the License for the specific language governing permissions and
+% limitations under the License.
+% luatex-cn-banxin.sty
+% 古籍版心与鱼尾功能支持
+% 这是 luatex_cn 的子包
+%
+\RequirePackage{expl3}
+\RequirePackage{xparse}
+\ProvidesExplPackage {banxin/luatex-cn-banxin} {2026/02/10} {0.2.7} {Ancient Book Banxin Support}
+
+\lua_now:e {
+  package.loaded["banxin.luatex-cn-banxin-main"]~=~nil;
+  banxin~=~require("banxin.luatex-cn-banxin-main");
+}
+
+% =============================================================================
+% Variable Declarations
+% =============================================================================
+
+% Banxin on/off
+\bool_new:N \l__luatexcn_banxin_on_bool
+
+% Banxin layout ratios
+\tl_new:N \l__luatexcn_banxin_upper_ratio_tl
+\tl_new:N \l__luatexcn_banxin_middle_ratio_tl
+
+% Banxin padding
+\tl_new:N \l__luatexcn_banxin_padding_top_tl
+\tl_new:N \l__luatexcn_banxin_padding_bottom_tl
+
+% Banxin divider
+\bool_new:N \l__luatexcn_banxin_divider_bool
+
+% Yuwei
+\bool_new:N \l__luatexcn_banxin_upper_yuwei_bool
+\bool_new:N \l__luatexcn_banxin_lower_yuwei_bool
+
+% Book name variables
+\tl_new:N \l__luatexcn_banxin_book_name_tl
+\tl_new:N \l__luatexcn_banxin_book_name_font_size_tl
+\tl_new:N \l__luatexcn_banxin_book_name_grid_height_tl
+\tl_new:N \l__luatexcn_banxin_book_name_align_tl
+
+% Chapter title variables
+\tl_new:N \l__luatexcn_banxin_chapter_title_tl
+\tl_new:N \l__luatexcn_banxin_chapter_title_font_size_tl
+\tl_new:N \l__luatexcn_banxin_chapter_title_grid_height_tl
+\tl_new:N \l__luatexcn_banxin_chapter_title_top_margin_tl
+\int_new:N \l__luatexcn_banxin_chapter_title_cols_int
+
+% Page number variables
+\tl_new:N \l__luatexcn_banxin_page_number_font_size_tl
+\tl_new:N \l__luatexcn_banxin_page_number_grid_height_tl
+\tl_new:N \l__luatexcn_banxin_page_number_align_tl
+
+% Publisher variables
+\tl_new:N \l__luatexcn_banxin_publisher_tl
+\tl_new:N \l__luatexcn_banxin_publisher_font_size_tl
+\tl_new:N \l__luatexcn_banxin_publisher_grid_height_tl
+\tl_new:N \l__luatexcn_banxin_publisher_bottom_margin_tl
+\tl_new:N \l__luatexcn_banxin_publisher_align_tl
+
+% =============================================================================
+% Sub-Namespace Definitions
+% =============================================================================
+
+% book-name sub-namespace
+\keys_define:nn { luatexcn / banxin / book-name }
+  {
+    font-size .tl_set:N = \l__luatexcn_banxin_book_name_font_size_tl,
+    font-size .initial:n = {},
+    grid-height .tl_set:N = \l__luatexcn_banxin_book_name_grid_height_tl,
+    grid-height .initial:n = {},
+    align .tl_set:N = \l__luatexcn_banxin_book_name_align_tl,
+    align .initial:n = {center},
+  }
+
+% chapter sub-namespace
+\keys_define:nn { luatexcn / banxin / chapter }
+  {
+    font-size .tl_set:N = \l__luatexcn_banxin_chapter_title_font_size_tl,
+    font-size .initial:n = {},
+    grid-height .tl_set:N = \l__luatexcn_banxin_chapter_title_grid_height_tl,
+    grid-height .initial:n = {},
+    top-margin .tl_set:N = \l__luatexcn_banxin_chapter_title_top_margin_tl,
+    top-margin .initial:n = {20pt},
+    cols .int_set:N = \l__luatexcn_banxin_chapter_title_cols_int,
+    cols .initial:n = 1,
+  }
+
+% page-number sub-namespace
+\keys_define:nn { luatexcn / banxin / page-number }
+  {
+    font-size .tl_set:N = \l__luatexcn_banxin_page_number_font_size_tl,
+    font-size .initial:n = {14pt},
+    grid-height .tl_set:N = \l__luatexcn_banxin_page_number_grid_height_tl,
+    grid-height .initial:n = {},
+    align .tl_set:N = \l__luatexcn_banxin_page_number_align_tl,
+    align .initial:n = {right-bottom},
+  }
+
+% publisher sub-namespace
+\keys_define:nn { luatexcn / banxin / publisher }
+  {
+    font-size .tl_set:N = \l__luatexcn_banxin_publisher_font_size_tl,
+    font-size .initial:n = {10pt},
+    grid-height .tl_set:N = \l__luatexcn_banxin_publisher_grid_height_tl,
+    grid-height .initial:n = {},
+    align .tl_set:N = \l__luatexcn_banxin_publisher_align_tl,
+    align .initial:n = {right},
+    bottom-margin .tl_set:N = \l__luatexcn_banxin_publisher_bottom_margin_tl,
+    bottom-margin .initial:n = {5pt},
+  }
+
+% =============================================================================
+% Main Banxin Key Definitions
+% =============================================================================
+\keys_define:nn { luatexcn / banxin }
+  {
+    % Banxin on/off
+    banxin .bool_set:N = \l__luatexcn_banxin_on_bool,
+    banxin .initial:n = false,
+
+    % Banxin layout ratios
+    banxin-upper-ratio .tl_set:N = \l__luatexcn_banxin_upper_ratio_tl,
+    banxin-upper-ratio .initial:n = {0.28},
+
+    banxin-middle-ratio .tl_set:N = \l__luatexcn_banxin_middle_ratio_tl,
+    banxin-middle-ratio .initial:n = {0.56},
+
+    % Banxin padding
+    banxin-padding-top .tl_set:N = \l__luatexcn_banxin_padding_top_tl,
+    banxin-padding-top .initial:n = {2pt},
+
+    banxin-padding-bottom .tl_set:N = \l__luatexcn_banxin_padding_bottom_tl,
+    banxin-padding-bottom .initial:n = {10pt},
+
+    % Banxin divider
+    banxin-divider .bool_set:N = \l__luatexcn_banxin_divider_bool,
+    banxin-divider .initial:n = true,
+
+    % Yuwei
+    upper-yuwei .bool_set:N = \l__luatexcn_banxin_upper_yuwei_bool,
+    upper-yuwei .initial:n = true,
+
+    lower-yuwei .bool_set:N = \l__luatexcn_banxin_lower_yuwei_bool,
+    lower-yuwei .initial:n = true,
+
+    % Chapter title text content (used by \chapter command)
+    chapter-title .tl_set:N = \l__luatexcn_banxin_chapter_title_tl,
+    chapter-title .initial:n = {},
+
+    % Nested key handlers - detect text vs key-value pairs
+    book-name .code:n = {
+      \tl_if_in:nnTF { #1 } { = }
+        { \keys_set:nn { luatexcn / banxin / book-name } { #1 } }
+        { \tl_set:Nn \l__luatexcn_banxin_book_name_tl { #1 } }
+    },
+
+    chapter .code:n = {
+      \keys_set:nn { luatexcn / banxin / chapter } { #1 }
+    },
+
+    page-number .code:n = {
+      \keys_set:nn { luatexcn / banxin / page-number } { #1 }
+    },
+
+    publisher .code:n = {
+      \tl_if_in:nnTF { #1 } { = }
+        { \keys_set:nn { luatexcn / banxin / publisher } { #1 } }
+        { \tl_set:Nn \l__luatexcn_banxin_publisher_tl { #1 } }
+    },
+  }
+
+% =============================================================================
+% Setup Command
+% =============================================================================
+\NewDocumentCommand{\banxinSetup}{ m }
+  {
+    \keys_set:nn { luatexcn / banxin } { #1 }
+    % Update _G.banxin.enabled for early access by content.setup
+    \lua_now:e {
+      _G.banxin.setup({
+        enabled~=~\bool_if:NTF~\l__luatexcn_banxin_on_bool~{true}~{false}
+      })
+    }
+  }
+
+% =============================================================================
+% Compatibility Mode Logic
+% =============================================================================
+
+% 1. Book Name / Title Synchronization
+\cs_if_exist:NTF \title
+  {
+    \NewCommandCopy \__luatexcn_banxin_orig_title \title
+    \RenewDocumentCommand \title { m }
+      {
+        \__luatexcn_banxin_orig_title { #1 }
+        \tl_set:Nn \l__luatexcn_banxin_book_name_tl { #1 }
+      }
+  }
+  {
+    \NewDocumentCommand \title { m }
+      {
+        \gdef\@title{#1}
+        \tl_set:Nn \l__luatexcn_banxin_book_name_tl { #1 }
+      }
+  }
+
+% 2. Chapter Title Synchronization
+\cs_if_exist:NTF \chapter
+  {
+    \NewCommandCopy \__luatexcn_banxin_orig_chapter \chapter
+    \RenewDocumentCommand \chapter { s o m }
+      {
+        \IfBooleanTF {#1}
+          { \__luatexcn_banxin_orig_chapter* {#3} }
+          {
+            \IfNoValueTF {#2}
+              { \__luatexcn_banxin_orig_chapter {#3} }
+              { \__luatexcn_banxin_orig_chapter [#2] {#3} }
+          }
+        \tl_set:Nn \l__luatexcn_banxin_chapter_title_tl { #3 }
+      }
+  }
+  {
+    \NewDocumentCommand \chapter { m }
+      {
+        \tl_set:Nn \l__luatexcn_banxin_chapter_title_tl { #1 }
+      }
+  }
+
+\ExplSyntaxOff%
+%
+\endinput%

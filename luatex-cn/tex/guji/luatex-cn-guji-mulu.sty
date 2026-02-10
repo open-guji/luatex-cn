@@ -1,0 +1,72 @@
+% Copyright 2026 Open-Guji (https://github.com/open-guji)
+%
+% Licensed under the Apache License, Version 2.0 (the "License");
+% you may not use this file except in compliance with the License.
+% You may obtain a copy of the License at
+%
+%     http://www.apache.org/licenses/LICENSE-2.0
+%
+% Unless required by applicable law or agreed to in writing, software
+% distributed under the License is distributed on an "AS IS" BASIS,
+% WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+% See the License for the specific language governing permissions and
+% limitations under the License.
+% luatex-cn-guji-mulu.sty
+% Catalog/Index (目录) support for traditional book typesetting
+% This is a subpackage of luatex_cn
+%
+%
+%   Or with raw commands (level = number of indent spaces, default 0):
+%       \條目{卷一}           % level 0, no indent
+%       \條目[1]{經部一}      % level 1, 1 space indent
+%       \條目[2]{易類}        % level 2, 2 spaces indent
+%
+\RequirePackage{expl3}
+\RequirePackage{xparse}
+\ProvidesExplPackage {guji/luatex-cn-guji-mulu} {2026/02/10} {0.2.7} {Catalog/Index support for traditional books}
+
+% Load the core column engine
+\RequirePackage{core/luatex-cn-core-column}
+
+% ============================================================================
+% Internal Functions
+% ============================================================================
+
+% Output column with level-based indent
+% #1: level (0, 1, 2, 3, ...) - represents actual number of full-width spaces
+% #2: content
+\cs_new:Nn \__luatexcn_mulu_output_column:nn
+  {
+    \int_case:nn { #1 }
+      {
+        { 0 } { \Column{ #2 } }
+        { 1 } { \Column{ 　#2 } }
+        { 2 } { \Column{ 　　#2 } }
+        { 3 } { \Column{ 　　　#2 } }
+        { 4 } { \Column{ 　　　　#2 } }
+      }
+  }
+
+% ============================================================================
+% User Commands
+% ============================================================================
+
+% \条目[level]{content} - Output a column entry with level-based indent
+\NewDocumentCommand{\条目}{ O{0} +m }
+  {
+    \__luatexcn_mulu_output_column:nn { #1 } { #2 }
+  }
+
+% ============================================================================
+% Environment (currently just a grouping wrapper)
+% ============================================================================
+
+\ExplSyntaxOff
+
+% ============================================================================
+% Simplified Chinese Aliases (简体中文别名)
+% ============================================================================
+
+\NewCommandCopy{\條目}{\条目}
+
+\endinput

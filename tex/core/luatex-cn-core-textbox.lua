@@ -366,7 +366,9 @@ local function apply_result_attributes(res_box, params, current_indent)
         h_sp = constants.to_dimen(h_raw) or 0
     end
 
-    local actual_cols = node.get_attribute(res_box, constants.ATTR_TEXTBOX_WIDTH) or 1
+    local outer_cols = tonumber(params.outer_cols) or 0
+    local actual_cols = (outer_cols > 0) and outer_cols
+        or node.get_attribute(res_box, constants.ATTR_TEXTBOX_WIDTH) or 1
     -- Height calculation: use actual content rows from render (already set by main.lua)
     -- only recalculate if user specified explicit height
     local height_val

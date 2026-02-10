@@ -265,6 +265,7 @@ local function handle_glyph_node(curr, p_head, pos, params, ctx)
             interval = ctx.interval,
             body_font_size = ctx.body_font_size,
             cell_height = pos.cell_height,
+            col_widths = _G.content and _G.content.col_widths,
         }
     )
 
@@ -487,8 +488,16 @@ local function process_page_nodes(p_head, layout_map, params, ctx)
                 D.setfield(curr, "shrink", 0)
 
                 -- Calculate grid position (same logic as glyph but simpler - no centering needed)
-                local _, final_x = text_position.calculate_rtl_position(pos.col, ctx.p_total_cols, ctx.grid_width,
-                    ctx.half_thickness, ctx.shift_x, ctx.banxin_width, ctx.interval)
+                local final_x
+                local cw = _G.content and _G.content.col_widths
+                if cw and #cw > 0 then
+                    local rtl_col = ctx.p_total_cols - 1 - pos.col
+                    final_x = text_position.get_column_x_var(rtl_col, cw, ctx.p_total_cols)
+                        + (ctx.half_thickness or 0) + (ctx.shift_x or 0)
+                else
+                    _, final_x = text_position.calculate_rtl_position(pos.col, ctx.p_total_cols, ctx.grid_width,
+                        ctx.half_thickness, ctx.shift_x, ctx.banxin_width, ctx.interval)
+                end
                 local final_y = text_position.calculate_y_position(pos.row, ctx.grid_height, ctx.shift_y)
 
                 -- Insert kern to move to correct position, then kern back
@@ -565,10 +574,16 @@ local function render_single_page(p_head, p_max_col, p_max_row, p, layout_map, p
 
     -- For TextBox: use actual content dimensions, not expanded page dimensions
     -- For regular content: use full page dimensions
+    local col_widths = _G.content and _G.content.col_widths
     local content_width, content_height
     if page.is_textbox then
         content_width = (actual_cols > 0 and actual_cols or 1) * grid_width
         content_height = (actual_rows > 0 and actual_rows or 1) * grid_height
+    elseif col_widths and #col_widths > 0 then
+        -- Variable-width columns: sum all column widths
+        content_width = 0
+        for _, w in ipairs(col_widths) do content_width = content_width + w end
+        content_height = line_limit * grid_height + b_padding_top + b_padding_bottom
     else
         local banxin_w = ctx.banxin_width or 0
         local interval = ctx.interval or 0

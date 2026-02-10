@@ -31,6 +31,10 @@
 \tl_new:N \l__luatexcn_column_default_font_tl
 \tl_new:N \l__luatexcn_column_default_color_tl
 
+% Global dim for current column width (read by TextBox for inner-gw auto-calculation)
+% 0pt means not set (use default grid_width)
+\dim_new:N \g__luatexcn_column_current_width_dim
+
 \makeatletter
 
     % Align mode: 0=top, 1=bottom, 2=center, 3=stretch
@@ -52,6 +56,9 @@
         font-size .tl_set:N = \l__luatexcn_column_local_size_tl,
         font .tl_set:N = \l__luatexcn_column_local_font_tl,
         font-color .tl_set:N = \l__luatexcn_column_local_color_tl,
+
+        width .tl_set:N = \l__luatexcn_column_width_tl,
+        width .initial:n = {},
       }
 
     \NewDocumentCommand{\Column}{ O{} +m }
@@ -66,8 +73,22 @@
         \tl_set:Nn \l__luatexcn_column_local_size_tl {}
         \tl_set:Nn \l__luatexcn_column_local_font_tl {}
         \tl_set:Nn \l__luatexcn_column_local_color_tl {}
+        \tl_set:Nn \l__luatexcn_column_width_tl {}
 
         \keys_set:nn { luatexcn / column } { #1 }
+
+        % Handle column width: register in Lua and set global dim for TextBox
+        \tl_if_empty:NF \l__luatexcn_column_width_tl
+          {
+            \dim_gset:Nn \g__luatexcn_column_current_width_dim
+              { \l__luatexcn_column_width_tl }
+            \lua_now:e {
+              _G.content~=~_G.content~or~{}~
+              _G.content.col_widths~=~_G.content.col_widths~or~{}~
+              table.insert(_G.content.col_widths,~
+                \dim_to_decimal_in_sp:n { \l__luatexcn_column_width_tl })
+            }
+          }
 
         % If last=true, add 4 to align mode
         \bool_if:NT \l__luatexcn_column_last_bool
@@ -129,6 +150,9 @@
         \setluatexattribute\cnverticalstyle{\column_style_id}
 
         #2
+
+        % Reset column width after content
+        \dim_gset:Nn \g__luatexcn_column_current_width_dim { 0pt }
 
         % Pop style from stack
         \lua_now:n {

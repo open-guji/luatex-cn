@@ -245,8 +245,19 @@ local function calc_page_columns(explicit_page_cols)
     local g_width = _G.content.grid_width or 0
     local available_width = _G.content.available_width or 0
 
+    -- When col_widths has entries, set page_columns from it directly
+    local col_widths = _G.content.col_widths
+    if col_widths and type(col_widths) == "table" and #col_widths > 0 then
+        _G.content.page_columns = #col_widths
+        return
+    end
+
     if explicit_page_cols > 0 then
         _G.content.page_columns = explicit_page_cols
+        -- Auto-adjust grid_width to fill available width when page_columns is explicit
+        if available_width > 0 then
+            _G.content.grid_width = math.floor(available_width / explicit_page_cols)
+        end
     elseif banxin_on then
         _G.content.page_columns = (2 * n_column + 1)
     elseif g_width > 0 and available_width > 0 then

@@ -1,0 +1,25 @@
+% titlepage-issue28.tex - 复现 issue #28 书名页样式
+% 测试变宽列 (col_widths) 功能
+\documentclass{ltc-guji}
+
+\pageSetup{
+  columns=12,
+  lines=20
+}
+
+\contentSetup{
+  font-size=12pt
+}
+
+\begin{document}
+
+% 使用 Column width 参数的书名页
+% 每列指定绝对宽度
+% border=true 启用列边框，outer-border=true 启用外边框
+\begin{书名页}[border=true, outer-border=true]
+  \列[width=1cm, align=top, font-size=10pt]{光緒九年仲春}
+  \列[width=3cm, align=center, font-size=32pt]{童蒙必讀書}
+  \列[width=1cm, align=bottom, font-size=10pt]{武昌書局校刊}
+\end{书名页}
+
+\end{document}

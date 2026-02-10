@@ -78,6 +78,24 @@ local function draw_column_borders(p_head, params)
     local b_thickness_bp = border_thickness * sp_to_bp
     local half_thickness = math.floor(border_thickness / 2)
 
+    -- Variable-width column borders: when col_widths is set,
+    -- each column has its own width in sp.
+    local col_widths = _G.content and _G.content.col_widths
+    if col_widths and #col_widths > 0 then
+        for i = 1, #col_widths do
+            local logical_col = i - 1
+            local rtl_col = total_cols - 1 - logical_col
+            local tx_bp = (text_position.get_column_x_var(rtl_col, col_widths, total_cols) + half_thickness + shift_x) * sp_to_bp
+            local ty_bp = -(half_thickness + outer_shift) * sp_to_bp
+            local tw_bp = col_widths[i] * sp_to_bp
+            local th_bp = -(line_limit * grid_height + b_padding_top + b_padding_bottom) * sp_to_bp
+
+            local literal = utils.create_border_literal(b_thickness_bp, border_rgb_str, tx_bp, ty_bp, tw_bp, th_bp)
+            p_head = utils.insert_pdf_literal(p_head, literal)
+        end
+        return p_head
+    end
+
     for col = 0, total_cols - 1 do
         -- Skip banxin columns (they are drawn separately by banxin module)
         if not banxin_cols[col] then
@@ -293,9 +311,15 @@ local function render_borders(p_head, params)
 
     -- Calculate content dimensions
     local content_width, content_height
+    local col_widths = _G.content and _G.content.col_widths
     if is_textbox then
         content_width = (actual_cols > 0 and actual_cols or 1) * grid_width
         content_height = (actual_rows > 0 and actual_rows or 1) * grid_height
+    elseif col_widths and #col_widths > 0 then
+        -- Variable-width columns: sum all column widths
+        content_width = 0
+        for _, w in ipairs(col_widths) do content_width = content_width + w end
+        content_height = line_limit * grid_height + b_padding_top + b_padding_bottom
     else
         if interval > 0 and banxin_width > 0 and banxin_width ~= grid_width then
             local n_banxin = math.floor(p_total_cols / (interval + 1))

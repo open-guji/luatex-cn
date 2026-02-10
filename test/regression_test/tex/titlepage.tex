@@ -12,11 +12,11 @@
 
 \begin{document}
 
-% 测试书名页环境
-\begin{书名页}[columns=3]
-  \书名页列[align=bottom, font-size=12pt]{卷一}
-  \书名页列[align=center, font-size=24pt]{史記}
-  \书名页列[align=top, font-size=12pt]{五帝本紀}
+% 测试书名页环境（使用 Column 的 width 参数）
+\begin{书名页}
+  \列[width=2cm, align=bottom, font-size=12pt]{卷一}
+  \列[width=3cm, align=center, font-size=24pt]{史記}
+  \列[width=2cm, align=top, font-size=12pt]{五帝本紀}
 \end{书名页}
 
 \end{document}

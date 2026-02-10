@@ -6,7 +6,7 @@
 
 LuaTeX package for Chinese charactor typesetting, covering horizontal/vertical, traditional/modern layout. Currently focus on Ancient Book replication. Implemented core logic of vertical typesetting, decorative elements of traditional Chinese books, and interlinear notes.
 
-CTAN: [v0.1.1](https://ctan.org/pkg/luatex-cn) | GitHub Release: [v0.2.6](https://github.com/open-guji/luatex-cn/releases)
+CTAN: [v0.1.1](https://ctan.org/pkg/luatex-cn) | GitHub Release: [v0.2.7](https://github.com/open-guji/luatex-cn/releases)
 
 📢 **通知**：维基（Wiki）页面已同步更新详细用户手册，请 [查看](https://github.com/open-guji/luatex-cn/wiki)。
 
@@ -35,6 +35,15 @@ CTAN: [v0.1.1](https://ctan.org/pkg/luatex-cn) | GitHub Release: [v0.2.6](https:
 | ![红楼梦2](示例/首页展示/honglou-p2.png) | ![红楼梦1](示例/首页展示/honglou-p1.png) |
 
 > [查看源码](示例/红楼梦甲戌本/石头记.tex) | [查看 PDF](示例/红楼梦甲戌本/石头记.pdf)
+
+### 3. 《史记·秦楚之际月表》（中华书局排版）
+演示了现代繁体竖排、脚注、段落缩进等功能。
+
+| 第一页 | 第二页 |
+| :---: | :---: |
+| ![卷十六第一页](示例/首页展示/juan16-p1.png) | ![卷十六第二页](示例/首页展示/juan16-p2.png) |
+
+> [查看源码](示例/史记卷六·现代/卷十六.tex) | [查看 PDF](示例/史记卷六·现代/卷十六.pdf)
 
 ## 功能特性
 

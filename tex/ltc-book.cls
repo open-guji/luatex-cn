@@ -16,7 +16,7 @@
 
 \RequirePackage{expl3}
 \RequirePackage{l3keys2e}
-\ProvidesExplClass {ltc-book} {2026/02/07} {0.2.6} {Chinese Vertical Book Class}
+\ProvidesExplClass {ltc-book} {2026/02/09} {0.2.7} {Chinese Vertical Book Class}
 
 % ============================================================================
 % Variables

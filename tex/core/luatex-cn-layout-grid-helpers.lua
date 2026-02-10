@@ -186,6 +186,65 @@ local function get_cell_height(node, grid_height)
 end
 
 -- =============================================================================
+-- Unified cell size resolution
+-- =============================================================================
+
+--- Resolve cell height for a node in the unified layout engine
+-- Priority: 1) node style cell_height → 2) column default_cell_height → 3) font-size based
+-- @param node (direct node) The glyph node
+-- @param grid_height (number) Base grid height in sp
+-- @param default_cell_height (number|nil) Fixed cell height (grid mode) or nil (natural mode)
+-- @return (number) Cell height in sp
+local function resolve_cell_height(node, grid_height, default_cell_height)
+    -- 1. Check node style for per-character/paragraph cell_height override
+    local sid = D.get_attribute(node, constants.ATTR_STYLE_REG_ID)
+    if sid and sid > 0 then
+        local style_ch = style_registry.get_cell_height(sid)
+        if style_ch and style_ch > 0 then
+            return style_ch
+        end
+    end
+    -- 2. Column-level default (grid mode)
+    if default_cell_height and default_cell_height > 0 then
+        return default_cell_height
+    end
+    -- 3. Natural mode: font-size based
+    return get_cell_height(node, grid_height)
+end
+
+--- Resolve cell width for a node in the unified layout engine
+-- Priority: 1) node style cell_width → 2) column default_cell_width
+-- @param node (direct node) The glyph node
+-- @param default_cell_width (number|nil) Column-level default cell width in sp
+-- @return (number|nil) Cell width in sp, or nil (use grid_width)
+local function resolve_cell_width(node, default_cell_width)
+    local sid = D.get_attribute(node, constants.ATTR_STYLE_REG_ID)
+    if sid and sid > 0 then
+        local style_cw = style_registry.get_cell_width(sid)
+        if style_cw and style_cw > 0 then
+            return style_cw
+        end
+    end
+    return default_cell_width
+end
+
+--- Resolve cell gap for a node in the unified layout engine
+-- Priority: 1) node style cell_gap → 2) column default_cell_gap
+-- @param node (direct node) The glyph node
+-- @param default_cell_gap (number) Column-level default cell gap in sp
+-- @return (number) Cell gap in sp
+local function resolve_cell_gap(node, default_cell_gap)
+    local sid = D.get_attribute(node, constants.ATTR_STYLE_REG_ID)
+    if sid and sid > 0 then
+        local style_gap = style_registry.get_cell_gap(sid)
+        if style_gap then
+            return style_gap
+        end
+    end
+    return default_cell_gap or 0
+end
+
+-- =============================================================================
 -- Module exports
 -- =============================================================================
 
@@ -206,6 +265,9 @@ helpers.is_occupied = is_occupied
 helpers.mark_occupied = mark_occupied
 
 helpers.get_cell_height = get_cell_height
+helpers.resolve_cell_height = resolve_cell_height
+helpers.resolve_cell_width = resolve_cell_width
+helpers.resolve_cell_gap = resolve_cell_gap
 
 package.loaded['core.luatex-cn-layout-grid-helpers'] = helpers
 return helpers

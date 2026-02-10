@@ -336,12 +336,14 @@ function punct.make_kinsoku_hook(punct_ctx)
                     if indent and indent > 0 and ctx.cur_row < indent then
                         ctx.cur_row = indent
                         ctx.cur_column_indent = indent
+                        ctx.cur_y_sp = ctx.cur_row * grid_height
                     end
                     pulled.page = ctx.cur_page
                     pulled.col = ctx.cur_col
-                    pulled.relative_row = ctx.cur_row
+                    pulled.relative_row = ctx.cur_y_sp / grid_height
                     table.insert(col_buffer, pulled)
                     ctx.cur_row = ctx.cur_row + 1
+                    ctx.cur_y_sp = ctx.cur_row * grid_height
                     ctx.page_has_content = true
 
                     dbg.log(string.format(
@@ -368,12 +370,14 @@ function punct.make_kinsoku_hook(punct_ctx)
                 if indent and indent > 0 and ctx.cur_row < indent then
                     ctx.cur_row = indent
                     ctx.cur_column_indent = indent
+                    ctx.cur_y_sp = ctx.cur_row * grid_height
                 end
                 pulled.page = ctx.cur_page
                 pulled.col = ctx.cur_col
-                pulled.relative_row = ctx.cur_row
+                pulled.relative_row = ctx.cur_y_sp / grid_height
                 table.insert(col_buffer, pulled)
                 ctx.cur_row = ctx.cur_row + 1
+                ctx.cur_y_sp = ctx.cur_row * grid_height
                 ctx.page_has_content = true
 
                 dbg.log(string.format(
@@ -541,9 +545,10 @@ end
 function punct.layout(list, layout_map, engine_ctx, ctx)
     if not ctx then return end
     if not ctx.squeeze then return end
-    -- Natural mode handles punctuation sizing via get_cell_height() in layout-grid;
-    -- squeeze post-processing would overwrite those carefully computed values.
-    if engine_ctx.layout_mode == "natural" then return end
+    -- Natural mode (no default_cell_height) handles punctuation sizing via
+    -- get_cell_height() in layout-grid; squeeze post-processing would overwrite
+    -- those carefully computed values.
+    if not engine_ctx.default_cell_height then return end
     -- Note: punct-hanging requires deeper integration with layout-grid.lua
     -- to allow dot-class punctuation to overflow beyond effective_limit.
     -- This will be implemented in a future version.

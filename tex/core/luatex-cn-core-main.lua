@@ -273,10 +273,16 @@ local function init_engine_context(box_num, params)
         b_padding_bottom = b_padding_bottom,
         -- Body font size (for footnote marker alignment)
         body_font_size = current_fs,
-        -- Layout mode: "grid" (fixed grid) or "natural" (variable cell height)
-        layout_mode = (not is_textbox) and (_G.content.layout_mode or "grid") or "grid",
+        -- Unified layout: default_cell_height (nil=natural, >0=grid) and default_cell_gap
+        -- Grid mode: every character occupies exactly one grid_height cell, no gap
+        -- Natural mode: cell height determined by font_size, with user-specified gap
+        -- Textbox always uses grid mode; non-textbox follows _G.content.layout_mode
+        default_cell_height = (is_textbox or (_G.content.layout_mode or "grid") == "grid")
+            and g_height or nil,
+        default_cell_width = nil,  -- reserved for future per-character width override
+        default_cell_gap = (not is_textbox and (_G.content.layout_mode or "grid") ~= "grid")
+            and (_G.content.inter_cell_gap or 0) or 0,
         col_height_sp = limit * g_height,
-        inter_cell_gap = (not is_textbox) and (_G.content.inter_cell_gap or 0) or 0,
         -- Registry data (set after layout)
     }
 
@@ -392,9 +398,12 @@ local function compute_grid_layout(list, params, engine_ctx, plugin_contexts, p_
         absolute_height = p_info.h_dim, -- textbox-specific
         plugin_contexts = plugin_contexts,
         hooks = hooks,                  -- kinsoku hook for layout-grid
-        layout_mode = engine_ctx.layout_mode,
+        -- Unified layout params (replaces layout_mode/inter_cell_gap)
+        default_cell_height = engine_ctx.default_cell_height,
+        default_cell_width = engine_ctx.default_cell_width,
+        default_cell_gap = engine_ctx.default_cell_gap,
         col_height_sp = engine_ctx.col_height_sp,
-        inter_cell_gap = engine_ctx.inter_cell_gap,
+        grid_height = engine_ctx.g_height,
     }
 
     -- For textbox: pass explicit values (no global fallback)

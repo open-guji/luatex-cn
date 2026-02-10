@@ -204,6 +204,27 @@ function style_registry.get_border_margin(id)
     return style_registry.get_attr(id, "border_margin")
 end
 
+--- Get cell height from style
+-- @param id (number) Style ID
+-- @return (number|nil) Cell height in sp (nil = use default/font-based)
+function style_registry.get_cell_height(id)
+    return style_registry.get_attr(id, "cell_height")
+end
+
+--- Get cell width from style
+-- @param id (number) Style ID
+-- @return (number|nil) Cell width in sp (nil = use grid_width)
+function style_registry.get_cell_width(id)
+    return style_registry.get_attr(id, "cell_width")
+end
+
+--- Get cell gap from style
+-- @param id (number) Style ID
+-- @return (number|nil) Cell gap in sp, or nil
+function style_registry.get_cell_gap(id)
+    return style_registry.get_attr(id, "cell_gap")
+end
+
 -- ============================================================================
 -- Style Stack Functions (Phase 3: Style Inheritance)
 -- ============================================================================

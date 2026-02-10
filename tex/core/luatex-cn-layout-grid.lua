@@ -92,6 +92,9 @@ local is_center_gap_col = h.is_center_gap_col
 local is_occupied = h.is_occupied
 local mark_occupied = h.mark_occupied
 local get_cell_height = h.get_cell_height
+local resolve_cell_height = h.resolve_cell_height
+local resolve_cell_width = h.resolve_cell_width
+local resolve_cell_gap = h.resolve_cell_gap
 
 -- Export _internal for testing
 local _internal = {}
@@ -105,9 +108,11 @@ _internal.is_center_gap_col = is_center_gap_col
 local function create_grid_context(params, line_limit, p_cols)
     -- Use helper for chapter_title with fallback to _G.metadata
     local initial_chapter = get_chapter_title(params)
-    local layout_mode = (params and params.layout_mode) or "grid"
+    -- Unified layout: default_cell_height (nil=natural, >0=grid) and default_cell_gap
+    local default_cell_height = params and params.default_cell_height  -- nil = natural mode
+    local default_cell_gap = (params and params.default_cell_gap) or 0
+    -- col_height_sp: always in sp. For grid mode, computed as line_limit * grid_height by caller.
     local col_height_sp = (params and params.col_height_sp) or 0
-    local inter_cell_gap = (params and params.inter_cell_gap) or 0
     local ctx = {
         cur_page = 0,
         cur_col = 0,
@@ -121,11 +126,11 @@ local function create_grid_context(params, line_limit, p_cols)
         chapter_title = initial_chapter,
         page_chapter_titles = {}, -- To store chapter title for each page
         last_glyph_row = -1, -- Track last glyph row for detecting line changes
-        -- Natural layout mode fields
-        layout_mode = layout_mode,
+        -- Unified layout fields (replaces layout_mode/inter_cell_gap)
+        default_cell_height = default_cell_height,
+        default_cell_gap = default_cell_gap,
         cur_y_sp = 0,
         col_height_sp = col_height_sp,
-        inter_cell_gap = inter_cell_gap,
     }
     ctx.page_chapter_titles[0] = ctx.chapter_title -- Initialize page 0 with the initial chapter title
     return ctx
@@ -134,6 +139,7 @@ end
 
 local function apply_indentation(ctx, indent)
     if not indent or indent == 0 then return end
+    local old_row = ctx.cur_row
     if indent < 0 then
         -- 负缩进（抬头）：列起始时设置 cur_row 为负值
         -- 用 cur_column_indent 追踪是否已应用，防止每个字符都重置
@@ -142,12 +148,17 @@ local function apply_indentation(ctx, indent)
             ctx.cur_row = indent
             ctx.cur_column_indent = indent
         end
-        return
+    else
+        -- 正缩进：保持原有逻辑
+        if ctx.cur_row < indent then ctx.cur_row = indent end
+        if indent > (ctx.cur_column_indent or 0) then ctx.cur_column_indent = indent end
+        if ctx.cur_row < (ctx.cur_column_indent or 0) then ctx.cur_row = ctx.cur_column_indent end
     end
-    -- 正缩进：保持原有逻辑
-    if ctx.cur_row < indent then ctx.cur_row = indent end
-    if indent > (ctx.cur_column_indent or 0) then ctx.cur_column_indent = indent end
-    if ctx.cur_row < (ctx.cur_column_indent or 0) then ctx.cur_row = ctx.cur_column_indent end
+    -- Sync sp accumulator when cur_row changed (unified layout)
+    if ctx.cur_row ~= old_row then
+        local gh = (ctx.params and ctx.params.grid_height) or 655360
+        ctx.cur_y_sp = ctx.cur_row * gh
+    end
 end
 
 
@@ -172,6 +183,7 @@ local function move_to_next_valid_position(ctx, interval, grid_height, indent)
             changed = true
             -- When wrapping column/page, row reset must honor indent
             ctx.cur_row = 0
+            ctx.cur_y_sp = 0
             ctx.cur_column_indent = 0
             if indent then apply_indentation(ctx, indent) end
         end
@@ -185,14 +197,17 @@ local function move_to_next_valid_position(ctx, interval, grid_height, indent)
             changed = true
             -- When wrapping column/page, row reset must honor indent
             ctx.cur_row = 0
+            ctx.cur_y_sp = 0
             ctx.cur_column_indent = 0
             if indent then apply_indentation(ctx, indent) end
         end
         -- Skip Occupied
         if is_occupied(ctx.occupancy, ctx.cur_page, ctx.cur_col, ctx.cur_row) then
             ctx.cur_row = ctx.cur_row + 1
+            ctx.cur_y_sp = ctx.cur_row * grid_height
             if ctx.cur_row >= ctx.line_limit then
                 ctx.cur_row = 0
+                ctx.cur_y_sp = 0
                 ctx.cur_col = ctx.cur_col + 1
                 changed = true
                 -- Reset column-specific indent tracker
@@ -224,10 +239,8 @@ local function wrap_to_next_column(ctx, p_cols, interval, grid_height, indent, r
     ctx.cur_col = ctx.cur_col + 1
     ctx.cur_row = 0
     ctx.just_wrapped_column = true -- Flag for issue #54 fix
-    -- Natural mode: reset Y accumulator
-    if ctx.layout_mode == "natural" then
-        ctx.cur_y_sp = 0
-    end
+    -- Always reset Y accumulator on column wrap (unified layout)
+    ctx.cur_y_sp = 0
     if ctx.cur_col >= p_cols then
         ctx.cur_col = 0
         ctx.cur_page = ctx.cur_page + 1
@@ -294,6 +307,7 @@ local function handle_penalty_breaks(p_val, ctx, flush_buffer_fn, p_cols, interv
                 wrap_to_next_column(ctx, p_cols, interval, grid_height, indent, false, true)
             end
             ctx.cur_row = post_indent
+            ctx.cur_y_sp = post_indent * grid_height
             ctx.cur_column_indent = 0
         else
             if ctx.cur_row > ctx.cur_column_indent then
@@ -309,6 +323,7 @@ local function handle_penalty_breaks(p_val, ctx, flush_buffer_fn, p_cols, interv
             ctx.cur_page = ctx.cur_page + 1
             ctx.cur_col = 0
             ctx.cur_row = 0
+            ctx.cur_y_sp = 0
             ctx.cur_column_indent = 0
             ctx.page_has_content = false
             move_to_next_valid_position(ctx, interval, grid_height, indent)
@@ -327,6 +342,7 @@ _internal.handle_penalty_breaks = handle_penalty_breaks
 local function calculate_grid_positions(head, grid_height, line_limit, n_column, page_columns, params)
     local d_head = D.todirect(head)
     params = params or {}
+    params.grid_height = params.grid_height or grid_height -- Store for ctx.params access
     local distribute = params.distribute
 
     if line_limit < 1 then line_limit = 20 end
@@ -421,9 +437,9 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
             end
         end
 
-        -- Natural mode: recalculate positions with tight packing
+        -- Natural mode (no default_cell_height): recalculate positions with tight packing
         -- Only stretch when remaining space < min_cell_height (nearly full column)
-        if ctx.layout_mode == "natural" and N > 0 and not distribute then
+        if not ctx.default_cell_height and N > 0 and not distribute then
             local total_cells = 0
             local min_cell = math.huge
             for _, e in ipairs(col_buffer) do
@@ -609,10 +625,12 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
 
         local effective_limit = line_limit - r_indent
         if effective_limit < indent + 1 then effective_limit = indent + 1 end
+        -- Compute effective column height in sp for unified overflow check
+        local effective_col_height_sp = effective_limit * grid_height
 
-        -- Check wrapping BEFORE placing
+        -- Check wrapping BEFORE placing (unified: sp-based)
         -- In distribution mode, we allow overflow so we can squeeze characters later
-        if ctx.cur_row >= effective_limit and not distribute then
+        if ctx.cur_y_sp >= effective_col_height_sp and not distribute then
             flush_buffer()
             wrap_to_next_column(ctx, p_cols, interval, grid_height, indent, true, false)
         end
@@ -643,6 +661,7 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
                 if last_col > ctx.cur_col then
                     ctx.cur_col = last_col
                     ctx.cur_row = 0
+                    ctx.cur_y_sp = 0
                 end
             end
 
@@ -679,7 +698,8 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
                 r_indent = r_indent,
                 block_id = block_id,
                 first_indent = first_indent,
-                textflow_mode = textflow_mode
+                textflow_mode = textflow_mode,
+                grid_height = grid_height, -- For cur_y_sp sync
             }
             local callbacks = {
                 flush = flush_buffer,
@@ -704,7 +724,8 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
             local tb_params = {
                 effective_limit = effective_limit,
                 p_cols = p_cols,
-                indent = 0 -- Textbox should not inherit paragraph indent
+                indent = 0, -- Textbox should not inherit paragraph indent
+                grid_height = grid_height, -- For cur_y_sp sync
             }
             local tb_callbacks = {
                 flush = flush_buffer,
@@ -727,6 +748,7 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
             -- This ensures "后续文字" continues after textflow, not from start
             if ctx.textflow_pending_sub_col and ctx.textflow_pending_row_used then
                 ctx.cur_row = ctx.cur_row + ctx.textflow_pending_row_used
+                ctx.cur_y_sp = ctx.cur_row * grid_height
                 ctx.textflow_pending_sub_col = nil
                 ctx.textflow_pending_row_used = nil
             end
@@ -770,39 +792,36 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
                 -- Clear wrapped flag - we've processed a regular character
                 ctx.just_wrapped_column = false
 
-                if ctx.layout_mode == "natural" then
-                    local cell_h = get_cell_height(t, grid_height)
-                    -- Column overflow check
-                    if ctx.cur_y_sp + cell_h > ctx.col_height_sp and ctx.cur_y_sp > 0 then
-                        flush_buffer()
-                        wrap_to_next_column(ctx, p_cols, interval, grid_height, indent, false, false)
-                    end
-                    table.insert(col_buffer, {
-                        node = t,
-                        page = ctx.cur_page,
-                        col = ctx.cur_col,
-                        relative_row = ctx.cur_y_sp / grid_height,
-                        height = (D.getfield(t, "height") or 0) + (D.getfield(t, "depth") or 0),
-                        cell_height = cell_h,
-                    })
-                    ctx.cur_y_sp = ctx.cur_y_sp + cell_h + ctx.inter_cell_gap
-                    ctx.cur_row = math.floor(ctx.cur_y_sp / grid_height + 0.5)
-                    ctx.page_has_content = true
-                else
-                    table.insert(col_buffer, {
-                        node = t,
-                        page = ctx.cur_page,
-                        col = ctx.cur_col,
-                        relative_row = ctx.cur_row,
-                        height = (D.getfield(t, "height") or 0) + (D.getfield(t, "depth") or 0)
-                    })
-                    ctx.cur_row = ctx.cur_row + 1
-                    ctx.page_has_content = true
+                -- Unified layout: resolve cell height and gap
+                local cell_h = resolve_cell_height(t, grid_height, ctx.default_cell_height)
+                local gap = resolve_cell_gap(t, ctx.default_cell_gap)
 
+                -- Column overflow check (sp-based)
+                -- In distribute mode, allow overflow (flush_buffer will squeeze later)
+                if not distribute and ctx.cur_y_sp + cell_h > ctx.col_height_sp and ctx.cur_y_sp > 0 then
+                    flush_buffer()
+                    wrap_to_next_column(ctx, p_cols, interval, grid_height, indent, false, false)
+                end
+
+                table.insert(col_buffer, {
+                    node = t,
+                    page = ctx.cur_page,
+                    col = ctx.cur_col,
+                    relative_row = ctx.cur_y_sp / grid_height,
+                    height = (D.getfield(t, "height") or 0) + (D.getfield(t, "depth") or 0),
+                    cell_height = cell_h,
+                })
+
+                ctx.cur_y_sp = ctx.cur_y_sp + cell_h + gap
+                ctx.cur_row = math.floor(ctx.cur_y_sp / grid_height + 0.5)
+                ctx.page_has_content = true
+
+                -- Grid mode only: kinsoku + move_to_next_valid_position
+                -- Natural mode handles column wrap via sp-based overflow check above
+                if ctx.default_cell_height then
                     -- Kinsoku (line-breaking rules) hook:
-                    -- When column is about to wrap, check if we need to adjust
-                    -- to prevent forbidden characters at column start/end
-                    if not distribute and params and params.hooks
+                    -- Only for tight packing (gap == 0)
+                    if gap == 0 and not distribute and params and params.hooks
                         and params.hooks.check_kinsoku then
                         params.hooks.check_kinsoku(
                             t, ctx, effective_limit, col_buffer,
@@ -817,16 +836,8 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
             -- Accumulate consecutive spacing nodes
             local net_width, lookahead = accumulate_spacing(t)
 
-            if ctx.layout_mode == "natural" then
-                -- Natural mode: accumulate sp directly, no quantization
-                if net_width > 0 and ctx.cur_y_sp > 0 then
-                    ctx.cur_y_sp = ctx.cur_y_sp + net_width
-                    if ctx.cur_y_sp > ctx.col_height_sp then
-                        flush_buffer()
-                        wrap_to_next_column(ctx, p_cols, interval, grid_height, indent, false, false)
-                    end
-                end
-            else
+            if ctx.default_cell_height then
+                -- Grid-like: quantize spacing to grid cells (backward compatible)
                 local threshold = (grid_height or 655360) * 0.25
                 if net_width > threshold then
                     local num_cells = math.floor(net_width / (grid_height or 655360) + 0.5)
@@ -837,14 +848,25 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
                             net_width / 65536, (grid_height or 0) / 65536, num_cells))
 
                         for i = 1, num_cells do
-                            ctx.cur_row = ctx.cur_row + 1
-                            if ctx.cur_row >= effective_limit then
+                            ctx.cur_y_sp = ctx.cur_y_sp + grid_height
+                            ctx.cur_row = math.floor(ctx.cur_y_sp / grid_height + 0.5)
+                            if ctx.cur_y_sp >= effective_col_height_sp then
                                 flush_buffer()
                                 wrap_to_next_column(ctx, p_cols, interval, grid_height, indent, false, false)
                             else
                                 move_to_next_valid_position(ctx, interval, grid_height, indent)
                             end
                         end
+                    end
+                end
+            else
+                -- Natural: accumulate sp directly, no quantization
+                if net_width > 0 and ctx.cur_y_sp > 0 then
+                    ctx.cur_y_sp = ctx.cur_y_sp + net_width
+                    ctx.cur_row = math.floor(ctx.cur_y_sp / grid_height + 0.5)
+                    if ctx.cur_y_sp > ctx.col_height_sp then
+                        flush_buffer()
+                        wrap_to_next_column(ctx, p_cols, interval, grid_height, indent, false, false)
                     end
                 end
             end
@@ -864,6 +886,7 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
                         -- (auto-balance=false textflow may have rows_used=0, leaving cur_row un-advanced)
                         if ctx.textflow_pending_sub_col and ctx.textflow_pending_row_used then
                             ctx.cur_row = ctx.cur_row + ctx.textflow_pending_row_used
+                            ctx.cur_y_sp = ctx.cur_row * grid_height
                             ctx.textflow_pending_sub_col = nil
                             ctx.textflow_pending_row_used = nil
                         end

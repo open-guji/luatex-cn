@@ -133,6 +133,9 @@ _G.content.font_color = _G.content.font_color or nil
 _G.content.font_size = _G.content.font_size or 0
 _G.content.layout_mode = _G.content.layout_mode or "grid"
 _G.content.inter_cell_gap = _G.content.inter_cell_gap or 0
+_G.content.cell_height = _G.content.cell_height or nil
+_G.content.cell_width = _G.content.cell_width or nil
+_G.content.cell_gap = _G.content.cell_gap or nil
 
 -- ============================================================================
 -- Setup Helper Functions
@@ -182,6 +185,15 @@ local function parse_visual_params(params)
     if params.inter_cell_gap then
         _G.content.inter_cell_gap = constants.to_dimen(params.inter_cell_gap) or 0
     end
+    if params.cell_height and params.cell_height ~= "" then
+        _G.content.cell_height = constants.to_dimen(params.cell_height)
+    end
+    if params.cell_width and params.cell_width ~= "" then
+        _G.content.cell_width = constants.to_dimen(params.cell_width)
+    end
+    if params.cell_gap and params.cell_gap ~= "" then
+        _G.content.cell_gap = constants.to_dimen(params.cell_gap)
+    end
 end
 
 --- Push content base style to style stack
@@ -208,6 +220,12 @@ local function push_content_base_style()
         outer_border_sep = _G.content.outer_border_sep or (65536 * 2),
         -- Background color (nil means no background)
         background_color = _G.content.background_color,
+        -- Cell layout params (unified engine)
+        cell_height = _G.content.cell_height
+            or ((_G.content.layout_mode == "grid") and _G.content.grid_height or nil),
+        cell_width = _G.content.cell_width or nil,
+        cell_gap = _G.content.cell_gap
+            or ((_G.content.layout_mode ~= "grid") and _G.content.inter_cell_gap or 0),
     }
     if _G.content.font_color then
         base_style.font_color = _G.content.font_color

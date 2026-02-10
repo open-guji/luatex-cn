@@ -392,7 +392,10 @@ function textflow.place_nodes(ctx, start_node, layout_map, params, callbacks)
         if i > 1 then
             callbacks.wrap()
             local chunk_indent = callbacks.get_indent(params.block_id, params.base_indent, params.first_indent)
-            if ctx.cur_row < chunk_indent then ctx.cur_row = chunk_indent end
+            if ctx.cur_row < chunk_indent then
+                ctx.cur_row = chunk_indent
+                ctx.cur_y_sp = ctx.cur_row * (params.grid_height or 655360)
+            end
         end
         for _, node_info in ipairs(chunk.nodes) do
             -- Note: ATTR_STYLE_REG_ID is already set by TeX layer
@@ -449,6 +452,7 @@ function textflow.place_nodes(ctx, start_node, layout_map, params, callbacks)
         else
             ctx.cur_row = ctx.cur_row + chunk.rows_used
         end
+        ctx.cur_y_sp = ctx.cur_row * (params.grid_height or 655360)
     end
 
     -- Update ctx with final sub-column state for next textflow

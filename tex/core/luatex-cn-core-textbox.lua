@@ -644,6 +644,7 @@ function textbox.place_textbox_node(ctx, node, tb_w, tb_h, params, callbacks)
         callbacks.flush()
         callbacks.wrap(false, false) -- reset_indent=false, reset_content=false
         ctx.cur_row = params.indent  -- Textbox respects indent at start of new column
+        ctx.cur_y_sp = ctx.cur_row * (params.grid_height or 655360)
     end
 
     local fits_width = true
@@ -675,6 +676,7 @@ function textbox.place_textbox_node(ctx, node, tb_w, tb_h, params, callbacks)
         height = tb_h
     })
     ctx.cur_row = ctx.cur_row + tb_h
+    ctx.cur_y_sp = ctx.cur_row * (params.grid_height or 655360)
     callbacks.move_next()
 end
 

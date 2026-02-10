@@ -309,29 +309,23 @@ local function render_borders(p_head, params)
     local banxin_width = params.banxin_width or 0
     local interval = params.interval or 0
 
-    -- Calculate content dimensions
-    local content_width, content_height
-    local col_widths = _G.content and _G.content.col_widths
-    if is_textbox then
-        content_width = (actual_cols > 0 and actual_cols or 1) * grid_width
-        content_height = (actual_rows > 0 and actual_rows or 1) * grid_height
-    elseif col_widths and #col_widths > 0 then
-        -- Variable-width columns: sum all column widths
-        content_width = 0
-        for _, w in ipairs(col_widths) do content_width = content_width + w end
-        content_height = line_limit * grid_height + b_padding_top + b_padding_bottom
-    else
-        if interval > 0 and banxin_width > 0 and banxin_width ~= grid_width then
-            local n_banxin = math.floor(p_total_cols / (interval + 1))
-            local n_content = p_total_cols - n_banxin
-            content_width = n_content * grid_width + n_banxin * banxin_width
-        else
-            content_width = p_total_cols * grid_width
-        end
-        content_height = line_limit * grid_height + b_padding_top + b_padding_bottom
-    end
-    local inner_width = content_width + border_thickness
-    local inner_height = content_height + border_thickness
+    -- Calculate content dimensions (shared logic in content module)
+    local content_mod = package.loaded['core.luatex-cn-core-content'] or
+        require('core.luatex-cn-core-content')
+    local _, _, inner_width, inner_height = content_mod.calculate_content_dimensions({
+        is_textbox = is_textbox,
+        actual_cols = actual_cols,
+        actual_rows = actual_rows,
+        grid_width = grid_width,
+        grid_height = grid_height,
+        line_limit = line_limit,
+        b_padding_top = b_padding_top,
+        b_padding_bottom = b_padding_bottom,
+        p_total_cols = p_total_cols,
+        border_thickness = border_thickness,
+        banxin_width = banxin_width,
+        interval = interval,
+    })
 
     -- 1. Draw column borders
     if params.draw_border and p_total_cols > 0 then

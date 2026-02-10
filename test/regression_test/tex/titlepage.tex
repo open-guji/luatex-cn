@@ -1,22 +1,13 @@
 % titlepage.tex - Test for book title page (书名页) feature
 \documentclass{ltc-guji}
 
-\pageSetup{
-  columns=12,
-  lines=20
-}
-
-\contentSetup{
-  font-size=14pt
-}
-
 \begin{document}
 
 % 测试书名页环境（使用 Column 的 width 参数）
 \begin{书名页}
-  \列[width=2cm, align=bottom, font-size=12pt]{卷一}
-  \列[width=3cm, align=center, font-size=24pt]{史記}
-  \列[width=2cm, align=top, font-size=12pt]{五帝本紀}
+  \列[width=5cm, align=top, font-size=36pt]{光緒九年仲春}
+  \列[width=7cm, align=center, font-size=48pt]{童蒙必讀書}
+  \列[width=5cm, align=bottom, font-size=36pt]{武昌書局校刊}
 \end{书名页}
 
 \end{document}

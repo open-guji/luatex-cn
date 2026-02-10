@@ -56,7 +56,7 @@
   % (SinglePage and BodyText both use \NewEnviron, which redefines \BODY)
   \tl_set_eq:NN \l__luatexcn_titlepage_body_tl \BODY
   % Initialize col_widths array (columns will register their widths here)
-  \lua_now:n { _G.content.col_widths = {} }%
+  \lua_now:n { require('core.luatex-cn-core-content').init_col_widths() }%
   % Apply options
   \keys_set:nn { luatexcn / titlepage } { #1 }%
   % Wrap in SinglePage + Content
@@ -69,13 +69,10 @@
       \l__luatexcn_titlepage_body_tl
     \end{正文}
     % Set page-columns from the number of registered column widths
-    \lua_now:e {
-      local~cw~=~_G.content.col_widths~
-      if~cw~then~_G.content.page_columns~=~ \c_hash_str cw~end
-    }
+    \lua_now:n { require('core.luatex-cn-core-content').sync_page_columns_from_col_widths() }
   \end{单页}
   % Clear col_widths after page is shipped (clearpage runs inside 单页)
-  \lua_now:n { _G.content.col_widths = nil }%
+  \lua_now:n { require('core.luatex-cn-core-content').clear_col_widths() }%
 }
 
 % ============================================================================

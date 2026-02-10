@@ -572,33 +572,6 @@ local function render_single_page(p_head, p_max_col, p_max_row, p, layout_map, p
     local outer_shift = ctx.outer_shift
     local b_rgb_str = ctx.b_rgb_str
 
-    -- For TextBox: use actual content dimensions, not expanded page dimensions
-    -- For regular content: use full page dimensions
-    local col_widths = _G.content and _G.content.col_widths
-    local content_width, content_height
-    if page.is_textbox then
-        content_width = (actual_cols > 0 and actual_cols or 1) * grid_width
-        content_height = (actual_rows > 0 and actual_rows or 1) * grid_height
-    elseif col_widths and #col_widths > 0 then
-        -- Variable-width columns: sum all column widths
-        content_width = 0
-        for _, w in ipairs(col_widths) do content_width = content_width + w end
-        content_height = line_limit * grid_height + b_padding_top + b_padding_bottom
-    else
-        local banxin_w = ctx.banxin_width or 0
-        local interval = ctx.interval or 0
-        if interval > 0 and banxin_w > 0 and banxin_w ~= grid_width then
-            local n_banxin = math.floor(p_total_cols / (interval + 1))
-            local n_content = p_total_cols - n_banxin
-            content_width = n_content * grid_width + n_banxin * banxin_w
-        else
-            content_width = p_total_cols * grid_width
-        end
-        content_height = line_limit * grid_height + b_padding_top + b_padding_bottom
-    end
-    local inner_width = content_width + border_thickness
-    local inner_height = content_height + border_thickness
-
     -- Reserved columns (computed via engine_ctx helper function)
     local reserved_cols = grid.get_reserved_cols and grid.get_reserved_cols(p, p_total_cols) or {}
 

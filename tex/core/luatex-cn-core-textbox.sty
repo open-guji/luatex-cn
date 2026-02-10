@@ -107,41 +107,22 @@
     % Width is always 1 for outer layout (textbox occupies 1 column externally)
     \setluatexattribute\cnverticaltextboxwidth{1}
 
-    % Calculate inner grid dimensions (hybrid approach)
-    % If inner-grid-width not specified, auto-calculate based on outer-cols and n-cols
-    \tl_if_empty:NTF \l__luatexcn_textbox_inner_gw_tl
-      {
-        % Check if inside a Column with explicit width
-        \dim_compare:nNnTF \g__luatexcn_column_current_width_dim > { 0pt }
-          {
-            % Column width available: use it as inner-gw basis
-            \int_compare:nNnTF \l__luatexcn_textbox_n_cols_int > 0
-              { \dim_set:Nn \l__luatexcn_textbox_inner_gw_dim
-                  { \g__luatexcn_column_current_width_dim
-                    / \l__luatexcn_textbox_n_cols_int } }
-              { \dim_set:Nn \l__luatexcn_textbox_inner_gw_dim
-                  { \g__luatexcn_column_current_width_dim } }
-          }
-          {
-            \int_compare:nNnTF \l__luatexcn_textbox_outer_cols_int > 0
-              {
-                % outer-cols specified: inner_gw = content_gw * outer_cols / max(n_cols, 1)
-                \int_compare:nNnTF \l__luatexcn_textbox_n_cols_int > 0
-                  { \dim_set:Nn \l__luatexcn_textbox_inner_gw_dim
-                      { (\l__luatexcn_content_grid_width_tl) * \l__luatexcn_textbox_outer_cols_int
-                        / \l__luatexcn_textbox_n_cols_int } }
-                  { \dim_set:Nn \l__luatexcn_textbox_inner_gw_dim
-                      { (\l__luatexcn_content_grid_width_tl) * \l__luatexcn_textbox_outer_cols_int } }
-              }
-              {
-                % No outer-cols: original behavior
-                \int_compare:nNnTF \l__luatexcn_textbox_n_cols_int > 0
-                  { \dim_set:Nn \l__luatexcn_textbox_inner_gw_dim { (\l__luatexcn_content_grid_width_tl) / \l__luatexcn_textbox_n_cols_int } }
-                  { \dim_set:Nn \l__luatexcn_textbox_inner_gw_dim { \l__luatexcn_content_grid_width_tl } }
-              }
-          }
-      }
-      { \dim_set:Nn \l__luatexcn_textbox_inner_gw_dim { \l__luatexcn_textbox_inner_gw_tl } }
+    % Calculate inner grid width via Lua (replaces TeX-side decision tree)
+    \dim_set:Nn \l__luatexcn_textbox_inner_gw_dim {
+      \lua_now:e {
+        local ~ tb = require('core.luatex-cn-core-textbox')
+        tex.print(tostring(tb.calc_inner_grid_width({
+          inner_gw =
+            \tl_if_empty:NTF \l__luatexcn_textbox_inner_gw_tl
+              { 0 }
+              { \dim_to_decimal_in_sp:n { \l__luatexcn_textbox_inner_gw_tl } },
+          column_width = \dim_to_decimal_in_sp:n { \g__luatexcn_column_current_width_dim },
+          outer_cols = \int_use:N \l__luatexcn_textbox_outer_cols_int,
+          n_cols = \int_use:N \l__luatexcn_textbox_n_cols_int,
+          content_gw = \dim_to_decimal_in_sp:n { \l__luatexcn_content_grid_width_tl },
+        })))
+      } sp
+    }
     \tl_if_empty:NTF \l__luatexcn_textbox_inner_gh_tl
       { \dim_set:Nn \l__luatexcn_textbox_inner_gh_dim { \l__luatexcn_content_grid_height_tl } }
       { \dim_set:Nn \l__luatexcn_textbox_inner_gh_dim { \l__luatexcn_textbox_inner_gh_tl } }

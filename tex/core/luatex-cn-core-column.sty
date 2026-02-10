@@ -83,9 +83,7 @@
             \dim_gset:Nn \g__luatexcn_column_current_width_dim
               { \l__luatexcn_column_width_tl }
             \lua_now:e {
-              _G.content~=~_G.content~or~{}~
-              _G.content.col_widths~=~_G.content.col_widths~or~{}~
-              table.insert(_G.content.col_widths,~
+              require('core.luatex-cn-core-content').register_col_width(
                 \dim_to_decimal_in_sp:n { \l__luatexcn_column_width_tl })
             }
           }

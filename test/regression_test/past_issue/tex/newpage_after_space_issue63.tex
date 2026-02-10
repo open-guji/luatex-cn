@@ -1,0 +1,33 @@
+% newpage_after_space_issue63.tex - 回归测试: 空格挤字到行末后 newpage 内容丢失 (issue #63)
+% 问题: \空格[10] 将文字挤到列末，\newpage 后内容应正常排版
+\documentclass{ltc-guji}
+\禁用分页裁剪
+
+\begin{document}
+\begin{正文}
+
+一\\
+一\\
+一\\
+一\\
+一\\
+一\\
+一\\
+一\\
+一\\
+一\\
+一\\
+一\\
+一\\
+一\\
+一\\
+\空格[10] 时康熙岁次乙亥清明中浣
+
+\newpage
+
+时康熙岁次乙亥清明中浣
+
+秦中觉天者谢颐题于皋鹤堂
+
+\end{正文}
+\end{document}

@@ -218,7 +218,8 @@ local function mark_occupied(occupancy, p, c, r)
 end
 
 --- Get cell height for a node in natural layout mode
--- Returns font_size from style registry, or actual font size, or grid_height as fallback
+-- Returns font_size from style registry, or actual font size,
+-- or grid_height as fallback.
 -- Punctuation nodes (ATTR_PUNCT_TYPE > 0) get half height
 local function get_cell_height(node, grid_height)
     local base
@@ -370,9 +371,10 @@ local function wrap_to_next_column(ctx, p_cols, interval, grid_height, indent, r
     if ctx.cur_col >= p_cols then
         ctx.cur_col = 0
         ctx.cur_page = ctx.cur_page + 1
-        if reset_content then
-            ctx.page_has_content = false
-        end
+        -- Always reset page_has_content on page turn:
+        -- new page has no content yet regardless of reset_content flag.
+        -- (reset_content only controls same-page column wraps)
+        ctx.page_has_content = false
     end
     if reset_indent then
         ctx.cur_column_indent = 0
@@ -421,7 +423,7 @@ _internal.accumulate_spacing = accumulate_spacing
 -- @return (boolean) true if handled, false otherwise
 local function handle_penalty_breaks(p_val, ctx, flush_buffer_fn, p_cols, interval, grid_height, indent, penalty_node)
     if p_val == constants.PENALTY_FORCE_COLUMN then
-        -- Forced column break (explicit \换列 command)
+        -- Forced column break (explicit \换行 command)
         flush_buffer_fn()
         -- Check for post-break indent (e.g., footnote indentation)
         local post_indent = penalty_node and D.get_attribute(penalty_node, constants.ATTR_COLUMN_BREAK_INDENT)

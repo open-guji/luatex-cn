@@ -59,6 +59,9 @@
 
         width .tl_set:N = \l__luatexcn_column_width_tl,
         width .initial:n = {},
+
+        grid-height .tl_set:N = \l__luatexcn_column_grid_height_tl,
+        grid-height .initial:n = {},
       }
 
     \NewDocumentCommand{\Column}{ O{} +m }
@@ -74,6 +77,7 @@
         \tl_set:Nn \l__luatexcn_column_local_font_tl {}
         \tl_set:Nn \l__luatexcn_column_local_color_tl {}
         \tl_set:Nn \l__luatexcn_column_width_tl {}
+        \tl_set:Nn \l__luatexcn_column_grid_height_tl {}
 
         \keys_set:nn { luatexcn / column } { #1 }
 
@@ -137,7 +141,8 @@
           local ~ style_id = column.push_style(
             \tl_if_empty:NTF \l_tmpd_tl { nil } { [=[\luaescapestring{\tl_use:N \l_tmpd_tl}]=] },
             \tl_if_empty:NTF \l_tmpc_tl { nil } { [=[\luaescapestring{\tl_use:N \l_tmpc_tl}]=] },
-            \tl_if_empty:NTF \l_tmpb_tl { nil } { [=[\luaescapestring{\tl_use:N \l_tmpb_tl}]=] }
+            \tl_if_empty:NTF \l_tmpb_tl { nil } { [=[\luaescapestring{\tl_use:N \l_tmpb_tl}]=] },
+            \tl_if_empty:NTF \l__luatexcn_column_grid_height_tl { nil } { [=[\luaescapestring{\tl_use:N \l__luatexcn_column_grid_height_tl}]=] }
           )
           tex.print(tostring(style_id))
         }}
@@ -175,7 +180,7 @@
 \ExplSyntaxOff
 
 % Chinese alias
-\NewCommandCopy{\列}{\Column}
-\NewCommandCopy{\末列}{\LastColumn}
+\NewCommandCopy{\行}{\Column}
+\NewCommandCopy{\末行}{\LastColumn}
 
 \endinput%

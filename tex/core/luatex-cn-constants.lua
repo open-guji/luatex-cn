@@ -329,7 +329,7 @@ end
 constants.PENALTY_SMART_BREAK = -10001
 
 --- Force column break: Unconditionally wrap to next column
---- Used by: \换列 command, some \\ commands
+--- Used by: \换行 command, some \\ commands
 constants.PENALTY_FORCE_COLUMN = -10002
 
 --- Force page break: Unconditionally wrap to new page

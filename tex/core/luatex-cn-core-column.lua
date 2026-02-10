@@ -89,8 +89,9 @@ end
 -- @param font_color (string|nil) Font color string
 -- @param font_size (string|nil) Font size string
 -- @param font (string|nil) Font family name
+-- @param grid_height (string|nil) Grid height string (e.g. "40pt")
 -- @return (number) Style ID (always returns a valid number)
-function column.push_style(font_color, font_size, font)
+function column.push_style(font_color, font_size, font, grid_height)
     local style = {}
     if font_color and font_color ~= "" then
         style.font_color = font_color
@@ -100,6 +101,9 @@ function column.push_style(font_color, font_size, font)
     end
     if font and font ~= "" then
         style.font = font
+    end
+    if grid_height and grid_height ~= "" then
+        style.grid_height = constants.to_dimen(grid_height)
     end
     local id = style_registry.push(style)
     -- push() may return nil if style is empty, ensure we return 0
@@ -240,8 +244,52 @@ function column.place_nodes(ctx, start_node, layout_map, params, callbacks)
         return next_node
     end
 
-    -- Calculate total height
+    -- Get style from first node for non-jiazhu items
+    local first_node = nil
+    for _, item in ipairs(items) do
+        if item.node then
+            first_node = item.node
+            break
+        elseif item.nodes and #item.nodes > 0 then
+            first_node = item.nodes[1]
+            break
+        end
+    end
+
+    local style_reg_id = first_node and D.get_attribute(first_node, constants.ATTR_STYLE_REG_ID)
+    local current_style = style_registry.get(style_reg_id)
+    local font_color_str = current_style and current_style.font_color or nil
+    local font_size_val = current_style and current_style.font_size or nil
+    local font_str = current_style and current_style.font or nil
+
+    -- Override grid_height from style if set (per-Column grid-height)
+    -- row_step: how many grid rows each character occupies
+    -- (e.g., style grid_height=65pt, global grid_height=14pt → row_step≈4.64)
+    local row_step = 1
+    if current_style and current_style.grid_height and current_style.grid_height > 0 then
+        row_step = current_style.grid_height / grid_height
+    end
+
+    -- Calculate total height (in global grid units)
     local total_height = calculate_total_height(items, grid_height)
+    -- Adjust for row_step: each glyph uses row_step grid units instead of 1
+    if row_step ~= 1 then
+        -- Recalculate: count glyphs and adjust
+        local glyph_count = 0
+        local non_glyph_height = 0
+        for _, item in ipairs(items) do
+            if item.type == "glyph" then
+                glyph_count = glyph_count + 1
+            elseif item.type == "jiazhu_group" then
+                non_glyph_height = non_glyph_height + item.rows
+            elseif item.type == "textbox" then
+                non_glyph_height = non_glyph_height + item.height
+            elseif item.type == "kern" then
+                non_glyph_height = non_glyph_height + (item.height / grid_height)
+            end
+        end
+        total_height = glyph_count * row_step + non_glyph_height
+    end
 
     -- Calculate starting row based on alignment
     local start_row = 0
@@ -265,24 +313,6 @@ function column.place_nodes(ctx, start_node, layout_map, params, callbacks)
         end
     end
 
-    -- Get style from first node for non-jiazhu items
-    local first_node = nil
-    for _, item in ipairs(items) do
-        if item.node then
-            first_node = item.node
-            break
-        elseif item.nodes and #item.nodes > 0 then
-            first_node = item.nodes[1]
-            break
-        end
-    end
-
-    local style_reg_id = first_node and D.get_attribute(first_node, constants.ATTR_STYLE_REG_ID)
-    local current_style = style_registry.get(style_reg_id)
-    local font_color_str = current_style and current_style.font_color or nil
-    local font_size_val = current_style and current_style.font_size or nil
-    local font_str = current_style and current_style.font or nil
-
     -- Place items
     local cur_row = start_row
     for _, item in ipairs(items) do
@@ -297,7 +327,7 @@ function column.place_nodes(ctx, start_node, layout_map, params, callbacks)
             if font_size_val then entry.font_size = font_size_val end
             if font_str then entry.font = font_str end
             layout_map[item.node] = entry
-            cur_row = cur_row + v_scale + gap
+            cur_row = cur_row + row_step * v_scale + gap
 
         elseif item.type == "jiazhu_group" then
             -- Handle jiazhu group with dual-column layout

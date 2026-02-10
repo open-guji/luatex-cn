@@ -76,171 +76,31 @@ local style_registry = package.loaded['util.luatex-cn-style-registry'] or
 
 local dbg = debug.get_debugger('layout')
 
+-- Load helpers (parameter getters, style attributes, column validation, occupancy)
+local h = package.loaded['core.luatex-cn-layout-grid-helpers'] or
+    require('core.luatex-cn-layout-grid-helpers')
+
+local get_banxin_on = h.get_banxin_on
+local get_grid_width = h.get_grid_width
+local get_margin_right = h.get_margin_right
+local get_chapter_title = h.get_chapter_title
+local get_node_font_color = h.get_node_font_color
+local get_node_font_size = h.get_node_font_size
+local apply_style_attrs = h.apply_style_attrs
+local is_reserved_col = h.is_reserved_col
+local is_center_gap_col = h.is_center_gap_col
+local is_occupied = h.is_occupied
+local mark_occupied = h.mark_occupied
+local get_cell_height = h.get_cell_height
+
+-- Export _internal for testing
 local _internal = {}
-
--- =============================================================================
--- Helper functions to get params with fallback to globals
--- =============================================================================
-
--- Helper to get banxin_on with fallback to _G.banxin.enabled
-local function get_banxin_on(params)
-    if params and params.banxin_on ~= nil then
-        return params.banxin_on
-    end
-    return _G.banxin and _G.banxin.enabled or false
-end
-
--- Helper to get grid_width with fallback to _G.content.grid_width
-local function get_grid_width(params, fallback)
-    if params and params.grid_width and params.grid_width > 0 then
-        return params.grid_width
-    end
-    if _G.content and _G.content.grid_width and _G.content.grid_width > 0 then
-        return _G.content.grid_width
-    end
-    return fallback or (65536 * 20)
-end
-
--- Helper to get margin_right with fallback to _G.page.margin_right
-local function get_margin_right(params)
-    if params and params.margin_right then
-        if type(params.margin_right) == "number" then
-            return params.margin_right
-        else
-            return constants.to_dimen(params.margin_right) or 0
-        end
-    end
-    return _G.page and _G.page.margin_right or 0
-end
-
--- Helper to get chapter_title with fallback to _G.metadata.chapter_title
-local function get_chapter_title(params)
-    if params and params.chapter_title and params.chapter_title ~= "" then
-        return params.chapter_title
-    end
-    return _G.metadata and _G.metadata.chapter_title or ""
-end
-
 _internal.get_banxin_on = get_banxin_on
 _internal.get_grid_width = get_grid_width
 _internal.get_margin_right = get_margin_right
 _internal.get_chapter_title = get_chapter_title
-
--- =============================================================================
--- Helpers to get style attributes from node's style registry attribute
--- =============================================================================
-
--- Extract font_color from node's ATTR_STYLE_REG_ID attribute
--- Returns font_color string (e.g., "1 0 0" for red) or nil
-local function get_node_font_color(node)
-    local style_id = D.get_attribute(node, constants.ATTR_STYLE_REG_ID)
-    if style_id and style_id > 0 then
-        return style_registry.get_font_color(style_id)
-    end
-    return nil
-end
-
--- Extract font_size from node's ATTR_STYLE_REG_ID attribute
--- Returns font_size in sp (scaled points) or nil
-local function get_node_font_size(node)
-    local style_id = D.get_attribute(node, constants.ATTR_STYLE_REG_ID)
-    if style_id and style_id > 0 then
-        return style_registry.get_font_size(style_id)
-    end
-    return nil
-end
-
--- Extract font name/family from node's ATTR_STYLE_REG_ID attribute
--- Returns font name string or nil
-local function get_node_font(node)
-    local style_id = D.get_attribute(node, constants.ATTR_STYLE_REG_ID)
-    if style_id and style_id > 0 then
-        return style_registry.get_font(style_id)
-    end
-    return nil
-end
-
--- =============================================================================
--- Column validation functions
--- =============================================================================
-
-local function is_reserved_col(col, interval, banxin_on)
-    if not banxin_on then return false end
-    if interval <= 0 then return false end
-    return _G.core.hooks.is_reserved_column(col, interval)
-end
-
-local function is_center_gap_col(col, params, grid_height)
-    local banxin_on = get_banxin_on(params)
-    if not banxin_on then return false end
-
-    -- Use provided params if available, fall back to globals
-    local g_width = get_grid_width(params, grid_height)
-
-    -- Use global page width (set by page.setup via \pageSetup)
-    local paper_w = _G.page and _G.page.paper_width or 0
-    if paper_w <= 0 then return false end
-
-    local center = paper_w / 2
-    local gap_half_width = 15 * 65536 -- 15pt in sp
-
-    local floating_x = params and params.floating_x or 0
-    if floating_x <= 0 then
-        -- No explicit floating_x provided, use margin_right as the right origin
-        -- (main text col 0 is anchored to margin_right)
-        floating_x = get_margin_right(params)
-    end
-
-    local col_right_x = floating_x + col * g_width
-    local col_left_x = col_right_x + g_width
-
-    local gap_left = center - gap_half_width
-    local gap_right = center + gap_half_width
-
-    local overlaps = (col_right_x < gap_right) and (col_left_x > gap_left)
-
-    return overlaps
-end
-
 _internal.is_reserved_col = is_reserved_col
 _internal.is_center_gap_col = is_center_gap_col
-
-local function is_occupied(occupancy, p, c, r)
-    if not occupancy[p] then return false end
-    if not occupancy[p][c] then return false end
-    return occupancy[p][c][r] == true
-end
-
-local function mark_occupied(occupancy, p, c, r)
-    if not occupancy[p] then occupancy[p] = {} end
-    if not occupancy[p][c] then occupancy[p][c] = {} end
-    occupancy[p][c][r] = true
-end
-
---- Get cell height for a node in natural layout mode
--- Returns font_size from style registry, or actual font size,
--- or grid_height as fallback.
--- Punctuation nodes (ATTR_PUNCT_TYPE > 0) get half height
-local function get_cell_height(node, grid_height)
-    local base
-    local fs = get_node_font_size(node)
-    if fs and fs > 0 then
-        base = fs
-    else
-        local fid = D.getfield(node, "font")
-        if fid then
-            local f = font.getfont(fid)
-            if f and f.size then base = f.size end
-        end
-    end
-    base = base or grid_height
-    -- Punctuation occupies half cell
-    local punct_type = D.get_attribute(node, constants.ATTR_PUNCT_TYPE)
-    if punct_type and punct_type > 0 then
-        return math.floor(base * 0.5)
-    end
-    return base
-end
 
 local function create_grid_context(params, line_limit, p_cols)
     -- Use helper for chapter_title with fallback to _G.metadata
@@ -597,11 +457,6 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
             local row = distribute_rows[i] or entry.relative_row
             local v_scale = (distribute and N > 1) and v_scale_all or 1.0
 
-            -- Get style attributes from node's style registry attribute (Phase 2: Style Registry)
-            local font_color = get_node_font_color(entry.node)
-            local font_size = get_node_font_size(entry.node)
-            local font = get_node_font(entry.node)
-
             local map_entry = {
                 page = entry.page,
                 col = entry.col,
@@ -612,16 +467,7 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
                 v_scale = v_scale,
                 cell_height = entry.cell_height,
             }
-            -- Only add optional style fields if they are set
-            if font_color then
-                map_entry.font_color = font_color
-            end
-            if font_size then
-                map_entry.font_size = font_size
-            end
-            if font then
-                map_entry.font = font
-            end
+            apply_style_attrs(map_entry, entry.node)
 
             -- Check for line mark attribute (专名号/书名号)
             local lm_id = D.get_attribute(entry.node, constants.ATTR_LINE_MARK_ID)
@@ -662,19 +508,7 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
                 col = ctx.cur_col,
                 row = ctx.cur_row
             }
-
-            local font_color = get_node_font_color(t)
-            local font_size = get_node_font_size(t)
-            local font = get_node_font(t)
-            if font_color then
-                map_entry.font_color = font_color
-            end
-            if font_size then
-                map_entry.font_size = font_size
-            end
-            if font then
-                map_entry.font = font
-            end
+            apply_style_attrs(map_entry, t)
 
             layout_map[t] = map_entry
             t = D.getnext(t)
@@ -918,18 +752,7 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
                     row = dec_row
                 }
 
-                local font_color = get_node_font_color(t)
-                local font_size = get_node_font_size(t)
-                local font = get_node_font(t)
-                if font_color then
-                    map_entry.font_color = font_color
-                end
-                if font_size then
-                    map_entry.font_size = font_size
-                end
-                if font then
-                    map_entry.font = font
-                end
+                apply_style_attrs(map_entry, t)
 
                 layout_map[t] = map_entry
                 -- DO NOT increment cur_row - marker is zero-width overlay

@@ -1,0 +1,211 @@
+-- Copyright 2026 Open-Guji (https://github.com/open-guji)
+--
+-- Licensed under the Apache License, Version 2.0 (the "License");
+-- you may not use this file except in compliance with the License.
+-- You may obtain a copy of the License at
+--
+--     http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing, software
+-- distributed under the License is distributed on an "AS IS" BASIS,
+-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-- See the License for the specific language governing permissions and
+-- limitations under the License.
+-- ============================================================================
+-- layout_grid_helpers.lua - 布局网格辅助函数
+-- ============================================================================
+-- 从 layout_grid.lua 提取的参数获取、样式属性、列验证、占用地图等辅助函数。
+-- 这些函数不依赖布局上下文 (ctx)，是纯粹的工具函数。
+-- ============================================================================
+
+local constants = package.loaded['core.luatex-cn-constants'] or
+    require('core.luatex-cn-constants')
+local D = constants.D
+local style_registry = package.loaded['util.luatex-cn-style-registry'] or
+    require('util.luatex-cn-style-registry')
+
+local helpers = {}
+
+-- =============================================================================
+-- Parameter getters with fallback to globals
+-- =============================================================================
+
+local function get_banxin_on(params)
+    if params and params.banxin_on ~= nil then
+        return params.banxin_on
+    end
+    return _G.banxin and _G.banxin.enabled or false
+end
+
+local function get_grid_width(params, fallback)
+    if params and params.grid_width and params.grid_width > 0 then
+        return params.grid_width
+    end
+    if _G.content and _G.content.grid_width and _G.content.grid_width > 0 then
+        return _G.content.grid_width
+    end
+    return fallback or (65536 * 20)
+end
+
+local function get_margin_right(params)
+    if params and params.margin_right then
+        if type(params.margin_right) == "number" then
+            return params.margin_right
+        else
+            return constants.to_dimen(params.margin_right) or 0
+        end
+    end
+    return _G.page and _G.page.margin_right or 0
+end
+
+local function get_chapter_title(params)
+    if params and params.chapter_title and params.chapter_title ~= "" then
+        return params.chapter_title
+    end
+    return _G.metadata and _G.metadata.chapter_title or ""
+end
+
+-- =============================================================================
+-- Style attribute helpers
+-- =============================================================================
+
+local function get_node_font_color(node)
+    local style_id = D.get_attribute(node, constants.ATTR_STYLE_REG_ID)
+    if style_id and style_id > 0 then
+        return style_registry.get_font_color(style_id)
+    end
+    return nil
+end
+
+local function get_node_font_size(node)
+    local style_id = D.get_attribute(node, constants.ATTR_STYLE_REG_ID)
+    if style_id and style_id > 0 then
+        return style_registry.get_font_size(style_id)
+    end
+    return nil
+end
+
+local function get_node_font(node)
+    local style_id = D.get_attribute(node, constants.ATTR_STYLE_REG_ID)
+    if style_id and style_id > 0 then
+        return style_registry.get_font(style_id)
+    end
+    return nil
+end
+
+local function apply_style_attrs(map_entry, node_ptr)
+    local fc = get_node_font_color(node_ptr)
+    local fs = get_node_font_size(node_ptr)
+    local f = get_node_font(node_ptr)
+    if fc then map_entry.font_color = fc end
+    if fs then map_entry.font_size = fs end
+    if f then map_entry.font = f end
+end
+
+-- =============================================================================
+-- Column validation functions
+-- =============================================================================
+
+local function is_reserved_col(col, interval, banxin_on)
+    if not banxin_on then return false end
+    if interval <= 0 then return false end
+    return _G.core.hooks.is_reserved_column(col, interval)
+end
+
+local function is_center_gap_col(col, params, grid_height)
+    local banxin_on = get_banxin_on(params)
+    if not banxin_on then return false end
+
+    local g_width = get_grid_width(params, grid_height)
+
+    local paper_w = _G.page and _G.page.paper_width or 0
+    if paper_w <= 0 then return false end
+
+    local center = paper_w / 2
+    local gap_half_width = 15 * 65536 -- 15pt in sp
+
+    local floating_x = params and params.floating_x or 0
+    if floating_x <= 0 then
+        floating_x = get_margin_right(params)
+    end
+
+    local col_right_x = floating_x + col * g_width
+    local col_left_x = col_right_x + g_width
+
+    local gap_left = center - gap_half_width
+    local gap_right = center + gap_half_width
+
+    local overlaps = (col_right_x < gap_right) and (col_left_x > gap_left)
+
+    return overlaps
+end
+
+-- =============================================================================
+-- Occupancy map functions
+-- =============================================================================
+
+local function is_occupied(occupancy, p, c, r)
+    if not occupancy[p] then return false end
+    if not occupancy[p][c] then return false end
+    return occupancy[p][c][r] == true
+end
+
+local function mark_occupied(occupancy, p, c, r)
+    if not occupancy[p] then occupancy[p] = {} end
+    if not occupancy[p][c] then occupancy[p][c] = {} end
+    occupancy[p][c][r] = true
+end
+
+-- =============================================================================
+-- Cell height calculation (natural layout mode)
+-- =============================================================================
+
+--- Get cell height for a node in natural layout mode
+-- Returns font_size from style registry, or actual font size,
+-- or grid_height as fallback.
+-- Punctuation nodes (ATTR_PUNCT_TYPE > 0) get half height
+local function get_cell_height(node, grid_height)
+    local base
+    local fs = get_node_font_size(node)
+    if fs and fs > 0 then
+        base = fs
+    else
+        local fid = D.getfield(node, "font")
+        if fid then
+            local f = font.getfont(fid)
+            if f and f.size then base = f.size end
+        end
+    end
+    base = base or grid_height
+    -- Punctuation occupies half cell
+    local punct_type = D.get_attribute(node, constants.ATTR_PUNCT_TYPE)
+    if punct_type and punct_type > 0 then
+        return math.floor(base * 0.5)
+    end
+    return base
+end
+
+-- =============================================================================
+-- Module exports
+-- =============================================================================
+
+helpers.get_banxin_on = get_banxin_on
+helpers.get_grid_width = get_grid_width
+helpers.get_margin_right = get_margin_right
+helpers.get_chapter_title = get_chapter_title
+
+helpers.get_node_font_color = get_node_font_color
+helpers.get_node_font_size = get_node_font_size
+helpers.get_node_font = get_node_font
+helpers.apply_style_attrs = apply_style_attrs
+
+helpers.is_reserved_col = is_reserved_col
+helpers.is_center_gap_col = is_center_gap_col
+
+helpers.is_occupied = is_occupied
+helpers.mark_occupied = mark_occupied
+
+helpers.get_cell_height = get_cell_height
+
+package.loaded['core.luatex-cn-layout-grid-helpers'] = helpers
+return helpers

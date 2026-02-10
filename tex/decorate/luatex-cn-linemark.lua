@@ -38,15 +38,7 @@ local sp_to_bp = utils.sp_to_bp
 
 local linemark = {}
 
--- Color name to RGB mapping (same as decorate module)
-local color_map = {
-    red = "1 0 0",
-    blue = "0 0 1",
-    green = "0 1 0",
-    black = "0 0 0",
-    purple = "0.5 0 0.5",
-    orange = "1 0.5 0"
-}
+local color_map = constants.color_map
 
 -- Wavy amplitude presets (as fraction of 1em), keyed by style
 local amplitude_presets = {

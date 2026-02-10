@@ -340,5 +340,18 @@ constants.PENALTY_FORCE_PAGE = -10003
 --- Note: This keeps standard TeX value for compatibility
 constants.PENALTY_PAGE_FILL = -10000
 
+-- ============================================================================
+-- Shared color name to RGB mapping
+-- ============================================================================
+
+constants.color_map = {
+    red = "1 0 0",
+    blue = "0 0 1",
+    green = "0 1 0",
+    black = "0 0 0",
+    purple = "0.5 0 0.5",
+    orange = "1 0.5 0",
+}
+
 package.loaded['core.luatex-cn-constants'] = constants
 return constants

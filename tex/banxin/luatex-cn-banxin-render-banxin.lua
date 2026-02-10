@@ -44,6 +44,7 @@ local utils = package.loaded['util.luatex-cn-utils'] or
 local text_position = package.loaded['core.luatex-cn-render-position'] or
     require('luatex-cn-render-position')
 local yuwei = package.loaded['banxin.luatex-cn-banxin-render-yuwei'] or require('banxin.luatex-cn-banxin-render-yuwei')
+local banxin_layout = package.loaded['banxin.luatex-cn-banxin-layout'] or require('banxin.luatex-cn-banxin-layout')
 
 -- Register banxin module if debug module is available
 local debug = package.loaded['debug.luatex-cn-debug'] or
@@ -58,34 +59,10 @@ local sp_to_bp = utils.sp_to_bp
 -- Helper Functions (纯函数，只计算不产生副作用)
 -- ============================================================================
 
---- 统计 UTF-8 字符串中的字符数
--- @param text (string) UTF-8 字符串
--- @return (number) 字符数
-local function count_utf8_chars(text)
-    local count = 0
-    for _ in text:gmatch("[%z\1-\127\194-\244][\128-\191]*") do
-        count = count + 1
-    end
-    return count
-end
-
---- 计算鱼尾的尺寸
--- @param width (number) 版心宽度 (sp)
--- @return (table) { edge_height, notch_height, gap } 鱼尾尺寸
-local function calculate_yuwei_dimensions(width)
-    return {
-        edge_height = width * 0.39,
-        notch_height = width * 0.17,
-        gap = 65536 * 3.7, -- 3.7pt gap from dividing lines
-    }
-end
-
---- 计算鱼尾总高度（包含间隙）
--- @param yuwei_dims (table) 鱼尾尺寸
--- @return (number) 鱼尾总高度 (sp)
-local function calculate_yuwei_total_height(yuwei_dims)
-    return yuwei_dims.gap + yuwei_dims.edge_height + yuwei_dims.notch_height
-end
+-- Reuse shared helpers from banxin-layout module
+local count_utf8_chars = banxin_layout.count_utf8_chars
+local calculate_yuwei_dimensions = banxin_layout.calculate_yuwei_dimensions
+local calculate_yuwei_total_height = banxin_layout.calculate_yuwei_total_height
 
 --- 将节点链插入到链表头部
 -- @param p_head (node) 当前链表头
@@ -430,19 +407,8 @@ local function render_text_section(p_head, layout)
     return p_head
 end
 
---- 解析章节标题（支持 \\\\ 换行）
--- @param chapter_title (string) 章节标题
--- @return (table) 标题部分数组
-local function parse_chapter_title(chapter_title)
-    if not chapter_title then return {} end
-    -- Handle both \\ and \\\\ (TeX vs Lua literal escaping)
-    local raw_title = chapter_title:gsub("\\\\+", "\n")
-    local parts = {}
-    for s in raw_title:gmatch("[^\n]+") do
-        table.insert(parts, s)
-    end
-    return parts
-end
+-- Reuse parse_chapter_title from banxin-layout module
+local parse_chapter_title = banxin_layout.parse_chapter_title
 
 -- ============================================================================
 -- Debug Functions (调试功能)

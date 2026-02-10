@@ -1064,8 +1064,6 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
 
     flush_buffer()
 
-    local total_pages = ctx.cur_page + 1
-
     local map_count = 0
     for _ in pairs(layout_map) do map_count = map_count + 1 end
     dbg.log(string.format("Layout map built. Total entries: %d, Total pages: %d", map_count,

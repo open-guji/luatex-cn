@@ -80,7 +80,6 @@ local debug = package.loaded['debug.luatex-cn-debug'] or
     require('debug.luatex-cn-debug')
 
 local dbg = debug.get_debugger('core')
-local dbg_map = debug.get_debugger('layout_map')
 local flatten = package.loaded['core.luatex-cn-core-flatten-nodes'] or
     require('core.luatex-cn-core-flatten-nodes')
 local layout = package.loaded['core.luatex-cn-layout-grid'] or
@@ -626,47 +625,6 @@ local function process(box_num, params)
     -- This recovers memory for sidenotes and floating boxes immediately.
     sidenote.clear_registry()
     textbox.clear_registry()
-end
-
---- Final cleanup function to be called at the end of the document
--- This safely flushes all remaining nodes in registries and clears tables
-local function finalize_engine()
-    local glyph_id = node.id("glyph")
-    local before = node.count(glyph_id)
-    dbg.log(string.format("Performing cleanup. Glyphs before: %d", before))
-
-    -- 1. Flush and clear pending pages
-    for i, box in pairs(_G.vertical_pending_pages) do
-        if box then
-            node.flush_list(box)
-        end
-    end
-    _G.vertical_pending_pages = {}
-
-    -- 2. Flush and clear sidenote registry
-    if sidenote and sidenote.registry then
-        for _, item in pairs(sidenote.registry) do
-            local head = type(item) == "table" and item.head or item
-            if head then
-                node.flush_list(head)
-            end
-        end
-        sidenote.clear_registry()
-    end
-
-    -- 3. Flush and clear textbox registries
-    if textbox and textbox.floating_registry then
-        for _, item in pairs(textbox.floating_registry) do
-            if item.box then
-                node.flush_list(item.box)
-            end
-        end
-        textbox.clear_registry()
-    end
-
-    -- 4. Force garbage collection
-    collectgarbage("collect")
-    collectgarbage("collect") -- Second pass for finalizers
 end
 
 -- ========================================================================

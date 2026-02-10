@@ -4,7 +4,7 @@ English | [中文版](Home)
 
 Welcome to the LuaTeX-CN Wiki. This site provides comprehensive documentation for users and developers to help you create high-quality classic Chinese typesettings using LuaTeX-CN.
 
-> **Current Version**: [v0.2.6](https://github.com/open-guji/luatex-cn/releases) | **CTAN**: [v0.1.1](https://ctan.org/pkg/luatex-cn)
+> **Current Version**: [v0.2.7](https://github.com/open-guji/luatex-cn/releases) | **CTAN**: [v0.1.1](https://ctan.org/pkg/luatex-cn)
 
 ## Quick Access
 
@@ -19,13 +19,21 @@ Welcome to the LuaTeX-CN Wiki. This site provides comprehensive documentation fo
 - [[Font Setup | EN:Fonts]] - Config Chinese fonts and fallback chains
 - [[Layout Control | EN:Features]] - Chapters, TOC entries, and fine-grained layout control
 
-### 2. Specialized Commands
+### 2. Document Classes
+- [[ltc-guji (Ancient Books) | EN:Quick-Start]] - Traditional vertical typesetting (default class)
+- [[ltc-book (Modern Books) | EN:ltc-book]] - Modern vertical books with punct squeeze and footnotes
+
+### 3. Punctuation & Judou
+- [[Punctuation System | EN:Punctuation]] - Modern punct styles (mainland/Taiwan), squeeze, kinsoku
+- [[Judou | EN:Judou]] - Classical Chinese punctuation (judou/plain/normal modes)
+
+### 4. Specialized Commands
 - [[Interlinear & Side Notes | EN:Side-Note]] - Detailed usage of jiazhu and side notes
 - [[Annotations & Marginal Notes | EN:Annotation]] - Floating annotations and marginal notes (MeiPi)
-- [[Punctuation | EN:Judou]] - Traditional Chinese punctuation (Judou)
 - [[Decorations | EN:Correction]] - Underlines, book titles, and correction marks
+- [[Elevation | EN:Taitou]] - Honorific elevation formatting
 
-### 3. Advanced Features
+### 5. Advanced Features
 - [[Text Boxes | EN:Textbox]] - Absolute positioning and adaptive containers
 - [[Seals | EN:Seal]] - Adding and positioning electronic seals
 - [[Debugging | EN:Debug]] - Grid visualization and layout debugging

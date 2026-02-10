@@ -11,33 +11,36 @@
 | `四库全书` | `ltc-guji` | 经典官修书籍风格（黑白版） |
 | `四库全书彩色` | `ltc-guji` | 经典官修书籍风格（彩色版） |
 | `红楼梦甲戌本` | `ltc-guji` | 手抄本风格，支持侧批与眉批 |
-| `default` | `ltc-book` | 默认现代竖排风格 |
+| `default` | `ltc-book` | 默认现代竖排风格（台湾标点） |
+| `中华书局` | `ltc-book` | 中华书局现代竖排风格（大陆标点） |
 
 ## 使用模板
 
 在文档类选项中指定模板名称：
 
 ```latex
-% 使用彩色四库全书模板
+% ltc-guji 模板
 \documentclass[四库全书彩色]{ltc-guji}
-
-% 使用红楼梦甲戌本模板
 \documentclass[红楼梦甲戌本]{ltc-guji}
+
+% ltc-book 模板 (v0.2.7+)
+\documentclass{ltc-book}              % 默认模板
+\documentclass[中华书局]{ltc-book}     % 中华书局模板
 ```
 
 ## 自定义模板
 
 ### 方法 1：创建配置文件
 
+#### ltc-guji 模板
+
 在 `configs/` 目录下创建 `luatex-cn-guji-<模板名>.cfg` 文件：
 
 ```latex
 % luatex-cn-guji-MyTemplate.cfg
 
-% 可以继承已有模板
 \gujiSetup{ template = default }
 
-% 页面设置
 \pageSetup{
     paper-width = 1077.2pt,
     paper-height = 1077.2pt,
@@ -47,7 +50,6 @@
     margin-right = 25.5pt,
 }
 
-% 内容设置
 \contentSetup{
     n-column = 12,
     font-size = 30pt,
@@ -56,13 +58,44 @@
     border = true,
 }
 
-% 版心设置
 \banxinSetup{
     banxin-upper-ratio = 0.18,
     banxin-middle-ratio = 0.38,
     upper-yuwei = true,
     lower-yuwei = true,
 }
+
+\endinput
+```
+
+#### ltc-book 模板 (v0.2.7+)
+
+在 `configs/` 目录下创建 `luatex-cn-book-<模板名>.cfg` 文件：
+
+```latex
+% luatex-cn-book-mytemplate.cfg
+
+\pageSetup{
+    paper-width = 148mm,
+    paper-height = 210mm,
+    margin-top = 20mm,
+    margin-bottom = 15mm,
+    margin-left = 18mm,
+    margin-right = 15mm,
+    page-number-style = digits,
+}
+
+\contentSetup{
+    font-size = 11pt,
+    line-spacing = 13pt,
+    grid-width = 13pt,
+    grid-height = 13pt,
+    vertical-align = center,
+    n-column = 0,
+    border = false,
+}
+
+\punctSetup{punct-style=taiwan}
 
 \endinput
 ```
@@ -115,12 +148,17 @@
 | | `border` | 显示边框 | true |
 | | `font-color` | 字体颜色 (RGB) | {0,0,0} |
 | | `border-color` | 边框颜色 (RGB) | {0,0,0} |
+| | `layout-mode` | 排版模式 (v0.2.7+) | `grid` |
 | `\pageSetup` | `paper-width` | 纸张宽度 | - |
 | | `paper-height` | 纸张高度 | - |
 | | `margin-*` | 页边距 | - |
+| | `page-number-style` | 页码样式 (v0.2.7+) | `none` |
 | `\banxinSetup` | `banxin-upper-ratio` | 版心上部比例 | 0.18 |
 | | `upper-yuwei` | 上鱼尾 | true |
 | | `lower-yuwei` | 下鱼尾 | true |
+| `\punctSetup` | `punct-style` | 标点风格 (v0.2.7+) | `taiwan` |
+| | `punct-squeeze` | 标点挤压 (v0.2.7+) | `true` |
+| | `kinsoku` | 禁则处理 (v0.2.7+) | `true` |
 
 ---
 

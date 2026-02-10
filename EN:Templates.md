@@ -11,58 +11,72 @@
 | `四库全书` | `ltc-guji` | Classic official book style (B&W) |
 | `四库全书彩色` | `ltc-guji` | Classic official book style (Color) |
 | `红楼梦甲戌本` | `ltc-guji` | Manuscript style with side/top notes |
-| `default` | `ltc-book` | Default modern vertical style |
+| `default` | `ltc-book` | Default modern vertical style (Taiwan punct) |
+| `中华书局` | `ltc-book` | Zhonghua Shuju modern style (Mainland punct) |
 
 ## Using Templates
 
 Specify the template name in document class options:
 
 ```latex
-% Use colored Siku Quanshu template
+% ltc-guji templates
 \documentclass[四库全书彩色]{ltc-guji}
-
-% Use Hong Lou Meng Jiaxu edition template
 \documentclass[红楼梦甲戌本]{ltc-guji}
+
+% ltc-book templates (v0.2.7+)
+\documentclass{ltc-book}              % Default template
+\documentclass[中华书局]{ltc-book}     % Zhonghua Shuju template
 ```
 
 ## Custom Templates
 
 ### Method 1: Create Configuration File
 
+#### ltc-guji Template
+
 Create a `luatex-cn-guji-<template-name>.cfg` file in the `configs/` directory:
 
 ```latex
-% luatex-cn-guji-MyTemplate.cfg
-
-% Can inherit from existing template
 \gujiSetup{ template = default }
 
-% Page setup
 \pageSetup{
     paper-width = 1077.2pt,
     paper-height = 1077.2pt,
-    margin-top = 226.8pt,
-    margin-bottom = 113.4pt,
-    margin-left = 25.5pt,
-    margin-right = 25.5pt,
 }
 
-% Content setup
 \contentSetup{
     n-column = 12,
     font-size = 30pt,
-    line-spacing = 45pt,
-    n-char-per-col = 18,
     border = true,
 }
 
-% Banxin setup
 \banxinSetup{
-    banxin-upper-ratio = 0.18,
-    banxin-middle-ratio = 0.38,
     upper-yuwei = true,
     lower-yuwei = true,
 }
+
+\endinput
+```
+
+#### ltc-book Template (v0.2.7+)
+
+Create a `luatex-cn-book-<template-name>.cfg` file in the `configs/` directory:
+
+```latex
+\pageSetup{
+    paper-width = 148mm,
+    paper-height = 210mm,
+    page-number-style = digits,
+}
+
+\contentSetup{
+    font-size = 11pt,
+    line-spacing = 13pt,
+    n-column = 0,
+    border = false,
+}
+
+\punctSetup{punct-style=taiwan}
 
 \endinput
 ```
@@ -88,19 +102,6 @@ Create a `luatex-cn-guji-<template-name>.cfg` file in the `configs/` directory:
 \end{document}
 ```
 
-### Method 3: Define Template with defineGujiTemplate
-
-```latex
-\defineGujiTemplate{MyTemplate}{
-    book-name = Default Title,
-    n-column = 10,
-    border = true,
-}
-
-% Use custom template
-\gujiSetup{ template = MyTemplate }
-```
-
 ## Configuration Reference Table
 
 | Command | Parameter | Description | Default |
@@ -113,14 +114,16 @@ Create a `luatex-cn-guji-<template-name>.cfg` file in the `configs/` directory:
 | | `line-spacing` | Line spacing | 45pt |
 | | `n-char-per-col` | Characters per column | 18 |
 | | `border` | Show border | true |
-| | `font-color` | Font color (RGB) | {0,0,0} |
-| | `border-color` | Border color (RGB) | {0,0,0} |
+| | `layout-mode` | Layout mode (v0.2.7+) | `grid` |
 | `\pageSetup` | `paper-width` | Paper width | - |
 | | `paper-height` | Paper height | - |
 | | `margin-*` | Margins | - |
+| | `page-number-style` | Number style (v0.2.7+) | `none` |
 | `\banxinSetup` | `banxin-upper-ratio` | Upper section ratio | 0.18 |
 | | `upper-yuwei` | Upper fish tail | true |
-| | `lower-yuwei` | Lower fish tail | true |
+| `\punctSetup` | `punct-style` | Punct style (v0.2.7+) | `taiwan` |
+| | `punct-squeeze` | Squeeze (v0.2.7+) | `true` |
+| | `kinsoku` | Line-breaking rules (v0.2.7+) | `true` |
 
 ---
 

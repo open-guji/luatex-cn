@@ -4,6 +4,19 @@ English | [中文版](Changelog)
 
 All notable changes to this project will be documented here.
 
+## [0.2.7] - 2026-02-09
+
+- ✨ **Modern Punctuation System**: Full modern punctuation support (squeeze, kinsoku line-breaking, vertical quote replacement) with mainland/Taiwan style options
+- ✨ **ltc-book Document Class**: New `ltc-book` class for modern vertical Chinese book typesetting with template system (default/zhonghuashuju)
+- ✨ **Footnote System**: Added `\Footnote` command with endnote and page-bottom modes, lujiao/circled numbering styles
+- ✨ **Natural Layout Mode**: Added `layout-mode=natural` for non-uniform character spacing with half-grid punctuation and bottom-aligned columns
+- ✨ **Flexible Column Widths**: `\Column` now supports `width` parameter for variable-width column layouts
+- ✨ **Title Page Column Widths**: TitlePage supports `column-widths` parameter for flexible layouts
+- 🐛 **Bug Fix**: Fixed content loss when `\newpage` follows auto-pagination at column end (fix #63)
+- 🐛 **Bug Fix**: Fixed `\Space` command being skipped at column start (fix #62)
+- 🐛 **Bug Fix**: Fixed `\挪抬` command trailing spaces producing extra whitespace
+- ♻️ **Refactoring**: Split render-page.lua into two modules, reorganized regression tests into three suites
+
 ## [0.2.6] - 2026-02-07
 
 - ✨ **Taitou Support**: Added `\抬头[N]` system (Single/Double/Triple/Flat/Relative Taitou) with automatic border wrapping

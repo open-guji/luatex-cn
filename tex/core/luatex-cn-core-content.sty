@@ -51,6 +51,12 @@
 \tl_new:N \l__luatexcn_content_cell_width_tl
 \tl_new:N \l__luatexcn_content_cell_gap_tl
 
+% Flexible column width and spacing (Free Mode)
+\bool_new:N \l__luatexcn_content_auto_col_width_bool
+\tl_new:N \l__luatexcn_content_col_spacing_top_tl
+\tl_new:N \l__luatexcn_content_col_spacing_bottom_tl
+\tl_new:N \l__luatexcn_content_para_spacing_tl
+
 \keys_define:nn { luatexcn / content }
   {
     border .bool_set:N = \l__luatexcn_content_border_bool,
@@ -135,6 +141,24 @@
 
     cell-gap .tl_set:N = \l__luatexcn_content_cell_gap_tl,
     cell-gap .initial:n = {},
+
+    % 灵活列宽和间距参数（Free Mode）
+    auto-column-width .bool_set:N = \l__luatexcn_content_auto_col_width_bool,
+    auto-column-width .initial:n = false,
+
+    column-spacing-top .tl_set:N = \l__luatexcn_content_col_spacing_top_tl,
+    column-spacing-top .initial:n = {0pt},
+
+    column-spacing-bottom .tl_set:N = \l__luatexcn_content_col_spacing_bottom_tl,
+    column-spacing-bottom .initial:n = {0pt},
+
+    column-spacing .meta:n = {
+      column-spacing-top = #1,
+      column-spacing-bottom = #1
+    },
+
+    paragraph-spacing .tl_set:N = \l__luatexcn_content_para_spacing_tl,
+    paragraph-spacing .initial:n = {0pt},
 
     unknown .code:n = { \keys_set:nx { luatexcn / page } { \l_keys_key_tl = { #1 } } },
   }

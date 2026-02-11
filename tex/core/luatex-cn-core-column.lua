@@ -94,11 +94,33 @@ end
 -- @param font_size (string|nil) Font size string
 -- @param font (string|nil) Font family name
 -- @param grid_height (string|nil) Grid height string (e.g. "40pt")
+-- @param spacing_top (string|nil) Spacing-top (column right spacing) string
+-- @param spacing_bottom (string|nil) Spacing-bottom (column left spacing) string
+-- @param column_width (string|nil) Column width string
+-- @param auto_width (boolean|nil) Auto-width setting
+-- @param width_scale (string|nil) Width scale factor string
 -- @return (number) Style ID (always returns a valid number)
-function column.push_style(font_color, font_size, font, grid_height)
+function column.push_style(font_color, font_size, font, grid_height,
+                          spacing_top, spacing_bottom, column_width,
+                          auto_width, width_scale)
     local extra = {}
     if grid_height and grid_height ~= "" then
         extra.grid_height = constants.to_dimen(grid_height)
+    end
+    if spacing_top and spacing_top ~= "" then
+        extra.spacing_top = constants.to_dimen(spacing_top)
+    end
+    if spacing_bottom and spacing_bottom ~= "" then
+        extra.spacing_bottom = constants.to_dimen(spacing_bottom)
+    end
+    if column_width and column_width ~= "" then
+        extra.column_width = constants.to_dimen(column_width)
+    end
+    if auto_width ~= nil then
+        extra.auto_width = auto_width
+    end
+    if width_scale and width_scale ~= "" then
+        extra.width_scale = tonumber(width_scale)
     end
     return style_registry.push_content_style(font_color, font_size, font, extra)
 end

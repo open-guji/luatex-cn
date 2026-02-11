@@ -1,0 +1,22 @@
+\documentclass{ltc-guji}
+
+\begin{document}
+
+% 测试新参数是否能正常解析
+\begin{正文}
+
+% 测试 spacing 参数
+\行[spacing=5pt]{测试间距}
+
+% 测试 spacing-top 和 spacing-bottom 分别设置
+\行[spacing-top=3pt, spacing-bottom=7pt]{不同间距}
+
+% 测试 auto-width 和 width-scale
+\行[font-size=24pt, auto-width=true, width-scale=1.5]{大字号}
+
+% 测试 column-width 显式指定
+\行[column-width=50pt]{固定列宽}
+
+\end{正文}
+
+\end{document}

@@ -137,7 +137,7 @@ local function calculate_decorate_position(pos, reg, ctx, base_size, font_id, ch
     -- Position calculation (use previous row as decorations follow characters)
     local _, base_x = text_position.calculate_rtl_position(pos.col, ctx.p_total_cols, ctx.col_geom,
         ctx.half_thickness, ctx.shift_x)
-    local dec_cell_h = pos.cell_height
+    local dec_cell_h = pos.cell_height or ctx.grid_height or 0
     local target_y_sp = math.max(0, pos.y_sp - dec_cell_h)
     local base_y = -target_y_sp - ctx.shift_y
 

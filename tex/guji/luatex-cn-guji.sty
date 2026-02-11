@@ -61,19 +61,5 @@
 \NewCommandCopy{\圈点}{\EmphasisMark}
 % \专名号 and \书名号 are now provided by luatex-cn-linemark.sty
 
-% ============================================================================
-% 古籍标题命令
-% ============================================================================
-
 \ExplSyntaxOff
-
-% \卷名{文字} - 卷名标题（大字号，适用于"史记卷十六"等）
-\newcommand{\卷名}[1]{%
-  \文本框[font-size=48pt, grid-height=54pt, grid-width=100pt]{#1}%
-}
-
-% \章节名{文字} - 章节名标题（中等字号，适用于"秦楚之際月表第四"等）
-\newcommand{\章节名}[1]{%
-  \文本框[font-size=32pt, grid-height=36pt, grid-width=70pt]{#1}%
-}
 \endinput

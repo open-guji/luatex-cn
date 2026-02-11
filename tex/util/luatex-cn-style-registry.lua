@@ -225,6 +225,41 @@ function style_registry.get_cell_gap(id)
     return style_registry.get_attr(id, "cell_gap")
 end
 
+--- Get spacing-top (column right spacing) from style
+-- @param id (number) Style ID
+-- @return (number|nil) Spacing-top in sp, or nil if not found
+function style_registry.get_spacing_top(id)
+    return style_registry.get_attr(id, "spacing_top")
+end
+
+--- Get spacing-bottom (column left spacing) from style
+-- @param id (number) Style ID
+-- @return (number|nil) Spacing-bottom in sp, or nil if not found
+function style_registry.get_spacing_bottom(id)
+    return style_registry.get_attr(id, "spacing_bottom")
+end
+
+--- Get column width from style
+-- @param id (number) Style ID
+-- @return (number|nil) Column width in sp, or nil if not found
+function style_registry.get_column_width(id)
+    return style_registry.get_attr(id, "column_width")
+end
+
+--- Get auto-width setting from style
+-- @param id (number) Style ID
+-- @return (boolean|nil) Auto-width setting, or nil if not found
+function style_registry.get_auto_width(id)
+    return style_registry.get_attr(id, "auto_width")
+end
+
+--- Get width-scale from style
+-- @param id (number) Style ID
+-- @return (number|nil) Width scale factor, or nil if not found
+function style_registry.get_width_scale(id)
+    return style_registry.get_attr(id, "width_scale")
+end
+
 -- ============================================================================
 -- Style Stack Functions (Phase 3: Style Inheritance)
 -- ============================================================================

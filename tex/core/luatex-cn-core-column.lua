@@ -197,6 +197,15 @@ function column.collect_nodes(start_node)
                     height = k
                 })
             end
+        elseif tid == constants.PENALTY then
+            -- Check for column boundary marker (penalty -10001)
+            local penalty_val = D.getfield(temp_t, "penalty")
+            if penalty_val == -10001 then
+                -- Column boundary marker - consume and stop
+                temp_t = D.getnext(temp_t)
+                break
+            end
+            -- Other penalties are ignored (continue collecting)
         end
 
         temp_t = D.getnext(temp_t)

@@ -239,7 +239,7 @@ local function init_engine_context(box_num, params)
         -- Content: read from _G.content (calculated by content.setup)
         b_interval = _G.content.n_column or 8
         if b_interval <= 0 and banxin_on then b_interval = 8 end
-        p_cols = _G.content.page_columns or 1
+        p_cols = _G.content.page_columns  -- nil in Free Mode (n_column=0)
     end
 
     if is_textbox then
@@ -357,8 +357,8 @@ local function init_engine_context(box_num, params)
         h_dim = h_dim,
     }
 
-    dbg.log(string.format("Stage 0: Initialized with g_height=%.2f pt, limit=%d, p_cols=%d",
-        g_height / 65536, limit, p_cols))
+    dbg.log(string.format("Stage 0: Initialized with g_height=%.2f pt, limit=%d, p_cols=%s",
+        g_height / 65536, limit, tostring(p_cols)))
 
     return list, engine_ctx, plugin_contexts, p_info
 end

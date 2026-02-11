@@ -242,7 +242,7 @@ local function render_single_page(p_head, p_max_col, p, layout_map, params, ctx,
     local p_total_cols = p_max_col + 1
     local p_cols = ctx.p_cols
     -- Always enforce full page width to ensure correct RTL/SplitPage absolute positioning
-    if p_cols > 0 and p_total_cols < p_cols then
+    if p_cols and p_cols > 0 and p_total_cols < p_cols then
         p_total_cols = p_cols
     end
 
@@ -333,6 +333,19 @@ local function render_single_page(p_head, p_max_col, p, layout_map, params, ctx,
     -- Phase 2.4: Pass page-specific column widths for Free Mode
     ctx_node.page_num = p
     ctx_node.page_col_widths_sp = (ctx.col_geom and ctx.col_geom.col_widths_sp and ctx.col_geom.col_widths_sp[p]) or nil
+
+    -- Free Mode: Right-align variable-width columns within content area
+    if ctx_node.page_col_widths_sp and next(ctx_node.page_col_widths_sp) then
+        local total_width_sp = 0
+        for _, w in pairs(ctx_node.page_col_widths_sp) do
+            total_width_sp = total_width_sp + w
+        end
+        local content_width_sp = (_G.content and _G.content.content_width) or 0
+        if content_width_sp > total_width_sp then
+            -- Add right-alignment offset to shift_x
+            ctx_node.shift_x = ctx_node.shift_x + (content_width_sp - total_width_sp)
+        end
+    end
 
     p_head = process_page_nodes(p_head, layout_map, params, ctx_node)
 

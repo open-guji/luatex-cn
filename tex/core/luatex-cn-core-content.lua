@@ -288,6 +288,12 @@ local function calc_page_columns(explicit_page_cols)
     local g_width = _G.content.grid_width or 0
     local content_width = _G.content.content_width or 0
 
+    -- Free Mode: n_column=0 means variable-width columns, no fixed page_columns
+    if n_column == 0 and explicit_page_cols <= 0 then
+        _G.content.page_columns = nil
+        return
+    end
+
     -- When col_widths has entries, set page_columns from it directly
     local col_widths = _G.content and _G.content.col_widths
     if col_widths and #col_widths > 0 then
@@ -357,7 +363,7 @@ local function calc_auto_layout()
 
     -- ========== Grid Parameters Calculation ==========
     -- Auto-calculate grid_width if banxin is on AND no explicit grid_width was provided
-    if banxin_on and _G.content.page_columns > 0 and (_G.content.grid_width or 0) == 0 then
+    if banxin_on and (_G.content.page_columns or 0) > 0 and (_G.content.grid_width or 0) == 0 then
         local ratio = _G.content.banxin_ratio or 0.7
         local n_col = _G.content.n_column or 8
         _G.content.grid_width = math.floor(content_width / (2 * n_col + ratio))

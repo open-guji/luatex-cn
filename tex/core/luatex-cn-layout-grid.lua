@@ -765,17 +765,18 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
                 local cols_used = ctx.cur_col - col_start_col
                 if cols_used > 0 then
                     -- Get style attributes from Column's first node
-                    local style_reg = require('core.luatex-cn-core-column-style-registry')
+                    local style_reg = require('util.luatex-cn-style-registry')
                     local style_id = D.get_attribute(col_start_node, constants.ATTR_STYLE_REG_ID)
                     local col_width_str = style_id and style_reg.get_attr(style_id, "column_width")
                     local col_width_sp = col_width_str and tex.sp(col_width_str) or nil
 
                     -- Record column width (use explicit width if set, else estimate from grid)
-                    local actual_width_sp = col_width_sp or (cols_used * (params.grid_width or 0))
+                    local g_width = params.grid_width or (_G.content and _G.content.grid_width) or 0
+                    local actual_width_sp = col_width_sp or (cols_used * g_width)
 
                     -- Initialize page array if needed
                     ctx.col_widths_sp[col_start_page] = ctx.col_widths_sp[col_start_page] or {}
-                    ctx.col_widths_sp[col_start_page][col_start_col] = actual_width_sp
+                    ctx.col_widths_sp[col_start_page][col_start_col + 1] = actual_width_sp  -- 1-indexed for render-position
 
                     -- Accumulate for page wrap decision
                     ctx.accumulated_width_sp = ctx.accumulated_width_sp + actual_width_sp

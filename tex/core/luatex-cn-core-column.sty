@@ -179,6 +179,9 @@
         \setluatexattribute\cnverticalstyle{\column_style_id}
 
         #2
+        % Insert column boundary marker (penalty -10001) for Free Mode boundary detection
+        % This specific value marks column boundaries without affecting line breaking
+        \penalty-10001
 
         % Reset column width after content
         \dim_gset:Nn \g__luatexcn_column_current_width_dim { 0pt }

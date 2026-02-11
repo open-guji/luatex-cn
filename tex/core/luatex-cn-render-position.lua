@@ -263,13 +263,10 @@ end
 -- @param col (number) 列索引（从 0 开始）
 -- @param glyph_dims (table) 字形尺寸: width, height, depth, char, font
 -- @param params (table) 参数表:
---   - grid_width (number) 每个网格单元的宽度 (sp)
---   - grid_height (number) 每个网格单元的高度 (sp)
+--   - col_geom (table) 列几何参数 { grid_width, banxin_width, interval }
 --   - y_sp (number) Y 位置 (sp)
 --   ...
 local function calc_grid_position(col, glyph_dims, params)
-    local grid_width = params.grid_width or 0
-    local grid_height = params.grid_height or 0
     local total_cols = params.total_cols or 1
     local shift_x = params.shift_x or 0
     local shift_y = params.shift_y or 0
@@ -285,7 +282,7 @@ local function calc_grid_position(col, glyph_dims, params)
         require('core.luatex-cn-textflow')
 
     local col_geom = params.col_geom or {
-        grid_width = grid_width,
+        grid_width = params.grid_width or 0,
         banxin_width = params.banxin_width or 0,
         interval = params.interval or 0,
     }

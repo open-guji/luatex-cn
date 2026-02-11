@@ -47,6 +47,12 @@ local dbg = debug.get_debugger('render')
 -- Node Handling Functions
 -- ============================================================================
 
+-- Reusable template tables for calc_grid_position (created once per page in process_page_nodes)
+-- glyph_dims: per-glyph dimensions (width, height, depth, char, font)
+-- glyph_params: page-constant fields pre-filled, per-glyph fields overwritten each call
+local glyph_dims = {}
+local glyph_params = {}
+
 -- 辅助函数：处理单个字形的定位
 local function handle_glyph_node(curr, p_head, pos, params, ctx)
     -- vertical_align now comes from ctx (read from _G.content or params in calculate_render_context)
@@ -72,33 +78,22 @@ local function handle_glyph_node(curr, p_head, pos, params, ctx)
         end
     end
 
-    local final_x, final_y = text_position.calc_grid_position(pos.col,
-        {
-            width = w,
-            height = h * v_scale,
-            depth = d * v_scale,
-            char = D.getfield(curr, "char"),
-            font = D.getfield(curr, "font")
-        },
-        {
-            grid_width = ctx.grid_width,
-            grid_height = ctx.grid_height,
-            total_cols = ctx.p_total_cols,
-            shift_x = ctx.shift_x,
-            shift_y = ctx.shift_y,
-            v_align = vertical_align,
-            h_align = h_align,
-            half_thickness = ctx.half_thickness,
-            sub_col = pos.sub_col,
-            textflow_align = pos.textflow_align or ctx.textflow_align,
-            col_geom = ctx.col_geom,
-            body_font_size = ctx.body_font_size,
-            cell_height = pos.cell_height,
-            cell_width = pos.cell_width,
-            col_widths = _G.content and _G.content.col_widths,
-            y_sp = pos.y_sp,
-        }
-    )
+    -- Fill per-glyph fields into reusable templates (page-constant fields set in process_page_nodes)
+    glyph_dims.width = w
+    glyph_dims.height = h * v_scale
+    glyph_dims.depth = d * v_scale
+    glyph_dims.char = D.getfield(curr, "char")
+    glyph_dims.font = D.getfield(curr, "font")
+
+    glyph_params.v_align = vertical_align
+    glyph_params.h_align = h_align
+    glyph_params.sub_col = pos.sub_col
+    glyph_params.textflow_align = pos.textflow_align or ctx.textflow_align
+    glyph_params.cell_height = pos.cell_height
+    glyph_params.cell_width = pos.cell_width
+    glyph_params.y_sp = pos.y_sp
+
+    local final_x, final_y = text_position.calc_grid_position(pos.col, glyph_dims, glyph_params)
 
     -- Check if glyph needs vertical rotation (font lacks vertical form)
     local needs_rotate = D.get_attribute(curr, constants.ATTR_VERT_ROTATE) == 1
@@ -218,14 +213,14 @@ local function handle_debug_drawing(curr, p_head, pos, ctx)
         local th_sp = -(pos.cell_height or ctx.grid_height)
 
         if pos.sub_col and pos.sub_col > 0 then
-            tw_sp = ctx.grid_width / 2
+            tw_sp = ctx.col_geom.grid_width / 2
             if pos.sub_col == 1 then
                 tx_sp = tx_sp + tw_sp
             end
         end
 
         if pos.is_block then
-            tw_sp = pos.width * ctx.grid_width
+            tw_sp = pos.width * ctx.col_geom.grid_width
             th_sp = -pos.height * ctx.grid_height
         end
         return utils.draw_debug_rect(p_head, curr, tx_sp, ty_sp, tw_sp, th_sp, color_str)
@@ -240,6 +235,16 @@ local function process_page_nodes(p_head, layout_map, params, ctx)
     ctx.last_font_id = ctx.last_font_id or params.font_id or font.current()
     -- Initialize line mark collection for this page
     ctx.line_mark_entries = ctx.line_mark_entries or {}
+
+    -- Initialize page-constant fields in glyph_params template (per-glyph fields set in handle_glyph_node)
+    glyph_params.total_cols = ctx.p_total_cols
+    glyph_params.shift_x = ctx.shift_x
+    glyph_params.shift_y = ctx.shift_y
+    glyph_params.half_thickness = ctx.half_thickness
+    glyph_params.col_geom = ctx.col_geom
+    glyph_params.body_font_size = ctx.body_font_size
+    glyph_params.col_widths = _G.content and _G.content.col_widths
+
     while curr do
         local next_curr = D.getnext(curr)
         local id = D.getid(curr)

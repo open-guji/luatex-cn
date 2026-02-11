@@ -165,7 +165,6 @@ local function calculate_render_context(ctx)
         b_rgb_str = b_rgb_str,
         background_rgb_str = background_rgb_str,
         text_rgb_str = text_rgb_str,
-        grid_width = grid_width,
         grid_height = grid_height,
         banxin_width = banxin_width,
         col_geom = col_geom,
@@ -249,7 +248,7 @@ local function render_single_page(p_head, p_max_col, p, layout_map, params, ctx,
     local actual_cols = p_max_col + 1
     local actual_height_sp = (p_max_y_sp and p_max_y_sp > 0) and p_max_y_sp or ctx.grid_height
 
-    local grid_width = ctx.grid_width
+    local grid_width = ctx.col_geom.grid_width
     local grid_height = ctx.grid_height
     local border_thickness = ctx.border_thickness
     local line_limit = ctx.line_limit

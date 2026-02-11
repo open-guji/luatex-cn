@@ -398,11 +398,9 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
     ctx.banxin_registry = {} -- Track Banxin columns per page
     ctx.is_free_mode = is_free_mode
 
-    -- In free mode, use available page width (grid_width * p_cols as max)
-    -- This is an approximation; actual width tracking will be in Phase 2
+    -- In free mode, use content_width from three-layer architecture for page wrap
     if is_free_mode then
-        local grid_width = params.grid_width or (12 * 65536)
-        ctx.content_width = grid_width * 100 -- Large enough for typical pages
+        ctx.content_width = (_G.content and _G.content.content_width) or 0
         dbg.log(string.format("[Free Mode] Enabled, p_cols=%d (virtual)", p_cols))
     else
         ctx.content_width = 0

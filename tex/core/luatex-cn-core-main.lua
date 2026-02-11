@@ -250,6 +250,16 @@ local function init_engine_context(box_num, params)
     local banxin_w = _G.content.banxin_width
     if not banxin_w or banxin_w <= 0 then banxin_w = g_width end
 
+    -- Phase 3.3: Calculate content_height_sp from three-layer architecture
+    -- IMPORTANT: Only use _G.content.content_height for main content, NOT for textbox
+    -- Textbox uses its own height calculation (limit * g_height)
+    local content_height_sp
+    if is_textbox then
+        content_height_sp = limit * g_height
+    else
+        content_height_sp = (_G.content and _G.content.content_height) or (limit * g_height)
+    end
+
     local engine_ctx = {
         -- Grid dimensions
         g_width = g_width,
@@ -260,6 +270,8 @@ local function init_engine_context(box_num, params)
         line_limit = limit,
         n_column = b_interval,
         page_columns = p_cols,
+        -- Content area height (Phase 3: from three-layer architecture)
+        content_height_sp = content_height_sp,
         -- Border rendering
         draw_border = is_border,
         border_thickness = b_thickness,

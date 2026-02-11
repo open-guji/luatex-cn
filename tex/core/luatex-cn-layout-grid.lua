@@ -111,7 +111,7 @@ local function create_grid_context(params, line_limit, p_cols)
     -- Unified layout: default_cell_height (nil=natural, >0=grid) and default_cell_gap
     local default_cell_height = params and params.default_cell_height  -- nil = natural mode
     local default_cell_gap = (params and params.default_cell_gap) or 0
-    -- col_height_sp: always in sp. For grid mode, computed as line_limit * grid_height by caller.
+    -- col_height_sp: always in sp. Set to content_height_sp from three-layer architecture.
     local col_height_sp = (params and params.col_height_sp) or 0
     local ctx = {
         cur_page = 0,

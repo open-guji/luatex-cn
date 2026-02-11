@@ -297,6 +297,7 @@ local function render_single_page(p_head, p_max_col, p, layout_map, params, ctx,
         banxin_width = ctx.banxin_width,
         interval = ctx.interval,
         line_limit = line_limit,
+        content_height_sp = engine.content_height_sp,
         -- Border params
         border_thickness = border_thickness,
         b_padding_top = b_padding_top,
@@ -352,7 +353,7 @@ local function render_single_page(p_head, p_max_col, p, layout_map, params, ctx,
     -- For TextBox: return actual content dimensions, not expanded page dimensions
     -- This ensures TextBox output box has correct dimensions in main document flow
     local return_cols = page.is_textbox and actual_cols or p_total_cols
-    local return_height_sp = page.is_textbox and actual_height_sp or (line_limit * grid_height)
+    local return_height_sp = page.is_textbox and actual_height_sp or engine.content_height_sp
     return D.tonode(p_head), return_cols, return_height_sp
 end
 

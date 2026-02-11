@@ -139,10 +139,7 @@ _G.content.grid_height = _G.content.grid_height or 0
 _G.content.banxin_width = _G.content.banxin_width or 0
 _G.content.banxin_ratio = _G.content.banxin_ratio or 0.7
 
--- ========== Deprecated (for backward compatibility) ==========
--- These are aliases to content_width/height, will be removed in future
-_G.content.available_width = _G.content.available_width or 0
-_G.content.available_height = _G.content.available_height or 0
+-- ========== Internal (border overhead tracking) ==========
 _G.content.border_overhead_height = _G.content.border_overhead_height or 0
 
 -- ========== Visual Parameters ==========
@@ -281,9 +278,6 @@ local function calc_content_area_width()
     -- Layer 3: Content Area (Total - Border)
     local content_width = total_width - border_overhead_width
     _G.content.content_width = content_width
-
-    -- Backward compatibility: update old name
-    _G.content.available_width = content_width
 end
 
 --- Calculate page_columns based on content area width and settings
@@ -360,10 +354,6 @@ local function calc_auto_layout()
     local content_height = total_height - border_overhead_height
     _G.content.content_width = content_width
     _G.content.content_height = content_height
-
-    -- Backward compatibility: update old names
-    _G.content.available_width = content_width
-    _G.content.available_height = content_height
 
     -- ========== Grid Parameters Calculation ==========
     -- Auto-calculate grid_width if banxin is on AND no explicit grid_width was provided
@@ -486,7 +476,7 @@ end
 
 --- Calculate content area dimensions (shared by render-page and render-border)
 -- @param params (table) {is_textbox, actual_cols, actual_height_sp, grid_width, grid_height,
---   line_limit, b_padding_top, b_padding_bottom, p_total_cols, border_thickness,
+--   content_height_sp, b_padding_top, b_padding_bottom, p_total_cols, border_thickness,
 --   banxin_width, interval}
 -- @return content_width, content_height, inner_width, inner_height (all in sp)
 local function calculate_content_dimensions(params)
@@ -498,7 +488,7 @@ local function calculate_content_dimensions(params)
     elseif col_widths and #col_widths > 0 then
         content_width = 0
         for _, w in ipairs(col_widths) do content_width = content_width + w end
-        content_height = params.line_limit * params.grid_height + params.b_padding_top + params.b_padding_bottom
+        content_height = params.content_height_sp + params.b_padding_top + params.b_padding_bottom
     else
         local bw = params.banxin_width or 0
         local iv = params.interval or 0
@@ -509,7 +499,7 @@ local function calculate_content_dimensions(params)
         else
             content_width = params.p_total_cols * params.grid_width
         end
-        content_height = params.line_limit * params.grid_height + params.b_padding_top + params.b_padding_bottom
+        content_height = params.content_height_sp + params.b_padding_top + params.b_padding_bottom
     end
     local inner_width = content_width + params.border_thickness
     local inner_height = content_height + params.border_thickness

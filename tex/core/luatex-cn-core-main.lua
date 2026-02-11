@@ -294,7 +294,7 @@ local function init_engine_context(box_num, params)
         default_cell_width = nil,  -- reserved for future per-character width override
         default_cell_gap = (not is_textbox and (_G.content.layout_mode or "grid") ~= "grid")
             and (_G.content.inter_cell_gap or 0) or 0,
-        col_height_sp = limit * g_height,
+        col_height_sp = content_height_sp,
         -- Column geometry bundle for position functions
         col_geom = { grid_width = g_width, banxin_width = banxin_w, interval = b_interval },
         -- Registry data (set after layout)
@@ -311,8 +311,7 @@ local function init_engine_context(box_num, params)
             x = col_x + effective_half + engine_ctx.shift_x,
             y = -(effective_half + engine_ctx.outer_shift),
             width = engine_ctx.banxin_width,
-            height = engine_ctx.line_limit * engine_ctx.g_height + engine_ctx.b_padding_top + engine_ctx
-                .b_padding_bottom,
+            height = engine_ctx.content_height_sp + engine_ctx.b_padding_top + engine_ctx.b_padding_bottom,
         }
     end
 
@@ -545,7 +544,7 @@ local function generate_physical_pages(list, params, engine_ctx, plugin_contexts
     -- 3.2 Construct TeX boxes
     _G.vertical_pending_pages = {}
     local outer_shift = engine_ctx.outer_shift
-    local char_grid_height = p_info.is_textbox and p_info.h_dim or (engine_ctx.line_limit * engine_ctx.g_height)
+    local char_grid_height = p_info.is_textbox and p_info.h_dim or engine_ctx.content_height_sp
     local total_v_depth = char_grid_height + engine_ctx.b_padding_top + engine_ctx.b_padding_bottom +
         engine_ctx.border_thickness + outer_shift * 2
 

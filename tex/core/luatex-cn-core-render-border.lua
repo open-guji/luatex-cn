@@ -71,7 +71,7 @@ local function draw_column_borders(p_head, params)
     local outer_shift = params.outer_shift
     local border_rgb_str = params.border_rgb_str
     local banxin_cols = params.banxin_cols or {} -- Set of column indices to skip
-    local col_min_rows = params.col_min_rows or {} -- Per-column min row for taitou raised border
+    local col_min_y_sp = params.col_min_y_sp or {} -- Per-column min y_sp for taitou raised border
     local banxin_width = params.banxin_width or 0
     local interval = params.interval or 0
 
@@ -105,10 +105,10 @@ local function draw_column_borders(p_head, params)
             local tw_bp = text_position.get_column_width(col, grid_width, banxin_width, interval) * sp_to_bp
             local th_bp = -(line_limit * grid_height + b_padding_top + b_padding_bottom) * sp_to_bp
 
-            -- Taitou raised border: extend column upward for negative row columns
-            local min_row = col_min_rows[col]
-            if min_row and min_row < 0 then
-                local raised_sp = (-min_row) * grid_height
+            -- Taitou raised border: extend column upward for negative y_sp columns
+            local min_y = col_min_y_sp[col]
+            if min_y and min_y < 0 then
+                local raised_sp = -min_y
                 ty_bp = ty_bp + raised_sp * sp_to_bp
                 th_bp = th_bp - raised_sp * sp_to_bp
             end
@@ -135,7 +135,7 @@ end
 --   - outer_border_thickness: 外边框厚度 (sp)
 --   - outer_border_sep: 内外边框间距 (sp)
 --   - border_rgb_str: 归一化的 RGB 颜色字符串
---   - col_min_rows: (optional) 每列最小行号表
+--   - col_min_y_sp: (optional) 每列最小行号表
 --   - total_cols: (optional) 总列数
 --   - grid_width: (optional) 格子宽度 (sp)
 --   - grid_height: (optional) 格子高度 (sp)
@@ -149,7 +149,7 @@ local function draw_outer_border(p_head, params)
     local ob_thickness_val = params.outer_border_thickness
     local ob_sep_val = params.outer_border_sep
     local border_rgb_str = params.border_rgb_str
-    local col_min_rows = params.col_min_rows or {}
+    local col_min_y_sp = params.col_min_y_sp or {}
 
     local ob_thickness_bp = ob_thickness_val * sp_to_bp
 
@@ -160,7 +160,7 @@ local function draw_outer_border(p_head, params)
 
     -- Check if any taitou columns exist
     local has_taitou = false
-    for _, v in pairs(col_min_rows) do
+    for _, v in pairs(col_min_y_sp) do
         if v and v < 0 then has_taitou = true; break end
     end
 
@@ -188,9 +188,9 @@ local function draw_outer_border(p_head, params)
     local col_tops = {}
     for rtl_col = 0, total_cols - 1 do
         local col = total_cols - 1 - rtl_col
-        local min_row = col_min_rows[col]
-        if min_row and min_row < 0 then
-            col_tops[rtl_col] = ty_bp + (-min_row) * gh_bp
+        local min_y = col_min_y_sp[col]
+        if min_y and min_y < 0 then
+            col_tops[rtl_col] = ty_bp + (-min_y) * sp_to_bp
         else
             col_tops[rtl_col] = ty_bp
         end
@@ -268,7 +268,7 @@ end
 --   -- Grid and dimensions
 --   - p_total_cols: 页面总列数
 --   - actual_cols: 实际内容列数
---   - actual_rows: 实际内容行数
+--   - actual_height_sp: 实际内容高度 (sp)
 --   - grid_width: 每列宽度 (sp)
 --   - grid_height: 每行高度 (sp)
 --   - line_limit: 每列行数限制
@@ -297,7 +297,6 @@ end
 local function render_borders(p_head, params)
     local p_total_cols = params.p_total_cols
     local actual_cols = params.actual_cols
-    local actual_rows = params.actual_rows
     local grid_width = params.grid_width
     local grid_height = params.grid_height
     local line_limit = params.line_limit
@@ -315,7 +314,7 @@ local function render_borders(p_head, params)
     local _, _, inner_width, inner_height = content_mod.calculate_content_dimensions({
         is_textbox = is_textbox,
         actual_cols = actual_cols,
-        actual_rows = actual_rows,
+        actual_height_sp = params.actual_height_sp,
         grid_width = grid_width,
         grid_height = grid_height,
         line_limit = line_limit,
@@ -343,7 +342,7 @@ local function render_borders(p_head, params)
             outer_shift = params.outer_shift,
             border_rgb_str = params.b_rgb_str,
             banxin_cols = params.reserved_cols,
-            col_min_rows = params.col_min_rows,
+            col_min_y_sp = params.col_min_y_sp,
         })
     end
 
@@ -356,7 +355,7 @@ local function render_borders(p_head, params)
             outer_border_sep = params.ob_sep_val,
             border_rgb_str = params.b_rgb_str,
             -- Taitou stepped border params
-            col_min_rows = params.col_min_rows,
+            col_min_y_sp = params.col_min_y_sp,
             total_cols = p_total_cols,
             grid_width = grid_width,
             grid_height = grid_height,
@@ -370,7 +369,7 @@ local function render_borders(p_head, params)
     -- 3. Draw background (shaped or rectangular)
     local border_shape = params.border_shape
     local shape_width = actual_cols * grid_width
-    local shape_height = actual_rows * grid_height
+    local shape_height = params.actual_height_sp
 
     if border_shape == "octagon" and params.background_rgb_str then
         -- Octagon-shaped background

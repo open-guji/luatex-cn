@@ -183,7 +183,7 @@ _internal.calculate_render_context = calculate_render_context
 local function group_nodes_by_page(d_head, layout_map, total_pages)
     local page_nodes = {}
     for p = 0, total_pages - 1 do
-        page_nodes[p] = { head = nil, tail = nil, max_col = 0, max_row = 0 }
+        page_nodes[p] = { head = nil, tail = nil, max_col = 0, max_y_sp = 0 }
     end
 
     local t = d_head
@@ -202,12 +202,11 @@ local function group_nodes_by_page(d_head, layout_map, total_pages)
                 end
                 page_nodes[p].tail = t
                 if pos.col > page_nodes[p].max_col then page_nodes[p].max_col = pos.col end
-                -- Track max row for actual content height calculation
-                -- Note: pos.row can be fractional (from distribute_rows), use math.ceil
-                -- Note: pos.height is in sp (physical), NOT grid row count
-                local row = pos.row or 0
-                local row_ceil = math.ceil(row)
-                if row_ceil > page_nodes[p].max_row then page_nodes[p].max_row = row_ceil end
+                -- Track max_y_sp (bottom of furthest cell) for sp-based height
+                if pos.y_sp then
+                    local y_bottom = pos.y_sp + (pos.cell_height or 0)
+                    if y_bottom > page_nodes[p].max_y_sp then page_nodes[p].max_y_sp = y_bottom end
+                end
             else
                 node.flush_node(D.tonode(t))
             end
@@ -228,7 +227,7 @@ _internal.position_floating_box = textbox_mod.render_floating_box
 local process_page_nodes = page_process.process_page_nodes
 
 -- 辅助函数：渲染单个页面
-local function render_single_page(p_head, p_max_col, p_max_row, p, layout_map, params, ctx)
+local function render_single_page(p_head, p_max_col, p, layout_map, params, ctx, p_max_y_sp)
     if not p_head then return nil, 0 end
 
     local p_total_cols = p_max_col + 1
@@ -240,7 +239,7 @@ local function render_single_page(p_head, p_max_col, p_max_row, p, layout_map, p
 
     -- Actual content dimensions (for special border shapes)
     local actual_cols = p_max_col + 1
-    local actual_rows = p_max_row + 1
+    local actual_height_sp = (p_max_y_sp and p_max_y_sp > 0) and p_max_y_sp or ctx.grid_height
 
     local grid_width = ctx.grid_width
     local grid_height = ctx.grid_height
@@ -262,16 +261,16 @@ local function render_single_page(p_head, p_max_col, p_max_row, p, layout_map, p
     -- Reserved columns (computed via engine_ctx helper function)
     local reserved_cols = grid.get_reserved_cols and grid.get_reserved_cols(p, p_total_cols) or {}
 
-    -- Scan layout_map for taitou columns (negative row = raised border)
-    local col_min_rows = {}
+    -- Scan layout_map for taitou columns (negative y_sp = raised border)
+    local col_min_y_sp = {}
     local scan_t = p_head
     while scan_t do
         local pos = layout_map[scan_t]
         if pos then
             local col = pos.col
-            local row = math.floor(pos.row or 0)
-            if row < 0 and (not col_min_rows[col] or row < col_min_rows[col]) then
-                col_min_rows[col] = row
+            local y = pos.y_sp or 0
+            if y < 0 and (not col_min_y_sp[col] or y < col_min_y_sp[col]) then
+                col_min_y_sp[col] = y
             end
         end
         scan_t = D.getnext(scan_t)
@@ -282,7 +281,7 @@ local function render_single_page(p_head, p_max_col, p_max_row, p, layout_map, p
         -- Grid and dimensions
         p_total_cols = p_total_cols,
         actual_cols = actual_cols,
-        actual_rows = actual_rows,
+        actual_height_sp = actual_height_sp,
         grid_width = grid_width,
         grid_height = grid_height,
         banxin_width = ctx.banxin_width,
@@ -309,7 +308,7 @@ local function render_single_page(p_head, p_max_col, p_max_row, p, layout_map, p
         border_margin = ctx.border_margin,
         background_rgb_str = ctx.background_rgb_str,
         -- Taitou raised border
-        col_min_rows = col_min_rows,
+        col_min_y_sp = col_min_y_sp,
     })
 
     -- Font color
@@ -340,8 +339,8 @@ local function render_single_page(p_head, p_max_col, p_max_row, p, layout_map, p
     -- For TextBox: return actual content dimensions, not expanded page dimensions
     -- This ensures TextBox output box has correct dimensions in main document flow
     local return_cols = page.is_textbox and actual_cols or p_total_cols
-    local return_rows = page.is_textbox and actual_rows or line_limit
-    return D.tonode(p_head), return_cols, return_rows
+    local return_height_sp = page.is_textbox and actual_height_sp or (line_limit * grid_height)
+    return D.tonode(p_head), return_cols, return_height_sp
 end
 
 _internal.render_single_page = render_single_page
@@ -367,10 +366,10 @@ local function apply_positions(head, layout_map, params)
     for p = 0, params.total_pages - 1 do
         local p_head = page_nodes[p].head
         local p_max_col = page_nodes[p].max_col
-        local p_max_row = page_nodes[p].max_row
-        local rendered_head, cols, rows = render_single_page(p_head, p_max_col, p_max_row, p, layout_map, params, ctx)
+        local p_max_y_sp = page_nodes[p].max_y_sp
+        local rendered_head, cols, height_sp = render_single_page(p_head, p_max_col, p, layout_map, params, ctx, p_max_y_sp)
         if rendered_head then
-            result_pages[p + 1] = { head = rendered_head, cols = cols, rows = rows }
+            result_pages[p + 1] = { head = rendered_head, cols = cols, height_sp = height_sp }
         end
     end
 

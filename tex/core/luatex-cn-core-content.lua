@@ -435,7 +435,7 @@ end
 -- ============================================================================
 
 --- Calculate content area dimensions (shared by render-page and render-border)
--- @param params (table) {is_textbox, actual_cols, actual_rows, grid_width, grid_height,
+-- @param params (table) {is_textbox, actual_cols, actual_height_sp, grid_width, grid_height,
 --   line_limit, b_padding_top, b_padding_bottom, p_total_cols, border_thickness,
 --   banxin_width, interval}
 -- @return content_width, content_height, inner_width, inner_height (all in sp)
@@ -444,7 +444,7 @@ local function calculate_content_dimensions(params)
     local col_widths = _G.content and _G.content.col_widths
     if params.is_textbox then
         content_width = (params.actual_cols > 0 and params.actual_cols or 1) * params.grid_width
-        content_height = (params.actual_rows > 0 and params.actual_rows or 1) * params.grid_height
+        content_height = params.actual_height_sp > 0 and params.actual_height_sp or params.grid_height
     elseif col_widths and #col_widths > 0 then
         content_width = 0
         for _, w in ipairs(col_widths) do content_width = content_width + w end

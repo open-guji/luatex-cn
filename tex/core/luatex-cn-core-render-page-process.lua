@@ -70,7 +70,7 @@ local function handle_glyph_node(curr, p_head, pos, params, ctx)
         end
     end
 
-    local final_x, final_y = text_position.calc_grid_position(pos.col, pos.row,
+    local final_x, final_y = text_position.calc_grid_position(pos.col,
         {
             width = w,
             height = h * v_scale,
@@ -93,7 +93,9 @@ local function handle_glyph_node(curr, p_head, pos, params, ctx)
             interval = ctx.interval,
             body_font_size = ctx.body_font_size,
             cell_height = pos.cell_height,
+            cell_width = pos.cell_width,
             col_widths = _G.content and _G.content.col_widths,
+            y_sp = pos.y_sp,
         }
     )
 
@@ -177,7 +179,7 @@ local function handle_block_node(curr, p_head, pos, ctx)
     local final_x = text_position.get_column_x(rtl_col_left, ctx.grid_width, ctx.banxin_width or 0, ctx.interval or 0)
         + ctx.half_thickness + ctx.shift_x
 
-    local final_y_top = -pos.row * ctx.grid_height - ctx.shift_y
+    local final_y_top = -pos.y_sp - ctx.shift_y
     D.setfield(curr, "shift", -final_y_top + h)
 
     local k_pre = D.new(constants.KERN)
@@ -210,7 +212,7 @@ local function handle_debug_drawing(curr, p_head, pos, ctx)
     if show_me then
         local _, tx_sp = text_position.calculate_rtl_position(pos.col, ctx.p_total_cols, ctx.grid_width,
             ctx.half_thickness, ctx.shift_x, ctx.banxin_width, ctx.interval)
-        local ty_sp = text_position.calculate_y_position(pos.row, ctx.grid_height, ctx.shift_y)
+        local ty_sp = -pos.y_sp - (ctx.shift_y or 0)
         local tw_sp = text_position.get_column_width(pos.col, ctx.grid_width, ctx.banxin_width or 0, ctx.interval or 0)
         local th_sp = -(pos.cell_height or ctx.grid_height)
 
@@ -267,7 +269,8 @@ local function process_page_nodes(p_head, layout_map, params, ctx)
                                 local lm_entry = {
                                     group_id = pos.line_mark_id,
                                     col = pos.col,
-                                    row = pos.row,
+                                    y_sp = pos.y_sp,
+                                    cell_height = pos.cell_height,
                                     font_size = pos.font_size,
                                     sub_col = pos.sub_col,
                                 }
@@ -317,7 +320,7 @@ local function process_page_nodes(p_head, layout_map, params, ctx)
                     _, final_x = text_position.calculate_rtl_position(pos.col, ctx.p_total_cols, ctx.grid_width,
                         ctx.half_thickness, ctx.shift_x, ctx.banxin_width, ctx.interval)
                 end
-                local final_y = text_position.calculate_y_position(pos.row, ctx.grid_height, ctx.shift_y)
+                local final_y = -pos.y_sp - (ctx.shift_y or 0)
 
                 -- Insert kern to move to correct position, then kern back
                 local k_pre = D.new(constants.KERN)
@@ -328,7 +331,7 @@ local function process_page_nodes(p_head, layout_map, params, ctx)
                 p_head = D.insert_before(p_head, curr, k_pre)
                 D.insert_after(p_head, curr, k_post)
 
-                dbg.log(string.format("  [render] GLUE (space) [c:%d, r:%.2f]", pos.col, pos.row))
+                dbg.log(string.format("  [render] GLUE (space) [c:%d, y_sp:%.0f]", pos.col, pos.y_sp or 0))
                 p_head = handle_debug_drawing(curr, p_head, pos, ctx)
             else
                 -- Not positioned - zero out (baseline/lineskip glue)

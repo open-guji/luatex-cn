@@ -414,10 +414,11 @@ function textflow.place_nodes(ctx, start_node, layout_map, params, callbacks)
                 node_row = ctx.cur_row + node_info.relative_row
             end
 
+            local gh = params.grid_height or 655360
             local entry = {
                 page = ctx.cur_page,
                 col = ctx.cur_col,
-                row = node_row,
+                y_sp = node_row * gh,
                 sub_col = node_info.sub_col
             }
 

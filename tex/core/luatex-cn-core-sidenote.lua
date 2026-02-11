@@ -119,7 +119,7 @@ function sidenote.render(head, layout_map, params, context, engine_ctx, page_idx
 
         local pos = {
             col = item.col,
-            row = item.row,
+            y_sp = item.y_sp,
             sidenote_offset = sidenote_x_offset,
         }
 
@@ -141,7 +141,7 @@ function sidenote.render(head, layout_map, params, context, engine_ctx, page_idx
                 effective_grid_height = tonumber(item.metadata.grid_height) or engine_ctx.g_height
             end
 
-            local final_y = -pos.row * engine_ctx.g_height - (effective_grid_height + char_total_height) / 2 + d -
+            local final_y = -pos.y_sp - (effective_grid_height + char_total_height) / 2 + d -
                 engine_ctx.shift_y
 
             D.setfield(curr, "xoffset", final_x)
@@ -153,7 +153,7 @@ function sidenote.render(head, layout_map, params, context, engine_ctx, page_idx
                 linemark_entries[#linemark_entries + 1] = {
                     group_id = lm_id,
                     col = item.col,
-                    row = item.row,
+                    y_sp = pos.y_sp,
                     x_center_sp = boundary_x,
                     font_size = effective_grid_height,
                 }
@@ -320,9 +320,10 @@ local function safe_resolve(val, font_size_sp)
     return tonumber(val) or 0
 end
 
-local function calculate_start_position(anchor_row, metadata, main_grid_height)
+local function calculate_start_position(anchor_y_sp, metadata, main_grid_height)
     local yoffset_grid = safe_resolve(metadata.yoffset, main_grid_height) / main_grid_height
     local padding_top_grid = safe_resolve(metadata.padding_top, main_grid_height) / main_grid_height
+    local anchor_row = anchor_y_sp / main_grid_height
     return math.max(anchor_row, padding_top_grid) + yoffset_grid
 end
 
@@ -379,12 +380,13 @@ local function place_individual_sidenote(sid, registry_item, last_node_pos, para
 
     local curr_p, curr_c = last_node_pos.page, last_node_pos.col
     local base_indent = last_node_pos.indent or 0
-    dbg.log(string.format("Placing sid=%d at p=%d, c=%d, anchor_r=%.2f, indent=%d",
-        sid, curr_p, curr_c, last_node_pos.row, base_indent))
+    local anchor_y_sp = last_node_pos.y_sp or 0
+    dbg.log(string.format("Placing sid=%d at p=%d, c=%d, anchor_y_sp=%.0f, indent=%d",
+        sid, curr_p, curr_c, anchor_y_sp, base_indent))
 
     curr_p, curr_c = skip_to_valid_column(curr_p, curr_c, p_cols, config.banxin_on, config.interval)
 
-    local curr_r = calculate_start_position(last_node_pos.row, metadata, main_grid_height)
+    local curr_r = calculate_start_position(anchor_y_sp, metadata, main_grid_height)
     local filled_r = tracker.get(curr_p, curr_c)
     if curr_r <= filled_r then
         curr_r = filled_r + 0.1
@@ -398,7 +400,7 @@ local function place_individual_sidenote(sid, registry_item, last_node_pos, para
             node = current_content_node,
             page = curr_p,
             col = curr_c,
-            row = curr_r,
+            y_sp = curr_r * main_grid_height,
             metadata = metadata
         })
 
@@ -428,7 +430,7 @@ local function find_sidenote_anchors(head, layout_map, on_sidenote_found)
                     local anchor_pos = {
                         page = pos.page,
                         col = pos.col,
-                        row = pos.row,
+                        y_sp = pos.y_sp or 0,
                         indent = indent
                     }
                     on_sidenote_found(sid, anchor_pos)

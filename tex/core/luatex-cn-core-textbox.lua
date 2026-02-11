@@ -671,6 +671,7 @@ function textbox.place_textbox_node(ctx, node, tb_w, tb_h, params, callbacks)
         page = ctx.cur_page,
         col = ctx.cur_col,
         relative_row = ctx.cur_row,
+        y_sp = ctx.cur_y_sp,
         is_block = true,
         width = tb_w,
         height = tb_h

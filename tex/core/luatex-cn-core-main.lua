@@ -563,8 +563,12 @@ local function generate_physical_pages(list, params, engine_ctx, plugin_contexts
 
         if p_info.is_textbox then
             node.set_attribute(new_box, constants.ATTR_TEXTBOX_WIDTH, page_info.cols)
-            -- Use actual content rows for auto-height, or line_limit for fixed-height
-            node.set_attribute(new_box, constants.ATTR_TEXTBOX_HEIGHT, page_info.rows or engine_ctx.line_limit)
+            -- Use actual content height for auto-height, or line_limit for fixed-height
+            -- height_sp is in scaled points; convert to row count for occupancy grid
+            local tb_rows = page_info.height_sp
+                and math.ceil(page_info.height_sp / engine_ctx.g_height)
+                or engine_ctx.line_limit
+            node.set_attribute(new_box, constants.ATTR_TEXTBOX_HEIGHT, tb_rows)
         else
             node.set_attribute(new_box, constants.ATTR_TEXTBOX_WIDTH, 0)
             node.set_attribute(new_box, constants.ATTR_TEXTBOX_HEIGHT, 0)

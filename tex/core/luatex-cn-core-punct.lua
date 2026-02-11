@@ -341,6 +341,7 @@ function punct.make_kinsoku_hook(punct_ctx)
                     pulled.page = ctx.cur_page
                     pulled.col = ctx.cur_col
                     pulled.relative_row = ctx.cur_y_sp / grid_height
+                    pulled.y_sp = ctx.cur_y_sp
                     table.insert(col_buffer, pulled)
                     ctx.cur_row = ctx.cur_row + 1
                     ctx.cur_y_sp = ctx.cur_row * grid_height
@@ -375,6 +376,7 @@ function punct.make_kinsoku_hook(punct_ctx)
                 pulled.page = ctx.cur_page
                 pulled.col = ctx.cur_col
                 pulled.relative_row = ctx.cur_y_sp / grid_height
+                pulled.y_sp = ctx.cur_y_sp
                 table.insert(col_buffer, pulled)
                 ctx.cur_row = ctx.cur_row + 1
                 ctx.cur_y_sp = ctx.cur_row * grid_height
@@ -557,8 +559,8 @@ function punct.layout(list, layout_map, engine_ctx, ctx)
     local columns = {} -- key: "page:col" → sorted list of {node, pos, ptype}
 
     for node_d, pos in pairs(layout_map) do
-        -- Only process nodes that have a row (actual positioned content)
-        if pos.row then
+        -- Only process nodes that have y_sp (actual positioned content)
+        if pos.y_sp then
             local ptype = get_node_punct_type(node_d)
             local key = string.format("%d:%d", pos.page, pos.col)
             if not columns[key] then
@@ -577,35 +579,35 @@ function punct.layout(list, layout_map, engine_ctx, ctx)
 
     -- Process each column
     for _, col_entries in pairs(columns) do
-        -- Sort by row
+        -- Sort by y_sp position
         table.sort(col_entries, function(a, b)
-            return a.pos.row < b.pos.row
+            return a.pos.y_sp < b.pos.y_sp
         end)
 
         -- Sequential cell placement: each character occupies a cell of a certain
         -- height. Punctuation cells are shorter (squeezed), but cells NEVER overlap.
-        -- accumulated_squeeze tracks total grid rows saved so far, so subsequent
+        -- accumulated_squeeze_sp tracks total sp saved so far, so subsequent
         -- characters shift up by that amount.
-        local accumulated_squeeze = 0
-        local prev_orig_row = nil
+        local accumulated_squeeze_sp = 0
+        local prev_orig_y_sp = nil
         local prev_ptype = nil
 
         for _, entry in ipairs(col_entries) do
             local curr_ptype = entry.ptype
             local squeeze_amount = 0
 
-            -- Close row gaps caused by invisible spacing nodes (e.g. TeX newlines
+            -- Close gaps caused by invisible spacing nodes (e.g. TeX newlines
             -- between sentences). Only close gaps that follow punctuation marks,
             -- as these are almost always interword spaces rather than intentional
             -- paragraph spacing.
-            local orig_row = entry.pos.row
-            if prev_orig_row and prev_ptype then
-                local gap = orig_row - prev_orig_row - 1
-                if gap > 0 then
-                    accumulated_squeeze = accumulated_squeeze + gap
+            local orig_y_sp = entry.pos.y_sp
+            if prev_orig_y_sp and prev_ptype then
+                local gap_sp = orig_y_sp - prev_orig_y_sp - grid_height
+                if gap_sp > 0 then
+                    accumulated_squeeze_sp = accumulated_squeeze_sp + gap_sp
                 end
             end
-            prev_orig_row = orig_row
+            prev_orig_y_sp = orig_y_sp
             prev_ptype = curr_ptype
 
             -- Determine squeeze for this entry
@@ -617,17 +619,17 @@ function punct.layout(list, layout_map, engine_ctx, ctx)
                 end
             end
 
-            -- Cell height for this entry (in grid units: 1.0 = full cell)
-            local cell_height_grid = 1.0 - squeeze_amount
+            -- Cell height for this entry (in sp)
+            local cell_height_sp = math.floor((1.0 - squeeze_amount) * grid_height + 0.5)
 
-            -- Shift row up by accumulated squeeze (cells are sequential, no overlap)
-            entry.pos.row = entry.pos.row - accumulated_squeeze
+            -- Shift up by accumulated squeeze (cells are sequential, no overlap)
+            entry.pos.y_sp = entry.pos.y_sp - accumulated_squeeze_sp
 
             -- Store cell height (sp) for render stage to use for centering
-            entry.pos.cell_height = math.floor(cell_height_grid * grid_height + 0.5)
+            entry.pos.cell_height = cell_height_sp
 
-            -- Accumulate squeeze for subsequent entries
-            accumulated_squeeze = accumulated_squeeze + squeeze_amount
+            -- Accumulate squeeze for subsequent entries (in sp)
+            accumulated_squeeze_sp = accumulated_squeeze_sp + math.floor(squeeze_amount * grid_height + 0.5)
         end
     end
 

@@ -397,7 +397,7 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
         end
 
         local v_scale_all = 1.0
-        local distribute_rows = {}
+        local distribute_y_sp = {}
 
         if distribute and N > 1 then
             local total_char_height = 0
@@ -418,7 +418,7 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
                     if ch <= 0 then ch = grid_height end
                     ch = ch * v_scale_all
                     local y_center = current_y + ch / 2
-                    distribute_rows[i] = y_center / grid_height - 0.5
+                    distribute_y_sp[i] = y_center - grid_height * 0.5
                     current_y = current_y + ch
                 end
             else
@@ -431,7 +431,7 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
                     local ch = (entry.height or grid_height)
                     if ch <= 0 then ch = grid_height end
                     local y_center = current_y + ch / 2
-                    distribute_rows[i] = y_center / grid_height - 0.5
+                    distribute_y_sp[i] = y_center - grid_height * 0.5
                     current_y = current_y + ch + gap
                 end
             end
@@ -450,38 +450,39 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
             local remaining = ctx.col_height_sp - total_cells
 
             if N == 1 then
-                col_buffer[1].relative_row = 0
+                col_buffer[1].y_sp = 0
             elseif remaining > 0 and remaining < min_cell and N > 1 then
                 -- Nearly full: distribute remaining space for bottom alignment
                 local gap = remaining / (N - 1)
                 local y = 0
                 for _, e in ipairs(col_buffer) do
-                    e.relative_row = y / grid_height
+                    e.y_sp = y
                     y = y + (e.cell_height or grid_height) + gap
                 end
             else
                 -- Normal: tight packing, no stretching
                 local y = 0
                 for _, e in ipairs(col_buffer) do
-                    e.relative_row = y / grid_height
+                    e.y_sp = y
                     y = y + (e.cell_height or grid_height)
                 end
             end
         end
 
         for i, entry in ipairs(col_buffer) do
-            local row = distribute_rows[i] or entry.relative_row
+            local y_sp = distribute_y_sp[i] or entry.y_sp
             local v_scale = (distribute and N > 1) and v_scale_all or 1.0
 
             local map_entry = {
                 page = entry.page,
                 col = entry.col,
-                row = row,
+                y_sp = y_sp,
                 is_block = entry.is_block,
                 width = entry.width,
                 height = entry.height,
                 v_scale = v_scale,
                 cell_height = entry.cell_height,
+                cell_width = entry.cell_width,
             }
             apply_style_attrs(map_entry, entry.node)
 
@@ -522,7 +523,7 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
             local map_entry = {
                 page = ctx.cur_page,
                 col = ctx.cur_col,
-                row = ctx.cur_row
+                y_sp = ctx.cur_y_sp,
             }
             apply_style_attrs(map_entry, t)
 
@@ -759,19 +760,19 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
                 -- use the previous character's position (last column's last row)
                 local dec_page = ctx.cur_page
                 local dec_col = ctx.cur_col
-                local dec_row = ctx.cur_row
+                local dec_y_sp = ctx.cur_y_sp
 
                 if ctx.just_wrapped_column and ctx.last_char_row then
                     -- Column just wrapped - use previous character's position
                     dec_page = ctx.last_char_page or ctx.cur_page
                     dec_col = ctx.last_char_col or ctx.cur_col
-                    dec_row = ctx.last_char_row + 1 -- +1 because render subtracts 1
+                    dec_y_sp = (ctx.last_char_y_sp or 0) + (ctx.last_char_cell_height or grid_height)
                 end
 
                 local map_entry = {
                     page = dec_page,
                     col = dec_col,
-                    row = dec_row
+                    y_sp = dec_y_sp,
                 }
 
                 apply_style_attrs(map_entry, t)
@@ -789,11 +790,14 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
                 ctx.last_char_page = ctx.cur_page
                 ctx.last_char_col = ctx.cur_col
                 ctx.last_char_row = ctx.cur_row
+                ctx.last_char_y_sp = ctx.cur_y_sp
+                ctx.last_char_cell_height = cell_h
                 -- Clear wrapped flag - we've processed a regular character
                 ctx.just_wrapped_column = false
 
                 -- Unified layout: resolve cell height and gap
                 local cell_h = resolve_cell_height(t, grid_height, ctx.default_cell_height)
+                local cell_w = resolve_cell_width(t, ctx.default_cell_width)
                 local gap = resolve_cell_gap(t, ctx.default_cell_gap)
 
                 -- Column overflow check (sp-based)
@@ -807,9 +811,10 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
                     node = t,
                     page = ctx.cur_page,
                     col = ctx.cur_col,
-                    relative_row = ctx.cur_y_sp / grid_height,
+                    y_sp = ctx.cur_y_sp,
                     height = (D.getfield(t, "height") or 0) + (D.getfield(t, "depth") or 0),
                     cell_height = cell_h,
+                    cell_width = cell_w,
                 })
 
                 ctx.cur_y_sp = ctx.cur_y_sp + cell_h + gap
@@ -838,9 +843,10 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
 
             if ctx.default_cell_height then
                 -- Grid-like: quantize spacing to grid cells (backward compatible)
-                local threshold = (grid_height or 655360) * 0.25
+                local cell_h = ctx.default_cell_height or grid_height
+                local threshold = (cell_h or 655360) * 0.25
                 if net_width > threshold then
-                    local num_cells = math.floor(net_width / (grid_height or 655360) + 0.5)
+                    local num_cells = math.floor(net_width / (cell_h or 655360) + 0.5)
                     if num_cells < 1 then num_cells = 1 end
 
                     if ctx.cur_row > ctx.cur_column_indent then
@@ -848,7 +854,7 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
                             net_width / 65536, (grid_height or 0) / 65536, num_cells))
 
                         for i = 1, num_cells do
-                            ctx.cur_y_sp = ctx.cur_y_sp + grid_height
+                            ctx.cur_y_sp = ctx.cur_y_sp + cell_h
                             ctx.cur_row = math.floor(ctx.cur_y_sp / grid_height + 0.5)
                             if ctx.cur_y_sp >= effective_col_height_sp then
                                 flush_buffer()

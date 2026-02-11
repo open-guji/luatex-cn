@@ -320,7 +320,7 @@ function column.place_nodes(ctx, start_node, layout_map, params, callbacks)
             local entry = {
                 page = ctx.cur_page,
                 col = ctx.cur_col,
-                row = cur_row,
+                y_sp = cur_row * grid_height,
                 v_scale = v_scale
             }
             if font_color_str then entry.font_color = font_color_str end
@@ -355,10 +355,11 @@ function column.place_nodes(ctx, start_node, layout_map, params, callbacks)
 
                 D.set_attribute(jnode, constants.ATTR_JIAZHU_SUB, sub_col)
 
+                local jiazhu_row = cur_row + relative_row * v_scale
                 local entry = {
                     page = ctx.cur_page,
                     col = ctx.cur_col,
-                    row = cur_row + relative_row * v_scale,
+                    y_sp = jiazhu_row * grid_height,
                     sub_col = sub_col,
                     v_scale = v_scale
                 }
@@ -374,7 +375,7 @@ function column.place_nodes(ctx, start_node, layout_map, params, callbacks)
             local entry = {
                 page = ctx.cur_page,
                 col = ctx.cur_col,
-                row = cur_row,
+                y_sp = cur_row * grid_height,
                 is_block = true,
                 height = item.height,
                 v_scale = v_scale

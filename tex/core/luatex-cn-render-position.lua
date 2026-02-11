@@ -261,13 +261,13 @@ end
 -- 供 render.lua 使用，用于主文本定位，其中节点被就地修改。
 --
 -- @param col (number) 列索引（从 0 开始）
--- @param row (number) 行索引（从 0 开始）
 -- @param glyph_dims (table) 字形尺寸: width, height, depth, char, font
 -- @param params (table) 参数表:
 --   - grid_width (number) 每个网格单元的宽度 (sp)
 --   - grid_height (number) 每个网格单元的高度 (sp)
+--   - y_sp (number) Y 位置 (sp)
 --   ...
-local function calc_grid_position(col, row, glyph_dims, params)
+local function calc_grid_position(col, glyph_dims, params)
     local grid_width = params.grid_width or 0
     local grid_height = params.grid_height or 0
     local total_cols = params.total_cols or 1
@@ -305,8 +305,9 @@ local function calc_grid_position(col, row, glyph_dims, params)
     end
     local sub_col = params.sub_col or 0
 
-    -- Width-based centering for main text (simple and reliable)
-    -- Visual centering is only used for decoration symbols (in decorate.lua)
+    -- Cell width for character centering (default to column width)
+    -- cell_width may differ from col_width when per-character width override is set
+    local cell_w = params.cell_width or col_width
     local center_offset = (col_width - w) / 2
 
     -- Calculate X offset based on horizontal alignment
@@ -318,17 +319,18 @@ local function calc_grid_position(col, row, glyph_dims, params)
         x_offset = base_x
     elseif h_align == "right" then
         -- Align right edge to body text's right edge (body text is centered in cell)
-        local body_fs = params.body_font_size or col_width
+        local body_fs = params.body_font_size or cell_w
         x_offset = base_x + (col_width + body_fs) / 2 - w
     else -- center
-        x_offset = base_x + center_offset
+        -- Center char within cell, center cell within column
+        x_offset = base_x + (col_width - cell_w) / 2 + (cell_w - w) / 2
     end
 
     -- Calculate Y offset based on vertical alignment
     -- cell_height: actual cell height for this glyph (may differ from grid_height
     -- for squeezed punctuation). Falls back to grid_height if not specified.
     local cell_height = params.cell_height or grid_height
-    local y_offset = calculate_y_position(row, grid_height, shift_y)
+    local y_offset = -params.y_sp - (shift_y or 0)
 
     if v_align == "top" then
         y_offset = y_offset - h

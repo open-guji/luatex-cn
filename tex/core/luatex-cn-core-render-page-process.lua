@@ -243,7 +243,8 @@ local function process_page_nodes(p_head, layout_map, params, ctx)
     glyph_params.half_thickness = ctx.half_thickness
     glyph_params.col_geom = ctx.col_geom
     glyph_params.body_font_size = ctx.body_font_size
-    glyph_params.col_widths = _G.content and _G.content.col_widths
+    -- Phase 2.4: Prefer Free Mode col_widths_sp[page], fall back to TitlePage col_widths
+    glyph_params.col_widths = ctx.page_col_widths_sp or (_G.content and _G.content.col_widths)
 
     while curr do
         local next_curr = D.getnext(curr)

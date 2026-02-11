@@ -28,7 +28,10 @@ jobs:
           mkdir -p ~/.ssh
           ssh-keyscan gitee.com >> ~/.ssh/known_hosts
 
-      - name: Push main branch to Gitee
+      - name: Prepare Gitee Branch
+        run: bash scripts/prepare-gitee-branch.sh
+
+      - name: Push to Gitee
         run: |
           git remote add gitee git@gitee.com:open-guji/${{ github.event.repository.name }}.git
-          git push -f gitee main:main
+          git push -f gitee gitee:main

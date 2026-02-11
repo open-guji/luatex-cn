@@ -495,6 +495,8 @@ local function generate_physical_pages(list, params, engine_ctx, plugin_contexts
             -- n_column is mainly for banxin/layout, but might be needed for some calc
             n_column = engine_ctx.n_column,
             cols = engine_ctx.page_columns,
+            -- Phase 2.4: Free Mode column widths
+            col_widths_sp = _G.content and _G.content.col_widths_sp or nil,
         },
         page = p_info,       -- { p_width, p_height, m_*, is_textbox, is_outer_border, ob_* }
         engine = engine_ctx, -- { border_thickness, draw_border, shifts, colors, reserved_cols helpers }

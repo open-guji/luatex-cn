@@ -38,11 +38,12 @@ local function get_banxin_on(params)
 end
 
 local function get_grid_width(params, fallback)
-    if params and params.grid_width and params.grid_width > 0 then
+    if params and params.grid_width and type(params.grid_width) == "number" and params.grid_width > 0 then
         return params.grid_width
     end
-    if _G.content and _G.content.grid_width and _G.content.grid_width > 0 then
-        return _G.content.grid_width
+    local g_width = _G.content and _G.content.grid_width
+    if g_width and type(g_width) == "number" and g_width > 0 then
+        return g_width
     end
     return fallback or (65536 * 20)
 end

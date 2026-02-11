@@ -131,6 +131,14 @@ local function create_grid_context(params, line_limit, p_cols)
         default_cell_gap = default_cell_gap,
         cur_y_sp = 0,
         col_height_sp = col_height_sp,
+        -- Free mode tracking
+        is_free_mode = false,
+        content_width = 0,
+        accumulated_width_sp = 0,
+        -- Phase 2.3: Column width tracking for Free Mode
+        col_widths_sp = {}, -- col_widths_sp[page][col] = width_sp
+        col_spacing_top_sp = {}, -- col_spacing_top_sp[page][col] = spacing_sp
+        col_spacing_bottom_sp = {}, -- col_spacing_bottom_sp[page][col] = spacing_sp
     }
     ctx.page_chapter_titles[0] = ctx.chapter_title -- Initialize page 0 with the initial chapter title
     return ctx
@@ -241,7 +249,21 @@ local function wrap_to_next_column(ctx, p_cols, interval, grid_height, indent, r
     ctx.just_wrapped_column = true -- Flag for issue #54 fix
     -- Always reset Y accumulator on column wrap (unified layout)
     ctx.cur_y_sp = 0
-    if ctx.cur_col >= p_cols then
+
+    local should_wrap_page = false
+
+    if ctx.is_free_mode and ctx.content_width > 0 then
+        -- Free mode: check if accumulated width exceeds available width
+        if ctx.accumulated_width_sp >= ctx.content_width then
+            should_wrap_page = true
+            ctx.accumulated_width_sp = 0 -- Reset for new page
+        end
+    else
+        -- Grid mode: use fixed column count
+        should_wrap_page = (ctx.cur_col >= p_cols)
+    end
+
+    if should_wrap_page then
         ctx.cur_col = 0
         ctx.cur_page = ctx.cur_page + 1
         -- Always reset page_has_content on page turn:
@@ -348,7 +370,21 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
     if line_limit < 1 then line_limit = 20 end
 
     local interval = tonumber(n_column) or 0
-    local p_cols = tonumber(page_columns) or (2 * interval + 1)
+    local p_cols
+    local is_free_mode = (interval == 0 and not page_columns)
+
+    if page_columns and tonumber(page_columns) then
+        -- Explicit page-columns specified
+        p_cols = tonumber(page_columns)
+    elseif interval > 0 then
+        -- Grid mode: use interval-based calculation
+        p_cols = 2 * interval + 1
+    else
+        -- Free mode (n-column = 0, no page-columns):
+        -- Don't pre-calculate columns, use large value and check space dynamically
+        p_cols = 10000 -- Large value, actual wrap decided by available width
+    end
+
     if p_cols <= 0 then p_cols = 10000 end -- Safety
 
     -- Debug: Log floating textbox parameters
@@ -360,6 +396,18 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
     -- Stateful cursor layout
     local ctx = create_grid_context(params, line_limit, p_cols)
     ctx.banxin_registry = {} -- Track Banxin columns per page
+    ctx.is_free_mode = is_free_mode
+
+    -- In free mode, use available page width (grid_width * p_cols as max)
+    -- This is an approximation; actual width tracking will be in Phase 2
+    if is_free_mode then
+        local grid_width = params.grid_width or (12 * 65536)
+        ctx.content_width = grid_width * 100 -- Large enough for typical pages
+        dbg.log(string.format("[Free Mode] Enabled, p_cols=%d (virtual)", p_cols))
+    else
+        ctx.content_width = 0
+    end
+
     local layout_map = {}
 
     -- Buffer for distribution mode
@@ -650,7 +698,24 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
 
             -- Column always starts on a new column
             flush_buffer()
+            -- In grid mode or if current column has content, wrap to next column
+            -- In free mode with space available, allow columns side-by-side
+            local should_wrap_before_column = false
             if ctx.cur_row > 0 then
+                if not ctx.is_free_mode then
+                    -- Grid mode: always wrap
+                    should_wrap_before_column = true
+                else
+                    -- Free mode: only wrap if no space left
+                    -- (will be checked in wrap_to_next_column based on accumulated_width_sp)
+                    should_wrap_before_column = false
+                    -- Move to next column position (without page wrap)
+                    ctx.cur_col = ctx.cur_col + 1
+                    ctx.cur_row = 0
+                    ctx.cur_y_sp = 0
+                end
+            end
+            if should_wrap_before_column then
                 wrap_to_next_column(ctx, p_cols, interval, grid_height, 0, true, false)
             end
 
@@ -675,14 +740,49 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
             local column_callbacks = {
                 flush = flush_buffer,
                 wrap = function()
-                    wrap_to_next_column(ctx, p_cols, interval, grid_height, 0, true, false)
+                    if ctx.is_free_mode then
+                        -- Free mode: don't wrap, just move to next column position
+                        ctx.cur_col = ctx.cur_col + 1
+                        ctx.cur_row = 0
+                        ctx.cur_y_sp = 0
+                    else
+                        -- Grid mode: normal wrap (may trigger page break)
+                        wrap_to_next_column(ctx, p_cols, interval, grid_height, 0, true, false)
+                    end
                 end,
                 debug = function(msg) dbg.log(msg) end
             }
 
+            -- In free mode, track column width for page wrap decision
+            local col_start_col = ctx.cur_col
+            local col_start_page = ctx.cur_page
+            local col_start_node = t  -- Save Column's first node for style lookup
+
             t = column_mod.place_nodes(ctx, t, layout_map, column_params, column_callbacks)
 
             if not t then break end
+
+            -- Phase 2.3: Record column width in Free Mode
+            if ctx.is_free_mode then
+                local cols_used = ctx.cur_col - col_start_col
+                if cols_used > 0 then
+                    -- Get style attributes from Column's first node
+                    local style_reg = require('core.luatex-cn-core-column-style-registry')
+                    local style_id = D.get_attribute(col_start_node, constants.ATTR_STYLE_REG_ID)
+                    local col_width_str = style_id and style_reg.get_attr(style_id, "column_width")
+                    local col_width_sp = col_width_str and tex.sp(col_width_str) or nil
+
+                    -- Record column width (use explicit width if set, else estimate from grid)
+                    local actual_width_sp = col_width_sp or (cols_used * (params.grid_width or 0))
+
+                    -- Initialize page array if needed
+                    ctx.col_widths_sp[col_start_page] = ctx.col_widths_sp[col_start_page] or {}
+                    ctx.col_widths_sp[col_start_page][col_start_col] = actual_width_sp
+
+                    -- Accumulate for page wrap decision
+                    ctx.accumulated_width_sp = ctx.accumulated_width_sp + actual_width_sp
+                end
+            end
             goto start_of_loop
         end
 
@@ -920,6 +1020,24 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
     for _ in pairs(layout_map) do map_count = map_count + 1 end
     dbg.log(string.format("Layout map built. Total entries: %d, Total pages: %d", map_count,
         ctx.cur_page + 1))
+
+    -- Phase 2.2/2.3: Export Free Mode data to _G.content
+    if ctx.is_free_mode then
+        _G.content = _G.content or {}
+        _G.content.is_free_mode_layout = true
+        _G.content.col_widths_sp = ctx.col_widths_sp
+        _G.content.col_spacing_top_sp = ctx.col_spacing_top_sp
+        _G.content.col_spacing_bottom_sp = ctx.col_spacing_bottom_sp
+
+        -- Debug: log recorded widths
+        local total_cols = 0
+        for page, cols in pairs(ctx.col_widths_sp) do
+            for col, width in pairs(cols) do
+                total_cols = total_cols + 1
+            end
+        end
+        dbg.log(string.format("[Phase 2.3] Free Mode: recorded %d column widths", total_cols))
+    end
 
     return layout_map, ctx.cur_page + 1, ctx.page_chapter_titles, ctx.banxin_registry
 end

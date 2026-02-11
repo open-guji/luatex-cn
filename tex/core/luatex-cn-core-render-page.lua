@@ -147,6 +147,8 @@ local function calculate_render_context(ctx)
         grid_width = grid_width,
         banxin_width = banxin_width,
         interval = interval,
+        -- Phase 2.4: Free Mode column widths (page -> col -> width_sp)
+        col_widths_sp = grid.col_widths_sp,
     }
 
     return {
@@ -323,10 +325,13 @@ local function render_single_page(p_head, p_max_col, p, layout_map, params, ctx,
     p_head = content.set_font_color(p_head, ctx.text_rgb_str)
 
     -- Node positions
-    -- Update context with page-specific total_cols
+    -- Update context with page-specific total_cols and col_widths_sp
     local ctx_node = {}
     for k, v in pairs(ctx) do ctx_node[k] = v end
     ctx_node.p_total_cols = p_total_cols
+    -- Phase 2.4: Pass page-specific column widths for Free Mode
+    ctx_node.page_num = p
+    ctx_node.page_col_widths_sp = (ctx.col_geom and ctx.col_geom.col_widths_sp and ctx.col_geom.col_widths_sp[p]) or nil
 
     p_head = process_page_nodes(p_head, layout_map, params, ctx_node)
 

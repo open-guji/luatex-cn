@@ -38,6 +38,8 @@ local decorate_mod = package.loaded['decorate.luatex-cn-decorate'] or
     require('decorate.luatex-cn-decorate')
 local debug = package.loaded['debug.luatex-cn-debug'] or
     require('debug.luatex-cn-debug')
+local helpers = package.loaded['core.luatex-cn-layout-grid-helpers'] or
+    require('core.luatex-cn-layout-grid-helpers')
 
 local dbg = debug.get_debugger('render')
 
@@ -89,8 +91,7 @@ local function handle_glyph_node(curr, p_head, pos, params, ctx)
             half_thickness = ctx.half_thickness,
             sub_col = pos.sub_col,
             textflow_align = pos.textflow_align or ctx.textflow_align,
-            banxin_width = ctx.banxin_width,
-            interval = ctx.interval,
+            col_geom = ctx.col_geom,
             body_font_size = ctx.body_font_size,
             cell_height = pos.cell_height,
             cell_width = pos.cell_width,
@@ -176,7 +177,7 @@ local function handle_block_node(curr, p_head, pos, ctx)
     local w = D.getfield(curr, "width") or 0
 
     local rtl_col_left = ctx.p_total_cols - (pos.col + (pos.width or 1))
-    local final_x = text_position.get_column_x(rtl_col_left, ctx.grid_width, ctx.banxin_width or 0, ctx.interval or 0)
+    local final_x = text_position.get_column_x(rtl_col_left, ctx.col_geom)
         + ctx.half_thickness + ctx.shift_x
 
     local final_y_top = -pos.y_sp - ctx.shift_y
@@ -210,10 +211,10 @@ local function handle_debug_drawing(curr, p_head, pos, ctx)
     end
 
     if show_me then
-        local _, tx_sp = text_position.calculate_rtl_position(pos.col, ctx.p_total_cols, ctx.grid_width,
-            ctx.half_thickness, ctx.shift_x, ctx.banxin_width, ctx.interval)
+        local _, tx_sp = text_position.calculate_rtl_position(pos.col, ctx.p_total_cols, ctx.col_geom,
+            ctx.half_thickness, ctx.shift_x)
         local ty_sp = -pos.y_sp - (ctx.shift_y or 0)
-        local tw_sp = text_position.get_column_width(pos.col, ctx.grid_width, ctx.banxin_width or 0, ctx.interval or 0)
+        local tw_sp = text_position.get_column_width(pos.col, ctx.col_geom)
         local th_sp = -(pos.cell_height or ctx.grid_height)
 
         if pos.sub_col and pos.sub_col > 0 then
@@ -266,22 +267,22 @@ local function process_page_nodes(p_head, layout_map, params, ctx)
                             end
                             -- Collect line mark entries for batch rendering
                             if pos.line_mark_id then
-                                local lm_entry = {
-                                    group_id = pos.line_mark_id,
-                                    col = pos.col,
-                                    y_sp = pos.y_sp,
-                                    cell_height = pos.cell_height,
-                                    font_size = pos.font_size,
-                                    sub_col = pos.sub_col,
-                                }
-                                -- For sub-column chars, capture actual X center from rendered position
-                                -- so linemark doesn't need to recalculate textflow alignment
+                                local x_center
                                 if pos.sub_col and pos.sub_col > 0 then
                                     local gw = D.getfield(curr, "width") or 0
                                     local gx = D.getfield(curr, "xoffset") or 0
-                                    lm_entry.x_center_sp = gx + gw / 2
+                                    x_center = gx + gw / 2
                                 end
-                                ctx.line_mark_entries[#ctx.line_mark_entries + 1] = lm_entry
+                                ctx.line_mark_entries[#ctx.line_mark_entries + 1] =
+                                    helpers.create_linemark_entry({
+                                        group_id = pos.line_mark_id,
+                                        col = pos.col,
+                                        y_sp = pos.y_sp,
+                                        cell_height = pos.cell_height,
+                                        font_size = pos.font_size,
+                                        sub_col = pos.sub_col,
+                                        x_center_sp = x_center,
+                                    })
                             end
                         end
                     else
@@ -317,8 +318,8 @@ local function process_page_nodes(p_head, layout_map, params, ctx)
                     final_x = text_position.get_column_x_var(rtl_col, cw, ctx.p_total_cols)
                         + (ctx.half_thickness or 0) + (ctx.shift_x or 0)
                 else
-                    _, final_x = text_position.calculate_rtl_position(pos.col, ctx.p_total_cols, ctx.grid_width,
-                        ctx.half_thickness, ctx.shift_x, ctx.banxin_width, ctx.interval)
+                    _, final_x = text_position.calculate_rtl_position(pos.col, ctx.p_total_cols, ctx.col_geom,
+                        ctx.half_thickness, ctx.shift_x)
                 end
                 local final_y = -pos.y_sp - (ctx.shift_y or 0)
 

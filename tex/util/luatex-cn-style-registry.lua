@@ -316,6 +316,34 @@ function style_registry.pop_temporary()
     return count
 end
 
+--- Push a content style with common font parameters
+-- Handles font_color, font_size (string → sp conversion), font name.
+-- @param font_color (string|nil)
+-- @param font_size (string|nil) e.g., "14pt"
+-- @param font (string|nil)
+-- @param extra (table|nil) Additional style fields (textflow_align, auto_balance, grid_height, etc.)
+-- @return (number) Style ID (always a valid number)
+function style_registry.push_content_style(font_color, font_size, font, extra)
+    local constants_mod = package.loaded['core.luatex-cn-constants'] or
+        require('core.luatex-cn-constants')
+    local style = {}
+    if font_color and font_color ~= "" then
+        style.font_color = font_color
+    end
+    if font_size and font_size ~= "" then
+        style.font_size = constants_mod.to_dimen(font_size)
+    end
+    if font and font ~= "" then
+        style.font = font
+    end
+    if extra then
+        for k, v in pairs(extra) do
+            style[k] = v
+        end
+    end
+    return style_registry.push(style) or 0
+end
+
 --- Clear the registry (useful for testing or document end)
 function style_registry.clear()
     _G.style_registry = {

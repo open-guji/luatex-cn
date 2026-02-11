@@ -127,7 +127,7 @@ local function calculate_decorate_position(pos, reg, ctx, base_size, font_id, ch
     end
 
     -- Get actual column width (may differ for banxin columns)
-    local col_width = text_position.get_column_width(pos.col, ctx.grid_width, ctx.banxin_width or 0, ctx.interval or 0)
+    local col_width = text_position.get_column_width(pos.col, ctx.col_geom)
 
     -- Horizontal Centering: align glyph's visual center to cell center
     local v_center = text_position.get_visual_center(char, font_id) or (glyph_w / 2)
@@ -135,8 +135,8 @@ local function calculate_decorate_position(pos, reg, ctx, base_size, font_id, ch
     local center_offset = (col_width / 2) - scaled_v_center
 
     -- Position calculation (use previous row as decorations follow characters)
-    local _, base_x = text_position.calculate_rtl_position(pos.col, ctx.p_total_cols, ctx.grid_width,
-        ctx.half_thickness, ctx.shift_x, ctx.banxin_width, ctx.interval)
+    local _, base_x = text_position.calculate_rtl_position(pos.col, ctx.p_total_cols, ctx.col_geom,
+        ctx.half_thickness, ctx.shift_x)
     local dec_cell_h = pos.cell_height or ctx.grid_height
     local target_y_sp = math.max(0, pos.y_sp - dec_cell_h)
     local base_y = -target_y_sp - ctx.shift_y

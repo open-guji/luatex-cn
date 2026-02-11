@@ -94,12 +94,14 @@ local function get_node_font(node)
 end
 
 local function apply_style_attrs(map_entry, node_ptr)
-    local fc = get_node_font_color(node_ptr)
-    local fs = get_node_font_size(node_ptr)
-    local f = get_node_font(node_ptr)
-    if fc then map_entry.font_color = fc end
-    if fs then map_entry.font_size = fs end
-    if f then map_entry.font = f end
+    local style_id = D.get_attribute(node_ptr, constants.ATTR_STYLE_REG_ID)
+    if not style_id or style_id <= 0 then return end
+    local style = style_registry.get(style_id)
+    if not style then return end
+    if style.font_color then map_entry.font_color = style.font_color end
+    if style.font_size then map_entry.font_size = style.font_size end
+    if style.font then map_entry.font = style.font end
+    if style.textflow_align then map_entry.textflow_align = style.textflow_align end
 end
 
 -- =============================================================================
@@ -268,6 +270,23 @@ helpers.get_cell_height = get_cell_height
 helpers.resolve_cell_height = resolve_cell_height
 helpers.resolve_cell_width = resolve_cell_width
 helpers.resolve_cell_gap = resolve_cell_gap
+
+--- Create a linemark entry with standard fields
+-- @param opts (table) { group_id, col, y_sp, cell_height, font_size, sub_col, x_center_sp }
+-- @return (table) Linemark entry
+local function create_linemark_entry(opts)
+    return {
+        group_id = opts.group_id,
+        col = opts.col,
+        y_sp = opts.y_sp,
+        cell_height = opts.cell_height,
+        font_size = opts.font_size,
+        sub_col = opts.sub_col,
+        x_center_sp = opts.x_center_sp,
+    }
+end
+
+helpers.create_linemark_entry = create_linemark_entry
 
 package.loaded['core.luatex-cn-layout-grid-helpers'] = helpers
 return helpers

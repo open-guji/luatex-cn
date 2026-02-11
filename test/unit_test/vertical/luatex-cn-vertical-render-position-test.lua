@@ -12,7 +12,7 @@ test_utils.run_test("calculate_rtl_position - basic", function()
     local rtl_col, x_pos = position.calculate_rtl_position(
         0,     -- col
         10,    -- total_cols
-        65536, -- grid_width
+        { grid_width = 65536 }, -- col_geom
         1000,  -- half_thickness
         500    -- shift_x
     )
@@ -26,7 +26,7 @@ test_utils.run_test("calculate_rtl_position - last column", function()
     local rtl_col, x_pos = position.calculate_rtl_position(
         9,     -- col (last)
         10,    -- total_cols
-        65536, -- grid_width
+        { grid_width = 65536 }, -- col_geom
         0,     -- half_thickness
         0      -- shift_x
     )
@@ -39,7 +39,7 @@ test_utils.run_test("calculate_rtl_position - middle column", function()
     local rtl_col, x_pos = position.calculate_rtl_position(
         5,          -- col (middle)
         10,         -- total_cols
-        65536 * 10, -- grid_width = 10pt
+        { grid_width = 65536 * 10 }, -- col_geom (grid_width = 10pt)
         0,
         0
     )
@@ -52,7 +52,7 @@ test_utils.run_test("calculate_rtl_position - with shifts", function()
     local rtl_col, x_pos = position.calculate_rtl_position(
         0,
         5,
-        65536,
+        { grid_width = 65536 }, -- col_geom
         65536 * 2, -- half_thickness = 2pt
         65536 * 3  -- shift_x = 3pt
     )
@@ -159,9 +159,11 @@ test_utils.run_test("calc_grid_position - basic center alignment", function()
         shift_y = 0,
         half_thickness = 0,
         v_align = "center",
-        h_align = "center"
+        h_align = "center",
+        cell_height = 65536 * 10,
+        y_sp = 0,
     }
-    local x_off, y_off = position.calc_grid_position(0, 0, glyph_dims, params)
+    local x_off, y_off = position.calc_grid_position(0, glyph_dims, params)
     test_utils.assert_eq(type(x_off), "number", "X offset should be number")
     test_utils.assert_eq(type(y_off), "number", "Y offset should be number")
 end)
@@ -176,9 +178,11 @@ test_utils.run_test("calc_grid_position - left alignment", function()
         shift_y = 0,
         half_thickness = 0,
         v_align = "center",
-        h_align = "left"
+        h_align = "left",
+        cell_height = 65536 * 10,
+        y_sp = 0,
     }
-    local x_off, _ = position.calc_grid_position(0, 0, glyph_dims, params)
+    local x_off, _ = position.calc_grid_position(0, glyph_dims, params)
     -- For col 0 with 10 cols, rtl_col = 9
     -- left align: x_off = 9 * grid_width + half_thickness + shift_x
     test_utils.assert_eq(x_off, 9 * 65536 * 10, "Left aligned X offset")
@@ -196,9 +200,11 @@ test_utils.run_test("calc_grid_position - sub_col jiazhu", function()
         v_align = "center",
         h_align = "center",
         sub_col = 1,
-        jiazhu_align = "outward"
+        jiazhu_align = "outward",
+        cell_height = 65536 * 10,
+        y_sp = 0,
     }
-    local x_off, y_off = position.calc_grid_position(0, 0, glyph_dims, params)
+    local x_off, y_off = position.calc_grid_position(0, glyph_dims, params)
     test_utils.assert_eq(type(x_off), "number", "Jiazhu X offset should be number")
     test_utils.assert_eq(type(y_off), "number", "Jiazhu Y offset should be number")
 end)

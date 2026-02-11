@@ -77,11 +77,12 @@ end
 --- 计算列的 X 偏移（支持版心列窄化）
 -- 当版心列宽度与正文列不同时，不能用 rtl_col * grid_width。
 -- @param rtl_col (number) 物理列号（RTL 转换后，从左数，0-indexed）
--- @param grid_width (number) 正文列宽 (sp)
--- @param banxin_width (number) 版心列宽 (sp)，0 表示等宽
--- @param interval (number) 版心间隔（n_column），0 表示无版心
+-- @param col_geom (table) 列几何参数 { grid_width, banxin_width, interval }
 -- @return (number) X 偏移 (sp)
-local function get_column_x(rtl_col, grid_width, banxin_width, interval)
+local function get_column_x(rtl_col, col_geom)
+    local grid_width = col_geom.grid_width
+    local banxin_width = col_geom.banxin_width or 0
+    local interval = col_geom.interval or 0
     if interval <= 0 or banxin_width <= 0 or banxin_width == grid_width then
         return rtl_col * grid_width
     end
@@ -99,11 +100,12 @@ end
 
 --- 获取指定逻辑列的宽度
 -- @param col (number) 逻辑列号 (0-indexed)
--- @param grid_width (number) 正文列宽 (sp)
--- @param banxin_width (number) 版心列宽 (sp)
--- @param interval (number) 版心间隔
+-- @param col_geom (table) 列几何参数 { grid_width, banxin_width, interval }
 -- @return (number) 列宽 (sp)
-local function get_column_width(col, grid_width, banxin_width, interval)
+local function get_column_width(col, col_geom)
+    local grid_width = col_geom.grid_width
+    local banxin_width = col_geom.banxin_width or 0
+    local interval = col_geom.interval or 0
     if interval > 0 and banxin_width > 0 and banxin_width ~= grid_width then
         if (col % (interval + 1)) == interval then
             return banxin_width
@@ -117,15 +119,13 @@ end
 --
 -- @param col (number) 逻辑列号 (0-indexed)
 -- @param total_cols (number) 总列数
--- @param grid_width (number) 网格宽度 (sp)
+-- @param col_geom (table) 列几何参数 { grid_width, banxin_width, interval }
 -- @param half_thickness (number) 边框半厚度 (sp)
 -- @param shift_x (number) X 偏移量 (sp)
--- @param banxin_width (number) 版心列宽 (sp, optional)
--- @param interval (number) 版心间隔 (optional)
 -- @return (number, number) rtl_col, x_position
-local function calculate_rtl_position(col, total_cols, grid_width, half_thickness, shift_x, banxin_width, interval)
+local function calculate_rtl_position(col, total_cols, col_geom, half_thickness, shift_x)
     local rtl_col = total_cols - 1 - col
-    local x_pos = get_column_x(rtl_col, grid_width, banxin_width or 0, interval or 0)
+    local x_pos = get_column_x(rtl_col, col_geom)
         + (half_thickness or 0) + (shift_x or 0)
     return rtl_col, x_pos
 end
@@ -284,8 +284,11 @@ local function calc_grid_position(col, glyph_dims, params)
     local textflow = package.loaded['core.luatex-cn-textflow'] or
         require('core.luatex-cn-textflow')
 
-    local banxin_width = params.banxin_width or 0
-    local interval = params.interval or 0
+    local col_geom = params.col_geom or {
+        grid_width = grid_width,
+        banxin_width = params.banxin_width or 0,
+        interval = params.interval or 0,
+    }
     local col_widths = params.col_widths
 
     -- Calculate RTL column position and base X
@@ -299,9 +302,8 @@ local function calc_grid_position(col, glyph_dims, params)
         col_width = get_column_width_var(col, col_widths)
     else
         -- Uniform-width columns mode
-        rtl_col, base_x = calculate_rtl_position(col, total_cols, grid_width, half_thickness, shift_x,
-            banxin_width, interval)
-        col_width = get_column_width(col, grid_width, banxin_width, interval)
+        rtl_col, base_x = calculate_rtl_position(col, total_cols, col_geom, half_thickness, shift_x)
+        col_width = get_column_width(col, col_geom)
     end
     local sub_col = params.sub_col or 0
 
@@ -327,9 +329,8 @@ local function calc_grid_position(col, glyph_dims, params)
     end
 
     -- Calculate Y offset based on vertical alignment
-    -- cell_height: actual cell height for this glyph (may differ from grid_height
-    -- for squeezed punctuation). Falls back to grid_height if not specified.
-    local cell_height = params.cell_height or grid_height
+    -- cell_height: actual cell height for this glyph (set by layout for all glyph entries)
+    local cell_height = params.cell_height
     local y_offset = -params.y_sp - (shift_y or 0)
 
     if v_align == "top" then

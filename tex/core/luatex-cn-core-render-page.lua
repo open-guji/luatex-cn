@@ -142,6 +142,13 @@ local function calculate_render_context(ctx)
     -- Colors: border from engine (already normalized in main.lua)
     local b_rgb_str = engine.border_rgb_str
 
+    -- Bundle column geometry triple for position functions
+    local col_geom = {
+        grid_width = grid_width,
+        banxin_width = banxin_width,
+        interval = interval,
+    }
+
     return {
         border_thickness = border_thickness,
         half_thickness = half_thickness,
@@ -161,6 +168,7 @@ local function calculate_render_context(ctx)
         grid_width = grid_width,
         grid_height = grid_height,
         banxin_width = banxin_width,
+        col_geom = col_geom,
         body_font_size = body_font_size,
         vertical_align = vertical_align,
         -- TextFlow align default (per-node align from style stack takes precedence)
@@ -284,6 +292,7 @@ local function render_single_page(p_head, p_max_col, p, layout_map, params, ctx,
         actual_height_sp = actual_height_sp,
         grid_width = grid_width,
         grid_height = grid_height,
+        col_geom = ctx.col_geom,
         banxin_width = ctx.banxin_width,
         interval = ctx.interval,
         line_limit = line_limit,

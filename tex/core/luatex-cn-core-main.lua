@@ -283,6 +283,8 @@ local function init_engine_context(box_num, params)
         default_cell_gap = (not is_textbox and (_G.content.layout_mode or "grid") ~= "grid")
             and (_G.content.inter_cell_gap or 0) or 0,
         col_height_sp = limit * g_height,
+        -- Column geometry bundle for position functions
+        col_geom = { grid_width = g_width, banxin_width = banxin_w, interval = b_interval },
         -- Registry data (set after layout)
     }
 
@@ -292,8 +294,7 @@ local function init_engine_context(box_num, params)
     engine_ctx.get_reserved_column_coords = function(col, total_cols)
         local rtl_col = total_cols - 1 - col
         local effective_half = engine_ctx.draw_border and engine_ctx.half_thickness or 0
-        local col_x = text_position.get_column_x(rtl_col, engine_ctx.g_width,
-            engine_ctx.banxin_width, engine_ctx.n_column)
+        local col_x = text_position.get_column_x(rtl_col, engine_ctx.col_geom)
         return {
             x = col_x + effective_half + engine_ctx.shift_x,
             y = -(effective_half + engine_ctx.outer_shift),

@@ -72,8 +72,11 @@ local function draw_column_borders(p_head, params)
     local border_rgb_str = params.border_rgb_str
     local banxin_cols = params.banxin_cols or {} -- Set of column indices to skip
     local col_min_y_sp = params.col_min_y_sp or {} -- Per-column min y_sp for taitou raised border
-    local banxin_width = params.banxin_width or 0
-    local interval = params.interval or 0
+    local col_geom = params.col_geom or {
+        grid_width = grid_width,
+        banxin_width = params.banxin_width or 0,
+        interval = params.interval or 0,
+    }
 
     local b_thickness_bp = border_thickness * sp_to_bp
     local half_thickness = math.floor(border_thickness / 2)
@@ -100,9 +103,9 @@ local function draw_column_borders(p_head, params)
         -- Skip banxin columns (they are drawn separately by banxin module)
         if not banxin_cols[col] then
             local rtl_col = total_cols - 1 - col
-            local tx_bp = (text_position.get_column_x(rtl_col, grid_width, banxin_width, interval) + half_thickness + shift_x) * sp_to_bp
+            local tx_bp = (text_position.get_column_x(rtl_col, col_geom) + half_thickness + shift_x) * sp_to_bp
             local ty_bp = -(half_thickness + outer_shift) * sp_to_bp
-            local tw_bp = text_position.get_column_width(col, grid_width, banxin_width, interval) * sp_to_bp
+            local tw_bp = text_position.get_column_width(col, col_geom) * sp_to_bp
             local th_bp = -(line_limit * grid_height + b_padding_top + b_padding_bottom) * sp_to_bp
 
             -- Taitou raised border: extend column upward for negative y_sp columns
@@ -197,10 +200,13 @@ local function draw_outer_border(p_head, params)
     end
 
     -- Column boundary X positions (supports mixed column widths)
-    local banxin_width = params.banxin_width or 0
-    local interval = params.interval or 0
+    local col_geom = params.col_geom or {
+        grid_width = grid_width,
+        banxin_width = params.banxin_width or 0,
+        interval = params.interval or 0,
+    }
     local function cb(b)
-        return (text_position.get_column_x(b, grid_width, banxin_width, interval) + half_thickness + shift_x) * sp_to_bp
+        return (text_position.get_column_x(b, col_geom) + half_thickness + shift_x) * sp_to_bp
     end
 
     -- Construct path: counter-clockwise from bottom-left
@@ -307,6 +313,11 @@ local function render_borders(p_head, params)
 
     local banxin_width = params.banxin_width or 0
     local interval = params.interval or 0
+    local col_geom = params.col_geom or {
+        grid_width = grid_width,
+        banxin_width = banxin_width,
+        interval = interval,
+    }
 
     -- Calculate content dimensions (shared logic in content module)
     local content_mod = package.loaded['core.luatex-cn-core-content'] or
@@ -332,8 +343,7 @@ local function render_borders(p_head, params)
             total_cols = p_total_cols,
             grid_width = grid_width,
             grid_height = grid_height,
-            banxin_width = banxin_width,
-            interval = interval,
+            col_geom = col_geom,
             line_limit = line_limit,
             border_thickness = border_thickness,
             b_padding_top = b_padding_top,
@@ -359,8 +369,7 @@ local function render_borders(p_head, params)
             total_cols = p_total_cols,
             grid_width = grid_width,
             grid_height = grid_height,
-            banxin_width = banxin_width,
-            interval = interval,
+            col_geom = col_geom,
             half_thickness = math.floor(border_thickness / 2),
             shift_x = params.shift_x,
         })

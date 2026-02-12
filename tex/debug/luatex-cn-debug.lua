@@ -507,14 +507,37 @@ local function pre_shipout_grid_callback(head)
     -- head is typically a vbox (vlist); get its list content
     local id = node.id("vlist")
     if head.id == id then
-        -- Insert grid at the BEGINNING of the box's content list (so it renders at bottom layer)
+        -- Strategy: wrap all existing content in q/Q (save/restore graphics state),
+        -- then append grid AFTER Q. This ensures:
+        -- 1. Grid renders on top of all content (including backgrounds)
+        -- 2. Q restores CTM to page origin, so grid coordinates are correct
         local grid_node = create_grid_node()
         local content = head.list
         if content then
-            -- Insert before the first node (so grid is behind all content)
-            grid_node.next = content
-            content.prev = grid_node
-            head.list = grid_node
+            -- Create q (save) and Q (restore) pdf_literal nodes
+            local whatsit_id = node.id("whatsit")
+            local pdf_literal_id = node.subtype("pdf_literal")
+            local q_save = node.new(whatsit_id, pdf_literal_id)
+            q_save.data = "q"
+            q_save.mode = 2
+            local q_restore = node.new(whatsit_id, pdf_literal_id)
+            q_restore.data = "Q"
+            q_restore.mode = 2
+
+            -- Insert q at beginning
+            q_save.next = content
+            content.prev = q_save
+            head.list = q_save
+
+            -- Find tail and append Q then grid
+            local tail = content
+            while tail.next do
+                tail = tail.next
+            end
+            tail.next = q_restore
+            q_restore.prev = tail
+            q_restore.next = grid_node
+            grid_node.prev = q_restore
         else
             head.list = grid_node
         end
@@ -586,8 +609,10 @@ function debug.create_floating_debug_node(item, box_height, shift)
     -- Debug node is inserted after the box, current position is at box right edge, baseline
     -- Box shift moves content down by shift amount
     -- Box top relative to baseline = height - shift
-    local offset_x = 0  -- Already at right edge
-    local offset_y = (box_height - shift) * sp_to_bp  -- Move from baseline to top
+    -- When outer border exists, shift marker to outer border's top-right corner
+    local ob_ext = (item.ob_extension or 0) * sp_to_bp
+    local offset_x = ob_ext  -- Shift right to outer border edge
+    local offset_y = (box_height - shift) * sp_to_bp + ob_ext  -- Move up to outer border top
 
     -- Get coordinate values formatted according to current measure
     local x_val = debug.format_coordinate(item.x)

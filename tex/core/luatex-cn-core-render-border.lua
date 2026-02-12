@@ -435,6 +435,33 @@ local function render_borders(p_head, params)
         end
     end
 
+    -- 5. Textbox outer border (drawn around the decorative shape frame)
+    -- This is separate from body text outer border (section 2) to avoid coordinate conflicts
+    if params.textbox_outer_border and border_shape and border_shape ~= "none" then
+        local border_w = params.border_width or (65536 * 0.4)
+        local border_m = params.border_margin or 0
+        local ob_t = params.textbox_ob_thickness or (65536 * 1)
+        local ob_s = params.textbox_ob_sep or (65536 * 2)
+        local border_color = params.border_color_str or params.b_rgb_str or "0 0 0"
+
+        -- Outer border wraps the decorative shape with ob_sep gap
+        -- Gap measured from outer edge of inner stroke to inner edge of outer stroke
+        local gap = border_w / 2 + ob_s + ob_t / 2
+        local outer_x = -(border_m + gap)
+        local outer_y = border_m + gap
+        local outer_w = shape_width + 2 * (border_m + gap)
+        local outer_h = shape_height + 2 * (border_m + gap)
+
+        p_head = drawing.draw_rect_frame(p_head, {
+            x = outer_x,
+            y = outer_y,
+            width = outer_w,
+            height = outer_h,
+            line_width = ob_t,
+            color_str = border_color,
+        })
+    end
+
     return p_head
 end
 

@@ -275,7 +275,7 @@ local function init_engine_context(box_num, params)
         -- Border rendering
         draw_border = is_border,
         border_thickness = b_thickness,
-        half_thickness = math.floor(b_thickness / 2),
+        half_thickness = (is_textbox and not is_border) and 0 or math.floor(b_thickness / 2),
         outer_shift = is_outer_border and (ob_thickness + ob_sep) or 0,
         shift_x = (is_outer_border and (ob_thickness + ob_sep) or 0),
         shift_y = (is_outer_border and (ob_thickness + ob_sep) or 0) +
@@ -423,7 +423,7 @@ local function compute_grid_layout(list, params, engine_ctx, plugin_contexts, p_
         -- Enable center gap detection if there's a global banxin AND textbox has floating position
         -- This ensures meipi skips the center gap when crossing banxin
         local global_banxin_on = _G.banxin and _G.banxin.enabled or false
-        layout_params.banxin_on = global_banxin_on and (floating_x > 0)
+        layout_params.banxin_on = global_banxin_on and (floating_x > 0) and not is_floating
         layout_params.grid_width = engine_ctx.g_width
         layout_params.margin_right = p_info.m_right
         layout_params.chapter_title = params.chapter_title or ""
@@ -494,6 +494,10 @@ local function generate_physical_pages(list, params, engine_ctx, plugin_contexts
         border_color = current_style.border_color or "0 0 0",
         border_width = current_style.border_width or "0.4pt",
         border_margin = current_style.border_margin or params.border_margin or "1pt",
+        -- Textbox outer border (separate from body text outer border, drawn around decorative shape)
+        textbox_outer_border = params.outer_border or false,
+        textbox_ob_thickness = params.outer_border_thickness,
+        textbox_ob_sep = params.outer_border_sep,
     }
 
     local render_ctx = {

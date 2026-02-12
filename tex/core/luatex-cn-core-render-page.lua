@@ -138,6 +138,10 @@ local function calculate_render_context(ctx)
     local border_color_str = utils.normalize_rgb(visual.border_color) or "0 0 0"
     local border_width = constants.to_dimen(visual.border_width) or (65536 * 0.4)
     local border_margin = constants.to_dimen(visual.border_margin) or (65536 * 1)
+    -- Textbox outer border (drawn around decorative shape, not via body text mechanism)
+    local textbox_outer_border = visual.textbox_outer_border or false
+    local textbox_ob_thickness = constants.to_dimen(visual.textbox_ob_thickness) or (65536 * 1)
+    local textbox_ob_sep = constants.to_dimen(visual.textbox_ob_sep) or (65536 * 2)
 
     -- Colors: border from engine (already normalized in main.lua)
     local b_rgb_str = engine.border_rgb_str
@@ -183,6 +187,10 @@ local function calculate_render_context(ctx)
         border_color_str = border_color_str,
         border_width = border_width,
         border_margin = border_margin,
+        -- Textbox outer border params
+        textbox_outer_border = textbox_outer_border,
+        textbox_ob_thickness = textbox_ob_thickness,
+        textbox_ob_sep = textbox_ob_sep,
     }
 end
 
@@ -359,6 +367,10 @@ local function render_single_page(p_head, p_max_col, p, layout_map, params, ctx,
         background_rgb_str = ctx.background_rgb_str,
         -- Taitou raised border
         col_min_y_sp = col_min_y_sp,
+        -- Textbox outer border (drawn around decorative shape)
+        textbox_outer_border = ctx.textbox_outer_border,
+        textbox_ob_thickness = ctx.textbox_ob_thickness,
+        textbox_ob_sep = ctx.textbox_ob_sep,
     })
 
     -- Font color

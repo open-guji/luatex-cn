@@ -270,6 +270,45 @@ local function render_single_page(p_head, p_max_col, p, layout_map, params, ctx,
     -- Reserved columns (computed via engine_ctx helper function)
     local reserved_cols = grid.get_reserved_cols and grid.get_reserved_cols(p, p_total_cols) or {}
 
+    -- Right-align columns within content area BEFORE drawing borders
+    -- Skip TitlePage (has col_widths but NOT page_col_widths_sp)
+    local page_col_widths_sp = (ctx.col_geom and ctx.col_geom.col_widths_sp and ctx.col_geom.col_widths_sp[p]) or nil
+    local has_legacy_col_widths = (_G.content and _G.content.col_widths and next(_G.content.col_widths))
+    local has_free_mode_widths = (page_col_widths_sp and next(page_col_widths_sp))
+    local is_titlepage = has_legacy_col_widths and not has_free_mode_widths
+
+    if not is_titlepage then
+        local total_cols_width_sp
+        if page_col_widths_sp and next(page_col_widths_sp) then
+            -- Free Mode: sum variable column widths
+            total_cols_width_sp = 0
+            for _, w in pairs(page_col_widths_sp) do
+                total_cols_width_sp = total_cols_width_sp + w
+            end
+        else
+            -- Fixed-width mode: calculate total width including banxin
+            local col_gwidth = ctx.col_geom and ctx.col_geom.grid_width or 0
+            local col_bwidth = ctx.col_geom and ctx.col_geom.banxin_width or 0
+            local col_interval = ctx.col_geom and ctx.col_geom.interval or 0
+
+            if col_interval > 0 and col_bwidth > 0 and col_bwidth ~= col_gwidth then
+                -- With banxin columns
+                local n_banxin = math.floor(p_total_cols / (col_interval + 1))
+                local n_content = p_total_cols - n_banxin
+                total_cols_width_sp = n_content * col_gwidth + n_banxin * col_bwidth
+            else
+                -- Uniform width
+                total_cols_width_sp = p_total_cols * col_gwidth
+            end
+        end
+
+        -- Right-align: add offset if columns are narrower than content area
+        local content_width_sp = (_G.content and _G.content.content_width) or 0
+        if content_width_sp > total_cols_width_sp then
+            shift_x = shift_x + (content_width_sp - total_cols_width_sp)
+        end
+    end
+
     -- Scan layout_map for taitou columns (negative y_sp = raised border)
     local col_min_y_sp = {}
     local scan_t = p_head
@@ -332,20 +371,9 @@ local function render_single_page(p_head, p_max_col, p, layout_map, params, ctx,
     ctx_node.p_total_cols = p_total_cols
     -- Phase 2.4: Pass page-specific column widths for Free Mode
     ctx_node.page_num = p
-    ctx_node.page_col_widths_sp = (ctx.col_geom and ctx.col_geom.col_widths_sp and ctx.col_geom.col_widths_sp[p]) or nil
-
-    -- Free Mode: Right-align variable-width columns within content area
-    if ctx_node.page_col_widths_sp and next(ctx_node.page_col_widths_sp) then
-        local total_width_sp = 0
-        for _, w in pairs(ctx_node.page_col_widths_sp) do
-            total_width_sp = total_width_sp + w
-        end
-        local content_width_sp = (_G.content and _G.content.content_width) or 0
-        if content_width_sp > total_width_sp then
-            -- Add right-alignment offset to shift_x
-            ctx_node.shift_x = ctx_node.shift_x + (content_width_sp - total_width_sp)
-        end
-    end
+    ctx_node.page_col_widths_sp = page_col_widths_sp
+    -- Apply the computed right-alignment shift_x
+    ctx_node.shift_x = shift_x
 
     p_head = process_page_nodes(p_head, layout_map, params, ctx_node)
 

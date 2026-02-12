@@ -3,6 +3,21 @@
 
 \begin{document}
 
+\begin{封面}[底色={245,222,179}]
+  % 永樂大典 - 右上角竖排标题框（双层边框通过border-margin实现）
+  \TextBox[floating=true, x=5.5cm, y=0.8cm,
+           border-shape=rect, border-color={0.15 0.45 0.45},
+           border-width=4pt,
+           border-margin=6pt,
+           background-color={0.88 0.78 0.58},
+           font-size=40pt, height=4]{永樂大典}
+  % 六模 六十八 - 右上角小标签
+  \TextBox[floating=true, x=2.5cm, y=0.8cm,
+           border-shape=rect, border-color={0.2 0.5 0.5},
+           border-width=1.5pt,
+           font-size=18pt, height=5]{六模六十八}
+\end{封面}
+
 \begin{BodyText}
 默认页面尺寸
 \end{BodyText}

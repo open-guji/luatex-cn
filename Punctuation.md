@@ -101,22 +101,22 @@
 | — | ︱ |
 | … | ︙ |
 
-## 在 ltc-book 中使用
+## 在 cn-vbook / tw-vbook 中使用
 
-`ltc-book` 文档类默认启用标点系统。通过模板选择不同风格：
+`cn-vbook` / `tw-vbook` 文档类默认启用标点系统。通过模板选择不同风格：
 
 ```latex
 % 默认模板：台湾风格
-\documentclass{ltc-book}
+\documentclass{cn-vbook}
 
 % 中华书局模板：大陆风格
-\documentclass[中华书局]{ltc-book}
+\documentclass[中华书局]{cn-vbook}
 ```
 
 也可以在文档中随时切换：
 
 ```latex
-\documentclass{ltc-book}
+\documentclass{cn-vbook}
 \punctSetup{punct-style=mainland}  % 覆盖默认的台湾风格
 
 \begin{document}
@@ -126,12 +126,12 @@
 \end{document}
 ```
 
-## 在 ltc-guji 中使用
+## 在 guji 中使用
 
-`ltc-guji` 文档类也支持标点系统。当 `punct-mode=normal` 时，标点系统自动生效：
+`guji` 文档类也支持标点系统。当 `punct-mode=normal` 时，标点系统自动生效：
 
 ```latex
-\documentclass[四库全书]{ltc-guji}
+\documentclass[四库全书]{guji}
 \正常标点模式  % 使用现代标点（而非句读）
 \punctSetup{punct-style=mainland}
 
@@ -170,4 +170,4 @@
 
 ---
 
-👉 下一步：查看 [[句读 | Judou]] | [[ltc-book | ltc-book]] | [[功能详解 | Features]]
+下一步：查看 [[句读 | Judou]] | [[现代竖排 | ltc-book]] | [[功能详解 | Features]]

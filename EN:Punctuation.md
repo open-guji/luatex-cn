@@ -72,24 +72,24 @@ Follows Chinese typesetting standards (CLREQ) to prevent marks from appearing in
 
 The system automatically replaces horizontal bracket/quote forms with Unicode Vertical Presentation Forms (e.g., 「→﹁, 」→﹂, （→︵, ）→︶, 《→︽, 》→︾, —→︱, …→︙).
 
-## Using with ltc-book
+## Using with cn-vbook / tw-vbook
 
-The `ltc-book` document class enables the punctuation system by default. Choose styles via templates:
+The `cn-vbook` / `tw-vbook` document classes enable the punctuation system by default. Choose styles via templates:
 
 ```latex
 % Default template: Taiwan style
-\documentclass{ltc-book}
+\documentclass{cn-vbook}
 
 % Zhonghua Shuju template: Mainland style
-\documentclass[中华书局]{ltc-book}
+\documentclass[中华书局]{cn-vbook}
 ```
 
-## Using with ltc-guji
+## Using with guji
 
-The `ltc-guji` class also supports the punctuation system. When `punct-mode=normal`, it activates automatically:
+The `guji` class also supports the punctuation system. When `punct-mode=normal`, it activates automatically:
 
 ```latex
-\documentclass[四库全书]{ltc-guji}
+\documentclass[四库全书]{guji}
 \正常标点模式  % Use modern punctuation (not judou)
 \punctSetup{punct-style=mainland}
 ```
@@ -114,4 +114,4 @@ Implemented via `luatex-cn-core-punct.lua` in three stages:
 
 ---
 
-👉 Next: [[Judou | EN:Judou]] | [[ltc-book | EN:ltc-book]] | [[Features | EN:Features]]
+👉 Next: [[Judou | EN:Judou]] | [[Modern Vertical | EN:ltc-book]] | [[Features | EN:Features]]

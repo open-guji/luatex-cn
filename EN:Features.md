@@ -11,8 +11,8 @@ A grid-based layout system built on LuaTeX for high-precision vertical text flow
 - **Pagination & Column Flow**: Handles complex page splitting and column transitions automatically.
 
 ## 2. Document Classes
-- **[[ltc-guji | EN:Quick-Start]]**: Traditional ancient book typesetting with banxin, fishtail, silk frames.
-- **[[ltc-book | EN:ltc-book]]** (v0.2.7+): Modern vertical books with clean design, built-in footnotes and punctuation system.
+- **[[guji | EN:Quick-Start]]**: Traditional ancient book typesetting with banxin, fishtail, silk frames.
+- **[[cn-vbook / tw-vbook | EN:ltc-book]]** (v0.2.7+): Modern vertical books with clean design, built-in footnotes and punctuation system.
 
 ## 3. Punctuation Processing
 - **[[Punctuation System | EN:Punctuation]]** (v0.2.7+): Modern punct squeeze, kinsoku, vertical quote replacement with mainland/Taiwan styles.

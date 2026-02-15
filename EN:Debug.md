@@ -68,7 +68,7 @@ Set different debug colors for different modules:
 ## Usage Example
 
 ```latex
-\documentclass[四库全书彩色]{ltc-guji}
+\documentclass[四库全书彩色]{guji}
 
 % Enable debug mode
 \LtcDebugOn

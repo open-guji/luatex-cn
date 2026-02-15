@@ -8,31 +8,31 @@
 
 | 模板名称 | 文档类 | 说明 |
 |---------|-------|------|
-| `四库全书` | `ltc-guji` | 经典官修书籍风格（黑白版） |
-| `四库全书彩色` | `ltc-guji` | 经典官修书籍风格（彩色版） |
-| `红楼梦甲戌本` | `ltc-guji` | 手抄本风格，支持侧批与眉批 |
-| `default` | `ltc-book` | 默认现代竖排风格（台湾标点） |
-| `中华书局` | `ltc-book` | 中华书局现代竖排风格（大陆标点） |
+| `四库全书` | `guji` | 经典官修书籍风格（黑白版） |
+| `四库全书彩色` | `guji` | 经典官修书籍风格（彩色版） |
+| `红楼梦甲戌本` | `guji` | 手抄本风格，支持侧批与眉批 |
+| `default` | `cn-vbook` / `tw-vbook` | 默认现代竖排风格（台湾标点） |
+| `中华书局` | `cn-vbook` / `tw-vbook` | 中华书局现代竖排风格（大陆标点） |
 
 ## 使用模板
 
 在文档类选项中指定模板名称：
 
 ```latex
-% ltc-guji 模板
-\documentclass[四库全书彩色]{ltc-guji}
-\documentclass[红楼梦甲戌本]{ltc-guji}
+% guji 古籍模板
+\documentclass[四库全书彩色]{guji}
+\documentclass[红楼梦甲戌本]{guji}
 
-% ltc-book 模板 (v0.2.7+)
-\documentclass{ltc-book}              % 默认模板
-\documentclass[中华书局]{ltc-book}     % 中华书局模板
+% cn-vbook / tw-vbook 现代竖排模板 (v0.2.7+)
+\documentclass{cn-vbook}              % 默认模板
+\documentclass[中华书局]{cn-vbook}     % 中华书局模板
 ```
 
 ## 自定义模板
 
 ### 方法 1：创建配置文件
 
-#### ltc-guji 模板
+#### guji 模板
 
 在 `configs/` 目录下创建 `luatex-cn-guji-<模板名>.cfg` 文件：
 
@@ -68,7 +68,7 @@
 \endinput
 ```
 
-#### ltc-book 模板 (v0.2.7+)
+#### cn-vbook / tw-vbook 模板 (v0.2.7+)
 
 在 `configs/` 目录下创建 `luatex-cn-book-<模板名>.cfg` 文件：
 
@@ -103,7 +103,7 @@
 ### 方法 2：在文档中直接配置
 
 ```latex
-\documentclass{ltc-guji}
+\documentclass{guji}
 
 \gujiSetup{
     book-name = 我的书名,
@@ -162,4 +162,4 @@
 
 ---
 
-👉 下一步：查看 [[调试模式 | Debug]] 或 [[功能详解 | Features]]
+下一步：查看 [[调试模式 | Debug]] 或 [[功能详解 | Features]]

@@ -6,7 +6,7 @@
 
 ## 1. Automatic Font Detection
 
-By default, the `ltc-guji` document class automatically selects the most suitable installed fonts based on your operating system:
+By default, the `guji` (or `cn-vbook` / `tw-vbook`) document class automatically selects the most suitable installed fonts based on your operating system:
 
 - **Windows**: Prioritizes SimSun, SimHei, etc.
 - **macOS**: Prioritizes Songti SC, PingFang SC, etc.

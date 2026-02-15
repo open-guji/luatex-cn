@@ -13,7 +13,7 @@
 创建文件 `test.tex`，写入以下内容：
 
 ```latex
-\documentclass[四库全书]{ltc-guji}
+\documentclass[四库全书]{guji}
 
 \title{钦定四库全书}
 \chapter{史记\\卷一}
@@ -92,7 +92,7 @@ lualatex test.tex
 把上面的命令组合起来：
 
 ```latex
-\documentclass[四库全书]{ltc-guji}
+\documentclass[四库全书]{guji}
 
 \title{钦定四库全书}
 \chapter{史记\\卷一}
@@ -122,7 +122,7 @@ lualatex test.tex
 
 通过文档类选项选择不同的预设风格：
 
-### ltc-guji（古籍排版）
+### guji（古籍排版）
 
 | 选项 | 说明 |
 |------|------|
@@ -131,11 +131,11 @@ lualatex test.tex
 | `红楼梦甲戌本` | 手抄本风格，无鱼尾，支持侧批与眉批 |
 
 ```latex
-\documentclass[四库全书]{ltc-guji}
-\documentclass[红楼梦甲戌本]{ltc-guji}
+\documentclass[四库全书]{guji}
+\documentclass[红楼梦甲戌本]{guji}
 ```
 
-### ltc-book（现代竖排）
+### cn-vbook / tw-vbook（现代竖排）
 
 | 选项 | 说明 |
 |------|------|
@@ -143,11 +143,11 @@ lualatex test.tex
 | `中华书局` | 中华书局风格，大陆标点 |
 
 ```latex
-\documentclass{ltc-book}
-\documentclass[中华书局]{ltc-book}
+\documentclass{cn-vbook}
+\documentclass[中华书局]{cn-vbook}
 ```
 
-详见 [[模板与自定义 | Templates]] 和 [[ltc-book | ltc-book]]。
+详见 [[模板与自定义 | Templates]] 和 [[现代竖排 | ltc-book]]。
 
 ---
 
@@ -165,7 +165,7 @@ lualatex test.tex
 | `\书名号{书名}` | 书名标记波浪线 | [[改字与装饰 \| Correction]] |
 | `\改{正}` | 古籍勘误改字 | [[改字与装饰 \| Correction]] |
 | `\抬头[1]` | 敬语提行 | [[抬头 \| Taitou]] |
-| `\脚注{...}` | 脚注 | [[ltc-book \| ltc-book]] |
+| `\脚注{...}` | 脚注 | [[现代竖排 \| ltc-book]] |
 | `\LtcDebugOn` | 开启调试模式 | [[调试模式 \| Debug]] |
 
 完整命令列表请查看 **[[命令索引 | Command-Reference]]**。

@@ -50,10 +50,10 @@ Since v0.2.1, the range of supported punctuation has been extended to include:
 
 ### 2. Using with Different Document Classes
 
-#### ltc-guji (Ancient Books)
+#### guji (Ancient Books)
 
 ```latex
-\documentclass[四库全书]{ltc-guji}
+\documentclass[四库全书]{guji}
 \开启句读模式  % Use traditional judou
 
 \begin{document}
@@ -64,11 +64,11 @@ Since v0.2.1, the range of supported punctuation has been extended to include:
 \end{document}
 ```
 
-#### ltc-book (Modern Books)
+#### cn-vbook / tw-vbook (Modern Books)
 
 ```latex
-\documentclass{ltc-book}
-% ltc-book defaults to modern punctuation (punct-mode=normal)
+\documentclass{cn-vbook}
+% cn-vbook defaults to modern punctuation (punct-mode=normal)
 
 \begin{document}
 \begin{正文}

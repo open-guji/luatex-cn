@@ -4,7 +4,7 @@ English | [中文版](Home)
 
 Welcome to the LuaTeX-CN Wiki. This site provides comprehensive documentation for users and developers to help you create high-quality classic Chinese typesettings using LuaTeX-CN.
 
-> **Current Version**: [v0.2.7](https://github.com/open-guji/luatex-cn/releases) | **CTAN**: [v0.1.1](https://ctan.org/pkg/luatex-cn)
+> **Current Version**: [v0.2.8](https://github.com/open-guji/luatex-cn/releases) | **CTAN**: [v0.1.1](https://ctan.org/pkg/luatex-cn)
 
 ## Quick Access
 
@@ -20,8 +20,8 @@ Welcome to the LuaTeX-CN Wiki. This site provides comprehensive documentation fo
 - [[Layout Control | EN:Features]] - Chapters, TOC entries, and fine-grained layout control
 
 ### 2. Document Classes
-- [[ltc-guji (Ancient Books) | EN:Quick-Start]] - Traditional vertical typesetting (default class)
-- [[ltc-book (Modern Books) | EN:ltc-book]] - Modern vertical books with punct squeeze and footnotes
+- [[guji (Ancient Books) | EN:Quick-Start]] - Traditional vertical typesetting (default class)
+- [[cn-vbook / tw-vbook (Modern Books) | EN:ltc-book]] - Modern vertical books with punct squeeze and footnotes
 
 ### 3. Punctuation & Judou
 - [[Punctuation System | EN:Punctuation]] - Modern punct styles (mainland/Taiwan), squeeze, kinsoku

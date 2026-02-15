@@ -84,7 +84,7 @@ tlmgr install luatex-cn
 创建测试文件 `test.tex`：
 
 ```latex
-\documentclass[四库全书]{ltc-guji}
+\documentclass[四库全书]{guji}
 \begin{document}
 \begin{正文}
 天地玄黄，宇宙洪荒。
@@ -100,7 +100,7 @@ lualatex test.tex
 
 如果编译成功并生成 `test.pdf`，恭喜你安装完成！打开 PDF 应该能看到竖排的文字。
 
-> 如果遇到 `File 'ltc-guji.cls' not found` 错误，说明 luatex-cn 没有正确安装，请检查文件路径和 `texhash` 是否已执行。
+> 如果遇到 `File 'guji.cls' not found` 错误，说明 luatex-cn 没有正确安装，请检查文件路径和 `texhash` 是否已执行。
 
 ---
 

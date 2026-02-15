@@ -55,34 +55,34 @@ luatex-cn 提供两个面向现代竖排中文书籍的文档类，与 `guji`（
 
 ## 标点风格配置
 
-`ltc-book` 默认启用现代标点系统。详见 [[标点系统 | Punctuation]]。
+`cn-vbook` / `tw-vbook` 默认启用现代标点系统。详见 [[标点系统 | Punctuation]]。
 
 ### 台湾风格 (默认)
 
 ```latex
-\documentclass{ltc-book}
+\documentclass{cn-vbook}
 % 标点居中，这是默认设置
 ```
 
 ### 大陆风格
 
 ```latex
-\documentclass{ltc-book}
+\documentclass{cn-vbook}
 \punctSetup{punct-style=mainland}
 ```
 
 或直接使用中华书局模板（自动设置为大陆风格）：
 
 ```latex
-\documentclass[中华书局]{ltc-book}
+\documentclass[中华书局]{cn-vbook}
 ```
 
 ### 句读模式
 
-虽然 `ltc-book` 默认使用现代标点，但也可以切换到句读模式：
+虽然现代竖排文档类默认使用现代标点，但也可以切换到句读模式：
 
 ```latex
-\documentclass{ltc-book}
+\documentclass{cn-vbook}
 \开启句读模式  % 切换到句读模式
 
 \begin{document}
@@ -95,12 +95,12 @@ luatex-cn 提供两个面向现代竖排中文书籍的文档类，与 `guji`（
 
 ## 脚注系统
 
-`ltc-book` 内置脚注支持，提供段末注和页下注两种模式。
+现代竖排文档类内置脚注支持，提供段末注和页下注两种模式。
 
 ### 基本用法
 
 ```latex
-\documentclass{ltc-book}
+\documentclass{cn-vbook}
 \脚注设置{number-style=lujiao, indent=1em}
 
 \begin{document}
@@ -136,7 +136,7 @@ luatex-cn 提供两个面向现代竖排中文书籍的文档类，与 `guji`（
 
 ## 页码
 
-`ltc-book` 自动在页面左下角显示竖排页码。
+现代竖排文档类自动在页面左下角显示竖排页码。
 
 ### 页码配置
 
@@ -187,7 +187,7 @@ luatex-cn 提供两个面向现代竖排中文书籍的文档类，与 `guji`（
 然后在文档中使用：
 
 ```latex
-\documentclass[mytemplate]{ltc-book}
+\documentclass[mytemplate]{cn-vbook}
 ```
 
 ## 自由列宽模式

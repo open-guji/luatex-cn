@@ -8,31 +8,31 @@
 
 | Template Name | Document Class | Description |
 |--------------|----------------|-------------|
-| `四库全书` | `ltc-guji` | Classic official book style (B&W) |
-| `四库全书彩色` | `ltc-guji` | Classic official book style (Color) |
-| `红楼梦甲戌本` | `ltc-guji` | Manuscript style with side/top notes |
-| `default` | `ltc-book` | Default modern vertical style (Taiwan punct) |
-| `中华书局` | `ltc-book` | Zhonghua Shuju modern style (Mainland punct) |
+| `四库全书` | `guji` | Classic official book style (B&W) |
+| `四库全书彩色` | `guji` | Classic official book style (Color) |
+| `红楼梦甲戌本` | `guji` | Manuscript style with side/top notes |
+| `default` | `cn-vbook` / `tw-vbook` | Default modern vertical style (Taiwan punct) |
+| `中华书局` | `cn-vbook` | Zhonghua Shuju modern style (Mainland punct) |
 
 ## Using Templates
 
 Specify the template name in document class options:
 
 ```latex
-% ltc-guji templates
-\documentclass[四库全书彩色]{ltc-guji}
-\documentclass[红楼梦甲戌本]{ltc-guji}
+% guji templates
+\documentclass[四库全书彩色]{guji}
+\documentclass[红楼梦甲戌本]{guji}
 
-% ltc-book templates (v0.2.7+)
-\documentclass{ltc-book}              % Default template
-\documentclass[中华书局]{ltc-book}     % Zhonghua Shuju template
+% cn-vbook / tw-vbook templates (v0.2.7+)
+\documentclass{cn-vbook}              % Default template
+\documentclass[中华书局]{cn-vbook}     % Zhonghua Shuju template
 ```
 
 ## Custom Templates
 
 ### Method 1: Create Configuration File
 
-#### ltc-guji Template
+#### guji Template
 
 Create a `luatex-cn-guji-<template-name>.cfg` file in the `configs/` directory:
 
@@ -58,7 +58,7 @@ Create a `luatex-cn-guji-<template-name>.cfg` file in the `configs/` directory:
 \endinput
 ```
 
-#### ltc-book Template (v0.2.7+)
+#### cn-vbook / tw-vbook Template (v0.2.7+)
 
 Create a `luatex-cn-book-<template-name>.cfg` file in the `configs/` directory:
 
@@ -84,7 +84,7 @@ Create a `luatex-cn-book-<template-name>.cfg` file in the `configs/` directory:
 ### Method 2: Direct Configuration in Document
 
 ```latex
-\documentclass{ltc-guji}
+\documentclass{guji}
 
 \gujiSetup{
     book-name = My Book Title,

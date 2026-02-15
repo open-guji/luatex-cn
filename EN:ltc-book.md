@@ -1,13 +1,19 @@
 English | [中文版](ltc-book)
 
-# ltc-book: Modern Vertical Book Class (v0.2.7+)
+# Modern Vertical Book Classes (v0.2.7+)
 
-`ltc-book` is a document class for modern vertical Chinese book typesetting. Unlike `ltc-guji` (ancient book typesetting), `ltc-book` uses a clean, modern design: no banxin, no fishtail, no silk frames — suitable for contemporary publications that need vertical layout.
+luatex-cn provides two document classes for modern vertical Chinese book typesetting. Unlike `guji` (ancient book typesetting), they use a clean, modern design: no banxin, no fishtail, no silk frames — suitable for contemporary publications that need vertical layout.
+
+| Class | Punct Style | Description |
+|-------|-------------|-------------|
+| **`cn-vbook`** (v0.2.8+) | Mainland | Simplified Chinese vertical books |
+| **`tw-vbook`** (v0.2.8+) | Taiwan | Traditional Chinese vertical books |
+| `ltc-book` | Taiwan | Legacy name, still works |
 
 ## Basic Usage
 
 ```latex
-\documentclass{ltc-book}
+\documentclass{cn-vbook}
 \setmainfont{Noto Serif SC}
 
 \begin{document}
@@ -21,35 +27,36 @@ English | [中文版](ltc-book)
 
 | Option | Description | Punct Style |
 |--------|-------------|-------------|
-| (none) | Default, 16-kai (170×240mm), 12pt font | Taiwan |
+| (none) | Default, 16-kai (170x240mm), 12pt font | Taiwan |
 | `中华书局` | Zhonghua Shuju style, 15pt font, footnotes enabled | Mainland |
 
 ```latex
-\documentclass{ltc-book}           % Default
-\documentclass[中华书局]{ltc-book}  % Zhonghua Shuju
+\documentclass{cn-vbook}           % Default
+\documentclass[中华书局]{cn-vbook}  % Zhonghua Shuju
 ```
 
-## Differences from ltc-guji
+## Differences from guji
 
-| Feature | ltc-book | ltc-guji |
+| Feature | cn-vbook / tw-vbook | guji |
 |---------|---------|---------|
 | Design | Modern, clean | Traditional ancient |
 | Banxin/Yuwei | No | Yes |
 | Borders/Silk frames | No | Yes |
+| Layout mode | Free column width (`n-column=0`) | Fixed grid (`n-column=8`) |
 | Default punct | Modern (normal) | Configurable judou/normal |
 | Footnotes | Built-in | Manual loading |
 | Page numbers | Auto vertical | In banxin center |
 
 ## Punctuation Style
 
-`ltc-book` enables the modern punctuation system by default. See [[Punctuation System | EN:Punctuation]].
+`cn-vbook` / `tw-vbook` enable the modern punctuation system by default. See [[Punctuation System | EN:Punctuation]].
 
 ```latex
-\documentclass{ltc-book}
+\documentclass{cn-vbook}
 \punctSetup{punct-style=mainland}  % Override to mainland style
 ```
 
-Or use `\documentclass[中华书局]{ltc-book}` which automatically sets mainland style.
+Or use `\documentclass[中华书局]{cn-vbook}` which automatically sets mainland style.
 
 You can also switch to judou mode: `\开启句读模式`
 
@@ -95,8 +102,8 @@ Auto vertical page numbers at lower-left. Configure via `\pageSetup`:
 
 ## Custom Templates
 
-Create `configs/luatex-cn-book-<name>.cfg` with `\pageSetup`, `\contentSetup`, `\punctSetup`, then use `\documentclass[name]{ltc-book}`.
+Create `configs/luatex-cn-book-<name>.cfg` with `\pageSetup`, `\contentSetup`, `\punctSetup`, then use `\documentclass[name]{cn-vbook}`.
 
 ---
 
-👉 Next: [[Punctuation | EN:Punctuation]] | [[Features | EN:Features]] | [[Templates | EN:Templates]]
+Next: [[Punctuation | EN:Punctuation]] | [[Features | EN:Features]] | [[Templates | EN:Templates]]

@@ -50,10 +50,10 @@ v0.2.1 起扩展了标点符号支持范围，包括：
 
 ### 2. 在不同文档类中使用
 
-#### ltc-guji（古籍排版）
+#### guji（古籍排版）
 
 ```latex
-\documentclass[四库全书]{ltc-guji}
+\documentclass[四库全书]{guji}
 \开启句读模式  % 使用传统句读
 
 \begin{document}
@@ -64,11 +64,11 @@ v0.2.1 起扩展了标点符号支持范围，包括：
 \end{document}
 ```
 
-#### ltc-book（现代竖排）
+#### cn-vbook / tw-vbook（现代竖排）
 
 ```latex
-\documentclass{ltc-book}
-% ltc-book 默认使用现代标点（punct-mode=normal）
+\documentclass{cn-vbook}
+% 现代竖排文档类默认使用现代标点（punct-mode=normal）
 
 \begin{document}
 \begin{正文}

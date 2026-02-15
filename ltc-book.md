@@ -1,13 +1,19 @@
 [English Version](EN:ltc-book) | 中文版
 
-# ltc-book 现代竖排文档类 (v0.2.7+)
+# 现代竖排文档类 (v0.2.7+)
 
-`ltc-book` 是一个面向现代竖排中文书籍的文档类。与 `ltc-guji`（古籍排版）不同，`ltc-book` 采用简洁的现代设计：无版心、无鱼尾、无丝栏，适合当代出版物的竖排需求。
+luatex-cn 提供两个面向现代竖排中文书籍的文档类，与 `guji`（古籍排版）不同，它们采用简洁的现代设计：无版心、无鱼尾、无丝栏，适合当代出版物的竖排需求。
+
+| 文档类 | 标点风格 | 说明 |
+|--------|---------|------|
+| **`cn-vbook`** (v0.2.8+) | 大陆 | 简体中文竖排书籍 |
+| **`tw-vbook`** (v0.2.8+) | 台湾 | 繁体中文竖排书籍 |
+| `ltc-book` | 台湾 | 旧名称，仍可使用 |
 
 ## 基本用法
 
 ```latex
-\documentclass{ltc-book}
+\documentclass{cn-vbook}
 \setmainfont{Noto Serif SC}
 
 \begin{document}
@@ -29,19 +35,20 @@
 
 ```latex
 % 使用默认模板
-\documentclass{ltc-book}
+\documentclass{cn-vbook}
 
 % 使用中华书局模板
-\documentclass[中华书局]{ltc-book}
+\documentclass[中华书局]{cn-vbook}
 ```
 
-## 与 ltc-guji 的区别
+## 与 guji 的区别
 
-| 特性 | ltc-book | ltc-guji |
+| 特性 | cn-vbook / tw-vbook | guji |
 |------|---------|---------|
 | 设计风格 | 现代简洁 | 传统古籍 |
 | 版心/鱼尾 | 无 | 支持 |
 | 边框/丝栏 | 无 | 支持 |
+| 布局模式 | 自由列宽 (`n-column=0`) | 固定网格 (`n-column=8`) |
 | 标点默认 | 现代标点 (normal) | 可选句读/正常 |
 | 脚注 | 内置支持 | 需手动加载 |
 | 页码 | 自动竖排 | 版心中缝 |
@@ -183,6 +190,22 @@
 \documentclass[mytemplate]{ltc-book}
 ```
 
+## 自由列宽模式
+
+`cn-vbook` / `tw-vbook` 默认使用 `n-column=0`，即**自由列宽模式**。与 `guji` 的固定 8 列网格不同，自由模式下每列的宽度由内容决定，布局引擎自动追踪各列宽度并在内容超出页面宽度时分页。
+
+这种模式适合现代书籍中列宽不固定的场景，如混合不同字号、使用 `\行[宽度=3cm]{...}` 指定不等宽列等。
+
+在自定义模板中启用：
+```latex
+\contentSetup{
+    n-column = 0,           % 启用自由列宽
+    grid-width = 13pt,
+    grid-height = 13pt,
+    border = false,
+}
+```
+
 ---
 
-👉 下一步：查看 [[标点系统 | Punctuation]] | [[功能详解 | Features]] | [[模板与自定义 | Templates]]
+下一步：查看 [[标点系统 | Punctuation]] | [[功能详解 | Features]] | [[模板与自定义 | Templates]]

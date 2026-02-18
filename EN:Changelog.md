@@ -4,6 +4,27 @@ English | [中文版](Changelog)
 
 All notable changes to this project will be documented here.
 
+## [0.2.9] - 2026-02-18
+
+Complete typesetting of *Qinding Siku Quanshu Jianming Mulu (Volume 1)*. Added "digitization" mode for classical text OCR and proofreading.
+
+- ✨ **Helper Commands**: Added `\臣`, `\xshift` and other typesetting auxiliary commands
+- ✨ **Page Processing**: Added cover page, collation page, and blank page processing
+- ✨ **Digital Mode**: New `guji-digital` document class for OCR-based classical text digitization and proofreading (experimental)
+- 🐛 **Taitou Fixes**: Fixed numerous taitou indentation and line-breaking issues
+- 🐛 **Judou Fix**: Fixed judou mode behavior inside jiazhu (interlinear notes)
+- 🐛 **Banxin Fix**: Fixed single-page banxin processing
+- 🐛 **Background Color Fix**: Fixed background color inheritance and override logic
+
+## [0.2.8] - 2026-02-14
+
+- ✨ **Free Layout Mode**: New automatic column width and flexible column spacing support
+- ✨ **Style Command**: Added `\样式` command and `Style` environment for inline style overrides (font size, color, grid height, etc.)
+- ✨ **Cover Feature**: Added `Cover` environment and volume/chapter name commands for ancient book covers
+- ✨ **Command Renaming**: Document classes unified to `guji`, `cn-vbook`, `tw-vbook`; commands fully support English/simplified/traditional Chinese names
+- 🐛 **Bug Fixes**: Improved modern traditional Chinese vertical typesetting; fixed footnote and heading layout issues
+- ♻️ **Refactoring**: Major refactoring of layout-grid module, unified grid/natural engines, rewrote unit tests
+
 ## [0.2.7] - 2026-02-09
 
 - ✨ **Modern Punctuation System**: Full modern punctuation support (squeeze, kinsoku line-breaking, vertical quote replacement) with mainland/Taiwan style options

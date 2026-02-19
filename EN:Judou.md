@@ -67,7 +67,7 @@ Since v0.2.1, the range of supported punctuation has been extended to include:
 #### cn-vbook / tw-vbook (Modern Books)
 
 ```latex
-\documentclass{cn-vbook}
+\documentclass{ltc-cn-vbook}
 % cn-vbook defaults to modern punctuation (punct-mode=normal)
 
 \begin{document}

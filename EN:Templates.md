@@ -8,11 +8,11 @@
 
 | Template Name | Document Class | Description |
 |--------------|----------------|-------------|
-| `四库全书` | `guji` | Classic official book style (B&W) |
-| `四库全书彩色` | `guji` | Classic official book style (Color) |
-| `红楼梦甲戌本` | `guji` | Manuscript style with side/top notes |
-| `default` | `cn-vbook` / `tw-vbook` | Default modern vertical style (Taiwan punct) |
-| `中华书局` | `cn-vbook` | Zhonghua Shuju modern style (Mainland punct) |
+| `四库全书` | `ltc-guji` | Classic official book style (B&W) |
+| `四库全书彩色` | `ltc-guji` | Classic official book style (Color) |
+| `红楼梦甲戌本` | `ltc-guji` | Manuscript style with side/top notes |
+| `default` | `ltc-cn-vbook` / `ltc-tw-vbook` | Default modern vertical style (Taiwan punct) |
+| `中华书局` | `ltc-cn-vbook` | Zhonghua Shuju modern style (Mainland punct) |
 
 ## Using Templates
 
@@ -24,7 +24,7 @@ Specify the template name in document class options:
 \documentclass[红楼梦甲戌本]{guji}
 
 % cn-vbook / tw-vbook templates (v0.2.7+)
-\documentclass{cn-vbook}              % Default template
+\documentclass{ltc-cn-vbook}              % Default template
 \documentclass[中华书局]{cn-vbook}     % Zhonghua Shuju template
 ```
 
@@ -84,7 +84,7 @@ Create a `luatex-cn-book-<template-name>.cfg` file in the `configs/` directory:
 ### Method 2: Direct Configuration in Document
 
 ```latex
-\documentclass{guji}
+\documentclass{ltc-guji}
 
 \gujiSetup{
     book-name = My Book Title,

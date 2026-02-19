@@ -74,11 +74,11 @@ The system automatically replaces horizontal bracket/quote forms with Unicode Ve
 
 ## Using with cn-vbook / tw-vbook
 
-The `cn-vbook` / `tw-vbook` document classes enable the punctuation system by default. Choose styles via templates:
+The `ltc-cn-vbook` / `ltc-tw-vbook` document classes enable the punctuation system by default. Choose styles via templates:
 
 ```latex
 % Default template: Taiwan style
-\documentclass{cn-vbook}
+\documentclass{ltc-cn-vbook}
 
 % Zhonghua Shuju template: Mainland style
 \documentclass[中华书局]{cn-vbook}
@@ -86,7 +86,7 @@ The `cn-vbook` / `tw-vbook` document classes enable the punctuation system by de
 
 ## Using with guji
 
-The `guji` class also supports the punctuation system. When `punct-mode=normal`, it activates automatically:
+The `ltc-guji` class also supports the punctuation system. When `punct-mode=normal`, it activates automatically:
 
 ```latex
 \documentclass[四库全书]{guji}

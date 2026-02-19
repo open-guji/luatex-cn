@@ -103,11 +103,11 @@
 
 ## 在 cn-vbook / tw-vbook 中使用
 
-`cn-vbook` / `tw-vbook` 文档类默认启用标点系统。通过模板选择不同风格：
+`ltc-cn-vbook` / `ltc-tw-vbook` 文档类默认启用标点系统。通过模板选择不同风格：
 
 ```latex
 % 默认模板：台湾风格
-\documentclass{cn-vbook}
+\documentclass{ltc-cn-vbook}
 
 % 中华书局模板：大陆风格
 \documentclass[中华书局]{cn-vbook}
@@ -116,7 +116,7 @@
 也可以在文档中随时切换：
 
 ```latex
-\documentclass{cn-vbook}
+\documentclass{ltc-cn-vbook}
 \punctSetup{punct-style=mainland}  % 覆盖默认的台湾风格
 
 \begin{document}
@@ -128,7 +128,7 @@
 
 ## 在 guji 中使用
 
-`guji` 文档类也支持标点系统。当 `punct-mode=normal` 时，标点系统自动生效：
+`ltc-guji` 文档类也支持标点系统。当 `punct-mode=normal` 时，标点系统自动生效：
 
 ```latex
 \documentclass[四库全书]{guji}

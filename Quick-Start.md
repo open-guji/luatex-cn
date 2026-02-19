@@ -143,7 +143,7 @@ lualatex test.tex
 | `中华书局` | 中华书局风格，大陆标点 |
 
 ```latex
-\documentclass{cn-vbook}
+\documentclass{ltc-cn-vbook}
 \documentclass[中华书局]{cn-vbook}
 ```
 

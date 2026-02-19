@@ -8,11 +8,11 @@
 
 | 模板名称 | 文档类 | 说明 |
 |---------|-------|------|
-| `四库全书` | `guji` | 经典官修书籍风格（黑白版） |
-| `四库全书彩色` | `guji` | 经典官修书籍风格（彩色版） |
-| `红楼梦甲戌本` | `guji` | 手抄本风格，支持侧批与眉批 |
-| `default` | `cn-vbook` / `tw-vbook` | 默认现代竖排风格（台湾标点） |
-| `中华书局` | `cn-vbook` / `tw-vbook` | 中华书局现代竖排风格（大陆标点） |
+| `四库全书` | `ltc-guji` | 经典官修书籍风格（黑白版） |
+| `四库全书彩色` | `ltc-guji` | 经典官修书籍风格（彩色版） |
+| `红楼梦甲戌本` | `ltc-guji` | 手抄本风格，支持侧批与眉批 |
+| `default` | `ltc-cn-vbook` / `ltc-tw-vbook` | 默认现代竖排风格（台湾标点） |
+| `中华书局` | `ltc-cn-vbook` / `ltc-tw-vbook` | 中华书局现代竖排风格（大陆标点） |
 
 ## 使用模板
 
@@ -24,7 +24,7 @@
 \documentclass[红楼梦甲戌本]{guji}
 
 % cn-vbook / tw-vbook 现代竖排模板 (v0.2.7+)
-\documentclass{cn-vbook}              % 默认模板
+\documentclass{ltc-cn-vbook}              % 默认模板
 \documentclass[中华书局]{cn-vbook}     % 中华书局模板
 ```
 
@@ -103,7 +103,7 @@
 ### 方法 2：在文档中直接配置
 
 ```latex
-\documentclass{guji}
+\documentclass{ltc-guji}
 
 \gujiSetup{
     book-name = 我的书名,

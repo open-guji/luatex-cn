@@ -2,18 +2,18 @@
 
 # 现代竖排文档类 (v0.2.7+)
 
-luatex-cn 提供两个面向现代竖排中文书籍的文档类，与 `guji`（古籍排版）不同，它们采用简洁的现代设计：无版心、无鱼尾、无丝栏，适合当代出版物的竖排需求。
+luatex-cn 提供两个面向现代竖排中文书籍的文档类，与 `ltc-guji`（古籍排版）不同，它们采用简洁的现代设计：无版心、无鱼尾、无丝栏，适合当代出版物的竖排需求。
 
 | 文档类 | 标点风格 | 说明 |
 |--------|---------|------|
-| **`cn-vbook`** (v0.2.8+) | 大陆 | 简体中文竖排书籍 |
-| **`tw-vbook`** (v0.2.8+) | 台湾 | 繁体中文竖排书籍 |
+| **`ltc-cn-vbook`** (v0.2.8+) | 大陆 | 简体中文竖排书籍 |
+| **`ltc-tw-vbook`** (v0.2.8+) | 台湾 | 繁体中文竖排书籍 |
 | `ltc-book` | 台湾 | 旧名称，仍可使用 |
 
 ## 基本用法
 
 ```latex
-\documentclass{cn-vbook}
+\documentclass{ltc-cn-vbook}
 \setmainfont{Noto Serif SC}
 
 \begin{document}
@@ -35,7 +35,7 @@ luatex-cn 提供两个面向现代竖排中文书籍的文档类，与 `guji`（
 
 ```latex
 % 使用默认模板
-\documentclass{cn-vbook}
+\documentclass{ltc-cn-vbook}
 
 % 使用中华书局模板
 \documentclass[中华书局]{cn-vbook}
@@ -55,19 +55,19 @@ luatex-cn 提供两个面向现代竖排中文书籍的文档类，与 `guji`（
 
 ## 标点风格配置
 
-`cn-vbook` / `tw-vbook` 默认启用现代标点系统。详见 [[标点系统 | Punctuation]]。
+`ltc-cn-vbook` / `ltc-tw-vbook` 默认启用现代标点系统。详见 [[标点系统 | Punctuation]]。
 
 ### 台湾风格 (默认)
 
 ```latex
-\documentclass{cn-vbook}
+\documentclass{ltc-cn-vbook}
 % 标点居中，这是默认设置
 ```
 
 ### 大陆风格
 
 ```latex
-\documentclass{cn-vbook}
+\documentclass{ltc-cn-vbook}
 \punctSetup{punct-style=mainland}
 ```
 
@@ -82,7 +82,7 @@ luatex-cn 提供两个面向现代竖排中文书籍的文档类，与 `guji`（
 虽然现代竖排文档类默认使用现代标点，但也可以切换到句读模式：
 
 ```latex
-\documentclass{cn-vbook}
+\documentclass{ltc-cn-vbook}
 \开启句读模式  % 切换到句读模式
 
 \begin{document}
@@ -100,7 +100,7 @@ luatex-cn 提供两个面向现代竖排中文书籍的文档类，与 `guji`（
 ### 基本用法
 
 ```latex
-\documentclass{cn-vbook}
+\documentclass{ltc-cn-vbook}
 \脚注设置{number-style=lujiao, indent=1em}
 
 \begin{document}
@@ -192,7 +192,7 @@ luatex-cn 提供两个面向现代竖排中文书籍的文档类，与 `guji`（
 
 ## 自由列宽模式
 
-`cn-vbook` / `tw-vbook` 默认使用 `n-column=0`，即**自由列宽模式**。与 `guji` 的固定 8 列网格不同，自由模式下每列的宽度由内容决定，布局引擎自动追踪各列宽度并在内容超出页面宽度时分页。
+`ltc-cn-vbook` / `ltc-tw-vbook` 默认使用 `n-column=0`，即**自由列宽模式**。与 `ltc-guji` 的固定 8 列网格不同，自由模式下每列的宽度由内容决定，布局引擎自动追踪各列宽度并在内容超出页面宽度时分页。
 
 这种模式适合现代书籍中列宽不固定的场景，如混合不同字号、使用 `\行[宽度=3cm]{...}` 指定不等宽列等。
 

@@ -6,7 +6,7 @@
 
 ## 1. 自动字体探测
 
-在默认情况下，使用 `guji`（或 `cn-vbook` / `tw-vbook`）文档类会自动根据操作系统选择最合适的已安装字体：
+在默认情况下，使用 `ltc-guji`（或 `ltc-cn-vbook` / `ltc-tw-vbook`）文档类会自动根据操作系统选择最合适的已安装字体：
 
 - **Windows**: 优先使用中易宋体 (SimSun)、中易黑体 (SimHei) 等。
 - **macOS**: 优先使用宋体-简 (Songti SC)、苹方-简 (PingFang SC) 等。

@@ -12,10 +12,10 @@
 
 ```
 tex/
-├── guji.cls                  # 古籍文档类（推荐入口）
-├── ltc-guji.cls              # 古籍文档类（兼容别名）
-├── cn-vbook.cls              # 大陆竖排书籍
-├── tw-vbook.cls              # 台湾竖排书籍
+├── ltc-guji.cls                  # 古籍文档类（推荐入口）
+├── ltc-ltc-guji.cls              # 古籍文档类（兼容别名）
+├── ltc-cn-vbook.cls              # 大陆竖排书籍
+├── ltc-tw-vbook.cls              # 台湾竖排书籍
 ├── luatex-cn.sty             # 顶层宏包（兼容性入口）
 ├── luatex-cn-core.sty        # 核心功能聚合包
 │
@@ -91,7 +91,7 @@ tex/
 
 ```
                     ┌─────────────────┐
-                    │   guji.cls      │  ← 用户文档类入口
+                    │   ltc-guji.cls      │  ← 用户文档类入口
                     └────────┬────────┘
                              │ \RequirePackage
                              ▼
@@ -205,11 +205,11 @@ end
 
 | 文件 | 用途 | 加载的包 |
 |------|------|----------|
-| `guji.cls` | 古籍排版 | `luatex-cn-core` + `guji/*.sty` |
-| `cn-vbook.cls` | 大陆竖排书籍 | `luatex-cn-core` + 标点系统 |
-| `tw-vbook.cls` | 台湾竖排书籍 | `luatex-cn-core` + 标点系统 |
+| `ltc-guji.cls` | 古籍排版 | `luatex-cn-core` + `guji/*.sty` |
+| `ltc-cn-vbook.cls` | 大陆竖排书籍 | `luatex-cn-core` + 标点系统 |
+| `ltc-tw-vbook.cls` | 台湾竖排书籍 | `luatex-cn-core` + 标点系统 |
 
-**guji.cls 加载顺序**：
+**ltc-guji.cls 加载顺序**：
 ```latex
 \LoadClass{article}
 \RequirePackage{luatex-cn-core}       % 核心功能
@@ -504,7 +504,7 @@ python3 test/regression_test.py save test/regression_test/basic/tex/shiji.tex
 
 ```latex
 % issue_description_issue42.tex - 回归测试: 问题简述 (issue #42)
-\documentclass{guji}
+\documentclass{ltc-guji}
 \关闭分页
 
 \begin{document}

@@ -2,18 +2,18 @@ English | [中文版](ltc-book)
 
 # Modern Vertical Book Classes (v0.2.7+)
 
-luatex-cn provides two document classes for modern vertical Chinese book typesetting. Unlike `guji` (ancient book typesetting), they use a clean, modern design: no banxin, no fishtail, no silk frames — suitable for contemporary publications that need vertical layout.
+luatex-cn provides two document classes for modern vertical Chinese book typesetting. Unlike `ltc-guji` (ancient book typesetting), they use a clean, modern design: no banxin, no fishtail, no silk frames — suitable for contemporary publications that need vertical layout.
 
 | Class | Punct Style | Description |
 |-------|-------------|-------------|
-| **`cn-vbook`** (v0.2.8+) | Mainland | Simplified Chinese vertical books |
-| **`tw-vbook`** (v0.2.8+) | Taiwan | Traditional Chinese vertical books |
+| **`ltc-cn-vbook`** (v0.2.8+) | Mainland | Simplified Chinese vertical books |
+| **`ltc-tw-vbook`** (v0.2.8+) | Taiwan | Traditional Chinese vertical books |
 | `ltc-book` | Taiwan | Legacy name, still works |
 
 ## Basic Usage
 
 ```latex
-\documentclass{cn-vbook}
+\documentclass{ltc-cn-vbook}
 \setmainfont{Noto Serif SC}
 
 \begin{document}
@@ -31,7 +31,7 @@ luatex-cn provides two document classes for modern vertical Chinese book typeset
 | `中华书局` | Zhonghua Shuju style, 15pt font, footnotes enabled | Mainland |
 
 ```latex
-\documentclass{cn-vbook}           % Default
+\documentclass{ltc-cn-vbook}           % Default
 \documentclass[中华书局]{cn-vbook}  % Zhonghua Shuju
 ```
 
@@ -49,10 +49,10 @@ luatex-cn provides two document classes for modern vertical Chinese book typeset
 
 ## Punctuation Style
 
-`cn-vbook` / `tw-vbook` enable the modern punctuation system by default. See [[Punctuation System | EN:Punctuation]].
+`ltc-cn-vbook` / `ltc-tw-vbook` enable the modern punctuation system by default. See [[Punctuation System | EN:Punctuation]].
 
 ```latex
-\documentclass{cn-vbook}
+\documentclass{ltc-cn-vbook}
 \punctSetup{punct-style=mainland}  % Override to mainland style
 ```
 

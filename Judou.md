@@ -67,7 +67,7 @@ v0.2.1 起扩展了标点符号支持范围，包括：
 #### cn-vbook / tw-vbook（现代竖排）
 
 ```latex
-\documentclass{cn-vbook}
+\documentclass{ltc-cn-vbook}
 % 现代竖排文档类默认使用现代标点（punct-mode=normal）
 
 \begin{document}

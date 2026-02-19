@@ -21,7 +21,7 @@ Complete typesetting of *Qinding Siku Quanshu Jianming Mulu (Volume 1)*. Added "
 
 - ✨ **Helper Commands**: Added `\臣`, `\xshift` and other typesetting auxiliary commands
 - ✨ **Page Processing**: Added cover page, collation page, and blank page processing
-- ✨ **Digital Mode**: New `guji-digital` document class for OCR-based classical text digitization and proofreading (experimental)
+- ✨ **Digital Mode**: New `ltc-guji-digital` document class for OCR-based classical text digitization and proofreading (experimental)
 - ✨ **SideNote Enhancement**: `\SideNode` now supports positional parameters and numeric auto-conversion (`\SideNode[5pt]` = `\SideNode[0.5]` auto-converts to em)
 - ♻️ **Parameter Renaming**:
   - Renamed: `font-color` Chinese alias `字色` → `字体颜色` (`\Style`, `\Paragraph`, `\SideNode`, etc.)
@@ -39,7 +39,7 @@ Complete typesetting of *Qinding Siku Quanshu Jianming Mulu (Volume 1)*. Added "
 - ✨ **Free Layout Mode**: New automatic column width and flexible column spacing support
 - ✨ **Style Command**: Added `\样式` command and `Style` environment for inline style overrides (font size, color, grid height, etc.)
 - ✨ **Cover Feature**: Added `Cover` environment and volume/chapter name commands for ancient book covers
-- ✨ **Command Renaming**: Document classes unified to `guji`, `cn-vbook`, `tw-vbook`; commands fully support English/simplified/traditional Chinese names
+- ✨ **Command Renaming**: Document classes unified to `ltc-guji`, `ltc-cn-vbook`, `ltc-tw-vbook`; commands fully support English/simplified/traditional Chinese names
 - 🐛 **Bug Fixes**: Improved modern traditional Chinese vertical typesetting; fixed footnote and heading layout issues
 - ♻️ **Refactoring**: Major refactoring of layout-grid module, unified grid/natural engines, rewrote unit tests
 

@@ -473,7 +473,7 @@
 
 ## 古籍文档类 (Guji Class)
 
-**文件**: `guji.cls`
+**文件**: `ltc-guji.cls`
 
 ### `\gujiSetup`  `\古籍设置`  `\古籍設置`
 
@@ -881,7 +881,7 @@
 
 ## cn-vbook
 
-**文件**: `cn-vbook.cls`
+**文件**: `ltc-cn-vbook.cls`
 
 简体中文竖排书籍文档类。自动加载 `luatex-cn-core` 和默认模板 `luatex-cn-vbook-default.cfg`。
 
@@ -889,12 +889,12 @@
 
 ## tw-vbook
 
-**文件**: `tw-vbook.cls`
+**文件**: `ltc-tw-vbook.cls`
 
-繁体中文竖排书籍文档类。加载 `luatex-cn-tw-vbook-default.cfg`。其他与 `cn-vbook` 相同。
+繁体中文竖排书籍文档类。加载 `luatex-cn-tw-vbook-default.cfg`。其他与 `ltc-cn-vbook` 相同。
 
 ## guji  ltc-guji
 
-**文件**: `guji.cls`  `ltc-guji.cls`
+**文件**: `ltc-guji.cls`  `ltc-ltc-guji.cls`
 
 古籍文档类。加载全部古籍功能模块（句读、夹注、批注、眉批、印章、书名页、封面等）。

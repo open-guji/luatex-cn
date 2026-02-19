@@ -20,9 +20,9 @@
 
 | 文档类 | 用途 | 详情 |
 |--------|------|------|
-| **`guji`** | 传统古籍排版（版心、鱼尾、丝栏） | [[快速入门 \| Quick-Start]] |
-| **`cn-vbook`** | 现代大陆竖排书籍（标点挤压、脚注） | [[ltc-book \| ltc-book]] |
-| **`tw-vbook`** | 现代台湾竖排书籍（居中标点） | [[ltc-book \| ltc-book]] |
+| **`ltc-guji`** | 传统古籍排版（版心、鱼尾、丝栏） | [[快速入门 \| Quick-Start]] |
+| **`ltc-cn-vbook`** | 现代大陆竖排书籍（标点挤压、脚注） | [[ltc-book \| ltc-book]] |
+| **`ltc-tw-vbook`** | 现代台湾竖排书籍（居中标点） | [[ltc-book \| ltc-book]] |
 
 > `ltc-guji` 和 `ltc-book` 仍可使用，但推荐使用上述新名称。
 

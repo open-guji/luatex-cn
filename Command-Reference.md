@@ -815,21 +815,12 @@
 
 ---
 
-### `\ApplyAutoFont`  `\应用自动字体`  `\應用自動字體`
-
 根据操作系统自动检测并应用中文字体。
-
-### `\GetAutoFontName`  `\获取字体名`  `\獲取字體名`
 
 获取自动检测到的字体名称。
 
-### `\GetAutoFontFeatures`  `\获取字体特性`
-
 获取自动检测到的字体特性字符串。
 
-### `\DeclareFontFallback`  `\声明字体递补`  `\聲明字體遞補`
-
-声明字体递补链（字符替换链）。语法：`\DeclareFontFallback{chain}{Font1,Font2,Font3}`
 
 ### `\setfontfamily`  `\设置字体族`  `\設置字體族`
 
@@ -883,9 +874,6 @@
 
 隐藏页面坐标网格。
 
-### `\LtcIfDebugT`
-
-条件执行：若调试已启用则执行代码。语法：`\LtcIfDebugT{调试代码}`
 
 ---
 

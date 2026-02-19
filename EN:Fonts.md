@@ -48,13 +48,10 @@ Chinese Alias:
 \设置字体族{Source Han Serif SC, SimSun, SimHei}
 ```
 
-### `\DeclareFontFallback`
-
 To define a named fallback chain for custom usage:
 
 ```latex
 % Define a chain named "mybackup"
-\DeclareFontFallback{mybackup}{SimSun, SimHei}
 
 % Apply this chain to a specific font
 \setmainfont{MyCustomFont}[RawFeature={fallback=mybackup}]

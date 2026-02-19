@@ -57,19 +57,6 @@ v0.1.5 新增了**字体族**（Font Family）的概念。通过设置字体族�
 \setFontFamily{Source Han Serif SC, SimSun, SimHei}
 ```
 
-### `\DeclareFontFallback`
-
-如果你想自定义一个命名的递补链供后续使用：
-
-```latex
-% 定义名为 "mybackup" 的递补链
-\DeclareFontFallback{mybackup}{SimSun, SimHei}
-
-% 将该链应用到某个字体
-\setmainfont{MyCustomFont}[RawFeature={fallback=mybackup}]
-```
-
-> [!NOTE]
 > 对于竖排文档，手动设置字体时，通常无需额外添加竖排特性（`RawFeature={+vert}`），`luatex-cn` 底层通常会自动处理。但在某些极端自定义场景下，你可能需要手动指定 `Renderer=Harfbuzz` 或相关特性。
 
 ---

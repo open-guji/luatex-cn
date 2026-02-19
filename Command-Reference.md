@@ -239,7 +239,7 @@
 | height | 高度 | 高度 | 整数 | 0 | 文本框高度（格数） |
 | n-cols | 列数 | 列數 | 整数 | 0 | 内部列数 |
 | outer-cols | 外列数 | 外列數 | 整数 | 0 | 外部占用列数 |
-| distribute | 均分 | 均分 | 是/否 | false | 均分排布内容 |
+| fill | 填充 | 填充 | 是/否 | false | 均分排布内容 |
 | box-align | 框对齐 | 框對齊 | 字符串 | top | 文本框在列中的对齐 |
 | border | 边框 | 邊框 | 是/否 | false | 显示边框 |
 | border-shape | 边框形状 | 邊框形狀 | 选项 | none | 边框形状：`none` `octagon` `circle` |

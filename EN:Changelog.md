@@ -4,6 +4,17 @@ English | [中文版](Changelog)
 
 All notable changes to this project will be documented here.
 
+## [0.3.0] - 2026-02-18
+
+Project is now stable for full-book typesetting.
+
+- ✨ **User Experience Improvements**: Organized parameter naming conventions, updated Wiki and README documentation
+- ✨ **Template System**: Added templates folder with ready-to-use typesetting templates
+- 🐛 **Paragraph Fix**: Fixed `bottom-indent` default value setting (fix #xx)
+- 🐛 **Banxin Fix**: Fixed banxin chapter alignment handling
+
+**Note**: Before v1.0, commands and parameters may change. Please keep your installation up to date.
+
 ## [0.2.9] - 2026-02-18
 
 Complete typesetting of *Qinding Siku Quanshu Jianming Mulu (Volume 1)*. Added "digitization" mode for classical text OCR and proofreading.

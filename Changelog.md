@@ -11,6 +11,13 @@
 - ✨ **辅助命令**：新增 `\臣`、`\xshift` 等排版辅助命令
 - ✨ **页面处理**：新增封面、校勘页、空白页等处理支持
 - ✨ **数字化古籍模式**：新增 `guji-digital` 文档类，支持古籍 OCR 数字化录入与校对（实验性）
+- ✨ **侧批增强**：`\SideNode` 支持位置参数和数值自动转换（`\SideNode[5pt]` = `\SideNode[0.5]` 自动转换为 em）
+- ♻️ **参数改名**：
+  - 重命名：`font-color` 的中文别名 `字色` → `字体颜色`（`\Style`、`\Paragraph`、`\SideNode` 等）
+  - 重命名：`yoffset` → `yshift`（`\SideNode`，中文别名 `纵偏` → `纵移`）
+  - 重命名：`distribute` → `fill`（`\TextBox`，中文别名 `均分` → `填充`）
+  - 重命名：`font-name` → `font`（`\Content`，中文别名 `字体名` → `字体`）
+  - 改进：Paragraph `first-indent`/`bottom-indent` 默认值改为空，自动跟随 `indent` 参数
 - 🐛 **抬头修复**：修复大量抬头缩进、换行的问题
 - 🐛 **句读修复**：修复句读模式在夹注中的问题
 - 🐛 **版心修复**：修复单页版心处理

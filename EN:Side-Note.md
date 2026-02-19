@@ -38,17 +38,27 @@ Main text\\夹注{This is interlinear note content. If it is long, it will autom
 Small annotations placed between text columns or at page margins.
 
 ### Usage
+
+Three syntax options:
 ```latex
-Main text\\侧批[yoffset=10pt, color=red]{This is the side note content}continued text.
+% Basic usage
+Main text\\侧批{This is the side note content}continued text.
+
+% Positional parameter (auto-converts to em)
+Main text\\侧批[5pt]{Note with adjusted height}continued text.
+Main text\\侧批[0.5]{Equivalent to 0.5em}continued text.
+
+% Named parameters
+Main text\\侧批[yshift=10pt, color=red]{Both color and position}continued text.
 ```
 
 ### Parameters
-- `yoffset`: Vertical offset for fine-tuning positions.
+- `yshift`: Vertical offset with positional parameter support. Pure numbers auto-convert to em units (e.g., `0.5` → `0.5em`).
 - `color`: Annotation color (default: red).
-- `font-size`: Font size for the note.
-- `grid-height`: Custom grid height for the note block.
-- `border-padding-top`: Top border padding.
-- `border-padding-bottom`: Bottom border padding.
+- `font-size`: Font size for the note (default: 10pt).
+- `grid-height`: Custom grid height for the note block (default: equals font size).
+- `border-padding-top`: Top border padding (default: 0pt).
+- `border-padding-bottom`: Bottom border padding (default: 0pt).
 
 ### Global Configuration
 ```latex
@@ -56,11 +66,15 @@ Main text\\侧批[yoffset=10pt, color=red]{This is the side note content}continu
   color = red,
   font-size = 19pt,
   grid-height = 20pt,
-  yoffset = 0em,
+  yshift = 0em,
   border-padding-top = 0.5em,
   border-padding-bottom = 0.5em
 }
 ```
+
+### Aliases
+- Setup command: `\sidenodeSetup` / `\CePiSetup` / `\侧批设置` (Simplified) / `\側批設置` (Traditional)
+- Vertical shift parameter: `yshift` / `纵移` (Simplified) / `縱移` (Traditional)
 
 ### Cross-Page Color Preservation (v0.2.1+)
 v0.2.1 introduced the style registry mechanism. Side note color settings now persist correctly across pages. Even when side note content spans multiple pages, colors remain consistent.

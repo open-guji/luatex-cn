@@ -11,6 +11,13 @@ Complete typesetting of *Qinding Siku Quanshu Jianming Mulu (Volume 1)*. Added "
 - ✨ **Helper Commands**: Added `\臣`, `\xshift` and other typesetting auxiliary commands
 - ✨ **Page Processing**: Added cover page, collation page, and blank page processing
 - ✨ **Digital Mode**: New `guji-digital` document class for OCR-based classical text digitization and proofreading (experimental)
+- ✨ **SideNote Enhancement**: `\SideNode` now supports positional parameters and numeric auto-conversion (`\SideNode[5pt]` = `\SideNode[0.5]` auto-converts to em)
+- ♻️ **Parameter Renaming**:
+  - Renamed: `font-color` Chinese alias `字色` → `字体颜色` (`\Style`, `\Paragraph`, `\SideNode`, etc.)
+  - Renamed: `yoffset` → `yshift` (`\SideNode`, Chinese alias `纵偏` → `纵移`)
+  - Renamed: `distribute` → `fill` (`\TextBox`, Chinese alias `均分` → `填充`)
+  - Renamed: `font-name` → `font` (`\Content`, Chinese alias `字体名` → `字体`)
+  - Improved: Paragraph `first-indent`/`bottom-indent` defaults to empty, automatically follows `indent` parameter
 - 🐛 **Taitou Fixes**: Fixed numerous taitou indentation and line-breaking issues
 - 🐛 **Judou Fix**: Fixed judou mode behavior inside jiazhu (interlinear notes)
 - 🐛 **Banxin Fix**: Fixed single-page banxin processing

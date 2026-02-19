@@ -239,8 +239,6 @@
 | height | 高度 | 高度 | 整数 | 0 | 文本框高度（格数） |
 | n-cols | 列数 | 列數 | 整数 | 0 | 内部列数 |
 | outer-cols | 外列数 | 外列數 | 整数 | 0 | 外部占用列数 |
-| inner-grid-width | 内格宽 | 內格寬 | 度量 | _(空)_ | 内部网格宽度 |
-| inner-grid-height | 内格高 | 內格高 | 度量 | _(空)_ | 内部网格高度 |
 | distribute | 均分 | 均分 | 是/否 | false | 均分排布内容 |
 | box-align | 框对齐 | 框對齊 | 字符串 | top | 文本框在列中的对齐 |
 | border | 边框 | 邊框 | 是/否 | false | 显示边框 |
@@ -261,8 +259,8 @@
 | background-color | 底色 | 底色 | 颜色 | _(空)_ | 背景色 |
 | font-color | 字体颜色 | 字體顏色 | 颜色 | _(空)_ | 字体颜色 |
 | font-size | 字号 | 字號 | 字号 | _(空)_ | 字号 |
-| grid-width | 格宽 | 格寬 | 度量 | _(空)_ | 网格宽度（别名 inner-grid-width） |
-| grid-height | 格高 | 格高 | 度量 | _(空)_ | 网格高度（别名 inner-grid-height） |
+| grid-width | 格宽 | 格寬 | 度量 | _(空)_ | 内部网格宽度 |
+| grid-height | 格高 | 格高 | 度量 | _(空)_ | 内部网格高度 |
 
 ### `\FillTextBox`  `\填充文本框`
 

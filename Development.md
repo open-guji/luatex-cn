@@ -505,7 +505,7 @@ python3 test/regression_test.py save test/regression_test/basic/tex/shiji.tex
 ```latex
 % issue_description_issue42.tex - 回归测试: 问题简述 (issue #42)
 \documentclass{guji}
-\禁用分页裁剪
+\关闭分页
 
 \begin{document}
 \begin{正文}

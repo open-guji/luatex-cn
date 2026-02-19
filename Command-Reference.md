@@ -46,16 +46,16 @@
 | background-color | 底色 | 底色 | 颜色 | _(空)_ | 页面背景色 |
 | footskip | 页脚距 | 頁腳距 | 度量 | 0pt | 页脚偏移 |
 | topskip | 页头距 | 頁頭距 | 度量 | 0pt | 页头偏移 |
-| page-split-enabled | 启用分页 | 啟用分頁 | 是/否 | true | 是否启用筒子页裁剪 |
+| page-split-enabled | 开启分页 | 開啟分頁 | 是/否 | true | 是否启用筒子页裁剪 |
 | page-split-right-first | 右页优先 | 右頁優先 | 是/否 | true | 筒子页先印右页 |
 | page-number-style | 页码样式 | 頁碼樣式 | 字符串 | none | 页码显示风格 |
 | page-number-font-size | 页码字号 | 頁碼字號 | 字号 | 9pt | 页码字号 |
 
-### `\enableSplitPage`  `\启用分页裁剪`  `\啟用分頁裁剪`
+### `\enableSplitPage`  `\开启分页`  `\開啟分頁`
 
 启用筒子页（电子简策）裁剪模式，可接受 key-value 参数配置。
 
-### `\disableSplitPage`  `\禁用分页裁剪`  `\禁用分頁裁剪`
+### `\disableSplitPage`  `\关闭分页`  `\關閉分頁`
 
 关闭筒子页裁剪。
 

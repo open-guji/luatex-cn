@@ -512,14 +512,6 @@
 | judou-color | 句读颜色 | 句讀顏色 | 颜色 | red | 句读颜色 |
 | punct-mode | 标点模式 | 標點模式 | 选项 | normal | 标点模式 |
 
-### `\JudouOn`  `\开启句读`  `\開啟句讀`
-
-启用句读模式，可选 key-value 参数。
-
-### `\JudouOff`  `\关闭句读`  `\關閉句讀`
-
-关闭句读模式。
-
 ### `\NormalPunctuationMode`  `\正常标点模式`  `\正常標點模式`
 
 切换到正常标点模式。

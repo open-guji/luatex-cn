@@ -39,9 +39,9 @@
 %   \end{正文}
 %   \end{document}
 %
-% 如需手动指定字体，使用 font-name 参数覆盖自动探测：
+% 如需手动指定字体，使用 font 参数覆盖自动探测：
 %
-%   \begin{正文}[font-name=Source Han Serif SC]
+%   \begin{正文}[font=Source Han Serif SC]
 %   使用思源宋体排版。
 %   \end{正文}
 %
@@ -59,19 +59,9 @@
 % ============================================================================
 % 提供的命令 (Commands)
 % ============================================================================
-%
-%   \ApplyAutoFont
-%       应用自动探测的中文字体（调用 \setmainfont）
-%
-%   \DeclareFontFallback{<name>}{<font_list>}
-%       定义一个字体递补链（按顺序寻找缺失字符）。
-%       例如：\DeclareFontFallback{myfallbacks}{Font2, Font3}
-%
-%   \GetAutoFontName
-%       获取探测到的字体名称（可用于调试或显示）
-%
-%   \GetAutoFontFeatures
-%       获取字体特性字符串（如 RawFeature={+vert,+vrt2}）
+% 注：以下命令（ApplyAutoFont、GetAutoFontName、GetAutoFontFeatures、
+%     DeclareFontFallback）已被弃用，不再推荐使用。
+%     请在 contentSetup 中使用 font 参数或通过 fontspec 直接配置字体。
 %
 % ============================================================================
 % 手动设置字体 (Manual Font Configuration)
@@ -93,7 +83,7 @@
 \RequirePackage{expl3}
 \RequirePackage{xparse}
 \RequirePackage{luatexbase}
-\ProvidesExplPackage {fonts/luatex-cn-font-autodetect} {2026/02/18} {0.2.9} {Automatic Chinese font detection for LuaLaTeX}
+\ProvidesExplPackage {fonts/luatex-cn-font-autodetect} {2026/02/19} {0.3.0} {Automatic Chinese font detection for LuaLaTeX}
 
 % Ensure we're using LuaTeX
 \sys_if_engine_luatex:TF
@@ -126,7 +116,10 @@
       }
   }
 
-% Command to apply auto-detected font
+% ============================================================================
+% Core Implementation for Auto Font Detection
+% ============================================================================
+% Internal command to apply auto-detected font
 \NewDocumentCommand{\ApplyAutoFont}{}{
   \lua_now:e {
     texio.write_nl("term~and~log",~"[Font~Auto-Detect]~ApplyAutoFont~command~called");~
@@ -161,59 +154,23 @@
     }
 }
 
-% Command to get auto-detected font name (for use in keys)
-\NewDocumentCommand{\GetAutoFontName}{}{
-  \lua_now:e {
-    local~font_setup~=~fontdetect.get_font_setup();~
-    if~font_setup~then~
-      tex.print(font_setup.name);~
-    end;
-  }
-}
-
-% Command to get auto-detected font features
-\NewDocumentCommand{\GetAutoFontFeatures}{}{
-  \lua_now:e {
-    local~font_setup~=~fontdetect.get_font_setup();~
-    if~font_setup~then~
-      tex.print(font_setup.features);~
-    end;
-  }
-}
-
-% Command to declare a font fallback chain
-% Usage: \DeclareFontFallback{chain_name}{font1, font2, ...}
-\cs_new:Npn \__luatexcn_declare_font_fallback:nn #1 #2
-  {
-    \str_clear:N \l_tmpa_str
-    \clist_map_inline:nn { #2 }
-      {
-        \tl_set:Nn \l_tmpb_tl { ##1 }
-        \tl_if_in:NnTF \l_tmpb_tl { : }
-          { }
-          { \tl_put_right:Nn \l_tmpb_tl { :mode=node;+vert;+vrt2 } }
-        \str_put_right:Nx \l_tmpa_str { ,~"\lua_escape:e { \tl_use:N \l_tmpb_tl }" }
-      }
-    \lua_now:e
-      {
-        if~luaotfload~and~luaotfload.add_fallback~then~
-          luaotfload.add_fallback("#1",~{~\str_tail:N \l_tmpa_str~})~
-        end
-      }
-  }
-
-\NewDocumentCommand{\DeclareFontFallback}{m m}
-  {
-    \__luatexcn_declare_font_fallback:nn { #1 } { #2 }
-  }
+% ============================================================================
+% DEPRECATED COMMANDS (no longer user-facing)
+% ============================================================================
+% The following commands have been marked as internal and are no longer
+% recommended for user code:
+%   - \GetAutoFontName (use contentSetup font parameter instead)
+%   - \GetAutoFontFeatures (not needed)
+%   - \DeclareFontFallback (use fontspec directly for font fallbacks)
+%
+% \ApplyAutoFont is still used internally by document classes.
 
 % Command to set main font with a fallback chain in one step
 % Usage: \SetMainFontChain{Font1, Font2, Font3}
 \DeclareDocumentCommand{\setfontfamily}{m}
   {
-    \DeclareFontFallback { luatexcn_main_fallback } { #1 }
     \tl_set:Nx \l_tmpa_tl { \clist_item:nn { #1 } { 1 } }
-    \exp_args:NV \setmainfont \l_tmpa_tl [ RawFeature = { fallback = luatexcn_main_fallback } ]
+    \exp_args:NV \setmainfont \l_tmpa_tl
   }
 
 \DeclareDocumentCommand{\setFontFamily}{m}{\setfontfamily{#1}}
@@ -224,14 +181,7 @@
 % Simplified Chinese / 简体
 \DeclareDocumentCommand{\设置字体族}{m}{\setfontfamily{#1}}
 \DeclareDocumentCommand{\设置字体}{m}{\setmainfont{#1}}
-\NewCommandCopy{\应用自动字体}{\ApplyAutoFont}
-\NewCommandCopy{\获取字体名}{\GetAutoFontName}
-\NewCommandCopy{\获取字体特性}{\GetAutoFontFeatures}
-\NewCommandCopy{\声明字体递补}{\DeclareFontFallback}
 % Traditional Chinese / 繁体
-\NewCommandCopy{\應用自動字體}{\ApplyAutoFont}
-\NewCommandCopy{\獲取字體名}{\GetAutoFontName}
-\NewCommandCopy{\聲明字體遞補}{\DeclareFontFallback}
 \DeclareDocumentCommand{\設置字體族}{m}{\setfontfamily{#1}}
 \DeclareDocumentCommand{\設置字體}{m}{\setmainfont{#1}}
 

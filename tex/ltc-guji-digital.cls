@@ -12,14 +12,14 @@
 % See the License for the specific language governing permissions and
 % limitations under the License.
 
-% guji-digital.cls - A LaTeX document class for digitizing ancient Chinese books.
-% Unlike guji.cls (semantic), this class focuses on layout-faithful digitization:
+% ltc-guji-digital.cls - A LaTeX document class for digitizing ancient Chinese books.
+% Unlike ltc-guji.cls (semantic), this class focuses on layout-faithful digitization:
 % each TeX newline = one column, explicit page breaks, explicit banxin content.
 
 \RequirePackage{expl3}
 \RequirePackage{l3keys2e}
 \RequirePackage{core/luatex-cn-core-template}
-\ProvidesExplClass {guji-digital} {2026/02/18} {0.2.9}
+\ProvidesExplClass {ltc-guji-digital} {2026/02/19} {0.3.0}
   {Ancient Chinese Book Digitization Class}
 
 % ============================================================================
@@ -120,7 +120,7 @@
 
 % Load default config
 \InputIfFileExists{configs/luatex-cn-digital-default.cfg}{}{
-  \PackageWarning{guji-digital}{Config~file~configs/luatex-cn-digital-default.cfg~not~found}
+  \PackageWarning{ltc-guji-digital}{Config~file~configs/luatex-cn-digital-default.cfg~not~found}
 }
 
 % Apply initial template from class options

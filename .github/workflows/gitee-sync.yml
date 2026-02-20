@@ -16,7 +16,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          fetch-depth: 1
 
       - name: Setup SSH
         uses: webfactory/ssh-agent@v0.9.0
@@ -28,10 +28,11 @@ jobs:
           mkdir -p ~/.ssh
           ssh-keyscan gitee.com >> ~/.ssh/known_hosts
 
-      - name: Prepare Gitee Branch
-        run: bash scripts/prepare-gitee-branch.sh
+      - name: Prepare for Gitee Sync
+        run: bash scripts/prepare-gitee-sync.sh
 
       - name: Push to Gitee
         run: |
           git remote add gitee git@gitee.com:open-guji/${{ github.event.repository.name }}.git
-          git push -f gitee gitee:main
+          git push -f gitee gitee-sync:main
+        continue-on-error: true

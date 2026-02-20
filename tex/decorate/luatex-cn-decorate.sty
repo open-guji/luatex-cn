@@ -17,7 +17,7 @@
 %
 \RequirePackage{expl3}
 \RequirePackage{xparse}
-\ProvidesExplPackage {decorate/luatex-cn-decorate} {2026/02/18} {0.2.9} {Character Decoration Support}
+\ProvidesExplPackage {decorate/luatex-cn-decorate} {2026/02/19} {0.3.0} {Character Decoration Support}
 
 % Decorate Command - Apply decoration to each character in content
 % Syntax: \decorate[char=。, color=red, xshift=0pt, yshift=0pt]{content}
@@ -38,10 +38,8 @@
     color .initial:n = red,
     xshift .tl_set:N = \l__luatexcn_decorate_xshift_tl,
     xshift .initial:n = 0pt,
-    xoffset .tl_set:N = \l__luatexcn_decorate_xshift_tl,
     yshift .tl_set:N = \l__luatexcn_decorate_yshift_tl,
     yshift .initial:n = 0pt,
-    yoffset .tl_set:N = \l__luatexcn_decorate_yshift_tl,
     font-size .tl_set:N = \l__luatexcn_decorate_font_size_tl,
     font-size .initial:n = ,
     scale .tl_set:N = \l__luatexcn_decorate_scale_tl,

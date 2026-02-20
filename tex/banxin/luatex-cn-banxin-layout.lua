@@ -238,6 +238,7 @@ local function calculate_chapter_title_layout(params, regions, decorations)
         font_scale = font_scale,
         grid_height = desired_grid_h,
         n_cols = params.chapter_title_cols or 1,
+        h_align = params.chapter_title_align or "center",
     }
 end
 

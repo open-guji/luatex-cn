@@ -24,7 +24,7 @@
 \RequirePackage{core/luatex-cn-core-base}
 \RequirePackage{expl3}
 \RequirePackage{xparse}
-\ProvidesExplPackage {core/luatex-cn-core-column} {2026/02/18} {0.2.9} {Column Support for Vertical Typesetting}
+\ProvidesExplPackage {core/luatex-cn-core-column} {2026/02/19} {0.3.0} {Column Support for Vertical Typesetting}
 
 % Default variables for column
 \tl_new:N \l__luatexcn_column_default_size_tl
@@ -226,7 +226,7 @@
     末列 .bool_set:N = \l__luatexcn_column_last_bool,
     字号 .tl_set:N = \l__luatexcn_column_local_size_tl,
     字体 .tl_set:N = \l__luatexcn_column_local_font_tl,
-    字色 .tl_set:N = \l__luatexcn_column_local_color_tl,
+    字体颜色 .tl_set:N = \l__luatexcn_column_local_color_tl,
     宽度 .tl_set:N = \l__luatexcn_column_width_tl,
     列宽 .tl_set:N = \l__luatexcn_column_width_tl,
     自动宽度 .bool_set:N = \l__luatexcn_column_auto_width_bool,
@@ -239,6 +239,7 @@
     對齊 .meta:n = { align = #1 },
     字號 .tl_set:N = \l__luatexcn_column_local_size_tl,
     字體 .tl_set:N = \l__luatexcn_column_local_font_tl,
+    字體顏色 .tl_set:N = \l__luatexcn_column_local_color_tl,
     寬度 .tl_set:N = \l__luatexcn_column_width_tl,
     列寬 .tl_set:N = \l__luatexcn_column_width_tl,
     自動寬度 .bool_set:N = \l__luatexcn_column_auto_width_bool,

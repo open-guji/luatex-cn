@@ -5,9 +5,9 @@
 % 根因: FORCE_COLUMN 换列后 textflow pending 状态未清除，SMART_BREAK
 %       再次 flush pending 导致二次换列。
 % 修复: SMART_BREAK 在 cur_row==0 时清除 stale pending 而不添加行数。
-\documentclass{guji}
+\documentclass{ltc-guji}
 \setmainfont{TW-Kai}
-\禁用分页裁剪
+\关闭分页
 \无标点模式
 
 % 复现 \注 命令的结构：段落[indent=2] + 夹注[auto-balance=false]

@@ -451,7 +451,7 @@ local function render_chapter_title_from_layout(p_head, element, chapter_title)
         local c = i - 1
         local sub_x = element.x + (n_cols - 1 - c) * col_width
 
-        local col_h_align = "center"
+        local col_h_align = element.h_align or "center"
         if n_cols > 1 then
             if i == 1 then
                 col_h_align = "right"

@@ -101,8 +101,10 @@ def process_file(tex_file, mode, pdf_dir, baseline_dir, current_dir, diff_dir):
             return False, "PNG conversion failed", log_list
 
         # 3. Check if baselines already exist and compare
-        existing_baselines = sorted(list(baseline_dir.glob(f"{pdf_file.stem}-*.png")),
-                                    key=lambda x: int(re.search(r'-(\d+)\.png$', x.name).group(1)))
+        existing_baselines = sorted(
+            [f for f in baseline_dir.glob(f"{pdf_file.stem}-*.png")
+             if re.match(rf"^{re.escape(pdf_file.stem)}-\d+\.png$", f.name)],
+            key=lambda x: int(re.search(r'-(\d+)\.png$', x.name).group(1)))
 
         images_match = False
         if len(existing_baselines) == len(new_pngs):

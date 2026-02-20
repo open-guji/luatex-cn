@@ -78,9 +78,9 @@ local function read_banxin_params()
         upper_ratio = tonumber(get_tl("l__luatexcn_banxin_upper_ratio_tl")) or 0.28,
         middle_ratio = tonumber(get_tl("l__luatexcn_banxin_middle_ratio_tl")) or 0.56,
 
-        -- Padding
-        padding_top = parse_dim(get_tl("l__luatexcn_banxin_padding_top_tl")),
-        padding_bottom = parse_dim(get_tl("l__luatexcn_banxin_padding_bottom_tl")),
+        -- Padding (from book-name and page-number sub-namespaces)
+        padding_top = parse_dim(get_tl("l__luatexcn_banxin_book_name_top_padding_tl")),
+        padding_bottom = parse_dim(get_tl("l__luatexcn_banxin_page_number_bottom_padding_tl")),
 
         -- Divider
         divider = get_bool("l__luatexcn_banxin_divider_bool"),
@@ -97,6 +97,7 @@ local function read_banxin_params()
         chapter_title_cols = get_int("l__luatexcn_banxin_chapter_title_cols_int"),
         chapter_title_font_size = parse_dim(get_tl("l__luatexcn_banxin_chapter_title_font_size_tl")),
         chapter_title_grid_height = parse_dim(get_tl("l__luatexcn_banxin_chapter_title_grid_height_tl")),
+        chapter_title_align = get_tl("l__luatexcn_banxin_chapter_title_align_tl") or "center",
 
         -- Yuwei
         upper_yuwei = get_bool("l__luatexcn_banxin_upper_yuwei_bool"),
@@ -206,6 +207,7 @@ function banxin_main.layout(list, layout_map, engine_ctx, context)
                     chapter_title_cols = bp.chapter_title_cols > 0 and bp.chapter_title_cols or 1,
                     chapter_title_font_size = bp.chapter_title_font_size > 0 and bp.chapter_title_font_size or nil,
                     chapter_title_grid_height = bp.chapter_title_grid_height > 0 and bp.chapter_title_grid_height or nil,
+                    chapter_title_align = bp.chapter_title_align,
                     page_number_align = bp.page_number_align,
                     page_number_font_size = bp.page_number_font_size > 0 and bp.page_number_font_size or nil,
                     publisher = bp.publisher,
@@ -247,14 +249,41 @@ function banxin_main.render(head, layout_map, params, context, engine_ctx, page_
     local bp = context.params
 
     -- Resolve runtime content: chapter title (may vary per page)
+    -- Only update when \chapter markers exist; walk back to find most recent marker.
     local chapter_title = bp.chapter_title
-    if engine_ctx.page_chapter_titles and engine_ctx.page_chapter_titles[page_idx] then
-        chapter_title = engine_ctx.page_chapter_titles[page_idx]
+    local page_resets = engine_ctx.page_resets
+    if page_resets and next(page_resets) and engine_ctx.page_chapter_titles then
+        for p = page_idx, 0, -1 do
+            if page_resets[p] then
+                local t = engine_ctx.page_chapter_titles[p]
+                if t and t ~= "" then
+                    chapter_title = t
+                end
+                break
+            end
+        end
     end
 
     -- Resolve runtime content: page number
     -- Support explicit page number string (for digital mode)
-    local page_number = (params.start_page_number or 1) + page_idx
+    -- When \chapter resets page number, compute relative page number from last reset.
+    local page_number
+    if page_resets and next(page_resets) then
+        local last_reset_page = -1
+        for p = page_idx, 0, -1 do
+            if page_resets[p] then
+                last_reset_page = p
+                break
+            end
+        end
+        if last_reset_page >= 0 then
+            page_number = 1 + (page_idx - last_reset_page)
+        else
+            page_number = (params.start_page_number or 1) + page_idx
+        end
+    else
+        page_number = (params.start_page_number or 1) + page_idx
+    end
     local explicit_page_number = _G.banxin and _G.banxin.explicit_page_number or nil
 
     local p_head = D.todirect(head)

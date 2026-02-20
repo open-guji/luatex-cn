@@ -658,11 +658,11 @@ class Generator:
 
         for line in lines:
             # documentclass 替换
-            m = re.match(r'(\\documentclass)\[(.+?)\]\{(guji|ltc-guji)\}', line)
+            m = re.match(r'(\\documentclass)\[(.+?)\]\{(ltc-guji|guji)\}', line)
             if m:
                 template_name = m.group(2)
                 digital_name = template_map.get(template_name, template_name)
-                result.append(f'\\documentclass[{digital_name}]{{guji-digital}}')
+                result.append(f'\\documentclass[{digital_name}]{{ltc-guji-digital}}')
                 continue
 
             # 去掉不需要的 \usepackage

@@ -12,7 +12,7 @@
 % See the License for the specific language governing permissions and
 % limitations under the License.
 
-\ProvidesExplPackage{core/luatex-cn-core-page}{2026/02/18} {0.2.9}{Page geometry and background support}
+\ProvidesExplPackage{core/luatex-cn-core-page}{2026/02/19} {0.3.0}{Page geometry and background support}
 
 % Global token lists for page parameters (centralized)
 \tl_new:N \l__luatexcn_page_paper_width_tl
@@ -346,14 +346,14 @@
 % Simplified Chinese / 简体
 \NewEnvironmentCopy{页}{Page}
 \NewCommandCopy{\页面设置}{\pageSetup}
-\NewCommandCopy{\启用分页裁剪}{\enableSplitPage}
-\NewCommandCopy{\禁用分页裁剪}{\disableSplitPage}
+\NewCommandCopy{\开启分页}{\enableSplitPage}
+\NewCommandCopy{\关闭分页}{\disableSplitPage}
 \NewCommandCopy{\设置页码}{\SetPageNumber}
 \NewCommandCopy{\重置页码}{\ResetPageNumber}
 % Traditional Chinese / 繁体
 \NewCommandCopy{\頁面設置}{\pageSetup}
-\NewCommandCopy{\啟用分頁裁剪}{\enableSplitPage}
-\NewCommandCopy{\禁用分頁裁剪}{\disableSplitPage}
+\NewCommandCopy{\開啟分頁}{\enableSplitPage}
+\NewCommandCopy{\關閉分頁}{\disableSplitPage}
 \NewCommandCopy{\設置頁碼}{\SetPageNumber}
 \NewCommandCopy{\重置頁碼}{\ResetPageNumber}
 
@@ -372,7 +372,7 @@
     右边距 .tl_set:N = \l__luatexcn_page_margin_right_tl,
     页脚距 .tl_set:N = \l__luatexcn_page_footskip_tl,
     页头距 .tl_set:N = \l__luatexcn_page_topskip_tl,
-    启用分页 .bool_set:N = \l__luatexcn_page_split_enabled_bool,
+    开启分页 .bool_set:N = \l__luatexcn_page_split_enabled_bool,
     右页优先 .bool_set:N = \l__luatexcn_page_split_right_first_bool,
     页码样式 .tl_set:N = \l__luatexcn_page_number_style_tl,
     页码字号 .tl_set:N = \l__luatexcn_page_number_font_size_tl,
@@ -385,7 +385,7 @@
     右邊距 .tl_set:N = \l__luatexcn_page_margin_right_tl,
     頁腳距 .tl_set:N = \l__luatexcn_page_footskip_tl,
     頁頭距 .tl_set:N = \l__luatexcn_page_topskip_tl,
-    啟用分頁 .bool_set:N = \l__luatexcn_page_split_enabled_bool,
+    開啟分頁 .bool_set:N = \l__luatexcn_page_split_enabled_bool,
     右頁優先 .bool_set:N = \l__luatexcn_page_split_right_first_bool,
     頁碼樣式 .tl_set:N = \l__luatexcn_page_number_style_tl,
     頁碼字號 .tl_set:N = \l__luatexcn_page_number_font_size_tl,

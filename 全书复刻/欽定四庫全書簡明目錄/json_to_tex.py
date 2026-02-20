@@ -162,7 +162,7 @@ def json_to_tex(json_file, output_file, template_file=None):
 
 \usepackage{enumitem} % For better list control if needed
 \usepackage{tikz}
-% \禁用分页裁剪
+% \关闭分页
 \无标点模式
 \setmainfont{TW-Kai}
 

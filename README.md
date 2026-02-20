@@ -4,7 +4,7 @@
 
 致力于基于 LuaTeX 引擎实现最纯粹、最高质量的中文排版支持。已完成对常见古籍版式的像素级复刻，能够直观地处理版心、夹注、侧批、眉批、脚注、印章、句读、改字、标点等等功能。同时支持现代繁体竖排，支持大陆与台湾不同标点标准。灵活支持用户自定义模板。
 
-CTAN: [v0.1.1](https://ctan.org/pkg/luatex-cn) | GitHub Release: [v0.2.9](https://github.com/open-guji/luatex-cn/releases)
+CTAN: [v0.1.1](https://ctan.org/pkg/luatex-cn) | GitHub Release: [v0.3.0](https://github.com/open-guji/luatex-cn/releases)
 
 > **[Wiki 用户手册](https://github.com/open-guji/luatex-cn/wiki)** ｜ **[快速入门](https://github.com/open-guji/luatex-cn/wiki/Quick-Start)** ｜ **[命令索引](https://github.com/open-guji/luatex-cn/wiki/Command-Reference)** ｜ **[更新日志](https://github.com/open-guji/luatex-cn/wiki/Changelog)**
 
@@ -70,7 +70,7 @@ tlmgr install luatex-cn
 创建 `test.tex`，写入以下内容：
 
 ```latex
-\documentclass[四库全书]{guji}
+\documentclass[四库全书]{ltc-guji}
 \句读模式
 %\setmainfont{TW-Kai}
 
@@ -116,11 +116,29 @@ lualatex test.tex
 
 | 文档类 | 用途 | 示例 |
 |--------|------|------|
-| **`guji`** | 传统古籍排版（版心、鱼尾、丝栏） | `\documentclass{guji}` |
-| **`cn-vbook`** | 现代大陆竖排书籍 | `\documentclass{cn-vbook}` |
-| **`tw-vbook`** | 现代台湾竖排书籍 | `\documentclass{tw-vbook}` |
+| **`ltc-guji`** | 传统古籍排版（版心、鱼尾、丝栏） | `\documentclass{ltc-guji}` |
+| **`ltc-cn-vbook`** | 现代大陆竖排书籍 | `\documentclass{ltc-cn-vbook}` |
+| **`ltc-tw-vbook`** | 现代台湾竖排书籍 | `\documentclass{ltc-tw-vbook}` |
 
 > 所有命令都支持简体、繁体中文名称。例如 `\夹注{...}`、`\侧批{...}`、`\begin{正文}`。
+
+## 模板
+
+除了默认模板，luatex-cn 支持自定义模板。欢迎贡献新的模板！请将模板文件放在 [模板目录](模板/) 并提交 Pull Request。推荐模板：
+
+| 模板 | 说明 | 源码 |
+|------|------|------|
+| **四库全书文渊阁本** | 八行二十一字，正文首页带"文渊阁宝"印章，目录封面黄底，页面淡黄背景 | [cfg](模板/四库全书文渊阁本.cfg) |
+
+在文档中使用模板：
+```latex
+\documentclass[四库全书文渊阁本]{ltc-guji}
+\begin{document}
+  ...
+\end{document}
+```
+
+。
 
 ## 系统要求
 

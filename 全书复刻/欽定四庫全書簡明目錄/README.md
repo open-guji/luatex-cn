@@ -8,8 +8,10 @@
 
 图片来源：https://archive.org/details/06064237.cn/page/n1/mode/2up
 
-文本来源：OCR 识别，参考多个其他来源进行校对
-- https://ctext.org/wiki.pl?if=gb&chapter=3658735 
+文本来源：OCR 识别，并参考其他来源进行校对
+- https://ctext.org/wiki.pl?if=gb&chapter=3658735
+
+文本内容经过处理已经发布到[维基文库](https://zh.wikisource.org/wiki/%E5%9B%9B%E5%BA%AB%E5%85%A8%E6%9B%B8%E7%B0%A1%E6%98%8E%E7%9B%AE%E9%8C%84/%E5%8D%B7001)，欢迎进行校对。
 
 ## 文件
 - `tex/` - LaTeX 源文件

@@ -17,7 +17,7 @@
 %
 \RequirePackage{expl3}
 \RequirePackage{xparse}
-\ProvidesExplPackage {guji/luatex-cn-guji-jiazhu} {2026/02/18} {0.2.9} {Jiazhu (Dual-column notes) support}
+\ProvidesExplPackage {guji/luatex-cn-guji-jiazhu} {2026/02/19} {0.3.0} {Jiazhu (Dual-column notes) support}
 
 % Load the core textflow engine
 \RequirePackage{core/luatex-cn-core-textflow}
@@ -92,11 +92,12 @@
     % 简体
     字号 .tl_set:N = \l__luatexcn_jiazhu_size_tl,
     字体 .tl_set:N = \l__luatexcn_jiazhu_font_tl,
-    字色 .tl_set:N = \l__luatexcn_jiazhu_font_color_tl,
+    字体颜色 .tl_set:N = \l__luatexcn_jiazhu_font_color_tl,
     对齐 .tl_set:N = \l__luatexcn_jiazhu_align_tl,
     % 繁体（与简体不同形的）
     字號 .tl_set:N = \l__luatexcn_jiazhu_size_tl,
     字體 .tl_set:N = \l__luatexcn_jiazhu_font_tl,
+    字體顏色 .tl_set:N = \l__luatexcn_jiazhu_font_color_tl,
     對齊 .tl_set:N = \l__luatexcn_jiazhu_align_tl,
   }
 \ExplSyntaxOff

@@ -12,13 +12,13 @@
 % See the License for the specific language governing permissions and
 % limitations under the License.
 
-% tw-vbook.cls - A document class for modern vertical Chinese typesetting.
-% Same as cn-vbook but with Taiwan-style punctuation by default.
+% ltc-tw-vbook.cls - A document class for modern vertical Chinese typesetting.
+% Same as ltc-cn-vbook but with Taiwan-style punctuation by default.
 
 \RequirePackage{expl3}
 \RequirePackage{l3keys2e}
 \RequirePackage{core/luatex-cn-core-template}
-\ProvidesExplClass {tw-vbook} {2026/02/18} {0.2.9} {Chinese Vertical Book Class (Taiwan)}
+\ProvidesExplClass {ltc-tw-vbook} {2026/02/19} {0.3.0} {Chinese Vertical Book Class (Taiwan)}
 
 % ============================================================================
 % Variables
@@ -74,7 +74,7 @@
 
 % Load default config (for Taiwan variant)
 \InputIfFileExists{configs/luatex-cn-tw-vbook-default.cfg}{}{
-  \PackageWarning{tw-vbook}{Config~file~configs/luatex-cn-tw-vbook-default.cfg~not~found}
+  \PackageWarning{ltc-tw-vbook}{Config~file~configs/luatex-cn-tw-vbook-default.cfg~not~found}
 }
 
 % Apply initial template from class options

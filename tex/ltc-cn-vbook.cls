@@ -12,13 +12,13 @@
 % See the License for the specific language governing permissions and
 % limitations under the License.
 
-% cn-vbook.cls - A document class for modern vertical Chinese typesetting.
+% ltc-cn-vbook.cls - A document class for modern vertical Chinese typesetting.
 % Default: Modern vertical layout.
 
 \RequirePackage{expl3}
 \RequirePackage{l3keys2e}
 \RequirePackage{core/luatex-cn-core-template}
-\ProvidesExplClass {cn-vbook} {2026/02/18} {0.2.9} {Chinese Vertical Book Class}
+\ProvidesExplClass {ltc-cn-vbook} {2026/02/19} {0.3.0} {Chinese Vertical Book Class}
 
 % ============================================================================
 % Variables
@@ -74,7 +74,7 @@
 
 % Load default config
 \InputIfFileExists{configs/luatex-cn-vbook-default.cfg}{}{
-  \PackageWarning{cn-vbook}{Config~file~configs/luatex-cn-vbook-default.cfg~not~found}
+  \PackageWarning{ltc-cn-vbook}{Config~file~configs/luatex-cn-vbook-default.cfg~not~found}
 }
 
 % Apply initial template from class options

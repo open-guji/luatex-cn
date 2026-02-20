@@ -17,7 +17,7 @@
 %
 \RequirePackage{expl3}
 \RequirePackage{xparse}
-\ProvidesExplPackage {banxin/luatex-cn-banxin} {2026/02/18} {0.2.9} {Ancient Book Banxin Support}
+\ProvidesExplPackage {banxin/luatex-cn-banxin} {2026/02/19} {0.3.0} {Ancient Book Banxin Support}
 
 \lua_now:e {
   package.loaded["banxin.luatex-cn-banxin-main"]~=~nil;
@@ -35,10 +35,6 @@
 \tl_new:N \l__luatexcn_banxin_upper_ratio_tl
 \tl_new:N \l__luatexcn_banxin_middle_ratio_tl
 
-% Banxin padding
-\tl_new:N \l__luatexcn_banxin_padding_top_tl
-\tl_new:N \l__luatexcn_banxin_padding_bottom_tl
-
 % Banxin divider
 \bool_new:N \l__luatexcn_banxin_divider_bool
 
@@ -51,6 +47,7 @@
 \tl_new:N \l__luatexcn_banxin_book_name_font_size_tl
 \tl_new:N \l__luatexcn_banxin_book_name_grid_height_tl
 \tl_new:N \l__luatexcn_banxin_book_name_align_tl
+\tl_new:N \l__luatexcn_banxin_book_name_top_padding_tl
 
 % Chapter title variables
 \tl_new:N \l__luatexcn_banxin_chapter_title_tl
@@ -58,11 +55,13 @@
 \tl_new:N \l__luatexcn_banxin_chapter_title_grid_height_tl
 \tl_new:N \l__luatexcn_banxin_chapter_title_top_margin_tl
 \int_new:N \l__luatexcn_banxin_chapter_title_cols_int
+\tl_new:N \l__luatexcn_banxin_chapter_title_align_tl
 
 % Page number variables
 \tl_new:N \l__luatexcn_banxin_page_number_font_size_tl
 \tl_new:N \l__luatexcn_banxin_page_number_grid_height_tl
 \tl_new:N \l__luatexcn_banxin_page_number_align_tl
+\tl_new:N \l__luatexcn_banxin_page_number_bottom_padding_tl
 
 % Publisher variables
 \tl_new:N \l__luatexcn_banxin_publisher_tl
@@ -84,6 +83,8 @@
     grid-height .initial:n = {},
     align .tl_set:N = \l__luatexcn_banxin_book_name_align_tl,
     align .initial:n = {center},
+    top-padding .tl_set:N = \l__luatexcn_banxin_book_name_top_padding_tl,
+    top-padding .initial:n = {2pt},
   }
 
 % chapter sub-namespace
@@ -97,6 +98,8 @@
     top-margin .initial:n = {20pt},
     cols .int_set:N = \l__luatexcn_banxin_chapter_title_cols_int,
     cols .initial:n = 1,
+    align .tl_set:N = \l__luatexcn_banxin_chapter_title_align_tl,
+    align .initial:n = {center},
   }
 
 % page-number sub-namespace
@@ -108,6 +111,8 @@
     grid-height .initial:n = {},
     align .tl_set:N = \l__luatexcn_banxin_page_number_align_tl,
     align .initial:n = {right-bottom},
+    bottom-padding .tl_set:N = \l__luatexcn_banxin_page_number_bottom_padding_tl,
+    bottom-padding .initial:n = {10pt},
   }
 
 % publisher sub-namespace
@@ -138,13 +143,6 @@
 
     banxin-middle-ratio .tl_set:N = \l__luatexcn_banxin_middle_ratio_tl,
     banxin-middle-ratio .initial:n = {0.56},
-
-    % Banxin padding
-    banxin-padding-top .tl_set:N = \l__luatexcn_banxin_padding_top_tl,
-    banxin-padding-top .initial:n = {2pt},
-
-    banxin-padding-bottom .tl_set:N = \l__luatexcn_banxin_padding_bottom_tl,
-    banxin-padding-bottom .initial:n = {10pt},
 
     % Banxin divider
     banxin-divider .bool_set:N = \l__luatexcn_banxin_divider_bool,
@@ -262,6 +260,8 @@
     上留白 .tl_set:N = \l__luatexcn_banxin_chapter_title_top_margin_tl,
     列数 .int_set:N = \l__luatexcn_banxin_chapter_title_cols_int,
     列數 .int_set:N = \l__luatexcn_banxin_chapter_title_cols_int,
+    对齐 .tl_set:N = \l__luatexcn_banxin_chapter_title_align_tl,
+    對齊 .tl_set:N = \l__luatexcn_banxin_chapter_title_align_tl,
   }
 
 % --- page-number sub-namespace ---
@@ -287,8 +287,6 @@
     版心 .bool_set:N = \l__luatexcn_banxin_on_bool,
     版心上比 .tl_set:N = \l__luatexcn_banxin_upper_ratio_tl,
     版心中比 .tl_set:N = \l__luatexcn_banxin_middle_ratio_tl,
-    版心上填充 .tl_set:N = \l__luatexcn_banxin_padding_top_tl,
-    版心下填充 .tl_set:N = \l__luatexcn_banxin_padding_bottom_tl,
     版心分隔线 .bool_set:N = \l__luatexcn_banxin_divider_bool,
     版心分隔線 .bool_set:N = \l__luatexcn_banxin_divider_bool,
     上鱼尾 .bool_set:N = \l__luatexcn_banxin_upper_yuwei_bool,

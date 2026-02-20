@@ -19,7 +19,7 @@
 \RequirePackage{core/luatex-cn-core-base}
 \RequirePackage{expl3}
 \RequirePackage{xparse}
-\ProvidesExplPackage {core/luatex-cn-core-style} {2026/02/18} {0.2.9} {Generic Style Override for Vertical Typesetting}
+\ProvidesExplPackage {core/luatex-cn-core-style} {2026/02/19} {0.3.0} {Generic Style Override for Vertical Typesetting}
 
 \makeatletter
 
@@ -149,7 +149,7 @@
     % 简体
     字号 .tl_set:N = \l__luatexcn_style_size_tl,
     字体 .tl_set:N = \l__luatexcn_style_font_tl,
-    字色 .tl_set:N = \l__luatexcn_style_color_tl,
+    字体颜色 .tl_set:N = \l__luatexcn_style_color_tl,
     格高 .tl_set:N = \l__luatexcn_style_grid_height_tl,
     上间距 .tl_set:N = \l__luatexcn_style_spacing_top_tl,
     下间距 .tl_set:N = \l__luatexcn_style_spacing_bottom_tl,
@@ -159,6 +159,7 @@
     % 繁体（与简体不同形的）
     字號 .tl_set:N = \l__luatexcn_style_size_tl,
     字體 .tl_set:N = \l__luatexcn_style_font_tl,
+    字體顏色 .tl_set:N = \l__luatexcn_style_color_tl,
     上間距 .tl_set:N = \l__luatexcn_style_spacing_top_tl,
     下間距 .tl_set:N = \l__luatexcn_style_spacing_bottom_tl,
     間距 .meta:n = { spacing-top = #1, spacing-bottom = #1 },

@@ -320,10 +320,10 @@ local function safe_resolve(val, font_size_sp)
 end
 
 local function calculate_start_position(anchor_y_sp, metadata, main_grid_height)
-    local yoffset_grid = safe_resolve(metadata.yoffset, main_grid_height) / main_grid_height
+    local yshift_grid = safe_resolve(metadata.yshift, main_grid_height) / main_grid_height
     local padding_top_grid = safe_resolve(metadata.padding_top, main_grid_height) / main_grid_height
     local anchor_row = anchor_y_sp / main_grid_height
-    return math.max(anchor_row, padding_top_grid) + yoffset_grid
+    return math.max(anchor_row, padding_top_grid) + yshift_grid
 end
 
 local function calculate_next_node_pos(curr_p, curr_c, curr_r, node_id, config)

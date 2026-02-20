@@ -13,7 +13,7 @@
 % limitations under the License.
 
 \RequirePackage{core/luatex-cn-core-base}
-\ProvidesExplPackage{core/luatex-cn-core-content}{2026/02/18} {0.2.9}{Content layout and border support}
+\ProvidesExplPackage{core/luatex-cn-core-content}{2026/02/19} {0.3.0}{Content layout and border support}
 
 % Centralized variables for content border settings
 \bool_new:N \l__luatexcn_content_border_bool
@@ -103,8 +103,8 @@
     font-size .tl_set:N = \l__luatexcn_content_font_size_tl,
     font-size .initial:n = {12pt},
 
-    font-name .tl_set:N = \l__luatexcn_content_font_name_tl,
-    font-name .initial:n = {},
+    font .tl_set:N = \l__luatexcn_content_font_name_tl,
+    font .initial:n = {},
 
     font-features .tl_set:N = \l__luatexcn_content_font_features_tl,
     font-features .initial:n = {},
@@ -338,7 +338,7 @@
 % Shared Helper Functions for Content Environments
 % ============================================================================
 
-% Helper: Setup font if font-name is specified
+% Helper: Setup font if font is specified
 % Uses RawFeature={+vert,+vrt2} as default for CJK vertical typesetting
 \cs_new_protected:Npn \__luatexcn_content_setup_font:
   {
@@ -420,7 +420,6 @@
             banxin_ratio~=~"\l__luatexcn_content_banxin_ratio_tl",
           })
         }
-        \LtcIfDebugT { \iow_term:x { Guji~Layout:~grid-width=\l__luatexcn_content_grid_width_tl~,~grid-height=\l__luatexcn_content_grid_height_tl~,~height=\l__luatexcn_content_height_tl } }
       }
   }
 
@@ -468,9 +467,9 @@
     格高 .tl_set:N = \l__luatexcn_content_grid_height_tl,
     纵对齐 .tl_set:N = \l__luatexcn_content_valign_tl,
     字号 .tl_set:N = \l__luatexcn_content_font_size_tl,
-    字体名 .tl_set:N = \l__luatexcn_content_font_name_tl,
+    字体 .tl_set:N = \l__luatexcn_content_font_name_tl,
     字体特性 .tl_set:N = \l__luatexcn_content_font_features_tl,
-    字色 .tl_set:N = \l__luatexcn_content_font_color_tl,
+    字体颜色 .tl_set:N = \l__luatexcn_content_font_color_tl,
     行数 .int_set:N = \l__luatexcn_content_n_column_int,
     版面行数 .tl_set:N = \l__luatexcn_content_page_columns_tl,
     高度 .tl_set:N = \l__luatexcn_content_height_tl,
@@ -498,8 +497,9 @@
     格寬 .tl_set:N = \l__luatexcn_content_grid_width_tl,
     縱對齊 .tl_set:N = \l__luatexcn_content_valign_tl,
     字號 .tl_set:N = \l__luatexcn_content_font_size_tl,
-    字體名 .tl_set:N = \l__luatexcn_content_font_name_tl,
+    字體 .tl_set:N = \l__luatexcn_content_font_name_tl,
     字體特性 .tl_set:N = \l__luatexcn_content_font_features_tl,
+    字體顏色 .tl_set:N = \l__luatexcn_content_font_color_tl,
     行數 .int_set:N = \l__luatexcn_content_n_column_int,
     版面行數 .tl_set:N = \l__luatexcn_content_page_columns_tl,
     列間距 .tl_set:N = \l__luatexcn_content_col_spacing_tl,

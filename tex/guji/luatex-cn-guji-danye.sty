@@ -12,7 +12,7 @@
 % See the License for the specific language governing permissions and
 % limitations under the License.
 
-\ProvidesExplPackage{guji/luatex-cn-guji-danye}{2026/02/18} {0.2.9}{Single page support for traditional Chinese books}
+\ProvidesExplPackage{guji/luatex-cn-guji-danye}{2026/02/19} {0.3.0}{Single page support for traditional Chinese books}
 
 % ============================================================================
 % SinglePage Environment (单页)
@@ -84,6 +84,7 @@
   \begin{SinglePage}[#1]
     \keys_set:nn { luatexcn / content } { border = false, outer-border = false }
     \begin{正文}
+      \char"200B\relax % Zero-width space placeholder to ensure page renders even when empty
       \l__luatexcn_empty_danye_body_tl
     \end{正文}
   \end{SinglePage}

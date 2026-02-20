@@ -33,15 +33,17 @@
 % Syntax: \begin{Paragraph}[indent=2, first-indent=0, bottom-indent=1]
 
 \int_new:N \g_luatexcn_paragraph_block_id_int
+\tl_new:N \l__luatexcn_paragraph_first_indent_tl
+\tl_new:N \l__luatexcn_paragraph_bottom_indent_tl
 
 \keys_define:nn { luatexcn / paragraph }
   {
     indent .int_set:N = \l__luatexcn_paragraph_indent_int,
     indent .initial:n = 0,
-    first-indent .int_set:N = \l__luatexcn_paragraph_first_indent_int,
-    first-indent .initial:n = -1, % -1 means use indent value
-    bottom-indent .int_set:N = \l__luatexcn_paragraph_bottom_indent_int,
-    bottom-indent .initial:n = 0,
+    first-indent .tl_set:N = \l__luatexcn_paragraph_first_indent_tl,
+    first-indent .initial:n = {}, % empty means use indent value
+    bottom-indent .tl_set:N = \l__luatexcn_paragraph_bottom_indent_tl,
+    bottom-indent .initial:n = {}, % empty means use indent value
   }
 
 \NewDocumentEnvironment{Paragraph}{ O{} }
@@ -54,20 +56,27 @@
     \setluatexattribute\cnverticalblockid { \int_use:N \g_luatexcn_paragraph_block_id_int }
 
     % Push style to stack with indent values
-    \edef\paragraph_style_id{\lua_now:e {
-      local ~ sr = require('util.luatex-cn-style-registry')
-      tex.print(sr.push_indent(\int_use:N \l__luatexcn_paragraph_indent_int, \int_use:N \l__luatexcn_paragraph_first_indent_int))
-    }}
+    \tl_if_empty:NTF \l__luatexcn_paragraph_first_indent_tl
+      { \edef\paragraph_style_id{\lua_now:e {
+        local ~ sr = require('util.luatex-cn-style-registry')
+        tex.print(sr.push_indent(\int_use:N \l__luatexcn_paragraph_indent_int, -1))
+      }} }
+      { \edef\paragraph_style_id{\lua_now:e {
+        local ~ sr = require('util.luatex-cn-style-registry')
+        tex.print(sr.push_indent(\int_use:N \l__luatexcn_paragraph_indent_int, tonumber("\l__luatexcn_paragraph_first_indent_tl")))
+      }} }
     \setluatexattribute\cnverticalstyle{\paragraph_style_id}
 
     % Set indent attributes (used by layout-grid.lua)
     \setluatexattribute\cnverticalindent{\l__luatexcn_paragraph_indent_int}
-    \int_compare:nNnTF \l__luatexcn_paragraph_first_indent_int = {-1}
+    \tl_if_empty:NTF \l__luatexcn_paragraph_first_indent_tl
       { \setluatexattribute\cnverticalfirstindent{\l__luatexcn_paragraph_indent_int} }
-      { \setluatexattribute\cnverticalfirstindent{\l__luatexcn_paragraph_first_indent_int} }
+      { \setluatexattribute\cnverticalfirstindent{\l__luatexcn_paragraph_first_indent_tl} }
 
     % Set Bottom Indent (still via attribute, as it's less common)
-    \setluatexattribute\cnverticalrightindent{\l__luatexcn_paragraph_bottom_indent_int}
+    \tl_if_empty:NTF \l__luatexcn_paragraph_bottom_indent_tl
+      { \setluatexattribute\cnverticalrightindent{0} }
+      { \setluatexattribute\cnverticalrightindent{\l__luatexcn_paragraph_bottom_indent_tl} }
 
     % Redefine \\ to restore temporary indent after line break
     \cs_set_eq:NN \__luatexcn_original_newline: \\
@@ -267,10 +276,10 @@
   {
     缩进 .int_set:N = \l__luatexcn_paragraph_indent_int,
     縮進 .int_set:N = \l__luatexcn_paragraph_indent_int,
-    首行缩进 .int_set:N = \l__luatexcn_paragraph_first_indent_int,
-    首行縮進 .int_set:N = \l__luatexcn_paragraph_first_indent_int,
-    末行缩进 .int_set:N = \l__luatexcn_paragraph_bottom_indent_int,
-    末行縮進 .int_set:N = \l__luatexcn_paragraph_bottom_indent_int,
+    首行缩进 .tl_set:N = \l__luatexcn_paragraph_first_indent_tl,
+    首行縮進 .tl_set:N = \l__luatexcn_paragraph_first_indent_tl,
+    末行缩进 .tl_set:N = \l__luatexcn_paragraph_bottom_indent_tl,
+    末行縮進 .tl_set:N = \l__luatexcn_paragraph_bottom_indent_tl,
   }
 
 \ExplSyntaxOff

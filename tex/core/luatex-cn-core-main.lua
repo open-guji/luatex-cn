@@ -447,12 +447,13 @@ local function compute_grid_layout(list, params, engine_ctx, plugin_contexts, p_
         layout_params.banxin_on = engine_ctx.banxin_on
     end
 
-    local layout_map, total_pages, page_chapter_titles, banxin_registry = layout.calculate_grid_positions(list,
+    local layout_map, total_pages, page_chapter_titles, banxin_registry, page_resets = layout.calculate_grid_positions(list,
         engine_ctx.g_height,
         engine_ctx.line_limit, engine_ctx.n_column, engine_ctx.page_columns,
         layout_params)
     engine_ctx.banxin_registry = banxin_registry
     engine_ctx.page_chapter_titles = page_chapter_titles
+    engine_ctx.page_resets = page_resets or {}
     engine_ctx.total_pages = total_pages
 
     dbg.log(string.format("Stage 2: Laid out total_pages = %d", total_pages))

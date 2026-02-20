@@ -18,10 +18,10 @@
 \RequirePackage{core/luatex-cn-core-base}
 \RequirePackage{expl3}
 \RequirePackage{xparse}
-\ProvidesExplPackage {core/luatex-cn-core-sidenote} {2026/02/18} {0.2.9} {SideNode Support for Vertical Typesetting}
+\ProvidesExplPackage {core/luatex-cn-core-sidenote} {2026/02/19} {0.3.0} {SideNode Support for Vertical Typesetting}
 
 % Define keys for SideNode
-\tl_new:N \l__luatexcn_sidenote_yoffset_tl
+\tl_new:N \l__luatexcn_sidenote_yshift_tl
 \tl_new:N \l__luatexcn_sidenote_grid_height_tl
 \tl_new:N \l__luatexcn_sidenote_font_size_tl
 \tl_new:N \l__luatexcn_sidenote_color_tl
@@ -30,8 +30,8 @@
 
 \keys_define:nn { luatexcn / sidenode }
   {
-    yoffset .tl_set:N = \l__luatexcn_sidenote_yoffset_tl,
-    yoffset .initial:n = 0pt,
+    yshift .tl_set:N = \l__luatexcn_sidenote_yshift_tl,
+    yshift .initial:n = 0pt,
     grid-height .tl_set:N = \l__luatexcn_sidenote_grid_height_tl,
     font-size .tl_set:N = \l__luatexcn_sidenote_font_size_tl,
     font-size .initial:n = 10pt,
@@ -50,7 +50,33 @@
 
 \NewDocumentCommand{\SideNode}{ O{} +m }{%
   \group_begin:
-    \keys_set:nn { luatexcn / sidenode } { #1 }
+    % Process optional argument: handle positional parameter (plain number → em)
+    \tl_if_empty:nTF { #1 }
+      {
+        % Empty argument: no special processing needed
+      }
+      {
+        % Check if it's a plain number by attempting regex match
+        \regex_match:nnTF { ^\d+(?:\.\d+)?$ } { #1 }
+          {
+            % Plain number: convert to em
+            \tl_set:Nn \l_tmpa_tl { yshift = #1 em }
+            \keys_set:nn { luatexcn / sidenode } { yshift = #1 em }
+          }
+          {
+            % Not a plain number: check if it has '='
+            \regex_match:nnTF { = } { #1 }
+              {
+                % Contains '=': use as-is (named parameter like color=red)
+                \keys_set:nn { luatexcn / sidenode } { #1 }
+              }
+              {
+                % No '=': treat as positional yshift with units
+                \keys_set:nn { luatexcn / sidenode } { yshift = #1 }
+              }
+          }
+      }
+    % If #1 was empty, no keys to set (use defaults)
     % Use explicit font size
     \tl_if_empty:NTF \l__luatexcn_sidenote_font_size_tl
       { \dim_set:Nn \l_tmpa_dim { \f@size pt } }
@@ -68,7 +94,7 @@
 
     % Pass style attributes to Lua (style registration handled in Lua layer)
     \lua_now:e { vertical_sidenote.register_sidenote(\int_value:w \l_tmpa_box, {
-      yoffset = vertical_constants.to_dimen([=[\luaescapestring{\tl_use:N \l__luatexcn_sidenote_yoffset_tl}]=]) ~ or ~ 0,
+      yshift = vertical_constants.to_dimen([=[\luaescapestring{\tl_use:N \l__luatexcn_sidenote_yshift_tl}]=]) ~ or ~ 0,
       grid_height = \int_value:w \l_tmpb_dim,
       padding_top = vertical_constants.to_dimen([=[\luaescapestring{\tl_use:N \l__luatexcn_sidenote_padding_top_tl}]=]) ~ or ~ 0,
       padding_bottom = vertical_constants.to_dimen([=[\luaescapestring{\tl_use:N \l__luatexcn_sidenote_padding_bottom_tl}]=]) ~ or ~ 0,
@@ -98,14 +124,14 @@
 \keys_define:nn { luatexcn / sidenode }
   {
     % 简体
-    纵偏 .tl_set:N = \l__luatexcn_sidenote_yoffset_tl,
+    纵移 .tl_set:N = \l__luatexcn_sidenote_yshift_tl,
     格高 .tl_set:N = \l__luatexcn_sidenote_grid_height_tl,
     字号 .tl_set:N = \l__luatexcn_sidenote_font_size_tl,
     颜色 .tl_set:N = \l__luatexcn_sidenote_color_tl,
     边框上填充 .tl_set:N = \l__luatexcn_sidenote_padding_top_tl,
     边框下填充 .tl_set:N = \l__luatexcn_sidenote_padding_bottom_tl,
     % 繁体（与简体不同形的）
-    縱偏 .tl_set:N = \l__luatexcn_sidenote_yoffset_tl,
+    縱移 .tl_set:N = \l__luatexcn_sidenote_yshift_tl,
     字號 .tl_set:N = \l__luatexcn_sidenote_font_size_tl,
     顏色 .tl_set:N = \l__luatexcn_sidenote_color_tl,
   }

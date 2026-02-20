@@ -17,7 +17,7 @@
 %
 \NeedsTeXFormat{LaTeX2e}
 \RequirePackage{expl3}
-\ProvidesExplPackage {debug/luatex-cn-debug} {2026/02/18} {0.2.9} {Centralized debugging for luatex-cn}
+\ProvidesExplPackage {debug/luatex-cn-debug} {2026/02/19} {0.3.0} {Centralized debugging for luatex-cn}
 
 % ============================================================================
 % Initialization
@@ -55,12 +55,6 @@
 \NewDocumentCommand{\LtcDebugColor}{ m m }
   {
     \lua_now:e { luatex_cn_debug.modules["#1"].color = "#2" }
-  }
-
-% Conditional execution based on debug state (true branch only)
-\NewDocumentCommand{\LtcIfDebugT}{ +m }
-  {
-    \int_compare:nNnT { \lua_now:n { tex.print(luatex_cn_debug.global_enabled~and~1~or~0) } } = { 1 } { #1 }
   }
 
 % Show frame around text area (uses showframe package)

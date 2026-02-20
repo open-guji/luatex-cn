@@ -421,11 +421,24 @@ local function post_process_ctan(staging_path)
   print("\n=== Post-processing complete ===\n")
 end
 
+-- Read version from VERSION file
+local function read_version()
+  local f = io.open("VERSION", "r")
+  if not f then return "unknown" end
+  local version = f:read("*a"):gsub("^%s+", ""):gsub("%s+$", "")
+  f:close()
+  return version
+end
+
 -- Custom CTAN build function (call via: texlua build.lua ctan)
 local function ctan_custom()
   print("\n========================================")
   print("  LuaTeX-CN Custom CTAN Build")
   print("========================================\n")
+
+  -- Read version
+  local version = read_version()
+  print("Version: " .. version .. "\n")
 
   -- Step 1: Sanitize files
   sanitize_project_files()
@@ -479,7 +492,7 @@ local function ctan_custom()
 
   -- Step 7: Create final zip
   print("\n>>> Creating CTAN archive...")
-  local zip_name = module .. "-ctan.zip"
+  local zip_name = module .. "-ctan-v" .. version .. ".zip"
   local zip_path = join_path(ctan_dir, zip_name)
 
   -- Remove old zip if exists
@@ -498,18 +511,26 @@ local function ctan_custom()
     os.execute('cd "' .. ctan_dir .. '" && zip -r "' .. zip_name .. '" "' .. module .. '"')
   end
 
-  -- Also copy to project root for convenience
-  local root_zip = module .. "-ctan.zip"
+  -- Also copy to project root for convenience (with version in name)
+  local root_zip = module .. "-ctan-v" .. version .. ".zip"
   if path_exists(root_zip) then
     remove_path(root_zip)
   end
   copy_path(zip_path, root_zip)
+
+  -- Also keep a symlink/copy with the generic name for backwards compatibility
+  local generic_zip = module .. "-ctan.zip"
+  if path_exists(generic_zip) then
+    remove_path(generic_zip)
+  end
+  copy_path(zip_path, generic_zip)
 
   print("\n========================================")
   print("  CTAN Package Build Complete!")
   print("========================================")
   print("Staging area: " .. staging_path)
   print("Archive: " .. root_zip)
+  print("Generic name: " .. generic_zip)
   print("")
 
   return 0

@@ -126,6 +126,7 @@ local function create_grid_context(params, line_limit, p_cols)
         page_has_content = false,
         chapter_title = initial_chapter,
         page_chapter_titles = {}, -- To store chapter title for each page
+        page_resets = {}, -- page_resets[page] = true when a \chapter marker resets page number
         last_glyph_row = -1, -- Track last glyph row for detecting line changes
         -- Unified layout: grid = fixed cell_height + zero gap; natural = font-size + configurable gap
         default_cell_height = default_cell_height,
@@ -970,6 +971,7 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
             if new_title then
                 ctx.chapter_title = new_title
                 ctx.page_chapter_titles[ctx.cur_page] = new_title
+                ctx.page_resets[ctx.cur_page] = true
             end
         end
 
@@ -1230,7 +1232,7 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
 
     export_free_mode_data(ctx, layout_map, params)
 
-    return layout_map, ctx.cur_page + 1, ctx.page_chapter_titles, ctx.banxin_registry
+    return layout_map, ctx.cur_page + 1, ctx.page_chapter_titles, ctx.banxin_registry, ctx.page_resets
 end
 
 -- Create module table

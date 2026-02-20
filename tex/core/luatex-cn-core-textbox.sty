@@ -20,10 +20,10 @@
 \RequirePackage{core/luatex-cn-core-base}
 \RequirePackage{expl3}
 \RequirePackage{xparse}
-\ProvidesExplPackage {core/luatex-cn-core-textbox} {2026/02/18} {0.2.9} {TextBox Support for Vertical Typesetting}
+\ProvidesExplPackage {core/luatex-cn-core-textbox} {2026/02/19} {0.3.0} {TextBox Support for Vertical Typesetting}
 
 % Grid Textbox Command (Simplified for Single Column)
-% Syntax: \GridTextbox[height=N, distribute=true/false]{content}
+% Syntax: \GridTextbox[height=N, fill=true/false]{content}
 % height is in grid units (integers), width is always 1
 % Key-value interface for \GridTextbox
 \bool_new:N \l__luatexcn_textbox_border_bool
@@ -58,12 +58,8 @@
     n-cols .initial:n = 0,
     outer-cols .int_set:N = \l__luatexcn_textbox_outer_cols_int,
     outer-cols .initial:n = 0,
-    inner-grid-width .tl_set:N = \l__luatexcn_textbox_inner_gw_tl,
-    inner-grid-width .initial:n = {},
-    inner-grid-height .tl_set:N = \l__luatexcn_textbox_inner_gh_tl,
-    inner-grid-height .initial:n = {},
-    distribute .bool_set:N = \l__luatexcn_textbox_distribute_bool,
-    distribute .initial:n = false,
+    fill .bool_set:N = \l__luatexcn_textbox_distribute_bool,
+    fill .initial:n = false,
     box-align .tl_set:N = \l__luatexcn_textbox_box_align_tl,
     box-align .initial:n = {top},
     border .bool_set:N = \l__luatexcn_textbox_border_bool,
@@ -89,7 +85,9 @@
     font-size .tl_set:N = \l__luatexcn_textbox_font_size_tl,
     font-size .initial:n = {},
     grid-width .tl_set:N = \l__luatexcn_textbox_inner_gw_tl,
+    grid-width .initial:n = {},
     grid-height .tl_set:N = \l__luatexcn_textbox_inner_gh_tl,
+    grid-height .initial:n = {},
     % Border shape parameters (rect/octagon/circle)
     border-shape .tl_set:N = \l__luatexcn_textbox_border_shape_tl,
     border-shape .initial:n = {none},
@@ -291,9 +289,7 @@
     高度 .tl_set:N = \l__luatexcn_textbox_height_tl,
     列数 .int_set:N = \l__luatexcn_textbox_n_cols_int,
     外列数 .int_set:N = \l__luatexcn_textbox_outer_cols_int,
-    内格宽 .tl_set:N = \l__luatexcn_textbox_inner_gw_tl,
-    内格高 .tl_set:N = \l__luatexcn_textbox_inner_gh_tl,
-    均分 .bool_set:N = \l__luatexcn_textbox_distribute_bool,
+    填充 .bool_set:N = \l__luatexcn_textbox_distribute_bool,
     框对齐 .tl_set:N = \l__luatexcn_textbox_box_align_tl,
     边框 .bool_set:N = \l__luatexcn_textbox_border_bool,
     版心 .bool_set:N = \l__luatexcn_textbox_banxin_bool,
@@ -304,7 +300,7 @@
     横位 .tl_set:N = \l__luatexcn_textbox_x_tl,
     纵位 .tl_set:N = \l__luatexcn_textbox_y_tl,
     底色 .tl_set:N = \l__luatexcn_textbox_bg_color_tl,
-    字色 .tl_set:N = \l__luatexcn_textbox_font_color_tl,
+    字体颜色 .tl_set:N = \l__luatexcn_textbox_font_color_tl,
     字号 .tl_set:N = \l__luatexcn_textbox_font_size_tl,
     格宽 .meta:n = { grid-width = #1 },
     格高 .meta:n = { grid-height = #1 },
@@ -318,8 +314,7 @@
     % 繁体（与简体不同形的）
     列數 .int_set:N = \l__luatexcn_textbox_n_cols_int,
     外列數 .int_set:N = \l__luatexcn_textbox_outer_cols_int,
-    內格寬 .tl_set:N = \l__luatexcn_textbox_inner_gw_tl,
-    內格高 .tl_set:N = \l__luatexcn_textbox_inner_gh_tl,
+    填充 .bool_set:N = \l__luatexcn_textbox_distribute_bool,
     框對齊 .tl_set:N = \l__luatexcn_textbox_box_align_tl,
     邊框 .bool_set:N = \l__luatexcn_textbox_border_bool,
     列對齊 .meta:n = { column-align = #1 },
@@ -329,7 +324,9 @@
     橫位 .tl_set:N = \l__luatexcn_textbox_x_tl,
     縱位 .tl_set:N = \l__luatexcn_textbox_y_tl,
     字號 .tl_set:N = \l__luatexcn_textbox_font_size_tl,
+    字體顏色 .tl_set:N = \l__luatexcn_textbox_font_color_tl,
     格寬 .meta:n = { grid-width = #1 },
+    格高 .meta:n = { grid-height = #1 },
     邊框形狀 .tl_set:N = \l__luatexcn_textbox_border_shape_tl,
     邊框色 .tl_set:N = \l__luatexcn_textbox_border_color_tl,
     邊框寬 .tl_set:N = \l__luatexcn_textbox_border_width_tl,

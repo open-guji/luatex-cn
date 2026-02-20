@@ -18,7 +18,7 @@
 %
 \NeedsTeXFormat{LaTeX2e}
 \RequirePackage{expl3}
-\ProvidesExplPackage {guji/luatex-cn-guji-cover} {2026/02/18} {0.2.9} {Cover page support}
+\ProvidesExplPackage {guji/luatex-cn-guji-cover} {2026/02/19} {0.3.0} {Cover page support}
 
 \RequirePackage{environ}
 \RequirePackage{xcolor}
@@ -71,6 +71,7 @@
     \keys_set:nn { luatexcn / content } { border = false, outer-border = false }
     \keys_set:nn { luatexcn / banxin } { banxin = false }
     \begin{正文}
+      \char"200B\relax % Zero-width space placeholder to ensure page renders even when empty
       \l__luatexcn_cover_body_tl
     \end{正文}
   \end{单页}

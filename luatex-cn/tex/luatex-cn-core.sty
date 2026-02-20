@@ -1,0 +1,55 @@
+% Copyright 2026 Open-Guji (https://github.com/open-guji)
+%
+% Licensed under the Apache License, Version 2.0 (the "License");
+% you may not use this file except in compliance with the License.
+% You may obtain a copy of the License at
+%
+%     http://www.apache.org/licenses/LICENSE-2.0
+%
+% Unless required by applicable law or agreed to in writing, software
+% distributed under the License is distributed on an "AS IS" BASIS,
+% WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+% See the License for the specific language governing permissions and
+% limitations under the License.
+
+% luatex-cn-core.sty
+% Core package for luatex-cn
+% Includes vertical typesetting and font support
+%
+\NeedsTeXFormat{LaTeX2e}
+\RequirePackage{expl3}
+\ProvidesExplPackage {luatex-cn-core} {2026/02/20} {0.1.6} {Core features for luatex-cn}
+
+% Check if LuaTeX is being used
+\sys_if_engine_luatex:TF
+  { }
+  {
+    \PackageError { luatex-cn-core } { This~package~requires~LuaTeX }
+      { Please~compile~your~document~with~LuaLaTeX~instead~of~pdfLaTeX~or~XeLaTeX. }
+  }
+
+% ============================================================================
+% Load Core Dependencies
+% ============================================================================
+
+% Centralized debugging module
+\RequirePackage{debug/luatex-cn-debug}
+
+% Core vertical typesetting engine (always loaded)
+\RequirePackage{vertical/luatex-cn-vertical}
+
+% Font auto-detection module
+\RequirePackage{fonts/luatex-cn-font-autodetect}
+
+
+
+% Version info (synchronized with VERSION file in project root)
+\tl_const:Nn \c_luatexcn_core_version_tl {0.1.6}
+\cs_new:Npn \luatexcncoreversion { \c_luatexcn_core_version_tl }
+
+% Main package initialization
+\PackageInfo { luatex_cn_core } { Chinese~typesetting~core~\tl_use:N \c_luatexcn_core_version_tl \space loaded }
+
+\ExplSyntaxOff%
+%
+\endinput%

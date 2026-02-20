@@ -1,0 +1,1011 @@
+% Copyright 2026 Open-Guji (https://github.com/open-guji)
+%
+% Licensed under the Apache License, Version 2.0 (the "License");
+% you may not use this file except in compliance with the License.
+% You may obtain a copy of the License at
+%
+%     http://www.apache.org/licenses/LICENSE-2.0
+%
+% Unless required by applicable law or agreed to in writing, software
+% distributed under the License is distributed on an "AS IS" BASIS,
+% WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+% See the License for the specific language governing permissions and
+% limitations under the License.
+% vertical.sty
+% LuaTeX 竖排排版宏包
+% 这是 luatex_cn 的子包
+%
+\RequirePackage{expl3}
+\ProvidesExplPackage {vertical/luatex-cn-vertical} {2026/02/20} {0.1.6} {Chinese vertical typesetting for LuaTeX}
+
+% Check if LuaTeX is being used
+\sys_if_engine_luatex:TF
+  { }
+  {
+    \PackageError { vertical/luatex-cn-vertical } { This~package~requires~LuaTeX }
+      { Please~compile~your~document~with~LuaLaTeX. }
+  }
+
+% Load luatexbase for attributes
+\RequirePackage{luatexbase}
+\RequirePackage{xcolor}
+\RequirePackage{enumitem}
+% 设置 itemize 默认样式：空标签 + 紧凑间距（符合古籍排版风格）
+\setlist[itemize]{label={}, nosep}
+\newluatexattribute\cnverticalindent
+\newluatexattribute\cnverticalrightindent
+\newluatexattribute\cnverticaltextboxwidth
+\newluatexattribute\cnverticaltextboxheight
+\newluatexattribute\cnverticaltextboxdistribute
+\newluatexattribute\cnverticaljiazhu
+\newluatexattribute\cnverticaljiazhusub
+\newluatexattribute\cnverticaljiazhumode
+\newluatexattribute\cnverticalblockid
+\newluatexattribute\cnverticalfirstindent
+
+% Load the Lua modules
+% Robust Lua loader with error reporting is no longer needed since we use \lua_now:e
+
+\lua_now:e {
+  luatex_cn_debug.register_module("vertical", { color = "yellow" })
+}
+
+% Clear cache and Load Modules
+\lua_now:e {
+  package.loaded["vertical.luatex-cn-vertical-base-constants"]~=~nil;
+  package.loaded["vertical.luatex-cn-vertical-base-utils"]~=~nil;
+  package.loaded["vertical.luatex-cn-vertical-base-text-utils"]~=~nil;
+  package.loaded["vertical.luatex-cn-vertical-flatten-nodes"]~=~nil;
+  package.loaded["vertical.luatex-cn-vertical-layout-grid"]~=~nil;
+  package.loaded["vertical.luatex-cn-vertical-render-page"]~=~nil;
+  package.loaded["vertical.luatex-cn-vertical-render-border"]~=~nil;
+  package.loaded["vertical.luatex-cn-vertical-render-background"]~=~nil;
+  package.loaded["vertical.luatex-cn-vertical-render-position"]~=~nil;
+  package.loaded["vertical.luatex-cn-vertical-core-main"]~=~nil;
+  package.loaded["vertical.luatex-cn-vertical-core-textbox"]~=~nil;
+  package.loaded["vertical.luatex-cn-vertical-core-textflow"]~=~nil;
+  package.loaded["vertical.luatex-cn-vertical-core-sidenote"]~=~nil;
+
+  vertical_constants~=~require('vertical.luatex-cn-vertical-base-constants');
+  vertical_utils~=~require('vertical.luatex-cn-vertical-base-utils');
+  vertical_text_utils~=~require('vertical.luatex-cn-vertical-base-text-utils');
+  vertical_hooks~=~require('vertical.luatex-cn-vertical-base-hooks');
+  vertical_flatten~=~require('vertical.luatex-cn-vertical-flatten-nodes');
+  vertical_layout~=~require('vertical.luatex-cn-vertical-layout-grid');
+  vertical_text_position~=~require('vertical.luatex-cn-vertical-render-position');
+  vertical_render~=~require('vertical.luatex-cn-vertical-render-page');
+  vertical_border~=~require('vertical.luatex-cn-vertical-render-border');
+  vertical_background~=~require('vertical.luatex-cn-vertical-render-background');
+  vertical_textbox~=~require('vertical.luatex-cn-vertical-core-textbox');
+  vertical_textflow~=~require('vertical.luatex-cn-vertical-core-textflow');
+  vertical_sidenote~=~require('vertical.luatex-cn-vertical-core-sidenote');
+  vertical~=~require('vertical.luatex-cn-vertical-core-main')
+}
+% Helper for unified dimension parsing (calls Lua)
+\cs_new:Npn \__luatexcn_to_dimen:n #1
+  {
+    \lua_now:e { 
+      local~res~=~vertical_constants.to_dimen([=[\luaescapestring{#1}]=])~
+      if~type(res)~==~"table"~and~res.unit~==~"em"~then~
+        local~f~=~font.getfont(font.current())~
+        res~=~math.floor(res.value~*~(f~and~f.size~or~655360)~+~0.5)~
+      end~
+      tex.sprint(res~or~0) 
+    }~sp
+  }
+
+% Define keys for SideNode
+\tl_new:N \l__luatexcn_v_sidenode_yoffset_tl
+\tl_new:N \l__luatexcn_v_sidenode_grid_height_tl
+\tl_new:N \l__luatexcn_v_sidenode_font_size_tl
+\tl_new:N \l__luatexcn_v_sidenode_color_tl
+\tl_new:N \l__luatexcn_v_sidenode_padding_top_tl
+\tl_new:N \l__luatexcn_v_sidenode_padding_bottom_tl
+
+\keys_define:nn { luatexcn / sidenode }
+  {
+    yoffset .tl_set:N = \l__luatexcn_v_sidenode_yoffset_tl,
+    yoffset .initial:n = 0pt,
+    grid-height .tl_set:N = \l__luatexcn_v_sidenode_grid_height_tl,
+    font-size .tl_set:N = \l__luatexcn_v_sidenode_font_size_tl,
+    font-size .initial:n = 10pt,
+    color .tl_set:N = \l__luatexcn_v_sidenode_color_tl,
+    color .initial:n = red,
+    border-padding-top .tl_set:N = \l__luatexcn_v_sidenode_padding_top_tl,
+    border-padding-top .initial:n = 0pt,
+    border-padding-bottom .tl_set:N = \l__luatexcn_v_sidenode_padding_bottom_tl,
+    border-padding-bottom .initial:n = 0pt,
+  }
+
+\NewDocumentCommand{\SideNode}{ O{} +m }{%
+  \group_begin:
+    \keys_set:nn { luatexcn / sidenode } { #1 }
+    % Use explicit font size
+    \tl_if_empty:NTF \l__luatexcn_v_sidenode_font_size_tl
+      { \dim_set:Nn \l_tmpa_dim { \f@size pt } }
+      { \dim_set:Nn \l_tmpa_dim { \__luatexcn_to_dimen:n { \l__luatexcn_v_sidenode_font_size_tl } } }
+    \fontsize{\l_tmpa_dim}{\l_tmpa_dim}\selectfont
+    % Color must be inside the box to be captured in the node list
+    \hbox_set:Nn \l_tmpa_box {\textcolor{\l__luatexcn_v_sidenode_color_tl}{#2}}%
+
+    % Prepare metadata
+    \dim_set:Nn \l_tmpb_dim { \__luatexcn_to_dimen:n { \l__luatexcn_v_sidenode_grid_height_tl } }
+    % If grid-height not set, default to font size (tight packing)
+    \dim_compare:nF { \l_tmpb_dim > 0pt } { \dim_set_eq:NN \l_tmpb_dim \l_tmpa_dim }
+
+    \lua_now:e { vertical_sidenote.register_sidenote(\int_value:w \l_tmpa_box, {
+      yoffset = vertical_constants.to_dimen([=[\luaescapestring{\tl_use:N \l__luatexcn_v_sidenode_yoffset_tl}]=]) ~ or ~ 0,
+      grid_height = \int_value:w \l_tmpb_dim,
+      padding_top = vertical_constants.to_dimen([=[\luaescapestring{\tl_use:N \l__luatexcn_v_sidenode_padding_top_tl}]=]) ~ or ~ 0,
+      padding_bottom = vertical_constants.to_dimen([=[\luaescapestring{\tl_use:N \l__luatexcn_v_sidenode_padding_bottom_tl}]=]) ~ or ~ 0
+    })}%
+  \group_end:
+}
+
+% Decorate Command - Zero-width decoration for the previous character
+% Creates a whatsit node that will be processed by Lua to overlay on the previous character
+% Syntax: \decorate[color=red, xoffset=0pt, yoffset=0pt, font-size=6pt]{content}
+
+\tl_new:N \l__luatexcn_v_decorate_color_tl
+\tl_new:N \l__luatexcn_v_decorate_xoffset_tl
+\tl_new:N \l__luatexcn_v_decorate_yoffset_tl
+\tl_new:N \l__luatexcn_v_decorate_font_size_tl
+\tl_new:N \l__luatexcn_v_decorate_scale_tl
+
+\keys_define:nn { luatexcn / decorate }
+  {
+    color .tl_set:N = \l__luatexcn_v_decorate_color_tl,
+    color .initial:n = red,
+    xoffset .tl_set:N = \l__luatexcn_v_decorate_xoffset_tl,
+    xoffset .initial:n = 0pt,
+    xshift .tl_set:N = \l__luatexcn_v_decorate_xoffset_tl,
+    yoffset .tl_set:N = \l__luatexcn_v_decorate_yoffset_tl,
+    yoffset .initial:n = 0pt,
+    yshift .tl_set:N = \l__luatexcn_v_decorate_yoffset_tl,
+    font-size .initial:n = ,
+    scale .tl_set:N = \l__luatexcn_v_decorate_scale_tl,
+    scale .initial:n = 1.0,
+  }
+
+\NewDocumentCommand{\decorate}{ O{} m }{%
+  \group_begin:
+    \keys_set:nn { luatexcn / decorate } { #1 }
+    \lua_now:e {
+      local~constants~=~require('vertical.luatex-cn-vertical-base-constants')
+      constants.register_decorate(
+        "\luaescapestring{#2}",
+        "\luaescapestring{\l__luatexcn_v_decorate_xoffset_tl}",
+        "\luaescapestring{\l__luatexcn_v_decorate_yoffset_tl}",
+        "\luaescapestring{\l__luatexcn_v_decorate_font_size_tl}",
+        "\luaescapestring{\l__luatexcn_v_decorate_color_tl}",
+        font.current(),
+        "\luaescapestring{\l__luatexcn_v_decorate_scale_tl}"
+      )
+    }
+    \box0\scan_stop:
+  \group_end:
+}
+
+% Alias for CJK name
+\NewCommandCopy{\装饰}{\decorate}
+
+% 改 (Fix/Correction) Command - Mark a character as corrected
+% Used in classical Chinese text editing: 甲\改{乙} means "甲 is corrected to 乙"
+% This overlays a 、(deletion mark) on the previous character and places the 
+% replacement character at bottom-right corner at half the font size
+% Syntax: \改{replacement character}
+\NewDocumentCommand{\改}{ m }{%
+  \group_begin:
+    % First: overlay a 、 symbol to mark deletion (centered on the character)
+    \lua_now:e {
+      local~constants~=~require('vertical.luatex-cn-vertical-base-constants')
+      constants.register_decorate(
+        "、",
+        "0em",
+        "0em",
+        nil,
+        "black",
+        nil,
+        2
+      )
+    }%
+    \box0\scan_stop:
+    % Second: add the replacement character at bottom-right, half size
+    \lua_now:e {
+      local~constants~=~require('vertical.luatex-cn-vertical-base-constants')
+      constants.register_decorate(
+        "\luaescapestring{#1}",
+        "-0.6em",
+        "0.5em",
+        nil,
+        "black",
+        nil,
+        0.6
+      )
+    }%
+    \box0\scan_stop:
+  \group_end:
+}
+
+% Alias with English name
+\NewCommandCopy{\fix}{\改}
+
+% PiZhu (批注) - Floating annotation box
+\tl_new:N \l__luatexcn_v_pizhu_font_size_tl
+\tl_new:N \l__luatexcn_v_pizhu_color_tl
+\tl_new:N \l__luatexcn_v_pizhu_grid_width_tl
+\tl_new:N \l__luatexcn_v_pizhu_grid_height_tl
+\tl_new:N \l__luatexcn_v_pizhu_x_tl
+\tl_new:N \l__luatexcn_v_pizhu_y_tl
+\tl_new:N \l__luatexcn_v_pizhu_height_tl
+
+\keys_define:nn { luatexcn / pizhu }
+  {
+    x .tl_set:N = \l__luatexcn_v_pizhu_x_tl,
+    y .tl_set:N = \l__luatexcn_v_pizhu_y_tl,
+    height .tl_set:N = \l__luatexcn_v_pizhu_height_tl,
+    font-size .tl_set:N = \l__luatexcn_v_pizhu_font_size_tl,
+    font-size .initial:n = {18pt},
+    color .tl_set:N = \l__luatexcn_v_pizhu_color_tl,
+    color .initial:n = {1~0~0},
+    grid-width .tl_set:N = \l__luatexcn_v_pizhu_grid_width_tl,
+    grid-width .initial:n = {20pt},
+    grid-height .tl_set:N = \l__luatexcn_v_pizhu_grid_height_tl,
+    grid-height .initial:n = {19pt},
+  }
+
+\NewDocumentCommand{\PiZhu}{ O{} +m }{%
+  \group_begin:
+    \keys_set:nn { luatexcn / pizhu } { #1 }
+    % Build keyval list with expansion so token list values are expanded
+    \tl_set:Nx \l_tmpa_tl {
+      floating=true,
+      floating-paper-width=\l__luatexcn_v_paper_width_tl,
+      x=\l__luatexcn_v_pizhu_x_tl,
+      y=\l__luatexcn_v_pizhu_y_tl,
+      height=\l__luatexcn_v_pizhu_height_tl,
+      font-color=\exp_not:V \l__luatexcn_v_pizhu_color_tl,
+      font-size=\l__luatexcn_v_pizhu_font_size_tl,
+      grid-width=\l__luatexcn_v_pizhu_grid_width_tl,
+      grid-height=\l__luatexcn_v_pizhu_grid_height_tl
+    }
+    % Use \use:x to properly expand the keyval list for xparse optional argument
+    \use:x { \exp_not:N \TextBox [\l_tmpa_tl]{\exp_not:n{#2}} }
+  \group_end:
+}
+
+
+% Use l3keys for key-value parameters
+
+
+\tl_new:N \l__cnv_banxin_upper_tl
+\tl_new:N \l__cnv_banxin_middle_tl
+\tl_new:N \l__cnv_banxin_lower_tl
+
+% Ensure global debug boolean exists (if loaded standalone)
+% Standardized debug flag is provided by luatex-cn-debug.sty via luatex-cn-core.sty
+
+% Removed local debug commands in favor of global \LtcDebugOn
+
+% Define keys
+\keys_define:nn { luatexcn / vertical }
+  {
+    height .tl_set:N = \l__luatexcn_v_height_tl,
+    height .initial:n = ,
+
+    spacing-col .tl_set:N = \l__luatexcn_v_col_spacing_tl,
+    spacing-col .initial:n = {},
+
+    grid-width .tl_set:N = \l__luatexcn_v_grid_width_tl,
+    grid-width .initial:n = {1.5em},
+
+    grid-height .tl_set:N = \l__luatexcn_v_grid_height_tl,
+    grid-height .initial:n = {1.2em},
+
+    cols .int_set:N = \l__luatexcn_v_cols_int,
+    cols .initial:n = 0,
+
+    % Debug key removed - use global \LtcDebugOn
+
+    border .bool_set:N = \l__luatexcn_v_border_bool,
+    border .initial:n = false,
+
+    banxin .bool_set:N = \l__luatexcn_v_banxin_bool,
+    banxin .initial:n = false,
+
+    outer-border .bool_set:N = \l__luatexcn_v_outer_border_bool,
+    outer-border .initial:n = false,
+
+    outer-border-thickness .tl_set:N = \l__luatexcn_v_outer_border_thickness_tl,
+    outer-border-thickness .initial:n = {2pt},
+
+    outer-border-sep .tl_set:N = \l__luatexcn_v_outer_border_sep_tl,
+    outer-border-sep .initial:n = {2pt},
+
+    border-padding-top .tl_set:N = \l__luatexcn_v_border_padding_top_tl,
+    border-padding-top .initial:n = {0.1em},
+
+    border-padding-bottom .tl_set:N = \l__luatexcn_v_border_padding_bottom_tl,
+    border-padding-bottom .initial:n = {0.1em},
+
+    border-thickness .tl_set:N = \l__luatexcn_v_border_thickness_tl,
+    border-thickness .initial:n = {0.4pt},
+
+    vertical-align .tl_set:N = \l__luatexcn_v_valign_tl,
+    vertical-align .initial:n = {center},
+
+    n-column .int_set:N = \l__luatexcn_v_n_column_int,
+    n-column .initial:n = 8,
+
+    page-columns .tl_set:N = \l__luatexcn_v_page_columns_tl,
+    page-columns .initial:n = {},
+
+    border-color .tl_set:N = \l__luatexcn_v_border_color_tl,
+    border-color .initial:n = {black},
+
+    background-color .tl_set:N = \l__luatexcn_v_background_color_tl,
+    background-color .initial:n = {},
+
+    font-color .tl_set:N = \l__luatexcn_v_font_color_tl,
+    font-color .initial:n = {},
+
+    paper-width .tl_set:N = \l__luatexcn_v_paper_width_tl,
+    paper-width .initial:n = {0pt},
+
+    paper-height .tl_set:N = \l__luatexcn_v_paper_height_tl,
+    paper-height .initial:n = {0pt},
+
+    margin-top .tl_set:N = \l__luatexcn_v_margin_top_tl,
+    margin-top .initial:n = {0pt},
+
+    margin-bottom .tl_set:N = \l__luatexcn_v_margin_bottom_tl,
+    margin-bottom .initial:n = {0pt},
+
+    margin-left .tl_set:N = \l__luatexcn_v_margin_left_tl,
+    margin-left .initial:n = {0pt},
+
+    margin-right .tl_set:N = \l__luatexcn_v_margin_right_tl,
+    margin-right .initial:n = {0pt},
+
+    jiazhu-font-size .tl_set:N = \l__luatexcn_v_jiazhu_size_tl,
+    jiazhu-font-size .initial:n = {},
+
+    jiazhu-font .tl_set:N = \l__luatexcn_v_jiazhu_font_tl,
+    jiazhu-font .initial:n = {},
+
+    jiazhu-font-color .tl_set:N = \l__luatexcn_v_jiazhu_font_color_tl,
+    jiazhu-font-color .initial:n = {},
+
+    % Jiazhu alignment: outward (default), inward, center, left, right
+    jiazhu-align .tl_set:N = \l__luatexcn_v_jiazhu_align_tl,
+    jiazhu-align .initial:n = {outward},
+
+    % Banxin (版心) configuration
+    banxin-upper-ratio .tl_set:N = \l__luatexcn_v_banxin_upper_tl,
+    banxin-upper-ratio .initial:n = {0.28},
+
+    banxin-middle-ratio .tl_set:N = \l__luatexcn_v_banxin_middle_tl,
+    banxin-middle-ratio .initial:n = {0.56},
+
+    % Book Name (formerly Banxin text)
+    book-name .tl_set:N = \l__luatexcn_v_book_name_tl,
+    book-name .initial:n = {},
+
+    % Banxin padding (版心独立的间距设置)
+    banxin-padding-top .tl_set:N = \l__luatexcn_v_banxin_padding_top_tl,
+    banxin-padding-top .initial:n = {2pt},
+
+    banxin-padding-bottom .tl_set:N = \l__luatexcn_v_banxin_padding_bottom_tl,
+    banxin-padding-bottom .initial:n = {10pt},
+
+    % Lower Yuwei (下鱼尾) - optional decoration
+    lower-yuwei .bool_set:N = \l__luatexcn_v_lower_yuwei_bool,
+    lower-yuwei .initial:n = true,
+
+    % Chapter title (章节标题) - displayed in section 2 of banxin
+    chapter-title .tl_set:N = \l__luatexcn_v_chapter_title_tl,
+    chapter-title .initial:n = {},
+
+    chapter-title-top-margin .tl_set:N = \l__luatexcn_v_chapter_title_top_margin_tl,
+    chapter-title-top-margin .initial:n = {20pt},
+
+    chapter-title-cols .int_set:N = \l__luatexcn_v_chapter_title_cols_int,
+    chapter-title-cols .initial:n = 1,
+
+    chapter-title-font-size .tl_set:N = \l__luatexcn_v_chapter_title_font_size_tl,
+    chapter-title-font-size .initial:n = {},
+
+    chapter-title-grid-height .tl_set:N = \l__luatexcn_v_chapter_title_grid_height_tl,
+    chapter-title-grid-height .initial:n = {},
+
+    book-name-align .tl_set:N = \l__luatexcn_v_book_name_align_tl,
+    book-name-align .initial:n = {center},
+
+    book-name-grid-height .tl_set:N = \l__luatexcn_v_book_name_grid_height_tl,
+    book-name-grid-height .initial:n = {},
+
+    upper-yuwei .bool_set:N = \l__luatexcn_v_upper_yuwei_bool,
+    upper-yuwei .initial:n = true,
+
+    banxin-divider .bool_set:N = \l__luatexcn_v_banxin_divider_bool,
+    banxin-divider .initial:n = true,
+
+    page-number-align .tl_set:N = \l__luatexcn_v_page_number_align_tl,
+    page-number-align .initial:n = {right-bottom},
+
+    page-number-font-size .tl_set:N = \l__luatexcn_v_page_number_font_size_tl,
+    page-number-font-size .initial:n = {14pt},
+    
+    font-size .tl_set:N = \l__luatexcn_v_font_size_tl,
+    font-size .initial:n = {12pt},
+
+    page-number-grid-height .tl_set:N = \l__luatexcn_v_page_number_grid_height_tl,
+    page-number-grid-height .initial:n = {},
+
+    judou-on .bool_set:N = \l__luatexcn_v_judou_on_bool,
+    judou-on .initial:n = false,
+
+    judou-pos .tl_set:N = \l__luatexcn_v_judou_pos_tl,
+    judou-pos .initial:n = {right-bottom},
+
+    judou-size .tl_set:N = \l__luatexcn_v_judou_size_tl,
+    judou-size .initial:n = {1em},
+
+    judou-color .tl_set:N = \l__luatexcn_v_judou_color_tl,
+    judou-color .initial:n = {red},
+
+    punct-mode .tl_set:N = \l__luatexcn_v_punct_mode_tl,
+    punct-mode .initial:n = {normal},
+
+    publisher .tl_set:N = \l__luatexcn_v_publisher_tl,
+    publisher .initial:n = {},
+
+    publisher-font-size .tl_set:N = \l__luatexcn_v_publisher_font_size_tl,
+    publisher-font-size .initial:n = {10pt},
+
+    publisher-grid-height .tl_set:N = \l__luatexcn_v_publisher_grid_height_tl,
+    publisher-grid-height .initial:n = {},
+
+    publisher-bottom-margin .tl_set:N = \l__luatexcn_v_publisher_bottom_margin_tl,
+    publisher-bottom-margin .initial:n = {5pt},
+
+    publisher-align .tl_set:N = \l__luatexcn_v_publisher_align_tl,
+    publisher-align .initial:n = {right},
+  }
+
+\tl_new:N \l__luatexcn_v_border_rgb_tl
+\tl_new:N \l__luatexcn_v_background_rgb_tl
+\tl_new:N \l__luatexcn_v_font_rgb_tl
+
+% Internal function to call Lua for Grid Layout
+\cs_new_protected:Npn \__luatexcn_v_process_grid:n #1
+  {
+    % Put content into a vbox to preserve structure (paragraphs)
+    \vbox_set:Nn \l_tmpa_box
+      {
+        \dim_set_eq:NN \hsize \c_max_dim
+        \dim_set_eq:NN \hfuzz \c_max_dim
+        \int_set:Nn \hbadness { 10000 }
+        \dim_zero:N \parindent
+        #1
+      }
+    % Call Lua to transform the box
+    \skip_zero:N \topskip
+    
+    % Support direct RGB input or named colors
+    % We try to extract from xcolor first; if it fails, we pass raw string to Lua
+    \cs_if_exist:cTF { color @ \l__luatexcn_v_border_color_tl }
+      {
+        \exp_args:NV \extractcolorspec \l__luatexcn_v_border_color_tl \l_tmpa_tl
+        \exp_args:NNx \convertcolorspec \l_tmpa_tl {rgb} \l_tmpb_tl
+        \tl_set:Nx \l__luatexcn_v_border_rgb_tl { \l_tmpb_tl }
+      }
+      { \tl_set_eq:NN \l__luatexcn_v_border_rgb_tl \l__luatexcn_v_border_color_tl }
+    \tl_replace_all:Nnn \l__luatexcn_v_border_rgb_tl { , } { ~ }
+
+    \tl_if_empty:NTF \l__luatexcn_v_background_color_tl
+      { \tl_set:Nn \l__luatexcn_v_background_rgb_tl { nil } }
+      {
+        \cs_if_exist:cTF { color @ \l__luatexcn_v_background_color_tl }
+          {
+            \exp_args:NV \extractcolorspec \l__luatexcn_v_background_color_tl \l_tmpa_tl
+            \exp_args:NNx \convertcolorspec \l_tmpa_tl {rgb} \l_tmpb_tl
+            \tl_set:Nx \l__luatexcn_v_background_rgb_tl { \l_tmpb_tl }
+          }
+          { \tl_set_eq:NN \l__luatexcn_v_background_rgb_tl \l__luatexcn_v_background_color_tl }
+      }
+    \tl_replace_all:Nnn \l__luatexcn_v_background_rgb_tl { , } { ~ }
+
+    \tl_if_empty:NTF \l__luatexcn_v_font_color_tl
+      { \tl_set:Nn \l__luatexcn_v_font_rgb_tl { nil } }
+      {
+        \cs_if_exist:cTF { color @ \l__luatexcn_v_font_color_tl }
+          {
+            \exp_args:NV \extractcolorspec \l__luatexcn_v_font_color_tl \l_tmpa_tl
+            \exp_args:NNx \convertcolorspec \l_tmpa_tl {rgb} \l_tmpb_tl
+            \tl_set:Nx \l__luatexcn_v_font_rgb_tl { \l_tmpb_tl }
+          }
+          { \tl_set_eq:NN \l__luatexcn_v_font_rgb_tl \l__luatexcn_v_font_color_tl }
+      }
+    \tl_replace_all:Nnn \l__luatexcn_v_font_rgb_tl { , } { ~ }
+
+    \bool_if:NT \g_luatexcn_debug_enabled_bool { \typeout{DEBUG:~banxin-padding-top~is~\l__luatexcn_v_banxin_padding_top_tl} }
+    \lua_now:e {
+      vertical.process_from_tex(\int_value:w \l_tmpa_box, {
+        height~=~[=[\luaescapestring{\l__luatexcn_v_height_tl}]=],
+        grid_width~=~[=[\luaescapestring{\l__luatexcn_v_grid_width_tl}]=],
+        grid_height~=~[=[\luaescapestring{\l__luatexcn_v_grid_height_tl}]=],
+        col_limit~=~\int_use:N~\l__luatexcn_v_cols_int,
+
+        banxin_on~=~\bool_if:NTF~\l__luatexcn_v_banxin_bool~{true}~{false},
+        border_on~=~\bool_if:NTF~\l__luatexcn_v_border_bool~{true}~{false},
+        border_padding_top~=~[=[\luaescapestring{\l__luatexcn_v_border_padding_top_tl}]=],
+        border_padding_bottom~=~[=[\luaescapestring{\l__luatexcn_v_border_padding_bottom_tl}]=],
+        vertical_align~=~[=[\luaescapestring{\l__luatexcn_v_valign_tl}]=],
+        border_thickness~=~[=[\luaescapestring{\l__luatexcn_v_border_thickness_tl}]=],
+        outer_border_on~=~\bool_if:NTF~\l__luatexcn_v_outer_border_bool~{true}~{false},
+        outer_border_thickness~=~[=[\luaescapestring{\l__luatexcn_v_outer_border_thickness_tl}]=],
+        outer_border_sep~=~[=[\luaescapestring{\l__luatexcn_v_outer_border_sep_tl}]=],
+        n_column~=~\int_use:N~\l__luatexcn_v_n_column_int,
+        page_columns~=~[=[\luaescapestring{\l__luatexcn_v_page_columns_tl}]=],
+        border_color~=~[=[\l__luatexcn_v_border_rgb_tl]=],
+        background_color~=~[=[\l__luatexcn_v_background_rgb_tl]=],
+        font_color~=~[=[\l__luatexcn_v_font_rgb_tl]=],
+        paper_width~=~[=[\luaescapestring{\l__luatexcn_v_paper_width_tl}]=],
+        paper_height~=~[=[\luaescapestring{\l__luatexcn_v_paper_height_tl}]=],
+        margin_top~=~[=[\luaescapestring{\l__luatexcn_v_margin_top_tl}]=],
+        margin_bottom~=~[=[\luaescapestring{\l__luatexcn_v_margin_bottom_tl}]=],
+        margin_left~=~[=[\luaescapestring{\l__luatexcn_v_margin_left_tl}]=],
+        margin_right~=~[=[\luaescapestring{\l__luatexcn_v_margin_right_tl}]=],
+        banxin_upper_ratio~=~[=[\luaescapestring{\l__luatexcn_v_banxin_upper_tl}]=],
+        banxin_middle_ratio~=~[=[\luaescapestring{\l__luatexcn_v_banxin_middle_tl}]=],
+        book_name~=~[=[\luaescapestring{\l__luatexcn_v_book_name_tl}]=],
+        banxin_padding_top~=~[=[\luaescapestring{\l__luatexcn_v_banxin_padding_top_tl}]=],
+        banxin_padding_bottom~=~[=[\luaescapestring{\l__luatexcn_v_banxin_padding_bottom_tl}]=],
+        lower_yuwei~=~\bool_if:NTF~\l__luatexcn_v_lower_yuwei_bool~{true}~{false},
+        chapter_title~=~[=[\luaescapestring{\l__luatexcn_v_chapter_title_tl}]=],
+        chapter_title_top_margin~=~[=[\luaescapestring{\l__luatexcn_v_chapter_title_top_margin_tl}]=],
+        chapter_title_cols~=~\int_use:N~\l__luatexcn_v_chapter_title_cols_int,
+        chapter_title_font_size~=~[=[\luaescapestring{\l__luatexcn_v_chapter_title_font_size_tl}]=],
+        chapter_title_grid_height~=~[=[\luaescapestring{\l__luatexcn_v_chapter_title_grid_height_tl}]=],
+        book_name_align~=~[=[\luaescapestring{\l__luatexcn_v_book_name_align_tl}]=],
+        book_name_grid_height~=~[=[\luaescapestring{\l__luatexcn_v_book_name_grid_height_tl}]=],
+        upper_yuwei~=~\bool_if:NTF~\l__luatexcn_v_upper_yuwei_bool~{true}~{false},
+        banxin_divider~=~\bool_if:NTF~\l__luatexcn_v_banxin_divider_bool~{true}~{false},
+        page_number_align~=~[=[\luaescapestring{\l__luatexcn_v_page_number_align_tl}]=],
+        page_number_font_size~=~[=[\luaescapestring{\l__luatexcn_v_page_number_font_size_tl}]=],
+        jiazhu_font_size~=~[=[\luaescapestring{\l__luatexcn_v_jiazhu_size_tl}]=],
+        jiazhu_align~=~[=[\luaescapestring{\l__luatexcn_v_jiazhu_align_tl}]=],
+        page_number_grid_height~=~[=[\luaescapestring{\l__luatexcn_v_page_number_grid_height_tl}]=],
+        font_size~=~[=[\luaescapestring{\l__luatexcn_v_font_size_tl}]=],
+        judou_on~=~\bool_if:NTF~\l__luatexcn_v_judou_on_bool~{true}~{false},
+        judou_pos~=~[=[\luaescapestring{\l__luatexcn_v_judou_pos_tl}]=],
+        judou_size~=~[=[\luaescapestring{\l__luatexcn_v_judou_size_tl}]=],
+        judou_color~=~[=[\luaescapestring{\l__luatexcn_v_judou_color_tl}]=],
+        punct_mode~=~[=[\luaescapestring{\l__luatexcn_v_punct_mode_tl}]=],
+        publisher~=~[=[\luaescapestring{\l__luatexcn_v_publisher_tl}]=],
+        publisher_font_size~=~[=[\luaescapestring{\l__luatexcn_v_publisher_font_size_tl}]=],
+        publisher_grid_height~=~[=[\luaescapestring{\l__luatexcn_v_publisher_grid_height_tl}]=],
+        publisher_bottom_margin~=~[=[\luaescapestring{\l__luatexcn_v_publisher_bottom_margin_tl}]=],
+        publisher_align~=~[=[\luaescapestring{\l__luatexcn_v_publisher_align_tl}]=]
+      })
+    }
+  }
+
+% Judou Mode Toggle Commands
+% Usage: \JudouOn to enable, \JudouOff to disable
+\NewDocumentCommand{\JudouOn}{ O{} }
+  {
+    \keys_set:nn { luatexcn / vertical } { judou-on = true, #1 }
+  }
+
+\NewDocumentCommand{\JudouOff}{ }
+  {
+    \keys_set:nn { luatexcn / vertical } { judou-on = false }
+  }
+
+% Convenience Commands for Punctuation Modes
+\NewDocumentCommand{\NormalPunctuationMode}{ O{} }
+  {
+    \keys_set:nn { luatexcn / vertical } { punct-mode = normal, #1 }
+  }
+\NewDocumentCommand{\正常标点模式}{ O{} } { \NormalPunctuationMode[#1] }
+
+\NewDocumentCommand{\JudouPunctuationMode}{ O{} }
+  {
+    \keys_set:nn { luatexcn / vertical } { punct-mode = judou, #1 }
+  }
+\NewDocumentCommand{\句读模式}{ O{} } { \JudouPunctuationMode[#1] }
+
+\NewDocumentCommand{\NonePunctuationMode}{ O{} }
+  {
+    \keys_set:nn { luatexcn / vertical } { punct-mode = none, #1 }
+  }
+\NewDocumentCommand{\无标点模式}{ O{} } { \NonePunctuationMode[#1] }
+
+% Define Main Command with Key-Value interface
+% Syntax: \VerticalRTT[key=val]{text}
+\NewDocumentCommand{\VerticalRTT}{ O{} +m }
+  {
+    \par\noindent
+    \group_begin:
+    \keys_set:nn { luatexcn / vertical } { #1 }
+    \__luatexcn_v_process_grid:n { #2 }
+    \group_end:
+  }
+
+% Alias
+\NewDocumentCommand{\vertical}{ O{} +m }
+  {
+    \VerticalRTT[#1]{#2}
+  }
+
+\NewDocumentCommand{\Vertical}{ O{} +m }
+  {
+    \VerticalRTT[#1]{#2}
+  }
+
+% Grid Textbox Command (Simplified for Single Column)
+% Syntax: \GridTextbox[height=N, distribute=true/false]{content}
+% height is in grid units (integers), width is always 1
+% Key-value interface for \GridTextbox
+\bool_new:N \l__luatexcn_v_textbox_border_bool
+\tl_new:N \l__luatexcn_v_textbox_box_align_tl
+\tl_new:N \l__luatexcn_v_textbox_inner_gw_tl
+\tl_new:N \l__luatexcn_v_textbox_inner_gh_tl
+\dim_new:N \l__luatexcn_v_textbox_inner_gw_dim
+\dim_new:N \l__luatexcn_v_textbox_inner_gh_dim
+\bool_new:N \l__luatexcn_v_textbox_floating_bool
+\tl_new:N \l__luatexcn_v_textbox_x_tl
+\tl_new:N \l__luatexcn_v_textbox_y_tl
+\tl_new:N \l__luatexcn_v_textbox_bg_color_tl
+\tl_new:N \l__luatexcn_v_textbox_font_color_tl
+\tl_new:N \l__luatexcn_v_textbox_bg_rgb_tl
+\tl_new:N \l__luatexcn_v_textbox_font_rgb_tl
+\tl_new:N \l__luatexcn_v_textbox_font_size_tl
+\tl_new:N \l__luatexcn_v_textbox_floating_paper_width_tl
+
+\keys_define:nn { luatexcn / v / textbox }
+  {
+    height .tl_set:N = \l__luatexcn_v_textbox_height_tl,
+    height .initial:n = 0,
+    n-cols .int_set:N = \l__luatexcn_v_textbox_n_cols_int,
+    n-cols .initial:n = 0,
+    inner-grid-width .tl_set:N = \l__luatexcn_v_textbox_inner_gw_tl,
+    inner-grid-width .initial:n = {},
+    inner-grid-height .tl_set:N = \l__luatexcn_v_textbox_inner_gh_tl,
+    inner-grid-height .initial:n = {},
+    distribute .bool_set:N = \l__luatexcn_v_textbox_distribute_bool,
+    distribute .initial:n = false,
+    box-align .tl_set:N = \l__luatexcn_v_textbox_box_align_tl,
+    box-align .initial:n = {top},
+    border .bool_set:N = \l__luatexcn_v_textbox_border_bool,
+    border .initial:n = false,
+    banxin .bool_set:N = \l__luatexcn_v_banxin_bool,
+    column-align .tl_set:N = \l__luatexcn_v_textbox_col_align_tl,
+    column-align .initial:n = {},
+    % debug key removed - use global \LtcDebugOn
+
+    vertical-align .tl_set:N = \l__luatexcn_v_textbox_box_align_tl,
+    floating .bool_set:N = \l__luatexcn_v_textbox_floating_bool,
+    floating .initial:n = false,
+    floating-paper-width .tl_set:N = \l__luatexcn_v_textbox_floating_paper_width_tl,
+    floating-paper-width .initial:n = 0pt,
+    x .tl_set:N = \l__luatexcn_v_textbox_x_tl,
+    x .initial:n = 0pt,
+    y .tl_set:N = \l__luatexcn_v_textbox_y_tl,
+    y .initial:n = 0pt,
+    background-color .tl_set:N = \l__luatexcn_v_textbox_bg_color_tl,
+    background-color .initial:n = {},
+    font-color .tl_set:N = \l__luatexcn_v_textbox_font_color_tl,
+    font-color .initial:n = {},
+    font-size .tl_set:N = \l__luatexcn_v_textbox_font_size_tl,
+    font-size .initial:n = {},
+    grid-width .tl_set:N = \l__luatexcn_v_textbox_inner_gw_tl,
+    grid-height .tl_set:N = \l__luatexcn_v_textbox_inner_gh_tl,
+  }
+
+\NewDocumentCommand{\TextBox}{ O{} +m }
+  {
+    \group_begin:
+    % Inherit debug setting from global environment
+    % No local override anymore
+    \keys_set:nn { luatexcn / v / textbox } { #1 }
+    % Width is always 1 for outer layout (textbox occupies 1 column externally)
+    \setluatexattribute\cnverticaltextboxwidth{1}
+    
+    % Calculate inner grid dimensions (hybrid approach)
+    % If inner-grid-width not specified, auto-calculate: outer_width / n_cols
+    \tl_if_empty:NTF \l__luatexcn_v_textbox_inner_gw_tl
+      {
+        \int_compare:nNnTF \l__luatexcn_v_textbox_n_cols_int > 0
+          { \dim_set:Nn \l__luatexcn_v_textbox_inner_gw_dim { (\l__luatexcn_v_grid_width_tl) / \l__luatexcn_v_textbox_n_cols_int } }
+          { \dim_set:Nn \l__luatexcn_v_textbox_inner_gw_dim { \l__luatexcn_v_grid_width_tl } }
+      }
+      { \dim_set:Nn \l__luatexcn_v_textbox_inner_gw_dim { \l__luatexcn_v_textbox_inner_gw_tl } }
+    \tl_if_empty:NTF \l__luatexcn_v_textbox_inner_gh_tl
+      { \dim_set:Nn \l__luatexcn_v_textbox_inner_gh_dim { \l__luatexcn_v_grid_height_tl } }
+      { \dim_set:Nn \l__luatexcn_v_textbox_inner_gh_dim { \l__luatexcn_v_textbox_inner_gh_tl } }
+    
+    % Capture content in a box and process it via Lua for inner verticality
+    \vbox_set:Nn \l_tmpa_box {
+      \setluatexattribute\cnverticaltextboxwidth{0}
+      \setluatexattribute\cnverticaltextboxheight{0}
+      % Reset indent for textbox internal content (textbox as a whole will be indented)
+      \setluatexattribute\cnverticalindent{0}
+      % Reset paragraph spacing to prevent unwanted glues in grid layout
+      \dim_set:Nn \l_tmpa_dim { \l__luatexcn_v_grid_height_tl }
+      % Scale font size
+      \tl_if_empty:NTF \l__luatexcn_v_textbox_font_size_tl
+        {
+          % Default auto-scaling for multi-column boxes
+          \int_compare:nNnT \l__luatexcn_v_textbox_n_cols_int > 1
+            {
+              \dim_set:Nn \l_tmpa_dim { \l__luatexcn_v_textbox_inner_gw_dim * 85 / 100 }
+              \fontsize{\l_tmpa_dim}{\l__luatexcn_v_textbox_inner_gw_dim}\selectfont
+            }
+        }
+        {
+          % User-specified font size
+          \dim_set:Nn \l_tmpa_dim { \l__luatexcn_v_textbox_font_size_tl }
+          \fontsize{\l_tmpa_dim}{\l_tmpa_dim}\selectfont
+        }
+    % Inner line length: if height specified, constrain it; otherwise use max for auto-sizing
+    \tl_if_empty:NTF \l__luatexcn_v_textbox_height_tl
+      { \dim_set_eq:NN \hsize \c_max_dim }
+      {
+        \exp_args:NnV \regex_match:nnTF { [^0-9\.] } \l__luatexcn_v_textbox_height_tl
+          { \dim_set:Nn \hsize { \l__luatexcn_v_textbox_height_tl } }
+          { \dim_set:Nn \hsize { \l__luatexcn_v_textbox_inner_gh_dim * \l__luatexcn_v_textbox_height_tl } }
+      }
+    #2
+    }
+    
+    % Expand variables to ensure they contain the color string, not a macro name
+    % Use o-expansion to preserve spaces (standard x-expansion strips them in ExplSyntax)
+    \tl_set:No \l__luatexcn_v_textbox_bg_color_tl { \l__luatexcn_v_textbox_bg_color_tl }
+    \tl_set:No \l__luatexcn_v_textbox_font_color_tl { \l__luatexcn_v_textbox_font_color_tl }
+
+    % Convert background color to RGB
+    \cs_if_exist:cTF { color @ \l__luatexcn_v_textbox_bg_color_tl }
+      {
+        \exp_args:NV \extractcolorspec \l__luatexcn_v_textbox_bg_color_tl \l_tmpa_tl
+        \exp_args:NNx \convertcolorspec \l_tmpa_tl { rgb } \l_tmpb_tl
+        \tl_set:Nx \l__luatexcn_v_textbox_bg_rgb_tl { \l_tmpb_tl }
+      }
+      { \tl_set_eq:NN \l__luatexcn_v_textbox_bg_rgb_tl \l__luatexcn_v_textbox_bg_color_tl }
+    \tl_replace_all:Nnn \l__luatexcn_v_textbox_bg_rgb_tl { , } { ~ }
+
+    % Convert font color to RGB
+    \cs_if_exist:cTF { color @ \l__luatexcn_v_textbox_font_color_tl }
+      {
+        \exp_args:NV \extractcolorspec \l__luatexcn_v_textbox_font_color_tl \l_tmpa_tl
+        \exp_args:NNx \convertcolorspec \l_tmpa_tl { rgb } \l_tmpb_tl
+        \tl_set:Nx \l__luatexcn_v_textbox_font_rgb_tl { \l_tmpb_tl }
+      }
+      { \tl_set_eq:NN \l__luatexcn_v_textbox_font_rgb_tl \l__luatexcn_v_textbox_font_color_tl }
+    \tl_replace_all:Nnn \l__luatexcn_v_textbox_font_rgb_tl { , } { ~ }
+
+    \lua_now:e {vertical_textbox.process_inner_box(\int_value:w~\l_tmpa_box,~{
+      n_cols~=~\int_use:N~\l__luatexcn_v_textbox_n_cols_int,
+      height~=~[=[\luaescapestring{\tl_use:N \l__luatexcn_v_textbox_height_tl}]=],
+      grid_width~=~\dim_to_decimal_in_sp:n { \l__luatexcn_v_textbox_inner_gw_dim },
+      grid_height~=~\dim_to_decimal_in_sp:n { \l__luatexcn_v_textbox_inner_gh_dim },
+      outer_grid_height~=~\dim_to_decimal_in_sp:n { \l__luatexcn_v_grid_height_tl },
+      box_align~=~"\luaescapestring{\tl_use:N~\l__luatexcn_v_textbox_box_align_tl}",
+      column_aligns~=~"\luaescapestring{\tl_use:N~\l__luatexcn_v_textbox_col_align_tl}",
+
+      border~=~"\bool_if:NTF~\l__luatexcn_v_textbox_border_bool~{true}{false}",
+      background_color~=~[=[\l__luatexcn_v_textbox_bg_rgb_tl]=],
+      font_color~=~[=[\l__luatexcn_v_textbox_font_rgb_tl]=],
+      font_size~=~[=[\luaescapestring{\l__luatexcn_v_textbox_font_size_tl}]=],
+      floating~=~\bool_if:NTF~\l__luatexcn_v_textbox_floating_bool~{true}{false},
+      floating_x~=~[=[\luaescapestring{\l__luatexcn_v_textbox_x_tl}]=],
+      floating_y~=~[=[\luaescapestring{\l__luatexcn_v_textbox_y_tl}]=],
+      floating_paper_width~=~[=[\luaescapestring{\l__luatexcn_v_textbox_floating_paper_width_tl}]=],
+      judou_on~=~\bool_if:NTF~\l__luatexcn_v_judou_on_bool~{true}~{false},
+      judou_pos~=~[=[\luaescapestring{\l__luatexcn_v_judou_pos_tl}]=],
+      judou_size~=~[=[\luaescapestring{\l__luatexcn_v_judou_size_tl}]=],
+      judou_color~=~[=[\luaescapestring{\l__luatexcn_v_judou_color_tl}]=],
+      punct_mode~=~[=[\luaescapestring{\l__luatexcn_v_punct_mode_tl}]=]
+    }) }
+    \setluatexattribute\cnverticaltextboxwidth{0}
+    \setluatexattribute\cnverticaltextboxheight{0}
+    \bool_if:NTF \l__luatexcn_v_textbox_floating_bool
+      {
+        \lua_now:e { vertical_textbox.register_floating_box(\int_value:w~\l_tmpa_box,~{
+          x~=~[=[\luaescapestring{\l__luatexcn_v_textbox_x_tl}]=],
+          y~=~[=[\luaescapestring{\l__luatexcn_v_textbox_y_tl}]=]
+        }) }
+      }
+      {
+        \mode_leave_vertical: \box_use:N \l_tmpa_box
+      }
+    \group_end:
+  }
+
+% TextFlow Command (双行小注/夹注)
+% Syntax: \TextFlow{content}
+\makeatletter
+    
+    \keys_define:nn { luatexcn / textflow }
+      {
+        only-column .choice:,
+        only-column / left .code:n = { \tl_set:Nn \l_tmpa_tl {2} },
+        only-column / right .code:n = { \tl_set:Nn \l_tmpa_tl {1} },
+        only-column / none .code:n = { \tl_set:Nn \l_tmpa_tl {0} },
+        only-column .initial:n = none,
+
+        font-size .tl_set:N = \l__luatexcn_v_jiazhu_local_size_tl,
+        font .tl_set:N = \l__luatexcn_v_jiazhu_local_font_tl,
+        font-color .tl_set:N = \l__luatexcn_v_jiazhu_local_color_tl,
+      }
+    
+    \NewDocumentCommand{\TextFlow}{ O{} +m }
+      {
+        \group_begin:
+        
+        % Initialize temp var for mode (0 = balanced/default)
+        \tl_set:Nn \l_tmpa_tl {0}
+        % Initialize local override variables
+        \tl_set:Nn \l__luatexcn_v_jiazhu_local_size_tl {}
+        \tl_set:Nn \l__luatexcn_v_jiazhu_local_font_tl {}
+        \tl_set:Nn \l__luatexcn_v_jiazhu_local_color_tl {}
+        
+        \keys_set:nn { luatexcn / textflow } { #1 }
+        
+        % Capture attribute values using edef BEFORE selectfont
+        \edef\savedindent{\the\cnverticalindent}
+        \edef\savedblockid{\the\cnverticalblockid}
+        \edef\savedfirst{\the\cnverticalfirstindent}
+        \edef\savedright{\the\cnverticalrightindent}
+
+        % 1. Determine Font Size (Local > Global > Default 0.7)
+        \tl_if_empty:NTF \l__luatexcn_v_jiazhu_local_size_tl
+          {
+            \tl_set:Nx \l_tmpb_tl { \l__luatexcn_v_jiazhu_size_tl }
+            \tl_if_empty:NTF \l_tmpb_tl
+              { \tl_set:Nx \l_tmpc_tl { \fp_eval:n { 0.7 * \f@size } pt } }
+              { \tl_set_eq:NN \l_tmpc_tl \l__luatexcn_v_jiazhu_size_tl }
+          }
+          { \tl_set_eq:NN \l_tmpc_tl \l__luatexcn_v_jiazhu_local_size_tl }
+
+        % 2. Determine Font (Local > Global)
+        \tl_if_empty:NTF \l__luatexcn_v_jiazhu_local_font_tl
+          { \tl_set_eq:NN \l_tmpb_tl \l__luatexcn_v_jiazhu_font_tl }
+          { \tl_set_eq:NN \l_tmpb_tl \l__luatexcn_v_jiazhu_local_font_tl }
+
+        % 3. Determine Color (Local > Global)
+        \tl_if_empty:NTF \l__luatexcn_v_jiazhu_local_color_tl
+          { \tl_set_eq:NN \l_tmpd_tl \l__luatexcn_v_jiazhu_font_color_tl }
+          { \tl_set_eq:NN \l_tmpd_tl \l__luatexcn_v_jiazhu_local_color_tl }
+
+        % Apply Font and Size
+        \tl_if_empty:NTF \l_tmpb_tl
+          { \fontsize{\l_tmpc_tl}{\l_tmpc_tl}\selectfont }
+          { \setmainfont{\l_tmpb_tl}[RawFeature={+vert,+vrt2}] \fontsize{\l_tmpc_tl}{\l_tmpc_tl}\selectfont }
+
+        % Apply Color
+        \tl_if_empty:NF \l_tmpd_tl
+          {
+            % Simple heuristic: if it contains a comma or space, it's numeric RGB
+            \tl_if_in:NnTF \l_tmpd_tl { , }
+              { \color[rgb]{\l_tmpd_tl} }
+              {
+                \tl_if_in:NnTF \l_tmpd_tl { ~ }
+                  {
+                    \tl_set:Nx \l_tmpc_tl { \l_tmpd_tl }
+                    \tl_replace_all:Nnn \l_tmpc_tl { ~ } { , }
+                    \color[rgb]{\l_tmpc_tl}
+                  }
+                  { \color{\l_tmpd_tl} }
+              }
+          }
+        
+        % CRITICAL: Set jiazhu attribute AFTER selectfont
+        \setluatexattribute\cnverticaljiazhu{1}
+        \setluatexattribute\cnverticaljiazhumode{\l_tmpa_tl}
+    
+        % Restore
+        \cnverticalindent = \savedindent\relax
+        \cnverticalblockid = \savedblockid\relax
+        \cnverticalfirstindent = \savedfirst\relax
+        \cnverticalrightindent = \savedright\relax
+        
+        #2
+        \group_end:
+      }
+
+    \NewDocumentCommand{\DanHangJiaZhu}{ O{right} +m }
+      {
+        \TextFlow[only-column=#1]{#2}
+      }
+
+\makeatother
+
+% Space Command - inserts a space that occupies grid cells in vertical layout
+% In CJK text, normal ASCII spaces are often absorbed; use this for explicit spacing
+% Syntax: \Space or \Space[width]
+% Default width is 1em (one grid cell)
+\NewDocumentCommand{\Space}{ O{1em} }
+  {
+    \regex_match:nnTF { ^[0-9\.]+$ } { #1 }
+      { \skip_horizontal:n { \__luatexcn_to_dimen:n { \l__luatexcn_v_grid_height_tl } * #1 } }
+      { \skip_horizontal:n { \__luatexcn_to_dimen:n { #1 } } }
+  }
+
+% Paragraph Environment
+% Supports block indentation with first-line/hanging indent differentiation
+% Syntax: \begin{Paragraph}[indent=2, first-indent=0, bottom-indent=1]
+
+\int_new:N \g_luatexcn_v_block_id_int
+
+\keys_define:nn { luatexcn / v / paragraph }
+  {
+    indent .int_set:N = \l__luatexcn_v_para_indent_int,
+    indent .initial:n = 0,
+    first-indent .int_set:N = \l__luatexcn_v_para_first_indent_int,
+    first-indent .initial:n = -1, % -1 means use indent value
+    bottom-indent .int_set:N = \l__luatexcn_v_para_bottom_indent_int,
+    bottom-indent .initial:n = 0,
+  }
+
+\NewDocumentEnvironment{Paragraph}{ O{} }
+  {
+    \par
+    \int_gincr:N \g_luatexcn_v_block_id_int
+    \keys_set:nn { luatexcn / v / paragraph } { #1 }
+    
+    % Set Block ID
+    \setluatexattribute\cnverticalblockid { \int_use:N \g_luatexcn_v_block_id_int }
+    
+    % Set Base Indent (also serves as Hanging Indent)
+    \setluatexattribute\cnverticalindent{\l__luatexcn_v_para_indent_int}
+    
+    % Set First Indent
+    \int_compare:nNnTF \l__luatexcn_v_para_first_indent_int = {-1}
+      { \setluatexattribute\cnverticalfirstindent{\l__luatexcn_v_para_indent_int} }
+      { \setluatexattribute\cnverticalfirstindent{\l__luatexcn_v_para_first_indent_int} }
+      
+    % Set Bottom Indent
+    \setluatexattribute\cnverticalrightindent{\l__luatexcn_v_para_bottom_indent_int}
+  }
+  {
+    % Reset indent attributes to default BEFORE \par
+    % so subsequent content won't inherit paragraph's indent
+    \setluatexattribute\cnverticalindent{0}
+    \setluatexattribute\cnverticalfirstindent{-1}
+    \setluatexattribute\cnverticalrightindent{0}
+    \par
+  }
+
+% 填充文本框 - Backwards compatible: accepts either integer (old syntax) or key-value options (new syntax)
+\NewDocumentCommand{\FillTextBox}{ O{} +m }
+  {%
+    \tl_set:Nn \l_tmpa_tl { #1 }
+    \regex_match:nnTF { ^[0-9]+$ } { #1 }
+      { \TextBox[height=#1, box-align=fill]{#2} }  % Old syntax: just an integer height
+      { \TextBox[#1, box-align=fill]{#2} }          % New syntax: key-value options
+  }
+
+\ExplSyntaxOff%
+
+% ============================================================================
+% Command Aliases (Defined outside ExplSyntax for CJK support)
+% ============================================================================
+\NewCommandCopy{\竖排}{\VerticalRTT}
+\NewCommandCopy{\文本框}{\TextBox}
+\NewCommandCopy{\填充文本框}{\FillTextBox}
+\NewCommandCopy{\文本流}{\TextFlow}
+\NewCommandCopy{\空格}{\Space}
+\NewCommandCopy{\段落}{\Paragraph}
+\NewCommandCopy{\CePi}{\SideNode}
+\NewCommandCopy{\侧批}{\SideNode}
+\NewCommandCopy{\批注}{\PiZhu}
+\NewCommandCopy{\开启句读模式}{\JudouOn}
+\NewCommandCopy{\关闭句读模式}{\JudouOff}
+\NewCommandCopy{\开启无标点模式}{\NonePunctuationMode}
+\NewCommandCopy{\开启正常标点模式}{\NormalPunctuationMode}
+\NewEnvironmentCopy{列表}{itemize}
+
+\endinput%

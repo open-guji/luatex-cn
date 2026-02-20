@@ -18,6 +18,6 @@ TEST 1: Box content
 .\TU/FandolSong-Regular(0)/m/n/10 s
 .\TU/FandolSong-Regular(0)/m/n/10 t
 ! OK.
-<argument> ...x 0=\hbox {Text to test} \showbox 0 
+<argument>  \setbox 0=\hbox {Text to test} \showbox 0 
 l. ...}
 ============================================================

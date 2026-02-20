@@ -75,6 +75,95 @@ token.set_macro("fontauto@fontname", "SimSun")
 \expandafter\setmainfont\expandafter{\fontauto@fontname}
 ```
 
+### 1.4 TeX 到 Lua 参数传递的正确语法
+
+**日期**: 2026-01-31
+
+**问题**：在 `\lua_now:e` 上下文中参数传递使用了错误的语法，导致 Lua 接收到字面字符串而非实际值。
+
+**错误示例**：
+```latex
+% ❌ 错误：双反斜杠导致变量未展开
+\lua_now:e {
+  judou_mod.setup({
+    punct_mode~=~[=[\\luaescapestring{\\l__luatexcn_judou_punct_mode_tl}]=],
+    color~=~[=[\\luaescapestring{\\l__luatexcn_judou_color_tl}]=]
+  })
+}
+```
+
+**结果**：Lua 接收到 `"\\luaescapestring{\\l__luatexcn_judou_punct_mode_tl}"` 而非 `"judou"`
+
+**正确写法**：
+```latex
+% ✅ 正确：单反斜杠 + \tl_use:N
+\lua_now:e {
+  judou_mod.setup({
+    punct_mode~=~[=[\luaescapestring{\tl_use:N~\l__luatexcn_judou_punct_mode_tl}]=],
+    color~=~[=[\luaescapestring{\tl_use:N~\l__luatexcn_judou_color_tl}]=]
+  })
+}
+```
+
+**原因分析**：
+- `\lua_now:e` 使用 e-type 扩展，`\\` 会被解释为 `\`
+- 双反斜杠阻止了变量的正确展开
+- 必须使用单反斜杠 + `\tl_use:N` 来展开 token list 变量
+
+**调试方法**：
+```lua
+-- 在 Lua 端打印接收到的参数值
+texio.write_nl("term_and_log", string.format("[DEBUG] param = %s", tostring(param)))
+```
+
+**参考文件**：
+- `tex/guji/luatex-cn-guji-judou.sty` (正确示例)
+- `tex/core/luatex-cn-core-textbox.sty` (参考模式)
+
+### 1.5 `\lua_now:e` vs `\lua_now:n` - 模块加载的正确语法
+
+**日期**: 2026-01-31
+
+**问题**：使用 `\lua_now:e` 加载 Lua 模块导致模块变量为 `nil`。
+
+**错误症状**：
+```
+[\directlua]:1: attempt to index a nil value (global 'judou_mod')
+```
+
+**根本原因**：
+- `\lua_now:e` 会对参数进行 TeX 扩展
+- 纯 Lua 代码（如 `require` 语句）不需要也不应该被 TeX 扩展
+
+**错误写法**：
+```latex
+% ❌ 错误：e-type 扩展破坏 Lua 代码
+\lua_now:e { judou_mod = require('guji.luatex-cn-guji-judou') }
+```
+
+**正确写法**：
+```latex
+% ✅ 正确：n-type 不进行扩展
+\lua_now:n { judou_mod = require('guji.luatex-cn-guji-judou') }
+```
+
+**规则总结**：
+
+| 用途 | 扩展类型 | 示例 |
+|------|---------|------|
+| **传递 TeX 变量到 Lua** | `\lua_now:e` | `\lua_now:e { mod.setup({ param = [=[\luaescapestring{\tl_use:N~\var}]=] }) }` |
+| **执行纯 Lua 代码** | `\lua_now:n` | `\lua_now:n { mod = require('module') }` |
+
+**修复的文件**（2026-01-31）：
+- `tex/guji/luatex-cn-guji-judou.sty` (line 23)
+- `tex/guji/luatex-cn-guji-jiazhu.sty` (line 26)
+- `tex/core/luatex-cn-core-metadata.sty` (line 19)
+
+**关键要点**：
+1. **`:e` 扩展**：用于需要 TeX 变量展开的场景（调用 Lua 函数并传参）
+2. **`:n` 不扩展**：用于纯 Lua 代码（`require`、赋值等）
+3. **调试**：使用 `texio.write_nl()` 打印模块对象验证是否加载成功
+
 ---
 
 ## 二、 expl3 语法陷阱
@@ -265,6 +354,58 @@ p_head = D.insert_before(p_head, p_head, Kern(rel_x))
 D.insert_after(p_head, kern_node, box)
 D.insert_after(p_head, box, Kern(-(rel_x + box_width)))  -- 补偿
 ```
+
+### 4.5 跨页颜色保持
+
+**问题**：使用 `\color{}` 的内容（如侧批、夹注）在跨页时失去颜色。
+
+**根本原因**：
+- `group_nodes_by_page()` 将节点按页分组时会断开节点链接
+- 颜色堆栈节点（color push）可能在页 1，但文字节点在页 2
+- PDF 颜色状态不会自动跨页保持
+
+**错误方案**：
+```lua
+-- ❌ 在 handle_glyph_node 中检测属性并包裹颜色会破坏渲染
+if D.get_attribute(curr, ATTR_JIAZHU) == 1 then
+    -- 直接包裹会导致内容消失
+end
+```
+
+**正确方案**：通过 layout_map 传递颜色
+```latex
+% 1. TeX 层：存储颜色到 Lua 全局
+\lua_now:e { _G.comp.current_color = [=[#1]=] }
+\color{#1}  % 正常应用颜色
+```
+
+```lua
+-- 2. Layout 层：从全局读取并存入 layout_map
+local color = (_G.comp and _G.comp.current_color) or nil
+layout_map[node] = {
+    page = p, col = c, row = r,
+    comp_color = color  -- 传递颜色
+}
+```
+
+```lua
+-- 3. Render 层：从 layout_map 读取并独立应用
+local color = pos.comp_color
+if color and color ~= "" then
+    local rgb = utils.normalize_rgb(color)
+    local push = utils.create_pdf_literal("q " .. utils.create_color_literal(rgb, false))
+    local pop = utils.create_pdf_literal("Q")
+    p_head = D.insert_before(p_head, curr, push)
+    D.insert_after(p_head, kern, pop)  -- 包裹 glyph + kern
+end
+```
+
+**关键点**：
+- 颜色值通过 layout_map 传递，每页独立应用
+- 不依赖跨页的颜色堆栈状态
+- `q/Q` 确保颜色只影响当前包裹的内容
+
+**适用场景**：侧批、夹注、批注等可能跨页的有色组件
 
 ---
 

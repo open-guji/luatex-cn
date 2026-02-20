@@ -20,7 +20,7 @@
 \RequirePackage{core/luatex-cn-core-base}
 \RequirePackage{expl3}
 \RequirePackage{xparse}
-\ProvidesExplPackage {core/luatex-cn-core-textflow} {2026/01/31} {0.2.0} {TextFlow (Jiazhu) Support for Vertical Typesetting}
+\ProvidesExplPackage {core/luatex-cn-core-textflow} {2026/01/31} {0.2.1} {TextFlow (Jiazhu) Support for Vertical Typesetting}
 
 % TextFlow Command (双行小注/夹注)
 % Syntax: \TextFlow{content}
@@ -83,7 +83,7 @@
           { \fontsize{\l_tmpc_tl}{\l_tmpc_tl}\selectfont }
           { \setmainfont{\l_tmpb_tl}[RawFeature={+vert,+vrt2}] \fontsize{\l_tmpc_tl}{\l_tmpc_tl}\selectfont }
 
-        % Apply Color
+        % Apply Color (visual appearance)
         \tl_if_empty:NF \l_tmpd_tl
           {
             % Simple heuristic: if it contains a comma or space, it's numeric RGB
@@ -92,17 +92,29 @@
               {
                 \tl_if_in:NnTF \l_tmpd_tl { ~ }
                   {
-                    \tl_set:Nx \l_tmpc_tl { \l_tmpd_tl }
-                    \tl_replace_all:Nnn \l_tmpc_tl { ~ } { , }
-                    \color[rgb]{\l_tmpc_tl}
+                    \tl_set:Nx \l_tmpe_tl { \l_tmpd_tl }
+                    \tl_replace_all:Nnn \l_tmpe_tl { ~ } { , }
+                    \color[rgb]{\l_tmpe_tl}
                   }
                   { \color{\l_tmpd_tl} }
               }
           }
 
+        % Push style to stack and get style ID (Phase 3: Style Stack Management)
+        \edef\jiazhu_style_id{\lua_now:e {
+          local ~ textflow = require('core.luatex-cn-textflow')
+          local ~ style_id = textflow.jiazhu_push_style(
+            \tl_if_empty:NTF \l_tmpd_tl { nil } { [=[\luaescapestring{\tl_use:N \l_tmpd_tl}]=] },
+            [=[\luaescapestring{\tl_use:N \l_tmpc_tl}]=],
+            \tl_if_empty:NTF \l_tmpb_tl { nil } { [=[\luaescapestring{\tl_use:N \l_tmpb_tl}]=] }
+          )
+          tex.print(tostring(style_id))
+        }}
+
         % CRITICAL: Set jiazhu attribute AFTER selectfont
         \setluatexattribute\cnverticaljiazhu{1}
         \setluatexattribute\cnverticaljiazhumode{\l_tmpa_tl}
+        \setluatexattribute\cnverticalstyle{\jiazhu_style_id}
 
         % Restore
         \cnverticalindent = \savedindent\relax
@@ -111,6 +123,13 @@
         \cnverticalrightindent = \savedright\relax
 
         #2
+
+        % Pop style from stack
+        \lua_now:n {
+          local ~ textflow = require('core.luatex-cn-textflow')
+          textflow.jiazhu_pop_style()
+        }
+
         \group_end:
       }
 

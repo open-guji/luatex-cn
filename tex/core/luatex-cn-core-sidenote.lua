@@ -21,6 +21,10 @@ local utils = package.loaded['util.luatex-cn-utils'] or
     require('util.luatex-cn-utils')
 local debug = package.loaded['debug.luatex-cn-debug'] or
     require('debug.luatex-cn-debug')
+local style_registry = package.loaded['util.luatex-cn-style-registry'] or
+    require('util.luatex-cn-style-registry')
+local judou = package.loaded['guji.luatex-cn-guji-judou'] or
+    require('guji.luatex-cn-guji-judou')
 local D = node.direct
 
 local dbg = debug.get_debugger('sidenote')
@@ -87,15 +91,27 @@ function sidenote.render(head, layout_map, params, context, engine_ctx, page_idx
 
     local sidenote_x_offset = engine_ctx.g_width * 0.9
 
+    -- Build sidenote sublist first (using original reverse iteration to maintain correct order)
+    local sn_head = nil
+    local sidenote_color = nil  -- Track color from first sidenote node's attribute
+
     for i = #sidenote_for_page, 1, -1 do
         local item = sidenote_for_page[i]
         local curr = item.node
         D.setnext(curr, nil)
 
-        if not d_head then
-            d_head = curr
+        -- Extract font_color from node's ATTR_STYLE_REG_ID (Phase 2: Style registry)
+        if not sidenote_color then
+            local style_id = D.get_attribute(curr, constants.ATTR_STYLE_REG_ID)
+            if style_id then
+                sidenote_color = style_registry.get_font_color(style_id)
+            end
+        end
+
+        if not sn_head then
+            sn_head = curr
         else
-            d_head = D.insert_before(d_head, d_head, curr)
+            sn_head = D.insert_before(sn_head, sn_head, curr)
         end
 
         local pos = {
@@ -128,9 +144,13 @@ function sidenote.render(head, layout_map, params, context, engine_ctx, page_idx
 
             local k = D.new(constants.KERN)
             D.setfield(k, "kern", -w)
-            D.insert_after(d_head, curr, k)
+            D.insert_after(sn_head, curr, k)
         elseif id == constants.HLIST or id == constants.VLIST then
-            d_head = render_page._internal.handle_block_node(curr, d_head, pos, engine_ctx)
+            sn_head = render_page._internal.handle_block_node(curr, sn_head, pos, engine_ctx)
+        elseif id == constants.WHATSIT then
+            -- Preserve whatsit nodes (including pdf_colorstack for color preservation)
+            -- These nodes don't need position adjustment, just need to be kept in the list
+            -- This is crucial for maintaining color across page boundaries
         else
             if id == constants.GLUE then
                 D.setfield(curr, "width", 0)
@@ -140,7 +160,38 @@ function sidenote.render(head, layout_map, params, context, engine_ctx, page_idx
         end
 
         if dbg.is_enabled() then
-            d_head = render_page._internal.handle_debug_drawing(curr, d_head, pos, engine_ctx)
+            sn_head = render_page._internal.handle_debug_drawing(curr, sn_head, pos, engine_ctx)
+        end
+    end
+
+    -- Append sidenote sublist to end of main list (so sidenotes render on top of borders)
+    if sn_head then
+        -- Wrap sidenote content with color nodes if color is specified
+        -- This ensures color is maintained across page boundaries
+        if sidenote_color and sidenote_color ~= "" then
+            local rgb_str = utils.normalize_rgb(sidenote_color)
+            -- Insert color push at the beginning (fill color)
+            local color_cmd = utils.create_color_literal(rgb_str, false)  -- false = fill color (rg)
+            local color_push = utils.create_pdf_literal("q " .. color_cmd)
+            sn_head = D.insert_before(sn_head, sn_head, color_push)
+
+            -- Find the tail and insert color pop at the end
+            local sn_tail = sn_head
+            while D.getnext(sn_tail) do
+                sn_tail = D.getnext(sn_tail)
+            end
+            local color_pop = utils.create_pdf_literal("Q")
+            D.insert_after(sn_head, sn_tail, color_pop)
+        end
+
+        if not d_head then
+            d_head = sn_head
+        else
+            local d_tail = d_head
+            while D.getnext(d_tail) do
+                d_tail = D.getnext(d_tail)
+            end
+            D.setnext(d_tail, sn_head)
         end
     end
 
@@ -372,6 +423,35 @@ function sidenote.register_sidenote(box_num, metadata)
     local id = sidenote.registry_counter
 
     local content_head = node.copy_list(box.list)
+
+    -- Apply judou processing if enabled
+    local judou_ctx = judou.initialize({}, {})
+    if judou_ctx then
+        content_head = judou.flatten(content_head, {}, judou_ctx)
+    end
+
+    -- Register style and set attribute on all nodes (Phase 2: Style registry)
+    local font_color_str = metadata and metadata.font_color
+    local font_size_str = metadata and metadata.font_size
+
+    -- Build style table with all available attributes
+    local style = {}
+    if font_color_str and font_color_str ~= "" then
+        style.font_color = font_color_str
+    end
+    if font_size_str and font_size_str ~= "" then
+        style.font_size = constants.to_dimen(font_size_str)
+    end
+
+    -- Register style and set attribute if any style attributes are present
+    if next(style) then  -- Check if style table is not empty
+        local style_reg_id = style_registry.register(style)
+        -- Traverse the node list and set ATTR_STYLE_REG_ID on all nodes
+        for n in node.traverse(content_head) do
+            node.set_attribute(n, constants.ATTR_STYLE_REG_ID, style_reg_id)
+        end
+    end
+
     sidenote.registry[id] = {
         head = content_head,
         metadata = metadata or {}

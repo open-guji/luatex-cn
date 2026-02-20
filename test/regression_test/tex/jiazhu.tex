@@ -4,6 +4,13 @@
 \usepackage{tikz}
 \setmainfont{TW-Kai}
 \禁用分页裁剪
+\无标点模式
+
+\jiazhuSetup{
+    align = outward,
+    font = FandolSong,
+    font-color = {0, 0, 0},
+}
 
 \begin{document}
 \begin{正文}
@@ -19,7 +26,19 @@
 
 一二三\夹注[font-color=blue, font-size=14pt]{蓝色小字夹注}四五
 
-一二三\夹注[font=FandolSong, font-color=red]{宋体红色夹注}四五
+一二三\夹注[font=TW-Kai, font-color=red]{宋体红色夹注}四五
+
+标点\夹注{标点，测试。}测试。”\夹注[font=TW-Kai]{标点，测试。}四五
+
+% Fill up most of page 1
+一二三四五六七八九十一二三四五六七八九十一二三四五六七八九十一二三四五六七八九十一二三四五六七八九十一二三四五六七八九十一二三四五六七八九十一二三四五六七八九十
+
+一二三四五六七八九十一二三四五六七八九十一二三四五六七八九十一二三四五六七八九十一二三四五六七八九十一二三四五六七八九十一二三四五六七八九十一二三四五六七八九十
+
+% Long jiazhu that should span from end of page 1 to beginning of page 2
+末尾文字\夹注[font-color=red]{这是一个很长很长的红色夹注它应该从第一页的末尾开始一直延续到第二页的开头并且在第二页上仍然应该保持红色而不是变成黑色这是测试跨页颜色保持的关键测试用例}继续正文
+
+一二三四五六七八九十一二三四五六七八九十
 
 \end{正文}
 \end{document}

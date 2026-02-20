@@ -30,7 +30,6 @@ local judou = {}
 -- =============================================================================
 -- Initialize global judou table
 _G.judou = _G.judou or {}
-_G.judou.enabled = _G.judou.enabled or false
 _G.judou.punct_mode = _G.judou.punct_mode or "normal"
 _G.judou.pos = _G.judou.pos or "right-bottom"
 _G.judou.size = _G.judou.size or "1em"
@@ -40,9 +39,6 @@ _G.judou.color = _G.judou.color or "red"
 -- @param params (table) Parameters from TeX keyvals
 local function setup(params)
     params = params or {}
-    if params.enabled ~= nil then
-        _G.judou.enabled = (params.enabled == true or params.enabled == "true")
-    end
     if params.punct_mode and params.punct_mode ~= "" then
         _G.judou.punct_mode = params.punct_mode
     end
@@ -67,7 +63,6 @@ judou.setup = setup
 -- @return table A table containing judou configuration values
 local function read_judou_params()
     return {
-        judou_on = _G.judou.enabled or false,
         punct_mode = _G.judou.punct_mode or "normal",
         judou_pos = _G.judou.pos or "right-bottom",
         judou_size = _G.judou.size or "1em",
@@ -88,9 +83,6 @@ function judou.initialize(params, engine_ctx)
     local jp = read_judou_params()
 
     local mode = jp.punct_mode
-    if jp.judou_on then
-        mode = "judou"
-    end
 
     if mode == "normal" then
         return nil -- Plugin disabled for this run

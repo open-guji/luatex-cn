@@ -13,10 +13,10 @@
 % limitations under the License.
 
 \RequirePackage{core/luatex-cn-core-base}
-\ProvidesExplPackage{core/luatex-cn-core-metadata}{2026/01/31} {0.2.0}{Book metadata management}
+\ProvidesExplPackage{core/luatex-cn-core-metadata}{2026/01/31} {0.2.1}{Book metadata management}
 
 % Load Lua module
-\lua_now:e { vertical_metadata = require('core.luatex-cn-core-metadata') }
+\lua_now:n { vertical_metadata = require('core.luatex-cn-core-metadata') }
 
 % ============================================================================
 % Centralized variables for book metadata

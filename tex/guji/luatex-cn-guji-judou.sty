@@ -17,17 +17,16 @@
 %
 \RequirePackage{expl3}
 \RequirePackage{xparse}
-\ProvidesExplPackage {guji/luatex-cn-guji-judou} {2026/01/31} {0.2.0} {Judou (Punctuation Mode) Support}
+\ProvidesExplPackage {guji/luatex-cn-guji-judou} {2026/01/31} {0.2.1} {Judou (Punctuation Mode) Support}
 
 % Load Lua module for global state
-\lua_now:e { judou_mod = require('guji.luatex-cn-guji-judou') }
+\lua_now:n { judou_mod = require('guji.luatex-cn-guji-judou') }
 
 % =============================================================================
 % Judou Key Definitions (luatexcn / judou namespace)
 % =============================================================================
 
 % --- Variable Declarations ---
-\bool_new:N \l__luatexcn_judou_on_bool
 \tl_new:N \l__luatexcn_judou_pos_tl
 \tl_new:N \l__luatexcn_judou_size_tl
 \tl_new:N \l__luatexcn_judou_color_tl
@@ -36,9 +35,6 @@
 % --- Key Definitions ---
 \keys_define:nn { luatexcn / judou }
   {
-    judou-on .bool_set:N = \l__luatexcn_judou_on_bool,
-    judou-on .initial:n = false,
-
     judou-pos .tl_set:N = \l__luatexcn_judou_pos_tl,
     judou-pos .initial:n = {right-bottom},
 
@@ -60,11 +56,10 @@
   {
     \lua_now:e {
       judou_mod.setup({
-        enabled~=~\bool_if:NTF \l__luatexcn_judou_on_bool {true} {false},
-        punct_mode~=~[=[\\luaescapestring{\\l__luatexcn_judou_punct_mode_tl}]=],
-        pos~=~[=[\\luaescapestring{\\l__luatexcn_judou_pos_tl}]=],
-        size~=~[=[\\luaescapestring{\\l__luatexcn_judou_size_tl}]=],
-        color~=~[=[\\luaescapestring{\\l__luatexcn_judou_color_tl}]=]
+        punct_mode~=~[=[\luaescapestring{\tl_use:N~\l__luatexcn_judou_punct_mode_tl}]=],
+        pos~=~[=[\luaescapestring{\tl_use:N~\l__luatexcn_judou_pos_tl}]=],
+        size~=~[=[\luaescapestring{\tl_use:N~\l__luatexcn_judou_size_tl}]=],
+        color~=~[=[\luaescapestring{\tl_use:N~\l__luatexcn_judou_color_tl}]=]
       })
     }
   }
@@ -81,13 +76,13 @@
 % Usage: \JudouOn to enable, \JudouOff to disable
 \NewDocumentCommand{\JudouOn}{ O{} }
   {
-    \keys_set:nn { luatexcn / judou } { judou-on = true, #1 }
+    \keys_set:nn { luatexcn / judou } { punct-mode = judou, #1 }
     \__luatexcn_judou_sync_lua:
   }
 
 \NewDocumentCommand{\JudouOff}{ }
   {
-    \keys_set:nn { luatexcn / judou } { judou-on = false }
+    \keys_set:nn { luatexcn / judou } { punct-mode = normal }
     \__luatexcn_judou_sync_lua:
   }
 

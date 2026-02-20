@@ -34,8 +34,34 @@
 local constants = package.loaded['core.luatex-cn-constants'] or
     require('core.luatex-cn-constants')
 local D = constants.D
+local style_registry = package.loaded['util.luatex-cn-style-registry'] or
+    require('util.luatex-cn-style-registry')
 
 local textflow = {}
+
+--- Push jiazhu style to style stack
+-- @param font_color (string|nil) Font color string (e.g., "red" or "1 0 0")
+-- @param font_size (string|nil) Font size string (e.g., "14pt")
+-- @param font (string|nil) Font family name
+-- @return (number) Style ID
+function textflow.jiazhu_push_style(font_color, font_size, font)
+    local style = {}
+    if font_color and font_color ~= "" then
+        style.font_color = font_color
+    end
+    if font_size and font_size ~= "" then
+        style.font_size = constants.to_dimen(font_size)
+    end
+    if font and font ~= "" then
+        style.font = font
+    end
+    return style_registry.push(style)
+end
+
+--- Pop jiazhu style from style stack
+function textflow.jiazhu_pop_style()
+    return style_registry.pop()
+end
 
 --- 计算子列（如双行注 Jiazhu）的 X 偏移
 -- @param base_x (number) 基础 X 坐标 (sp)
@@ -233,6 +259,19 @@ function textflow.place_jiazhu_nodes(ctx, start_node, layout_map, params, callba
         params.jiazhu_mode)
 
     -- Place chunks into layout_map
+    -- Phase 3: Read style from node attribute (set by TeX layer)
+    local style_reg_id = nil
+    local current_style = nil
+    if #j_nodes > 0 then
+        style_reg_id = D.get_attribute(j_nodes[1], constants.ATTR_STYLE_REG_ID)
+        current_style = style_registry.get(style_reg_id)
+    end
+
+    -- Extract style attributes for layout_map (backward compatibility)
+    local font_color_str = current_style and current_style.font_color or nil
+    local font_size_val = current_style and current_style.font_size or nil
+    local font_str = current_style and current_style.font or nil
+
     for i, chunk in ipairs(chunks) do
         if i > 1 then
             callbacks.wrap()
@@ -240,12 +279,27 @@ function textflow.place_jiazhu_nodes(ctx, start_node, layout_map, params, callba
             if ctx.cur_row < chunk_indent then ctx.cur_row = chunk_indent end
         end
         for _, node_info in ipairs(chunk.nodes) do
-            layout_map[node_info.node] = {
+            -- Note: ATTR_STYLE_REG_ID is already set by TeX layer
+
+            local entry = {
                 page = ctx.cur_page,
                 col = ctx.cur_col,
                 row = ctx.cur_row + node_info.relative_row,
                 sub_col = node_info.sub_col
             }
+
+            -- Only add style fields if set (to maintain backward compatibility)
+            if font_color_str then
+                entry.font_color = font_color_str
+            end
+            if font_size_val then
+                entry.font_size = font_size_val
+            end
+            if font_str then
+                entry.font = font_str
+            end
+
+            layout_map[node_info.node] = entry
         end
         ctx.cur_row = ctx.cur_row + chunk.rows_used
     end

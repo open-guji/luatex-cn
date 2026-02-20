@@ -18,7 +18,7 @@
 \RequirePackage{core/luatex-cn-core-base}
 \RequirePackage{expl3}
 \RequirePackage{xparse}
-\ProvidesExplPackage {core/luatex-cn-core-sidenote} {2026/01/31} {0.2.0} {SideNode Support for Vertical Typesetting}
+\ProvidesExplPackage {core/luatex-cn-core-sidenote} {2026/01/31} {0.2.1} {SideNode Support for Vertical Typesetting}
 
 % Define keys for SideNode
 \tl_new:N \l__luatexcn_sidenote_yoffset_tl
@@ -64,11 +64,14 @@
     % If grid-height not set, default to font size (tight packing)
     \dim_compare:nF { \l_tmpb_dim > 0pt } { \dim_set_eq:NN \l_tmpb_dim \l_tmpa_dim }
 
+    % Pass style attributes to Lua (style registration handled in Lua layer)
     \lua_now:e { vertical_sidenote.register_sidenote(\int_value:w \l_tmpa_box, {
       yoffset = vertical_constants.to_dimen([=[\luaescapestring{\tl_use:N \l__luatexcn_sidenote_yoffset_tl}]=]) ~ or ~ 0,
       grid_height = \int_value:w \l_tmpb_dim,
       padding_top = vertical_constants.to_dimen([=[\luaescapestring{\tl_use:N \l__luatexcn_sidenote_padding_top_tl}]=]) ~ or ~ 0,
-      padding_bottom = vertical_constants.to_dimen([=[\luaescapestring{\tl_use:N \l__luatexcn_sidenote_padding_bottom_tl}]=]) ~ or ~ 0
+      padding_bottom = vertical_constants.to_dimen([=[\luaescapestring{\tl_use:N \l__luatexcn_sidenote_padding_bottom_tl}]=]) ~ or ~ 0,
+      font_color = [=[\luaescapestring{\tl_use:N \l__luatexcn_sidenote_color_tl}]=],
+      font_size = [=[\luaescapestring{\dim_use:N \l_tmpa_dim}]=]
     })}%
   \group_end:
 }

@@ -59,6 +59,9 @@ constants.ATTR_DECORATE_VISUAL_CENTER = 202611
 constants.ATTR_DECORATE_FONT = 202612
 constants.ATTR_CHAPTER_REG_ID = 202613
 
+-- Style Registry Attribute (for cross-page style preservation - Phase 2)
+constants.ATTR_STYLE_REG_ID = luatexbase.attributes.cnverticalstyle or luatexbase.new_attribute("cnverticalstyle")
+
 -- Constants for Side Pizhu
 constants.SIDENOTE_USER_ID = 202601
 constants.FLOATING_TEXTBOX_USER_ID = 202602
@@ -139,14 +142,34 @@ local function register_decorate(char_str, xoff_str, yoff_str, size_str, color_s
         char_code = utf8.codepoint(char_str, 1)
     end
 
+    -- Register style attributes in style_registry (Phase 2: Style Registry)
+    local style_registry = package.loaded['util.luatex-cn-style-registry'] or
+        require('util.luatex-cn-style-registry')
+
+    local style = {}
+    if color_str and color_str ~= "" then
+        style.font_color = color_str
+    end
+    if size_str and size_str ~= "" then
+        style.font_size = to_dimen(size_str)
+    end
+    -- Note: font_id is numeric, not storing in style registry (would need font name)
+
+    local style_reg_id = nil
+    if next(style) then
+        style_reg_id = style_registry.register(style)
+    end
+
+    -- Keep decoration-specific attributes in decorate_registry
     local reg = {
         char = char_code,
         xoffset = to_dimen(xoff_str) or 0,
         yoffset = to_dimen(yoff_str) or 0,
-        font_size = to_dimen(size_str), -- Nil means inherit from text font
         scale = tonumber(scale) or 1.0, -- Multiplier for font size
+        font_id = font_id,               -- Store provided ID (may be nil)
+        -- Backward compatibility: also store in reg for now
+        font_size = to_dimen(size_str),
         color = color_str,
-        font_id = font_id               -- Store provided ID (may be nil)
     }
     table.insert(_G.decorate_registry, reg)
     local reg_id = #_G.decorate_registry
@@ -160,8 +183,13 @@ local function register_decorate(char_str, xoff_str, yoff_str, size_str, color_s
     D.setfield(g, "width", 0)
     D.setfield(g, "height", 0)
     D.setfield(g, "depth", 0)
+
+    -- Set both decorate ID and style registry ID attributes
     if constants.ATTR_DECORATE_ID then
         D.set_attribute(g, constants.ATTR_DECORATE_ID, reg_id)
+    end
+    if style_reg_id and constants.ATTR_STYLE_REG_ID then
+        D.set_attribute(g, constants.ATTR_STYLE_REG_ID, style_reg_id)
     end
 
     -- Wrap in HLIST

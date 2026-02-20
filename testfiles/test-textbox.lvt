@@ -1,0 +1,20 @@
+\input{regression-test}
+\documentclass{ltc-guji}
+
+\begin{document}
+\START
+
+\TEST{Simple TextBox}{
+  \begin{guji-content}
+    \TextBox[height=2]{文本框内容}
+  \end{guji-content}
+}
+
+\TEST{TextBox with alignment}{
+  \begin{guji-content}
+    \TextBox[height=3, vertical-align=center]{对齐内容}
+  \end{guji-content}
+}
+
+\END
+\end{document}

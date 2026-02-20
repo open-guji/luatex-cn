@@ -1,0 +1,27 @@
+\documentclass[四库全书]{ltc-guji}
+\禁用分页裁剪
+
+\begin{document}
+\begin{正文}
+
+% TextBox with 20pt font (should scale grid and text)
+正常：一二\文本框{三四五}六七
+
+给定格子高度：一二\文本框[height=5]{三四五}六七
+
+给定绝对高度：一二\填充文本框[height=120pt]{三四五}六七
+
+填充：一二\填充文本框[height=5]{三四五}六七
+
+挤压：\填充文本框[height=4]{天地玄黄宇宙}洪荒
+
+% TextBox with 12pt font
+调整字体：\文本框[font-size=12pt, height=10]{一二三四五六七}
+
+缩进两格：\\
+\begin{段落}[indent=2]
+\文本框[font-size=12pt, height=10]{一二三四五六七}
+\end{段落}
+
+\end{正文}
+\end{document}

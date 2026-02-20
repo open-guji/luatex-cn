@@ -1,0 +1,46 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Run All Lua Tests",
+            "type": "shell",
+            "command": "texlua test/run_all.lua",
+            "group": {
+                "kind": "test",
+                "isDefault": true
+            },
+            "presentation": {
+                "reveal": "always",
+                "panel": "new"
+            },
+            "problemMatcher": "$gcc"
+        },
+        {
+            "label": "Run Current Test File",
+            "type": "shell",
+            "command": "texlua ${relativeFile}",
+            "group": "test",
+            "presentation": {
+                "reveal": "always",
+                "panel": "new"
+            }
+        },
+        {
+            "label": "Compile Current TeX File",
+            "type": "shell",
+            "command": "lualatex --interaction=nonstopmode --synctex=1 ${file}",
+            "options": {
+                "cwd": "${fileDirname}",
+                "env": {
+                    "TEXINPUTS": ".;${workspaceFolder}/src//;",
+                    "LUAINPUTS": ".;${workspaceFolder}/src//;"
+                }
+            },
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": "$gcc"
+        }
+    ]
+}

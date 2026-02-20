@@ -1,0 +1,84 @@
+name: Build & Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install TeX Live
+        uses: TeX-Live/setup-texlive-action@v3
+        with:
+          cache: true
+          packages: |
+            scheme-basic
+            l3build
+            luaotfload
+            luatex
+            ctablestack
+            fontspec
+            latex-bin
+            ctex
+            markdown
+            geometry
+
+      - name: Install system dependencies
+        run: sudo apt-get install -y zip
+
+      - name: Build CTAN package
+        run: |
+          texlua build.lua ctan
+
+      - name: Deploy to ctan branch
+        run: |
+          mkdir out
+          for d in build/distrib/ctan build/ctan; do
+            if [ -d "$d/luatex-cn" ]; then
+              echo "Found staging area in $d"
+              cp -r $d/* out/
+              break
+            fi
+          done
+          ls -R out
+
+      - name: Push to ctan branch
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./out
+          publish_branch: ctan
+          force_orphan: true
+          user_name: 'github-actions[bot]'
+          user_email: 'github-actions[bot]@users.noreply.github.com'
+          commit_message: "Release ${{ github.ref_name }} [skip ci]"
+
+      - name: Prepare release asset
+        run: |
+          cd out/luatex-cn
+          zip -r ../../luatex-cn-tex-${{ github.ref_name }}.zip tex/
+          cd ../..
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: luatex-cn-tex-${{ github.ref_name }}.zip
+          generate_release_notes: true
+          draft: true
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

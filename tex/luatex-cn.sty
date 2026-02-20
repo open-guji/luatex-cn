@@ -1,0 +1,77 @@
+% Copyright 2026 Open-Guji (https://github.com/open-guji)
+%
+% Licensed under the Apache License, Version 2.0 (the "License");
+% you may not use this file except in compliance with the License.
+% You may obtain a copy of the License at
+%
+%     http://www.apache.org/licenses/LICENSE-2.0
+%
+% Unless required by applicable law or agreed to in writing, software
+% distributed under the License is distributed on an "AS IS" BASIS,
+% WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+% See the License for the specific language governing permissions and
+% limitations under the License.
+
+% luatex_cn.sty
+% LuaTeX package for Chinese typesetting support
+% Main wrapper package that loads luatex-cn-core and other modules
+%
+\NeedsTeXFormat{LaTeX2e}
+\RequirePackage{expl3}
+\RequirePackage{l3keys2e}
+\ProvidesExplPackage {luatex-cn} {2026/01/31} {0.2.0} {Chinese typesetting support for LuaTeX (Bundle)}
+
+% ============================================================================
+% Package Options
+% ============================================================================
+\bool_new:N \g_luatexcn_banxin_bool
+\bool_new:N \g_luatexcn_no_banxin_bool
+
+\keys_define:nn { luatexcn }
+  {
+    banxin .bool_set:N = \g_luatexcn_banxin_bool,
+    banxin .initial:n = true,
+    no-banxin .code:n = { \bool_set_true:N \g_luatexcn_no_banxin_bool },
+  }
+
+\ProcessKeysOptions { luatexcn }
+
+% If no-banxin is explicitly set, override banxin
+\bool_if:NT \g_luatexcn_no_banxin_bool
+  {
+    \bool_set_false:N \g_luatexcn_banxin_bool
+  }
+
+% ============================================================================
+% Load Sub-packages
+% ============================================================================
+
+% 1. Load Core (Vertical + Typesetting + Base Utils)
+\RequirePackage{luatex-cn-core}
+
+% 2. Load SplitPage (筒子页) - Always available in bundle
+\RequirePackage{splitpage/luatex-cn-splitpage}
+
+% 3. Load Banxin (版心) - Conditional
+\RequirePackage{banxin/luatex-cn-banxin}
+
+% ============================================================================
+% Interface Documentation
+% ============================================================================
+% This package now serves as a bundle loading:
+% - luatex-cn-core
+% - luatex-cn-splitpage
+% - luatex-cn-banxin
+%
+% ============================================================================
+
+% Version info
+\tl_const:Nn \c_luatexcn_version_tl {0.2.0}
+\cs_new:Npn \luatexcnversion { \c_luatexcn_version_tl }
+
+% Main package initialization
+\PackageInfo { luatex_cn } { Chinese~typesetting~bundle~\tl_use:N \c_luatexcn_version_tl \space loaded }
+
+\ExplSyntaxOff%
+%
+\endinput%

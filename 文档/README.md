@@ -1,119 +1,16 @@
-# LuaTeX-cn 用户手册
+# LuaTeX-cn 项目文档 (Documentation)
 
-[English Version](README-en.md)
+这里是 `luatex-cn` 宏包的详细说明文档。
 
-`luatex-cn` 是一个专门为 LuaTeX 设计的中文排版宏包，特别增强了对古籍垂直排版（Guji Layout）和现代竖排的支持。
+## 🇨🇳 中文文档 (Chinese)
 
----
+- **[用户手册 (zh-doc)](luatex-cn-zh-doc.md)**: 核心功能说明，包含安装要求、快速入门、命令详解（竖排、夹注、印章等）及全局配置参数。
+- **[字体设置指南 (font-setup)](luatex-cn-font-setup.md)**: 详细讲解如何配置 `fontspec` 以支持垂直排版、全角字符以及常用古籍字体的设置方案。
 
-## 1. 安装与准备
+## 🇺🇸 English Documentation
 
-### 系统要求
-- **编译器**: 必须使用 `LuaLaTeX` (版本 1.10+)。不支持 pdfLaTeX 或 XeLaTeX。
-- **发行版**: 推荐使用 TeX Live 2024 或更高版本。
-
-### 字体配置
-本宏包不仅支持系统字体自动检测，还强烈建议用户手动指定高质量的古籍字体以支持生僻字：
-- **强烈推荐**: 使用 `\setmainfont{TW-Kai}` (全字库正楷体) 以获得最佳的兼容性和古籍视觉效果。
-- **自动检测**: 
-    - **Windows**: 优先选择 "SimSun", "Microsoft YaHei"。
-    - **macOS**: 优先选择 "Songti SC"。
-
-详细的字体配置方法请参考：[FONT-SETUP.md](./FONT-SETUP.md)
+- **[User Manual (en-doc)](luatex-cn-en-doc.md)**: English translation of the main manual, providing a complete reference for international users to implement Guji and modern vertical layouts.
 
 ---
 
-## 2. 快速入门
-
-### 古籍排版基础模板
-创建一个 `.tex` 文件，尽量模仿我们的 `史记` 示例：
-
-```latex
-\documentclass[四库全书彩色]{ltc-guji}
-
-\usepackage{enumitem}
-\usepackage{tikz}
-
-% 强烈建议指定字体，推荐全字库正楷
-\setmainfont{TW-Kai}
-
-\title{欽定四庫全書}
-\chapter{史記\\卷一}
-
-\begin{document}
-\begin{正文}
-欽定四庫全書
-
-\begin{列表}
-    \item 史記卷一
-    \item \填充文本框[12]{漢太史令}司馬遷\空格 撰
-    \item 五帝本紀第一
-\end{列表}
-
-\begin{段落}[indent=3]
-这里是正文内容...
-\夹注{这里是双行夹注内容，宏包会自动处理对齐与折行。}
-\end{段落}
-
-\end{正文}
-\end{document}
-```
-
-使用 `lualatex` 编译即可获得带有彩色网格和自动版心的页面。
-
----
-
-## 3. 文档类与模板
-
-项目提供了两个主要的文档类：
-
-### `ltc-guji.cls` (古籍专用)
-包含复杂的网格、鱼尾、版心控制，适用于重现历史文献。
-- **内置模板**:
-    - `四库全书`: 绿/红色界面的经典官修书籍风格。
-    - `红楼梦甲戌本`: 模拟手抄本，支持侧批与眉批。
-
-### `ltc-book.cls` (现代竖排)
-适用于现代小说、报告。默认无网格，版式更加自由。
-- **使用环境**: 使用 `\begin{正文} ... \end{正文}` 包裹内容。
-
----
-
-## 4. 功能与命令详细手册
-
-### 4.1 核心排版引擎
-- **`\竖排[参数]{内容}`**: 将指定内容按垂直网格排列。
-- **`\TextBox[参数]{内容}`**: 创建一个网格化的文本框。
-    - `height`: 占据的行数（网格高度）。
-    - `n-cols`: 内部细分列数（如一个大网格内排 3 列小字）。
-    - `box-align`: 内容对齐方式（`top`, `center`, `bottom`, `fill`）。
-- **`\Space[长度]`**: 插入网格占位符。
-
-### 4.2 注释系统
-- **`\TextFlow{内容}`** (别名: `\文本流`, `\夹注`): 生成传统古籍的“夹注”（双行小字）。
-- **`\SideNode[参数]{内容}`** (别名: `\侧批`, `\CePi`): 在版面边缘添加注释。
-    - `yoffset`: 垂直偏移量。
-    - `color`: 注释颜色（古籍常为红色）。
-
-### 4.3 装饰与定位
-- **`\YinZhang[参数]{图片路径}`**: 在当前页插入绝对定位的印章。
-    - `page`: 指定显示的页码。
-    - `x`, `y`: 坐标位置（相对于页面左上角）。
-    - `width`: 印章宽度。
-
-### 4.4 段落控制
-- **`\begin{Paragraph}[参数]`**:
-    - `indent`: 全局缩进。
-    - `first-indent`: 首行缩进（默认为 1 或 2 个字符）。
-    - `bottom-indent`: 底部（右侧）留白。
-
-### 4.5 全局配置 (`\gujiSetup`)
-- `book-name`: 版心上方的书名。
-- `chapter-title`: 版心中的章节名。
-- `border`: 是否显示边框线（`true`/`false`）。
-- `n-char`: 每行固定的字符数（古籍常见约束）。
-
----
-
-## 5. 更多资源
-如果你需要更深入的示例，请查看项目根目录下的 [示例/](../示例/) 文件夹。
+*Note: Each Markdown file has a corresponding PDF version in this directory for offline reading.*

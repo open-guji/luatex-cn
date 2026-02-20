@@ -1,0 +1,108 @@
+% Copyright 2026 Open-Guji (https://github.com/open-guji)
+%
+% Licensed under the Apache License, Version 2.0 (the "License");
+% you may not use this file except in compliance with the License.
+% You may obtain a copy of the License at
+%
+%     http://www.apache.org/licenses/LICENSE-2.0
+%
+% Unless required by applicable law or agreed to in writing, software
+% distributed under the License is distributed on an "AS IS" BASIS,
+% WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+% See the License for the specific language governing permissions and
+% limitations under the License.
+
+\ProvidesExplPackage{core/luatex-cn-core-page}{2026/01/31} {0.2.0}{Page geometry and background support}
+
+% Global token lists for page parameters (centralized)
+\tl_new:N \l__luatexcn_page_paper_width_tl
+\tl_new:N \l__luatexcn_page_paper_height_tl
+\tl_new:N \l__luatexcn_page_margin_top_tl
+\tl_new:N \l__luatexcn_page_margin_bottom_tl
+\tl_new:N \l__luatexcn_page_margin_left_tl
+\tl_new:N \l__luatexcn_page_margin_right_tl
+\tl_new:N \l__luatexcn_page_background_color_tl
+\tl_new:N \l__luatexcn_page_footskip_tl
+\tl_new:N \l__luatexcn_page_topskip_tl
+
+\keys_define:nn { luatexcn / page }
+  {
+    paper-width .tl_set:N = \l__luatexcn_page_paper_width_tl,
+    paper-width .initial:n = {210mm},
+
+    paper-height .tl_set:N = \l__luatexcn_page_paper_height_tl,
+    paper-height .initial:n = {297mm},
+
+    background-color .tl_set:N = \l__luatexcn_page_background_color_tl,
+    background-color .initial:n = {},
+
+    margin-top .tl_set:N = \l__luatexcn_page_margin_top_tl,
+    margin-top .initial:n = {0pt},
+
+    margin-bottom .tl_set:N = \l__luatexcn_page_margin_bottom_tl,
+    margin-bottom .initial:n = {0pt},
+
+    margin-left .tl_set:N = \l__luatexcn_page_margin_left_tl,
+    margin-left .initial:n = {0pt},
+
+    margin-right .tl_set:N = \l__luatexcn_page_margin_right_tl,
+    margin-right .initial:n = {0pt},
+
+    footskip .tl_set:N = \l__luatexcn_page_footskip_tl,
+    footskip .initial:n = {0pt},
+
+    topskip .tl_set:N = \l__luatexcn_page_topskip_tl,
+    topskip .initial:n = {0pt},
+
+    unknown .code:n = {},
+  }
+
+\NewDocumentCommand{\pageSetup}{ m }
+  {
+    \keys_set:nn { luatexcn / page } { #1 }
+    \lua_now:e {
+      local~page~=~require('core.luatex-cn-core-page')
+      page.setup({
+        paper_width~=~"\l__luatexcn_page_paper_width_tl",
+        paper_height~=~"\l__luatexcn_page_paper_height_tl",
+        margin_top~=~"\l__luatexcn_page_margin_top_tl",
+        margin_bottom~=~"\l__luatexcn_page_margin_bottom_tl",
+        margin_left~=~"\l__luatexcn_page_margin_left_tl",
+        margin_right~=~"\l__luatexcn_page_margin_right_tl"
+      })
+    }
+  }
+
+\cs_new:Npn \luatexcn_apply_geometry:
+  {
+    \if_meaning:w \@onlypreamble \@notprerr
+      % In document body
+      \newgeometry{
+        paperwidth=\l__luatexcn_page_paper_width_tl,
+        paperheight=\l__luatexcn_page_paper_height_tl,
+        top=\l__luatexcn_page_margin_top_tl,
+        bottom=\l__luatexcn_page_margin_bottom_tl,
+        left=\l__luatexcn_page_margin_left_tl,
+        right=\l__luatexcn_page_margin_right_tl,
+        footskip=\l__luatexcn_page_footskip_tl
+      }
+      % Manual paper size adjustment for LuaTeX if changed in body
+      \dim_set:Nn \pagewidth { \l__luatexcn_page_paper_width_tl }
+      \dim_set:Nn \pageheight { \l__luatexcn_page_paper_height_tl }
+      \dim_set:Nn \topskip { \l__luatexcn_page_topskip_tl }
+    \else
+      % In preamble
+      \geometry{
+        paperwidth=\l__luatexcn_page_paper_width_tl,
+        paperheight=\l__luatexcn_page_paper_height_tl,
+        top=\l__luatexcn_page_margin_top_tl,
+        bottom=\l__luatexcn_page_margin_bottom_tl,
+        left=\l__luatexcn_page_margin_left_tl,
+        right=\l__luatexcn_page_margin_right_tl,
+        footskip=\l__luatexcn_page_footskip_tl
+      }
+      \dim_set:Nn \topskip { \l__luatexcn_page_topskip_tl }
+    \fi
+  }
+
+\endinput

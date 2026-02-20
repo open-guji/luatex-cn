@@ -1,0 +1,73 @@
+% Copyright 2026 Open-Guji (https://github.com/open-guji)
+%
+% Licensed under the Apache License, Version 2.0 (the "License");
+% you may not use this file except in compliance with the License.
+% You may obtain a copy of the License at
+%
+%     http://www.apache.org/licenses/LICENSE-2.0
+%
+% Unless required by applicable law or agreed to in writing, software
+% distributed under the License is distributed on an "AS IS" BASIS,
+% WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+% See the License for the specific language governing permissions and
+% limitations under the License.
+% ============================================================================
+% luatex-cn-core-paragraph.sty - Paragraph Environment
+% ============================================================================
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{core/luatex-cn-core-paragraph}[2026/01/30 LuaTeX-CN Core Paragraph]
+
+\RequirePackage{core/luatex-cn-core-base}
+\ExplSyntaxOn
+
+% Paragraph Environment
+% Supports block indentation with first-line/hanging indent differentiation
+% Syntax: \begin{Paragraph}[indent=2, first-indent=0, bottom-indent=1]
+
+\int_new:N \g_luatexcn_paragraph_block_id_int
+
+\keys_define:nn { luatexcn / paragraph }
+  {
+    indent .int_set:N = \l__luatexcn_paragraph_indent_int,
+    indent .initial:n = 0,
+    first-indent .int_set:N = \l__luatexcn_paragraph_first_indent_int,
+    first-indent .initial:n = -1, % -1 means use indent value
+    bottom-indent .int_set:N = \l__luatexcn_paragraph_bottom_indent_int,
+    bottom-indent .initial:n = 0,
+  }
+
+\NewDocumentEnvironment{Paragraph}{ O{} }
+  {
+    \par
+    \int_gincr:N \g_luatexcn_paragraph_block_id_int
+    \keys_set:nn { luatexcn / paragraph } { #1 }
+
+    % Set Block ID
+    \setluatexattribute\cnverticalblockid { \int_use:N \g_luatexcn_paragraph_block_id_int }
+
+    % Set Base Indent (also serves as Hanging Indent)
+    \setluatexattribute\cnverticalindent{\l__luatexcn_paragraph_indent_int}
+
+    % Set First Indent
+    \int_compare:nNnTF \l__luatexcn_paragraph_first_indent_int = {-1}
+      { \setluatexattribute\cnverticalfirstindent{\l__luatexcn_paragraph_indent_int} }
+      { \setluatexattribute\cnverticalfirstindent{\l__luatexcn_paragraph_first_indent_int} }
+
+    % Set Bottom Indent
+    \setluatexattribute\cnverticalrightindent{\l__luatexcn_paragraph_bottom_indent_int}
+  }
+  {
+    % Reset indent attributes to default BEFORE \par
+    % so subsequent content won't inherit paragraph's indent
+    \setluatexattribute\cnverticalindent{0}
+    \setluatexattribute\cnverticalfirstindent{-1}
+    \setluatexattribute\cnverticalrightindent{0}
+    \par
+  }
+
+\ExplSyntaxOff
+
+% Support CJK environment alias
+\NewEnvironmentCopy{段落}{Paragraph}
+
+\endinput

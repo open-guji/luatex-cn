@@ -1,0 +1,17 @@
+\input{regression-test}
+\documentclass{ltc-book}
+
+\begin{document}
+\START
+
+\TEST{Basic Modern Book}{
+  \begin{正文}
+  \setbox0=\vbox{
+    文字竖排测试
+  }
+  \showbox0
+  \end{正文}
+}
+
+\END
+\end{document}

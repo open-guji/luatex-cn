@@ -1,0 +1,34 @@
+name: Sync to Gitee
+
+concurrency:
+  group: gitee-sync
+  cancel-in-progress: true
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  repo-sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.GITEE_PRIVATE_KEY }}
+
+      - name: Add Gitee to known_hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan gitee.com >> ~/.ssh/known_hosts
+
+      - name: Push main branch to Gitee
+        run: |
+          git remote add gitee git@gitee.com:open-guji/${{ github.event.repository.name }}.git
+          git push -f gitee main:main

@@ -1,0 +1,201 @@
+% Copyright 2026 Open-Guji (https://github.com/open-guji)
+%
+% Licensed under the Apache License, Version 2.0 (the "License");
+% you may not use this file except in compliance with the License.
+% You may obtain a copy of the License at
+%
+%     http://www.apache.org/licenses/LICENSE-2.0
+%
+% Unless required by applicable law or agreed to in writing, software
+% distributed under the License is distributed on an "AS IS" BASIS,
+% WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+% See the License for the specific language governing permissions and
+% limitations under the License.
+
+\RequirePackage{core/luatex-cn-core-base}
+\ProvidesExplPackage{core/luatex-cn-core-content}{2026/01/31} {0.2.0}{Content layout and border support}
+
+% Centralized variables for content border settings
+\bool_new:N \l__luatexcn_content_border_bool
+\tl_new:N \l__luatexcn_content_border_thickness_tl
+\tl_new:N \l__luatexcn_content_border_padding_top_tl
+\tl_new:N \l__luatexcn_content_border_padding_bottom_tl
+
+\bool_new:N \l__luatexcn_content_outer_border_bool
+\tl_new:N \l__luatexcn_content_outer_border_thickness_tl
+\tl_new:N \l__luatexcn_content_outer_border_sep_tl
+\tl_new:N \l__luatexcn_content_border_color_tl
+
+% Grid layout variables
+\int_new:N \l__luatexcn_content_n_char_per_col_int
+\tl_new:N \l__luatexcn_content_grid_width_tl
+\tl_new:N \l__luatexcn_content_grid_height_tl
+\tl_new:N \l__luatexcn_content_valign_tl
+\tl_new:N \l__luatexcn_content_font_size_tl
+\int_new:N \l__luatexcn_content_n_column_int
+\tl_new:N \l__luatexcn_content_page_columns_tl
+\tl_new:N \l__luatexcn_content_height_tl
+\tl_new:N \l__luatexcn_content_col_spacing_tl
+\tl_new:N \l__luatexcn_content_line_spacing_tl
+
+\tl_new:N \l__luatexcn_content_border_rgb_tl
+\tl_new:N \l__luatexcn_content_background_rgb_tl
+\tl_new:N \l__luatexcn_content_font_rgb_tl
+\tl_new:N \l__luatexcn_content_font_color_tl
+\tl_new:N \l__luatexcn_content_font_name_tl
+\tl_new:N \l__luatexcn_content_font_features_tl
+
+\keys_define:nn { luatexcn / content }
+  {
+    border .bool_set:N = \l__luatexcn_content_border_bool,
+    border .initial:n = false,
+
+    border-thickness .tl_set:N = \l__luatexcn_content_border_thickness_tl,
+    border-thickness .initial:n = {0.4pt},
+
+    border-padding-top .tl_set:N = \l__luatexcn_content_border_padding_top_tl,
+    border-padding-top .initial:n = {0pt},
+
+    border-padding-bottom .tl_set:N = \l__luatexcn_content_border_padding_bottom_tl,
+    border-padding-bottom .initial:n = {0pt},
+
+    outer-border .bool_set:N = \l__luatexcn_content_outer_border_bool,
+    outer-border .initial:n = false,
+
+    outer-border-thickness .tl_set:N = \l__luatexcn_content_outer_border_thickness_tl,
+    outer-border-thickness .initial:n = {1pt},
+
+    outer-border-sep .tl_set:N = \l__luatexcn_content_outer_border_sep_tl,
+    outer-border-sep .initial:n = {2pt},
+
+    border-color .tl_set:N = \l__luatexcn_content_border_color_tl,
+    border-color .initial:n = {black},
+
+    % Number of characters per column (used for auto-calculating grid-height)
+    n-char-per-col .int_set:N = \l__luatexcn_content_n_char_per_col_int,
+    n-char-per-col .initial:n = 0,
+
+    % Grid layout settings
+    grid-width .tl_set:N = \l__luatexcn_content_grid_width_tl,
+    grid-width .initial:n = {1.5em},
+
+    grid-height .tl_set:N = \l__luatexcn_content_grid_height_tl,
+    grid-height .initial:n = {1.2em},
+
+    vertical-align .tl_set:N = \l__luatexcn_content_valign_tl,
+    vertical-align .initial:n = {center},
+
+    font-size .tl_set:N = \l__luatexcn_content_font_size_tl,
+    font-size .initial:n = {12pt},
+
+    font-name .tl_set:N = \l__luatexcn_content_font_name_tl,
+    font-name .initial:n = {},
+
+    font-features .tl_set:N = \l__luatexcn_content_font_features_tl,
+    font-features .initial:n = {},
+
+    font-color .tl_set:N = \l__luatexcn_content_font_color_tl,
+    font-color .initial:n = {},
+
+    n-column .int_set:N = \l__luatexcn_content_n_column_int,
+    n-column .initial:n = 8,
+
+    page-columns .tl_set:N = \l__luatexcn_content_page_columns_tl,
+    page-columns .initial:n = {},
+
+    height .tl_set:N = \l__luatexcn_content_height_tl,
+    height .initial:n = ,
+
+    spacing-col .tl_set:N = \l__luatexcn_content_col_spacing_tl,
+    spacing-col .initial:n = {},
+
+    line-spacing .tl_set:N = \l__luatexcn_content_line_spacing_tl,
+    line-spacing .initial:n = { \baselineskip },
+
+    unknown .code:n = { \keys_set:nx { luatexcn / page } { \l_keys_key_tl = { #1 } } },
+  }
+
+\NewDocumentCommand{\contentSetup}{ m }
+  {
+    \keys_set:nn { luatexcn / content } { #1 }
+  }
+
+% Internal function to call Lua for Grid Layout
+\cs_new_protected:Npn \__luatexcn_content_process_grid:n #1
+  {
+    % Put content into a vbox to preserve structure (paragraphs)
+    \vbox_set:Nn \l_tmpa_box
+      {
+        \dim_set_eq:NN \hsize \c_max_dim
+        \dim_set_eq:NN \hfuzz \c_max_dim
+        \int_set:Nn \hbadness { 10000 }
+        \dim_zero:N \parindent
+        #1
+      }
+    % Call Lua to transform the box
+    \skip_zero:N \topskip
+    
+    % Convert colors to normalized RGB strings for Lua
+    \__luatexcn_color_to_rgb:NN \l__luatexcn_content_border_color_tl \l__luatexcn_content_border_rgb_tl
+    \__luatexcn_color_to_rgb_or_nil:NN \l__luatexcn_page_background_color_tl \l__luatexcn_content_background_rgb_tl
+    \__luatexcn_color_to_rgb_or_nil:NN \l__luatexcn_content_font_color_tl \l__luatexcn_content_font_rgb_tl
+
+    % Setup content parameters in _G.content (parsed once, used in Lua)
+    % Includes both layout params and visual params (colors already converted to RGB)
+    \lua_now:e {
+      local~content_mod~=~require('core.luatex-cn-core-content')
+      content_mod.setup({
+        border_on~=~\bool_if:NTF~\l__luatexcn_content_border_bool~{true}~{false},
+        outer_border_on~=~\bool_if:NTF~\l__luatexcn_content_outer_border_bool~{true}~{false},
+        border_thickness~=~[=[\luaescapestring{\l__luatexcn_content_border_thickness_tl}]=],
+        outer_border_thickness~=~[=[\luaescapestring{\l__luatexcn_content_outer_border_thickness_tl}]=],
+        outer_border_sep~=~[=[\luaescapestring{\l__luatexcn_content_outer_border_sep_tl}]=],
+        border_padding_top~=~[=[\luaescapestring{\l__luatexcn_content_border_padding_top_tl}]=],
+        border_padding_bottom~=~[=[\luaescapestring{\l__luatexcn_content_border_padding_bottom_tl}]=],
+        n_column~=~\int_use:N~\l__luatexcn_content_n_column_int,
+        grid_width~=~[=[\luaescapestring{\l__luatexcn_content_grid_width_tl}]=],
+        grid_height~=~[=[\luaescapestring{\l__luatexcn_content_grid_height_tl}]=],
+        page_columns~=~[=[\luaescapestring{\l__luatexcn_content_page_columns_tl}]=],
+        vertical_align~=~[=[\luaescapestring{\l__luatexcn_content_valign_tl}]=],
+        border_color~=~[=[\l__luatexcn_content_border_rgb_tl]=],
+        background_color~=~[=[\l__luatexcn_content_background_rgb_tl]=],
+        font_color~=~[=[\l__luatexcn_content_font_rgb_tl]=],
+        font_size~=~[=[\luaescapestring{\l__luatexcn_content_font_size_tl}]=]
+      })
+    }
+
+    % Process content (only layout-specific params that vary per invocation)
+    \lua_now:e {
+      core.process(\int_value:w \l_tmpa_box, {
+        height~=~[=[\luaescapestring{\l__luatexcn_content_height_tl}]=],
+        col_limit~=~\int_use:N~\l__luatexcn_content_n_char_per_col_int
+      })
+    }
+  }
+
+% Define Main Command with Key-Value interface
+% Syntax: \VerticalRTT[key=val]{text}
+\NewDocumentCommand{\VerticalRTT}{ O{} +m }
+  {
+    \par\noindent
+    \group_begin:
+    \keys_set:nn { luatexcn / content } { #1 }
+    \__luatexcn_content_process_grid:n { #2 }
+    \group_end:
+  }
+
+% Space Command - inserts a space that occupies grid cells in vertical layout
+% In CJK text, normal ASCII spaces are often absorbed; use this for explicit spacing
+% Syntax: \Space or \Space[width]
+% Default width is 1em (one grid cell)
+\NewDocumentCommand{\Space}{ O{1em} }
+  {
+    \regex_match:nnTF { ^[0-9\.]+$ } { #1 }
+      { \skip_horizontal:n { \__luatexcn_to_dimen:n { \l__luatexcn_content_grid_height_tl } * #1 } }
+      { \skip_horizontal:n { \__luatexcn_to_dimen:n { #1 } } }
+  }
+
+\ExplSyntaxOff
+\NewCommandCopy{\空格}{\Space}
+
+\endinput

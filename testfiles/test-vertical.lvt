@@ -1,0 +1,20 @@
+\input{regression-test}
+\documentclass{ltc-guji}
+
+\begin{document}
+\START
+
+\TEST{Basic Vertical Layout}{
+  \begin{guji-content}
+    测试竖排内容
+  \end{guji-content}
+}
+
+\TEST{Vertical with multiple lines}{
+  \begin{guji-content}
+    第一行内容\\第二行内容
+  \end{guji-content}
+}
+
+\END
+\end{document}

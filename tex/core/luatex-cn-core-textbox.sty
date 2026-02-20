@@ -1,0 +1,219 @@
+% Copyright 2026 Open-Guji (https://github.com/open-guji)
+%
+% Licensed under the Apache License, Version 2.0 (the "License");
+% you may not use this file except in compliance with the License.
+% You may obtain a copy of the License at
+%
+%     http://www.apache.org/licenses/LICENSE-2.0
+%
+% Unless required by applicable law or agreed to in writing, software
+% distributed under the License is distributed on an "AS IS" BASIS,
+% WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+% See the License for the specific language governing permissions and
+% limitations under the License.
+% luatex-cn-textbox.sty
+% TextBox support for vertical typesetting
+% This is a subpackage of luatex_cn
+%
+% NOTE: This file must be loaded AFTER luatexcn/vertical keys are defined
+%
+\RequirePackage{core/luatex-cn-core-base}
+\RequirePackage{expl3}
+\RequirePackage{xparse}
+\ProvidesExplPackage {core/luatex-cn-core-textbox} {2026/01/31} {0.2.0} {TextBox Support for Vertical Typesetting}
+
+% Grid Textbox Command (Simplified for Single Column)
+% Syntax: \GridTextbox[height=N, distribute=true/false]{content}
+% height is in grid units (integers), width is always 1
+% Key-value interface for \GridTextbox
+\bool_new:N \l__luatexcn_textbox_border_bool
+\tl_new:N \l__luatexcn_textbox_box_align_tl
+\tl_new:N \l__luatexcn_textbox_inner_gw_tl
+\tl_new:N \l__luatexcn_textbox_inner_gh_tl
+\dim_new:N \l__luatexcn_textbox_inner_gw_dim
+\dim_new:N \l__luatexcn_textbox_inner_gh_dim
+\bool_new:N \l__luatexcn_textbox_floating_bool
+\tl_new:N \l__luatexcn_textbox_x_tl
+\tl_new:N \l__luatexcn_textbox_y_tl
+\tl_new:N \l__luatexcn_textbox_bg_color_tl
+\tl_new:N \l__luatexcn_textbox_font_color_tl
+\tl_new:N \l__luatexcn_textbox_bg_rgb_tl
+\tl_new:N \l__luatexcn_textbox_font_rgb_tl
+\tl_new:N \l__luatexcn_textbox_font_size_tl
+\tl_new:N \l__luatexcn_textbox_floating_paper_width_tl
+
+\keys_define:nn { luatexcn / textbox }
+  {
+    height .tl_set:N = \l__luatexcn_textbox_height_tl,
+    height .initial:n = 0,
+    n-cols .int_set:N = \l__luatexcn_textbox_n_cols_int,
+    n-cols .initial:n = 0,
+    inner-grid-width .tl_set:N = \l__luatexcn_textbox_inner_gw_tl,
+    inner-grid-width .initial:n = {},
+    inner-grid-height .tl_set:N = \l__luatexcn_textbox_inner_gh_tl,
+    inner-grid-height .initial:n = {},
+    distribute .bool_set:N = \l__luatexcn_textbox_distribute_bool,
+    distribute .initial:n = false,
+    box-align .tl_set:N = \l__luatexcn_textbox_box_align_tl,
+    box-align .initial:n = {top},
+    border .bool_set:N = \l__luatexcn_textbox_border_bool,
+    border .initial:n = false,
+    banxin .bool_set:N = \l__luatexcn_textbox_banxin_bool,
+    column-align .tl_set:N = \l__luatexcn_textbox_col_align_tl,
+    column-align .initial:n = {},
+    % debug key removed - use global \LtcDebugOn
+
+    vertical-align .tl_set:N = \l__luatexcn_textbox_box_align_tl,
+    floating .bool_set:N = \l__luatexcn_textbox_floating_bool,
+    floating .initial:n = false,
+    floating-paper-width .tl_set:N = \l__luatexcn_textbox_floating_paper_width_tl,
+    floating-paper-width .initial:n = 0pt,
+    x .tl_set:N = \l__luatexcn_textbox_x_tl,
+    x .initial:n = 0pt,
+    y .tl_set:N = \l__luatexcn_textbox_y_tl,
+    y .initial:n = 0pt,
+    background-color .tl_set:N = \l__luatexcn_textbox_bg_color_tl,
+    background-color .initial:n = {},
+    font-color .tl_set:N = \l__luatexcn_textbox_font_color_tl,
+    font-color .initial:n = {},
+    font-size .tl_set:N = \l__luatexcn_textbox_font_size_tl,
+    font-size .initial:n = {},
+    grid-width .tl_set:N = \l__luatexcn_textbox_inner_gw_tl,
+    grid-height .tl_set:N = \l__luatexcn_textbox_inner_gh_tl,
+  }
+
+\NewDocumentCommand{\TextBox}{ O{} +m }
+  {
+    \group_begin:
+    % Inherit debug setting from global environment
+    % No local override anymore
+    \keys_set:nn { luatexcn / textbox } { #1 }
+    % Width is always 1 for outer layout (textbox occupies 1 column externally)
+    \setluatexattribute\cnverticaltextboxwidth{1}
+
+    % Calculate inner grid dimensions (hybrid approach)
+    % If inner-grid-width not specified, auto-calculate: outer_width / n_cols
+    \tl_if_empty:NTF \l__luatexcn_textbox_inner_gw_tl
+      {
+        \int_compare:nNnTF \l__luatexcn_textbox_n_cols_int > 0
+          { \dim_set:Nn \l__luatexcn_textbox_inner_gw_dim { (\l__luatexcn_content_grid_width_tl) / \l__luatexcn_textbox_n_cols_int } }
+          { \dim_set:Nn \l__luatexcn_textbox_inner_gw_dim { \l__luatexcn_content_grid_width_tl } }
+      }
+      { \dim_set:Nn \l__luatexcn_textbox_inner_gw_dim { \l__luatexcn_textbox_inner_gw_tl } }
+    \tl_if_empty:NTF \l__luatexcn_textbox_inner_gh_tl
+      { \dim_set:Nn \l__luatexcn_textbox_inner_gh_dim { \l__luatexcn_content_grid_height_tl } }
+      { \dim_set:Nn \l__luatexcn_textbox_inner_gh_dim { \l__luatexcn_textbox_inner_gh_tl } }
+
+    % Capture content in a box and process it via Lua for inner verticality
+    \vbox_set:Nn \l_tmpa_box {
+      \setluatexattribute\cnverticaltextboxwidth{0}
+      \setluatexattribute\cnverticaltextboxheight{0}
+      % Reset indent for textbox internal content (textbox as a whole will be indented)
+      \setluatexattribute\cnverticalindent{0}
+      % Reset paragraph spacing to prevent unwanted glues in grid layout
+      \dim_set:Nn \l_tmpa_dim { \l__luatexcn_content_grid_height_tl }
+      % Scale font size
+      \tl_if_empty:NTF \l__luatexcn_textbox_font_size_tl
+        {
+          % Default auto-scaling for multi-column boxes
+          \int_compare:nNnT \l__luatexcn_textbox_n_cols_int > 1
+            {
+              \dim_set:Nn \l_tmpa_dim { \l__luatexcn_textbox_inner_gw_dim * 85 / 100 }
+              \fontsize{\l_tmpa_dim}{\l__luatexcn_textbox_inner_gw_dim}\selectfont
+            }
+        }
+        {
+          % User-specified font size
+          \dim_set:Nn \l_tmpa_dim { \l__luatexcn_textbox_font_size_tl }
+          \fontsize{\l_tmpa_dim}{\l_tmpa_dim}\selectfont
+        }
+    % Inner line length: if height specified, constrain it; otherwise use max for auto-sizing
+    \tl_if_empty:NTF \l__luatexcn_textbox_height_tl
+      { \dim_set_eq:NN \hsize \c_max_dim }
+      {
+        \exp_args:NnV \regex_match:nnTF { [^0-9\.] } \l__luatexcn_textbox_height_tl
+          { \dim_set:Nn \hsize { \l__luatexcn_textbox_height_tl } }
+          { \dim_set:Nn \hsize { \l__luatexcn_textbox_inner_gh_dim * \l__luatexcn_textbox_height_tl } }
+      }
+    #2
+    }
+
+    % Expand variables to ensure they contain the color string, not a macro name
+    % Use o-expansion to preserve spaces (standard x-expansion strips them in ExplSyntax)
+    \tl_set:No \l__luatexcn_textbox_bg_color_tl { \l__luatexcn_textbox_bg_color_tl }
+    \tl_set:No \l__luatexcn_textbox_font_color_tl { \l__luatexcn_textbox_font_color_tl }
+
+    % Convert background color to RGB
+    \cs_if_exist:cTF { color @ \l__luatexcn_textbox_bg_color_tl }
+      {
+        \exp_args:NV \extractcolorspec \l__luatexcn_textbox_bg_color_tl \l_tmpa_tl
+        \exp_args:NNx \convertcolorspec \l_tmpa_tl { rgb } \l_tmpb_tl
+        \tl_set:Nx \l__luatexcn_textbox_bg_rgb_tl { \l_tmpb_tl }
+      }
+      { \tl_set_eq:NN \l__luatexcn_textbox_bg_rgb_tl \l__luatexcn_textbox_bg_color_tl }
+    \tl_replace_all:Nnn \l__luatexcn_textbox_bg_rgb_tl { , } { ~ }
+
+    % Convert font color to RGB
+    \cs_if_exist:cTF { color @ \l__luatexcn_textbox_font_color_tl }
+      {
+        \exp_args:NV \extractcolorspec \l__luatexcn_textbox_font_color_tl \l_tmpa_tl
+        \exp_args:NNx \convertcolorspec \l_tmpa_tl { rgb } \l_tmpb_tl
+        \tl_set:Nx \l__luatexcn_textbox_font_rgb_tl { \l_tmpb_tl }
+      }
+      { \tl_set_eq:NN \l__luatexcn_textbox_font_rgb_tl \l__luatexcn_textbox_font_color_tl }
+    \tl_replace_all:Nnn \l__luatexcn_textbox_font_rgb_tl { , } { ~ }
+
+    % Setup textbox params in _G.textbox (parsed once, used in Lua)
+    \lua_now:e {
+      vertical_textbox.setup({
+        column_aligns~=~[=[\luaescapestring{\tl_use:N~\l__luatexcn_textbox_col_align_tl}]=],
+        floating~=~\bool_if:NTF~\l__luatexcn_textbox_floating_bool~{true}~{false},
+        floating_x~=~[=[\luaescapestring{\l__luatexcn_textbox_x_tl}]=],
+        floating_y~=~[=[\luaescapestring{\l__luatexcn_textbox_y_tl}]=],
+        floating_paper_width~=~[=[\luaescapestring{\l__luatexcn_textbox_floating_paper_width_tl}]=],
+        outer_grid_height~=~\dim_to_decimal_in_sp:n { \l__luatexcn_content_grid_height_tl }
+      })
+    }
+
+    \lua_now:e {vertical_textbox.process_inner_box(\int_value:w~\l_tmpa_box,~{
+      n_cols~=~\int_use:N~\l__luatexcn_textbox_n_cols_int,
+      height~=~[=[\luaescapestring{\tl_use:N \l__luatexcn_textbox_height_tl}]=],
+      grid_width~=~\dim_to_decimal_in_sp:n { \l__luatexcn_textbox_inner_gw_dim },
+      grid_height~=~\dim_to_decimal_in_sp:n { \l__luatexcn_textbox_inner_gh_dim },
+      box_align~=~"\luaescapestring{\tl_use:N~\l__luatexcn_textbox_box_align_tl}",
+      border~=~"\bool_if:NTF~\l__luatexcn_textbox_border_bool~{true}{false}",
+      background_color~=~[=[\l__luatexcn_textbox_bg_rgb_tl]=],
+      font_color~=~[=[\l__luatexcn_textbox_font_rgb_tl]=],
+      font_size~=~[=[\luaescapestring{\l__luatexcn_textbox_font_size_tl}]=]
+    }) }
+    \setluatexattribute\cnverticaltextboxwidth{0}
+    \setluatexattribute\cnverticaltextboxheight{0}
+    \bool_if:NTF \l__luatexcn_textbox_floating_bool
+      {
+        \lua_now:e { vertical_textbox.register_floating_box(\int_value:w~\l_tmpa_box,~{
+          x~=~[=[\luaescapestring{\l__luatexcn_textbox_x_tl}]=],
+          y~=~[=[\luaescapestring{\l__luatexcn_textbox_y_tl}]=]
+        }) }
+      }
+      {
+        \mode_leave_vertical: \box_use:N \l_tmpa_box
+      }
+    \group_end:
+  }
+
+% 填充文本框 - Backwards compatible: accepts either integer (old syntax) or key-value options (new syntax)
+\NewDocumentCommand{\FillTextBox}{ O{} +m }
+  {%
+    \tl_set:Nn \l_tmpa_tl { #1 }
+    \regex_match:nnTF { ^[0-9]+$ } { #1 }
+      { \TextBox[height=#1, box-align=fill]{#2} }  % Old syntax: just an integer height
+      { \TextBox[#1, box-align=fill]{#2} }          % New syntax: key-value options
+  }
+
+\ExplSyntaxOff%
+
+% Command Aliases for CJK
+\NewCommandCopy{\文本框}{\TextBox}
+\NewCommandCopy{\填充文本框}{\FillTextBox}
+
+\endinput%

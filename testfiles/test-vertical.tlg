@@ -1,0 +1,76 @@
+This is a generated file for the l3build validation system.
+Don't change this file in any respect.
+============================================================
+TEST 1: Basic Vertical Layout
+============================================================
+*geometry* verbose mode - [ newgeometry ] result:
+* driver: luatex
+* paper: custom
+* layout: <same size as paper>
+* layoutoffset:(h,v)=(0.0pt,0.0pt)
+* modes: 
+* h-part:(L,W,R)=(133.2pt, 301.6pt, 133.2pt)
+* v-part:(T,H,B)=(188.50003pt, 614.49997pt, 91.6pt)
+* \paperwidth=568.0pt
+* \paperheight=894.6pt
+* \textwidth=301.6pt
+* \textheight=614.49997pt
+* \oddsidemargin=60.93001pt
+* \evensidemargin=60.93001pt
+* \topmargin=79.23004pt
+* \headheight=12.0pt
+* \headsep=25.0pt
+* \topskip=0.0pt
+* \footskip=42.67912pt
+* \marginparwidth=65.0pt
+* \marginparsep=11.0pt
+* \columnsep=10.0pt
+* \skip\footins=9.0pt plus 4.0pt minus 2.0pt
+* \hoffset=0.0pt
+* \voffset=0.0pt
+* \mag=1000
+* \@twocolumnfalse
+* \@twosidefalse
+* \@mparswitchfalse
+* \@reversemarginfalse
+* (1in=72.27pt=25.4mm, 1cm=28.453pt)
+[1
+] [2]
+============================================================
+============================================================
+TEST 2: Vertical with multiple lines
+============================================================
+*geometry* verbose mode - [ newgeometry ] result:
+* driver: luatex
+* paper: custom
+* layout: <same size as paper>
+* layoutoffset:(h,v)=(0.0pt,0.0pt)
+* modes: 
+* h-part:(L,W,R)=(133.2pt, 301.6pt, 133.2pt)
+* v-part:(T,H,B)=(188.50003pt, 614.49997pt, 91.6pt)
+* \paperwidth=568.0pt
+* \paperheight=894.6pt
+* \textwidth=301.6pt
+* \textheight=614.49997pt
+* \oddsidemargin=60.93001pt
+* \evensidemargin=60.93001pt
+* \topmargin=79.23004pt
+* \headheight=12.0pt
+* \headsep=25.0pt
+* \topskip=0.0pt
+* \footskip=42.67912pt
+* \marginparwidth=65.0pt
+* \marginparsep=11.0pt
+* \columnsep=10.0pt
+* \skip\footins=9.0pt plus 4.0pt minus 2.0pt
+* \hoffset=0.0pt
+* \voffset=0.0pt
+* \mag=1000
+* \@twocolumnfalse
+* \@twosidefalse
+* \@mparswitchfalse
+* \@reversemarginfalse
+* (1in=72.27pt=25.4mm, 1cm=28.453pt)
+[3
+] [4]
+============================================================

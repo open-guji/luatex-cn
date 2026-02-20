@@ -1,0 +1,146 @@
+% Copyright 2026 Open-Guji (https://github.com/open-guji)
+%
+% Licensed under the Apache License, Version 2.0 (the "License");
+% you may not use this file except in compliance with the License.
+% You may obtain a copy of the License at
+%
+%     http://www.apache.org/licenses/LICENSE-2.0
+%
+% Unless required by applicable law or agreed to in writing, software
+% distributed under the License is distributed on an "AS IS" BASIS,
+% WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+% See the License for the specific language governing permissions and
+% limitations under the License.
+%
+% luatex-cn-splitpage.sty
+% Automatic page splitting for traditional Chinese book formats (筒子页)
+%
+\RequirePackage{expl3}
+\ProvidesExplPackage {splitpage/luatex-cn-splitpage} {2026/01/31} {0.2.0} {Page splitting for Chinese traditional books}
+
+% Check if LuaTeX is being used
+\sys_if_engine_luatex:TF
+  { }
+  {
+    \PackageError { splitpage/luatex-cn-splitpage } { This~package~requires~LuaTeX }
+      { Please~compile~your~document~with~LuaLaTeX. }
+  }
+
+\RequirePackage{luatexbase}
+\RequirePackage{xparse}
+
+% Clear cache and load the Lua module
+\lua_now:e {
+  package.loaded['splitpage.luatex-cn-splitpage']~=~nil;
+  splitpage~=~require('splitpage.luatex-cn-splitpage');
+}
+
+% Key-value configuration
+\keys_define:nn { luatexcn / splitpage }
+  {
+    % Source page dimensions (the large paper before splitting)
+    source-width .tl_set:N = \l__luatexcn_sp_source_width_tl,
+    source-width .initial:n = {296mm},
+
+    source-height .tl_set:N = \l__luatexcn_sp_source_height_tl,
+    source-height .initial:n = {210mm},
+
+    % Output order: right-first (default) or left-first
+    right-first .bool_set:N = \l__luatexcn_sp_right_first_bool,
+    right-first .initial:n = true,
+
+
+  }
+
+% Setup command
+\NewDocumentCommand{\splitpageSetup}{ m }
+  {
+    \keys_set:nn { luatexcn / splitpage } { #1 }
+    \lua_now:e {
+      splitpage.configure({
+        source_width~=~"\luaescapestring{\l__luatexcn_sp_source_width_tl}",
+        source_height~=~"\luaescapestring{\l__luatexcn_sp_source_height_tl}",
+        right_first~=~\bool_if:NTF~\l__luatexcn_sp_right_first_bool~{true}~{false},
+      });~
+    }
+  }
+
+% Enable split page processing
+\NewDocumentCommand{\enableSplitPage}{ O{} }
+  {
+    \tl_if_empty:nF { #1 }
+      {
+        \keys_set:nn { luatexcn / splitpage } { #1 }
+      }
+    \lua_now:e {
+      splitpage.configure({
+        source_width~=~"\luaescapestring{\l__luatexcn_sp_source_width_tl}",
+        source_height~=~"\luaescapestring{\l__luatexcn_sp_source_height_tl}",
+        right_first~=~\bool_if:NTF~\l__luatexcn_sp_right_first_bool~{true}~{false},
+      });~
+      splitpage.enable();~
+    }
+    % Sync \paperwidth with target width for TikZ coordinate calculations
+    \dim_set:Nn \paperwidth { \lua_now:e { tex.sprint(splitpage.get_target_width());~ } sp }
+  }
+
+% Disable split page processing
+\NewDocumentCommand{\disableSplitPage}{ }
+  {
+    \lua_now:e { splitpage.disable();~ }
+    % Restore paperwidth to source width (the full spread size)
+    \dim_set:Nn \paperwidth { \l__luatexcn_sp_source_width_tl }
+  }
+
+
+% ============================================================================
+% Utility commands for background/foreground hooks
+% ============================================================================
+
+% Check if splitpage is enabled
+% Usage: \ifSplitPageEnabled ... \else ... \fi
+\newif\ifSplitPageEnabled
+\newcommand{\updateSplitPageStatus}{%
+  \lua_now:e {
+    if splitpage.is_enabled() then
+      tex.sprint("\\SplitPageEnabledtrue")
+    else
+      tex.sprint("\\SplitPageEnabledfalse")
+    end
+  }%
+}
+
+% Check if current page is right page
+% Usage: \ifSplitPageRight ... \else ... \fi
+\newif\ifSplitPageRight
+\newcommand{\updateSplitPageSide}{%
+  \lua_now:e {
+    local page = tex.count["c@page"]
+    if splitpage.is_right_page(page) then
+      tex.sprint("\\SplitPageRighttrue")
+    else
+      tex.sprint("\\SplitPageRightfalse")
+    end
+  }%
+}
+
+% Get source dimensions (original page size before splitting)
+\newcommand{\splitpageSourceWidth}{\lua_now:e { tex.sprint(splitpage.get_source_width() .. "sp") }}
+\newcommand{\splitpageSourceHeight}{\lua_now:e { tex.sprint(splitpage.get_source_height() .. "sp") }}
+
+% Get target dimensions (half page size after splitting)
+\newcommand{\splitpageTargetWidth}{\lua_now:e { tex.sprint(splitpage.get_target_width() .. "sp") }}
+\newcommand{\splitpageTargetHeight}{\lua_now:e { tex.sprint(splitpage.get_target_height() .. "sp") }}
+
+% CJK aliases
+\NewCommandCopy{\启用分页裁剪}{\enableSplitPage}
+\NewCommandCopy{\禁用分页裁剪}{\disableSplitPage}
+\NewCommandCopy{\分页裁剪设置}{\splitpageSetup}
+
+\AtEndDocument{%
+  \lua_now:e { splitpage.flush_pending() }%
+}
+
+\ExplSyntaxOff%
+%
+\endinput%

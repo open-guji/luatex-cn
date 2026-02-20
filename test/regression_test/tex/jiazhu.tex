@@ -1,0 +1,25 @@
+\documentclass{ltc-guji}
+
+\usepackage{enumitem}
+\usepackage{tikz}
+\setmainfont{TW-Kai}
+\禁用分页裁剪
+
+\begin{document}
+\begin{正文}
+一二三\夹注{六七八九十}四五
+
+\begin{段落}[indent=2]
+一二三四五六七八九\夹注{很长很长夹注应该自动换列到下一列并且保持缩进}十
+\end{段落}
+
+一二三\单行夹注[left]{甲乙丙丁}四五
+
+一二三\单行夹注{甲乙丙丁}四五
+
+一二三\夹注[font-color=blue, font-size=14pt]{蓝色小字夹注}四五
+
+一二三\夹注[font=FandolSong, font-color=red]{宋体红色夹注}四五
+
+\end{正文}
+\end{document}

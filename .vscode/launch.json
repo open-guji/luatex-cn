@@ -1,0 +1,42 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Run Current Test File",
+            "type": "lua",
+            "request": "launch",
+            "program": "${file}",
+            "runtimeExecutable": "texlua",
+            "cwd": "${workspaceFolder}",
+            "args": []
+        },
+        {
+            "name": "Run All Tests",
+            "type": "lua",
+            "request": "launch",
+            "program": "test/run_all.lua",
+            "runtimeExecutable": "texlua",
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "name": "Compile Current TeX File",
+            "type": "lua",
+            "request": "launch",
+            "runtimeExecutable": "lualatex",
+            "args": [
+                // "--interaction=nonstopmode",
+                // "--synctex=1",
+                "${file}"
+            ],
+            "cwd": "${fileDirname}",
+            "env": {
+                "TEXINPUTS": ".;${workspaceFolder}/src//;",
+                "LUAINPUTS": ".;${workspaceFolder}/src//;"
+            },
+            "presentation": {
+                "reveal": "always",
+                "panel": "new"
+            }
+        }
+    ]
+}

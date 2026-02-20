@@ -1,0 +1,225 @@
+% Copyright 2026 Open-Guji (https://github.com/open-guji)
+%
+% Licensed under the Apache License, Version 2.0 (the "License");
+% you may not use this file except in compliance with the License.
+% You may obtain a copy of the License at
+%
+%     http://www.apache.org/licenses/LICENSE-2.0
+%
+% Unless required by applicable law or agreed to in writing, software
+% distributed under the License is distributed on an "AS IS" BASIS,
+% WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+% See the License for the specific language governing permissions and
+% limitations under the License.
+
+% luatex-cn-font-autodetect.sty
+% 中文字体自动探测模块 - Automatic Chinese Font Detection for LuaLaTeX
+%
+% ============================================================================
+% 功能说明 (Description)
+% ============================================================================
+% 本模块根据操作系统自动选择合适的中文字体：
+%   - Windows: SimSun (宋体), SimHei (黑体), KaiTi (楷体), FangSong (仿宋)
+%   - macOS:   Songti SC, PingFang SC, Kaiti SC, STFangsong
+%   - Linux:   FandolSong, FandolHei, FandolKai, FandolFang (开源方正字体)
+%              或 Noto Serif/Sans CJK SC (Google Noto 字体)
+%
+% ============================================================================
+% 使用方法 (Usage)
+% ============================================================================
+%
+% 方式一：配合 ltc-guji 文档类使用（推荐）
+% ------------------------------------------
+% ltc-guji 会自动加载本模块，无需手动设置字体：
+%
+%   \documentclass{ltc-guji}
+%   \begin{document}
+%   \begin{正文}
+%   这里的文字会自动使用系统中文字体排版。
+%   \end{正文}
+%   \end{document}
+%
+% 如需手动指定字体，使用 font-name 参数覆盖自动探测：
+%
+%   \begin{正文}[font-name=Source Han Serif SC]
+%   使用思源宋体排版。
+%   \end{正文}
+%
+% 方式二：独立使用本模块
+% ------------------------------------------
+%   \documentclass{article}
+%   \usepackage{fontspec}
+%   \usepackage{luatex-cn-font-autodetect}
+%
+%   \begin{document}
+%   \ApplyAutoFont  % 应用自动探测的字体
+%   中文内容...
+%   \end{document}
+%
+% ============================================================================
+% 提供的命令 (Commands)
+% ============================================================================
+%
+%   \ApplyAutoFont
+%       应用自动探测的中文字体（调用 \setmainfont）
+%
+%   \DeclareFontFallback{<name>}{<font_list>}
+%       定义一个字体递补链（按顺序寻找缺失字符）。
+%       例如：\DeclareFontFallback{myfallbacks}{Font2, Font3}
+%
+%   \GetAutoFontName
+%       获取探测到的字体名称（可用于调试或显示）
+%
+%   \GetAutoFontFeatures
+%       获取字体特性字符串（如 RawFeature={+vert,+vrt2}）
+%
+% ============================================================================
+% 手动设置字体 (Manual Font Configuration)
+% ============================================================================
+% 如果自动探测的字体不符合需求，可以手动使用 fontspec：
+%
+%   \setmainfont{Your Font Name}[
+%     RawFeature={+vert,+vrt2},  % 竖排字形
+%     CharacterWidth=Full        % 全角字符
+%   ]
+%
+% 使用字体递补 (Font Fallbacks):
+%
+%   \DeclareFontFallback{mychain}{Font2, Font3}
+%   \setmainfont{PrimaryFont}[RawFeature={fallback=mychain}]
+%
+% ============================================================================
+
+\RequirePackage{expl3}
+\RequirePackage{xparse}
+\RequirePackage{luatexbase}
+\ProvidesExplPackage {fonts/luatex-cn-font-autodetect} {2026/01/31} {0.2.0} {Automatic Chinese font detection for LuaLaTeX}
+
+% Ensure we're using LuaTeX
+\sys_if_engine_luatex:TF
+  { }
+  {
+    \PackageError { luatex-cn-font-autodetect } { This~package~requires~LuaLaTeX }
+      { Please~compile~your~document~with~lualatex. }
+  }
+
+% Load the Lua module
+\lua_now:e {
+  fontdetect~=~require("fonts.luatex-cn-font-autodetect")
+}
+
+\tl_new:N \l__luatexcn_autodetect_font_name_tl
+
+
+
+% Internal helper to resolve first existing font from a comma-separated list
+\cs_new:Npn \__luatexcn_resolve_font:n #1
+  {
+    \clist_map_inline:nn { #1 }
+      {
+        \fontspec_font_if_exist:nTF { ##1 }
+          {
+            \tl_set:Nn \l__luatexcn_autodetect_font_name_tl { ##1 }
+            \clist_map_break:
+          }
+          { }
+      }
+  }
+
+% Command to apply auto-detected font
+\NewDocumentCommand{\ApplyAutoFont}{}{
+  \lua_now:e {
+    texio.write_nl("term~and~log",~"[Font~Auto-Detect]~ApplyAutoFont~command~called");~
+
+    if~not~fontdetect~then~
+      texio.write_nl("term~and~log",~"[Font~Auto-Detect]~ERROR:~fontdetect~module~not~loaded");~
+    else~
+        local~font_setup~=~fontdetect.get_font_setup();~
+        if~font_setup~then~
+          texio.write_nl("term~and~log",~"[Font~Auto-Detect]~Candidates:~"~..~font_setup.main);~
+          token.set_macro("l_tmpa_tl",~font_setup.main);~
+          token.set_macro("l__luatexcn_content_font_features_tl",~font_setup.features);~
+        else~
+          token.set_macro("l_tmpa_tl",~"");~
+        end;~
+    end;
+  }
+  \tl_if_empty:NF \l_tmpa_tl
+    {
+      \tl_clear:N \l__luatexcn_autodetect_font_name_tl
+      \exp_args:NV \__luatexcn_resolve_font:n \l_tmpa_tl
+      \tl_if_empty:NTF \l__luatexcn_autodetect_font_name_tl
+        {
+          \iow_log:n { [Font~Auto-Detect]~No~fonts~found~in~candidate~list }
+          \iow_term:n { [Font~Auto-Detect]~No~fonts~found~in~candidate~list }
+        }
+        {
+          \iow_log:x { [Font~Auto-Detect]~Applying~resolved~font:~ \l__luatexcn_autodetect_font_name_tl }
+          \iow_term:x { [Font~Auto-Detect]~Applying~resolved~font:~ \l__luatexcn_autodetect_font_name_tl }
+          \exp_args:NV \setmainfont \l__luatexcn_autodetect_font_name_tl [\l__luatexcn_content_font_features_tl]
+        }
+    }
+}
+
+% Command to get auto-detected font name (for use in keys)
+\NewDocumentCommand{\GetAutoFontName}{}{
+  \lua_now:e {
+    local~font_setup~=~fontdetect.get_font_setup();~
+    if~font_setup~then~
+      tex.print(font_setup.name);~
+    end;
+  }
+}
+
+% Command to get auto-detected font features
+\NewDocumentCommand{\GetAutoFontFeatures}{}{
+  \lua_now:e {
+    local~font_setup~=~fontdetect.get_font_setup();~
+    if~font_setup~then~
+      tex.print(font_setup.features);~
+    end;
+  }
+}
+
+% Command to declare a font fallback chain
+% Usage: \DeclareFontFallback{chain_name}{font1, font2, ...}
+\cs_new:Npn \__luatexcn_declare_font_fallback:nn #1 #2
+  {
+    \str_clear:N \l_tmpa_str
+    \clist_map_inline:nn { #2 }
+      {
+        \tl_set:Nn \l_tmpb_tl { ##1 }
+        \tl_if_in:NnTF \l_tmpb_tl { : }
+          { }
+          { \tl_put_right:Nn \l_tmpb_tl { :mode=node;+vert;+vrt2 } }
+        \str_put_right:Nx \l_tmpa_str { ,~"\lua_escape:e { \tl_use:N \l_tmpb_tl }" }
+      }
+    \lua_now:e
+      {
+        if~luaotfload~and~luaotfload.add_fallback~then~
+          luaotfload.add_fallback("#1",~{~\str_tail:N \l_tmpa_str~})~
+        end
+      }
+  }
+
+\NewDocumentCommand{\DeclareFontFallback}{m m}
+  {
+    \__luatexcn_declare_font_fallback:nn { #1 } { #2 }
+  }
+
+% Command to set main font with a fallback chain in one step
+% Usage: \SetMainFontChain{Font1, Font2, Font3}
+\DeclareDocumentCommand{\setfontfamily}{m}
+  {
+    \DeclareFontFallback { luatexcn_main_fallback } { #1 }
+    \tl_set:Nx \l_tmpa_tl { \clist_item:nn { #1 } { 1 } }
+    \exp_args:NV \setmainfont \l_tmpa_tl [ RawFeature = { fallback = luatexcn_main_fallback } ]
+  }
+
+\DeclareDocumentCommand{\setFontFamily}{m}{\setfontfamily{#1}}
+\DeclareDocumentCommand{\设置字体族}{m}{\setfontfamily{#1}}
+\DeclareDocumentCommand{\设置字体}{m}{\setmainfont{#1}}
+
+\ExplSyntaxOff%
+%
+\endinput%

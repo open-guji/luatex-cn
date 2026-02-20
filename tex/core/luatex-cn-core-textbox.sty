@@ -20,7 +20,7 @@
 \RequirePackage{core/luatex-cn-core-base}
 \RequirePackage{expl3}
 \RequirePackage{xparse}
-\ProvidesExplPackage {core/luatex-cn-core-textbox} {2026/01/31} {0.2.1} {TextBox Support for Vertical Typesetting}
+\ProvidesExplPackage {core/luatex-cn-core-textbox} {2026/01/31} {0.2.2} {TextBox Support for Vertical Typesetting}
 
 % Grid Textbox Command (Simplified for Single Column)
 % Syntax: \GridTextbox[height=N, distribute=true/false]{content}
@@ -108,8 +108,7 @@
     \vbox_set:Nn \l_tmpa_box {
       \setluatexattribute\cnverticaltextboxwidth{0}
       \setluatexattribute\cnverticaltextboxheight{0}
-      % Reset indent for textbox internal content (textbox as a whole will be indented)
-      \setluatexattribute\cnverticalindent{0}
+      % Note: indent is inherited from style stack (no longer reset here)
       % Reset paragraph spacing to prevent unwanted glues in grid layout
       \dim_set:Nn \l_tmpa_dim { \l__luatexcn_content_grid_height_tl }
       % Scale font size

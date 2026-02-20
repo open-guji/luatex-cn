@@ -12,7 +12,7 @@
 % See the License for the specific language governing permissions and
 % limitations under the License.
 
-\ProvidesExplPackage{core/luatex-cn-core-page}{2026/01/31} {0.2.1}{Page geometry and background support}
+\ProvidesExplPackage{core/luatex-cn-core-page}{2026/01/31} {0.2.2}{Page geometry and background support}
 
 % Global token lists for page parameters (centralized)
 \tl_new:N \l__luatexcn_page_paper_width_tl
@@ -75,16 +75,19 @@
 
 \cs_new:Npn \luatexcn_apply_geometry:
   {
+    % IMPORTANT: We set ALL geometry margins to 0, and handle margins manually in Lua.
+    % This simplifies coordinate calculations - (0,0) is now at paper edge.
+    % The actual margin values are stored in token lists and passed to Lua for positioning.
     \if_meaning:w \@onlypreamble \@notprerr
       % In document body
       \newgeometry{
         paperwidth=\l__luatexcn_page_paper_width_tl,
         paperheight=\l__luatexcn_page_paper_height_tl,
-        top=\l__luatexcn_page_margin_top_tl,
-        bottom=\l__luatexcn_page_margin_bottom_tl,
-        left=\l__luatexcn_page_margin_left_tl,
-        right=\l__luatexcn_page_margin_right_tl,
-        footskip=\l__luatexcn_page_footskip_tl
+        top=0pt,
+        bottom=0pt,
+        left=0pt,
+        right=0pt,
+        footskip=0pt
       }
       % Manual paper size adjustment for LuaTeX if changed in body
       \dim_set:Nn \pagewidth { \l__luatexcn_page_paper_width_tl }
@@ -95,11 +98,11 @@
       \geometry{
         paperwidth=\l__luatexcn_page_paper_width_tl,
         paperheight=\l__luatexcn_page_paper_height_tl,
-        top=\l__luatexcn_page_margin_top_tl,
-        bottom=\l__luatexcn_page_margin_bottom_tl,
-        left=\l__luatexcn_page_margin_left_tl,
-        right=\l__luatexcn_page_margin_right_tl,
-        footskip=\l__luatexcn_page_footskip_tl
+        top=0pt,
+        bottom=0pt,
+        left=0pt,
+        right=0pt,
+        footskip=0pt
       }
       \dim_set:Nn \topskip { \l__luatexcn_page_topskip_tl }
     \fi

@@ -127,6 +127,20 @@ function style_registry.get_font(id)
     return style_registry.get_attr(id, "font")
 end
 
+--- Get indent from style
+-- @param id (number) Style ID
+-- @return (number|nil) Indent value (grid units), or nil if not found
+function style_registry.get_indent(id)
+    return style_registry.get_attr(id, "indent")
+end
+
+--- Get first indent from style
+-- @param id (number) Style ID
+-- @return (number|nil) First indent value (grid units), or nil if not found
+function style_registry.get_first_indent(id)
+    return style_registry.get_attr(id, "first_indent")
+end
+
 -- ============================================================================
 -- Style Stack Functions (Phase 3: Style Inheritance)
 -- ============================================================================

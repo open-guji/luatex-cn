@@ -93,7 +93,11 @@ local function setup(params)
     local style_registry = package.loaded['util.luatex-cn-style-registry'] or
         require('util.luatex-cn-style-registry')
 
-    local base_style = {}
+    local base_style = {
+        -- Default indentation: 0 for content (Paragraph will override)
+        indent = 0,
+        first_indent = -1,  -- -1 means inherit from indent
+    }
     if _G.content.font_color then
         base_style.font_color = _G.content.font_color
     end
@@ -102,9 +106,7 @@ local function setup(params)
     end
 
     -- Push content base style (bottom of stack)
-    if next(base_style) then
-        _G.content_style_id = style_registry.push(base_style)
-    end
+    _G.content_style_id = style_registry.push(base_style)
 
     -- Store explicit page_columns if provided
     local explicit_page_cols = tonumber(params.page_columns) or 0

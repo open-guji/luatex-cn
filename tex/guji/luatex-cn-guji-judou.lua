@@ -135,6 +135,8 @@ local SET_JU = {
     [0x3002] = true, -- 。
     [0xFF01] = true, -- ！
     [0xFF1F] = true, -- ？
+    [0x2014] = true, -- — (em dash, usually used as ——)
+    [0x2026] = true, -- … (ellipsis, usually used as ……)
 }
 
 local SET_DOU = {
@@ -142,6 +144,15 @@ local SET_DOU = {
     [0xFF1A] = true, -- ：
     [0x3001] = true, -- 、
     [0xFF1B] = true, -- ；
+    [0x00B7] = true, -- · (middle dot)
+    [0x30FB] = true, -- ・ (katakana middle dot)
+    [0xFF5E] = true, -- ～ (fullwidth tilde)
+}
+
+-- Characters that should merge consecutive duplicates (e.g., —— or ……)
+local SET_MERGE_CONSECUTIVE = {
+    [0x2014] = true, -- —
+    [0x2026] = true, -- …
 }
 
 local SET_CLOSE_QUOTE = {
@@ -273,6 +284,14 @@ function judou.handle_judou_mode(head, t, ptype, last_visible)
 
     if ptype == "ju" then
         replacement_code = REPLACEMENT_JU
+        -- Merge consecutive duplicates (e.g., —— or ……)
+        if SET_MERGE_CONSECUTIVE[char] and next_node and D.getid(next_node) == constants.GLYPH then
+            local next_char = D.getfield(next_node, "char")
+            if next_char == char then
+                table.insert(nodes_to_remove, next_node)
+                next_node = D.getnext(next_node)
+            end
+        end
         -- Peek next for close quote
         if next_node and D.getid(next_node) == constants.GLYPH then
             local next_char = D.getfield(next_node, "char")

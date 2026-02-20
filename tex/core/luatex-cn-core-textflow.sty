@@ -20,7 +20,7 @@
 \RequirePackage{core/luatex-cn-core-base}
 \RequirePackage{expl3}
 \RequirePackage{xparse}
-\ProvidesExplPackage {core/luatex-cn-core-textflow} {2026/01/31} {0.2.1} {TextFlow (Jiazhu) Support for Vertical Typesetting}
+\ProvidesExplPackage {core/luatex-cn-core-textflow} {2026/01/31} {0.2.2} {TextFlow (Jiazhu) Support for Vertical Typesetting}
 
 % TextFlow Command (双行小注/夹注)
 % Syntax: \TextFlow{content}
@@ -53,10 +53,8 @@
         \keys_set:nn { luatexcn / textflow } { #1 }
 
         % Capture attribute values using edef BEFORE selectfont
-        \edef\savedindent{\the\cnverticalindent}
+        % Note: indent values are now inherited from style stack (no longer saved/restored here)
         \edef\savedblockid{\the\cnverticalblockid}
-        \edef\savedfirst{\the\cnverticalfirstindent}
-        \edef\savedright{\the\cnverticalrightindent}
 
         % 1. Determine Font Size (Local > Global > Default 0.7)
         \tl_if_empty:NTF \l__luatexcn_jiazhu_local_size_tl
@@ -116,11 +114,8 @@
         \setluatexattribute\cnverticaljiazhumode{\l_tmpa_tl}
         \setluatexattribute\cnverticalstyle{\jiazhu_style_id}
 
-        % Restore
-        \cnverticalindent = \savedindent\relax
+        % Restore block ID only (indent inherited from style stack)
         \cnverticalblockid = \savedblockid\relax
-        \cnverticalfirstindent = \savedfirst\relax
-        \cnverticalrightindent = \savedright\relax
 
         #2
 

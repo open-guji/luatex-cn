@@ -136,10 +136,18 @@ end
 -- @param box_num The TeX box number
 -- @param total_pages Total number of pages to output
 function page.output_pages(box_num, total_pages)
+    -- Get margins (geometry is set to 0, we manually add margins here)
+    local m_left = (_G.page and _G.page.margin_left) or 0
+    local m_top = (_G.page and _G.page.margin_top) or 0
+    local m_left_pt = m_left / 65536
+    local m_top_pt = m_top / 65536
+
     for i = 0, total_pages - 1 do
         tex.print(string.format("\\directlua{core.load_page(%d, %d)}", box_num, i))
+        -- Use \vbox with raised content to add top margin without affecting page breaks
         tex.print("\\par\\nointerlineskip")
-        tex.print(string.format("\\noindent\\hfill\\box%d", box_num))
+        tex.print(string.format("\\noindent\\kern%.5fpt\\vbox to 0pt{\\kern%.5fpt\\box%d\\vss}",
+            m_left_pt, m_top_pt, box_num))
         if i < total_pages - 1 then
             tex.print("\\vfill\\penalty-10000\\allowbreak")
         end

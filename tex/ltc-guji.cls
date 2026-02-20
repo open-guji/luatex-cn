@@ -18,7 +18,7 @@
 
 \RequirePackage{expl3}
 \RequirePackage{l3keys2e}
-\ProvidesExplClass {ltc-guji} {2026/01/31} {0.2.1} {Ancient Chinese Book Class (Template Support)}
+\ProvidesExplClass {ltc-guji} {2026/01/31} {0.2.2} {Ancient Chinese Book Class (Template Support)}
 
 \tl_new:N \l_luatexcn_guji_initial_template_tl
 \prop_new:N \g_luatexcn_guji_template_map_prop
@@ -34,16 +34,26 @@
     紅樓夢甲戌本 = HongLouMengJiaXuBen
   }
 
+% Store debug option for later processing (after debug package is loaded)
+\bool_new:N \g__luatexcn_guji_debug_pending_bool
+
 \keys_define:nn { luatexcn / guji / options }
   {
+    debug .code:n =
+      {
+        \str_if_eq:nnT { #1 } { true }
+          { \bool_gset_true:N \g__luatexcn_guji_debug_pending_bool }
+      },
+    debug .default:n = true,
+
     unknown .code:n =
       {
         \tl_set_eq:NN \l_tmpa_tl \l_keys_key_tl
-        
+
         % Try to map the option name
         \prop_get:NVNT \g_luatexcn_guji_template_map_prop \l_tmpa_tl \l_tmpb_tl
           { \tl_set_eq:NN \l_tmpa_tl \l_tmpb_tl }
-        
+
         % Look for config file: configs/luatex-cn-guji-<name>.cfg
         \file_if_exist:nTF { configs/luatex-cn-guji- \l_tmpa_tl .cfg }
           {
@@ -70,6 +80,9 @@
 \RequirePackage{xparse}
 \RequirePackage{tikz}
 \RequirePackage{luatex-cn-core}
+\RequirePackage{debug/luatex-cn-debug}
+% Apply debug setting from class options (after debug package is loaded)
+\bool_if:NT \g__luatexcn_guji_debug_pending_bool { \LtcDebugOn }
 \RequirePackage{splitpage/luatex-cn-splitpage}
 
 % Load banxin for 版心/鱼尾 features
@@ -117,8 +130,12 @@
 
     font-name .code:n = { \keys_set:nn { luatexcn / content } { font-name = #1 } },
 
-    debug .bool_set:N = \g_luatexcn_debug_enabled_bool,
-    debug .initial:n = false,
+    debug .code:n = {
+      \str_if_eq:nnTF { #1 } { true }
+        { \LtcDebugOn }
+        { \LtcDebugOff }
+    },
+    debug .default:n = true,
 
     font-features .code:n = { \keys_set:nn { luatexcn / content } { font-features = #1 } },
 
@@ -209,6 +226,8 @@
 \DeclareDocumentCommand{\chapter}{ m }
   {
     \keys_set:nn { luatexcn / banxin } { chapter-title = {#1} }
+    % Also set global metadata for layout phase (fixes issue #45 - chapter not showing on first page)
+    \metadataSetup{ chapter-title = {#1} }
     \ResetPageNumber
   }
 
@@ -322,7 +341,6 @@
       }
     \fontsize{\l__luatexcn_content_font_size_tl}{\l__luatexcn_content_line_spacing_tl}\selectfont
     
-    % global debug flag \g_luatexcn_debug_enabled_bool is already set by keys_set:nn { luatexcn / guji } { #1 } above
     % Zero out vertical skips for exact grid layout
     \dim_zero:N \topskip
     \dim_zero:N \parskip
@@ -366,7 +384,7 @@
     \int_set:Nn \l_tmpb_int { \dim_to_decimal_in_sp:n { \l_tmpa_dim } / \l_tmpa_int }
     \tl_set:Nx \l__luatexcn_content_grid_width_tl { \dim_eval:n { \l_tmpb_int sp } }
 
-    \bool_if:NT \g_luatexcn_debug_enabled_bool { \iow_term:x { Guji~Layout~Width:~total-cols=\int_use:N~\l_tmpa_int~,~grid-width=\l__luatexcn_content_grid_width_tl } }
+    \LtcIfDebugT { \iow_term:x { Guji~Layout~Width:~total-cols=\int_use:N~\l_tmpa_int~,~grid-width=\l__luatexcn_content_grid_width_tl } }
 
     % II. Height Logic
     % 1. Calculate raw content area height
@@ -400,7 +418,7 @@
         % height = grid-height * n-char-per-col (may be slightly less than available)
         \dim_set:Nn \l_tmpa_dim { \l_luatexcn_guji_grid_height_dim * \l__luatexcn_content_n_char_per_col_int }
         \tl_set:Nx \l__luatexcn_content_height_tl { \dim_use:N \l_tmpa_dim }
-        \bool_if:NT \g_luatexcn_debug_enabled_bool { \iow_term:x { Guji~Mode~A:~n-char-per-col=\int_use:N~\l__luatexcn_content_n_char_per_col_int~,~grid-height=\l__luatexcn_content_grid_height_tl~,~height=\l__luatexcn_content_height_tl } }
+        \LtcIfDebugT { \iow_term:x { Guji~Mode~A:~n-char-per-col=\int_use:N~\l__luatexcn_content_n_char_per_col_int~,~grid-height=\l__luatexcn_content_grid_height_tl~,~height=\l__luatexcn_content_height_tl } }
       }
       {
         % Mode B: grid-height specified, calculate fitting rows
@@ -414,7 +432,7 @@
             % height = rows * grid-height
             \dim_set:Nn \l_tmpa_dim { \l__luatexcn_content_grid_height_tl * \l_tmpa_int }
             \tl_set:Nx \l__luatexcn_content_height_tl { \dim_use:N \l_tmpa_dim }
-            \bool_if:NT \g_luatexcn_debug_enabled_bool { \iow_term:x { Guji~Mode~B:~grid-height=\l__luatexcn_content_grid_height_tl~,~rows=\int_use:N~\l_tmpa_int~,~height=\l__luatexcn_content_height_tl } }
+            \LtcIfDebugT { \iow_term:x { Guji~Mode~B:~grid-height=\l__luatexcn_content_grid_height_tl~,~rows=\int_use:N~\l_tmpa_int~,~height=\l__luatexcn_content_height_tl } }
           }
       }
 
@@ -427,7 +445,7 @@
     }
 
     % Log final layout
-    \bool_if:NT \g_luatexcn_debug_enabled_bool { \iow_term:x { Guji~Layout:~TextHeight=\dim_use:N~\l_tmpb_dim~,~TopMargin=\l__luatexcn_page_margin_top_tl } }
+    \LtcIfDebugT { \iow_term:x { Guji~Layout:~TextHeight=\dim_use:N~\l_tmpb_dim~,~TopMargin=\l__luatexcn_page_margin_top_tl } }
 
     % Update geometry for this environment
     \luatexcn_apply_geometry:

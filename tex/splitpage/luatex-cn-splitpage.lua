@@ -161,6 +161,12 @@ function splitpage.output_pages(box_num, total_pages)
     local target_w_pt = target_w / 65536
     local target_h_pt = target_h / 65536
 
+    -- Get margins (geometry is set to 0, we manually add margins here)
+    local m_left = (_G.page and _G.page.margin_left) or 0
+    local m_top = (_G.page and _G.page.margin_top) or 0
+    local m_left_pt = m_left / 65536
+    local m_top_pt = m_top / 65536
+
     for i = 0, total_pages - 1 do
         -- For split page, we need to output each page twice (left half and right half)
         -- First, load page into box (with copy=true so we can use it twice)
@@ -178,14 +184,17 @@ function splitpage.output_pages(box_num, total_pages)
         tex.print(cmd_dim_h)
 
         -- Output first half (right side if right_first)
+        -- Use \vbox with raised content to add top margin without affecting page breaks
+        -- The \vbox to 0pt ensures no height contribution to the page
         tex.print("\\par\\nointerlineskip")
         if right_first then
-            -- 右半页：将内容左移，使右半部分显示
-            tex.print(string.format("\\noindent\\kern-%.5fpt\\hbox to 0pt{\\smash{\\copy%d}\\hss}", target_w_pt,
-                box_num))
+            -- 右半页：将内容左移 target_w (显示右半部分)，然后加上 margin_left
+            tex.print(string.format("\\noindent\\kern%.5fpt\\kern-%.5fpt\\vbox to 0pt{\\kern%.5fpt\\hbox to 0pt{\\smash{\\copy%d}\\hss}\\vss}",
+                m_left_pt, target_w_pt, m_top_pt, box_num))
         else
-            -- 左半页：不移动
-            tex.print(string.format("\\noindent\\hbox to 0pt{\\smash{\\copy%d}\\hss}", box_num))
+            -- 左半页：只加 margin_left
+            tex.print(string.format("\\noindent\\kern%.5fpt\\vbox to 0pt{\\kern%.5fpt\\hbox to 0pt{\\smash{\\copy%d}\\hss}\\vss}",
+                m_left_pt, m_top_pt, box_num))
         end
 
         -- New page for second half
@@ -196,12 +205,13 @@ function splitpage.output_pages(box_num, total_pages)
         -- Output second half
         tex.print("\\par\\nointerlineskip")
         if right_first then
-            -- 左半页：不移动
-            tex.print(string.format("\\noindent\\hbox to 0pt{\\smash{\\copy%d}\\hss}", box_num))
+            -- 左半页：只加 margin_left
+            tex.print(string.format("\\noindent\\kern%.5fpt\\vbox to 0pt{\\kern%.5fpt\\hbox to 0pt{\\smash{\\copy%d}\\hss}\\vss}",
+                m_left_pt, m_top_pt, box_num))
         else
-            -- 右半页：将内容左移
-            tex.print(string.format("\\noindent\\kern-%.5fpt\\hbox to 0pt{\\smash{\\copy%d}\\hss}", target_w_pt,
-                box_num))
+            -- 右半页：将内容左移 target_w，然后加上 margin_left
+            tex.print(string.format("\\noindent\\kern%.5fpt\\kern-%.5fpt\\vbox to 0pt{\\kern%.5fpt\\hbox to 0pt{\\smash{\\copy%d}\\hss}\\vss}",
+                m_left_pt, target_w_pt, m_top_pt, box_num))
         end
 
         if i < total_pages - 1 then

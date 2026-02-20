@@ -11,15 +11,15 @@ Package geometry Warning: `paperheight': not available in `\newgeometry'; skippe
 * layout: <same size as paper>
 * layoutoffset:(h,v)=(0.0pt,0.0pt)
 * modes: 
-* h-part:(L,W,R)=(42.67912pt, 335.74254pt, 42.67912pt)
-* v-part:(T,H,B)=(56.9055pt, 483.69687pt, 56.9055pt)
+* h-part:(L,W,R)=(0.0pt, 421.10078pt, 0.0pt)
+* v-part:(T,H,B)=(0.0pt, 597.50787pt, 0.0pt)
 * \paperwidth=421.10078pt
 * \paperheight=597.50787pt
-* \textwidth=335.74254pt
-* \textheight=483.69687pt
-* \oddsidemargin=-29.59087pt
-* \evensidemargin=-29.59087pt
-* \topmargin=-52.36449pt
+* \textwidth=421.10078pt
+* \textheight=597.50787pt
+* \oddsidemargin=-72.26999pt
+* \evensidemargin=-72.26999pt
+* \topmargin=-109.26999pt
 * \headheight=12.0pt
 * \headsep=25.0pt
 * \topskip=0.0pt

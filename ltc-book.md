@@ -38,7 +38,7 @@ luatex-cn 提供两个面向现代竖排中文书籍的文档类，与 `ltc-guji
 \documentclass{ltc-cn-vbook}
 
 % 使用中华书局模板
-\documentclass[中华书局]{cn-vbook}
+\documentclass[中华书局]{ltc-cn-vbook}
 ```
 
 ## 与 guji 的区别
@@ -74,7 +74,7 @@ luatex-cn 提供两个面向现代竖排中文书籍的文档类，与 `ltc-guji
 或直接使用中华书局模板（自动设置为大陆风格）：
 
 ```latex
-\documentclass[中华书局]{cn-vbook}
+\documentclass[中华书局]{ltc-cn-vbook}
 ```
 
 ### 句读模式
@@ -187,7 +187,7 @@ luatex-cn 提供两个面向现代竖排中文书籍的文档类，与 `ltc-guji
 然后在文档中使用：
 
 ```latex
-\documentclass[mytemplate]{cn-vbook}
+\documentclass[mytemplate]{ltc-cn-vbook}
 ```
 
 ## 自由列宽模式

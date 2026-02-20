@@ -53,7 +53,7 @@ Since v0.2.1, the range of supported punctuation has been extended to include:
 #### guji (Ancient Books)
 
 ```latex
-\documentclass[四库全书]{guji}
+\documentclass[四库全书]{ltc-guji}
 \开启句读模式  % Use traditional judou
 
 \begin{document}

@@ -7,7 +7,7 @@ This page helps you quickly get started with `luatex-cn` for traditional Chinese
 ## Basic Template
 
 ```latex
-\documentclass[四库全书]{guji}
+\documentclass[四库全书]{ltc-guji}
 % Optional: specify font
 % \setmainfont{Noto Serif SC}
 
@@ -104,9 +104,9 @@ Choose preset styles via document class options:
 | `红楼梦甲戌本` | Manuscript style, no fishtail |
 
 ```latex
-\\documentclass[四库全书]{guji}
+\\documentclass[四库全书]{ltc-guji}
 % or
-\\documentclass[红楼梦甲戌本]{guji}
+\\documentclass[红楼梦甲戌本]{ltc-guji}
 ```
 
 ## Next Steps

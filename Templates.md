@@ -20,12 +20,12 @@
 
 ```latex
 % guji 古籍模板
-\documentclass[四库全书彩色]{guji}
-\documentclass[红楼梦甲戌本]{guji}
+\documentclass[四库全书彩色]{ltc-guji}
+\documentclass[红楼梦甲戌本]{ltc-guji}
 
 % cn-vbook / tw-vbook 现代竖排模板 (v0.2.7+)
 \documentclass{ltc-cn-vbook}              % 默认模板
-\documentclass[中华书局]{cn-vbook}     % 中华书局模板
+\documentclass[中华书局]{ltc-cn-vbook}     % 中华书局模板
 ```
 
 ## 自定义模板

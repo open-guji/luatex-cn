@@ -53,7 +53,7 @@ v0.2.1 起扩展了标点符号支持范围，包括：
 #### guji（古籍排版）
 
 ```latex
-\documentclass[四库全书]{guji}
+\documentclass[四库全书]{ltc-guji}
 \开启句读模式  % 使用传统句读
 
 \begin{document}

@@ -84,7 +84,7 @@ tlmgr install luatex-cn
 创建测试文件 `test.tex`：
 
 ```latex
-\documentclass[四库全书]{guji}
+\documentclass[四库全书]{ltc-guji}
 \begin{document}
 \begin{正文}
 天地玄黄，宇宙洪荒。

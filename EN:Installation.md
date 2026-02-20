@@ -45,7 +45,7 @@ Place the contents of `tex/` in the same directory as your `.tex` file and compi
 Create a test file `test.tex`:
 
 ```latex
-\documentclass[四库全书]{guji}
+\documentclass[四库全书]{ltc-guji}
 \begin{document}
 \begin{正文}
 天地玄黄，宇宙洪荒。

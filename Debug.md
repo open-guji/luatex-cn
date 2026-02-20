@@ -18,7 +18,7 @@
 也可以在文档类选项中开启：
 
 ```latex
-\documentclass[四库全书彩色, debug=true]{guji}
+\documentclass[四库全书彩色, debug=true]{ltc-guji}
 ```
 
 ### 1.2 模块级调试
@@ -116,7 +116,7 @@
 ### 5.1 定位批注位置
 
 ```latex
-\documentclass[四库全书彩色]{guji}
+\documentclass[四库全书彩色]{ltc-guji}
 
 % 开启调试和坐标网格
 \LtcDebugOn
@@ -132,7 +132,7 @@
 ### 5.2 调试侧批跨页
 
 ```latex
-\documentclass[四库全书彩色, debug=true]{guji}
+\documentclass[四库全书彩色, debug=true]{ltc-guji}
 
 \开启调试模块{sidenote}
 \显示网格
@@ -148,7 +148,7 @@
 ### 5.3 检查版心渲染
 
 ```latex
-\documentclass[四库全书彩色]{guji}
+\documentclass[四库全书彩色]{ltc-guji}
 
 \开启调试模块{banxin}
 \显示边框

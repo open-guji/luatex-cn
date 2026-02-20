@@ -13,7 +13,7 @@
 创建文件 `test.tex`，写入以下内容：
 
 ```latex
-\documentclass[四库全书]{guji}
+\documentclass[四库全书]{ltc-guji}
 
 \title{钦定四库全书}
 \chapter{史记\\卷一}
@@ -92,7 +92,7 @@ lualatex test.tex
 把上面的命令组合起来：
 
 ```latex
-\documentclass[四库全书]{guji}
+\documentclass[四库全书]{ltc-guji}
 
 \title{钦定四库全书}
 \chapter{史记\\卷一}
@@ -131,8 +131,8 @@ lualatex test.tex
 | `红楼梦甲戌本` | 手抄本风格，无鱼尾，支持侧批与眉批 |
 
 ```latex
-\documentclass[四库全书]{guji}
-\documentclass[红楼梦甲戌本]{guji}
+\documentclass[四库全书]{ltc-guji}
+\documentclass[红楼梦甲戌本]{ltc-guji}
 ```
 
 ### cn-vbook / tw-vbook（现代竖排）
@@ -144,7 +144,7 @@ lualatex test.tex
 
 ```latex
 \documentclass{ltc-cn-vbook}
-\documentclass[中华书局]{cn-vbook}
+\documentclass[中华书局]{ltc-cn-vbook}
 ```
 
 详见 [[模板与自定义 | Templates]] 和 [[现代竖排 | ltc-book]]。

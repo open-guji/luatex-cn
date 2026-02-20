@@ -81,7 +81,7 @@ The `ltc-cn-vbook` / `ltc-tw-vbook` document classes enable the punctuation syst
 \documentclass{ltc-cn-vbook}
 
 % Zhonghua Shuju template: Mainland style
-\documentclass[中华书局]{cn-vbook}
+\documentclass[中华书局]{ltc-cn-vbook}
 ```
 
 ## Using with guji
@@ -89,7 +89,7 @@ The `ltc-cn-vbook` / `ltc-tw-vbook` document classes enable the punctuation syst
 The `ltc-guji` class also supports the punctuation system. When `punct-mode=normal`, it activates automatically:
 
 ```latex
-\documentclass[四库全书]{guji}
+\documentclass[四库全书]{ltc-guji}
 \正常标点模式  % Use modern punctuation (not judou)
 \punctSetup{punct-style=mainland}
 ```

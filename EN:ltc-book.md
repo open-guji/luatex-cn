@@ -32,7 +32,7 @@ luatex-cn provides two document classes for modern vertical Chinese book typeset
 
 ```latex
 \documentclass{ltc-cn-vbook}           % Default
-\documentclass[中华书局]{cn-vbook}  % Zhonghua Shuju
+\documentclass[中华书局]{ltc-cn-vbook}  % Zhonghua Shuju
 ```
 
 ## Differences from guji
@@ -56,7 +56,7 @@ luatex-cn provides two document classes for modern vertical Chinese book typeset
 \punctSetup{punct-style=mainland}  % Override to mainland style
 ```
 
-Or use `\documentclass[中华书局]{cn-vbook}` which automatically sets mainland style.
+Or use `\documentclass[中华书局]{ltc-cn-vbook}` which automatically sets mainland style.
 
 You can also switch to judou mode: `\开启句读模式`
 
@@ -102,7 +102,7 @@ Auto vertical page numbers at lower-left. Configure via `\pageSetup`:
 
 ## Custom Templates
 
-Create `configs/luatex-cn-book-<name>.cfg` with `\pageSetup`, `\contentSetup`, `\punctSetup`, then use `\documentclass[name]{cn-vbook}`.
+Create `configs/luatex-cn-book-<name>.cfg` with `\pageSetup`, `\contentSetup`, `\punctSetup`, then use `\documentclass[name]{ltc-cn-vbook}`.
 
 ---
 

@@ -110,7 +110,7 @@
 \documentclass{ltc-cn-vbook}
 
 % 中华书局模板：大陆风格
-\documentclass[中华书局]{cn-vbook}
+\documentclass[中华书局]{ltc-cn-vbook}
 ```
 
 也可以在文档中随时切换：
@@ -131,7 +131,7 @@
 `ltc-guji` 文档类也支持标点系统。当 `punct-mode=normal` 时，标点系统自动生效：
 
 ```latex
-\documentclass[四库全书]{guji}
+\documentclass[四库全书]{ltc-guji}
 \正常标点模式  % 使用现代标点（而非句读）
 \punctSetup{punct-style=mainland}
 

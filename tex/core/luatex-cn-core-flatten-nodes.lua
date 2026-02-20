@@ -140,7 +140,14 @@ _internal.get_box_indentation = get_box_indentation
 -- @return (direct node) 复制后的节点
 local function copy_node_with_attributes(t, indent, r_indent)
     local copy = D.copy(t)
-    if indent > 0 then D.set_attribute(copy, constants.ATTR_INDENT, indent) end
+    if indent > 0 then
+        -- Don't overwrite forced indent values on individual nodes
+        -- (e.g., footnote indent set via tex.setattribute with encode_forced_indent)
+        local existing = D.get_attribute(copy, constants.ATTR_INDENT) or 0
+        if not constants.is_forced_indent(existing) then
+            D.set_attribute(copy, constants.ATTR_INDENT, indent)
+        end
+    end
     if r_indent > 0 then D.set_attribute(copy, constants.ATTR_RIGHT_INDENT, r_indent) end
 
     -- CRITICAL: Preserve textflow attributes (they are set by \TextFlow command)
@@ -305,6 +312,7 @@ end
 -- Create module table
 local flatten = {
     flatten_vbox = flatten_vbox,
+    _internal = _internal,
 }
 
 -- Register module in package.loaded for require() compatibility

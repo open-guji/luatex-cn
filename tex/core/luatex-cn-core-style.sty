@@ -1,0 +1,129 @@
+% Copyright 2026 Open-Guji (https://github.com/open-guji)
+%
+% Licensed under the Apache License, Version 2.0 (the "License");
+% you may not use this file except in compliance with the License.
+% You may obtain a copy of the License at
+%
+%     http://www.apache.org/licenses/LICENSE-2.0
+%
+% Unless required by applicable law or agreed to in writing, software
+% distributed under the License is distributed on an "AS IS" BASIS,
+% WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+% See the License for the specific language governing permissions and
+% limitations under the License.
+% luatex-cn-core-style.sty
+% Generic style override command for vertical typesetting
+% Pushes font/color/spacing overrides onto the style stack without
+% changing the layout mode (no jiazhu/column attributes).
+%
+\RequirePackage{core/luatex-cn-core-base}
+\RequirePackage{expl3}
+\RequirePackage{xparse}
+\ProvidesExplPackage {core/luatex-cn-core-style} {2026/02/14} {0.2.8} {Generic Style Override for Vertical Typesetting}
+
+\makeatletter
+
+    \keys_define:nn { luatexcn / style }
+      {
+        font-size .tl_set:N = \l__luatexcn_style_size_tl,
+        font .tl_set:N = \l__luatexcn_style_font_tl,
+        font-color .tl_set:N = \l__luatexcn_style_color_tl,
+
+        grid-height .tl_set:N = \l__luatexcn_style_grid_height_tl,
+
+        spacing-top .tl_set:N = \l__luatexcn_style_spacing_top_tl,
+        spacing-bottom .tl_set:N = \l__luatexcn_style_spacing_bottom_tl,
+        spacing .meta:n = { spacing-top = #1, spacing-bottom = #1 },
+      }
+
+    % Internal: push style and print ID
+    % Uses the same pattern as Column/TextFlow: pass individual arguments to Lua
+    \cs_new_protected:Npn \__luatexcn_style_push_and_set:
+      {
+        \edef\style_override_id{\lua_now:e {
+          local ~ sr = require('util.luatex-cn-style-registry')
+          local ~ constants = require('core.luatex-cn-constants')
+          local ~ style_id = sr.push_content_style(
+            \tl_if_empty:NTF \l__luatexcn_style_color_tl { nil } { [=[\luaescapestring{\l__luatexcn_style_color_tl}]=] },
+            \tl_if_empty:NTF \l__luatexcn_style_size_tl { nil } { [=[\luaescapestring{\l__luatexcn_style_size_tl}]=] },
+            \tl_if_empty:NTF \l__luatexcn_style_font_tl { nil } { [=[\luaescapestring{\l__luatexcn_style_font_tl}]=] },
+            sr.make_extra(
+              \tl_if_empty:NTF \l__luatexcn_style_grid_height_tl { nil } { [=[\luaescapestring{\l__luatexcn_style_grid_height_tl}]=] },
+              \tl_if_empty:NTF \l__luatexcn_style_spacing_top_tl { nil } { [=[\luaescapestring{\l__luatexcn_style_spacing_top_tl}]=] },
+              \tl_if_empty:NTF \l__luatexcn_style_spacing_bottom_tl { nil } { [=[\luaescapestring{\l__luatexcn_style_spacing_bottom_tl}]=] }
+            )
+          )
+          tex.print(tostring(style_id))
+        }}
+        \setluatexattribute\cnverticalstyle{\style_override_id}
+      }
+
+    % Internal: pop style
+    \cs_new_protected:Npn \__luatexcn_style_pop:
+      {
+        \lua_now:n {
+          local ~ sr = require('util.luatex-cn-style-registry')
+          sr.pop()
+        }
+      }
+
+    % Internal: initialize variables and parse keys
+    \cs_new_protected:Npn \__luatexcn_style_init_and_parse:n #1
+      {
+        \tl_set:Nn \l__luatexcn_style_size_tl {}
+        \tl_set:Nn \l__luatexcn_style_font_tl {}
+        \tl_set:Nn \l__luatexcn_style_color_tl {}
+        \tl_set:Nn \l__luatexcn_style_grid_height_tl {}
+        \tl_set:Nn \l__luatexcn_style_spacing_top_tl {}
+        \tl_set:Nn \l__luatexcn_style_spacing_bottom_tl {}
+        \keys_set:nn { luatexcn / style } { #1 }
+      }
+
+    % Internal: apply font if specified
+    \cs_new_protected:Npn \__luatexcn_style_apply_font:
+      {
+        \tl_if_empty:NF \l__luatexcn_style_size_tl
+          {
+            \tl_if_empty:NTF \l__luatexcn_style_font_tl
+              { \fontsize{\l__luatexcn_style_size_tl}{\l__luatexcn_style_size_tl}\selectfont }
+              { \setmainfont{\l__luatexcn_style_font_tl}[RawFeature={+vert,+vrt2}] \fontsize{\l__luatexcn_style_size_tl}{\l__luatexcn_style_size_tl}\selectfont }
+          }
+      }
+
+    % ====================================================================
+    % \Style[key=val]{content} - Command form
+    % ====================================================================
+    \NewDocumentCommand{\Style}{ O{} +m }
+      {
+        \group_begin:
+        \__luatexcn_style_init_and_parse:n { #1 }
+        \__luatexcn_style_apply_font:
+        \__luatexcn_style_push_and_set:
+        #2
+        \__luatexcn_style_pop:
+        \group_end:
+      }
+
+    % ====================================================================
+    % StyleEnv environment - \begin{StyleEnv}[key=val] ... \end{StyleEnv}
+    % ====================================================================
+    \NewDocumentEnvironment{StyleEnv}{ O{} }
+      {
+        \group_begin:
+        \__luatexcn_style_init_and_parse:n { #1 }
+        \__luatexcn_style_apply_font:
+        \__luatexcn_style_push_and_set:
+      }
+      {
+        \__luatexcn_style_pop:
+        \group_end:
+      }
+
+\makeatother
+
+\ExplSyntaxOff%
+
+% Chinese aliases
+\NewCommandCopy{\样式}{\Style}
+
+\endinput%

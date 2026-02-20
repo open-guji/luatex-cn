@@ -80,7 +80,6 @@ local debug = package.loaded['debug.luatex-cn-debug'] or
     require('debug.luatex-cn-debug')
 
 local dbg = debug.get_debugger('core')
-local dbg_map = debug.get_debugger('layout_map')
 local flatten = package.loaded['core.luatex-cn-core-flatten-nodes'] or
     require('core.luatex-cn-core-flatten-nodes')
 local layout = package.loaded['core.luatex-cn-layout-grid'] or
@@ -125,9 +124,9 @@ local function set_page_number(n)
     _G.page.current_page_number = tonumber(n) or 1
 end
 
--- 加载子模块 (punct must be before judou - they are mutually exclusive)
-register_plugin("punct", punct)
+-- 加载子模块 (judou must be before punct - punct reads judou's plugin context to check punct_mode)
 register_plugin("judou", judou)
+register_plugin("punct", punct)
 register_plugin("sidenote", sidenote)
 register_plugin("textbox", textbox)
 
@@ -240,7 +239,7 @@ local function init_engine_context(box_num, params)
         -- Content: read from _G.content (calculated by content.setup)
         b_interval = _G.content.n_column or 8
         if b_interval <= 0 and banxin_on then b_interval = 8 end
-        p_cols = _G.content.page_columns or 1
+        p_cols = _G.content.page_columns  -- nil in Free Mode (n_column=0)
     end
 
     if is_textbox then
@@ -251,6 +250,15 @@ local function init_engine_context(box_num, params)
     local banxin_w = _G.content.banxin_width
     if not banxin_w or banxin_w <= 0 then banxin_w = g_width end
 
+    -- Phase 3.3: Calculate content_height_sp from three-layer architecture
+    -- IMPORTANT: Only use _G.content.content_height for main content, NOT for textbox
+    -- Textbox uses its own height calculation (limit * g_height)
+    local content_height_sp
+    if is_textbox then
+        content_height_sp = limit * g_height
+    else
+        content_height_sp = (_G.content and _G.content.content_height) or (limit * g_height)
+    end
     local engine_ctx = {
         -- Grid dimensions
         g_width = g_width,
@@ -261,10 +269,12 @@ local function init_engine_context(box_num, params)
         line_limit = limit,
         n_column = b_interval,
         page_columns = p_cols,
+        -- Content area height (Phase 3: from three-layer architecture)
+        content_height_sp = content_height_sp,
         -- Border rendering
         draw_border = is_border,
         border_thickness = b_thickness,
-        half_thickness = math.floor(b_thickness / 2),
+        half_thickness = (is_textbox and not is_border) and 0 or math.floor(b_thickness / 2),
         outer_shift = is_outer_border and (ob_thickness + ob_sep) or 0,
         shift_x = (is_outer_border and (ob_thickness + ob_sep) or 0),
         shift_y = (is_outer_border and (ob_thickness + ob_sep) or 0) +
@@ -274,10 +284,22 @@ local function init_engine_context(box_num, params)
         b_padding_bottom = b_padding_bottom,
         -- Body font size (for footnote marker alignment)
         body_font_size = current_fs,
-        -- Layout mode: "grid" (fixed grid) or "natural" (variable cell height)
-        layout_mode = (not is_textbox) and (_G.content.layout_mode or "grid") or "grid",
-        col_height_sp = limit * g_height,
-        inter_cell_gap = (not is_textbox) and (_G.content.inter_cell_gap or 0) or 0,
+        -- Unified layout: default_cell_height (nil=natural, >0=grid) and default_cell_gap
+        -- Grid mode: every character occupies exactly one grid_height cell, no gap
+        -- Natural mode: cell height determined by font_size, with user-specified gap
+        -- Textbox always uses grid mode; non-textbox follows _G.content.layout_mode
+        default_cell_height = (is_textbox or (_G.content.layout_mode or "grid") == "grid")
+            and g_height or nil,
+        default_cell_width = nil,  -- reserved for future per-character width override
+        default_cell_gap = (not is_textbox and (_G.content.layout_mode or "grid") ~= "grid")
+            and (_G.content.inter_cell_gap or 0) or 0,
+        col_height_sp = content_height_sp,
+        -- Column geometry bundle for position functions
+        col_geom = { grid_width = g_width, banxin_width = banxin_w, interval = b_interval },
+        -- Visual defaults (read from _G once, passed through ctx)
+        vertical_align = _G.content.vertical_align or "center",
+        content_width = _G.content.content_width or 0,
+        start_page_number = params.start_page_number or _G.page.current_page_number or 1,
         -- Registry data (set after layout)
     }
 
@@ -287,14 +309,12 @@ local function init_engine_context(box_num, params)
     engine_ctx.get_reserved_column_coords = function(col, total_cols)
         local rtl_col = total_cols - 1 - col
         local effective_half = engine_ctx.draw_border and engine_ctx.half_thickness or 0
-        local col_x = text_position.get_column_x(rtl_col, engine_ctx.g_width,
-            engine_ctx.banxin_width, engine_ctx.n_column)
+        local col_x = text_position.get_column_x(rtl_col, engine_ctx.col_geom)
         return {
             x = col_x + effective_half + engine_ctx.shift_x,
             y = -(effective_half + engine_ctx.outer_shift),
             width = engine_ctx.banxin_width,
-            height = engine_ctx.line_limit * engine_ctx.g_height + engine_ctx.b_padding_top + engine_ctx
-                .b_padding_bottom,
+            height = engine_ctx.content_height_sp + engine_ctx.b_padding_top + engine_ctx.b_padding_bottom,
         }
     end
 
@@ -320,7 +340,7 @@ local function init_engine_context(box_num, params)
     for _, name in ipairs(core.ordered_plugins) do
         local p = core.plugins[name]
         if p.initialize then
-            plugin_contexts[name] = p.initialize(params, engine_ctx)
+            plugin_contexts[name] = p.initialize(params, engine_ctx, plugin_contexts)
         end
     end
 
@@ -340,8 +360,8 @@ local function init_engine_context(box_num, params)
         h_dim = h_dim,
     }
 
-    dbg.log(string.format("Stage 0: Initialized with g_height=%.2f pt, limit=%d, p_cols=%d",
-        g_height / 65536, limit, p_cols))
+    dbg.log(string.format("Stage 0: Initialized with g_height=%.2f pt, limit=%d, p_cols=%s",
+        g_height / 65536, limit, tostring(p_cols)))
 
     return list, engine_ctx, plugin_contexts, p_info
 end
@@ -389,26 +409,35 @@ local function compute_grid_layout(list, params, engine_ctx, plugin_contexts, p_
     local layout_params = {
         distribute = params.distribute, -- textbox-specific
         floating = is_floating,         -- textbox-specific
-        floating_x = floating_x,        -- textbox-specific
+        floating_x = floating_x or 0,  -- textbox-specific (default 0)
         absolute_height = p_info.h_dim, -- textbox-specific
         plugin_contexts = plugin_contexts,
         hooks = hooks,                  -- kinsoku hook for layout-grid
-        layout_mode = engine_ctx.layout_mode,
-        col_height_sp = engine_ctx.col_height_sp,
-        inter_cell_gap = engine_ctx.inter_cell_gap,
+        -- Explicit punct config (nil = no squeeze, callers must not add fallback)
+        punct_config = punct_ctx,
+        -- Unified layout params (all defaults set HERE, not at call sites)
+        default_cell_height = engine_ctx.default_cell_height, -- nil = natural mode
+        default_cell_width = engine_ctx.default_cell_width,   -- nil = use grid_width
+        default_cell_gap = engine_ctx.default_cell_gap or 0,
+        col_height_sp = engine_ctx.col_height_sp or 0,
+        grid_height = engine_ctx.g_height,
+        -- All modes: explicit values (helpers do NOT fall back to _G)
+        grid_width = engine_ctx.g_width,
+        margin_right = p_info.m_right or 0,
+        paper_width = p_info.p_width or 0,
+        chapter_title = params.chapter_title
+            or (_G.metadata and _G.metadata.chapter_title)
+            or "",
+        content_width = engine_ctx.content_width,
     }
 
-    -- For textbox: pass explicit values (no global fallback)
+    -- Banxin: textbox uses center-gap logic; non-textbox uses global banxin_on
     if p_info.is_textbox then
-        -- Enable center gap detection if there's a global banxin AND textbox has floating position
-        -- This ensures meipi skips the center gap when crossing banxin
         local global_banxin_on = _G.banxin and _G.banxin.enabled or false
-        layout_params.banxin_on = global_banxin_on and (floating_x > 0)
-        layout_params.grid_width = engine_ctx.g_width
-        layout_params.margin_right = p_info.m_right
-        layout_params.chapter_title = params.chapter_title or ""
+        layout_params.banxin_on = global_banxin_on and (floating_x > 0) and not is_floating
+    else
+        layout_params.banxin_on = engine_ctx.banxin_on
     end
-    -- For non-textbox: layout-grid.lua will read from globals via helpers
 
     local layout_map, total_pages, page_chapter_titles, banxin_registry = layout.calculate_grid_positions(list,
         engine_ctx.g_height,
@@ -456,16 +485,18 @@ local function generate_physical_pages(list, params, engine_ctx, plugin_contexts
     local total_pages = layout_results.total_pages
     local floating_map = layout_results.floating_map
 
-    local start_page = params.start_page_number or _G.page.current_page_number
+    local start_page = engine_ctx.start_page_number
 
     -- Build visual params - now always from style stack for both textbox and content
     local style_registry = package.loaded['util.luatex-cn-style-registry']
     local current_style = style_registry and style_registry.current() or {}
+    -- Judou plugin context (for render stage judou params)
+    local judou_ctx = plugin_contexts["judou"]
     local visual_ctx = {
         -- column_aligns is textbox-specific, always from plugin context
         column_aligns = plugin_contexts["textbox"] and plugin_contexts["textbox"].column_aligns or nil,
         -- Visual params from style stack (unified for both textbox and content)
-        vertical_align = current_style.vertical_align or _G.content.vertical_align or "center",
+        vertical_align = current_style.vertical_align or engine_ctx.vertical_align or "center",
         bg_rgb = current_style.background_color or params.background_color,
         font_rgb = current_style.font_color,
         font_size = constants.to_dimen(current_style.font_size),
@@ -474,6 +505,16 @@ local function generate_physical_pages(list, params, engine_ctx, plugin_contexts
         border_color = current_style.border_color or "0 0 0",
         border_width = current_style.border_width or "0.4pt",
         border_margin = current_style.border_margin or params.border_margin or "1pt",
+        -- Textbox outer border (separate from body text outer border, drawn around decorative shape)
+        textbox_outer_border = params.outer_border or false,
+        textbox_ob_thickness = params.outer_border_thickness,
+        textbox_ob_sep = params.outer_border_sep,
+        -- Judou params from plugin context (not from _G.judou)
+        judou_pos = judou_ctx and judou_ctx.pos or "right-bottom",
+        judou_size = judou_ctx and judou_ctx.size or "1em",
+        judou_color = judou_ctx and judou_ctx.color or "red",
+        -- TextFlow default align (jiazhu align handled by style stack, _G.jiazhu never existed)
+        textflow_align = "outward",
     }
 
     local render_ctx = {
@@ -486,6 +527,12 @@ local function generate_physical_pages(list, params, engine_ctx, plugin_contexts
             -- n_column is mainly for banxin/layout, but might be needed for some calc
             n_column = engine_ctx.n_column,
             cols = engine_ctx.page_columns,
+            -- Phase 2.4: Free Mode column widths
+            -- NOTE: Reads from _G.content because textbox needs outer content's col_widths_sp
+            -- (textbox typeset has its own layout_results which won't contain outer content's data)
+            col_widths_sp = _G.content and _G.content.col_widths_sp or nil,
+            -- Content width for right-align calculation
+            content_width = engine_ctx.content_width,
         },
         page = p_info,       -- { p_width, p_height, m_*, is_textbox, is_outer_border, ob_* }
         engine = engine_ctx, -- { border_thickness, draw_border, shifts, colors, reserved_cols helpers }
@@ -522,7 +569,7 @@ local function generate_physical_pages(list, params, engine_ctx, plugin_contexts
     -- 3.2 Construct TeX boxes
     _G.vertical_pending_pages = {}
     local outer_shift = engine_ctx.outer_shift
-    local char_grid_height = p_info.is_textbox and p_info.h_dim or (engine_ctx.line_limit * engine_ctx.g_height)
+    local char_grid_height = p_info.is_textbox and p_info.h_dim or engine_ctx.content_height_sp
     local total_v_depth = char_grid_height + engine_ctx.b_padding_top + engine_ctx.b_padding_bottom +
         engine_ctx.border_thickness + outer_shift * 2
 
@@ -555,8 +602,12 @@ local function generate_physical_pages(list, params, engine_ctx, plugin_contexts
 
         if p_info.is_textbox then
             node.set_attribute(new_box, constants.ATTR_TEXTBOX_WIDTH, page_info.cols)
-            -- Use actual content rows for auto-height, or line_limit for fixed-height
-            node.set_attribute(new_box, constants.ATTR_TEXTBOX_HEIGHT, page_info.rows or engine_ctx.line_limit)
+            -- Use actual content height for auto-height, or line_limit for fixed-height
+            -- height_sp is in scaled points; convert to row count for occupancy grid
+            local tb_rows = page_info.height_sp
+                and math.ceil(page_info.height_sp / engine_ctx.g_height)
+                or engine_ctx.line_limit
+            node.set_attribute(new_box, constants.ATTR_TEXTBOX_HEIGHT, tb_rows)
         else
             node.set_attribute(new_box, constants.ATTR_TEXTBOX_WIDTH, 0)
             node.set_attribute(new_box, constants.ATTR_TEXTBOX_HEIGHT, 0)
@@ -626,47 +677,6 @@ local function process(box_num, params)
     -- This recovers memory for sidenotes and floating boxes immediately.
     sidenote.clear_registry()
     textbox.clear_registry()
-end
-
---- Final cleanup function to be called at the end of the document
--- This safely flushes all remaining nodes in registries and clears tables
-local function finalize_engine()
-    local glyph_id = node.id("glyph")
-    local before = node.count(glyph_id)
-    dbg.log(string.format("Performing cleanup. Glyphs before: %d", before))
-
-    -- 1. Flush and clear pending pages
-    for i, box in pairs(_G.vertical_pending_pages) do
-        if box then
-            node.flush_list(box)
-        end
-    end
-    _G.vertical_pending_pages = {}
-
-    -- 2. Flush and clear sidenote registry
-    if sidenote and sidenote.registry then
-        for _, item in pairs(sidenote.registry) do
-            local head = type(item) == "table" and item.head or item
-            if head then
-                node.flush_list(head)
-            end
-        end
-        sidenote.clear_registry()
-    end
-
-    -- 3. Flush and clear textbox registries
-    if textbox and textbox.floating_registry then
-        for _, item in pairs(textbox.floating_registry) do
-            if item.box then
-                node.flush_list(item.box)
-            end
-        end
-        textbox.clear_registry()
-    end
-
-    -- 4. Force garbage collection
-    collectgarbage("collect")
-    collectgarbage("collect") -- Second pass for finalizers
 end
 
 -- ========================================================================

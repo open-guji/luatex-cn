@@ -4,7 +4,7 @@
 
 LuaTeX package for Chinese charactor typesetting, covering horizontal/vertical, tranditional/mordern layout. Currently focus on Ancient Book replication. Implemented core logic of vertical typesetting, decorative elements of traditional Chinese books, and interlinear notes.
 
-CTAN: [v0.1.1](https://ctan.org/pkg/luatex-cn) | GitHub Release: [v0.2.7](https://github.com/open-guji/luatex-cn/releases)
+CTAN: [v0.1.1](https://ctan.org/pkg/luatex-cn) | GitHub Release: [v0.2.8](https://github.com/open-guji/luatex-cn/releases)
 
 ## Features
 
@@ -26,10 +26,10 @@ Quick install:
 
 ## Usage
 
-The recommended way to use the package is through the `ltc-guji` document class:
+The recommended way to use the package is through the `guji` document class:
 
 ```latex
-\documentclass[红楼梦甲戌本]{ltc-guji}
+\documentclass[红楼梦甲戌本]{guji}
 
 % Set book title (appears in the right-side banxin)
 \title{脂硯齋重評石頭記}

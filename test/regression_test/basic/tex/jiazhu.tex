@@ -66,5 +66,11 @@
 
 下一段正文
 
+% Style 在夹注外部包裹测试
+\Style[font-color=red]{红色区域\夹注{夹注在红色样式内}继续红色}正常文字
+
+% Style 在夹注内部使用
+一二三\夹注{普通\Style[font-color=blue]{蓝色}普通}四五
+
 \end{正文}
 \end{document}

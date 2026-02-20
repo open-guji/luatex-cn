@@ -1,43 +1,41 @@
-\documentclass{ltc-guji}
+\documentclass{guji}
 
-\usepackage{tikz}
 \setmainfont{TW-Kai}
 \禁用分页裁剪
 
 \begin{document}
 \begin{正文}
 
-% Test 1: Top alignment (default)
-一二三四五六七八九十
-\Column{甲乙丙}
-一二三四五六七八九十一二三四五六七八九十一
-\Column{甲乙丙}
-
-% Test 2: Bottom alignment
-\Column[align=bottom]{甲乙丙居下}
-
-% Test 3: Center alignment
-\Column[align=center]{甲乙丙居中}
-
-% Test 4: Stretch alignment
-\Column[align=stretch]{甲乙丙丁戊展开}
-
-% Test 5: Stretch with many characters (squeeze)
-\Column[align=stretch]{一二三四五六七八九十壹贰叁肆伍陆柒捌玖拾挤压字符}
-
-% Test 6: With color
-\Column[align=center, font-color=red]{红色文字}
-
-% Test 7: Mixed with jiazhu
+% Test 1-7: Column alignment tests (all on same page)
+一二三四五六七八九十%
+\Column{甲乙丙}%
+一二三四五六七八九十一二三四五六七八九十一%
+\Column{甲乙丙}%
+\Column[align=bottom]{甲乙丙居下}%
+\Column[align=center]{甲乙丙居中}%
+\Column[align=stretch]{甲乙丙丁戊展开}%
+\Column[align=stretch]{一二三四五六七八九十壹贰叁肆伍陆柒捌玖拾挤压字符}%
+\Column[align=center, font-color=red]{红色文字}%
 \行{甲乙\夹注{双列夹注}丙丁}
 
 % Test 8: LastColumn - place at end of half-page
-一二三四五
+一二三四五%
 \LastColumn{末列内容}
 
 % Test 9: LastColumn with alignment
-一二三四五
+一二三四五%
 \末行[align=center]{居中末行}
+
+\newpage
+
+\行[spacing=5pt]{间距}
+\行[spacing-top=3pt, spacing-bottom=7pt]{不同}
+\行[font-size=24pt, width-scale=1.5]{大字}
+\行[column-width=50pt]{固定}
+
+% Style 与 Column 组合测试
+\Style[font-color=red]{红色\行{红色列内}继续红色}正常
+\行{\Style[font-color=blue]{蓝色}正常}
 
 \end{正文}
 \end{document}

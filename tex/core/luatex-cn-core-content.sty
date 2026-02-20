@@ -13,7 +13,7 @@
 % limitations under the License.
 
 \RequirePackage{core/luatex-cn-core-base}
-\ProvidesExplPackage{core/luatex-cn-core-content}{2026/02/09} {0.2.7}{Content layout and border support}
+\ProvidesExplPackage{core/luatex-cn-core-content}{2026/02/14} {0.2.8}{Content layout and border support}
 
 % Centralized variables for content border settings
 \bool_new:N \l__luatexcn_content_border_bool
@@ -47,6 +47,15 @@
 \tl_new:N \l__luatexcn_content_font_features_tl
 \tl_new:N \l__luatexcn_content_layout_mode_tl
 \tl_new:N \l__luatexcn_content_inter_cell_gap_tl
+\tl_new:N \l__luatexcn_content_cell_height_tl
+\tl_new:N \l__luatexcn_content_cell_width_tl
+\tl_new:N \l__luatexcn_content_cell_gap_tl
+
+% Flexible column width and spacing (Free Mode)
+\bool_new:N \l__luatexcn_content_auto_col_width_bool
+\tl_new:N \l__luatexcn_content_col_spacing_top_tl
+\tl_new:N \l__luatexcn_content_col_spacing_bottom_tl
+\tl_new:N \l__luatexcn_content_para_spacing_tl
 
 \keys_define:nn { luatexcn / content }
   {
@@ -124,6 +133,33 @@
     inter-cell-gap .tl_set:N = \l__luatexcn_content_inter_cell_gap_tl,
     inter-cell-gap .initial:n = {0pt},
 
+    cell-height .tl_set:N = \l__luatexcn_content_cell_height_tl,
+    cell-height .initial:n = {},
+
+    cell-width .tl_set:N = \l__luatexcn_content_cell_width_tl,
+    cell-width .initial:n = {},
+
+    cell-gap .tl_set:N = \l__luatexcn_content_cell_gap_tl,
+    cell-gap .initial:n = {},
+
+    % 灵活列宽和间距参数（Free Mode）
+    auto-column-width .bool_set:N = \l__luatexcn_content_auto_col_width_bool,
+    auto-column-width .initial:n = false,
+
+    column-spacing-top .tl_set:N = \l__luatexcn_content_col_spacing_top_tl,
+    column-spacing-top .initial:n = {0pt},
+
+    column-spacing-bottom .tl_set:N = \l__luatexcn_content_col_spacing_bottom_tl,
+    column-spacing-bottom .initial:n = {0pt},
+
+    column-spacing .meta:n = {
+      column-spacing-top = #1,
+      column-spacing-bottom = #1
+    },
+
+    paragraph-spacing .tl_set:N = \l__luatexcn_content_para_spacing_tl,
+    paragraph-spacing .initial:n = {0pt},
+
     unknown .code:n = { \keys_set:nx { luatexcn / page } { \l_keys_key_tl = { #1 } } },
   }
 
@@ -155,7 +191,10 @@
         font_color~=~[=[\l__luatexcn_content_font_rgb_tl]=],
         font_size~=~[=[\luaescapestring{\l__luatexcn_content_font_size_tl}]=],
         layout_mode~=~[=[\luaescapestring{\l__luatexcn_content_layout_mode_tl}]=],
-        inter_cell_gap~=~[=[\luaescapestring{\l__luatexcn_content_inter_cell_gap_tl}]=]
+        inter_cell_gap~=~[=[\luaescapestring{\l__luatexcn_content_inter_cell_gap_tl}]=],
+        cell_height~=~[=[\luaescapestring{\l__luatexcn_content_cell_height_tl}]=],
+        cell_width~=~[=[\luaescapestring{\l__luatexcn_content_cell_width_tl}]=],
+        cell_gap~=~[=[\luaescapestring{\l__luatexcn_content_cell_gap_tl}]=]
       })
     }
   }

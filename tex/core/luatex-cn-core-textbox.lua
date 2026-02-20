@@ -218,6 +218,10 @@ local function build_sub_params(params, col_aligns)
         border_shape = params.border_shape or "none",
         border_width = border_width,
         border_margin = params.border_margin or "1pt",
+        -- Outer border params (textbox-level)
+        outer_border = (params.outer_border == true or params.outer_border == "true"),
+        outer_border_thickness = params.outer_border_thickness,
+        outer_border_sep = params.outer_border_sep,
         -- floating* now in _G.textbox (read via plugin context in main.lua)
         -- judou params read directly from TeX vars by judou plugin
     }
@@ -274,7 +278,7 @@ local function execute_layout_pipeline(box_num, sub_params, current_indent)
         first_indent = 0,
         border_width = sub_params.border_width,
         border_color = sub_params.border_color,
-        outer_border = false,  -- TextBox never has outer border
+        outer_border = false,  -- TextBox never uses pipeline outer border (drawn separately)
     }
     -- Only include border if explicitly set (nil means inherit from parent)
     if sub_params.border_explicit ~= nil then
@@ -437,7 +441,8 @@ local function find_floating_boxes(list, layout_map, registry)
                         box = item.box,
                         page = current_page,
                         x = item.x,
-                        y = item.y
+                        y = item.y,
+                        ob_extension = item.ob_extension,
                     })
                     dbg.log(string.format("Placed floating box %d on page %d", anchor.fid, current_page))
                 end
@@ -465,7 +470,8 @@ local function find_floating_boxes(list, layout_map, registry)
                 box = item.box,
                 page = current_page,
                 x = item.x,
-                y = item.y
+                y = item.y,
+                ob_extension = item.ob_extension,
             })
             dbg.log(string.format("Placed floating box %d on page %d (end of document)", anchor.fid, current_page))
         end
@@ -595,6 +601,17 @@ function textbox.process_inner_box(box_num, params)
         apply_result_attributes(res_box, params, current_indent)
         tex.box[box_num] = res_box
     end
+
+    -- 6. Compute outer border extension for floating box position adjustment
+    if sub_params.outer_border then
+        local border_m = constants.to_dimen(sub_params.border_margin) or 0
+        local border_w = constants.to_dimen(sub_params.border_width) or (65536 * 0.4)
+        local ob_t = constants.to_dimen(sub_params.outer_border_thickness) or (65536 * 1)
+        local ob_s = constants.to_dimen(sub_params.outer_border_sep) or (65536 * 2)
+        _G.textbox.last_ob_extension = border_m + border_w / 2 + ob_s + ob_t
+    else
+        _G.textbox.last_ob_extension = 0
+    end
 end
 
 --- Register a floating textbox from a TeX box
@@ -613,8 +630,10 @@ function textbox.register_floating_box(box_num, params)
     textbox.floating_registry[id] = {
         box = b,
         x = constants.to_dimen(params.x) or 0,
-        y = constants.to_dimen(params.y) or 0
+        y = constants.to_dimen(params.y) or 0,
+        ob_extension = _G.textbox.last_ob_extension or 0,
     }
+    _G.textbox.last_ob_extension = 0
 
     dbg.log(string.format("Registered floating box ID=%d at (%s, %s)",
         id, tostring(params.x), tostring(params.y)))
@@ -644,6 +663,7 @@ function textbox.place_textbox_node(ctx, node, tb_w, tb_h, params, callbacks)
         callbacks.flush()
         callbacks.wrap(false, false) -- reset_indent=false, reset_content=false
         ctx.cur_row = params.indent  -- Textbox respects indent at start of new column
+        ctx.cur_y_sp = ctx.cur_row * (params.grid_height or 655360)
     end
 
     local fits_width = true
@@ -670,11 +690,13 @@ function textbox.place_textbox_node(ctx, node, tb_w, tb_h, params, callbacks)
         page = ctx.cur_page,
         col = ctx.cur_col,
         relative_row = ctx.cur_row,
+        y_sp = ctx.cur_y_sp,
         is_block = true,
         width = tb_w,
         height = tb_h
     })
     ctx.cur_row = ctx.cur_row + tb_h
+    ctx.cur_y_sp = ctx.cur_row * (params.grid_height or 655360)
     callbacks.move_next()
 end
 
@@ -745,13 +767,19 @@ function textbox.render_floating_box(p_head, item, params)
     -- To compensate and keep the floating box at absolute paper coordinates,
     -- we SUBTRACT the margins from the position.
     --
+    -- Outer border extension: when present, (x, y) references the outer border's
+    -- top-right corner instead of the box's top-right corner
+    local ob_ext = item.ob_extension or 0
+
     -- x is measured from the right edge of the logical page
     -- Position from logical page left = logical_page_width - x - box_width
-    local position_from_logical_left = logical_page_width - item.x - w
+    -- With outer border: shift box left so outer border right edge aligns with x
+    local position_from_logical_left = logical_page_width - item.x - w - ob_ext
     local rel_x = split_page_offset + position_from_logical_left - m_left
 
     -- For y: subtract m_top to compensate for the margin shift in page.split output
-    local rel_y = item.y - m_top
+    -- With outer border: shift box down so outer border top edge aligns with y
+    local rel_y = item.y + ob_ext - m_top
 
     -- Apply Kern & Shift
     local final_x = rel_x

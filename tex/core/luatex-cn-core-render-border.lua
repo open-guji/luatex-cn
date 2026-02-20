@@ -48,11 +48,8 @@ local text_position = package.loaded['core.luatex-cn-render-position'] or
 -- @param params (table) 参数表:
 --   - total_cols: 要绘制的总列数
 --   - grid_width: 每列的宽度 (sp)
---   - grid_height: 每行的高度 (sp)
---   - line_limit: 每列的行数限制
+--   - content_dim_h: 列边框高度 (sp), 即 line_limit * grid_height + padding
 --   - border_thickness: 边框厚度 (sp)
---   - b_padding_top: 顶部内边距 (sp)
---   - b_padding_bottom: 底部内边距 (sp)
 --   - shift_x: 水平偏移 (sp)
 --   - outer_shift: 外边框偏移 (sp)
 --   - border_rgb_str: 归一化的 RGB 颜色字符串
@@ -62,18 +59,18 @@ local function draw_column_borders(p_head, params)
     local sp_to_bp = utils.sp_to_bp
     local total_cols = params.total_cols
     local grid_width = params.grid_width
-    local grid_height = params.grid_height
-    local line_limit = params.line_limit
     local border_thickness = params.border_thickness
-    local b_padding_top = params.b_padding_top
-    local b_padding_bottom = params.b_padding_bottom
     local shift_x = params.shift_x
     local outer_shift = params.outer_shift
     local border_rgb_str = params.border_rgb_str
     local banxin_cols = params.banxin_cols or {} -- Set of column indices to skip
-    local col_min_rows = params.col_min_rows or {} -- Per-column min row for taitou raised border
-    local banxin_width = params.banxin_width or 0
-    local interval = params.interval or 0
+    local col_min_y_sp = params.col_min_y_sp or {} -- Per-column min y_sp for taitou raised border
+    local col_geom = params.col_geom or {
+        grid_width = grid_width,
+        banxin_width = params.banxin_width or 0,
+        interval = params.interval or 0,
+    }
+    local content_dim_h = params.content_dim_h  -- Pre-computed: line_limit * grid_height + padding
 
     local b_thickness_bp = border_thickness * sp_to_bp
     local half_thickness = math.floor(border_thickness / 2)
@@ -88,7 +85,7 @@ local function draw_column_borders(p_head, params)
             local tx_bp = (text_position.get_column_x_var(rtl_col, col_widths, total_cols) + half_thickness + shift_x) * sp_to_bp
             local ty_bp = -(half_thickness + outer_shift) * sp_to_bp
             local tw_bp = col_widths[i] * sp_to_bp
-            local th_bp = -(line_limit * grid_height + b_padding_top + b_padding_bottom) * sp_to_bp
+            local th_bp = -content_dim_h * sp_to_bp
 
             local literal = utils.create_border_literal(b_thickness_bp, border_rgb_str, tx_bp, ty_bp, tw_bp, th_bp)
             p_head = utils.insert_pdf_literal(p_head, literal)
@@ -100,15 +97,15 @@ local function draw_column_borders(p_head, params)
         -- Skip banxin columns (they are drawn separately by banxin module)
         if not banxin_cols[col] then
             local rtl_col = total_cols - 1 - col
-            local tx_bp = (text_position.get_column_x(rtl_col, grid_width, banxin_width, interval) + half_thickness + shift_x) * sp_to_bp
+            local tx_bp = (text_position.get_column_x(rtl_col, col_geom) + half_thickness + shift_x) * sp_to_bp
             local ty_bp = -(half_thickness + outer_shift) * sp_to_bp
-            local tw_bp = text_position.get_column_width(col, grid_width, banxin_width, interval) * sp_to_bp
-            local th_bp = -(line_limit * grid_height + b_padding_top + b_padding_bottom) * sp_to_bp
+            local tw_bp = text_position.get_column_width(col, col_geom) * sp_to_bp
+            local th_bp = -content_dim_h * sp_to_bp
 
-            -- Taitou raised border: extend column upward for negative row columns
-            local min_row = col_min_rows[col]
-            if min_row and min_row < 0 then
-                local raised_sp = (-min_row) * grid_height
+            -- Taitou raised border: extend column upward for negative y_sp columns
+            local min_y = col_min_y_sp[col]
+            if min_y and min_y < 0 then
+                local raised_sp = -min_y
                 ty_bp = ty_bp + raised_sp * sp_to_bp
                 th_bp = th_bp - raised_sp * sp_to_bp
             end
@@ -135,7 +132,7 @@ end
 --   - outer_border_thickness: 外边框厚度 (sp)
 --   - outer_border_sep: 内外边框间距 (sp)
 --   - border_rgb_str: 归一化的 RGB 颜色字符串
---   - col_min_rows: (optional) 每列最小行号表
+--   - col_min_y_sp: (optional) 每列最小行号表
 --   - total_cols: (optional) 总列数
 --   - grid_width: (optional) 格子宽度 (sp)
 --   - grid_height: (optional) 格子高度 (sp)
@@ -149,7 +146,7 @@ local function draw_outer_border(p_head, params)
     local ob_thickness_val = params.outer_border_thickness
     local ob_sep_val = params.outer_border_sep
     local border_rgb_str = params.border_rgb_str
-    local col_min_rows = params.col_min_rows or {}
+    local col_min_y_sp = params.col_min_y_sp or {}
 
     local ob_thickness_bp = ob_thickness_val * sp_to_bp
 
@@ -160,7 +157,7 @@ local function draw_outer_border(p_head, params)
 
     -- Check if any taitou columns exist
     local has_taitou = false
-    for _, v in pairs(col_min_rows) do
+    for _, v in pairs(col_min_y_sp) do
         if v and v < 0 then has_taitou = true; break end
     end
 
@@ -188,19 +185,22 @@ local function draw_outer_border(p_head, params)
     local col_tops = {}
     for rtl_col = 0, total_cols - 1 do
         local col = total_cols - 1 - rtl_col
-        local min_row = col_min_rows[col]
-        if min_row and min_row < 0 then
-            col_tops[rtl_col] = ty_bp + (-min_row) * gh_bp
+        local min_y = col_min_y_sp[col]
+        if min_y and min_y < 0 then
+            col_tops[rtl_col] = ty_bp + (-min_y) * sp_to_bp
         else
             col_tops[rtl_col] = ty_bp
         end
     end
 
     -- Column boundary X positions (supports mixed column widths)
-    local banxin_width = params.banxin_width or 0
-    local interval = params.interval or 0
+    local col_geom = params.col_geom or {
+        grid_width = grid_width,
+        banxin_width = params.banxin_width or 0,
+        interval = params.interval or 0,
+    }
     local function cb(b)
-        return (text_position.get_column_x(b, grid_width, banxin_width, interval) + half_thickness + shift_x) * sp_to_bp
+        return (text_position.get_column_x(b, col_geom) + half_thickness + shift_x) * sp_to_bp
     end
 
     -- Construct path: counter-clockwise from bottom-left
@@ -268,10 +268,10 @@ end
 --   -- Grid and dimensions
 --   - p_total_cols: 页面总列数
 --   - actual_cols: 实际内容列数
---   - actual_rows: 实际内容行数
+--   - actual_height_sp: 实际内容高度 (sp)
 --   - grid_width: 每列宽度 (sp)
 --   - grid_height: 每行高度 (sp)
---   - line_limit: 每列行数限制
+--   - content_height_sp: 内容区高度 (sp), 从三层架构获取
 --   -- Border params
 --   - border_thickness: 边框厚度 (sp)
 --   - b_padding_top: 顶部内边距 (sp)
@@ -297,10 +297,8 @@ end
 local function render_borders(p_head, params)
     local p_total_cols = params.p_total_cols
     local actual_cols = params.actual_cols
-    local actual_rows = params.actual_rows
     local grid_width = params.grid_width
     local grid_height = params.grid_height
-    local line_limit = params.line_limit
     local border_thickness = params.border_thickness
     local b_padding_top = params.b_padding_top
     local b_padding_bottom = params.b_padding_bottom
@@ -308,17 +306,22 @@ local function render_borders(p_head, params)
 
     local banxin_width = params.banxin_width or 0
     local interval = params.interval or 0
+    local col_geom = params.col_geom or {
+        grid_width = grid_width,
+        banxin_width = banxin_width,
+        interval = interval,
+    }
 
     -- Calculate content dimensions (shared logic in content module)
     local content_mod = package.loaded['core.luatex-cn-core-content'] or
         require('core.luatex-cn-core-content')
-    local _, _, inner_width, inner_height = content_mod.calculate_content_dimensions({
+    local content_dim_w, content_dim_h, inner_width, inner_height = content_mod.calculate_content_dimensions({
         is_textbox = is_textbox,
         actual_cols = actual_cols,
-        actual_rows = actual_rows,
+        actual_height_sp = params.actual_height_sp,
         grid_width = grid_width,
         grid_height = grid_height,
-        line_limit = line_limit,
+        content_height_sp = params.content_height_sp,
         b_padding_top = b_padding_top,
         b_padding_bottom = b_padding_bottom,
         p_total_cols = p_total_cols,
@@ -332,18 +335,14 @@ local function render_borders(p_head, params)
         p_head = draw_column_borders(p_head, {
             total_cols = p_total_cols,
             grid_width = grid_width,
-            grid_height = grid_height,
-            banxin_width = banxin_width,
-            interval = interval,
-            line_limit = line_limit,
+            col_geom = col_geom,
+            content_dim_h = content_dim_h,
             border_thickness = border_thickness,
-            b_padding_top = b_padding_top,
-            b_padding_bottom = b_padding_bottom,
             shift_x = params.shift_x,
             outer_shift = params.outer_shift,
             border_rgb_str = params.b_rgb_str,
             banxin_cols = params.reserved_cols,
-            col_min_rows = params.col_min_rows,
+            col_min_y_sp = params.col_min_y_sp,
         })
     end
 
@@ -356,12 +355,11 @@ local function render_borders(p_head, params)
             outer_border_sep = params.ob_sep_val,
             border_rgb_str = params.b_rgb_str,
             -- Taitou stepped border params
-            col_min_rows = params.col_min_rows,
+            col_min_y_sp = params.col_min_y_sp,
             total_cols = p_total_cols,
             grid_width = grid_width,
             grid_height = grid_height,
-            banxin_width = banxin_width,
-            interval = interval,
+            col_geom = col_geom,
             half_thickness = math.floor(border_thickness / 2),
             shift_x = params.shift_x,
         })
@@ -370,7 +368,7 @@ local function render_borders(p_head, params)
     -- 3. Draw background (shaped or rectangular)
     local border_shape = params.border_shape
     local shape_width = actual_cols * grid_width
-    local shape_height = actual_rows * grid_height
+    local shape_height = params.actual_height_sp
 
     if border_shape == "octagon" and params.background_rgb_str then
         -- Octagon-shaped background
@@ -435,6 +433,33 @@ local function render_borders(p_head, params)
                 color_str = border_color,
             })
         end
+    end
+
+    -- 5. Textbox outer border (drawn around the decorative shape frame)
+    -- This is separate from body text outer border (section 2) to avoid coordinate conflicts
+    if params.textbox_outer_border and border_shape and border_shape ~= "none" then
+        local border_w = params.border_width or (65536 * 0.4)
+        local border_m = params.border_margin or 0
+        local ob_t = params.textbox_ob_thickness or (65536 * 1)
+        local ob_s = params.textbox_ob_sep or (65536 * 2)
+        local border_color = params.border_color_str or params.b_rgb_str or "0 0 0"
+
+        -- Outer border wraps the decorative shape with ob_sep gap
+        -- Gap measured from outer edge of inner stroke to inner edge of outer stroke
+        local gap = border_w / 2 + ob_s + ob_t / 2
+        local outer_x = -(border_m + gap)
+        local outer_y = border_m + gap
+        local outer_w = shape_width + 2 * (border_m + gap)
+        local outer_h = shape_height + 2 * (border_m + gap)
+
+        p_head = drawing.draw_rect_frame(p_head, {
+            x = outer_x,
+            y = outer_y,
+            width = outer_w,
+            height = outer_h,
+            line_width = ob_t,
+            color_str = border_color,
+        })
     end
 
     return p_head

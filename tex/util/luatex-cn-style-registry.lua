@@ -204,6 +204,62 @@ function style_registry.get_border_margin(id)
     return style_registry.get_attr(id, "border_margin")
 end
 
+--- Get cell height from style
+-- @param id (number) Style ID
+-- @return (number|nil) Cell height in sp (nil = use default/font-based)
+function style_registry.get_cell_height(id)
+    return style_registry.get_attr(id, "cell_height")
+end
+
+--- Get cell width from style
+-- @param id (number) Style ID
+-- @return (number|nil) Cell width in sp (nil = use grid_width)
+function style_registry.get_cell_width(id)
+    return style_registry.get_attr(id, "cell_width")
+end
+
+--- Get cell gap from style
+-- @param id (number) Style ID
+-- @return (number|nil) Cell gap in sp, or nil
+function style_registry.get_cell_gap(id)
+    return style_registry.get_attr(id, "cell_gap")
+end
+
+--- Get spacing-top (column right spacing) from style
+-- @param id (number) Style ID
+-- @return (number|nil) Spacing-top in sp, or nil if not found
+function style_registry.get_spacing_top(id)
+    return style_registry.get_attr(id, "spacing_top")
+end
+
+--- Get spacing-bottom (column left spacing) from style
+-- @param id (number) Style ID
+-- @return (number|nil) Spacing-bottom in sp, or nil if not found
+function style_registry.get_spacing_bottom(id)
+    return style_registry.get_attr(id, "spacing_bottom")
+end
+
+--- Get column width from style
+-- @param id (number) Style ID
+-- @return (number|nil) Column width in sp, or nil if not found
+function style_registry.get_column_width(id)
+    return style_registry.get_attr(id, "column_width")
+end
+
+--- Get auto-width setting from style
+-- @param id (number) Style ID
+-- @return (boolean|nil) Auto-width setting, or nil if not found
+function style_registry.get_auto_width(id)
+    return style_registry.get_attr(id, "auto_width")
+end
+
+--- Get width-scale from style
+-- @param id (number) Style ID
+-- @return (number|nil) Width scale factor, or nil if not found
+function style_registry.get_width_scale(id)
+    return style_registry.get_attr(id, "width_scale")
+end
+
 -- ============================================================================
 -- Style Stack Functions (Phase 3: Style Inheritance)
 -- ============================================================================
@@ -293,6 +349,60 @@ function style_registry.pop_temporary()
         count = count + 1
     end
     return count
+end
+
+--- Push a content style with common font parameters
+-- Handles font_color, font_size (string → sp conversion), font name.
+-- @param font_color (string|nil)
+-- @param font_size (string|nil) e.g., "14pt"
+-- @param font (string|nil)
+-- @param extra (table|nil) Additional style fields (textflow_align, auto_balance, grid_height, etc.)
+-- @return (number) Style ID (always a valid number)
+function style_registry.push_content_style(font_color, font_size, font, extra)
+    local constants_mod = package.loaded['core.luatex-cn-constants'] or
+        require('core.luatex-cn-constants')
+    local style = {}
+    if font_color and font_color ~= "" then
+        style.font_color = font_color
+    end
+    if font_size and font_size ~= "" then
+        style.font_size = constants_mod.to_dimen(font_size)
+    end
+    if font and font ~= "" then
+        style.font = font
+    end
+    if extra then
+        for k, v in pairs(extra) do
+            style[k] = v
+        end
+    end
+    return style_registry.push(style) or 0
+end
+
+--- Build an extra table from optional grid_height, spacing_top, spacing_bottom strings
+--- Convenience helper for TeX→Lua calls where table construction in expl3 is awkward.
+-- @param grid_height (string|nil) e.g., "1.5em"
+-- @param spacing_top (string|nil) e.g., "5pt"
+-- @param spacing_bottom (string|nil) e.g., "5pt"
+-- @return (table|nil) Extra table for push_content_style, or nil if all params are nil
+function style_registry.make_extra(grid_height, spacing_top, spacing_bottom)
+    local constants_mod = package.loaded['core.luatex-cn-constants'] or
+        require('core.luatex-cn-constants')
+    local extra = {}
+    local has_any = false
+    if grid_height and grid_height ~= "" then
+        extra.grid_height = constants_mod.to_dimen(grid_height)
+        has_any = true
+    end
+    if spacing_top and spacing_top ~= "" then
+        extra.spacing_top = constants_mod.to_dimen(spacing_top)
+        has_any = true
+    end
+    if spacing_bottom and spacing_bottom ~= "" then
+        extra.spacing_bottom = constants_mod.to_dimen(spacing_bottom)
+        has_any = true
+    end
+    return has_any and extra or nil
 end
 
 --- Clear the registry (useful for testing or document end)

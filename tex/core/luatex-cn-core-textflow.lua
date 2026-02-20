@@ -36,6 +36,8 @@ local constants = package.loaded['core.luatex-cn-constants'] or
 local D = constants.D
 local style_registry = package.loaded['util.luatex-cn-style-registry'] or
     require('util.luatex-cn-style-registry')
+local helpers = package.loaded['core.luatex-cn-layout-grid-helpers'] or
+    require('core.luatex-cn-layout-grid-helpers')
 
 local textflow = {}
 
@@ -47,33 +49,36 @@ local textflow = {}
 -- @param auto_balance (boolean|nil) Whether to auto-balance last column (default true)
 -- @return (number) Style ID
 function textflow.push_style(font_color, font_size, font, textflow_align, auto_balance)
-    local style = {}
-    if font_color and font_color ~= "" then
-        style.font_color = font_color
-    end
-    if font_size and font_size ~= "" then
-        style.font_size = constants.to_dimen(font_size)
-    end
-    if font and font ~= "" then
-        style.font = font
-    end
-    -- Only set textflow_align if explicitly provided
-    -- Inheritance handled by style_registry
+    local extra = {}
     if textflow_align and textflow_align ~= "" then
-        style.textflow_align = textflow_align
+        extra.textflow_align = textflow_align
     end
-    -- auto_balance defaults to true if not specified
-    if auto_balance == false then
-        style.auto_balance = false
-    else
-        style.auto_balance = true
-    end
-    return style_registry.push(style)
+    extra.auto_balance = (auto_balance ~= false)
+    return style_registry.push_content_style(font_color, font_size, font, extra)
 end
 
 --- Pop textflow style from style stack
 function textflow.pop_style()
     return style_registry.pop()
+end
+
+--- Assign balanced sub-column positions to a list of nodes
+-- Simple balanced split: ceil(N/2) go to right (sub_col=1), rest to left (sub_col=2).
+-- Sets ATTR_JIAZHU_SUB on each node.
+-- @param nodes (table) Array of direct node pointers
+-- @return (table) Array of {node, sub_col, relative_row}
+-- @return (number) right_count
+function textflow.assign_balanced_sub_columns(nodes)
+    local N = #nodes
+    local right_count = math.ceil(N / 2)
+    local result = {}
+    for i, n in ipairs(nodes) do
+        local sub_col = (i <= right_count) and 1 or 2
+        local relative_row = (i <= right_count) and (i - 1) or (i - right_count - 1)
+        D.set_attribute(n, constants.ATTR_JIAZHU_SUB, sub_col)
+        result[i] = { node = n, sub_col = sub_col, relative_row = relative_row }
+    end
+    return result, right_count
 end
 
 --- Calculate sub-column X offset for textflow
@@ -374,25 +379,14 @@ function textflow.place_nodes(ctx, start_node, layout_map, params, callbacks)
         params.textflow_mode, auto_balance, start_sub_col, start_row_offset)
 
     -- Place chunks into layout_map
-    -- Read style from node attribute (set by TeX layer)
-    local style_reg_id = nil
-    local current_style = nil
-    if #nodes > 0 then
-        style_reg_id = D.get_attribute(nodes[1], constants.ATTR_STYLE_REG_ID)
-        current_style = style_registry.get(style_reg_id)
-    end
-
-    -- Extract style attributes for layout_map
-    local font_color_str = current_style and current_style.font_color or nil
-    local font_size_val = current_style and current_style.font_size or nil
-    local font_str = current_style and current_style.font or nil
-    local textflow_align_str = current_style and current_style.textflow_align or nil
-
     for i, chunk in ipairs(chunks) do
         if i > 1 then
             callbacks.wrap()
             local chunk_indent = callbacks.get_indent(params.block_id, params.base_indent, params.first_indent)
-            if ctx.cur_row < chunk_indent then ctx.cur_row = chunk_indent end
+            if ctx.cur_row < chunk_indent then
+                ctx.cur_row = chunk_indent
+                ctx.cur_y_sp = ctx.cur_row * (params.grid_height or 655360)
+            end
         end
         for _, node_info in ipairs(chunk.nodes) do
             -- Note: ATTR_STYLE_REG_ID is already set by TeX layer
@@ -411,26 +405,21 @@ function textflow.place_nodes(ctx, start_node, layout_map, params, callbacks)
                 node_row = ctx.cur_row + node_info.relative_row
             end
 
+            local gh = params.grid_height or 655360
             local entry = {
                 page = ctx.cur_page,
                 col = ctx.cur_col,
-                row = node_row,
-                sub_col = node_info.sub_col
+                y_sp = node_row * gh,
+                sub_col = node_info.sub_col,
             }
-
-            -- Only add style fields if set
-            if font_color_str then
-                entry.font_color = font_color_str
+            if node_info.sub_col then
+                -- jiazhu uses grid_height as vertical cell unit
+                entry.cell_height = gh
+            else
+                entry.cell_height = helpers.resolve_cell_height(node_info.node, gh, nil, ctx.punct_config)
+                entry.cell_width = helpers.resolve_cell_width(node_info.node, nil)
             end
-            if font_size_val then
-                entry.font_size = font_size_val
-            end
-            if font_str then
-                entry.font = font_str
-            end
-            if textflow_align_str then
-                entry.textflow_align = textflow_align_str
-            end
+            helpers.apply_style_attrs(entry, node_info.node)
 
             -- Check for line mark attribute (专名号/书名号)
             local lm_id = D.get_attribute(node_info.node, constants.ATTR_LINE_MARK_ID)
@@ -449,6 +438,7 @@ function textflow.place_nodes(ctx, start_node, layout_map, params, callbacks)
         else
             ctx.cur_row = ctx.cur_row + chunk.rows_used
         end
+        ctx.cur_y_sp = ctx.cur_row * (params.grid_height or 655360)
     end
 
     -- Update ctx with final sub-column state for next textflow

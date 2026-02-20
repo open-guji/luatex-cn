@@ -38,12 +38,20 @@ local decorate_mod = package.loaded['decorate.luatex-cn-decorate'] or
     require('decorate.luatex-cn-decorate')
 local debug = package.loaded['debug.luatex-cn-debug'] or
     require('debug.luatex-cn-debug')
+local helpers = package.loaded['core.luatex-cn-layout-grid-helpers'] or
+    require('core.luatex-cn-layout-grid-helpers')
 
 local dbg = debug.get_debugger('render')
 
 -- ============================================================================
 -- Node Handling Functions
 -- ============================================================================
+
+-- Reusable template tables for calc_grid_position (created once per page in process_page_nodes)
+-- glyph_dims: per-glyph dimensions (width, height, depth, char, font)
+-- glyph_params: page-constant fields pre-filled, per-glyph fields overwritten each call
+local glyph_dims = {}
+local glyph_params = {}
 
 -- 辅助函数：处理单个字形的定位
 local function handle_glyph_node(curr, p_head, pos, params, ctx)
@@ -70,32 +78,22 @@ local function handle_glyph_node(curr, p_head, pos, params, ctx)
         end
     end
 
-    local final_x, final_y = text_position.calc_grid_position(pos.col, pos.row,
-        {
-            width = w,
-            height = h * v_scale,
-            depth = d * v_scale,
-            char = D.getfield(curr, "char"),
-            font = D.getfield(curr, "font")
-        },
-        {
-            grid_width = ctx.grid_width,
-            grid_height = ctx.grid_height,
-            total_cols = ctx.p_total_cols,
-            shift_x = ctx.shift_x,
-            shift_y = ctx.shift_y,
-            v_align = vertical_align,
-            h_align = h_align,
-            half_thickness = ctx.half_thickness,
-            sub_col = pos.sub_col,
-            textflow_align = pos.textflow_align or ctx.textflow_align,
-            banxin_width = ctx.banxin_width,
-            interval = ctx.interval,
-            body_font_size = ctx.body_font_size,
-            cell_height = pos.cell_height,
-            col_widths = _G.content and _G.content.col_widths,
-        }
-    )
+    -- Fill per-glyph fields into reusable templates (page-constant fields set in process_page_nodes)
+    glyph_dims.width = w
+    glyph_dims.height = h * v_scale
+    glyph_dims.depth = d * v_scale
+    glyph_dims.char = D.getfield(curr, "char")
+    glyph_dims.font = D.getfield(curr, "font")
+
+    glyph_params.v_align = vertical_align
+    glyph_params.h_align = h_align
+    glyph_params.sub_col = pos.sub_col
+    glyph_params.textflow_align = pos.textflow_align or ctx.textflow_align
+    glyph_params.cell_height = pos.cell_height
+    glyph_params.cell_width = pos.cell_width
+    glyph_params.y_sp = pos.y_sp
+
+    local final_x, final_y = text_position.calc_grid_position(pos.col, glyph_dims, glyph_params)
 
     -- Check if glyph needs vertical rotation (font lacks vertical form)
     local needs_rotate = D.get_attribute(curr, constants.ATTR_VERT_ROTATE) == 1
@@ -174,10 +172,10 @@ local function handle_block_node(curr, p_head, pos, ctx)
     local w = D.getfield(curr, "width") or 0
 
     local rtl_col_left = ctx.p_total_cols - (pos.col + (pos.width or 1))
-    local final_x = text_position.get_column_x(rtl_col_left, ctx.grid_width, ctx.banxin_width or 0, ctx.interval or 0)
+    local final_x = text_position.get_column_x(rtl_col_left, ctx.col_geom)
         + ctx.half_thickness + ctx.shift_x
 
-    local final_y_top = -pos.row * ctx.grid_height - ctx.shift_y
+    local final_y_top = -pos.y_sp - ctx.shift_y
     D.setfield(curr, "shift", -final_y_top + h)
 
     local k_pre = D.new(constants.KERN)
@@ -208,21 +206,21 @@ local function handle_debug_drawing(curr, p_head, pos, ctx)
     end
 
     if show_me then
-        local _, tx_sp = text_position.calculate_rtl_position(pos.col, ctx.p_total_cols, ctx.grid_width,
-            ctx.half_thickness, ctx.shift_x, ctx.banxin_width, ctx.interval)
-        local ty_sp = text_position.calculate_y_position(pos.row, ctx.grid_height, ctx.shift_y)
-        local tw_sp = text_position.get_column_width(pos.col, ctx.grid_width, ctx.banxin_width or 0, ctx.interval or 0)
+        local _, tx_sp = text_position.calculate_rtl_position(pos.col, ctx.p_total_cols, ctx.col_geom,
+            ctx.half_thickness, ctx.shift_x)
+        local ty_sp = -pos.y_sp - (ctx.shift_y or 0)
+        local tw_sp = text_position.get_column_width(pos.col, ctx.col_geom)
         local th_sp = -(pos.cell_height or ctx.grid_height)
 
         if pos.sub_col and pos.sub_col > 0 then
-            tw_sp = ctx.grid_width / 2
+            tw_sp = ctx.col_geom.grid_width / 2
             if pos.sub_col == 1 then
                 tx_sp = tx_sp + tw_sp
             end
         end
 
         if pos.is_block then
-            tw_sp = pos.width * ctx.grid_width
+            tw_sp = pos.width * ctx.col_geom.grid_width
             th_sp = -pos.height * ctx.grid_height
         end
         return utils.draw_debug_rect(p_head, curr, tx_sp, ty_sp, tw_sp, th_sp, color_str)
@@ -237,6 +235,17 @@ local function process_page_nodes(p_head, layout_map, params, ctx)
     ctx.last_font_id = ctx.last_font_id or params.font_id or font.current()
     -- Initialize line mark collection for this page
     ctx.line_mark_entries = ctx.line_mark_entries or {}
+
+    -- Initialize page-constant fields in glyph_params template (per-glyph fields set in handle_glyph_node)
+    glyph_params.total_cols = ctx.p_total_cols
+    glyph_params.shift_x = ctx.shift_x
+    glyph_params.shift_y = ctx.shift_y
+    glyph_params.half_thickness = ctx.half_thickness
+    glyph_params.col_geom = ctx.col_geom
+    glyph_params.body_font_size = ctx.body_font_size
+    -- Phase 2.4: Prefer Free Mode col_widths_sp[page], fall back to TitlePage col_widths
+    glyph_params.col_widths = ctx.page_col_widths_sp or (_G.content and _G.content.col_widths)
+
     while curr do
         local next_curr = D.getnext(curr)
         local id = D.getid(curr)
@@ -264,21 +273,22 @@ local function process_page_nodes(p_head, layout_map, params, ctx)
                             end
                             -- Collect line mark entries for batch rendering
                             if pos.line_mark_id then
-                                local lm_entry = {
-                                    group_id = pos.line_mark_id,
-                                    col = pos.col,
-                                    row = pos.row,
-                                    font_size = pos.font_size,
-                                    sub_col = pos.sub_col,
-                                }
-                                -- For sub-column chars, capture actual X center from rendered position
-                                -- so linemark doesn't need to recalculate textflow alignment
+                                local x_center
                                 if pos.sub_col and pos.sub_col > 0 then
                                     local gw = D.getfield(curr, "width") or 0
                                     local gx = D.getfield(curr, "xoffset") or 0
-                                    lm_entry.x_center_sp = gx + gw / 2
+                                    x_center = gx + gw / 2
                                 end
-                                ctx.line_mark_entries[#ctx.line_mark_entries + 1] = lm_entry
+                                ctx.line_mark_entries[#ctx.line_mark_entries + 1] =
+                                    helpers.create_linemark_entry({
+                                        group_id = pos.line_mark_id,
+                                        col = pos.col,
+                                        y_sp = pos.y_sp,
+                                        cell_height = pos.cell_height,
+                                        font_size = pos.font_size,
+                                        sub_col = pos.sub_col,
+                                        x_center_sp = x_center,
+                                    })
                             end
                         end
                     else
@@ -314,10 +324,10 @@ local function process_page_nodes(p_head, layout_map, params, ctx)
                     final_x = text_position.get_column_x_var(rtl_col, cw, ctx.p_total_cols)
                         + (ctx.half_thickness or 0) + (ctx.shift_x or 0)
                 else
-                    _, final_x = text_position.calculate_rtl_position(pos.col, ctx.p_total_cols, ctx.grid_width,
-                        ctx.half_thickness, ctx.shift_x, ctx.banxin_width, ctx.interval)
+                    _, final_x = text_position.calculate_rtl_position(pos.col, ctx.p_total_cols, ctx.col_geom,
+                        ctx.half_thickness, ctx.shift_x)
                 end
-                local final_y = text_position.calculate_y_position(pos.row, ctx.grid_height, ctx.shift_y)
+                local final_y = -pos.y_sp - (ctx.shift_y or 0)
 
                 -- Insert kern to move to correct position, then kern back
                 local k_pre = D.new(constants.KERN)
@@ -328,7 +338,7 @@ local function process_page_nodes(p_head, layout_map, params, ctx)
                 p_head = D.insert_before(p_head, curr, k_pre)
                 D.insert_after(p_head, curr, k_post)
 
-                dbg.log(string.format("  [render] GLUE (space) [c:%d, r:%.2f]", pos.col, pos.row))
+                dbg.log(string.format("  [render] GLUE (space) [c:%d, y_sp:%.0f]", pos.col, pos.y_sp or 0))
                 p_head = handle_debug_drawing(curr, p_head, pos, ctx)
             else
                 -- Not positioned - zero out (baseline/lineskip glue)

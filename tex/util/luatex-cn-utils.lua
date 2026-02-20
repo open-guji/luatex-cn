@@ -136,28 +136,6 @@ local function draw_debug_rect(head, anchor, x_sp, y_sp, w_sp, h_sp, color_cmd)
     end
 end
 
-local function draw_debug_grid(head, x_sp, y_sp, w_sp, h_total_sp, color_name)
-    local tx_bp = x_sp * sp_to_bp
-    local ty_bp = y_sp * sp_to_bp
-    local tw_bp = w_sp * sp_to_bp
-    local th_bp = h_total_sp * sp_to_bp
-
-    local color_str = "0 0 1 RG" -- Default blue
-    if color_name == "red" then color_str = "1 0 0 RG" end
-    if color_name == "green" then color_str = "0 1 0 RG" end
-
-    -- Draw a single rectangle for the column
-    local literal = string.format("q 0.2 w %s %.4f %.4f %.4f %.4f re S Q", color_str, tx_bp, ty_bp, tw_bp, -th_bp)
-
-    local whatsit_id = node.id("whatsit")
-    local pdf_literal_id = node.subtype("pdf_literal")
-    local nn = node.direct.new(whatsit_id, pdf_literal_id)
-    node.direct.setfield(nn, "data", literal)
-    node.direct.setfield(nn, "mode", 0)
-
-    return node.direct.insert_before(head, head, nn)
-end
-
 --- 创建具有给定数据的 PDF literal 节点（直接节点版本）
 -- @param literal_str string PDF literal 字符串
 -- @param mode number 可选模式（默认 0: 原点位于当前位置）
@@ -213,15 +191,6 @@ end
 local function create_color_position_literal(rgb, x_bp, y_bp)
     return string.format("%s %s %s", create_color_literal(rgb, false), create_color_literal(rgb, true),
         create_position_cm(x_bp, y_bp))
-end
-
---- 创建完整的着色定位 PDF literal 字符串（起始部分，含 q）
--- @param rgb string RGB 颜色
--- @param x_bp number X 坐标 (bp)
--- @param y_bp number Y 坐标 (bp)
--- @return string PDF literal 字符串（用于开始：q ... cm）
-local function create_color_position_q_literal(rgb, x_bp, y_bp)
-    return "q " .. create_color_position_literal(rgb, x_bp, y_bp)
 end
 
 --- 生成 PDF 矩形指令 (raw)
@@ -411,14 +380,12 @@ local utils = {
     sp_to_bp = sp_to_bp,
 
     draw_debug_rect = draw_debug_rect,
-    draw_debug_grid = draw_debug_grid,
     create_pdf_literal = create_pdf_literal,
     insert_pdf_literal = insert_pdf_literal,
     create_color_literal = create_color_literal,
     create_position_cm = create_position_cm,
     wrap_graphics_state = wrap_graphics_state,
     create_color_position_literal = create_color_position_literal,
-    create_color_position_q_literal = create_color_position_q_literal,
     create_fill_rect_literal = create_fill_rect_literal,
     create_border_literal = create_border_literal,
     create_graphics_state_end = create_graphics_state_end,

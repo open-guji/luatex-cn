@@ -38,15 +38,7 @@ local sp_to_bp = utils.sp_to_bp
 
 local linemark = {}
 
--- Color name to RGB mapping (same as decorate module)
-local color_map = {
-    red = "1 0 0",
-    blue = "0 0 1",
-    green = "0 1 0",
-    black = "0 0 0",
-    purple = "0.5 0 0.5",
-    orange = "1 0.5 0"
-}
+local color_map = constants.color_map
 
 -- Wavy amplitude presets (as fraction of 1em), keyed by style
 local amplitude_presets = {
@@ -186,16 +178,16 @@ function linemark.render_line_marks(p_head, entries, ctx)
     for gid, group_entries in pairs(groups) do
         local reg = _G.line_mark_registry and _G.line_mark_registry[gid]
         if reg then
-            -- Sort by col, sub_col, then row
+            -- Sort by col, sub_col, then y_sp
             table.sort(group_entries, function(a, b)
                 if a.col ~= b.col then return a.col < b.col end
                 local a_sc = a.sub_col or 0
                 local b_sc = b.sub_col or 0
                 if a_sc ~= b_sc then return a_sc < b_sc end
-                return a.row < b.row
+                return a.y_sp < b.y_sp
             end)
 
-            -- Split into continuous segments (same col + sub_col, consecutive rows)
+            -- Split into continuous segments (same col + sub_col, consecutive y_sp)
             local segments = {}
             local cur_seg = { group_entries[1] }
 
@@ -204,7 +196,10 @@ function linemark.render_line_marks(p_head, entries, ctx)
                 local curr = group_entries[i]
                 local same_col = curr.col == prev.col
                 local same_sub = (curr.sub_col or 0) == (prev.sub_col or 0)
-                if same_col and same_sub and (curr.row - prev.row) <= 1.01 then
+                -- Consecutive: curr starts within prev cell bottom + small tolerance
+                local prev_bottom = prev.y_sp + (prev.cell_height or ctx.grid_height)
+                local tolerance = ctx.grid_height * 0.01
+                if same_col and same_sub and (curr.y_sp <= prev_bottom + tolerance) then
                     cur_seg[#cur_seg + 1] = curr
                 else
                     segments[#segments + 1] = cur_seg
@@ -269,9 +264,9 @@ function linemark.render_line_marks(p_head, entries, ctx)
                     effective_offset = math.floor(seg_offset * 0.8 + 0.5)
                 else
                     -- Normal full-width cell: center of cell
-                    local _, cell_left_x = text_position.calculate_rtl_position(col, ctx.p_total_cols,
-                        ctx.grid_width, ctx.half_thickness, ctx.shift_x, ctx.banxin_width, ctx.interval)
-                    local col_w = text_position.get_column_width(col, ctx.grid_width, ctx.banxin_width or 0, ctx.interval or 0)
+                    local _, cell_left_x = text_position.calculate_rtl_position(col, ctx.p_total_cols, ctx.col_geom,
+                        ctx.half_thickness, ctx.shift_x)
+                    local col_w = text_position.get_column_width(col, ctx.col_geom)
                     char_center_x = cell_left_x + col_w / 2
                 end
                 -- Line is at: character center - offset (to the left in physical coordinates)
@@ -280,9 +275,10 @@ function linemark.render_line_marks(p_head, entries, ctx)
 
                 -- Calculate Y range
                 -- Top of first character cell
-                local y_top_sp = -(first.row) * ctx.grid_height - (ctx.shift_y or 0)
+                local y_top_sp = -(first.y_sp) - (ctx.shift_y or 0)
                 -- Bottom of last character cell
-                local y_bot_sp = -(last.row + 1) * ctx.grid_height - (ctx.shift_y or 0)
+                local last_cell_h = last.cell_height or ctx.grid_height
+                local y_bot_sp = -(last.y_sp + last_cell_h) - (ctx.shift_y or 0)
 
                 -- Apply gap (shrink inward from edges, centered on character)
                 -- In PDF coords: Y+ is up, y_top > y_bot
@@ -308,8 +304,8 @@ function linemark.render_line_marks(p_head, entries, ctx)
                 local lit = utils.create_pdf_literal(pdf_cmd)
                 p_head = D.insert_before(p_head, p_head, lit)
 
-                dbg.log(string.format("gid=%d type=%s col=%d rows=%.1f-%.1f sub_col=%s efs=%d x=%.2fbp y=%.2f..%.2fbp",
-                    gid, reg.type, col, first.row, last.row, tostring(sub_col), efs, line_x_bp, y_start_bp, y_end_bp))
+                dbg.log(string.format("gid=%d type=%s col=%d y_sp=%.0f-%.0f sub_col=%s efs=%d x=%.2fbp y=%.2f..%.2fbp",
+                    gid, reg.type, col, first.y_sp, last.y_sp, tostring(sub_col), efs, line_x_bp, y_start_bp, y_end_bp))
             end
         end
     end

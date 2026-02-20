@@ -1,0 +1,55 @@
+% Copyright 2026 Open-Guji (https://github.com/open-guji)
+%
+% Licensed under the Apache License, Version 2.0 (the "License");
+% you may not use this file except in compliance with the License.
+% You may obtain a copy of the License at
+%
+%     http://www.apache.org/licenses/LICENSE-2.0
+%
+% Unless required by applicable law or agreed to in writing, software
+% distributed under the License is distributed on an "AS IS" BASIS,
+% WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+% See the License for the specific language governing permissions and
+% limitations under the License.
+% luatex-cn-core-template.sty
+% Shared helpers for template searching and loading
+%
+
+\RequirePackage{expl3}
+
+\ProvidesExplPackage {core/luatex-cn-core-template} {2026/02/14} {0.2.8} {Template loading helpers}
+
+% Check if a template exists (Local first, then configs/ directory)
+% #1 = template name
+% #2 = system config prefix (e.g. luatex-cn-vbook-)
+\cs_new_protected:Npn \luatexcn_if_template_exist:nnTF #1 #2 #3 #4
+  {
+    \file_if_exist:nTF { #1 .cfg }
+      { #3 }
+      {
+        \file_if_exist:nTF { configs/#2#1.cfg }
+          { #3 }
+          { #4 }
+      }
+  }
+
+% Load a template (Local first, then configs/ directory)
+% #1 = template name
+% #2 = system config prefix
+\cs_new_protected:Npn \luatexcn_load_template:nn #1 #2
+  {
+    \file_if_exist:nTF { #1 .cfg }
+      { \file_input:n { #1 .cfg } }
+      {
+        \InputIfFileExists { configs/#2#1.cfg } { }
+          { \PackageWarning{luatex-cn-core}{Template~#1~not~found} }
+      }
+  }
+
+\cs_generate_variant:Nn \luatexcn_if_template_exist:nnTF { Vn, nV, VV }
+\cs_generate_variant:Nn \luatexcn_load_template:nn { Vn, nV, VV }
+
+% CJK Alias
+\cs_new_eq:NN \加载模板 \luatexcn_load_template:nn
+
+\endinput

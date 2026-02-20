@@ -38,6 +38,10 @@ local constants = package.loaded['core.luatex-cn-constants'] or
 local D = constants.D
 local style_registry = package.loaded['util.luatex-cn-style-registry'] or
     require('util.luatex-cn-style-registry')
+local helpers = package.loaded['core.luatex-cn-layout-grid-helpers'] or
+    require('core.luatex-cn-layout-grid-helpers')
+local textflow = package.loaded['core.luatex-cn-core-textflow'] or
+    require('core.luatex-cn-core-textflow')
 
 local column = {}
 
@@ -90,24 +94,35 @@ end
 -- @param font_size (string|nil) Font size string
 -- @param font (string|nil) Font family name
 -- @param grid_height (string|nil) Grid height string (e.g. "40pt")
+-- @param spacing_top (string|nil) Spacing-top (column right spacing) string
+-- @param spacing_bottom (string|nil) Spacing-bottom (column left spacing) string
+-- @param column_width (string|nil) Column width string
+-- @param auto_width (boolean|nil) Auto-width setting
+-- @param width_scale (string|nil) Width scale factor string
 -- @return (number) Style ID (always returns a valid number)
-function column.push_style(font_color, font_size, font, grid_height)
-    local style = {}
-    if font_color and font_color ~= "" then
-        style.font_color = font_color
-    end
-    if font_size and font_size ~= "" then
-        style.font_size = constants.to_dimen(font_size)
-    end
-    if font and font ~= "" then
-        style.font = font
-    end
+function column.push_style(font_color, font_size, font, grid_height,
+                          spacing_top, spacing_bottom, column_width,
+                          auto_width, width_scale)
+    local extra = {}
     if grid_height and grid_height ~= "" then
-        style.grid_height = constants.to_dimen(grid_height)
+        extra.grid_height = constants.to_dimen(grid_height)
     end
-    local id = style_registry.push(style)
-    -- push() may return nil if style is empty, ensure we return 0
-    return id or 0
+    if spacing_top and spacing_top ~= "" then
+        extra.spacing_top = constants.to_dimen(spacing_top)
+    end
+    if spacing_bottom and spacing_bottom ~= "" then
+        extra.spacing_bottom = constants.to_dimen(spacing_bottom)
+    end
+    if column_width and column_width ~= "" then
+        extra.column_width = constants.to_dimen(column_width)
+    end
+    if auto_width ~= nil then
+        extra.auto_width = auto_width
+    end
+    if width_scale and width_scale ~= "" then
+        extra.width_scale = tonumber(width_scale)
+    end
+    return style_registry.push_content_style(font_color, font_size, font, extra)
 end
 
 --- Pop column style from style stack
@@ -182,6 +197,15 @@ function column.collect_nodes(start_node)
                     height = k
                 })
             end
+        elseif tid == constants.PENALTY then
+            -- Check for column boundary marker (penalty -10001)
+            local penalty_val = D.getfield(temp_t, "penalty")
+            if penalty_val == -10001 then
+                -- Column boundary marker - consume and stop
+                temp_t = D.getnext(temp_t)
+                break
+            end
+            -- Other penalties are ignored (continue collecting)
         end
 
         temp_t = D.getnext(temp_t)
@@ -256,18 +280,26 @@ function column.place_nodes(ctx, start_node, layout_map, params, callbacks)
         end
     end
 
-    local style_reg_id = first_node and D.get_attribute(first_node, constants.ATTR_STYLE_REG_ID)
-    local current_style = style_registry.get(style_reg_id)
-    local font_color_str = current_style and current_style.font_color or nil
-    local font_size_val = current_style and current_style.font_size or nil
-    local font_str = current_style and current_style.font or nil
-
     -- Override grid_height from style if set (per-Column grid-height)
     -- row_step: how many grid rows each character occupies
     -- (e.g., style grid_height=65pt, global grid_height=14pt → row_step≈4.64)
+    -- In natural mode, also derive from font-size when grid-height is not explicit
     local row_step = 1
-    if current_style and current_style.grid_height and current_style.grid_height > 0 then
-        row_step = current_style.grid_height / grid_height
+    if first_node then
+        local style_reg_id = D.get_attribute(first_node, constants.ATTR_STYLE_REG_ID)
+        if style_reg_id then
+            local style_grid_height = style_registry.get_attr(style_reg_id, "grid_height")
+            if style_grid_height and style_grid_height > 0 then
+                row_step = style_grid_height / grid_height
+            elseif (_G.content.layout_mode or "grid") ~= "grid" then
+                -- Natural mode: derive row_step from font-size
+                local style_font_size = style_registry.get_font_size(style_reg_id)
+                if style_font_size and style_font_size > grid_height then
+                    local gap = _G.content.inter_cell_gap or 0
+                    row_step = (style_font_size + gap) / grid_height
+                end
+            end
+        end
     end
 
     -- Calculate total height (in global grid units)
@@ -320,53 +352,31 @@ function column.place_nodes(ctx, start_node, layout_map, params, callbacks)
             local entry = {
                 page = ctx.cur_page,
                 col = ctx.cur_col,
-                row = cur_row,
-                v_scale = v_scale
+                y_sp = cur_row * grid_height,
+                v_scale = v_scale,
+                cell_height = helpers.resolve_cell_height(item.node, grid_height, nil, ctx.punct_config),
+                cell_width = helpers.resolve_cell_width(item.node, nil),
             }
-            if font_color_str then entry.font_color = font_color_str end
-            if font_size_val then entry.font_size = font_size_val end
-            if font_str then entry.font = font_str end
+            helpers.apply_style_attrs(entry, item.node)
             layout_map[item.node] = entry
             cur_row = cur_row + row_step * v_scale + gap
 
         elseif item.type == "jiazhu_group" then
-            -- Handle jiazhu group with dual-column layout
-            local jiazhu_nodes = item.nodes
-            local N = #jiazhu_nodes
-            local right_count = math.ceil(N / 2)
+            -- Handle jiazhu group with dual-column layout (shared with textflow)
+            local assignments = textflow.assign_balanced_sub_columns(item.nodes)
 
-            -- Get jiazhu style from first jiazhu node
-            local jiazhu_style_id = D.get_attribute(jiazhu_nodes[1], constants.ATTR_STYLE_REG_ID)
-            local jiazhu_style = style_registry.get(jiazhu_style_id)
-            local jiazhu_color = jiazhu_style and jiazhu_style.font_color or nil
-            local jiazhu_size = jiazhu_style and jiazhu_style.font_size or nil
-            local jiazhu_font = jiazhu_style and jiazhu_style.font or nil
-            local jiazhu_align = jiazhu_style and jiazhu_style.textflow_align or nil
-
-            for i, jnode in ipairs(jiazhu_nodes) do
-                local sub_col, relative_row
-                if i <= right_count then
-                    sub_col = 1
-                    relative_row = i - 1
-                else
-                    sub_col = 2
-                    relative_row = i - right_count - 1
-                end
-
-                D.set_attribute(jnode, constants.ATTR_JIAZHU_SUB, sub_col)
-
+            for _, a in ipairs(assignments) do
+                local jiazhu_row = cur_row + a.relative_row * v_scale
                 local entry = {
                     page = ctx.cur_page,
                     col = ctx.cur_col,
-                    row = cur_row + relative_row * v_scale,
-                    sub_col = sub_col,
-                    v_scale = v_scale
+                    y_sp = jiazhu_row * grid_height,
+                    sub_col = a.sub_col,
+                    v_scale = v_scale,
+                    cell_height = grid_height,
                 }
-                if jiazhu_color then entry.font_color = jiazhu_color end
-                if jiazhu_size then entry.font_size = jiazhu_size end
-                if jiazhu_font then entry.font = jiazhu_font end
-                if jiazhu_align then entry.textflow_align = jiazhu_align end
-                layout_map[jnode] = entry
+                helpers.apply_style_attrs(entry, a.node)
+                layout_map[a.node] = entry
             end
             cur_row = cur_row + item.rows * v_scale + gap
 
@@ -374,14 +384,12 @@ function column.place_nodes(ctx, start_node, layout_map, params, callbacks)
             local entry = {
                 page = ctx.cur_page,
                 col = ctx.cur_col,
-                row = cur_row,
+                y_sp = cur_row * grid_height,
                 is_block = true,
                 height = item.height,
                 v_scale = v_scale
             }
-            if font_color_str then entry.font_color = font_color_str end
-            if font_size_val then entry.font_size = font_size_val end
-            if font_str then entry.font = font_str end
+            helpers.apply_style_attrs(entry, item.node)
             layout_map[item.node] = entry
             cur_row = cur_row + item.height * v_scale + gap
 

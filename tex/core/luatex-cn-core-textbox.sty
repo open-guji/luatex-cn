@@ -20,7 +20,7 @@
 \RequirePackage{core/luatex-cn-core-base}
 \RequirePackage{expl3}
 \RequirePackage{xparse}
-\ProvidesExplPackage {core/luatex-cn-core-textbox} {2026/02/09} {0.2.7} {TextBox Support for Vertical Typesetting}
+\ProvidesExplPackage {core/luatex-cn-core-textbox} {2026/02/14} {0.2.8} {TextBox Support for Vertical Typesetting}
 
 % Grid Textbox Command (Simplified for Single Column)
 % Syntax: \GridTextbox[height=N, distribute=true/false]{content}
@@ -46,6 +46,9 @@
 \tl_new:N \l__luatexcn_textbox_border_width_tl
 \tl_new:N \l__luatexcn_textbox_border_margin_tl
 \tl_new:N \l__luatexcn_textbox_border_rgb_tl
+\bool_new:N \l__luatexcn_textbox_outer_border_bool
+\tl_new:N \l__luatexcn_textbox_outer_border_thickness_tl
+\tl_new:N \l__luatexcn_textbox_outer_border_sep_tl
 
 \keys_define:nn { luatexcn / textbox }
   {
@@ -96,6 +99,12 @@
     border-width .initial:n = {0.4pt},
     border-margin .tl_set:N = \l__luatexcn_textbox_border_margin_tl,
     border-margin .initial:n = {0pt},
+    outer-border .bool_set:N = \l__luatexcn_textbox_outer_border_bool,
+    outer-border .initial:n = false,
+    outer-border-thickness .tl_set:N = \l__luatexcn_textbox_outer_border_thickness_tl,
+    outer-border-thickness .initial:n = {1pt},
+    outer-border-sep .tl_set:N = \l__luatexcn_textbox_outer_border_sep_tl,
+    outer-border-sep .initial:n = {2pt},
   }
 
 \NewDocumentCommand{\TextBox}{ O{} +m }
@@ -222,7 +231,10 @@
       border_shape~=~"\luaescapestring{\tl_use:N~\l__luatexcn_textbox_border_shape_tl}",
       border_color~=~[=[\l__luatexcn_textbox_border_rgb_tl]=],
       border_width~=~[=[\luaescapestring{\l__luatexcn_textbox_border_width_tl}]=],
-      border_margin~=~[=[\luaescapestring{\l__luatexcn_textbox_border_margin_tl}]=]
+      border_margin~=~[=[\luaescapestring{\l__luatexcn_textbox_border_margin_tl}]=],
+      outer_border~=~\bool_if:NTF~\l__luatexcn_textbox_outer_border_bool~{true}{false},
+      outer_border_thickness~=~[=[\luaescapestring{\l__luatexcn_textbox_outer_border_thickness_tl}]=],
+      outer_border_sep~=~[=[\luaescapestring{\l__luatexcn_textbox_outer_border_sep_tl}]=]
     }) }
     \setluatexattribute\cnverticaltextboxwidth{0}
     \setluatexattribute\cnverticaltextboxheight{0}

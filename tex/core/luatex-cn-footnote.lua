@@ -112,7 +112,7 @@ function footnote.render(head, layout_map, render_ctx, ctx, engine_ctx, page_idx
             if node_info.page == page_idx then
                 table.insert(footnotes_for_page, {
                     fid = fid,
-                    row = node_info.anchor_row,
+                    sort_y_sp = node_info.anchor_y_sp or 0,
                     content = footnote.registry[fid],
                     is_continuation = false
                 })
@@ -122,8 +122,8 @@ function footnote.render(head, layout_map, render_ctx, ctx, engine_ctx, page_idx
 
     if #footnotes_for_page == 0 then return head end
 
-    -- Sort by row order (carryover footnotes have row = -1, so they come first)
-    table.sort(footnotes_for_page, function(a, b) return (a.row or 0) < (b.row or 0) end)
+    -- Sort by anchor position (carryover footnotes have negative sort_y_sp, so they come first)
+    table.sort(footnotes_for_page, function(a, b) return (a.sort_y_sp or 0) < (b.sort_y_sp or 0) end)
 
     dbg.log(string.format("Rendering %d footnotes on page %d", #footnotes_for_page, page_idx))
 
@@ -160,7 +160,7 @@ function footnote.render(head, layout_map, render_ctx, ctx, engine_ctx, page_idx
                 -- Not enough room, carry over to next page
                 table.insert(overflow_footnotes, {
                     fid = fn_info.fid,
-                    row = -1, -- Will be sorted first on next page
+                    sort_y_sp = -1, -- Negative value sorts first on next page
                     content = content,
                     is_continuation = true
                 })
@@ -179,7 +179,7 @@ function footnote.render(head, layout_map, render_ctx, ctx, engine_ctx, page_idx
                         if remaining_head then
                             table.insert(overflow_footnotes, {
                                 fid = fn_info.fid,
-                                row = -1,
+                                sort_y_sp = -1,
                                 content = { head = D.tonode(remaining_head) },
                                 is_continuation = true
                             })
@@ -280,10 +280,10 @@ function footnote.calculate_footnote_positions(layout_map, params)
                     end
                     table.insert(footnote_map[fid], {
                         page = pos.page,
-                        anchor_row = pos.row
+                        anchor_y_sp = pos.y_sp
                     })
-                    dbg.log(string.format("Found footnote anchor fid=%d at page=%d, row=%.2f",
-                        fid, pos.page, pos.row))
+                    dbg.log(string.format("Found footnote anchor fid=%d at page=%d, y_sp=%.0f",
+                        fid, pos.page, pos.y_sp or 0))
                 end
             end
         end

@@ -6,7 +6,7 @@
 
 LuaTeX package for Chinese charactor typesetting, covering horizontal/vertical, traditional/modern layout. Currently focus on Ancient Book replication. Implemented core logic of vertical typesetting, decorative elements of traditional Chinese books, and interlinear notes.
 
-CTAN: [v0.1.1](https://ctan.org/pkg/luatex-cn) | GitHub Release: [v0.2.7](https://github.com/open-guji/luatex-cn/releases)
+CTAN: [v0.1.1](https://ctan.org/pkg/luatex-cn) | GitHub Release: [v0.2.8](https://github.com/open-guji/luatex-cn/releases)
 
 📢 **通知**：维基（Wiki）页面已同步更新详细用户手册，请 [查看](https://github.com/open-guji/luatex-cn/wiki)。
 
@@ -69,10 +69,10 @@ tlmgr install luatex-cn
 
 ## 使用方法
 
-通过 `ltc-guji` 文档类使用本宏包。绝大多数命令都支持中文：
+通过 `guji` 文档类使用本宏包。绝大多数命令都支持中文：
 
 ```latex
-\documentclass[四库全书]{ltc-guji}
+\documentclass[四库全书]{guji}
 % 如果不指定字体，会使用系统默认中文字体
 % \setmainfont{Noto Serif SC}
 % \禁用分页裁剪

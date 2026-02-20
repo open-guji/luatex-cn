@@ -24,7 +24,7 @@
 \RequirePackage{core/luatex-cn-core-base}
 \RequirePackage{expl3}
 \RequirePackage{xparse}
-\ProvidesExplPackage {core/luatex-cn-core-column} {2026/02/09} {0.2.7} {Column Support for Vertical Typesetting}
+\ProvidesExplPackage {core/luatex-cn-core-column} {2026/02/14} {0.2.8} {Column Support for Vertical Typesetting}
 
 % Default variables for column
 \tl_new:N \l__luatexcn_column_default_size_tl
@@ -57,8 +57,25 @@
         font .tl_set:N = \l__luatexcn_column_local_font_tl,
         font-color .tl_set:N = \l__luatexcn_column_local_color_tl,
 
+        % 列宽参数
         width .tl_set:N = \l__luatexcn_column_width_tl,
         width .initial:n = {},
+        column-width .tl_set:N = \l__luatexcn_column_width_tl,  % 别名
+
+        auto-width .bool_set:N = \l__luatexcn_column_auto_width_bool,
+        auto-width .initial:n = true,
+
+        width-scale .tl_set:N = \l__luatexcn_column_width_scale_tl,
+        width-scale .initial:n = {1.2},
+
+        % 列间距参数（竖排方向）
+        spacing-top .tl_set:N = \l__luatexcn_column_spacing_top_tl,
+        spacing-top .initial:n = {},
+
+        spacing-bottom .tl_set:N = \l__luatexcn_column_spacing_bottom_tl,
+        spacing-bottom .initial:n = {},
+
+        spacing .meta:n = { spacing-top = #1, spacing-bottom = #1 },
 
         grid-height .tl_set:N = \l__luatexcn_column_grid_height_tl,
         grid-height .initial:n = {},
@@ -78,6 +95,10 @@
         \tl_set:Nn \l__luatexcn_column_local_color_tl {}
         \tl_set:Nn \l__luatexcn_column_width_tl {}
         \tl_set:Nn \l__luatexcn_column_grid_height_tl {}
+        \bool_set_true:N \l__luatexcn_column_auto_width_bool
+        \tl_set:Nn \l__luatexcn_column_width_scale_tl {1.2}
+        \tl_set:Nn \l__luatexcn_column_spacing_top_tl {}
+        \tl_set:Nn \l__luatexcn_column_spacing_bottom_tl {}
 
         \keys_set:nn { luatexcn / column } { #1 }
 
@@ -142,7 +163,12 @@
             \tl_if_empty:NTF \l_tmpd_tl { nil } { [=[\luaescapestring{\tl_use:N \l_tmpd_tl}]=] },
             \tl_if_empty:NTF \l_tmpc_tl { nil } { [=[\luaescapestring{\tl_use:N \l_tmpc_tl}]=] },
             \tl_if_empty:NTF \l_tmpb_tl { nil } { [=[\luaescapestring{\tl_use:N \l_tmpb_tl}]=] },
-            \tl_if_empty:NTF \l__luatexcn_column_grid_height_tl { nil } { [=[\luaescapestring{\tl_use:N \l__luatexcn_column_grid_height_tl}]=] }
+            \tl_if_empty:NTF \l__luatexcn_column_grid_height_tl { nil } { [=[\luaescapestring{\tl_use:N \l__luatexcn_column_grid_height_tl}]=] },
+            \tl_if_empty:NTF \l__luatexcn_column_spacing_top_tl { nil } { [=[\luaescapestring{\tl_use:N \l__luatexcn_column_spacing_top_tl}]=] },
+            \tl_if_empty:NTF \l__luatexcn_column_spacing_bottom_tl { nil } { [=[\luaescapestring{\tl_use:N \l__luatexcn_column_spacing_bottom_tl}]=] },
+            \tl_if_empty:NTF \l__luatexcn_column_width_tl { nil } { [=[\luaescapestring{\tl_use:N \l__luatexcn_column_width_tl}]=] },
+            \bool_if:NTF \l__luatexcn_column_auto_width_bool { true } { false },
+            \tl_if_empty:NTF \l__luatexcn_column_width_scale_tl { nil } { [=[\luaescapestring{\tl_use:N \l__luatexcn_column_width_scale_tl}]=] }
           )
           tex.print(tostring(style_id))
         }}
@@ -153,6 +179,9 @@
         \setluatexattribute\cnverticalstyle{\column_style_id}
 
         #2
+        % Insert column boundary marker (penalty -10001) for Free Mode boundary detection
+        % This specific value marks column boundaries without affecting line breaking
+        \penalty-10001
 
         % Reset column width after content
         \dim_gset:Nn \g__luatexcn_column_current_width_dim { 0pt }

@@ -88,7 +88,13 @@ function judou.initialize(params, engine_ctx)
         return nil -- Plugin disabled for this run
     end
 
-    return { mode = mode }
+    return {
+        mode = mode,
+        punct_mode = mode,
+        pos = jp.judou_pos,
+        size = jp.judou_size,
+        color = jp.judou_color,
+    }
 end
 
 --- Process node list for Punctuation modes (Plugin Interface)

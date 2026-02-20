@@ -18,7 +18,7 @@
 %
 \RequirePackage{expl3}
 \RequirePackage{xparse}
-\ProvidesExplPackage {core/luatex-cn-footnote} {2026/02/09} {0.2.7} {Footnote/Jiaokan support}
+\ProvidesExplPackage {core/luatex-cn-footnote} {2026/02/14} {0.2.8} {Footnote/Jiaokan support}
 
 % ============================================================================
 % Load Lua module and set global utils
@@ -175,7 +175,9 @@
         \int_compare:nNnT
           { \seq_count:N \g__luatexcn_footnote_content_seq } > { 0 }
           {
-            \__luatexcn_footnote_separator:
+            % No separator before footnotes: the column break (from synthetic penalty
+            % or \penalty -10002) already provides visual separation, and \hspace creates
+            % an unwanted empty column in vertical layout.
             % Group to contain font-size change (prevent leaking to subsequent text)
             \group_begin:
             % Apply footnote font-size using absolute value from content base font-size
@@ -187,26 +189,18 @@
             \int_step_inline:nn
               { \seq_count:N \g__luatexcn_footnote_content_seq }
               {
-                \int_compare:nNnTF { ##1 } > { 1 }
-                  {
-                    % Column break with post-break indent via attribute
-                    \lua_now:e {
-                      local~constants~=~require('core.luatex-cn-constants')
-                      local~indent_sp~=~\dim_to_decimal_in_sp:n { \l__luatexcn_footnote_indent_dim }
-                      local~grid_h_sp~=~\dim_to_decimal_in_sp:n { \l__luatexcn_content_grid_height_tl }
-                      local~cells~=~math.max(1,~math.floor(indent_sp~/~grid_h_sp~+~0.5))
-                      tex.setattribute(constants.ATTR_COLUMN_BREAK_INDENT,~cells)
-                    }
-                    \penalty -10002\relax
-                    \lua_now:e {
-                      local~constants~=~require('core.luatex-cn-constants')
-                      tex.setattribute(constants.ATTR_COLUMN_BREAK_INDENT,~-0x7FFFFFFF)
-                    }
-                  }
-                  {
-                    % First footnote: use normal indent space
-                    \hspace{\l__luatexcn_footnote_indent_dim}
-                  }
+                % Forced ATTR_INDENT ensures each footnote column starts indented.
+                % Note: ATTR_COLUMN_BREAK_INDENT on penalty is unreliable because
+                % TeX's paragraph builder may create new penalty nodes without
+                % custom attributes. Forced ATTR_INDENT on glyphs survives flatten.
+                \lua_now:e {
+                  local~constants~=~require('core.luatex-cn-constants')
+                  local~indent_sp~=~\dim_to_decimal_in_sp:n { \l__luatexcn_footnote_indent_dim }
+                  local~grid_h_sp~=~\dim_to_decimal_in_sp:n { \l__luatexcn_content_grid_height_tl }
+                  local~cells~=~math.max(1,~math.floor(indent_sp~/~grid_h_sp~+~0.5))
+                  tex.setattribute(constants.ATTR_INDENT,~constants.encode_forced_indent(cells))
+                }
+                \penalty -10002\relax
                 \__luatexcn_footnote_write_marker:n { ##1 }
                 \seq_item:Nn \g__luatexcn_footnote_content_seq { ##1 }
               }

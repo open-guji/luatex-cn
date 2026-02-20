@@ -74,15 +74,7 @@ end
 -- Rendering Functions (moved from render-page.lua)
 -- ============================================================================
 
--- Color name to RGB mapping
-local color_map = {
-    red = "1 0 0",
-    blue = "0 0 1",
-    green = "0 1 0",
-    black = "0 0 0",
-    purple = "0.5 0 0.5",
-    orange = "1 0.5 0"
-}
+local color_map = constants.color_map
 
 --- Resolve font size for decoration (uses PDF scaling, no new fonts)
 -- @param curr (node) Current node
@@ -135,7 +127,7 @@ local function calculate_decorate_position(pos, reg, ctx, base_size, font_id, ch
     end
 
     -- Get actual column width (may differ for banxin columns)
-    local col_width = text_position.get_column_width(pos.col, ctx.grid_width, ctx.banxin_width or 0, ctx.interval or 0)
+    local col_width = text_position.get_column_width(pos.col, ctx.col_geom)
 
     -- Horizontal Centering: align glyph's visual center to cell center
     local v_center = text_position.get_visual_center(char, font_id) or (glyph_w / 2)
@@ -143,13 +135,14 @@ local function calculate_decorate_position(pos, reg, ctx, base_size, font_id, ch
     local center_offset = (col_width / 2) - scaled_v_center
 
     -- Position calculation (use previous row as decorations follow characters)
-    local target_row = math.max(0, pos.row - 1)
-    local _, base_x = text_position.calculate_rtl_position(pos.col, ctx.p_total_cols, ctx.grid_width,
-        ctx.half_thickness, ctx.shift_x, ctx.banxin_width, ctx.interval)
-    local base_y = -target_row * ctx.grid_height - ctx.shift_y
+    local _, base_x = text_position.calculate_rtl_position(pos.col, ctx.p_total_cols, ctx.col_geom,
+        ctx.half_thickness, ctx.shift_x)
+    local dec_cell_h = pos.cell_height or ctx.grid_height or 0
+    local target_y_sp = math.max(0, pos.y_sp - dec_cell_h)
+    local base_y = -target_y_sp - ctx.shift_y
 
     -- Vertical Centering: Place the glyph's ink center at cell center
-    local cell_center_y = base_y - ctx.grid_height / 2
+    local cell_center_y = base_y - dec_cell_h / 2
     local scaled_ink_center = ((glyph_h - glyph_d) / 2) * scale
     local target_baseline_y = cell_center_y - scaled_ink_center
 
@@ -236,8 +229,8 @@ function decorate.handle_node(curr, p_head, pos, params, ctx, reg_id)
     D.insert_after(p_head, g, k)
     D.insert_after(p_head, k, n_end)
 
-    dbg.log(string.format("char=%d [c:%d, r:%.2f] scale=%.2f pos_x=%.4f pos_y=%.4f",
-        char, pos.col, pos.row, scale, x_bp, y_bp))
+    dbg.log(string.format("char=%d [c:%d, y_sp:%.0f] scale=%.2f pos_x=%.4f pos_y=%.4f",
+        char, pos.col, pos.y_sp or 0, scale, x_bp, y_bp))
 
     return p_head
 end

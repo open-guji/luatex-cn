@@ -3,6 +3,31 @@
 
 \begin{document}
 
+\begin{封面}[底色={245,222,179}]
+  % 永樂大典 - 右上角竖排标题框（双层边框）
+  \TextBox[
+    floating=true,
+    x=16.5cm,
+    y=1.5cm,
+    grid-height=55pt,
+    grid-width=55pt,
+    border-shape=rect,
+    border-width=0.8pt,
+    border-margin=2pt,
+    outer-border=true,
+    outer-border-thickness=1.2pt,
+    outer-border-sep=4pt,
+    font-size=50pt, height=4]{永樂大典}
+\end{封面}
+
+
+% 测试书名页环境（使用 Column 的 width 参数）
+\begin{书名页}
+  \行[width=5cm, align=top, font-size=48pt, grid-height=54pt]{光緒九年仲春}
+  \行[width=6cm, align=center, font-size=80pt, grid-height=90pt]{童蒙必讀書}
+  \行[width=5cm, align=bottom, font-size=48pt, grid-height=54pt]{武昌書局校刊}
+\end{书名页}
+
 \begin{BodyText}
 默认页面尺寸
 \end{BodyText}

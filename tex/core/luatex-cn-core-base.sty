@@ -18,7 +18,7 @@
 \RequirePackage{luatexbase}
 \RequirePackage{enumitem}
 
-\ProvidesExplPackage {core/luatex-cn-core-base} {2026/02/09} {0.2.7} {Core base for luatex-cn}
+\ProvidesExplPackage {core/luatex-cn-core-base} {2026/02/14} {0.2.8} {Core base for luatex-cn}
 
 % ============================================================================
 % Attributes
@@ -120,6 +120,11 @@
       { \tl_set:Nn #2 { nil } }
       { \__luatexcn_color_to_rgb:NN #1 #2 }
   }
+
+% ============================================================================
+% Template Loading Helpers
+% ============================================================================
+\RequirePackage{core/luatex-cn-core-template}
 
 \ExplSyntaxOff
 

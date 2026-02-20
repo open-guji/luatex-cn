@@ -105,34 +105,55 @@ end
 -- ============================================================================
 
 -- Initialize global content table (similar to _G.page)
+-- Organized according to CONTENT_REDESIGN.md three-layer architecture
 _G.content = _G.content or {}
-_G.content.border_on = _G.content.border_on or false
+
+-- ========== Total Box (Page - Margins) ==========
+_G.content.total_width = _G.content.total_width or 0
+_G.content.total_height = _G.content.total_height or 0
+
+-- ========== Border Parameters ==========
+-- Outer border
 _G.content.outer_border_on = _G.content.outer_border_on or false
-_G.content.border_thickness = _G.content.border_thickness or 26214 -- 0.4pt
 _G.content.outer_border_thickness = _G.content.outer_border_thickness or (65536 * 2)
 _G.content.outer_border_sep = _G.content.outer_border_sep or (65536 * 2)
+_G.content.outer_border_color = _G.content.outer_border_color or "0 0 0"  -- New: for future use
+
+-- Inner border
+_G.content.border_on = _G.content.border_on or false
+_G.content.border_thickness = _G.content.border_thickness or 26214 -- 0.4pt
+_G.content.border_color = _G.content.border_color or "0 0 0"
 _G.content.border_padding_top = _G.content.border_padding_top or 0
 _G.content.border_padding_bottom = _G.content.border_padding_bottom or 0
+
+-- ========== Content Area (Text Layout Area, excluding borders) ==========
+_G.content.content_width = _G.content.content_width or 0
+_G.content.content_height = _G.content.content_height or 0
+
+-- ========== Grid Layout Parameters ==========
 _G.content.n_column = _G.content.n_column or 8
 _G.content.n_char_per_col = _G.content.n_char_per_col or 0
 _G.content.page_columns = _G.content.page_columns or 0
 _G.content.grid_width = _G.content.grid_width or 0
 _G.content.grid_height = _G.content.grid_height or 0
-_G.content.content_height = _G.content.content_height or 0
-_G.content.available_width = _G.content.available_width or 0
-_G.content.available_height = _G.content.available_height or 0
-_G.content.border_overhead_height = _G.content.border_overhead_height or 0
 _G.content.banxin_width = _G.content.banxin_width or 0
 _G.content.banxin_ratio = _G.content.banxin_ratio or 0.7
 
--- Visual params (colors already converted to RGB strings by TeX)
+-- ========== Internal (border overhead tracking) ==========
+_G.content.border_overhead_height = _G.content.border_overhead_height or 0
+
+-- ========== Visual Parameters ==========
 _G.content.vertical_align = _G.content.vertical_align or "center"
-_G.content.border_color = _G.content.border_color or "0 0 0"
 _G.content.background_color = _G.content.background_color or nil
 _G.content.font_color = _G.content.font_color or nil
 _G.content.font_size = _G.content.font_size or 0
+
+-- ========== Unified Layout Engine Parameters ==========
 _G.content.layout_mode = _G.content.layout_mode or "grid"
 _G.content.inter_cell_gap = _G.content.inter_cell_gap or 0
+_G.content.cell_height = _G.content.cell_height or nil
+_G.content.cell_width = _G.content.cell_width or nil
+_G.content.cell_gap = _G.content.cell_gap or nil
 
 -- ============================================================================
 -- Setup Helper Functions
@@ -182,6 +203,15 @@ local function parse_visual_params(params)
     if params.inter_cell_gap then
         _G.content.inter_cell_gap = constants.to_dimen(params.inter_cell_gap) or 0
     end
+    if params.cell_height and params.cell_height ~= "" then
+        _G.content.cell_height = constants.to_dimen(params.cell_height)
+    end
+    if params.cell_width and params.cell_width ~= "" then
+        _G.content.cell_width = constants.to_dimen(params.cell_width)
+    end
+    if params.cell_gap and params.cell_gap ~= "" then
+        _G.content.cell_gap = constants.to_dimen(params.cell_gap)
+    end
 end
 
 --- Push content base style to style stack
@@ -208,6 +238,12 @@ local function push_content_base_style()
         outer_border_sep = _G.content.outer_border_sep or (65536 * 2),
         -- Background color (nil means no background)
         background_color = _G.content.background_color,
+        -- Cell layout params (unified engine)
+        cell_height = _G.content.cell_height
+            or ((_G.content.layout_mode == "grid") and _G.content.grid_height or nil),
+        cell_width = _G.content.cell_width or nil,
+        cell_gap = _G.content.cell_gap
+            or ((_G.content.layout_mode ~= "grid") and _G.content.inter_cell_gap or 0),
     }
     if _G.content.font_color then
         base_style.font_color = _G.content.font_color
@@ -216,34 +252,47 @@ local function push_content_base_style()
         base_style.font_size = _G.content.font_size
     end
 
-    _G.content_style_id = style_registry.push(base_style)
+    style_registry.push(base_style)
 end
 
---- Calculate available width from page dimensions and borders
-local function calc_available_width()
+--- Calculate total box and content area width from page dimensions
+-- Implements three-layer structure: Page → Total Box → Content Area
+local function calc_content_area_width()
+    local p_width = _G.page and _G.page.paper_width or 0
+    local m_left = _G.page and _G.page.margin_left or 0
+    local m_right = _G.page and _G.page.margin_right or 0
+
+    -- Layer 1: Total Box (Page - Margins)
+    local total_width = p_width - m_left - m_right
+    _G.content.total_width = total_width
+
+    -- Layer 2: Border overhead
     local b_thickness = _G.content.border_on and _G.content.border_thickness or 0
     local is_outer_border = _G.content.outer_border_on
     local ob_thickness = _G.content.outer_border_thickness or 0
     local ob_sep = _G.content.outer_border_sep or 0
 
-    local p_width = _G.page and _G.page.paper_width or 0
-    local m_left = _G.page and _G.page.margin_left or 0
-    local m_right = _G.page and _G.page.margin_right or 0
+    local border_overhead_width = calc_border_overhead_width(
+        _G.content.border_on, is_outer_border, b_thickness, ob_thickness, ob_sep)
 
-    local available_width = p_width - m_left - m_right - b_thickness
-    if is_outer_border then
-        available_width = available_width - 2 * (ob_thickness + ob_sep)
-    end
-    _G.content.available_width = available_width
+    -- Layer 3: Content Area (Total - Border)
+    local content_width = total_width - border_overhead_width
+    _G.content.content_width = content_width
 end
 
---- Calculate page_columns based on available width and settings
+--- Calculate page_columns based on content area width and settings
 -- @param explicit_page_cols (number) Explicitly set page columns (0 if not set)
 local function calc_page_columns(explicit_page_cols)
     local banxin_on = _G.banxin and _G.banxin.enabled
     local n_column = _G.content.n_column or 8
     local g_width = _G.content.grid_width or 0
-    local available_width = _G.content.available_width or 0
+    local content_width = _G.content.content_width or 0
+
+    -- Free Mode: n_column=0 means variable-width columns, no fixed page_columns
+    if n_column == 0 and explicit_page_cols <= 0 then
+        _G.content.page_columns = nil
+        return
+    end
 
     -- When col_widths has entries, set page_columns from it directly
     local col_widths = _G.content and _G.content.col_widths
@@ -254,23 +303,26 @@ local function calc_page_columns(explicit_page_cols)
 
     if explicit_page_cols > 0 then
         _G.content.page_columns = explicit_page_cols
-        -- Auto-adjust grid_width to fill available width when page_columns is explicit
-        if available_width > 0 then
-            _G.content.grid_width = math.floor(available_width / explicit_page_cols)
+        -- Auto-adjust grid_width to fill content area width when page_columns is explicit
+        if content_width > 0 then
+            _G.content.grid_width = math.floor(content_width / explicit_page_cols)
         end
     elseif banxin_on then
         _G.content.page_columns = (2 * n_column + 1)
-    elseif g_width > 0 and available_width > 0 then
+    elseif g_width > 0 and content_width > 0 then
         -- Use +0.5 rounding to handle banxin_ratio-induced fractional column counts
-        -- e.g. available / (available / 16.7) = 16.7 → round to 17
-        _G.content.page_columns = math.floor(available_width / g_width + 0.5)
+        -- e.g. content_width / (content_width / 16.7) = 16.7 → round to 17
+        _G.content.page_columns = math.floor(content_width / g_width + 0.5)
         if _G.content.page_columns <= 0 then _G.content.page_columns = 1 end
     else
         _G.content.page_columns = math.max(1, n_column)
     end
 end
 
---- Calculate auto-layout dimensions (grid_width, grid_height, content_height)
+--- Calculate auto-layout dimensions using three-layer structure
+-- Layer 1: Total Box (Page - Margins)
+-- Layer 2: Border overhead
+-- Layer 3: Content Area (Total - Border)
 local function calc_auto_layout()
     local b_thickness = _G.content.border_on and _G.content.border_thickness or 0
     local is_outer_border = _G.content.outer_border_on
@@ -287,33 +339,45 @@ local function calc_auto_layout()
     local m_top = _G.page and _G.page.margin_top or 0
     local m_bottom = _G.page and _G.page.margin_bottom or 0
 
-    -- Calculate border overhead for height
+    -- ========== Layer 1: Total Box ==========
+    local total_width = p_width - m_left - m_right
+    local total_height = p_height - m_top - m_bottom
+    _G.content.total_width = total_width
+    _G.content.total_height = total_height
+
+    -- ========== Layer 2: Border Overhead ==========
+    local border_overhead_width = calc_border_overhead_width(
+        _G.content.border_on, is_outer_border, b_thickness, ob_thickness, ob_sep)
+
     local border_overhead_height = calc_border_overhead_height(
         _G.content.border_on, is_outer_border, b_thickness, ob_thickness, ob_sep, b_padding_top, b_padding_bottom)
+
+    -- Store for backward compatibility
     _G.content.border_overhead_height = border_overhead_height
 
-    -- Calculate available height for text
-    local available_height = p_height - m_top - m_bottom - border_overhead_height
-    _G.content.available_height = available_height
+    -- ========== Layer 3: Content Area ==========
+    local content_width = total_width - border_overhead_width
+    local content_height = total_height - border_overhead_height
+    _G.content.content_width = content_width
+    _G.content.content_height = content_height
 
+    -- ========== Grid Parameters Calculation ==========
     -- Auto-calculate grid_width if banxin is on AND no explicit grid_width was provided
-    if banxin_on and _G.content.page_columns > 0 and (_G.content.grid_width or 0) == 0 then
-        local border_overhead_width = calc_border_overhead_width(
-            _G.content.border_on, is_outer_border, b_thickness, ob_thickness, ob_sep)
-        local raw_width = p_width - m_left - m_right - border_overhead_width
+    if banxin_on and (_G.content.page_columns or 0) > 0 and (_G.content.grid_width or 0) == 0 then
         local ratio = _G.content.banxin_ratio or 0.7
         local n_col = _G.content.n_column or 8
-        _G.content.grid_width = math.floor(raw_width / (2 * n_col + ratio))
+        _G.content.grid_width = math.floor(content_width / (2 * n_col + ratio))
         _G.content.banxin_width = math.floor(_G.content.grid_width * ratio)
     end
 
-    -- Auto-calculate grid_height and content_height
+    -- Auto-calculate grid_height from content_height
     local n_char = _G.content.n_char_per_col or 0
     local grid_h = _G.content.grid_height or 0
-    local new_grid_h, new_content_h = calc_grid_dimensions(available_height, n_char, grid_h)
+    local new_grid_h, new_content_h = calc_grid_dimensions(content_height, n_char, grid_h)
     if n_char > 0 or grid_h > 0 then
         _G.content.grid_height = new_grid_h
-        _G.content.content_height = new_content_h
+        -- Note: new_content_h may be grid-aligned, but we keep the raw content_height
+        -- for accurate layout decisions (content_height already set above)
     end
 end
 
@@ -328,7 +392,7 @@ local function sync_params(params)
 
     -- 2. Calculate layout dimensions
     local explicit_page_cols = tonumber(params.page_columns) or 0
-    calc_available_width()
+    calc_content_area_width()
     calc_page_columns(explicit_page_cols)
     calc_auto_layout()
 end
@@ -417,8 +481,8 @@ end
 -- ============================================================================
 
 --- Calculate content area dimensions (shared by render-page and render-border)
--- @param params (table) {is_textbox, actual_cols, actual_rows, grid_width, grid_height,
---   line_limit, b_padding_top, b_padding_bottom, p_total_cols, border_thickness,
+-- @param params (table) {is_textbox, actual_cols, actual_height_sp, grid_width, grid_height,
+--   content_height_sp, b_padding_top, b_padding_bottom, p_total_cols, border_thickness,
 --   banxin_width, interval}
 -- @return content_width, content_height, inner_width, inner_height (all in sp)
 local function calculate_content_dimensions(params)
@@ -426,11 +490,11 @@ local function calculate_content_dimensions(params)
     local col_widths = _G.content and _G.content.col_widths
     if params.is_textbox then
         content_width = (params.actual_cols > 0 and params.actual_cols or 1) * params.grid_width
-        content_height = (params.actual_rows > 0 and params.actual_rows or 1) * params.grid_height
+        content_height = params.actual_height_sp > 0 and params.actual_height_sp or params.grid_height
     elseif col_widths and #col_widths > 0 then
         content_width = 0
         for _, w in ipairs(col_widths) do content_width = content_width + w end
-        content_height = params.line_limit * params.grid_height + params.b_padding_top + params.b_padding_bottom
+        content_height = params.content_height_sp + params.b_padding_top + params.b_padding_bottom
     else
         local bw = params.banxin_width or 0
         local iv = params.interval or 0
@@ -441,7 +505,7 @@ local function calculate_content_dimensions(params)
         else
             content_width = params.p_total_cols * params.grid_width
         end
-        content_height = params.line_limit * params.grid_height + params.b_padding_top + params.b_padding_bottom
+        content_height = params.content_height_sp + params.b_padding_top + params.b_padding_bottom
     end
     local inner_width = content_width + params.border_thickness
     local inner_height = content_height + params.border_thickness
@@ -459,10 +523,11 @@ local function init_col_widths()
 end
 
 --- Register a column's width (call from Column when width is specified)
+-- Only takes effect when col_widths has been initialized (TitlePage mode).
+-- In normal BodyText, col_widths is nil and registration is silently ignored.
 -- @param width_sp (number) Column width in scaled points
 local function register_col_width(width_sp)
-    _G.content = _G.content or {}
-    _G.content.col_widths = _G.content.col_widths or {}
+    if not (_G.content and _G.content.col_widths) then return end
     table.insert(_G.content.col_widths, width_sp)
 end
 

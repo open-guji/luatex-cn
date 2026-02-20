@@ -12,6 +12,7 @@
 4. [PDF 渲染问题](#四-pdf-渲染问题)
 5. [参数传递链路](#五-参数传递链路)
 6. [特殊功能实现](#六-特殊功能实现)
+7. [布局引擎陷阱](#七-布局引擎陷阱)
 
 ---
 
@@ -615,3 +616,167 @@ print(string.format("Node ID=%d attr=%s", id,
 # 查看特定输出
 lualatex file.tex 2>&1 | grep "\[DEBUG\]"
 ```
+
+---
+
+## 七、 布局引擎陷阱
+
+### 7.1 Natural Mode `flush_buffer` 覆盖 y_sp 导致缩进丢失
+
+**日期**: 2026-02-12
+
+**问题**：`\脚注` 设置了 `indent=1em` 的强制缩进（forced indent），通过 `ATTR_INDENT` + `encode_forced_indent(cells)` 正确设置在脚注字符上。`apply_indentation()` 也正确将 `cur_y_sp` 设置为 `indent * grid_height`（即 1 格的偏移量）。但最终渲染结果中，脚注列的第一个字符与正文列的第一个字符在同一高度——缩进完全不可见。
+
+**根本原因**：
+
+`flush_buffer()` 中的 Natural Mode 重排代码（tight packing 路径）**始终从 y=0 开始重新计算所有 y_sp**，完全丢弃了布局阶段通过 `apply_indentation` 设置的缩进偏移：
+
+```lua
+-- ❌ 错误：start from 0 discards indent offset
+local y = 0
+for _, e in ipairs(col_buffer) do
+    e.y_sp = y  -- overwrites the indented y_sp!
+    y = y + (e.cell_height or grid_height)
+end
+```
+
+**修复方案**：使用 col_buffer 中第一个条目的原始 y_sp 作为起始位置，保留缩进偏移：
+
+```lua
+-- ✅ 正确：preserve indent offset from first entry
+local start_y = col_buffer[1].y_sp or 0
+local remaining = ctx.col_height_sp - total_cells - start_y
+
+if N == 1 then
+    -- keep original y_sp (preserves indent)
+elseif remaining > 0 and remaining < min_cell and N > 1 then
+    local gap = remaining / (N - 1)
+    local y = start_y
+    for _, e in ipairs(col_buffer) do
+        e.y_sp = y
+        y = y + (e.cell_height or grid_height) + gap
+    end
+else
+    local y = start_y
+    for _, e in ipairs(col_buffer) do
+        e.y_sp = y
+        y = y + (e.cell_height or grid_height)
+    end
+end
+```
+
+**调试方法**：在 layout 循环中添加临时日志，对比 "glyph 入 buffer 时的 y_sp" 和 "flush_buffer 后 layout_map 中的 y_sp"，即可发现差异。
+
+**关键教训**：
+1. **Layout 有两阶段**：字符入 buffer 时设置 y_sp（包含缩进），flush_buffer 时可能重算 y_sp。要确认最终写入 layout_map 的值。
+2. **Natural Mode 的 tight packing 是破坏性重写**：它不是微调，而是完全覆盖 y_sp。任何依赖 y_sp 初始值的功能都会受影响。
+3. **调试 y_sp 问题的正确位置**：在 flush_buffer 的 `layout_map[entry.node] = map_entry` 处检查最终值，而非 glyph 入 buffer 时。
+
+**影响的文件**：
+- `tex/core/luatex-cn-layout-grid.lua` (`flush_buffer` 函数，Natural Mode 分支)
+- `tex/core/luatex-cn-footnote.sty` (forced indent 设置)
+
+### 7.2 TeX 段落构建器不保留自定义属性
+
+**日期**: 2026-02-12
+
+**问题**：在 `\penalty -10002` 节点上通过 `tex.setattribute` 设置的 `ATTR_COLUMN_BREAK_INDENT` 在最终的节点流中丢失。
+
+**根本原因**：TeX 的段落构建器（paragraph builder）在断行时会**消耗**原始 penalty 节点，并创建**新的** penalty 节点。新节点**不携带**任何自定义属性。此外，flatten 阶段也会创建合成 penalty 节点（`D.new(constants.PENALTY)`），同样没有自定义属性。
+
+**解决方案**：不要依赖 penalty 节点携带自定义属性。改为将属性设置在**字符节点**（glyph）上，因为字符节点在段落构建器和 flatten 过程中被保留（通过 `copy_node_with_attributes`）。
+
+```latex
+% ❌ 错误：属性设在 penalty 上，会丢失
+\lua_now:e { tex.setattribute(ATTR_INDENT, value) }
+\penalty -10002  % penalty 节点被段落构建器替换
+
+% ✅ 正确：属性设在 glyph 上，会保留
+\lua_now:e { tex.setattribute(ATTR_INDENT, encode_forced_indent(cells)) }
+\penalty -10002
+后续文字内容  % glyph 节点保留 ATTR_INDENT
+```
+
+**关键教训**：
+- 段落构建器是黑盒：输入的节点可能被消耗/替换/重排
+- 只有**字符节点**上的属性是可靠的（因为 flatten 的 `copy_node_with_attributes` 会保留）
+- penalty、glue 等非字符节点的属性在段落构建后不可信
+
+### 7.3 `_G` 全局状态污染导致 page_columns 和标点布局错误
+
+**日期**: 2026-02-14
+
+**问题**：两个独立 bug，根因相同 —— `_G` 全局状态被意外读写，导致布局计算错误。
+
+#### Bug A: Column 每列新起一页（page_columns=1）
+
+**现象**：`column.tex` 测试每个 `\Column` 独占一页（18 页），正常应该多列排在同一页（3 页）。
+
+**根本原因**：`register_col_width()` 在 `_G.content.col_widths` 为 nil 时自动创建空表：
+
+```lua
+-- ❌ 错误：无条件创建 col_widths，正常 BodyText 也会被污染
+function register_col_width(width_sp)
+    _G.content.col_widths = _G.content.col_widths or {}  -- 创建了不该存在的表！
+    table.insert(_G.content.col_widths, width_sp)
+end
+```
+
+**执行时序**：
+```
+process_grid:
+  vbox_set (展开TeX → \行[column-width=50pt] → register_col_width → col_widths={50pt})
+  sync_to_lua → calc_page_columns → 发现 col_widths 有 1 项 → page_columns=1 !!
+```
+
+**正确方案**：
+```lua
+-- ✅ 只在 TitlePage 模式（col_widths 已被 init_col_widths 初始化）时注册
+function register_col_width(width_sp)
+    if not (_G.content and _G.content.col_widths) then return end
+    table.insert(_G.content.col_widths, width_sp)
+end
+```
+
+#### Bug B: 台湾模式标点占半格
+
+**现象**：tw-vbook 的标点只占半格，应该和正文一样占整格。
+
+**根本原因**：`get_cell_height()` 硬编码所有标点返回 `base * 0.5`，不区分大陆/台湾：
+
+```lua
+-- ❌ 错误：无条件将标点设为半格
+if punct_type and punct_type > 0 then
+    return math.floor(base * 0.5)
+end
+```
+
+另一个陷阱：cn-vbook/tw-vbook 使用 **natural 布局模式**（`layout_mode="natural"`），导致 `engine_ctx.default_cell_height=nil`，`punct.layout()` 中的 squeeze 逻辑根本不会执行到。所以即使在 `punct.layout()` 中加了 taiwan 跳过，也无效。
+
+**正确方案**：
+```lua
+-- ✅ 检查 punct style 和 squeeze 设置
+if punct_type and punct_type > 0 then
+    local style = (_G.punct and _G.punct.style) or "mainland"
+    local squeeze = not (_G.punct and _G.punct.squeeze == false)
+    if style ~= "taiwan" and squeeze then
+        return math.floor(base * 0.5)
+    end
+end
+```
+
+#### 架构层面的教训
+
+**`_G` 全局状态是这两个 bug 的共同根因**：
+
+| 问题 | `_G` 滥用方式 | 后果 |
+|------|-------------|------|
+| page_columns=1 | `register_col_width` 意外创建 `_G.content.col_widths` | 覆盖正常的 banxin 分页计算 |
+| 标点半格 | `get_cell_height` 需隐式读取 `_G.punct.style` | helpers 层依赖未声明的全局状态 |
+| punct.layout 不执行 | `default_cell_height` 依赖 `_G.content.layout_mode` | 代码路径完全取决于隐式全局值 |
+
+**关键教训**：
+1. **`_G` 表的字段不应该有"存在即为真"语义**：`col_widths` 的存在/不存在决定了走哪条计算路径，但任何代码都能创建它。应该用显式模式标志。
+2. **vbox 构建会触发 Lua 副作用**：TeX 的 `\vbox_set:Nn` 在收集内容时会执行宏，宏中的 `\lua_now` 调用会修改全局状态。这发生在 `sync_to_lua` 之前。
+3. **多条件优先级链（if col_widths / elseif banxin / elseif grid / else）非常脆弱**：最高优先级条件被意外满足时，所有正常路径都被跳过。
+4. **调试此类问题的高效方法**：用 `texio.write_nl` 在关键位置打印全局状态值（不依赖 debug 模块开关），快速定位是"哪个值不对"而非"哪行代码有bug"。

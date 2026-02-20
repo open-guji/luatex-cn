@@ -18,23 +18,30 @@ local function get_project_root()
         fh:close()
         return "../"
     end
-    -- Try grandparent directory (common for test/banxin/...)
+    -- Try grandparent directory (common for test/unit_test/core/...)
     fh = io.open("../../build.lua", "r")
     if fh then
         fh:close()
         return "../../"
+    end
+    -- Try great-grandparent (common for test/unit_test/subdir/...)
+    fh = io.open("../../../build.lua", "r")
+    if fh then
+        fh:close()
+        return "../../../"
     end
     return ""
 end
 
 local root = get_project_root()
 package.path = root .. "tex/?.lua;"
-    .. root .. "tex/vertical/?.lua;"
-    .. root .. "tex/banxin/?.lua;"
-    .. root .. "tex/fonts/?.lua;"
-    .. root .. "tex/splitpage/?.lua;"
     .. root .. "tex/core/?.lua;"
     .. root .. "tex/util/?.lua;"
+    .. root .. "tex/banxin/?.lua;"
+    .. root .. "tex/fonts/?.lua;"
+    .. root .. "tex/guji/?.lua;"
+    .. root .. "tex/decorate/?.lua;"
+    .. root .. "tex/debug/?.lua;"
     .. root .. "tex/?/init.lua;"
     .. package.path
 
@@ -224,8 +231,14 @@ texio = {
 
 luatexbase = {
     attributes = {},
+    _attr_counter = 100,
     new_attribute = function(name)
-        return 100 -- dummy attribute id
+        luatexbase._attr_counter = luatexbase._attr_counter + 1
+        luatexbase.attributes[name] = luatexbase._attr_counter
+        return luatexbase._attr_counter
+    end,
+    new_whatsit = function(name)
+        return 1 -- dummy whatsit subtype
     end
 }
 
@@ -239,7 +252,10 @@ tex = {
         return math.floor(num * (factors[unit] or 65536))
     end,
     current = function() return 0 end,
-    box = {}
+    box = {},
+    toks = setmetatable({}, {
+        __index = function() return "" end
+    })
 }
 
 font = {
@@ -247,6 +263,17 @@ font = {
     getfont = function(id) return { size = 655360 } end,
     define = function(data) return 1 end
 }
+
+-- Mock token interface (used by get_tex_tl, get_tex_bool, get_tex_int)
+token = token or {
+    get_macro = function() return nil end,
+    create = function() return { cmdname = "undefined_cs" } end,
+    set_macro = function() end,
+}
+
+-- Mock luatexbase.add_to_callback (used by debug grid)
+luatexbase.add_to_callback = luatexbase.add_to_callback or function() end
+luatexbase.remove_from_callback = luatexbase.remove_from_callback or function() end
 
 if not utf8 then
     utf8 = {
@@ -269,11 +296,82 @@ function test_utils.assert_eq(actual, expected, message)
     end
 end
 
+function test_utils.assert_true(value, message)
+    if not value then
+        error(string.format("Assertion failed: expected truthy, got '%s'. %s",
+            tostring(value), message or ""), 2)
+    end
+end
+
+function test_utils.assert_nil(value, message)
+    if value ~= nil then
+        error(string.format("Assertion failed: expected nil, got '%s'. %s",
+            tostring(value), message or ""), 2)
+    end
+end
+
+function test_utils.assert_type(value, expected_type, message)
+    if type(value) ~= expected_type then
+        error(string.format("Assertion failed: expected type '%s', got '%s'. %s",
+            expected_type, type(value), message or ""), 2)
+    end
+end
+
 function test_utils.assert_match(actual, pattern, message)
     if not string.match(actual, pattern) then
         error(string.format("Assertion failed: '%s' does not match pattern '%s'. %s",
             tostring(actual), tostring(pattern), message or ""), 2)
     end
+end
+
+function test_utils.assert_near(actual, expected, tolerance, message)
+    tolerance = tolerance or 0.001
+    if math.abs(actual - expected) > tolerance then
+        error(string.format("Assertion failed: expected ~%s, got %s (tolerance %s). %s",
+            tostring(expected), tostring(actual), tostring(tolerance), message or ""), 2)
+    end
+end
+
+-- Node creation helpers
+function test_utils.make_node(id, fields)
+    local n = node.new(id)
+    if fields then
+        for k, v in pairs(fields) do
+            n[k] = v
+        end
+    end
+    return n
+end
+
+function test_utils.make_glyph(char, fnt, fields)
+    local n = node.new("glyph")
+    n.char = char or 0
+    n.font = fnt or 0
+    if fields then
+        for k, v in pairs(fields) do
+            n[k] = v
+        end
+    end
+    return n
+end
+
+function test_utils.make_direct_node(id, fields)
+    local n = node.direct.new(id)
+    if fields then
+        for k, v in pairs(fields) do
+            n[k] = v
+        end
+    end
+    return n
+end
+
+-- Link a list of nodes together (sets next/prev)
+function test_utils.link_nodes(nodes)
+    for i = 1, #nodes - 1 do
+        nodes[i].next = nodes[i + 1]
+        nodes[i + 1].prev = nodes[i]
+    end
+    return nodes[1]
 end
 
 function test_utils.run_test(name, func)

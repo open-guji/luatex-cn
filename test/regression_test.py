@@ -334,8 +334,8 @@ def main():
     parser = argparse.ArgumentParser(description="Multi-page Visual Regression Test for luatex-cn")
     parser.add_argument("command", choices=["save", "check"], help="Command to run")
     parser.add_argument("files", nargs="*", help="Specific TeX files to process (optional)")
-    parser.add_argument("-j", "--jobs", type=int, default=multiprocessing.cpu_count(),
-                        help="Number of parallel jobs (default: number of CPUs)")
+    parser.add_argument("-j", "--jobs", type=int, default=8,
+                        help="Number of parallel jobs (default: 8)")
 
     # Suite selection flags
     parser.add_argument("--past-issues", action="store_true",

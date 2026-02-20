@@ -138,9 +138,22 @@ local function calculate_render_context(ctx)
     local border_color_str = utils.normalize_rgb(visual.border_color) or "0 0 0"
     local border_width = constants.to_dimen(visual.border_width) or (65536 * 0.4)
     local border_margin = constants.to_dimen(visual.border_margin) or (65536 * 1)
+    -- Textbox outer border (drawn around decorative shape, not via body text mechanism)
+    local textbox_outer_border = visual.textbox_outer_border or false
+    local textbox_ob_thickness = constants.to_dimen(visual.textbox_ob_thickness) or (65536 * 1)
+    local textbox_ob_sep = constants.to_dimen(visual.textbox_ob_sep) or (65536 * 2)
 
     -- Colors: border from engine (already normalized in main.lua)
     local b_rgb_str = engine.border_rgb_str
+
+    -- Bundle column geometry triple for position functions
+    local col_geom = {
+        grid_width = grid_width,
+        banxin_width = banxin_width,
+        interval = interval,
+        -- Phase 2.4: Free Mode column widths (page -> col -> width_sp)
+        col_widths_sp = grid.col_widths_sp,
+    }
 
     return {
         border_thickness = border_thickness,
@@ -158,22 +171,26 @@ local function calculate_render_context(ctx)
         b_rgb_str = b_rgb_str,
         background_rgb_str = background_rgb_str,
         text_rgb_str = text_rgb_str,
-        grid_width = grid_width,
         grid_height = grid_height,
         banxin_width = banxin_width,
+        col_geom = col_geom,
         body_font_size = body_font_size,
         vertical_align = vertical_align,
         -- TextFlow align default (per-node align from style stack takes precedence)
-        textflow_align = (_G.jiazhu and _G.jiazhu.align) or "outward",
-        -- Judou parameters from _G.judou global (set by judou.setup)
-        judou_pos = (_G.judou and _G.judou.pos) or "right-bottom",
-        judou_size = (_G.judou and _G.judou.size) or "1em",
-        judou_color = (_G.judou and _G.judou.color) or "red",
+        textflow_align = visual.textflow_align or "outward",
+        -- Judou parameters from visual context (populated by core-main from judou plugin context)
+        judou_pos = visual.judou_pos or "right-bottom",
+        judou_size = visual.judou_size or "1em",
+        judou_color = visual.judou_color or "red",
         -- Border shape decoration parameters (textbox only)
         border_shape = border_shape,
         border_color_str = border_color_str,
         border_width = border_width,
         border_margin = border_margin,
+        -- Textbox outer border params
+        textbox_outer_border = textbox_outer_border,
+        textbox_ob_thickness = textbox_ob_thickness,
+        textbox_ob_sep = textbox_ob_sep,
     }
 end
 
@@ -183,7 +200,7 @@ _internal.calculate_render_context = calculate_render_context
 local function group_nodes_by_page(d_head, layout_map, total_pages)
     local page_nodes = {}
     for p = 0, total_pages - 1 do
-        page_nodes[p] = { head = nil, tail = nil, max_col = 0, max_row = 0 }
+        page_nodes[p] = { head = nil, tail = nil, max_col = 0, max_y_sp = 0 }
     end
 
     local t = d_head
@@ -202,12 +219,11 @@ local function group_nodes_by_page(d_head, layout_map, total_pages)
                 end
                 page_nodes[p].tail = t
                 if pos.col > page_nodes[p].max_col then page_nodes[p].max_col = pos.col end
-                -- Track max row for actual content height calculation
-                -- Note: pos.row can be fractional (from distribute_rows), use math.ceil
-                -- Note: pos.height is in sp (physical), NOT grid row count
-                local row = pos.row or 0
-                local row_ceil = math.ceil(row)
-                if row_ceil > page_nodes[p].max_row then page_nodes[p].max_row = row_ceil end
+                -- Track max_y_sp (bottom of furthest cell) for sp-based height
+                if pos.y_sp then
+                    local y_bottom = pos.y_sp + (pos.cell_height or 0)
+                    if y_bottom > page_nodes[p].max_y_sp then page_nodes[p].max_y_sp = y_bottom end
+                end
             else
                 node.flush_node(D.tonode(t))
             end
@@ -228,21 +244,21 @@ _internal.position_floating_box = textbox_mod.render_floating_box
 local process_page_nodes = page_process.process_page_nodes
 
 -- 辅助函数：渲染单个页面
-local function render_single_page(p_head, p_max_col, p_max_row, p, layout_map, params, ctx)
+local function render_single_page(p_head, p_max_col, p, layout_map, params, ctx, p_max_y_sp)
     if not p_head then return nil, 0 end
 
     local p_total_cols = p_max_col + 1
     local p_cols = ctx.p_cols
     -- Always enforce full page width to ensure correct RTL/SplitPage absolute positioning
-    if p_cols > 0 and p_total_cols < p_cols then
+    if p_cols and p_cols > 0 and p_total_cols < p_cols then
         p_total_cols = p_cols
     end
 
     -- Actual content dimensions (for special border shapes)
     local actual_cols = p_max_col + 1
-    local actual_rows = p_max_row + 1
+    local actual_height_sp = (p_max_y_sp and p_max_y_sp > 0) and p_max_y_sp or ctx.grid_height
 
-    local grid_width = ctx.grid_width
+    local grid_width = ctx.col_geom.grid_width
     local grid_height = ctx.grid_height
     local border_thickness = ctx.border_thickness
     local line_limit = ctx.line_limit
@@ -262,16 +278,55 @@ local function render_single_page(p_head, p_max_col, p_max_row, p, layout_map, p
     -- Reserved columns (computed via engine_ctx helper function)
     local reserved_cols = grid.get_reserved_cols and grid.get_reserved_cols(p, p_total_cols) or {}
 
-    -- Scan layout_map for taitou columns (negative row = raised border)
-    local col_min_rows = {}
+    -- Right-align columns within content area BEFORE drawing borders
+    -- Skip TitlePage (has col_widths but NOT page_col_widths_sp)
+    local page_col_widths_sp = (ctx.col_geom and ctx.col_geom.col_widths_sp and ctx.col_geom.col_widths_sp[p]) or nil
+    local has_legacy_col_widths = (_G.content and _G.content.col_widths and next(_G.content.col_widths))
+    local has_free_mode_widths = (page_col_widths_sp and next(page_col_widths_sp))
+    local is_titlepage = has_legacy_col_widths and not has_free_mode_widths
+
+    if not is_titlepage then
+        local total_cols_width_sp
+        if page_col_widths_sp and next(page_col_widths_sp) then
+            -- Free Mode: sum variable column widths
+            total_cols_width_sp = 0
+            for _, w in pairs(page_col_widths_sp) do
+                total_cols_width_sp = total_cols_width_sp + w
+            end
+        else
+            -- Fixed-width mode: calculate total width including banxin
+            local col_gwidth = ctx.col_geom and ctx.col_geom.grid_width or 0
+            local col_bwidth = ctx.col_geom and ctx.col_geom.banxin_width or 0
+            local col_interval = ctx.col_geom and ctx.col_geom.interval or 0
+
+            if col_interval > 0 and col_bwidth > 0 and col_bwidth ~= col_gwidth then
+                -- With banxin columns
+                local n_banxin = math.floor(p_total_cols / (col_interval + 1))
+                local n_content = p_total_cols - n_banxin
+                total_cols_width_sp = n_content * col_gwidth + n_banxin * col_bwidth
+            else
+                -- Uniform width
+                total_cols_width_sp = p_total_cols * col_gwidth
+            end
+        end
+
+        -- Right-align: add offset if columns are narrower than content area
+        local content_width_sp = grid.content_width or 0
+        if content_width_sp > total_cols_width_sp then
+            shift_x = shift_x + (content_width_sp - total_cols_width_sp)
+        end
+    end
+
+    -- Scan layout_map for taitou columns (negative y_sp = raised border)
+    local col_min_y_sp = {}
     local scan_t = p_head
     while scan_t do
         local pos = layout_map[scan_t]
         if pos then
             local col = pos.col
-            local row = math.floor(pos.row or 0)
-            if row < 0 and (not col_min_rows[col] or row < col_min_rows[col]) then
-                col_min_rows[col] = row
+            local y = pos.y_sp or 0
+            if y < 0 and (not col_min_y_sp[col] or y < col_min_y_sp[col]) then
+                col_min_y_sp[col] = y
             end
         end
         scan_t = D.getnext(scan_t)
@@ -282,12 +337,14 @@ local function render_single_page(p_head, p_max_col, p_max_row, p, layout_map, p
         -- Grid and dimensions
         p_total_cols = p_total_cols,
         actual_cols = actual_cols,
-        actual_rows = actual_rows,
+        actual_height_sp = actual_height_sp,
         grid_width = grid_width,
         grid_height = grid_height,
+        col_geom = ctx.col_geom,
         banxin_width = ctx.banxin_width,
         interval = ctx.interval,
         line_limit = line_limit,
+        content_height_sp = engine.content_height_sp,
         -- Border params
         border_thickness = border_thickness,
         b_padding_top = b_padding_top,
@@ -309,17 +366,26 @@ local function render_single_page(p_head, p_max_col, p_max_row, p, layout_map, p
         border_margin = ctx.border_margin,
         background_rgb_str = ctx.background_rgb_str,
         -- Taitou raised border
-        col_min_rows = col_min_rows,
+        col_min_y_sp = col_min_y_sp,
+        -- Textbox outer border (drawn around decorative shape)
+        textbox_outer_border = ctx.textbox_outer_border,
+        textbox_ob_thickness = ctx.textbox_ob_thickness,
+        textbox_ob_sep = ctx.textbox_ob_sep,
     })
 
     -- Font color
     p_head = content.set_font_color(p_head, ctx.text_rgb_str)
 
     -- Node positions
-    -- Update context with page-specific total_cols
+    -- Update context with page-specific total_cols and col_widths_sp
     local ctx_node = {}
     for k, v in pairs(ctx) do ctx_node[k] = v end
     ctx_node.p_total_cols = p_total_cols
+    -- Phase 2.4: Pass page-specific column widths for Free Mode
+    ctx_node.page_num = p
+    ctx_node.page_col_widths_sp = page_col_widths_sp
+    -- Apply the computed right-alignment shift_x
+    ctx_node.shift_x = shift_x
 
     p_head = process_page_nodes(p_head, layout_map, params, ctx_node)
 
@@ -340,8 +406,8 @@ local function render_single_page(p_head, p_max_col, p_max_row, p, layout_map, p
     -- For TextBox: return actual content dimensions, not expanded page dimensions
     -- This ensures TextBox output box has correct dimensions in main document flow
     local return_cols = page.is_textbox and actual_cols or p_total_cols
-    local return_rows = page.is_textbox and actual_rows or line_limit
-    return D.tonode(p_head), return_cols, return_rows
+    local return_height_sp = page.is_textbox and actual_height_sp or engine.content_height_sp
+    return D.tonode(p_head), return_cols, return_height_sp
 end
 
 _internal.render_single_page = render_single_page
@@ -367,10 +433,10 @@ local function apply_positions(head, layout_map, params)
     for p = 0, params.total_pages - 1 do
         local p_head = page_nodes[p].head
         local p_max_col = page_nodes[p].max_col
-        local p_max_row = page_nodes[p].max_row
-        local rendered_head, cols, rows = render_single_page(p_head, p_max_col, p_max_row, p, layout_map, params, ctx)
+        local p_max_y_sp = page_nodes[p].max_y_sp
+        local rendered_head, cols, height_sp = render_single_page(p_head, p_max_col, p, layout_map, params, ctx, p_max_y_sp)
         if rendered_head then
-            result_pages[p + 1] = { head = rendered_head, cols = cols, rows = rows }
+            result_pages[p + 1] = { head = rendered_head, cols = cols, height_sp = height_sp }
         end
     end
 

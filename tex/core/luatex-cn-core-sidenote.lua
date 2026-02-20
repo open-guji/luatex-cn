@@ -27,6 +27,8 @@ local judou = package.loaded['guji.luatex-cn-guji-judou'] or
     require('guji.luatex-cn-guji-judou')
 local text_position = package.loaded['core.luatex-cn-render-position'] or
     require('core.luatex-cn-render-position')
+local helpers = package.loaded['core.luatex-cn-layout-grid-helpers'] or
+    require('core.luatex-cn-layout-grid-helpers')
 local D = node.direct
 
 local dbg = debug.get_debugger('sidenote')
@@ -119,7 +121,7 @@ function sidenote.render(head, layout_map, params, context, engine_ctx, page_idx
 
         local pos = {
             col = item.col,
-            row = item.row,
+            y_sp = item.y_sp,
             sidenote_offset = sidenote_x_offset,
         }
 
@@ -130,18 +132,14 @@ function sidenote.render(head, layout_map, params, context, engine_ctx, page_idx
             local w = D.getfield(curr, "width") or 0
 
             local rtl_col = p_total_cols - 1 - pos.col
-            local boundary_x = text_position.get_column_x(rtl_col + 1, engine_ctx.g_width,
-                engine_ctx.banxin_width or 0, engine_ctx.n_column or 0)
+            local boundary_x = text_position.get_column_x(rtl_col + 1, engine_ctx.col_geom)
                 + engine_ctx.half_thickness + engine_ctx.shift_x
             local final_x = boundary_x - (w / 2)
 
             local char_total_height = h + d
-            local effective_grid_height = engine_ctx.g_height
-            if item.metadata and item.metadata.grid_height then
-                effective_grid_height = tonumber(item.metadata.grid_height) or engine_ctx.g_height
-            end
+            local cell_h = item.cell_height or engine_ctx.g_height
 
-            local final_y = -pos.row * engine_ctx.g_height - (effective_grid_height + char_total_height) / 2 + d -
+            local final_y = -pos.y_sp - (cell_h + char_total_height) / 2 + d -
                 engine_ctx.shift_y
 
             D.setfield(curr, "xoffset", final_x)
@@ -150,13 +148,14 @@ function sidenote.render(head, layout_map, params, context, engine_ctx, page_idx
             -- Collect linemark entries (专名号/书名号)
             local lm_id = D.get_attribute(curr, constants.ATTR_LINE_MARK_ID)
             if lm_id and lm_id > 0 then
-                linemark_entries[#linemark_entries + 1] = {
-                    group_id = lm_id,
-                    col = item.col,
-                    row = item.row,
-                    x_center_sp = boundary_x,
-                    font_size = effective_grid_height,
-                }
+                linemark_entries[#linemark_entries + 1] =
+                    helpers.create_linemark_entry({
+                        group_id = lm_id,
+                        col = item.col,
+                        y_sp = pos.y_sp,
+                        x_center_sp = boundary_x,
+                        font_size = cell_h,
+                    })
             end
 
             local k = D.new(constants.KERN)
@@ -320,9 +319,10 @@ local function safe_resolve(val, font_size_sp)
     return tonumber(val) or 0
 end
 
-local function calculate_start_position(anchor_row, metadata, main_grid_height)
+local function calculate_start_position(anchor_y_sp, metadata, main_grid_height)
     local yoffset_grid = safe_resolve(metadata.yoffset, main_grid_height) / main_grid_height
     local padding_top_grid = safe_resolve(metadata.padding_top, main_grid_height) / main_grid_height
+    local anchor_row = anchor_y_sp / main_grid_height
     return math.max(anchor_row, padding_top_grid) + yoffset_grid
 end
 
@@ -360,6 +360,8 @@ local function place_individual_sidenote(sid, registry_item, last_node_pos, para
     local p_cols = params.page_columns or 10
     local line_limit = params.line_limit or 20
     local main_grid_height = params.grid_height or (65536 * 20)
+    local effective_gh = (metadata.grid_height and metadata.grid_height > 0)
+        and metadata.grid_height or main_grid_height
     local step = 1
     if metadata.grid_height and metadata.grid_height > 0 then
         step = metadata.grid_height / main_grid_height
@@ -379,12 +381,13 @@ local function place_individual_sidenote(sid, registry_item, last_node_pos, para
 
     local curr_p, curr_c = last_node_pos.page, last_node_pos.col
     local base_indent = last_node_pos.indent or 0
-    dbg.log(string.format("Placing sid=%d at p=%d, c=%d, anchor_r=%.2f, indent=%d",
-        sid, curr_p, curr_c, last_node_pos.row, base_indent))
+    local anchor_y_sp = last_node_pos.y_sp or 0
+    dbg.log(string.format("Placing sid=%d at p=%d, c=%d, anchor_y_sp=%.0f, indent=%d",
+        sid, curr_p, curr_c, anchor_y_sp, base_indent))
 
     curr_p, curr_c = skip_to_valid_column(curr_p, curr_c, p_cols, config.banxin_on, config.interval)
 
-    local curr_r = calculate_start_position(last_node_pos.row, metadata, main_grid_height)
+    local curr_r = calculate_start_position(anchor_y_sp, metadata, main_grid_height)
     local filled_r = tracker.get(curr_p, curr_c)
     if curr_r <= filled_r then
         curr_r = filled_r + 0.1
@@ -398,7 +401,8 @@ local function place_individual_sidenote(sid, registry_item, last_node_pos, para
             node = current_content_node,
             page = curr_p,
             col = curr_c,
-            row = curr_r,
+            y_sp = curr_r * main_grid_height,
+            cell_height = effective_gh,
             metadata = metadata
         })
 
@@ -428,7 +432,7 @@ local function find_sidenote_anchors(head, layout_map, on_sidenote_found)
                     local anchor_pos = {
                         page = pos.page,
                         col = pos.col,
-                        row = pos.row,
+                        y_sp = pos.y_sp or 0,
                         indent = indent
                     }
                     on_sidenote_found(sid, anchor_pos)

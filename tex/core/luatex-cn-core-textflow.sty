@@ -20,7 +20,14 @@
 \RequirePackage{core/luatex-cn-core-base}
 \RequirePackage{expl3}
 \RequirePackage{xparse}
-\ProvidesExplPackage {core/luatex-cn-core-textflow} {2026/02/01} {0.2.3} {TextFlow (Jiazhu) Support for Vertical Typesetting}
+\ProvidesExplPackage {core/luatex-cn-core-textflow} {2026/02/03} {0.2.4} {TextFlow (Jiazhu) Support for Vertical Typesetting}
+
+% Default variables for textflow (can be set by higher layers like guji/jiazhu)
+\tl_new:N \l__luatexcn_textflow_default_size_tl
+\tl_new:N \l__luatexcn_textflow_default_font_tl
+\tl_new:N \l__luatexcn_textflow_default_color_tl
+\tl_new:N \l__luatexcn_textflow_default_align_tl
+\tl_set:Nn \l__luatexcn_textflow_default_align_tl {outward}
 
 % TextFlow Command (双行小注/夹注)
 % Syntax: \TextFlow{content}
@@ -34,9 +41,10 @@
         only-column / none .code:n = { \tl_set:Nn \l_tmpa_tl {0} },
         only-column .initial:n = none,
 
-        font-size .tl_set:N = \l__luatexcn_jiazhu_local_size_tl,
-        font .tl_set:N = \l__luatexcn_jiazhu_local_font_tl,
-        font-color .tl_set:N = \l__luatexcn_jiazhu_local_color_tl,
+        font-size .tl_set:N = \l__luatexcn_textflow_local_size_tl,
+        font .tl_set:N = \l__luatexcn_textflow_local_font_tl,
+        font-color .tl_set:N = \l__luatexcn_textflow_local_color_tl,
+        align .tl_set:N = \l__luatexcn_textflow_local_align_tl,
       }
 
     \NewDocumentCommand{\TextFlow}{ O{} +m }
@@ -46,9 +54,10 @@
         % Initialize temp var for mode (0 = balanced/default)
         \tl_set:Nn \l_tmpa_tl {0}
         % Initialize local override variables
-        \tl_set:Nn \l__luatexcn_jiazhu_local_size_tl {}
-        \tl_set:Nn \l__luatexcn_jiazhu_local_font_tl {}
-        \tl_set:Nn \l__luatexcn_jiazhu_local_color_tl {}
+        \tl_set:Nn \l__luatexcn_textflow_local_size_tl {}
+        \tl_set:Nn \l__luatexcn_textflow_local_font_tl {}
+        \tl_set:Nn \l__luatexcn_textflow_local_color_tl {}
+        \tl_set:Nn \l__luatexcn_textflow_local_align_tl {}
 
         \keys_set:nn { luatexcn / textflow } { #1 }
 
@@ -56,25 +65,29 @@
         % Note: indent values are now inherited from style stack (no longer saved/restored here)
         \edef\savedblockid{\the\cnverticalblockid}
 
-        % 1. Determine Font Size (Local > Global > Default 0.7)
-        \tl_if_empty:NTF \l__luatexcn_jiazhu_local_size_tl
+        % 1. Determine Font Size (Local > Core Default > Default 0.7)
+        \tl_if_empty:NTF \l__luatexcn_textflow_local_size_tl
           {
-            \tl_set:Nx \l_tmpb_tl { \l__luatexcn_jiazhu_size_tl }
-            \tl_if_empty:NTF \l_tmpb_tl
+            \tl_if_empty:NTF \l__luatexcn_textflow_default_size_tl
               { \tl_set:Nx \l_tmpc_tl { \fp_eval:n { 0.7 * \f@size } pt } }
-              { \tl_set_eq:NN \l_tmpc_tl \l__luatexcn_jiazhu_size_tl }
+              { \tl_set_eq:NN \l_tmpc_tl \l__luatexcn_textflow_default_size_tl }
           }
-          { \tl_set_eq:NN \l_tmpc_tl \l__luatexcn_jiazhu_local_size_tl }
+          { \tl_set_eq:NN \l_tmpc_tl \l__luatexcn_textflow_local_size_tl }
 
-        % 2. Determine Font (Local > Global)
-        \tl_if_empty:NTF \l__luatexcn_jiazhu_local_font_tl
-          { \tl_set_eq:NN \l_tmpb_tl \l__luatexcn_jiazhu_font_tl }
-          { \tl_set_eq:NN \l_tmpb_tl \l__luatexcn_jiazhu_local_font_tl }
+        % 2. Determine Font (Local > Core Default)
+        \tl_if_empty:NTF \l__luatexcn_textflow_local_font_tl
+          { \tl_set_eq:NN \l_tmpb_tl \l__luatexcn_textflow_default_font_tl }
+          { \tl_set_eq:NN \l_tmpb_tl \l__luatexcn_textflow_local_font_tl }
 
-        % 3. Determine Color (Local > Global)
-        \tl_if_empty:NTF \l__luatexcn_jiazhu_local_color_tl
-          { \tl_set_eq:NN \l_tmpd_tl \l__luatexcn_jiazhu_font_color_tl }
-          { \tl_set_eq:NN \l_tmpd_tl \l__luatexcn_jiazhu_local_color_tl }
+        % 3. Determine Color (Local > Core Default)
+        \tl_if_empty:NTF \l__luatexcn_textflow_local_color_tl
+          { \tl_set_eq:NN \l_tmpd_tl \l__luatexcn_textflow_default_color_tl }
+          { \tl_set_eq:NN \l_tmpd_tl \l__luatexcn_textflow_local_color_tl }
+
+        % 4. Determine Align (Local > Core Default)
+        \tl_if_empty:NTF \l__luatexcn_textflow_local_align_tl
+          { \tl_set_eq:NN \l__luatexcn_textflow_resolved_align_tl \l__luatexcn_textflow_default_align_tl }
+          { \tl_set_eq:NN \l__luatexcn_textflow_resolved_align_tl \l__luatexcn_textflow_local_align_tl }
 
         % Apply Font and Size
         \tl_if_empty:NTF \l_tmpb_tl
@@ -99,20 +112,21 @@
           }
 
         % Push style to stack and get style ID (Phase 3: Style Stack Management)
-        \edef\jiazhu_style_id{\lua_now:e {
+        \edef\textflow_style_id{\lua_now:e {
           local ~ textflow = require('core.luatex-cn-textflow')
-          local ~ style_id = textflow.jiazhu_push_style(
+          local ~ style_id = textflow.push_style(
             \tl_if_empty:NTF \l_tmpd_tl { nil } { [=[\luaescapestring{\tl_use:N \l_tmpd_tl}]=] },
             [=[\luaescapestring{\tl_use:N \l_tmpc_tl}]=],
-            \tl_if_empty:NTF \l_tmpb_tl { nil } { [=[\luaescapestring{\tl_use:N \l_tmpb_tl}]=] }
+            \tl_if_empty:NTF \l_tmpb_tl { nil } { [=[\luaescapestring{\tl_use:N \l_tmpb_tl}]=] },
+            \tl_if_empty:NTF \l__luatexcn_textflow_resolved_align_tl { nil } { [=[\luaescapestring{\tl_use:N \l__luatexcn_textflow_resolved_align_tl}]=] }
           )
           tex.print(tostring(style_id))
         }}
 
-        % CRITICAL: Set jiazhu attribute AFTER selectfont
+        % CRITICAL: Set textflow attribute AFTER selectfont
         \setluatexattribute\cnverticaljiazhu{1}
         \setluatexattribute\cnverticaljiazhumode{\l_tmpa_tl}
-        \setluatexattribute\cnverticalstyle{\jiazhu_style_id}
+        \setluatexattribute\cnverticalstyle{\textflow_style_id}
 
         % Restore block ID only (indent inherited from style stack)
         \cnverticalblockid = \savedblockid\relax
@@ -122,7 +136,7 @@
         % Pop style from stack
         \lua_now:n {
           local ~ textflow = require('core.luatex-cn-textflow')
-          textflow.jiazhu_pop_style()
+          textflow.pop_style()
         }
 
         \group_end:

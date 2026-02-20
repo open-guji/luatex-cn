@@ -21,8 +21,7 @@
 -- 本模块提供了文字字符在网格单元中的定位计算，被主文本和版心文本共同复用：
 --   1. position_glyph: 在指定坐标处放置单个字符，处理居中对齐
 --   2. create_vertical_text: 创建竖排文字链（用于版心鱼尾文字）
---   3. position_glyph_in_grid: 网格坐标定位（包装 position_glyph）
---   4. calc_grid_position: 纯坐标计算（不创建节点，用于 render.lua）
+--   3. calc_grid_position: 纯坐标计算（不创建节点，用于 render.lua）
 --
 -- 【注意事项】
 --   • 所有定位函数都考虑了字符的 height 和 depth，保证基线对齐正确
@@ -37,10 +36,8 @@
 --      │     → 返回 (x_offset, y_offset)，用于 render.lua 直接设置
 --      ├─ position_glyph(glyph, x, y, params)
 --      │     → 设置 glyph.xoffset/yoffset，返回 (glyph, kern)
---      ├─ create_vertical_text(text, params)
---      │     → 创建完整的字符链（用于版心）
---      └─ position_glyph_in_grid(glyph, col, row, params)
---            → 网格坐标包装器
+--      └─ create_vertical_text(text, params)
+--            → 创建完整的字符链（用于版心）
 --
 --
 -- ============================================================================
@@ -67,22 +64,6 @@ local function calculate_rtl_position(col, total_cols, grid_width, half_thicknes
     local rtl_col = total_cols - 1 - col
     local x_pos = rtl_col * grid_width + (half_thickness or 0) + (shift_x or 0)
     return rtl_col, x_pos
-end
-
---- 计算块级元素的 RTL X 坐标
--- 块级元素可能跨越多列，需要计算其左边缘位置。
---
--- @param col (number) 起始列号
--- @param width (number) 块宽度（列数）
--- @param total_cols (number) 总列数
--- @param grid_width (number) 网格宽度 (sp)
--- @param half_thickness (number) 边框半厚度 (sp)
--- @param shift_x (number) X 偏移量 (sp)
--- @return (number) x_position
-local function calculate_rtl_block_position(col, width, total_cols, grid_width, half_thickness, shift_x)
-    -- Original: (total_cols - (col + (width or 1))) * grid_width + half_thickness + shift_x
-    local rtl_col_left = total_cols - (col + (width or 1))
-    return (rtl_col_left * grid_width) + (half_thickness or 0) + (shift_x or 0)
 end
 
 --- 计算 Y 坐标（基于行号）
@@ -168,45 +149,6 @@ local function position_glyph(glyph_direct, x, y, params)
 end
 
 
---- 在网格单元中定位字形（供主文本渲染使用）
--- 这是一个便捷包装函数，用于在行列网格中定位字形。
---
--- @param glyph_direct (node) 要定位的字形节点的直接引用
--- @param col (number) 列索引（从 0 开始，RTL 转换由调用者处理）
--- @param row (number) 行索引（从 0 开始）
--- @param params (table) 参数表:
---   - grid_width (number) 每个网格单元的宽度 (sp)
---   - grid_height (number) 每个网格单元的高度 (sp)
---   - total_cols (number) 总列数（用于 RTL 计算）
---   - shift_x (number) 边距/边框的 X 轴偏移 (sp)
---   - shift_y (number) 边距/边框的 Y 轴偏移 (sp)
---   - v_align (string) 垂直对齐: "top", "center", "bottom"
---   - half_thickness (number) 边框厚度的一半 (sp)
--- @return (node, node) 字形节点和负 kern 节点
-local function position_glyph_in_grid(glyph_direct, col, row, params)
-    local grid_width = params.grid_width or 0
-    local grid_height = params.grid_height or 0
-    local total_cols = params.total_cols or 1
-    local shift_x = params.shift_x or 0
-    local shift_y = params.shift_y or 0
-    local v_align = params.v_align or "center"
-    local half_thickness = params.half_thickness or 0
-
-    -- Calculate RTL column position
-    local rtl_col = total_cols - 1 - col
-
-    -- Calculate cell position
-    local cell_x = rtl_col * grid_width + half_thickness + shift_x
-    local cell_y = -row * grid_height - shift_y
-
-    return position_glyph(glyph_direct, cell_x, cell_y, {
-        cell_width = grid_width,
-        cell_height = grid_height,
-        h_align = "center",
-        v_align = v_align,
-    })
-end
-
 --- 计算网格位置坐标（纯计算，不操作节点）
 -- 供 render.lua 使用，用于主文本定位，其中节点被就地修改。
 --
@@ -237,19 +179,14 @@ local function get_visual_center(char_code, font_id)
     end
 
     local res
-    local method = "bbox"
     if bbox and #bbox >= 3 then
         local units_per_em = f.units_per_em or 1000
         local raw_v_center = (bbox[1] + bbox[3]) / 2
         res = raw_v_center * (f.size / units_per_em)
     else
         -- Fallback: EM-width centering
-        method = "fallback"
         res = (c.width or 0) / 2
     end
-
-    -- --- DEBUG: Log the visual center calculation (Removed) ---
-    -- if debug.is_enabled("render") then ... end
 
     return res
 end
@@ -297,8 +234,8 @@ local function calc_grid_position(col, row, glyph_dims, params)
     -- Calculate X offset based on horizontal alignment
     local x_offset
     if sub_col > 0 then
-        -- Jiazhu logic
-        x_offset = textflow.calculate_sub_column_x_offset(base_x, grid_width, w, sub_col, params.jiazhu_align)
+        -- TextFlow logic
+        x_offset = textflow.calculate_sub_column_x_offset(base_x, grid_width, w, sub_col, params.textflow_align)
     elseif h_align == "left" then
         x_offset = base_x
     elseif h_align == "right" then
@@ -328,7 +265,6 @@ end
 -- Internal functions for unit testing
 local _internal = {
     calculate_rtl_position = calculate_rtl_position,
-    calculate_rtl_block_position = calculate_rtl_block_position,
     calculate_y_position = calculate_y_position,
 }
 
@@ -336,10 +272,8 @@ local _internal = {
 local text_position = {
     get_visual_center = get_visual_center,
     position_glyph = position_glyph,
-    position_glyph_in_grid = position_glyph_in_grid,
     calc_grid_position = calc_grid_position,
     calculate_rtl_position = calculate_rtl_position,
-    calculate_rtl_block_position = calculate_rtl_block_position,
     calculate_y_position = calculate_y_position,
     _internal = _internal,
 }

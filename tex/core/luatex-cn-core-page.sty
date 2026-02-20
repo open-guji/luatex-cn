@@ -12,7 +12,7 @@
 % See the License for the specific language governing permissions and
 % limitations under the License.
 
-\ProvidesExplPackage{core/luatex-cn-core-page}{2026/02/01} {0.2.3}{Page geometry and background support}
+\ProvidesExplPackage{core/luatex-cn-core-page}{2026/02/03} {0.2.4}{Page geometry and background support}
 
 % Global token lists for page parameters (centralized)
 \tl_new:N \l__luatexcn_page_paper_width_tl
@@ -24,6 +24,8 @@
 \tl_new:N \l__luatexcn_page_background_color_tl
 \tl_new:N \l__luatexcn_page_footskip_tl
 \tl_new:N \l__luatexcn_page_topskip_tl
+\bool_new:N \l__luatexcn_page_split_enabled_bool
+\bool_new:N \l__luatexcn_page_split_right_first_bool
 
 \keys_define:nn { luatexcn / page }
   {
@@ -54,6 +56,13 @@
     topskip .tl_set:N = \l__luatexcn_page_topskip_tl,
     topskip .initial:n = {0pt},
 
+    % Split page (筒子页) configuration
+    page-split-enabled .bool_set:N = \l__luatexcn_page_split_enabled_bool,
+    page-split-enabled .initial:n = true,
+
+    page-split-right-first .bool_set:N = \l__luatexcn_page_split_right_first_bool,
+    page-split-right-first .initial:n = true,
+
     unknown .code:n = {},
   }
 
@@ -73,6 +82,9 @@
     }
   }
 
+% Flag to track if geometry has been initialized (margins set to 0)
+\bool_new:N \g__luatexcn_geometry_initialized_bool
+
 \cs_new:Npn \luatexcn_apply_geometry:
   {
     % IMPORTANT: We set ALL geometry margins to 0, and handle margins manually in Lua.
@@ -80,32 +92,165 @@
     % The actual margin values are stored in token lists and passed to Lua for positioning.
     \if_meaning:w \@onlypreamble \@notprerr
       % In document body
-      \newgeometry{
-        paperwidth=\l__luatexcn_page_paper_width_tl,
-        paperheight=\l__luatexcn_page_paper_height_tl,
-        top=0pt,
-        bottom=0pt,
-        left=0pt,
-        right=0pt,
-        footskip=0pt
-      }
-      % Manual paper size adjustment for LuaTeX if changed in body
-      \dim_set:Nn \pagewidth { \l__luatexcn_page_paper_width_tl }
-      \dim_set:Nn \pageheight { \l__luatexcn_page_paper_height_tl }
-      \dim_set:Nn \topskip { \l__luatexcn_page_topskip_tl }
+      \bool_if:NF \g__luatexcn_geometry_initialized_bool
+        {
+          % First time - need to set margins to 0 via \newgeometry
+          \newgeometry{
+            top=0pt, bottom=0pt, left=0pt, right=0pt, footskip=0pt
+          }
+          \bool_gset_true:N \g__luatexcn_geometry_initialized_bool
+        }
     \else
       % In preamble
       \geometry{
         paperwidth=\l__luatexcn_page_paper_width_tl,
         paperheight=\l__luatexcn_page_paper_height_tl,
-        top=0pt,
-        bottom=0pt,
-        left=0pt,
-        right=0pt,
-        footskip=0pt
+        top=0pt, bottom=0pt, left=0pt, right=0pt, footskip=0pt
       }
-      \dim_set:Nn \topskip { \l__luatexcn_page_topskip_tl }
+      \bool_gset_true:N \g__luatexcn_geometry_initialized_bool
     \fi
+    % Set paper/page dimensions and topskip (common for all branches)
+    % Must set both \paperwidth and \pagewidth for TikZ overlays (e.g. seal stamps)
+    \dim_set:Nn \paperwidth { \l__luatexcn_page_paper_width_tl }
+    \dim_set:Nn \paperheight { \l__luatexcn_page_paper_height_tl }
+    \dim_set:Nn \pagewidth { \l__luatexcn_page_paper_width_tl }
+    \dim_set:Nn \pageheight { \l__luatexcn_page_paper_height_tl }
+    \dim_set:Nn \topskip { \l__luatexcn_page_topskip_tl }
+  }
+
+% ============================================================================
+% Page Environment
+% Applies new page layout settings for content within the environment
+% Usage: \begin{page}[paper-width=21cm, paper-height=29.7cm, margin-top=1cm, ...]
+% Accepts all parameters from luatexcn/page namespace.
+% After the environment ends, page settings are restored to previous values.
+% ============================================================================
+
+\RequirePackage{environ}
+
+% Helper to sync Lua page state back to TeX token lists
+\cs_new:Npn \__luatexcn_page_sync_from_lua:
+  {
+    \tl_set:Nx \l__luatexcn_page_paper_width_tl { \lua_now:n { tex.sprint(require('core.luatex-cn-core-page').get_dim_str('paper_width')) } }
+    \tl_set:Nx \l__luatexcn_page_paper_height_tl { \lua_now:n { tex.sprint(require('core.luatex-cn-core-page').get_dim_str('paper_height')) } }
+    \tl_set:Nx \l__luatexcn_page_margin_top_tl { \lua_now:n { tex.sprint(require('core.luatex-cn-core-page').get_dim_str('margin_top')) } }
+    \tl_set:Nx \l__luatexcn_page_margin_bottom_tl { \lua_now:n { tex.sprint(require('core.luatex-cn-core-page').get_dim_str('margin_bottom')) } }
+    \tl_set:Nx \l__luatexcn_page_margin_left_tl { \lua_now:n { tex.sprint(require('core.luatex-cn-core-page').get_dim_str('margin_left')) } }
+    \tl_set:Nx \l__luatexcn_page_margin_right_tl { \lua_now:n { tex.sprint(require('core.luatex-cn-core-page').get_dim_str('margin_right')) } }
+    \str_if_eq:eeTF { \lua_now:n { tex.sprint(require('core.luatex-cn-core-page').get_split_str('enabled')) } } { true }
+      { \bool_set_true:N \l__luatexcn_page_split_enabled_bool }
+      { \bool_set_false:N \l__luatexcn_page_split_enabled_bool }
+    \str_if_eq:eeTF { \lua_now:n { tex.sprint(require('core.luatex-cn-core-page').get_split_str('right_first')) } } { true }
+      { \bool_set_true:N \l__luatexcn_page_split_right_first_bool }
+      { \bool_set_false:N \l__luatexcn_page_split_right_first_bool }
+  }
+
+\NewEnviron{Page}[1][]{%
+    \clearpage
+    % Save current settings in Lua (includes split state)
+    \lua_now:n { require('core.luatex-cn-core-page').save() }
+    % Apply new settings
+    \keys_set:nn { luatexcn / page } { #1 }
+    % Sync page dimensions to Lua (must be before split enable/disable)
+    \lua_now:e {
+      local~page~=~require('core.luatex-cn-core-page');~
+      page.setup({
+        paper_width~=~"\l__luatexcn_page_paper_width_tl",
+        paper_height~=~"\l__luatexcn_page_paper_height_tl",
+        margin_top~=~"\l__luatexcn_page_margin_top_tl",
+        margin_bottom~=~"\l__luatexcn_page_margin_bottom_tl",
+        margin_left~=~"\l__luatexcn_page_margin_left_tl",
+        margin_right~=~"\l__luatexcn_page_margin_right_tl"
+      });~
+    }
+    \luatexcn_apply_geometry:
+    % Sync split page settings to Lua and apply
+    \__luatexcn_page_split_sync:
+    \bool_if:NTF \l__luatexcn_page_split_enabled_bool
+      { \lua_now:n { require('core.luatex-cn-core-page').split.enable() } }
+      { \lua_now:n { require('core.luatex-cn-core-page').split.disable() } }
+    \BODY
+    \clearpage
+    % Restore previous settings from Lua (includes split state)
+    % Note: page.restore() calls split.enable/disable which sets pagewidth/pageheight directly
+    \lua_now:n { require('core.luatex-cn-core-page').restore() }
+    % Sync restored Lua state back to TeX token lists (for subsequent code that reads them)
+    \__luatexcn_page_sync_from_lua:
+    % Do NOT call \luatexcn_apply_geometry: here - it uses \newgeometry which does \clearpage
+    % and would create an empty page. The dimensions are already set by split.enable/disable.
+}
+
+% CJK alias for Page environment
+\NewEnvironmentCopy{页}{Page}
+
+% ============================================================================
+% Page Split (筒子页) - splits each page into two half-pages
+% State is stored in _G.page.split (Lua global) for cross-module communication
+% ============================================================================
+
+% Sync TeX keys to Lua global state
+\cs_new:Npn \__luatexcn_page_split_sync:
+  {
+    \lua_now:e {
+      _G.page.split.enabled = \bool_if:NTF \l__luatexcn_page_split_enabled_bool {true} {false};
+      _G.page.split.right_first = \bool_if:NTF \l__luatexcn_page_split_right_first_bool {true} {false};
+    }
+  }
+
+% Enable split page processing
+\NewDocumentCommand{\enableSplitPage}{ O{} }
+  {
+    \tl_if_empty:nF { #1 } { \keys_set:nn { luatexcn / page } { #1 } }
+    \__luatexcn_page_split_sync:
+    \lua_now:n { require('core.luatex-cn-core-page').split.enable() }
+  }
+
+% Disable split page processing
+\NewDocumentCommand{\disableSplitPage}{ }
+  {
+    \lua_now:n { require('core.luatex-cn-core-page').split.disable() }
+  }
+
+% CJK aliases
+\NewCommandCopy{\启用分页裁剪}{\enableSplitPage}
+\NewCommandCopy{\禁用分页裁剪}{\disableSplitPage}
+
+% Helper: apply split page if enabled
+\cs_new:Npn \__luatexcn_page_apply_split:
+  {
+    \bool_if:NT \l__luatexcn_page_split_enabled_bool
+      { \enableSplitPage }
+  }
+
+% ============================================================================
+% Page Number Commands
+% ============================================================================
+
+% Command to reset page number to 1
+\NewDocumentCommand{\ResetPageNumber}{ }
+  {
+    \lua_now:e { core.reset_page_number(); }
+  }
+
+% Command to set page number to arbitrary value
+\NewDocumentCommand{\SetPageNumber}{ m }
+  {
+    \lua_now:e { core.set_page_number(#1); }
+  }
+\NewCommandCopy{\设置页码}{\SetPageNumber}
+
+% ============================================================================
+% Override page break commands for grid content
+% ============================================================================
+
+\cs_new_protected:Npn \__luatexcn_page_override_pagebreak:
+  {
+    \RenewDocumentCommand{\newpage}{}{\penalty-10003 }
+    \RenewDocumentCommand{\clearpage}{}{\penalty-10003 }
+    \cs_set:Npn \chapter ##1 {
+      \directlua { core.insert_chapter_marker( "\luaescapestring{ \tl_to_str:n { ##1 } }" ) }
+      \box0\relax
+    }
   }
 
 \endinput

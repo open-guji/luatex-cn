@@ -185,9 +185,9 @@ local function is_center_gap_col(col, params, grid_height)
     local gap_half_width = 15 * 65536 -- 15pt in sp
 
     local floating_x = params and params.floating_x or 0
-    if not (params and params.floating) then
-        -- actually, main text col 0 is anchored to margin_right.
-        -- So floating_x for main text's right origin is margin_right.
+    if floating_x <= 0 then
+        -- No explicit floating_x provided, use margin_right as the right origin
+        -- (main text col 0 is anchored to margin_right)
         floating_x = get_margin_right(params)
     end
 
@@ -549,8 +549,6 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
         ::start_of_loop::
         local id = D.getid(t)
 
-        -- Logging for diagnostic
-        -- print(string.format("[D-layout-trace] Node=%s ID=%d [WHATSIT_REF=%d]", tostring(t), id, constants.WHATSIT or -1))
         if id == constants.WHATSIT then
             -- Position transparently at current cursor
             local map_entry = {
@@ -573,7 +571,6 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
             end
 
             layout_map[t] = map_entry
-            -- print(string.format("[D-layout] WHATSIT Node=%s [p:%d, c:%d, r:%d]", tostring(t), ctx.cur_page, ctx.cur_col, ctx.cur_row))
             t = D.getnext(t)
             if not t then break end
             goto start_of_loop
@@ -647,12 +644,12 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
 
         apply_indentation(ctx, indent)
 
-        local is_jiazhu = D.get_attribute(t, constants.ATTR_JIAZHU) == 1
-        if is_jiazhu then
+        local is_textflow = D.get_attribute(t, constants.ATTR_JIAZHU) == 1
+        if is_textflow then
             local textflow = package.loaded['core.luatex-cn-core-textflow'] or
                 require('core.luatex-cn-core-textflow')
 
-            local jiazhu_mode = D.get_attribute(t, constants.ATTR_JIAZHU_MODE) or 0
+            local textflow_mode = D.get_attribute(t, constants.ATTR_JIAZHU_MODE) or 0
             local place_params = {
                 effective_limit = effective_limit,
                 line_limit = line_limit,
@@ -660,7 +657,7 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
                 r_indent = r_indent,
                 block_id = block_id,
                 first_indent = first_indent,
-                jiazhu_mode = jiazhu_mode
+                textflow_mode = textflow_mode
             }
             local callbacks = {
                 flush = flush_buffer,
@@ -671,7 +668,7 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
                 debug = function(msg) dbg.log(msg) end
             }
 
-            t = textflow.place_jiazhu_nodes(ctx, t, layout_map, place_params, callbacks)
+            t = textflow.place_nodes(ctx, t, layout_map, place_params, callbacks)
 
             if not t then break end
             goto start_of_loop

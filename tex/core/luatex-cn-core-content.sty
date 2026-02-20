@@ -13,7 +13,7 @@
 % limitations under the License.
 
 \RequirePackage{core/luatex-cn-core-base}
-\ProvidesExplPackage{core/luatex-cn-core-content}{2026/02/01} {0.2.3}{Content layout and border support}
+\ProvidesExplPackage{core/luatex-cn-core-content}{2026/02/03} {0.2.4}{Content layout and border support}
 
 % Centralized variables for content border settings
 \bool_new:N \l__luatexcn_content_border_bool
@@ -115,36 +115,17 @@
     unknown .code:n = { \keys_set:nx { luatexcn / page } { \l_keys_key_tl = { #1 } } },
   }
 
-\NewDocumentCommand{\contentSetup}{ m }
+% Internal: Sync content parameters to Lua (idempotent, can be called multiple times)
+\cs_new_protected:Npn \__luatexcn_content_sync_to_lua:
   {
-    \keys_set:nn { luatexcn / content } { #1 }
-  }
-
-% Internal function to call Lua for Grid Layout
-\cs_new_protected:Npn \__luatexcn_content_process_grid:n #1
-  {
-    % Put content into a vbox to preserve structure (paragraphs)
-    \vbox_set:Nn \l_tmpa_box
-      {
-        \dim_set_eq:NN \hsize \c_max_dim
-        \dim_set_eq:NN \hfuzz \c_max_dim
-        \int_set:Nn \hbadness { 10000 }
-        \dim_zero:N \parindent
-        #1
-      }
-    % Call Lua to transform the box
-    \skip_zero:N \topskip
-    
     % Convert colors to normalized RGB strings for Lua
     \__luatexcn_color_to_rgb:NN \l__luatexcn_content_border_color_tl \l__luatexcn_content_border_rgb_tl
     \__luatexcn_color_to_rgb_or_nil:NN \l__luatexcn_page_background_color_tl \l__luatexcn_content_background_rgb_tl
     \__luatexcn_color_to_rgb_or_nil:NN \l__luatexcn_content_font_color_tl \l__luatexcn_content_font_rgb_tl
 
-    % Setup content parameters in _G.content (parsed once, used in Lua)
-    % Includes both layout params and visual params (colors already converted to RGB)
+    % Sync params to Lua (idempotent)
     \lua_now:e {
-      local~content_mod~=~require('core.luatex-cn-core-content')
-      content_mod.setup({
+      require('core.luatex-cn-core-content').sync_params({
         border_on~=~\bool_if:NTF~\l__luatexcn_content_border_bool~{true}~{false},
         outer_border_on~=~\bool_if:NTF~\l__luatexcn_content_outer_border_bool~{true}~{false},
         border_thickness~=~[=[\luaescapestring{\l__luatexcn_content_border_thickness_tl}]=],
@@ -163,8 +144,34 @@
         font_size~=~[=[\luaescapestring{\l__luatexcn_content_font_size_tl}]=]
       })
     }
+  }
 
-    % Process content (only layout-specific params that vary per invocation)
+\NewDocumentCommand{\contentSetup}{ m }
+  {
+    \keys_set:nn { luatexcn / content } { #1 }
+  }
+
+% Internal function to call Lua for Grid Layout
+\cs_new_protected:Npn \__luatexcn_content_process_grid:n #1
+  {
+    % Put content into a vbox to preserve structure (paragraphs)
+    \vbox_set:Nn \l_tmpa_box
+      {
+        \dim_set_eq:NN \hsize \c_max_dim
+        \dim_set_eq:NN \hfuzz \c_max_dim
+        \int_set:Nn \hbadness { 10000 }
+        \dim_zero:N \parindent
+        #1
+      }
+    \skip_zero:N \topskip
+
+    % Final sync (catches any overrides from environment optional args)
+    \__luatexcn_content_sync_to_lua:
+
+    % Initialize content style (once per content block)
+    \lua_now:n { require('core.luatex-cn-core-content').init_style() }
+
+    % Process content
     \lua_now:e {
       core.process(\int_value:w \l_tmpa_box, {
         height~=~[=[\luaescapestring{\l__luatexcn_content_height_tl}]=],
@@ -174,8 +181,8 @@
   }
 
 % Define Main Command with Key-Value interface
-% Syntax: \VerticalRTT[key=val]{text}
-\NewDocumentCommand{\VerticalRTT}{ O{} +m }
+% Syntax: \Content[key=val]{text}
+\NewDocumentCommand{\Content}{ O{} +m }
   {
     \par\noindent
     \group_begin:
@@ -183,6 +190,8 @@
     \__luatexcn_content_process_grid:n { #2 }
     \group_end:
   }
+% Backward compatibility alias
+\NewCommandCopy{\VerticalRTT}{\Content}
 
 % Space Command - inserts a space that occupies grid cells in vertical layout
 % In CJK text, normal ASCII spaces are often absorbed; use this for explicit spacing
@@ -259,38 +268,26 @@
       }
   }
 
-% ============================================================================
-% Base Content Environment (ltc-content)
-% A minimal content environment that classes can extend
-% ============================================================================
-
-\RequirePackage{environ}
-
-\NewEnviron{ltc-content}[1][]{%
-    \group_begin:
-    \keys_set:nn { luatexcn / content } { #1 }
-
-    % Setup font
-    \__luatexcn_content_setup_font:
-
-    % Zero skips
-    \__luatexcn_content_zero_skips:
-
-    % Calculate height if not set
-    \__luatexcn_content_calc_height:
-
-    % Apply geometry
-    \luatexcn_apply_geometry:
-
-    % Apply background color
-    \__luatexcn_content_apply_background:
-
-    % Process content
-    \nointerlineskip
-    \__luatexcn_content_process_grid:n { \BODY }
-    \group_end:
-    \clearpage
-}
+% Helper: Auto-layout calculation for guji-style content
+% Calls Lua to compute grid dimensions based on page and content parameters
+\cs_new_protected:Npn \__luatexcn_content_auto_layout:
+  {
+    \lua_now:e {
+      require('core.luatex-cn-core-content').guji_auto_layout({
+        border_on~=~\bool_if:NTF~\l__luatexcn_content_border_bool~{true}~{false},
+        outer_border_on~=~\bool_if:NTF~\l__luatexcn_content_outer_border_bool~{true}~{false},
+        border_thickness~=~"\l__luatexcn_content_border_thickness_tl",
+        outer_border_thickness~=~"\l__luatexcn_content_outer_border_thickness_tl",
+        outer_border_sep~=~"\l__luatexcn_content_outer_border_sep_tl",
+        border_padding_top~=~"\l__luatexcn_content_border_padding_top_tl",
+        border_padding_bottom~=~"\l__luatexcn_content_border_padding_bottom_tl",
+        n_column~=~\int_use:N~\l__luatexcn_content_n_column_int,
+        n_char_per_col~=~\int_use:N~\l__luatexcn_content_n_char_per_col_int,
+        grid_height~=~"\l__luatexcn_content_grid_height_tl",
+      })
+    }
+    \LtcIfDebugT { \iow_term:x { Guji~Layout:~grid-width=\l__luatexcn_content_grid_width_tl~,~grid-height=\l__luatexcn_content_grid_height_tl~,~height=\l__luatexcn_content_height_tl } }
+  }
 
 \ExplSyntaxOff
 \NewCommandCopy{\空格}{\Space}

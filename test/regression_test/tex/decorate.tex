@@ -3,17 +3,50 @@
 
 \begin{document}
 \begin{正文}
-天\装饰{、}、天
 
-、
+% 基本用法：默认圈点
+\decorate{天地}默认圈点
 
-天\装饰[scale=2]{、}
+% 自定义装饰字符
+\decorate[char=、]{宇宙}顿号装饰
 
-天\装饰[color=red, xshift=-0.3em, yshift=0.3em, scale=1.2]{、}
+% 颜色测试
+\decorate[char=。, color=blue]{日月}蓝色圈点
 
-天\装饰[color=red, xshift=-0.5em, yshift=0.5em, scale=1.2]{、}
+\decorate[char=●, color=green, scale=0.4]{辰宿}绿色实心点
 
-天\改{地}人
+% 位置偏移测试
+\decorate[char=。, xoffset=-0.3em]{寒来}右偏移
+
+\decorate[char=。, yoffset=0.3em]{秋收}下偏移
+
+% 缩放测试
+\decorate[char=。, scale=0.5]{闰余}缩小圈点
+
+\decorate[char=●, scale=0.6, color=red]{律吕}红色实心点
+
+% 混合使用
+云腾\decorate[char=。]{致雨}露结\decorate[char=、]{为霜}混合装饰
+
+% 改字功能
+天\改{地}改字测试
+
+% EmphasisMark 着重号功能
+\EmphasisMark{金生}着重号默认
+
+\圈点[color=blue]{丽水}蓝色圈点
+
+\着重号[color=green]{玉出}绿色着重号
+
+% underline 下划线功能
+\下划线{昆岗}默认下划线
+
+\专名号[color=blue]{玉出}蓝色下划线
+
+% WavyUnderline 波浪线功能
+\波浪线{剑号}默认波浪线
+
+\书名号[color=blue]{巨阙}蓝色波浪线
 
 \end{正文}
 \end{document}

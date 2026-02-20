@@ -166,23 +166,39 @@ function sidenote.render(head, layout_map, params, context, engine_ctx, page_idx
 
     -- Append sidenote sublist to end of main list (so sidenotes render on top of borders)
     if sn_head then
-        -- Wrap sidenote content with color nodes if color is specified
-        -- This ensures color is maintained across page boundaries
+        -- ALWAYS wrap sidenote content with q/Q to prevent color leakage
+        -- This is critical when sidenotes cross page boundaries, as embedded
+        -- pdf_colorstack nodes (from TeX \color commands) may be split across pages
+        local q_push = utils.create_pdf_literal("q")
+        sn_head = D.insert_before(sn_head, sn_head, q_push)
+
+        -- Set the sidenote color from style_registry. This is important for
+        -- cross-page sidenotes where the second page's content may not have
+        -- the colorstack push (which is on the first page).
+        -- Also serves as a color reset to prevent leakage from unbalanced pops.
+        local last_inserted = q_push
         if sidenote_color and sidenote_color ~= "" then
             local rgb_str = utils.normalize_rgb(sidenote_color)
-            -- Insert color push at the beginning (fill color)
-            local color_cmd = utils.create_color_literal(rgb_str, false)  -- false = fill color (rg)
-            local color_push = utils.create_pdf_literal("q " .. color_cmd)
-            sn_head = D.insert_before(sn_head, sn_head, color_push)
-
-            -- Find the tail and insert color pop at the end
-            local sn_tail = sn_head
-            while D.getnext(sn_tail) do
-                sn_tail = D.getnext(sn_tail)
+            if rgb_str then
+                local color_cmd = string.format("%s rg %s RG", rgb_str, rgb_str)
+                local color_literal = utils.create_pdf_literal(color_cmd)
+                D.insert_after(sn_head, q_push, color_literal)
+                last_inserted = color_literal
             end
-            local color_pop = utils.create_pdf_literal("Q")
-            D.insert_after(sn_head, sn_tail, color_pop)
+        else
+            -- Fallback: reset to black if no color specified
+            local color_reset = utils.create_pdf_literal("0 0 0 rg 0 0 0 RG")
+            D.insert_after(sn_head, q_push, color_reset)
+            last_inserted = color_reset
         end
+
+        -- Find the tail and insert Q at the end
+        local sn_tail = sn_head
+        while D.getnext(sn_tail) do
+            sn_tail = D.getnext(sn_tail)
+        end
+        local q_pop = utils.create_pdf_literal("Q")
+        D.insert_after(sn_head, sn_tail, q_pop)
 
         if not d_head then
             d_head = sn_head
@@ -235,9 +251,10 @@ local function is_reserved_column(col, banxin_on, interval)
 end
 
 local function skip_to_valid_column(p, c, p_cols, banxin_on, interval)
-    while is_reserved_column(c, banxin_on, interval) or
-        is_reserved_column(c - 1, banxin_on, interval) or
-        (c >= p_cols) do
+    -- Only skip reserved columns (banxin), not the column right after banxin
+    -- Sidenotes are offset to the right of the main text column, so they won't
+    -- overlap with the banxin on the left
+    while is_reserved_column(c, banxin_on, interval) or (c >= p_cols) do
         if c >= p_cols then
             c = 0
             p = p + 1
@@ -279,17 +296,18 @@ local function calculate_next_node_pos(curr_p, curr_c, curr_r, node_id, config)
     local next_p, next_c, next_r = curr_p, curr_c, curr_r
 
     -- Determine if this node consumes a row
+    -- Note: GLUE nodes (spaces) should NOT consume rows in vertical typesetting
     if node_id == constants.GLYPH or node_id == constants.HLIST or
-        node_id == constants.VLIST or node_id == constants.RULE or
-        node_id == constants.GLUE then
+        node_id == constants.VLIST or node_id == constants.RULE then
         next_r = curr_r + config.step
     end
 
     -- Handle overflow
     if next_r + config.padding_bottom_grid >= config.line_limit then
         next_c = curr_c + 1
-        -- Reset to base_indent instead of just padding_top
-        next_r = math.max(config.base_indent, config.padding_top_grid)
+        -- Use base_indent directly for column wrap alignment (fix for issue #47)
+        -- padding_top_grid is only for the first column start, not for wrapped columns
+        next_r = config.base_indent
         next_p, next_c = skip_to_valid_column(next_p, next_c, config.p_cols, config.banxin_on, config.interval)
 
         local filled = config.tracker.get(next_p, next_c)

@@ -168,6 +168,8 @@ texio.write_nl("term_and_log", string.format("[DEBUG] param = %s", tostring(para
 
 ## 二、 expl3 语法陷阱
 
+> **详细文档**: 参见 `ai_must_read/expl3_note.md` - 包含参数展开、xparse 陷阱等完整说明
+
 ### 2.1 空格与换行被忽略
 
 **问题**：`ExplSyntaxOn` 模式下空格被忽略，影响配置文件加载和 Lua 代码。

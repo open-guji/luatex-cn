@@ -170,17 +170,13 @@ local function build_sub_params(params, col_aligns)
     local style_registry = package.loaded['util.luatex-cn-style-registry']
     local current_id = style_registry and style_registry.current_id()
 
-    -- Resolve border: explicit param > inherited from style stack > default false
-    local border_on = false
+    -- Track if border was explicitly set (for style stack push)
+    -- nil = not set (inherit), true/false = explicitly set
+    local border_explicit = nil
     if params.border == "true" or params.border == true then
-        border_on = true
+        border_explicit = true
     elseif params.border == "false" or params.border == false then
-        border_on = false
-    elseif style_registry then
-        local inherited = style_registry.get_border(current_id)
-        if inherited ~= nil then
-            border_on = inherited
-        end
+        border_explicit = false
     end
 
     -- Resolve border_width: explicit param > inherited > default "0.4pt"
@@ -210,10 +206,11 @@ local function build_sub_params(params, col_aligns)
         grid_height = params.grid_height,
         box_align = params.box_align,
         column_aligns = col_aligns,
-        border_on = border_on,
+        border_explicit = border_explicit,  -- nil=inherit, true/false=explicit
         background_color = params.background_color,
         font_color = params.font_color,
         font_size = params.font_size,
+        vertical_align = params.vertical_align,
         is_textbox = true,
         distribute = (ba == "fill"),
         -- Border parameters (resolved from params or style stack)
@@ -268,18 +265,33 @@ local function execute_layout_pipeline(box_num, sub_params, current_indent)
 
     -- Push textbox style to override inherited styles (fix #37)
     -- - indent/first_indent = 0: textbox content should not inherit paragraph indent
-    -- - border settings: push to style stack for nested components
+    -- - border: only push if explicitly set (nil = inherit from parent)
     -- - outer_border = false: textbox never has outer border (content-only feature)
     local style_registry = package.loaded['util.luatex-cn-style-registry'] or
         require('util.luatex-cn-style-registry')
-    style_registry.push({
+    local style_overrides = {
         indent = 0,
         first_indent = 0,
-        border = sub_params.border_on,
         border_width = sub_params.border_width,
         border_color = sub_params.border_color,
         outer_border = false,  -- TextBox never has outer border
-    })
+    }
+    -- Only include border if explicitly set (nil means inherit from parent)
+    if sub_params.border_explicit ~= nil then
+        style_overrides.border = sub_params.border_explicit
+    end
+    -- Only include font params if explicitly set
+    if sub_params.font_color and sub_params.font_color ~= "" then
+        style_overrides.font_color = sub_params.font_color
+    end
+    if sub_params.font_size and sub_params.font_size ~= "" then
+        style_overrides.font_size = sub_params.font_size
+    end
+    -- Only include vertical_align if explicitly set
+    if sub_params.vertical_align and sub_params.vertical_align ~= "" then
+        style_overrides.vertical_align = sub_params.vertical_align
+    end
+    style_registry.push(style_overrides)
 
     -- Clear indent attributes on all nodes in the textbox content (fix #37)
     -- ATTR_INDENT takes priority over style registry, so we must clear it
@@ -669,7 +681,8 @@ function textbox.render_floating_box(p_head, item, params)
     local page = params.page or params
 
     -- Get paper dimensions
-    local splitpage_mod = _G.splitpage
+    local page_mod = package.loaded['core.luatex-cn-core-page']
+    local split_mod = page_mod and page_mod.split
     local full_paper_width = (_G.page and _G.page.paper_width and _G.page.paper_width > 0) and _G.page.paper_width or
         page.p_width or page.paper_width or page.width or 0
     local full_paper_height = (_G.page and _G.page.paper_height and _G.page.paper_height > 0) and _G.page.paper_height or
@@ -678,20 +691,21 @@ function textbox.render_floating_box(p_head, item, params)
 
     -- For split page: coordinates are relative to the logical page (half width)
     local split_page_offset = 0
-    if splitpage_mod and splitpage_mod.enabled and splitpage_mod.target_width > 0 then
-        logical_page_width = splitpage_mod.target_width
+    local split_target_width = split_mod and split_mod.get_target_width and split_mod.get_target_width() or 0
+    if split_mod and split_mod.is_enabled and split_mod.is_enabled() and split_target_width > 0 then
+        logical_page_width = split_target_width
         -- For page 1 (right half), we need to offset content into the right half of physical page
         -- Split page will then apply -logical_width shift to make right half visible
         split_page_offset = logical_page_width
     end
 
-    -- Get content area margins (geometry is 0, but splitpage adds these offsets during output)
+    -- Get content area margins (geometry is 0, but page.split adds these offsets during output)
     local m_top = (_G.page and _G.page.margin_top) or 0
     local m_left = (_G.page and _G.page.margin_left) or 0
 
     -- Position calculation:
     -- With geometry margins = 0, content origin is at paper edge (0, 0).
-    -- But splitpage.output_pages adds margin offsets when shipping out the page.
+    -- But page.split.output_pages adds margin offsets when shipping out the page.
     -- So the floating box (which is part of the content) will be shifted by (m_left, m_top).
     -- To compensate and keep the floating box at absolute paper coordinates,
     -- we SUBTRACT the margins from the position.
@@ -701,7 +715,7 @@ function textbox.render_floating_box(p_head, item, params)
     local position_from_logical_left = logical_page_width - item.x - w
     local rel_x = split_page_offset + position_from_logical_left - m_left
 
-    -- For y: subtract m_top to compensate for the margin shift in splitpage output
+    -- For y: subtract m_top to compensate for the margin shift in page.split output
     local rel_y = item.y - m_top
 
     -- Apply Kern & Shift
@@ -714,9 +728,16 @@ function textbox.render_floating_box(p_head, item, params)
     local k_post = D.new(constants.KERN)
     D.setfield(k_post, "kern", -(final_x + w))
 
-    p_head = D.insert_before(p_head, p_head, k_pre)
+    -- Wrap floating box with q/Q to isolate graphics state (prevent color leakage)
+    local utils = package.loaded['util.luatex-cn-utils'] or require('util.luatex-cn-utils')
+    local q_push = utils.create_pdf_literal("q")
+    local q_pop = utils.create_pdf_literal("Q")
+
+    p_head = D.insert_before(p_head, p_head, q_push)
+    D.insert_after(p_head, q_push, k_pre)
     D.insert_after(p_head, k_pre, curr)
     D.insert_after(p_head, curr, k_post)
+    D.insert_after(p_head, k_post, q_pop)
 
     -- If debug grid is enabled, draw coordinate marker at top-right corner
     -- Use mode=0 (relative to content) so marker only appears on the correct split page half

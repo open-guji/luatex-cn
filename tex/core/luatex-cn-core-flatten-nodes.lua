@@ -143,18 +143,18 @@ local function copy_node_with_attributes(t, indent, r_indent)
     if indent > 0 then D.set_attribute(copy, constants.ATTR_INDENT, indent) end
     if r_indent > 0 then D.set_attribute(copy, constants.ATTR_RIGHT_INDENT, r_indent) end
 
-    -- CRITICAL: Preserve jiazhu attributes (they are set by \jiazhu command)
-    local jiazhu_attr = D.get_attribute(t, constants.ATTR_JIAZHU)
-    if jiazhu_attr then
-        D.set_attribute(copy, constants.ATTR_JIAZHU, jiazhu_attr)
+    -- CRITICAL: Preserve textflow attributes (they are set by \TextFlow command)
+    local textflow_attr = D.get_attribute(t, constants.ATTR_JIAZHU)
+    if textflow_attr then
+        D.set_attribute(copy, constants.ATTR_JIAZHU, textflow_attr)
     end
-    local jiazhu_sub_attr = D.get_attribute(t, constants.ATTR_JIAZHU_SUB)
-    if jiazhu_sub_attr then
-        D.set_attribute(copy, constants.ATTR_JIAZHU_SUB, jiazhu_sub_attr)
+    local textflow_sub_attr = D.get_attribute(t, constants.ATTR_JIAZHU_SUB)
+    if textflow_sub_attr then
+        D.set_attribute(copy, constants.ATTR_JIAZHU_SUB, textflow_sub_attr)
     end
-    local jiazhu_mode_attr = D.get_attribute(t, constants.ATTR_JIAZHU_MODE)
-    if jiazhu_mode_attr then
-        D.set_attribute(copy, constants.ATTR_JIAZHU_MODE, jiazhu_mode_attr)
+    local textflow_mode_attr = D.get_attribute(t, constants.ATTR_JIAZHU_MODE)
+    if textflow_mode_attr then
+        D.set_attribute(copy, constants.ATTR_JIAZHU_MODE, textflow_mode_attr)
     end
 
     -- CRITICAL: Preserve block indentation attributes

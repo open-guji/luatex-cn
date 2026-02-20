@@ -13,7 +13,7 @@
 % limitations under the License.
 
 \RequirePackage{core/luatex-cn-core-base}
-\ProvidesExplPackage{core/luatex-cn-core-metadata}{2026/02/01} {0.2.3}{Book metadata management}
+\ProvidesExplPackage{core/luatex-cn-core-metadata}{2026/02/03} {0.2.4}{Book metadata management}
 
 % Load Lua module
 \lua_now:n { vertical_metadata = require('core.luatex-cn-core-metadata') }
@@ -87,6 +87,18 @@
   {
     \lua_now:e { vertical_metadata.insert_chapter_marker_to_box([=[\luaescapestring{#1}]=]) }
     \box_use:N \c_zero_int
+  }
+
+% ============================================================================
+% Chapter Command
+% ============================================================================
+% Sets chapter title in banxin and metadata, then resets page number
+\DeclareDocumentCommand{\chapter}{ m }
+  {
+    \keys_set:nn { luatexcn / banxin } { chapter-title = {#1} }
+    % Also set global metadata for layout phase (fixes issue #45 - chapter not showing on first page)
+    \metadataSetup{ chapter-title = {#1} }
+    \ResetPageNumber
   }
 
 \ExplSyntaxOff

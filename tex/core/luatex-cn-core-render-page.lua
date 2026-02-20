@@ -75,8 +75,8 @@ local content = package.loaded['core.luatex-cn-core-content'] or
     require('core.luatex-cn-core-content')
 local text_position = package.loaded['core.luatex-cn-render-position'] or
     require('luatex-cn-render-position')
-local decorate_mod = package.loaded['decorate.luatex-cn-decorate-main'] or
-    require('decorate.luatex-cn-decorate-main')
+local decorate_mod = package.loaded['decorate.luatex-cn-decorate'] or
+    require('decorate.luatex-cn-decorate')
 local debug = package.loaded['debug.luatex-cn-debug'] or
     require('debug.luatex-cn-debug')
 
@@ -92,7 +92,7 @@ local _internal = {}
 
 
 -- 辅助函数：计算渲染上下文（尺寸、偏移、列数等）
--- For non-textbox (VerticalRTT), reads static values from _G.content
+-- For non-textbox (Content), reads static values from _G.content
 -- For textbox, reads from passed ctx params
 local function calculate_render_context(ctx)
     -- Unpack nested contexts
@@ -102,7 +102,7 @@ local function calculate_render_context(ctx)
     local visual = ctx.visual
     local is_textbox = page.is_textbox
 
-    -- Static values: from _G.content for VerticalRTT, from ctx for textbox
+    -- Static values: from _G.content for Content, from ctx for textbox
     local border_thickness, half_thickness, ob_thickness_val, ob_sep_val
     local b_padding_top, b_padding_bottom
     local grid_width, grid_height
@@ -118,7 +118,7 @@ local function calculate_render_context(ctx)
         grid_width = grid.width
         grid_height = grid.height
     else
-        -- VerticalRTT: read static values from _G.content
+        -- Content: read static values from _G.content
         border_thickness = _G.content.border_thickness or 26214
         half_thickness = math.floor(border_thickness / 2)
         ob_thickness_val = _G.content.outer_border_thickness or (65536 * 2)
@@ -138,7 +138,7 @@ local function calculate_render_context(ctx)
     local p_cols = grid.cols
     local line_limit = grid.line_limit
 
-    -- Visual params: from _G.content for VerticalRTT, from ctx for textbox
+    -- Visual params: from _G.content for Content, from ctx for textbox
     local vertical_align, background_rgb_str, text_rgb_str
     local border_shape, border_color_str, border_width, border_margin
     if is_textbox then
@@ -182,8 +182,8 @@ local function calculate_render_context(ctx)
         grid_width = grid_width,
         grid_height = grid_height,
         vertical_align = vertical_align,
-        -- Jiazhu align from _G.jiazhu global (set by jiazhu.setup)
-        jiazhu_align = (_G.jiazhu and _G.jiazhu.align) or "outward",
+        -- TextFlow align default (per-node align from style stack takes precedence)
+        textflow_align = (_G.jiazhu and _G.jiazhu.align) or "outward",
         -- Judou parameters from _G.judou global (set by judou.setup)
         judou_pos = (_G.judou and _G.judou.pos) or "right-bottom",
         judou_size = (_G.judou and _G.judou.size) or "1em",
@@ -275,7 +275,7 @@ local function handle_glyph_node(curr, p_head, pos, params, ctx)
             h_align = h_align,
             half_thickness = ctx.half_thickness,
             sub_col = pos.sub_col,
-            jiazhu_align = ctx.jiazhu_align,
+            textflow_align = pos.textflow_align or ctx.textflow_align,
         }
     )
 

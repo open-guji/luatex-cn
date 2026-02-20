@@ -18,7 +18,7 @@
 
 \RequirePackage{expl3}
 \RequirePackage{l3keys2e}
-\ProvidesExplClass {ltc-book} {2026/02/01} {0.2.3} {Chinese Vertical Book Class}
+\ProvidesExplClass {ltc-book} {2026/02/03} {0.2.4} {Chinese Vertical Book Class}
 
 \tl_new:N \l_luatexcn_book_initial_template_tl
 
@@ -45,8 +45,6 @@
 % 2. Core Dependencies
 \RequirePackage{geometry}
 \RequirePackage{xcolor}
-% fontspec is optional - users can load it in their document if needed
-% But we load it here to enable font auto-detection
 \RequirePackage{fontspec}
 \RequirePackage{environ}
 \RequirePackage{expl3}
@@ -58,29 +56,14 @@
 
 \keys_define:nn { luatexcn / book }
   {
-    % Page geometry - modern book defaults (A5-ish)
-
-
-
-
-
-
-    % No border by default for modern books
-
-
-
-
     unknown .code:n = { \keys_set:nx { luatexcn / content } { \l_keys_key_tl = { #1 } } },
   }
 
-% 4. Geometry setup
-
-
-
 \NewDocumentCommand{\bookSetup}{ +m }
   {
-    \keys_set:nn { luatexcn / page } { #1 }
-    \keys_set:nn { luatexcn / book } { #1 }
+    \tl_set:Nn \l_tmpa_tl { #1 }
+    \tl_replace_all:Nnn \l_tmpa_tl { \par } { }
+    \keys_set:nV { luatexcn / book } \l_tmpa_tl
     \luatexcn_apply_geometry:
   }
 
@@ -89,42 +72,14 @@
   \PackageWarning{luatex-cn-book}{Default config not found}
 }
 
-
-
-% 5. Main content environment
+% 4. Main content environment
 \NewEnviron{ltc-book-content}[1][]{%
     \clearpage
     \group_begin:
     \keys_set:nn { luatexcn / book } { #1 }
-
-    % Font selection logic
-    \tl_if_empty:NF \l__luatexcn_content_font_name_tl
-      {
-        \tl_if_empty:NTF \l__luatexcn_content_font_features_tl
-          {
-            % No features specified, use default for CJK vertical
-            \exp_args:NV \setmainfont \l__luatexcn_content_font_name_tl [RawFeature={+vert,+vrt2}, CharacterWidth=Full]
-          }
-          {
-            \exp_args:NV \setmainfont \l__luatexcn_content_font_name_tl [\l__luatexcn_content_font_features_tl]
-          }
-      }
-
-    \fontsize{\l__luatexcn_content_font_size_tl}{\l__luatexcn_content_line_spacing_tl}\selectfont
-    
-    % Configure vertical module
-    \bool_if:NTF \l__luatexcn_content_border_bool 
-      { \keys_set:nn { luatexcn / vertical } { border=true } } 
-      { \keys_set:nn { luatexcn / vertical } { border=false } }
-    
-    \dim_zero:N \topskip
-    \dim_zero:N \parskip
-    \dim_zero:N \parindent
-
-    % Calculate height if not set
+    \__luatexcn_content_setup_font:
+    \__luatexcn_content_zero_skips:
     \__luatexcn_content_calc_height:
-
-
     \luatexcn_apply_geometry:
     \nointerlineskip
     \__luatexcn_content_process_grid:n { \BODY }
@@ -132,12 +87,11 @@
     \clearpage
 }
 
-% 6. Apply initial template if specified
+% 5. Apply initial template if specified
 \tl_if_empty:NF \l_luatexcn_book_initial_template_tl
   {
     \keys_set:nx { luatexcn / book } { template = \l_luatexcn_book_initial_template_tl }
   }
-
 
 \pagestyle{plain}
 

@@ -19,7 +19,7 @@
 \NeedsTeXFormat{LaTeX2e}
 \RequirePackage{expl3}
 \RequirePackage{l3keys2e}
-\ProvidesExplPackage {luatex-cn} {2026/02/01} {0.2.3} {Chinese typesetting support for LuaTeX (Bundle)}
+\ProvidesExplPackage {luatex-cn} {2026/02/03} {0.2.4} {Chinese typesetting support for LuaTeX (Bundle)}
 
 % ============================================================================
 % Package Options
@@ -46,27 +46,23 @@
 % Load Sub-packages
 % ============================================================================
 
-% 1. Load Core (Vertical + Typesetting + Base Utils)
+% 1. Load Core (Vertical + Typesetting + Base Utils + Page/SplitPage)
 \RequirePackage{luatex-cn-core}
 
-% 2. Load SplitPage (筒子页) - Always available in bundle
-\RequirePackage{splitpage/luatex-cn-splitpage}
-
-% 3. Load Banxin (版心) - Conditional
+% 2. Load Banxin (版心) - Conditional
 \RequirePackage{banxin/luatex-cn-banxin}
 
 % ============================================================================
 % Interface Documentation
 % ============================================================================
 % This package now serves as a bundle loading:
-% - luatex-cn-core
-% - luatex-cn-splitpage
+% - luatex-cn-core (includes page split functionality)
 % - luatex-cn-banxin
 %
 % ============================================================================
 
 % Version info
-\tl_const:Nn \c_luatexcn_version_tl {0.2.3}
+\tl_const:Nn \c_luatexcn_version_tl {0.2.4}
 \cs_new:Npn \luatexcnversion { \c_luatexcn_version_tl }
 
 % Main package initialization

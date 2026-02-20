@@ -153,7 +153,7 @@ local function init_engine_context(box_num, params)
     local list = box.list
 
     -- 0.1 Basic Grid Metrics
-    -- For TextBox: use params; for VerticalRTT: use _G.content
+    -- For TextBox: use params; for Content: use _G.content
     local current_fs = font.getfont(font.current()).size or 655360
     local is_textbox = (params.is_textbox == true)
     local g_width, g_height
@@ -185,15 +185,24 @@ local function init_engine_context(box_num, params)
     local m_left = _G.page.margin_left or 0
     local m_right = _G.page.margin_right or 0
 
-    -- 0.3 Borders & Padding (use global _G.content set by content.setup)
-    local b_thickness = _G.content.border_thickness or 26214 -- 0.4pt
+    -- Border settings: read from style stack
+    -- Content pushes {border, outer_border, border_width, border_color}
+    -- TextBox pushes {outer_border=false, border_width, border_color} and border if explicit
+    local style_registry = package.loaded['util.luatex-cn-style-registry']
+    local current_style = style_registry and style_registry.current() or {}
+    local is_border = current_style.border or false
+    local is_outer_border = current_style.outer_border or false
+    local border_color = current_style.border_color or "0 0 0"
+    -- Convert border_width from pt string to sp (style stack stores "0.4pt" format)
+    local b_thickness = 26214 -- default 0.4pt
+    if current_style.border_width then
+        b_thickness = constants.to_dimen(current_style.border_width) or 26214
+    end
+    -- Outer border params (not in style stack - content-only feature)
     local ob_thickness = _G.content.outer_border_thickness or (65536 * 2)
     local ob_sep = _G.content.outer_border_sep or (65536 * 2)
     local b_padding_top = _G.content.border_padding_top or 0
     local b_padding_bottom = _G.content.border_padding_bottom or 0
-    local is_border = _G.content.border_on or false
-    -- TextBox never has outer border (content-only feature)
-    local is_outer_border = is_textbox and false or (_G.content.outer_border_on or false)
 
     -- 0.4 Visual Flags & Features (use global _G.banxin set by banxin.setup)
     local banxin_on = _G.banxin and _G.banxin.enabled or false
@@ -221,7 +230,7 @@ local function init_engine_context(box_num, params)
         b_interval = 0  -- no banxin in textbox
         p_cols = tonumber(params.page_columns) or 100
     else
-        -- VerticalRTT: read from _G.content (calculated by content.setup)
+        -- Content: read from _G.content (calculated by content.setup)
         b_interval = _G.content.n_column or 8
         if b_interval <= 0 and banxin_on then b_interval = 8 end
         p_cols = _G.content.page_columns or 1
@@ -249,9 +258,7 @@ local function init_engine_context(box_num, params)
         shift_x = (is_outer_border and (ob_thickness + ob_sep) or 0),
         shift_y = (is_outer_border and (ob_thickness + ob_sep) or 0) +
             (is_border and (b_thickness + b_padding_top) or 0),
-        border_rgb_str = is_textbox
-            and (utils.normalize_rgb(params.border_color) or "0 0 0")
-            or (utils.normalize_rgb(_G.content.border_color) or "0 0 0"),
+        border_rgb_str = utils.normalize_rgb(border_color) or "0 0 0",
         b_padding_top = b_padding_top,
         b_padding_bottom = b_padding_bottom,
         -- Registry data (set after layout)
@@ -358,7 +365,10 @@ local function compute_grid_layout(list, params, engine_ctx, plugin_contexts, p_
 
     -- For textbox: pass explicit values (no global fallback)
     if p_info.is_textbox then
-        layout_params.banxin_on = false             -- no banxin in textbox
+        -- Enable center gap detection if there's a global banxin AND textbox has floating position
+        -- This ensures meipi skips the center gap when crossing banxin
+        local global_banxin_on = _G.banxin and _G.banxin.enabled or false
+        layout_params.banxin_on = global_banxin_on and (floating_x > 0)
         layout_params.grid_width = engine_ctx.g_width
         layout_params.margin_right = p_info.m_right
         layout_params.chapter_title = params.chapter_title or ""
@@ -421,15 +431,17 @@ local function generate_physical_pages(list, params, engine_ctx, plugin_contexts
     }
 
     if p_info.is_textbox then
-        -- TextBox: pass explicit visual params (no global fallback)
-        visual_ctx.vertical_align = params.vertical_align or "center"
+        -- TextBox: read visual params from style stack
+        local style_registry = package.loaded['util.luatex-cn-style-registry']
+        local current_style = style_registry and style_registry.current() or {}
+        visual_ctx.vertical_align = current_style.vertical_align or "center"
         visual_ctx.bg_rgb = params.background_color
-        visual_ctx.font_rgb = params.font_color
-        visual_ctx.font_size = constants.to_dimen(params.font_size)
-        -- Border shape parameters (resolved from style stack in textbox.lua)
+        visual_ctx.font_rgb = current_style.font_color
+        visual_ctx.font_size = constants.to_dimen(current_style.font_size)
+        -- Border shape decoration (uses border params from style stack)
         visual_ctx.border_shape = params.border_shape or "none"
-        visual_ctx.border_color = params.border_color or ""
-        visual_ctx.border_width = params.border_width or "0.4pt"
+        visual_ctx.border_color = current_style.border_color or "0 0 0"
+        visual_ctx.border_width = current_style.border_width or "0.4pt"
         visual_ctx.border_margin = params.border_margin or "1pt"
     end
     -- For non-textbox: render-page.lua will read from _G.content via calculate_render_context()
@@ -531,31 +543,14 @@ local function typeset(box_num, params)
     local list, engine_ctx, plugin_contexts, p_info = init_engine_context(box_num, params)
     if not list then return 0 end
 
-    -- For content (non-textbox): push border settings to style stack
-    local style_registry
-    local is_textbox = (params.is_textbox == true)
-    if not is_textbox then
-        style_registry = package.loaded['util.luatex-cn-style-registry'] or
-            require('util.luatex-cn-style-registry')
-        style_registry.push({
-            border = _G.content.border_on or false,
-            border_width = _G.content.border_thickness and
-                tostring(math.floor(_G.content.border_thickness / 65536 * 100 + 0.5) / 100) .. "pt" or "0.4pt",
-            border_color = _G.content.border_color or "",
-            outer_border = _G.content.outer_border_on or false,
-        })
-    end
+    -- Note: Base style is already pushed by init_style() in content.lua
+    -- TextBox pushes its own style overrides when processing
 
     list = flatten_node_stream(list, params, engine_ctx, plugin_contexts, p_info)
 
     local layout_results = compute_grid_layout(list, params, engine_ctx, plugin_contexts, p_info)
 
     local total_pages = generate_physical_pages(list, params, engine_ctx, plugin_contexts, layout_results, p_info)
-
-    -- Pop style stack for content
-    if not is_textbox and style_registry then
-        style_registry.pop()
-    end
 
     return total_pages
 end
@@ -583,13 +578,13 @@ local function process(box_num, params)
     local total_pages = typeset(box_num, params)
 
     -- Check if split page is enabled
-    -- CRITICAL: Do NOT enable split page output for textboxes (VerticalRTT, etc.)
+    -- CRITICAL: Do NOT enable split page output for textboxes (Content, etc.)
     local is_textbox = (params.is_textbox == true)
-    local split_enabled = _G.splitpage and _G.splitpage.is_enabled and _G.splitpage.is_enabled()
+    local split_enabled = page.split and page.split.is_enabled and page.split.is_enabled()
 
     if split_enabled and not is_textbox then
-        -- Split page mode: delegate to splitpage module
-        _G.splitpage.output_pages(box_num, total_pages)
+        -- Split page mode: delegate to page.split module
+        page.split.output_pages(box_num, total_pages)
     else
         -- Normal mode: delegate to page module
         page.output_pages(box_num, total_pages)

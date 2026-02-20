@@ -18,7 +18,7 @@
 
 \RequirePackage{expl3}
 \RequirePackage{l3keys2e}
-\ProvidesExplClass {ltc-guji} {2026/02/01} {0.2.3} {Ancient Chinese Book Class (Template Support)}
+\ProvidesExplClass {ltc-guji} {2026/02/03} {0.2.4} {Ancient Chinese Book Class (Template Support)}
 
 \tl_new:N \l_luatexcn_guji_initial_template_tl
 \prop_new:N \g_luatexcn_guji_template_map_prop
@@ -83,18 +83,12 @@
 \RequirePackage{debug/luatex-cn-debug}
 % Apply debug setting from class options (after debug package is loaded)
 \bool_if:NT \g__luatexcn_guji_debug_pending_bool { \LtcDebugOn }
-\RequirePackage{splitpage/luatex-cn-splitpage}
 
-% Load banxin for 版心/鱼尾 features
-\RequirePackage{banxin/luatex-cn-banxin}
+% Load all guji-specific features (句读, 夹注, 批注, 眉批, 印章, 单页)
+\RequirePackage{guji/luatex-cn-guji}
+
 % Enable banxin by default for guji class
 \banxinSetup{ banxin = true }
-
-% Load yinzhang (印章/seal stamp) module
-\RequirePackage{guji/luatex-cn-guji-yinzhang}
-
-% Load meipi (眉批/headnote) module
-\RequirePackage{guji/luatex-cn-guji-meipi}
 
 % 3. Page Geometry - Will be applied dynamically via tsemplate
 % Default values stored in key-value system below
@@ -133,13 +127,6 @@
 
     font-features .code:n = { \keys_set:nn { luatexcn / content } { font-features = #1 } },
 
-    % Split page (筒子页) configuration - forward to splitpage namespace
-    split-page .code:n = { \keys_set:nn { luatexcn / splitpage } { enabled = #1 } },
-    split-page .default:n = true,
-
-    split-page-right-first .code:n = { \keys_set:nn { luatexcn / splitpage } { right-first = #1 } },
-    split-page-right-first .default:n = true,
-
     template .code:n = {
       % Ensure standard catcodes for config files (preserve spaces)
       \ExplSyntaxOff
@@ -158,29 +145,13 @@
 % 5. Logic to apply geometry
 
 
-% 5b. Split page setup
-\cs_new:Npn \__luatexcn_guji_apply_split_page:
-  {
-    \bool_if:NT \l__luatexcn_sp_enabled_bool
-      {
-        \exp_args:Nx \splitpageSetup{
-          source-width = \l__luatexcn_page_paper_width_tl,
-          source-height = \l__luatexcn_page_paper_height_tl,
-        }
-        \enableSplitPage
-      }
-  }
-
 \NewDocumentCommand{\gujiSetup}{ +m }
   {
     \tl_set:Nn \l_tmpa_tl { #1 }
     \tl_replace_all:Nnn \l_tmpa_tl { \par } { }
-    \keys_set:nV { luatexcn / page } \l_tmpa_tl
     \keys_set:nV { luatexcn / guji } \l_tmpa_tl
-    % Apply geometry updates
     \luatexcn_apply_geometry:
-    % Apply split page if enabled
-    \__luatexcn_guji_apply_split_page:
+    \__luatexcn_page_apply_split:
   }
 
 % Load default config (after gujiSetup is defined)
@@ -188,29 +159,8 @@
   \PackageWarning{luatex-cn-guji}{Config file~configs/luatex-cn-guji-default.cfg~not~found}
 }
 
-% Note: \title and \publisher are defined in core/luatex-cn-core-metadata.sty
+% Note: \title, \publisher, and \chapter are defined in core/luatex-cn-core-metadata.sty
 % They forward to banxin namespace automatically
-
-% Command to reset page number to 1
-\NewDocumentCommand{\ResetPageNumber}{ }
-  {
-    \lua_now:e { core.reset_page_number(); }
-  }
-
-% Command to set page number to arbitrary value
-\NewDocumentCommand{\SetPageNumber}{ m }
-  {
-    \lua_now:e { core.set_page_number(#1); }
-  }
-\NewCommandCopy{\设置页码}{\SetPageNumber}
-
-\DeclareDocumentCommand{\chapter}{ m }
-  {
-    \keys_set:nn { luatexcn / banxin } { chapter-title = {#1} }
-    % Also set global metadata for layout phase (fixes issue #45 - chapter not showing on first page)
-    \metadataSetup{ chapter-title = {#1} }
-    \ResetPageNumber
-  }
 
 % Command to define templates
 \NewDocumentCommand{\defineGujiTemplate}{ m +m }
@@ -224,111 +174,23 @@
 % 6. Load Common Templates (if any)
 \InputIfFileExists{guji_common.def}{}{}
 
+% ============================================================================
+% Guji-specific Helper Commands (extracted from guji-content environment)
+% ============================================================================
 
 % 8. High-level Interface
 \NewEnviron{guji-content}[1][]{%
     \group_begin:
     \keys_set:nn { luatexcn / guji } { #1 }
-    % Note: book-name is set directly by \title command
-    % No fallback from \@title to avoid LaTeX's default error-throwing definition
-    % Setup font using shared helper
     \__luatexcn_content_setup_font:
-
-    % --- Auto-Layout Logic (TeX calculation for exact precision) ---
-    % I. Width Logic (Auto-calculated from n-column)
-    \dim_set:Nn \l_tmpa_dim { \l__luatexcn_page_paper_width_tl }
-    \dim_sub:Nn \l_tmpa_dim { \l__luatexcn_page_margin_left_tl }
-    \dim_sub:Nn \l_tmpa_dim { \l__luatexcn_page_margin_right_tl }
-    \dim_set:Nn \l_tmpb_dim { 0pt }
-    \bool_if:NT \l__luatexcn_content_outer_border_bool {
-      \dim_add:Nn \l_tmpb_dim { (\l__luatexcn_content_outer_border_sep_tl + \l__luatexcn_content_outer_border_thickness_tl) * 2 }
-    }
-    \bool_if:NT \l__luatexcn_content_border_bool {
-      \dim_add:Nn \l_tmpb_dim { \l__luatexcn_content_border_thickness_tl }
-    }
-    \int_set:Nn \l_tmpa_int { 2 * \l__luatexcn_content_n_column_int + 1 }
-    \dim_sub:Nn \l_tmpa_dim { \l_tmpb_dim }
-    \int_set:Nn \l_tmpb_int { \dim_to_decimal_in_sp:n { \l_tmpa_dim } / \l_tmpa_int }
-    \tl_set:Nx \l__luatexcn_content_grid_width_tl { \dim_eval:n { \l_tmpb_int sp } }
-
-    % II. Height Logic
-    \dim_set:Nn \l_tmpa_dim { \l__luatexcn_page_paper_height_tl }
-    \dim_sub:Nn \l_tmpa_dim { \l__luatexcn_page_margin_top_tl }
-    \dim_sub:Nn \l_tmpa_dim { \l__luatexcn_page_margin_bottom_tl }
-    \dim_set:Nn \l_tmpb_dim { 0pt }
-    \bool_if:NT \l__luatexcn_content_outer_border_bool {
-      \dim_add:Nn \l_tmpb_dim { (\l__luatexcn_content_outer_border_sep_tl + \l__luatexcn_content_outer_border_thickness_tl) * 2 }
-    }
-    \bool_if:NT \l__luatexcn_content_border_bool {
-      \dim_add:Nn \l_tmpb_dim { \l__luatexcn_content_border_padding_top_tl + \l__luatexcn_content_border_padding_bottom_tl + \l__luatexcn_content_border_thickness_tl }
-    }
-    \dim_sub:Nn \l_tmpa_dim { \l_tmpb_dim }
-
-    % Calculate grid-height and content-height
-    \int_compare:nNnTF { \l__luatexcn_content_n_char_per_col_int } > { 0 }
-      {
-        \int_set:Nn \l_tmpa_int { \dim_to_decimal_in_sp:n { \l_tmpa_dim } / \l__luatexcn_content_n_char_per_col_int }
-        \dim_set:Nn \l_luatexcn_guji_grid_height_dim { \l_tmpa_int sp }
-        \tl_set:Nx \l__luatexcn_content_grid_height_tl { \dim_use:N \l_luatexcn_guji_grid_height_dim }
-        \dim_set:Nn \l_tmpa_dim { \l_luatexcn_guji_grid_height_dim * \l__luatexcn_content_n_char_per_col_int }
-        \tl_set:Nx \l__luatexcn_content_height_tl { \dim_use:N \l_tmpa_dim }
-      }
-      {
-        \tl_if_empty:NTF \l__luatexcn_content_grid_height_tl
-          { \msg_error:nn { guji } { missing-grid-param } }
-          {
-            \int_set:Nn \l_tmpa_int { \dim_ratio:nn { \l_tmpa_dim } { \l__luatexcn_content_grid_height_tl } }
-            \dim_set:Nn \l_tmpa_dim { \l__luatexcn_content_grid_height_tl * \l_tmpa_int }
-            \tl_set:Nx \l__luatexcn_content_height_tl { \dim_use:N \l_tmpa_dim }
-          }
-      }
-
-    % Calculate total box height and adjust top margin
-    \dim_set:Nn \l_tmpb_dim { \l_tmpa_dim + \l_tmpb_dim + 2pt }
-    \tl_set:Nx \l__luatexcn_page_margin_top_tl {
-      \dim_eval:n { \l__luatexcn_page_paper_height_tl - \l__luatexcn_page_margin_bottom_tl - \l_tmpb_dim }
-    }
-
-    \LtcIfDebugT { \iow_term:x { Guji~Layout:~grid-width=\l__luatexcn_content_grid_width_tl~,~grid-height=\l__luatexcn_content_grid_height_tl~,~height=\l__luatexcn_content_height_tl } }
-
-    % Update geometry for this environment
+    \__luatexcn_content_auto_layout:
     \luatexcn_apply_geometry:
-    
-    % Apply background color using shared helper
     \__luatexcn_content_apply_background:
-
-    % Zero all vertical skips using shared helper
     \__luatexcn_content_zero_skips:
-
-    \keys_set:nx { luatexcn / vertical }
-      {
-        height = \l__luatexcn_content_height_tl,
-        grid-width = \l__luatexcn_content_grid_width_tl,
-        grid-height = \l__luatexcn_content_grid_height_tl,
-        vertical-align = \l__luatexcn_content_valign_tl,
-        n-column = \int_use:N \l__luatexcn_content_n_column_int,
-        background-color = { \l__luatexcn_page_background_color_tl },
-        font-color = { \l__luatexcn_content_font_color_tl },
-        paper-width = \l__luatexcn_page_paper_width_tl,
-        paper-height = \l__luatexcn_page_paper_height_tl,
-        margin-top = \l__luatexcn_page_margin_top_tl,
-        margin-bottom = \l__luatexcn_page_margin_bottom_tl,
-        margin-left = \l__luatexcn_page_margin_left_tl,
-        margin-right = \l__luatexcn_page_margin_right_tl,
-        font-size = \l__luatexcn_content_font_size_tl,
-      }
-    \RenewDocumentCommand{\newpage}{}{\penalty-10003 }
-    \RenewDocumentCommand{\clearpage}{}{\penalty-10003 }
-    \cs_set:Npn \chapter ##1 {
-      \directlua { core.insert_chapter_marker( "\luaescapestring{ \tl_to_str:n { ##1 } }" ) }
-      \box0\relax
-    }
+    \__luatexcn_page_override_pagebreak:
     \nointerlineskip
     \__luatexcn_content_process_grid:n { \BODY }
     \group_end:
-    \clearpage
-    % Restore geometry if needed? \restoregeometry resets to preamble settings.
-    \restoregeometry
 }
 
 
@@ -352,7 +214,7 @@
          { \exp_args:NV \setmainfont \l__luatexcn_content_font_name_tl [\l__luatexcn_content_font_features_tl] }
     }
     \luatexcn_apply_geometry:
-    \__luatexcn_guji_apply_split_page:
+    \__luatexcn_page_apply_split:
 }
 \ExplSyntaxOff
 %

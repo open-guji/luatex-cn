@@ -17,13 +17,10 @@
 %
 \RequirePackage{expl3}
 \RequirePackage{xparse}
-\ProvidesExplPackage {guji/luatex-cn-guji-jiazhu} {2026/02/01} {0.2.3} {Jiazhu (Dual-column notes) support}
+\ProvidesExplPackage {guji/luatex-cn-guji-jiazhu} {2026/02/03} {0.2.4} {Jiazhu (Dual-column notes) support}
 
 % Load the core textflow engine
 \RequirePackage{core/luatex-cn-core-textflow}
-
-% Load Lua module for global state
-\lua_now:n { jiazhu_mod = require('guji.luatex-cn-guji-jiazhu') }
 
 % Global Jiazhu Parameters (moved from vertical.sty)
 \tl_new:N \l__luatexcn_jiazhu_size_tl
@@ -46,15 +43,11 @@
 \NewDocumentCommand{\jiazhuSetup}{ m }
   {
     \keys_set:nn { luatexcn / jiazhu } { #1 }
-    % Sync to Lua global state
-    \lua_now:e {
-      jiazhu_mod.setup({
-        align~=~[=[\\luaescapestring{\\l__luatexcn_jiazhu_align_tl}]=],
-        font_size~=~[=[\\luaescapestring{\\l__luatexcn_jiazhu_size_tl}]=],
-        font~=~[=[\\luaescapestring{\\l__luatexcn_jiazhu_font_tl}]=],
-        font_color~=~[=[\\luaescapestring{\\l__luatexcn_jiazhu_font_color_tl}]=]
-      })
-    }
+    % Set core layer defaults (proper dependency direction: guji -> core)
+    \tl_set_eq:NN \l__luatexcn_textflow_default_size_tl \l__luatexcn_jiazhu_size_tl
+    \tl_set_eq:NN \l__luatexcn_textflow_default_font_tl \l__luatexcn_jiazhu_font_tl
+    \tl_set_eq:NN \l__luatexcn_textflow_default_color_tl \l__luatexcn_jiazhu_font_color_tl
+    \tl_set_eq:NN \l__luatexcn_textflow_default_align_tl \l__luatexcn_jiazhu_align_tl
   }
 
 % Jiazhu Command (双行小注/夹注)

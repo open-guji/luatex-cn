@@ -9,7 +9,7 @@
 
 \RequirePackage{expl3}
 \RequirePackage{xparse}
-\ProvidesExplPackage {guji/luatex-cn-guji-meipi} {2026/02/01} {0.2.3} {MeiPi Auto-Positioned Annotation Support}
+\ProvidesExplPackage {guji/luatex-cn-guji-meipi} {2026/02/03} {0.2.4} {MeiPi Auto-Positioned Annotation Support}
 
 % Load the Lua module
 \lua_now:n { require('guji.luatex-cn-guji-meipi') }
@@ -83,7 +83,18 @@
       })
     }
 
-    % 1. Create a temporary non-floating TextBox to measure dimensions
+    % Pre-calculate X position for center gap detection during TextBox layout
+    % This ensures TextBox knows its floating position before layout happens
+    \tl_if_empty:NTF \l__luatexcn_meipi_x_tl
+      {
+        % No user-specified x, estimate based on accumulated meipi positions
+        \tl_set:Nx \l__luatexcn_meipi_x_tl {
+          \lua_now:e { tex.sprint(require('guji.luatex-cn-guji-meipi').get_next_x_pt()) }
+        }
+      }
+      { }
+
+    % 1. Create TextBox with floating=false but pass x for center gap detection during layout
     % We use \use:x to expand variables before passing to TextBox
     % This ensures that \regex_match_... inside TextBox sees actual values (digits) not macro names
     \hbox_set:Nn \l__luatexcn_meipi_temp_box {
@@ -94,7 +105,8 @@
             font-color = \l__luatexcn_meipi_color_tl,
             grid-width = \l__luatexcn_meipi_grid_width_tl,
             grid-height = \l__luatexcn_meipi_grid_height_tl,
-            floating = false
+            floating = false,
+            x = \l__luatexcn_meipi_x_tl
          ] { \exp_not:n { #2 } }
        }
     }
@@ -104,23 +116,22 @@
     
     % Calculate height for Y positioning
     % Safe calculation: if contains 'pt' or units, use as is. Else use FP math.
-    \str_if_in:NnT \l__luatexcn_meipi_height_tl { p }
+    \str_if_in:NnTF \l__luatexcn_meipi_height_tl { p }
     {
          \dim_set:Nn \l__luatexcn_meipi_box_height_dim { \l__luatexcn_meipi_height_tl }
     }
-    \str_if_in:NnF \l__luatexcn_meipi_height_tl { p }
     {
          \tl_if_empty:NTF \l__luatexcn_meipi_height_tl
-         { 
+         {
              % Fallback if height not specified: 5 lines of grid height
              \dim_set:Nn \l__luatexcn_meipi_box_height_dim { \fp_to_dim:n { 5 * \dim_to_fp:n { \l__luatexcn_meipi_grid_height_tl } } }
          }
-         { 
+         {
              % Use FP math to be absolutely safe (avoid dim expressions * operator issues)
-             \dim_set:Nn \l__luatexcn_meipi_box_height_dim { 
-                \fp_to_dim:n { 
-                    \l__luatexcn_meipi_height_tl * \dim_to_fp:n { \l__luatexcn_meipi_grid_height_tl } 
-                } 
+             \dim_set:Nn \l__luatexcn_meipi_box_height_dim {
+                \fp_to_dim:n {
+                    \l__luatexcn_meipi_height_tl * \dim_to_fp:n { \l__luatexcn_meipi_grid_height_tl }
+                }
              }
          }
     }

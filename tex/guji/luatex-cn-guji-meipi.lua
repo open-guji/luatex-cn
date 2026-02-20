@@ -241,6 +241,14 @@ function meipi.register_with_fixed_xy(width_str, height_str, x_str, y_str)
     })
 end
 
+--- Get the starting X position for the next MeiPi annotation without registering
+-- This is used to pre-calculate X for center gap detection
+-- @return (string) X coordinate in pt format (e.g., "123.45pt")
+function meipi.get_next_x_pt()
+    local x = meipi.calculate_x(0)  -- 0 width just gets the starting position
+    return string.format("%.5fpt", x / 65536)
+end
+
 --- Output X coordinate for the next MeiPi annotation directly to TeX
 -- @param width_sp (string|number) Width in scaled points
 -- @param height_sp (string|number) Height in scaled points

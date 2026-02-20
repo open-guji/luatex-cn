@@ -198,9 +198,9 @@ local function init_engine_context(box_num, params)
     if current_style.border_width then
         b_thickness = constants.to_dimen(current_style.border_width) or 26214
     end
-    -- Outer border params (not in style stack - content-only feature)
-    local ob_thickness = _G.content.outer_border_thickness or (65536 * 2)
-    local ob_sep = _G.content.outer_border_sep or (65536 * 2)
+    -- Outer border params (now from style stack)
+    local ob_thickness = current_style.outer_border_thickness or (65536 * 2)
+    local ob_sep = current_style.outer_border_sep or (65536 * 2)
     local b_padding_top = _G.content.border_padding_top or 0
     local b_padding_bottom = _G.content.border_padding_bottom or 0
 
@@ -423,28 +423,23 @@ local function generate_physical_pages(list, params, engine_ctx, plugin_contexts
 
     local start_page = params.start_page_number or _G.page.current_page_number
 
-    -- Build visual params - for non-textbox, render-page.lua reads from _G.content directly
-    -- Only populate for textbox which has no global fallback
+    -- Build visual params - now always from style stack for both textbox and content
+    local style_registry = package.loaded['util.luatex-cn-style-registry']
+    local current_style = style_registry and style_registry.current() or {}
     local visual_ctx = {
         -- column_aligns is textbox-specific, always from plugin context
         column_aligns = plugin_contexts["textbox"] and plugin_contexts["textbox"].column_aligns or nil,
+        -- Visual params from style stack (unified for both textbox and content)
+        vertical_align = current_style.vertical_align or _G.content.vertical_align or "center",
+        bg_rgb = current_style.background_color or params.background_color,
+        font_rgb = current_style.font_color,
+        font_size = constants.to_dimen(current_style.font_size),
+        -- Border shape decoration (from style stack with params fallback)
+        border_shape = current_style.border_shape or params.border_shape or "none",
+        border_color = current_style.border_color or "0 0 0",
+        border_width = current_style.border_width or "0.4pt",
+        border_margin = current_style.border_margin or params.border_margin or "1pt",
     }
-
-    if p_info.is_textbox then
-        -- TextBox: read visual params from style stack
-        local style_registry = package.loaded['util.luatex-cn-style-registry']
-        local current_style = style_registry and style_registry.current() or {}
-        visual_ctx.vertical_align = current_style.vertical_align or "center"
-        visual_ctx.bg_rgb = params.background_color
-        visual_ctx.font_rgb = current_style.font_color
-        visual_ctx.font_size = constants.to_dimen(current_style.font_size)
-        -- Border shape decoration (uses border params from style stack)
-        visual_ctx.border_shape = params.border_shape or "none"
-        visual_ctx.border_color = current_style.border_color or "0 0 0"
-        visual_ctx.border_width = current_style.border_width or "0.4pt"
-        visual_ctx.border_margin = params.border_margin or "1pt"
-    end
-    -- For non-textbox: render-page.lua will read from _G.content via calculate_render_context()
 
     local render_ctx = {
         grid = {

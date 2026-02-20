@@ -223,16 +223,20 @@ local function build_sub_params(params, col_aligns)
     }
 end
 
---- Recursively clear indent attributes on all nodes in a list
+-- Sentinel value for "force indent to 0, don't check style stack"
+-- This value bypasses the style stack fallback in layout-grid.lua
+local FORCE_ZERO_INDENT = -2
+
+--- Recursively set indent attributes to force zero on all nodes in a list
 -- This ensures textbox content does not inherit paragraph indent (fix #37)
--- Clears ATTR_INDENT and ATTR_FIRST_INDENT since they take priority over style registry
+-- Uses special sentinel value -2 to mean "force 0, bypass style stack"
 -- @param list (node) Node list head
 local function clear_indent_recursive(list)
     if not list then return end
     for n in node.traverse(list) do
-        -- Clear indent attributes - unset by setting to "unset" value
-        node.unset_attribute(n, constants.ATTR_INDENT)
-        node.unset_attribute(n, constants.ATTR_FIRST_INDENT)
+        -- Set indent to sentinel value that means "force 0"
+        node.set_attribute(n, constants.ATTR_INDENT, FORCE_ZERO_INDENT)
+        node.set_attribute(n, constants.ATTR_FIRST_INDENT, FORCE_ZERO_INDENT)
         -- Recursively process nested lists (hlist/vlist)
         local id = n.id
         if id == node.id("hlist") or id == node.id("vlist") then
@@ -291,10 +295,23 @@ local function execute_layout_pipeline(box_num, sub_params, current_indent)
     if sub_params.vertical_align and sub_params.vertical_align ~= "" then
         style_overrides.vertical_align = sub_params.vertical_align
     end
-    style_registry.push(style_overrides)
+    -- Only include background_color if explicitly set
+    if sub_params.background_color and sub_params.background_color ~= "" then
+        style_overrides.background_color = sub_params.background_color
+    end
+    -- Only include border_shape if explicitly set and not "none"
+    if sub_params.border_shape and sub_params.border_shape ~= "" and sub_params.border_shape ~= "none" then
+        style_overrides.border_shape = sub_params.border_shape
+    end
+    -- Only include border_margin if explicitly set
+    if sub_params.border_margin and sub_params.border_margin ~= "" then
+        style_overrides.border_margin = sub_params.border_margin
+    end
+    local textbox_style_id = style_registry.push(style_overrides)
 
     -- Clear indent attributes on all nodes in the textbox content (fix #37)
-    -- ATTR_INDENT takes priority over style registry, so we must clear it
+    -- This ensures textbox content does not inherit paragraph indent
+    -- The style stack already has indent=0 from the push above
     local box = tex.box[box_num]
     if box and box.list then
         clear_indent_recursive(box.list)

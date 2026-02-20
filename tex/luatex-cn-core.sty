@@ -18,7 +18,7 @@
 %
 \NeedsTeXFormat{LaTeX2e}
 \RequirePackage{expl3}
-\ProvidesExplPackage {luatex-cn-core} {2026/02/03} {0.2.4} {Core features for luatex-cn}
+\ProvidesExplPackage {luatex-cn-core} {2026/02/06} {0.2.5} {Core features for luatex-cn}
 
 % Check if LuaTeX is being used
 \sys_if_engine_luatex:TF
@@ -47,14 +47,9 @@
 \RequirePackage{core/luatex-cn-core-paragraph}
 \RequirePackage{core/luatex-cn-core-sidenote}
 \RequirePackage{core/luatex-cn-core-textbox}
+\RequirePackage{core/luatex-cn-core-column}
 \RequirePackage{decorate/luatex-cn-decorate}
 \RequirePackage{banxin/luatex-cn-banxin}
-
-% Define vertical namespace for backward compatibility
-\keys_define:nn { luatexcn / vertical }
-  {
-    unknown .code:n = { \keys_set:nx { luatexcn / content } { \l_keys_key_tl = { #1 } } },
-  }
 
 % Font auto-detection module
 \RequirePackage{fonts/luatex-cn-font-autodetect}

@@ -18,7 +18,7 @@
 \RequirePackage{luatexbase}
 \RequirePackage{enumitem}
 
-\ProvidesExplPackage {core/luatex-cn-core-base} {2026/02/03} {0.2.4} {Core base for luatex-cn}
+\ProvidesExplPackage {core/luatex-cn-core-base} {2026/02/06} {0.2.5} {Core base for luatex-cn}
 
 % ============================================================================
 % Attributes
@@ -34,6 +34,8 @@
 \newluatexattribute\cnverticalblockid
 \newluatexattribute\cnverticalfirstindent
 \newluatexattribute\cnverticalstyle
+\newluatexattribute\cnverticalcolumn
+\newluatexattribute\cnverticalcolumnalign
 
 \lua_now:e {
   luatex_cn_debug.register_module("vertical", { color = "yellow" })
@@ -52,6 +54,7 @@
   package.loaded["core.luatex-cn-core-textbox"]~=~nil;
   package.loaded["core.luatex-cn-core-textflow"]~=~nil;
   package.loaded["core.luatex-cn-core-sidenote"]~=~nil;
+  package.loaded["core.luatex-cn-core-column"]~=~nil;
   package.loaded["banxin.luatex-cn-banxin-main"]~=~nil;
   package.loaded["core.luatex-cn-hooks"]~=~nil;
 

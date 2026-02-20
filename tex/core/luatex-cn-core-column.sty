@@ -1,0 +1,159 @@
+% Copyright 2026 Open-Guji (https://github.com/open-guji)
+%
+% Licensed under the Apache License, Version 2.0 (the "License");
+% you may not use this file except in compliance with the License.
+% You may obtain a copy of the License at
+%
+%     http://www.apache.org/licenses/LICENSE-2.0
+%
+% Unless required by applicable law or agreed to in writing, software
+% distributed under the License is distributed on an "AS IS" BASIS,
+% WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+% See the License for the specific language governing permissions and
+% limitations under the License.
+% luatex-cn-core-column.sty
+% Column (单列排版) support for vertical typesetting
+% This is a subpackage of luatex_cn
+%
+% Usage:
+%   \Column{content}                    % Default: top alignment
+%   \Column[align=center]{content}      % Center alignment
+%   \Column[align=bottom]{content}      % Bottom alignment
+%   \Column[align=stretch]{content}     % Stretch/squeeze to fill column
+%
+\RequirePackage{core/luatex-cn-core-base}
+\RequirePackage{expl3}
+\RequirePackage{xparse}
+\ProvidesExplPackage {core/luatex-cn-core-column} {2026/02/06} {0.2.5} {Column Support for Vertical Typesetting}
+
+% Default variables for column
+\tl_new:N \l__luatexcn_column_default_size_tl
+\tl_new:N \l__luatexcn_column_default_font_tl
+\tl_new:N \l__luatexcn_column_default_color_tl
+
+\makeatletter
+
+    % Align mode: 0=top, 1=bottom, 2=center, 3=stretch
+    % When last=true, add 4 to the value (4=last+top, 5=last+bottom, etc.)
+    \bool_new:N \l__luatexcn_column_last_bool
+
+    \keys_define:nn { luatexcn / column }
+      {
+        align .choice:,
+        align / top .code:n = { \int_set:Nn \l_tmpa_int {0} },
+        align / bottom .code:n = { \int_set:Nn \l_tmpa_int {1} },
+        align / center .code:n = { \int_set:Nn \l_tmpa_int {2} },
+        align / stretch .code:n = { \int_set:Nn \l_tmpa_int {3} },
+        align .initial:n = top,
+
+        last .bool_set:N = \l__luatexcn_column_last_bool,
+        last .default:n = true,
+
+        font-size .tl_set:N = \l__luatexcn_column_local_size_tl,
+        font .tl_set:N = \l__luatexcn_column_local_font_tl,
+        font-color .tl_set:N = \l__luatexcn_column_local_color_tl,
+      }
+
+    \NewDocumentCommand{\Column}{ O{} +m }
+      {
+        \group_begin:
+
+        % Initialize alignment mode (0 = top/default)
+        \int_set:Nn \l_tmpa_int {0}
+        % Initialize last flag
+        \bool_set_false:N \l__luatexcn_column_last_bool
+        % Initialize local override variables
+        \tl_set:Nn \l__luatexcn_column_local_size_tl {}
+        \tl_set:Nn \l__luatexcn_column_local_font_tl {}
+        \tl_set:Nn \l__luatexcn_column_local_color_tl {}
+
+        \keys_set:nn { luatexcn / column } { #1 }
+
+        % If last=true, add 4 to align mode
+        \bool_if:NT \l__luatexcn_column_last_bool
+          { \int_add:Nn \l_tmpa_int {4} }
+
+        % 1. Determine Font Size (Local > Default)
+        \tl_if_empty:NTF \l__luatexcn_column_local_size_tl
+          { \tl_set_eq:NN \l_tmpc_tl \l__luatexcn_column_default_size_tl }
+          { \tl_set_eq:NN \l_tmpc_tl \l__luatexcn_column_local_size_tl }
+
+        % 2. Determine Font (Local > Default)
+        \tl_if_empty:NTF \l__luatexcn_column_local_font_tl
+          { \tl_set_eq:NN \l_tmpb_tl \l__luatexcn_column_default_font_tl }
+          { \tl_set_eq:NN \l_tmpb_tl \l__luatexcn_column_local_font_tl }
+
+        % 3. Determine Color (Local > Default)
+        \tl_if_empty:NTF \l__luatexcn_column_local_color_tl
+          { \tl_set_eq:NN \l_tmpd_tl \l__luatexcn_column_default_color_tl }
+          { \tl_set_eq:NN \l_tmpd_tl \l__luatexcn_column_local_color_tl }
+
+        % Apply Font and Size if specified
+        \tl_if_empty:NF \l_tmpc_tl
+          {
+            \tl_if_empty:NTF \l_tmpb_tl
+              { \fontsize{\l_tmpc_tl}{\l_tmpc_tl}\selectfont }
+              { \setmainfont{\l_tmpb_tl}[RawFeature={+vert,+vrt2}] \fontsize{\l_tmpc_tl}{\l_tmpc_tl}\selectfont }
+          }
+
+        % Apply Color (visual appearance)
+        \tl_if_empty:NF \l_tmpd_tl
+          {
+            \tl_if_in:NnTF \l_tmpd_tl { , }
+              { \color[rgb]{\l_tmpd_tl} }
+              {
+                \tl_if_in:NnTF \l_tmpd_tl { ~ }
+                  {
+                    \tl_set:Nx \l_tmpe_tl { \l_tmpd_tl }
+                    \tl_replace_all:Nnn \l_tmpe_tl { ~ } { , }
+                    \color[rgb]{\l_tmpe_tl}
+                  }
+                  { \color{\l_tmpd_tl} }
+              }
+          }
+
+        % Push style to stack and get style ID
+        \edef\column_style_id{\lua_now:e {
+          local ~ column = require('core.luatex-cn-core-column')
+          local ~ style_id = column.push_style(
+            \tl_if_empty:NTF \l_tmpd_tl { nil } { [=[\luaescapestring{\tl_use:N \l_tmpd_tl}]=] },
+            \tl_if_empty:NTF \l_tmpc_tl { nil } { [=[\luaescapestring{\tl_use:N \l_tmpc_tl}]=] },
+            \tl_if_empty:NTF \l_tmpb_tl { nil } { [=[\luaescapestring{\tl_use:N \l_tmpb_tl}]=] }
+          )
+          tex.print(tostring(style_id))
+        }}
+
+        % Set column attributes
+        \setluatexattribute\cnverticalcolumn{1}
+        \setluatexattribute\cnverticalcolumnalign{\int_use:N \l_tmpa_int}
+        \setluatexattribute\cnverticalstyle{\column_style_id}
+
+        #2
+
+        % Pop style from stack
+        \lua_now:n {
+          local ~ column = require('core.luatex-cn-core-column')
+          column.pop_style()
+        }
+
+        \group_end:
+      }
+
+\makeatother
+
+\ExplSyntaxOff%
+
+% LastColumn: place content in the last column of current half-page
+\ExplSyntaxOn
+\NewDocumentCommand{\LastColumn}{ O{} +m }{%
+  \tl_if_empty:nTF {#1}
+    { \Column[last]{#2} }
+    { \Column[last, #1]{#2} }
+}
+\ExplSyntaxOff
+
+% Chinese alias
+\NewCommandCopy{\列}{\Column}
+\NewCommandCopy{\末列}{\LastColumn}
+
+\endinput%

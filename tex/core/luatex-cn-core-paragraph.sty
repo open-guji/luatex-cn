@@ -45,20 +45,32 @@
     % Set Block ID
     \setluatexattribute\cnverticalblockid { \int_use:N \g_luatexcn_paragraph_block_id_int }
 
-    % Set Base Indent (also serves as Hanging Indent)
-    \setluatexattribute\cnverticalindent{\l__luatexcn_paragraph_indent_int}
+    % Push style to stack with indent values
+    \edef\paragraph_style_id{\lua_now:e {
+      local ~ sr = require('util.luatex-cn-style-registry')
+      tex.print(sr.push_indent(\int_use:N \l__luatexcn_paragraph_indent_int, \int_use:N \l__luatexcn_paragraph_first_indent_int))
+    }}
+    \setluatexattribute\cnverticalstyle{\paragraph_style_id}
 
-    % Set First Indent
+    % Set indent attributes (used by layout-grid.lua)
+    \setluatexattribute\cnverticalindent{\l__luatexcn_paragraph_indent_int}
     \int_compare:nNnTF \l__luatexcn_paragraph_first_indent_int = {-1}
       { \setluatexattribute\cnverticalfirstindent{\l__luatexcn_paragraph_indent_int} }
       { \setluatexattribute\cnverticalfirstindent{\l__luatexcn_paragraph_first_indent_int} }
 
-    % Set Bottom Indent
+    % Set Bottom Indent (still via attribute, as it's less common)
     \setluatexattribute\cnverticalrightindent{\l__luatexcn_paragraph_bottom_indent_int}
   }
   {
-    % Reset indent attributes to default BEFORE \par
-    % so subsequent content won't inherit paragraph's indent
+    % Pop style from stack and reset cnverticalstyle to parent
+    \edef\parent_style_id{\lua_now:n {
+      local ~ style_registry = require('util.luatex-cn-style-registry')
+      style_registry.pop()
+      local ~ current_id = style_registry.current_id() ~ or ~ 0
+      tex.print(current_id)
+    }}
+    \setluatexattribute\cnverticalstyle{\parent_style_id}
+    % Reset indent attributes
     \setluatexattribute\cnverticalindent{0}
     \setluatexattribute\cnverticalfirstindent{-1}
     \setluatexattribute\cnverticalrightindent{0}

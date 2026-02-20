@@ -53,6 +53,8 @@ local utils = package.loaded['util.luatex-cn-utils'] or
     require('util.luatex-cn-utils')
 local debug = package.loaded['debug.luatex-cn-debug'] or
     require('debug.luatex-cn-debug')
+local style_registry = package.loaded['util.luatex-cn-style-registry'] or
+    require('util.luatex-cn-style-registry')
 local D = node.direct
 
 local dbg = debug.get_debugger('banxin')
@@ -211,7 +213,8 @@ function banxin_main.layout(list, layout_map, engine_ctx, context)
                     publisher_grid_height = bp.publisher_grid_height > 0 and bp.publisher_grid_height or nil,
                     publisher_bottom_margin = bp.publisher_bottom_margin > 0 and bp.publisher_bottom_margin or nil,
                     publisher_align = bp.publisher_align,
-                    font_size = _G.content.font_size or 655360,
+                    -- Get font_size from style stack (falls back to default if not set)
+                    font_size = style_registry.get_font_size(style_registry.current_id()) or 655360,
                 }
 
                 -- Calculate layout using the layout module

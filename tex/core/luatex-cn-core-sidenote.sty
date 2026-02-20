@@ -18,7 +18,7 @@
 \RequirePackage{core/luatex-cn-core-base}
 \RequirePackage{expl3}
 \RequirePackage{xparse}
-\ProvidesExplPackage {core/luatex-cn-core-sidenote} {2026/02/03} {0.2.4} {SideNode Support for Vertical Typesetting}
+\ProvidesExplPackage {core/luatex-cn-core-sidenote} {2026/02/06} {0.2.5} {SideNode Support for Vertical Typesetting}
 
 % Define keys for SideNode
 \tl_new:N \l__luatexcn_sidenote_yoffset_tl
@@ -56,9 +56,10 @@
       { \dim_set:Nn \l_tmpa_dim { \f@size pt } }
       { \dim_set:Nn \l_tmpa_dim { \__luatexcn_to_dimen:n { \l__luatexcn_sidenote_font_size_tl } } }
     \fontsize{\l_tmpa_dim}{\l_tmpa_dim}\selectfont
-    % Color is set via \textcolor here. The Lua render layer wraps sidenote
-    % content with q/Q to prevent color leakage when crossing page boundaries.
-    \hbox_set:Nn \l_tmpa_box {\textcolor{\l__luatexcn_sidenote_color_tl}{#2}}%
+    % DO NOT use \textcolor here - it creates pdf_colorstack nodes that cause
+    % color leakage when sidenotes span across page boundaries.
+    % Color is handled entirely in the Lua render layer via PDF literals.
+    \hbox_set:Nn \l_tmpa_box {#2}%
 
     % Prepare metadata
     \dim_set:Nn \l_tmpb_dim { \__luatexcn_to_dimen:n { \l__luatexcn_sidenote_grid_height_tl } }

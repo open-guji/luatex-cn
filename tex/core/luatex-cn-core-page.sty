@@ -12,7 +12,7 @@
 % See the License for the specific language governing permissions and
 % limitations under the License.
 
-\ProvidesExplPackage{core/luatex-cn-core-page}{2026/02/03} {0.2.4}{Page geometry and background support}
+\ProvidesExplPackage{core/luatex-cn-core-page}{2026/02/06} {0.2.5}{Page geometry and background support}
 
 % Global token lists for page parameters (centralized)
 \tl_new:N \l__luatexcn_page_paper_width_tl
@@ -80,6 +80,10 @@
         margin_right~=~"\l__luatexcn_page_margin_right_tl"
       })
     }
+    % Apply geometry when called in preamble (sets paper size)
+    \luatexcn_apply_geometry:
+    % Apply split page settings if enabled
+    \__luatexcn_page_apply_split:
   }
 
 % Flag to track if geometry has been initialized (margins set to 0)

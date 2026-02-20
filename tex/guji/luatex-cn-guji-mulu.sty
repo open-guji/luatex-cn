@@ -1,0 +1,79 @@
+% Copyright 2026 Open-Guji (https://github.com/open-guji)
+%
+% Licensed under the Apache License, Version 2.0 (the "License");
+% you may not use this file except in compliance with the License.
+% You may obtain a copy of the License at
+%
+%     http://www.apache.org/licenses/LICENSE-2.0
+%
+% Unless required by applicable law or agreed to in writing, software
+% distributed under the License is distributed on an "AS IS" BASIS,
+% WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+% See the License for the specific language governing permissions and
+% limitations under the License.
+% luatex-cn-guji-mulu.sty
+% Catalog/Index (目录) support for traditional book typesetting
+% This is a subpackage of luatex_cn
+%
+% Usage:
+%   \begin{目錄}
+%       \卷{一}
+%       \部{經部一}
+%       \類{易類}
+%   \end{目錄}
+%
+%   Or with raw commands:
+%   \begin{目錄}
+%       \條目[1]{卷一}
+%       \條目[2]{經部一}
+%       \條目[3]{易類}
+%   \end{目錄}
+%
+\RequirePackage{expl3}
+\RequirePackage{xparse}
+\ProvidesExplPackage {guji/luatex-cn-guji-mulu} {2026/02/06} {0.2.5} {Catalog/Index support for traditional books}
+
+% Load the core column engine
+\RequirePackage{core/luatex-cn-core-column}
+
+% ============================================================================
+% Internal Functions
+% ============================================================================
+
+% Output column with level-based indent
+% #1: level (1, 2, 3, ...)
+% #2: content
+\cs_new:Nn \__luatexcn_mulu_output_column:nn
+  {
+    \int_case:nn { #1 }
+      {
+        { 1 } { \Column{ #2 } }
+        { 2 } { \Column{ 　#2 } }
+        { 3 } { \Column{ 　　#2 } }
+        { 4 } { \Column{ 　　　#2 } }
+      }
+  }
+
+% ============================================================================
+% User Commands
+% ============================================================================
+
+% \条目[level]{content} - Output a column entry with level-based indent
+\NewDocumentCommand{\条目}{ O{1} +m }
+  {
+    \__luatexcn_mulu_output_column:nn { #1 } { #2 }
+  }
+
+% ============================================================================
+% Environment (currently just a grouping wrapper)
+% ============================================================================
+
+\ExplSyntaxOff
+
+% ============================================================================
+% Simplified Chinese Aliases (简体中文别名)
+% ============================================================================
+
+\NewCommandCopy{\條目}{\条目}
+
+\endinput

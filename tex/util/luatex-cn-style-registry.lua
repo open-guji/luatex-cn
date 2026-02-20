@@ -169,6 +169,41 @@ function style_registry.get_outer_border(id)
     return style_registry.get_attr(id, "outer_border")
 end
 
+--- Get outer border thickness from style
+-- @param id (number) Style ID
+-- @return (number|nil) Outer border thickness in sp, or nil if not found
+function style_registry.get_outer_border_thickness(id)
+    return style_registry.get_attr(id, "outer_border_thickness")
+end
+
+--- Get outer border separation from style
+-- @param id (number) Style ID
+-- @return (number|nil) Outer border separation in sp, or nil if not found
+function style_registry.get_outer_border_sep(id)
+    return style_registry.get_attr(id, "outer_border_sep")
+end
+
+--- Get background color from style
+-- @param id (number) Style ID
+-- @return (string|nil) Background color RGB string, or nil if not found
+function style_registry.get_background_color(id)
+    return style_registry.get_attr(id, "background_color")
+end
+
+--- Get border shape from style
+-- @param id (number) Style ID
+-- @return (string|nil) Border shape ("none", "rect", "octagon", "circle"), or nil if not found
+function style_registry.get_border_shape(id)
+    return style_registry.get_attr(id, "border_shape")
+end
+
+--- Get border margin from style
+-- @param id (number) Style ID
+-- @return (string|nil) Border margin value (e.g., "1pt"), or nil if not found
+function style_registry.get_border_margin(id)
+    return style_registry.get_attr(id, "border_margin")
+end
+
 -- ============================================================================
 -- Style Stack Functions (Phase 3: Style Inheritance)
 -- ============================================================================
@@ -212,6 +247,22 @@ function style_registry.push(overrides)
     table.insert(_G.style_registry.stack, id)
 
     return id
+end
+
+--- Push indent style (convenience function for Paragraph environment)
+-- @param indent (number) Base indent value (grid units)
+-- @param first_indent (number) First line indent, -1 means use indent value
+-- @return (number) New style ID
+function style_registry.push_indent(indent, first_indent)
+    indent = tonumber(indent) or 0
+    first_indent = tonumber(first_indent) or -1
+    if first_indent == -1 then
+        first_indent = indent
+    end
+    return style_registry.push({
+        indent = indent,
+        first_indent = first_indent
+    })
 end
 
 --- Pop current style from stack

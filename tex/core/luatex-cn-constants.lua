@@ -62,6 +62,14 @@ constants.ATTR_CHAPTER_REG_ID = 202613
 -- Style Registry Attribute (for cross-page style preservation - Phase 2)
 constants.ATTR_STYLE_REG_ID = luatexbase.attributes.cnverticalstyle or luatexbase.new_attribute("cnverticalstyle")
 
+-- Attributes for Column (单列排版)
+-- ATTR_COLUMN: 1 = 标记为 Column 内容
+-- ATTR_COLUMN_ALIGN: 对齐方式 0=top, 1=bottom, 2=center, 3=stretch
+--                    当 >= 4 时为 LastColumn (值 = base_align + 4)
+constants.ATTR_COLUMN = luatexbase.attributes.cnverticalcolumn or luatexbase.new_attribute("cnverticalcolumn")
+constants.ATTR_COLUMN_ALIGN = luatexbase.attributes.cnverticalcolumnalign or
+    luatexbase.new_attribute("cnverticalcolumnalign")
+
 -- Constants for Side Pizhu
 constants.SIDENOTE_USER_ID = 202601
 constants.FLOATING_TEXTBOX_USER_ID = 202602
@@ -167,7 +175,6 @@ local function register_decorate(char_str, xoff_str, yoff_str, size_str, color_s
         yoffset = to_dimen(yoff_str) or 0,
         scale = tonumber(scale) or 1.0, -- Multiplier for font size
         font_id = font_id,               -- Store provided ID (may be nil)
-        -- Backward compatibility: also store in reg for now
         font_size = to_dimen(size_str),
         color = color_str,
     }

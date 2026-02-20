@@ -12,99 +12,68 @@
 % See the License for the specific language governing permissions and
 % limitations under the License.
 
-% ltc-book.cls
-% Chinese Vertical Book - A document class for modern vertical Chinese typesetting
-% Developed for LuaTeX
+% ltc-book.cls - A document class for modern vertical Chinese typesetting.
 
 \RequirePackage{expl3}
 \RequirePackage{l3keys2e}
-\ProvidesExplClass {ltc-book} {2026/02/03} {0.2.4} {Chinese Vertical Book Class}
+\ProvidesExplClass {ltc-book} {2026/02/06} {0.2.5} {Chinese Vertical Book Class}
+
+% ============================================================================
+% Variables
+% ============================================================================
 
 \tl_new:N \l_luatexcn_book_initial_template_tl
+
+% ============================================================================
+% Class Options
+% ============================================================================
 
 \keys_define:nn { luatexcn / book / options }
   {
     unknown .code:n =
       {
         \tl_set_eq:NN \l_tmpa_tl \l_keys_key_tl
-        % Look for config file: configs/luatex-cn-book-<name>.cfg
         \file_if_exist:nTF { configs/luatex-cn-book- \l_tmpa_tl .cfg }
-          {
-            \tl_set_eq:NN \l_luatexcn_book_initial_template_tl \l_tmpa_tl
-          }
-          {
-            \PassOptionsToClass { \l_tmpa_tl } { article }
-          }
+          { \tl_set_eq:NN \l_luatexcn_book_initial_template_tl \l_tmpa_tl }
+          { \PassOptionsToClass { \l_tmpa_tl } { article } }
       }
   }
 
 \ProcessKeysOptions { luatexcn / book / options }
-
 \LoadClass{article}
 
-% 2. Core Dependencies
+% ============================================================================
+% Dependencies
+% ============================================================================
+
 \RequirePackage{geometry}
 \RequirePackage{xcolor}
 \RequirePackage{fontspec}
 \RequirePackage{environ}
-\RequirePackage{expl3}
 \RequirePackage{xparse}
 \RequirePackage{luatex-cn-core}
 
-% 3. Key-Value Configuration System
-\ExplSyntaxOn
+% ============================================================================
+% Initialization
+% ============================================================================
 
-\keys_define:nn { luatexcn / book }
-  {
-    unknown .code:n = { \keys_set:nx { luatexcn / content } { \l_keys_key_tl = { #1 } } },
-  }
-
-\NewDocumentCommand{\bookSetup}{ +m }
-  {
-    \tl_set:Nn \l_tmpa_tl { #1 }
-    \tl_replace_all:Nnn \l_tmpa_tl { \par } { }
-    \keys_set:nV { luatexcn / book } \l_tmpa_tl
-    \luatexcn_apply_geometry:
-  }
-
-% Load default configuration
+% Load default config
 \InputIfFileExists{configs/luatex-cn-book-default.cfg}{}{
-  \PackageWarning{luatex-cn-book}{Default config not found}
+  \PackageWarning{luatex-cn-book}{Config~file~configs/luatex-cn-book-default.cfg~not~found}
 }
 
-% 4. Main content environment
-\NewEnviron{ltc-book-content}[1][]{%
-    \clearpage
-    \group_begin:
-    \keys_set:nn { luatexcn / book } { #1 }
-    \__luatexcn_content_setup_font:
-    \__luatexcn_content_zero_skips:
-    \__luatexcn_content_calc_height:
-    \luatexcn_apply_geometry:
-    \nointerlineskip
-    \__luatexcn_content_process_grid:n { \BODY }
-    \group_end:
-    \clearpage
-}
-
-% 5. Apply initial template if specified
+% Apply initial template from class options
 \tl_if_empty:NF \l_luatexcn_book_initial_template_tl
   {
     \keys_set:nx { luatexcn / book } { template = \l_luatexcn_book_initial_template_tl }
   }
 
-\pagestyle{plain}
-
-% Environment Aliases (CJK support)
-\NewEnvironmentCopy{正文}{ltc-book-content}
-
-% Apply auto-detected font if no font-name is set
+% Apply font at end of class loading
 \AtEndOfClass{
   \tl_if_empty:NT \l__luatexcn_content_font_name_tl
-    {
-      \ApplyAutoFont
-    }
+    { \ApplyAutoFont }
 }
-\ExplSyntaxOff%
-%
-\endinput%
+
+\ExplSyntaxOff
+\pagestyle{plain}
+\endinput

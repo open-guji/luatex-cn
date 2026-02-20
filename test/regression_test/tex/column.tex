@@ -1,0 +1,43 @@
+\documentclass{ltc-guji}
+
+\usepackage{tikz}
+\setmainfont{TW-Kai}
+\禁用分页裁剪
+
+\begin{document}
+\begin{正文}
+
+% Test 1: Top alignment (default)
+一二三四五六七八九十
+\Column{甲乙丙}
+一二三四五六七八九十一二三四五六七八九十一
+\Column{甲乙丙}
+
+% Test 2: Bottom alignment
+\Column[align=bottom]{甲乙丙居下}
+
+% Test 3: Center alignment
+\Column[align=center]{甲乙丙居中}
+
+% Test 4: Stretch alignment
+\Column[align=stretch]{甲乙丙丁戊展开}
+
+% Test 5: Stretch with many characters (squeeze)
+\Column[align=stretch]{一二三四五六七八九十壹贰叁肆伍陆柒捌玖拾挤压字符}
+
+% Test 6: With color
+\Column[align=center, font-color=red]{红色文字}
+
+% Test 7: Mixed with jiazhu
+\列{甲乙\夹注{双列夹注}丙丁}
+
+% Test 8: LastColumn - place at end of half-page
+一二三四五
+\LastColumn{末列内容}
+
+% Test 9: LastColumn with alignment
+一二三四五
+\末列[align=center]{居中末列}
+
+\end{正文}
+\end{document}

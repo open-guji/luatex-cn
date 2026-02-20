@@ -13,7 +13,7 @@
 % limitations under the License.
 
 \RequirePackage{core/luatex-cn-core-base}
-\ProvidesExplPackage{core/luatex-cn-core-content}{2026/02/03} {0.2.4}{Content layout and border support}
+\ProvidesExplPackage{core/luatex-cn-core-content}{2026/02/06} {0.2.5}{Content layout and border support}
 
 % Centralized variables for content border settings
 \bool_new:N \l__luatexcn_content_border_bool
@@ -184,14 +184,33 @@
 % Syntax: \Content[key=val]{text}
 \NewDocumentCommand{\Content}{ O{} +m }
   {
+    \nointerlineskip
     \par\noindent
     \group_begin:
     \keys_set:nn { luatexcn / content } { #1 }
+    % Apply page geometry
+    \luatexcn_apply_geometry:
+    % Auto-layout for guji-style (computes grid dimensions if needed)
+    \__luatexcn_content_auto_layout:
+    % Common setup (font, skips, height fallback)
+    \__luatexcn_content_setup_font:
+    \__luatexcn_content_zero_skips:
+    \__luatexcn_content_calc_height:
+    % Apply background color if set
+    \__luatexcn_content_apply_background:
+    % Override \clearpage/\newpage for grid processing (scoped to this group)
+    \__luatexcn_page_override_pagebreak:
     \__luatexcn_content_process_grid:n { #2 }
     \group_end:
   }
-% Backward compatibility alias
-\NewCommandCopy{\VerticalRTT}{\Content}
+
+\NewEnviron{BodyText}[1][]{%
+    \group_begin:
+    \keys_set:nn { luatexcn / book } { #1 }
+    \Content{\BODY}
+    \group_end:
+}
+\NewEnvironmentCopy{正文}{BodyText}
 
 % Space Command - inserts a space that occupies grid cells in vertical layout
 % In CJK text, normal ASCII spaces are often absorbed; use this for explicit spacing
@@ -270,23 +289,27 @@
 
 % Helper: Auto-layout calculation for guji-style content
 % Calls Lua to compute grid dimensions based on page and content parameters
+% Only runs if n-column > 0 (guji-style with banxin)
 \cs_new_protected:Npn \__luatexcn_content_auto_layout:
   {
-    \lua_now:e {
-      require('core.luatex-cn-core-content').guji_auto_layout({
-        border_on~=~\bool_if:NTF~\l__luatexcn_content_border_bool~{true}~{false},
-        outer_border_on~=~\bool_if:NTF~\l__luatexcn_content_outer_border_bool~{true}~{false},
-        border_thickness~=~"\l__luatexcn_content_border_thickness_tl",
-        outer_border_thickness~=~"\l__luatexcn_content_outer_border_thickness_tl",
-        outer_border_sep~=~"\l__luatexcn_content_outer_border_sep_tl",
-        border_padding_top~=~"\l__luatexcn_content_border_padding_top_tl",
-        border_padding_bottom~=~"\l__luatexcn_content_border_padding_bottom_tl",
-        n_column~=~\int_use:N~\l__luatexcn_content_n_column_int,
-        n_char_per_col~=~\int_use:N~\l__luatexcn_content_n_char_per_col_int,
-        grid_height~=~"\l__luatexcn_content_grid_height_tl",
-      })
-    }
-    \LtcIfDebugT { \iow_term:x { Guji~Layout:~grid-width=\l__luatexcn_content_grid_width_tl~,~grid-height=\l__luatexcn_content_grid_height_tl~,~height=\l__luatexcn_content_height_tl } }
+    \int_compare:nNnT { \l__luatexcn_content_n_column_int } > { 0 }
+      {
+        \lua_now:e {
+          require('core.luatex-cn-core-content').guji_auto_layout({
+            border_on~=~\bool_if:NTF~\l__luatexcn_content_border_bool~{true}~{false},
+            outer_border_on~=~\bool_if:NTF~\l__luatexcn_content_outer_border_bool~{true}~{false},
+            border_thickness~=~"\l__luatexcn_content_border_thickness_tl",
+            outer_border_thickness~=~"\l__luatexcn_content_outer_border_thickness_tl",
+            outer_border_sep~=~"\l__luatexcn_content_outer_border_sep_tl",
+            border_padding_top~=~"\l__luatexcn_content_border_padding_top_tl",
+            border_padding_bottom~=~"\l__luatexcn_content_border_padding_bottom_tl",
+            n_column~=~\int_use:N~\l__luatexcn_content_n_column_int,
+            n_char_per_col~=~\int_use:N~\l__luatexcn_content_n_char_per_col_int,
+            grid_height~=~"\l__luatexcn_content_grid_height_tl",
+          })
+        }
+        \LtcIfDebugT { \iow_term:x { Guji~Layout:~grid-width=\l__luatexcn_content_grid_width_tl~,~grid-height=\l__luatexcn_content_grid_height_tl~,~height=\l__luatexcn_content_height_tl } }
+      }
   }
 
 \ExplSyntaxOff

@@ -316,6 +316,7 @@ _internal.move_to_next_valid_position = move_to_next_valid_position
 local function wrap_to_next_column(ctx, p_cols, interval, grid_height, indent, reset_indent, reset_content)
     ctx.cur_col = ctx.cur_col + 1
     ctx.cur_row = 0
+    ctx.just_wrapped_column = true  -- Flag for issue #54 fix
     if ctx.cur_col >= p_cols then
         ctx.cur_col = 0
         ctx.cur_page = ctx.cur_page + 1
@@ -515,7 +516,7 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
                 v_scale = v_scale
             }
 
-            -- Only add style fields if they are set (to maintain backward compatibility)
+            -- Only add optional style fields if they are set
             if font_color then
                 map_entry.font_color = font_color
             end
@@ -584,16 +585,24 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
 
         -- Advanced Indentation Logic
         -- Priority: 1) Node attribute (from Paragraph), 2) Style stack (inherited)
+        -- Special value -2 means "force 0, bypass style stack" (used by TextBox)
         local block_id = D.get_attribute(t, constants.ATTR_BLOCK_ID)
         local node_indent = D.get_attribute(t, constants.ATTR_INDENT)
         local node_first_indent = D.get_attribute(t, constants.ATTR_FIRST_INDENT)
 
-        -- Get indent from node attribute or style stack
-        local base_indent = node_indent or 0
-        local first_indent = node_first_indent or -1
+        -- Sentinel value for "force indent to 0, don't check style stack"
+        local FORCE_ZERO_INDENT = -2
 
-        -- If node doesn't have explicit indent, check style stack
-        if node_indent == nil or node_indent == 0 then
+        -- Handle sentinel value: -2 means "force 0"
+        local indent_is_forced = (node_indent == FORCE_ZERO_INDENT)
+        local first_indent_is_forced = (node_first_indent == FORCE_ZERO_INDENT)
+
+        -- Get indent from node attribute or style stack
+        local base_indent = indent_is_forced and 0 or (node_indent or 0)
+        local first_indent = first_indent_is_forced and 0 or (node_first_indent or -1)
+
+        -- If node doesn't have explicit indent (and not forced), check style stack
+        if not indent_is_forced and (node_indent == nil or node_indent == 0) then
             local style_id = D.get_attribute(t, constants.ATTR_STYLE_REG_ID)
             if style_id then
                 local stack_indent = style_registry.get_indent(style_id)
@@ -603,8 +612,8 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
             end
         end
 
-        -- If node doesn't have explicit first_indent, check style stack
-        if node_first_indent == nil or node_first_indent == -1 then
+        -- If node doesn't have explicit first_indent (and not forced), check style stack
+        if not first_indent_is_forced and (node_first_indent == nil or node_first_indent == -1) then
             local style_id = D.get_attribute(t, constants.ATTR_STYLE_REG_ID)
             if style_id then
                 local stack_first_indent = style_registry.get_first_indent(style_id)
@@ -643,6 +652,53 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
         end
 
         apply_indentation(ctx, indent)
+
+        -- Check for Column (单列排版) first
+        local is_column = D.get_attribute(t, constants.ATTR_COLUMN) == 1
+        if is_column then
+            local column_mod = package.loaded['core.luatex-cn-core-column'] or
+                require('core.luatex-cn-core-column')
+
+            -- Get align mode to check for LastColumn (align >= 4)
+            local align_mode = D.get_attribute(t, constants.ATTR_COLUMN_ALIGN) or 0
+            local is_last_column = align_mode >= 4
+
+            -- Column always starts on a new column
+            flush_buffer()
+            if ctx.cur_row > 0 then
+                wrap_to_next_column(ctx, p_cols, interval, grid_height, 0, true, false)
+            end
+
+            -- For LastColumn, jump to the last column of current half-page
+            if is_last_column then
+                -- Calculate last column before banxin (or page end)
+                local last_col = column_mod.find_last_column_in_half_page(
+                    ctx.cur_col, p_cols, interval, get_banxin_on(params))
+                if last_col > ctx.cur_col then
+                    ctx.cur_col = last_col
+                    ctx.cur_row = 0
+                end
+            end
+
+            local column_params = {
+                line_limit = line_limit,
+                grid_height = grid_height,
+                p_cols = p_cols,
+                interval = interval
+            }
+            local column_callbacks = {
+                flush = flush_buffer,
+                wrap = function()
+                    wrap_to_next_column(ctx, p_cols, interval, grid_height, 0, true, false)
+                end,
+                debug = function(msg) dbg.log(msg) end
+            }
+
+            t = column_mod.place_nodes(ctx, t, layout_map, column_params, column_callbacks)
+
+            if not t then break end
+            goto start_of_loop
+        end
 
         local is_textflow = D.get_attribute(t, constants.ATTR_JIAZHU) == 1
         if is_textflow then
@@ -703,12 +759,24 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
         elseif id == constants.GLYPH then
             local dec_id = D.get_attribute(t, constants.ATTR_DECORATE_ID)
             if dec_id and dec_id > 0 then
-                -- Decorate Marker: position directly at current row WITHOUT entering col_buffer
-                -- This ensures the marker doesn't affect normal character layout
+                -- Decorate Marker: position for the PREVIOUS character
+                -- ISSUE #54 FIX: When column just wrapped (just_wrapped_column flag),
+                -- use the previous character's position (last column's last row)
+                local dec_page = ctx.cur_page
+                local dec_col = ctx.cur_col
+                local dec_row = ctx.cur_row
+
+                if ctx.just_wrapped_column and ctx.last_char_row then
+                    -- Column just wrapped - use previous character's position
+                    dec_page = ctx.last_char_page or ctx.cur_page
+                    dec_col = ctx.last_char_col or ctx.cur_col
+                    dec_row = ctx.last_char_row + 1  -- +1 because render subtracts 1
+                end
+
                 local map_entry = {
-                    page = ctx.cur_page,
-                    col = ctx.cur_col,
-                    row = ctx.cur_row
+                    page = dec_page,
+                    col = dec_col,
+                    row = dec_row
                 }
 
                 local font_color = get_node_font_color(t)
@@ -727,6 +795,13 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
                 layout_map[t] = map_entry
                 -- DO NOT increment cur_row - marker is zero-width overlay
             else
+                -- Track last character position for decoration markers
+                ctx.last_char_page = ctx.cur_page
+                ctx.last_char_col = ctx.cur_col
+                ctx.last_char_row = ctx.cur_row
+                -- Clear wrapped flag - we've processed a regular character
+                ctx.just_wrapped_column = false
+
                 table.insert(col_buffer, {
                     node = t,
                     page = ctx.cur_page,

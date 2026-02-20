@@ -203,7 +203,7 @@ function fontdetect.resolve_font(font_list)
             -- Entry is a list of aliases for one font
             found = fontdetect.find_any_font(entry)
         else
-            -- Entry is a single font name (backward compatibility)
+            -- Entry is a single font name
             if fontdetect.font_exists(entry) then
                 found = entry
             end
@@ -253,7 +253,7 @@ function fontdetect.get_font_setup()
                     table.insert(names, entry[1])
                 end
             else
-                -- Entry is a single font name (backward compatibility)
+                -- Entry is a single font name
                 table.insert(names, entry)
             end
         end

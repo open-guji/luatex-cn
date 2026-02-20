@@ -85,6 +85,8 @@ local page_mod = package.loaded['core.luatex-cn-core-page'] or
     require('core.luatex-cn-core-page')
 local textbox_mod = package.loaded['core.luatex-cn-core-textbox'] or
     require('core.luatex-cn-core-textbox')
+local render_border = package.loaded['core.luatex-cn-core-render-border'] or
+    require('core.luatex-cn-core-render-border')
 
 
 -- Internal functions for unit testing
@@ -92,44 +94,25 @@ local _internal = {}
 
 
 -- 辅助函数：计算渲染上下文（尺寸、偏移、列数等）
--- For non-textbox (Content), reads static values from _G.content
--- For textbox, reads from passed ctx params
+-- All values come from ctx (populated by main.lua)
 local function calculate_render_context(ctx)
     -- Unpack nested contexts
     local engine = ctx.engine
     local grid = ctx.grid
     local page = ctx.page
     local visual = ctx.visual
-    local is_textbox = page.is_textbox
 
-    -- Static values: from _G.content for Content, from ctx for textbox
-    local border_thickness, half_thickness, ob_thickness_val, ob_sep_val
-    local b_padding_top, b_padding_bottom
-    local grid_width, grid_height
+    -- All values from ctx (main.lua populates these from style stack)
+    local border_thickness = engine.border_thickness
+    local half_thickness = engine.half_thickness
+    local ob_thickness_val = page.ob_thickness
+    local ob_sep_val = page.ob_sep
+    local b_padding_top = engine.b_padding_top
+    local b_padding_bottom = engine.b_padding_bottom
+    local grid_width = grid.width
+    local grid_height = grid.height
 
-    if is_textbox then
-        -- TextBox: use values from ctx (passed from main.lua)
-        border_thickness = engine.border_thickness
-        half_thickness = engine.half_thickness
-        ob_thickness_val = page.ob_thickness
-        ob_sep_val = page.ob_sep
-        b_padding_top = engine.b_padding_top
-        b_padding_bottom = engine.b_padding_bottom
-        grid_width = grid.width
-        grid_height = grid.height
-    else
-        -- Content: read static values from _G.content
-        border_thickness = _G.content.border_thickness or 26214
-        half_thickness = math.floor(border_thickness / 2)
-        ob_thickness_val = _G.content.outer_border_thickness or (65536 * 2)
-        ob_sep_val = _G.content.outer_border_sep or (65536 * 2)
-        b_padding_top = _G.content.border_padding_top or 0
-        b_padding_bottom = _G.content.border_padding_bottom or 0
-        grid_width = grid.width   -- Still from grid (calculated in main.lua)
-        grid_height = grid.height -- Still from grid (calculated in main.lua)
-    end
-
-    -- Dynamic values: always from ctx (calculated per-invocation in main.lua)
+    -- Dynamic values from ctx (calculated per-invocation in main.lua)
     local outer_shift = engine.outer_shift
     local shift_x = engine.shift_x
     local shift_y = engine.shift_y
@@ -138,27 +121,15 @@ local function calculate_render_context(ctx)
     local p_cols = grid.cols
     local line_limit = grid.line_limit
 
-    -- Visual params: from _G.content for Content, from ctx for textbox
-    local vertical_align, background_rgb_str, text_rgb_str
-    local border_shape, border_color_str, border_width, border_margin
-    if is_textbox then
-        vertical_align = visual.vertical_align or "center"
-        background_rgb_str = utils.normalize_rgb(visual.bg_rgb)
-        text_rgb_str = utils.normalize_rgb(visual.font_rgb)
-        -- Border shape decoration parameters
-        border_shape = visual.border_shape or "none"
-        border_color_str = utils.normalize_rgb(visual.border_color) or "0 0 0"
-        border_width = constants.to_dimen(visual.border_width) or (65536 * 0.4)
-        border_margin = constants.to_dimen(visual.border_margin) or (65536 * 1)
-    else
-        vertical_align = _G.content.vertical_align or "center"
-        background_rgb_str = utils.normalize_rgb(_G.content.background_color)
-        text_rgb_str = utils.normalize_rgb(_G.content.font_color)
-        border_shape = "none"
-        border_color_str = nil
-        border_width = 0
-        border_margin = 0
-    end
+    -- Visual params from ctx.visual (populated by main.lua)
+    local vertical_align = visual.vertical_align or "center"
+    local background_rgb_str = utils.normalize_rgb(visual.bg_rgb)
+    local text_rgb_str = utils.normalize_rgb(visual.font_rgb)
+    -- Border shape decoration parameters
+    local border_shape = visual.border_shape or "none"
+    local border_color_str = utils.normalize_rgb(visual.border_color) or "0 0 0"
+    local border_width = constants.to_dimen(visual.border_width) or (65536 * 0.4)
+    local border_margin = constants.to_dimen(visual.border_margin) or (65536 * 1)
 
     -- Colors: border from engine (already normalized in main.lua)
     local b_rgb_str = engine.border_rgb_str
@@ -348,7 +319,7 @@ end
 
 _internal.handle_block_node = handle_block_node
 
--- Expose decorate.handle_node for backward compatibility in tests
+-- Expose decorate.handle_node for unit testing
 _internal.handle_decorate_node = decorate_mod.handle_node
 
 -- 辅助函数：绘制调试网格/框
@@ -541,111 +512,39 @@ local function render_single_page(p_head, p_max_col, p_max_row, p, layout_map, p
     -- Reserved columns (computed via engine_ctx helper function)
     local reserved_cols = grid.get_reserved_cols and grid.get_reserved_cols(p, p_total_cols) or {}
 
-    -- Borders & Reserved Columns (Now handled by banxin plugin)
+    -- Borders, background, and decorative frames (handled by render_border module)
+    p_head = render_border.render_borders(p_head, {
+        -- Grid and dimensions
+        p_total_cols = p_total_cols,
+        actual_cols = actual_cols,
+        actual_rows = actual_rows,
+        grid_width = grid_width,
+        grid_height = grid_height,
+        line_limit = line_limit,
+        -- Border params
+        border_thickness = border_thickness,
+        b_padding_top = b_padding_top,
+        b_padding_bottom = b_padding_bottom,
+        shift_x = shift_x,
+        outer_shift = outer_shift,
+        b_rgb_str = b_rgb_str,
+        ob_thickness_val = ctx.ob_thickness_val,
+        ob_sep_val = ctx.ob_sep_val,
+        -- Flags
+        draw_border = draw_border,
+        draw_outer_border_flag = draw_outer_border,
+        is_textbox = page.is_textbox,
+        reserved_cols = reserved_cols,
+        -- Visual params
+        border_shape = ctx.border_shape,
+        border_color_str = ctx.border_color_str,
+        border_width = ctx.border_width,
+        border_margin = ctx.border_margin,
+        background_rgb_str = ctx.background_rgb_str,
+    })
 
-    if draw_border and p_total_cols > 0 then
-        -- Column borders
-        p_head = content.draw_column_borders(p_head, {
-            total_cols = p_total_cols,
-            grid_width = grid_width,
-            grid_height = grid_height,
-            line_limit = line_limit,
-            border_thickness = border_thickness,
-            b_padding_top = b_padding_top,
-            b_padding_bottom = b_padding_bottom,
-            shift_x = shift_x,
-            outer_shift = outer_shift,
-            border_rgb_str = b_rgb_str,
-            banxin_cols = reserved_cols,
-        })
-    end
-
-    -- Outer border
-    if draw_outer_border and p_total_cols > 0 then
-        p_head = content.draw_outer_border(p_head, {
-            inner_width = inner_width,
-            inner_height = inner_height,
-            outer_border_thickness = ctx.ob_thickness_val,
-            outer_border_sep = ctx.ob_sep_val,
-            border_rgb_str = b_rgb_str,
-        })
-    end
-
-    -- Colors & Background
+    -- Font color
     p_head = content.set_font_color(p_head, ctx.text_rgb_str)
-
-    -- Special border shape decoration (rect / octagon / circle) for TextBox
-    -- Use actual content size, not the expanded page dimensions
-    local border_shape = ctx.border_shape
-    local shape_width = actual_cols * grid_width
-    local shape_height = actual_rows * grid_height
-
-    -- Draw background: use shaped fill for octagon/circle, rectangular for others
-    if border_shape == "octagon" and ctx.background_rgb_str then
-        -- Octagon-shaped background
-        local border_m = ctx.border_margin or 0
-        p_head = content.draw_octagon_fill(p_head, {
-            x = -border_m,
-            y = border_m,
-            width = shape_width + 2 * border_m,
-            height = shape_height + 2 * border_m,
-            color_str = ctx.background_rgb_str,
-        })
-    elseif border_shape == "circle" and ctx.background_rgb_str then
-        -- Circle-shaped background
-        local border_m = ctx.border_margin or 0
-        p_head = content.draw_circle_fill(p_head, {
-            cx = shape_width / 2,
-            cy = -shape_height / 2,
-            radius = math.max(shape_width, shape_height) / 2 + border_m,
-            color_str = ctx.background_rgb_str,
-        })
-    else
-        -- Rectangular background (default)
-        p_head = page_mod.draw_background(p_head, {
-            bg_rgb_str = ctx.background_rgb_str,
-            inner_width = inner_width,
-            inner_height = inner_height,
-            outer_shift = outer_shift,
-            is_textbox = page.is_textbox,
-        })
-    end
-
-    -- Draw border frame
-    if border_shape and border_shape ~= "none" then
-        local border_color = ctx.border_color_str or ctx.b_rgb_str or "0 0 0"
-        local border_w = ctx.border_width or (65536 * 0.4)
-        local border_m = ctx.border_margin or 0
-
-        if border_shape == "rect" then
-            -- Rectangular frame: simple stroke rectangle
-            p_head = content.draw_rect_frame(p_head, {
-                x = -border_m,
-                y = border_m,
-                width = shape_width + 2 * border_m,
-                height = shape_height + 2 * border_m,
-                line_width = border_w,
-                color_str = border_color,
-            })
-        elseif border_shape == "octagon" then
-            p_head = content.draw_octagon_frame(p_head, {
-                x = -border_m,
-                y = border_m,
-                width = shape_width + 2 * border_m,
-                height = shape_height + 2 * border_m,
-                line_width = border_w,
-                color_str = border_color,
-            })
-        elseif border_shape == "circle" then
-            p_head = content.draw_circle_frame(p_head, {
-                cx = shape_width / 2,
-                cy = -shape_height / 2,
-                radius = math.max(shape_width, shape_height) / 2 + border_m,
-                line_width = border_w,
-                color_str = border_color,
-            })
-        end
-    end
 
     -- Node positions
     -- Update context with page-specific total_cols

@@ -12,7 +12,7 @@
 % See the License for the specific language governing permissions and
 % limitations under the License.
 
-\ProvidesExplPackage{guji/luatex-cn-guji-danye}{2026/02/14} {0.2.8}{Single page support for traditional Chinese books}
+\ProvidesExplPackage{guji/luatex-cn-guji-danye}{2026/02/18} {0.2.9}{Single page support for traditional Chinese books}
 
 % ============================================================================
 % SinglePage Environment (单页)
@@ -46,6 +46,8 @@
         page-split-enabled = false,
         #1
       }
+    % SinglePage defaults: no banxin (single page has no center column)
+    \keys_set:nn { luatexcn / banxin } { banxin = false }
     % Sync page dimensions to Lua
     \lua_now:e {
       local~page~=~require('core.luatex-cn-core-page');~
@@ -67,9 +69,34 @@
     \lua_now:n { require('core.luatex-cn-core-page').restore() }
     % Sync restored Lua state back to TeX token lists
     \__luatexcn_page_sync_from_lua:
+    % Globally restore paper/page dimensions so they survive \NewEnviron group end
+    \__luatexcn_page_restore_dims_globally:
 }
 
-% CJK alias
+% ============================================================================
+% EmptySinglePage Environment (空白页)
+% A single page with no borders at all (no column borders, no outer border)
+% Usage: \begin{EmptySinglePage}[additional options] ... \end{EmptySinglePage}
+% ============================================================================
+\tl_new:N \l__luatexcn_empty_danye_body_tl
+\NewEnviron{EmptySinglePage}[1][]{%
+  \tl_set_eq:NN \l__luatexcn_empty_danye_body_tl \BODY
+  \begin{SinglePage}[#1]
+    \keys_set:nn { luatexcn / content } { border = false, outer-border = false }
+    \begin{正文}
+      \l__luatexcn_empty_danye_body_tl
+    \end{正文}
+  \end{SinglePage}
+}
+
+% ============================================================================
+% CJK Aliases (中文别名)
+% ============================================================================
+% Simplified Chinese / 简体
 \NewEnvironmentCopy{单页}{SinglePage}
+\NewEnvironmentCopy{空白页}{EmptySinglePage}
+% Traditional Chinese / 繁体
+\NewEnvironmentCopy{單頁}{SinglePage}
+\NewEnvironmentCopy{空白頁}{EmptySinglePage}
 
 \endinput

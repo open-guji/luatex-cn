@@ -19,7 +19,7 @@
 \RequirePackage{core/luatex-cn-core-base}
 \RequirePackage{expl3}
 \RequirePackage{xparse}
-\ProvidesExplPackage {core/luatex-cn-core-style} {2026/02/14} {0.2.8} {Generic Style Override for Vertical Typesetting}
+\ProvidesExplPackage {core/luatex-cn-core-style} {2026/02/18} {0.2.9} {Generic Style Override for Vertical Typesetting}
 
 \makeatletter
 
@@ -34,6 +34,9 @@
         spacing-top .tl_set:N = \l__luatexcn_style_spacing_top_tl,
         spacing-bottom .tl_set:N = \l__luatexcn_style_spacing_bottom_tl,
         spacing .meta:n = { spacing-top = #1, spacing-bottom = #1 },
+
+        xshift .tl_set:N = \l__luatexcn_style_xshift_tl,
+        yshift .tl_set:N = \l__luatexcn_style_yshift_tl,
       }
 
     % Internal: push style and print ID
@@ -50,7 +53,9 @@
             sr.make_extra(
               \tl_if_empty:NTF \l__luatexcn_style_grid_height_tl { nil } { [=[\luaescapestring{\l__luatexcn_style_grid_height_tl}]=] },
               \tl_if_empty:NTF \l__luatexcn_style_spacing_top_tl { nil } { [=[\luaescapestring{\l__luatexcn_style_spacing_top_tl}]=] },
-              \tl_if_empty:NTF \l__luatexcn_style_spacing_bottom_tl { nil } { [=[\luaescapestring{\l__luatexcn_style_spacing_bottom_tl}]=] }
+              \tl_if_empty:NTF \l__luatexcn_style_spacing_bottom_tl { nil } { [=[\luaescapestring{\l__luatexcn_style_spacing_bottom_tl}]=] },
+              \tl_if_empty:NTF \l__luatexcn_style_xshift_tl { nil } { [=[\luaescapestring{\l__luatexcn_style_xshift_tl}]=] },
+              \tl_if_empty:NTF \l__luatexcn_style_yshift_tl { nil } { [=[\luaescapestring{\l__luatexcn_style_yshift_tl}]=] }
             )
           )
           tex.print(tostring(style_id))
@@ -76,6 +81,8 @@
         \tl_set:Nn \l__luatexcn_style_grid_height_tl {}
         \tl_set:Nn \l__luatexcn_style_spacing_top_tl {}
         \tl_set:Nn \l__luatexcn_style_spacing_bottom_tl {}
+        \tl_set:Nn \l__luatexcn_style_xshift_tl {}
+        \tl_set:Nn \l__luatexcn_style_yshift_tl {}
         \keys_set:nn { luatexcn / style } { #1 }
       }
 
@@ -123,7 +130,41 @@
 
 \ExplSyntaxOff%
 
-% Chinese aliases
+% ============================================================
+% Chinese aliases / 中文别名
+% ============================================================
+% Simplified Chinese / 简体
 \NewCommandCopy{\样式}{\Style}
+\NewEnvironmentCopy{样式环境}{StyleEnv}
+% Traditional Chinese / 繁体
+\NewCommandCopy{\樣式}{\Style}
+\NewEnvironmentCopy{樣式環境}{StyleEnv}
+
+% ============================================================
+% Chinese key aliases / 中文 Key 别名
+% ============================================================
+\ExplSyntaxOn
+\keys_define:nn { luatexcn / style }
+  {
+    % 简体
+    字号 .tl_set:N = \l__luatexcn_style_size_tl,
+    字体 .tl_set:N = \l__luatexcn_style_font_tl,
+    字色 .tl_set:N = \l__luatexcn_style_color_tl,
+    格高 .tl_set:N = \l__luatexcn_style_grid_height_tl,
+    上间距 .tl_set:N = \l__luatexcn_style_spacing_top_tl,
+    下间距 .tl_set:N = \l__luatexcn_style_spacing_bottom_tl,
+    间距 .meta:n = { spacing-top = #1, spacing-bottom = #1 },
+    横移 .tl_set:N = \l__luatexcn_style_xshift_tl,
+    纵移 .tl_set:N = \l__luatexcn_style_yshift_tl,
+    % 繁体（与简体不同形的）
+    字號 .tl_set:N = \l__luatexcn_style_size_tl,
+    字體 .tl_set:N = \l__luatexcn_style_font_tl,
+    上間距 .tl_set:N = \l__luatexcn_style_spacing_top_tl,
+    下間距 .tl_set:N = \l__luatexcn_style_spacing_bottom_tl,
+    間距 .meta:n = { spacing-top = #1, spacing-bottom = #1 },
+    橫移 .tl_set:N = \l__luatexcn_style_xshift_tl,
+    縱移 .tl_set:N = \l__luatexcn_style_yshift_tl,
+  }
+\ExplSyntaxOff
 
 \endinput%

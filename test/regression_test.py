@@ -6,8 +6,11 @@ import sys
 import argparse
 import re
 from pathlib import Path
-from PIL import Image
-import numpy as np
+
+# image_compare lives in scripts/
+_BASE_DIR = Path(__file__).parent.parent.resolve()
+sys.path.insert(0, str(_BASE_DIR / "scripts"))
+from image_compare import pdf_to_pngs, compare_images
 
 import concurrent.futures
 import multiprocessing
@@ -70,74 +73,18 @@ def compile_tex(tex_file, pdf_dir, log_list):
 
     return pdf_dir / pdf_name
 
-def pdf_to_pngs(pdf_file, output_dir, log_list):
-    """Convert all pages of PDF to PNG images using pdftoppm."""
-    # Clean up old images for this file
-    for old_png in output_dir.glob(f"{pdf_file.stem}-*.png"):
-        old_png.unlink()
-
-    output_prefix = str(output_dir / pdf_file.stem)
-    res = run_command([
-        "pdftoppm", "-png", "-r", "300",
-        str(pdf_file), output_prefix
-    ], log_list=log_list)
-    if res.returncode != 0:
+def pdf_to_pngs_logged(pdf_file, output_dir, log_list):
+    """Wrapper around image_compare.pdf_to_pngs that appends errors to log_list."""
+    pngs = pdf_to_pngs(pdf_file, output_dir)
+    if not pngs:
         log_list.append(f"ERROR: PDF to PNG conversion failed for {pdf_file.name}")
-        return []
-
-    # pdftoppm outputs files like name-1.png, name-2.png...
-    pngs = sorted(list(output_dir.glob(f"{pdf_file.stem}-*.png")),
-                  key=lambda x: int(re.search(r'-(\d+)\.png$', x.name).group(1)))
     return pngs
 
-def compare_images(baseline_png, current_png, diff_png, log_list):
-    """Compare two PNG images and generate a single composite diff image.
 
-    Composite: identical pixels in gray, baseline-only diffs in blue,
-    current-only diffs in red, overlapping diffs in purple/dark.
-    """
-    baseline_img = Image.open(baseline_png).convert("RGB")
-    current_img = Image.open(current_png).convert("RGB")
+def compare_images_logged(baseline_png, current_png, diff_png, log_list):
+    """Wrapper around image_compare.compare_images (log_list kept for API compat)."""
+    return compare_images(baseline_png, current_png, diff_png)
 
-    # Ensure same size (pad smaller if needed)
-    w = max(baseline_img.width, current_img.width)
-    h = max(baseline_img.height, current_img.height)
-    if baseline_img.size != (w, h):
-        padded = Image.new("RGB", (w, h), (255, 255, 255))
-        padded.paste(baseline_img, (0, 0))
-        baseline_img = padded
-    if current_img.size != (w, h):
-        padded = Image.new("RGB", (w, h), (255, 255, 255))
-        padded.paste(current_img, (0, 0))
-        current_img = padded
-
-    baseline_arr = np.array(baseline_img)
-    current_arr = np.array(current_img)
-
-    # Find pixels that differ (any channel)
-    diff_mask = np.any(baseline_arr != current_arr, axis=2)
-    diff_count = int(np.sum(diff_mask))
-
-    if diff_count > 0:
-        # Grayscale luminance
-        b_gray = np.mean(baseline_arr, axis=2)
-        c_gray = np.mean(current_arr, axis=2)
-
-        # Same pixels: grayscale
-        result = np.stack([b_gray, b_gray, b_gray], axis=2).astype(np.uint8)
-
-        # Different pixels: blue (baseline) + red (current) on white background
-        bs = (255 - b_gray[diff_mask]).astype(np.float32)
-        cs = (255 - c_gray[diff_mask]).astype(np.float32)
-
-        result[diff_mask, 0] = np.clip(255 - bs, 0, 255).astype(np.uint8)
-        result[diff_mask, 1] = np.clip(255 - bs - cs, 0, 255).astype(np.uint8)
-        result[diff_mask, 2] = np.clip(255 - cs, 0, 255).astype(np.uint8)
-
-        diff_img = Image.fromarray(result)
-        diff_img.save(str(diff_png))
-
-    return diff_count
 
 def process_file(tex_file, mode, pdf_dir, baseline_dir, current_dir, diff_dir):
     log_list = [f"\nProcessing {tex_file.name}..."]
@@ -149,7 +96,7 @@ def process_file(tex_file, mode, pdf_dir, baseline_dir, current_dir, diff_dir):
 
     if mode == "save":
         # 2. Convert to PNGs in a temp location first (use current_dir as temp)
-        new_pngs = pdf_to_pngs(pdf_file, current_dir, log_list)
+        new_pngs = pdf_to_pngs_logged(pdf_file, current_dir, log_list)
         if not new_pngs:
             return False, "PNG conversion failed", log_list
 
@@ -162,7 +109,7 @@ def process_file(tex_file, mode, pdf_dir, baseline_dir, current_dir, diff_dir):
             all_match = True
             for b_png, n_png in zip(existing_baselines, new_pngs):
                 diff_png = diff_dir / f"temp_diff_{n_png.name}"
-                diff_count = compare_images(b_png, n_png, diff_png, log_list)
+                diff_count = compare_images_logged(b_png, n_png, diff_png, log_list)
                 if diff_png.exists():
                     diff_png.unlink()
                 if diff_count != 0:
@@ -191,12 +138,15 @@ def process_file(tex_file, mode, pdf_dir, baseline_dir, current_dir, diff_dir):
 
     elif mode == "check":
         # 2. Convert to PNGs in current
-        current_pngs = pdf_to_pngs(pdf_file, current_dir, log_list)
+        current_pngs = pdf_to_pngs_logged(pdf_file, current_dir, log_list)
         if not current_pngs:
             return False, "PNG conversion failed", log_list
 
-        baseline_pngs = sorted(list(baseline_dir.glob(f"{pdf_file.stem}-*.png")),
-                               key=lambda x: int(re.search(r'-(\d+)\.png$', x.name).group(1)))
+        # Use regex to match exact stem followed by -N.png (not stem-more-stuff-N.png)
+        baseline_pngs = sorted(
+            [f for f in baseline_dir.glob(f"{pdf_file.stem}-*.png")
+             if re.match(rf"^{re.escape(pdf_file.stem)}-\d+\.png$", f.name)],
+            key=lambda x: int(re.search(r'-(\d+)\.png$', x.name).group(1)))
 
         if len(current_pngs) != len(baseline_pngs):
             return False, f"Page count mismatch: current={len(current_pngs)}, baseline={len(baseline_pngs)}", log_list
@@ -206,7 +156,7 @@ def process_file(tex_file, mode, pdf_dir, baseline_dir, current_dir, diff_dir):
 
         for i, (b_png, c_png) in enumerate(zip(baseline_pngs, current_pngs)):
             diff_png = diff_dir / f"diff_{c_png.name}"
-            diff_count = compare_images(b_png, c_png, diff_png, log_list)
+            diff_count = compare_images_logged(b_png, c_png, diff_png, log_list)
 
             if diff_count > 0:
                 total_diff_pixels += diff_count

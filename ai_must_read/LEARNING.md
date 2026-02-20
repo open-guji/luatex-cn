@@ -780,3 +780,118 @@ end
 2. **vbox 构建会触发 Lua 副作用**：TeX 的 `\vbox_set:Nn` 在收集内容时会执行宏，宏中的 `\lua_now` 调用会修改全局状态。这发生在 `sync_to_lua` 之前。
 3. **多条件优先级链（if col_widths / elseif banxin / elseif grid / else）非常脆弱**：最高优先级条件被意外满足时，所有正常路径都被跳过。
 4. **调试此类问题的高效方法**：用 `texio.write_nl` 在关键位置打印全局状态值（不依赖 debug 模块开关），快速定位是"哪个值不对"而非"哪行代码有bug"。
+
+---
+
+## 八、 页面环境与 Shipout Hook 交互
+
+### 8.1 `\topskip` 在 document body 中赋值导致空白页
+
+**日期**: 2026-02-14
+
+**问题**：封面（Cover）环境后总是产生一个多余的空白页。page.tex 输出 11 页而非 10 页。
+
+**现象**：
+- 两个连续的 SinglePage（单页）环境之间会产生空白页
+- 空白页不是真正空白，包含一个 vlist 节点（w=1136pt h=12pt）
+- 仅当 SinglePage 内有可见内容时才出现
+
+**根本原因**：`\luatexcn_apply_geometry:` 中包含 `\dim_set:Nn \topskip { 0pt }`，每次 SinglePage 开始时都会在 document body 中执行。这个 `\topskip` 赋值与 TikZ/eso-pic 加载的 shipout hook 交互，导致在连续 SinglePage 之间产生虚假空白页。
+
+```latex
+% ❌ 错误：在 document body 中设置 \topskip
+\cs_new:Npn \luatexcn_apply_geometry:
+  {
+    \dim_set:Nn \topskip { \l__luatexcn_page_topskip_tl }  % ← 在每个 SP 开始时执行
+    ...
+  }
+```
+
+**最小复现**（使用 plain article + eso-pic）：
+```latex
+\documentclass{article}
+\usepackage{eso-pic}  % 或 tikz，任何注册 shipout hook 的包
+\begin{document}
+Page one content
+\clearpage
+\topskip=0pt    % ← 在 \clearpage 之后赋值 \topskip → 触发空白页
+Page two content
+\end{document}
+% 结果：3 页（page 2 是空白页）
+```
+
+**修复方案**：将 `\topskip` 从 `\luatexcn_apply_geometry:`（每页调用）移到 `\pageSetup`（仅在 preamble 调用一次）。
+
+```latex
+% ✅ 正确：topskip 只在 preamble 设置一次
+\cs_new:Npn \pageSetup
+  {
+    ...
+    \luatexcn_apply_geometry:
+    % topskip 只在这里设置，不在 apply_geometry 中
+    \dim_set:Nn \topskip { \l__luatexcn_page_topskip_tl }
+    \__luatexcn_page_apply_split:
+  }
+
+% apply_geometry 中不再包含 topskip 赋值
+\cs_new:Npn \luatexcn_apply_geometry:
+  {
+    \dim_set:Nn \paperwidth { ... }
+    \dim_set:Nn \paperheight { ... }
+    \dim_set:Nn \pagewidth { ... }
+    \dim_set:Nn \pageheight { ... }
+    % NOTE: \topskip intentionally NOT set here
+  }
+```
+
+**调试过程**：
+1. 对比封面和书名页（都调用单页），发现两个连续单页就会产生空白页
+2. 用 `pre_shipout_filter` 回调检查空白页内容，发现有实际节点
+3. 二分法逐行注释 `\luatexcn_apply_geometry:`，定位到 `\topskip` 赋值
+4. 用最小 article 文档 + eso-pic 确认是 `\topskip` + shipout hook 的交互
+
+**关键教训**：
+1. **`\topskip` 在 document body 中赋值是危险的**：当文档加载了 TikZ、eso-pic 等注册 shipout hook 的包时，`\clearpage` 后的 `\topskip` 赋值可能产生虚假空白页
+2. **shipout hook 的副作用难以预测**：hook 中的 TikZ overlay 代码可能在 main vertical list 上产生节点（whatsit），这些节点被 TeX 视为"有内容"，触发额外的 shipout
+3. **二分法是定位此类问题的最有效方法**：逐行注释函数内容，直到空白页消失，即可精确定位根因
+4. **`\NewEnviron` 的分组效应**：`\NewEnviron` 创建 TeX group，内部的 `\dim_set:Nn` 是局部赋值，group 结束后被撤销。如果需要维度在环境结束后生效，必须用 `\dim_gset:Nn`（全局赋值）
+
+### 8.2 `tex.set("global", "paperwidth", ...)` 对 TeX dimen 无效
+
+**日期**: 2026-02-14
+
+**问题**：尝试在 Lua 中全局设置 `\paperwidth` 失败，赋值被静默忽略。
+
+**根本原因**：`\paperwidth` 是 TeX `\dimen` 寄存器（由 LaTeX 定义），不是 LuaTeX 的内部参数。`tex.set("global", ...)` 只对 LuaTeX 内部参数（如 `pagewidth`、`pageheight`）有效。
+
+```lua
+-- ✅ 有效：pagewidth/pageheight 是 LuaTeX 内部参数
+tex.set("global", "pagewidth", target_w)
+tex.set("global", "pageheight", target_h)
+
+-- ❌ 无效（静默失败）：paperwidth 是 TeX \dimen 寄存器
+tex.set("global", "paperwidth", target_w)
+tex.set("global", "paperheight", target_h)
+
+-- ✅ 正确方式：通过 TeX 层全局赋值 \paperwidth
+-- 在 .sty 中使用 \dim_gset:Nn \paperwidth { ... }
+```
+
+**`tex.set` 支持的参数类型**：
+| 类型 | 示例 | `tex.set("global", ...)` |
+|------|------|--------------------------|
+| LuaTeX 内部参数 | `pagewidth`, `pageheight` | ✅ 有效 |
+| TeX `\dimen` 寄存器 | `\paperwidth`, `\paperheight` | ❌ 静默失败 |
+
+**解决方案**：在 TeX 层（.sty 文件）中使用 `\dim_gset:Nn` 进行全局赋值：
+```latex
+\cs_new:Npn \__luatexcn_page_restore_dims_globally:
+  {
+    \dim_gset:Nn \paperwidth { \l__luatexcn_page_paper_width_tl }
+    \dim_gset:Nn \paperheight { \l__luatexcn_page_paper_height_tl }
+    \dim_gset:Nn \pagewidth { \l__luatexcn_page_paper_width_tl }
+    \dim_gset:Nn \pageheight { \l__luatexcn_page_paper_height_tl }
+  }
+```
+
+**教训**：Lua 层的 `tex.set` 不是万能的。对于 LaTeX 定义的 dimen 寄存器，全局赋值必须在 TeX 层完成。而且 `tex.set` 对不支持的参数名不会报错，只会静默忽略。

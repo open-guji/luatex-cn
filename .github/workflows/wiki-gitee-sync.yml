@@ -1,0 +1,53 @@
+name: Sync Wiki to Gitee
+
+concurrency:
+  group: wiki-gitee-sync
+  cancel-in-progress: true
+
+on:
+  schedule:
+    - cron: '0 2 * * *'   # 每天 UTC 2:00 (北京时间 10:00) 自动同步
+  workflow_dispatch:       # 支持手动触发
+
+jobs:
+  wiki-sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.GITEE_PRIVATE_KEY }}
+
+      - name: Add Gitee to known_hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan gitee.com >> ~/.ssh/known_hosts
+
+      - name: Clone GitHub Wiki
+        run: |
+          git clone https://github.com/open-guji/luatex-cn.wiki.git wiki
+          cd wiki
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Replace GitHub links with Gitee
+        run: |
+          cd wiki
+          for f in *.md; do
+            sed -i \
+              -e 's|https://github.com/open-guji/luatex-cn|https://gitee.com/open-guji/luatex-cn|g' \
+              -e 's|github.com/open-guji/luatex-cn|gitee.com/open-guji/luatex-cn|g' \
+              "$f"
+          done
+
+      - name: Push to Gitee Wiki
+        run: |
+          cd wiki
+          git add -A
+          if git diff --staged --quiet; then
+            echo "No link changes to commit"
+          else
+            git commit -m "Replace GitHub links with Gitee links"
+          fi
+          git remote add gitee git@gitee.com:open-guji/luatex-cn.wiki.git
+          git push -f gitee master:master

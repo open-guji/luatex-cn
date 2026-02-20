@@ -9,7 +9,7 @@
 
 \RequirePackage{expl3}
 \RequirePackage{xparse}
-\ProvidesExplPackage {guji/luatex-cn-guji-meipi} {2026/02/14} {0.2.8} {MeiPi Auto-Positioned Annotation Support}
+\ProvidesExplPackage {guji/luatex-cn-guji-meipi} {2026/02/18} {0.2.9} {MeiPi Auto-Positioned Annotation Support}
 
 % Load the Lua module
 \lua_now:n { require('guji.luatex-cn-guji-meipi') }
@@ -215,7 +215,40 @@
 
 \ExplSyntaxOff%
 
-% Command Alias for CJK
+% ============================================================================
+% CJK Aliases (中文别名)
+% ============================================================================
+% Simplified Chinese / 简体
 \NewCommandCopy{\眉批}{\MeiPi}
+\NewCommandCopy{\眉批设置}{\meipiSetup}
+% Traditional Chinese / 繁体
+\NewCommandCopy{\眉批設置}{\meipiSetup}
+
+% ============================================================
+% Chinese key aliases / 中文 Key 别名
+% ============================================================
+\ExplSyntaxOn
+\keys_define:nn { luatexcn / meipi }
+  {
+    % 简体
+    横位 .tl_set:N = \l__luatexcn_meipi_x_tl,
+    纵位 .tl_set:N = \l__luatexcn_meipi_y_tl,
+    高度 .tl_set:N = \l__luatexcn_meipi_height_tl,
+    字号 .tl_set:N = \l__luatexcn_meipi_font_size_tl,
+    颜色 .tl_set:N = \l__luatexcn_meipi_color_tl,
+    格宽 .tl_set:N = \l__luatexcn_meipi_grid_width_tl,
+    格高 .tl_set:N = \l__luatexcn_meipi_grid_height_tl,
+    间距 .tl_set:N = \l__luatexcn_meipi_spacing_tl,
+    间隔 .tl_set:N = \l__luatexcn_meipi_gap_tl,
+    % 繁体（与简体不同形的）
+    橫位 .tl_set:N = \l__luatexcn_meipi_x_tl,
+    縱位 .tl_set:N = \l__luatexcn_meipi_y_tl,
+    字號 .tl_set:N = \l__luatexcn_meipi_font_size_tl,
+    顏色 .tl_set:N = \l__luatexcn_meipi_color_tl,
+    格寬 .tl_set:N = \l__luatexcn_meipi_grid_width_tl,
+    間距 .tl_set:N = \l__luatexcn_meipi_spacing_tl,
+    間隔 .tl_set:N = \l__luatexcn_meipi_gap_tl,
+  }
+\ExplSyntaxOff
 
 \endinput%

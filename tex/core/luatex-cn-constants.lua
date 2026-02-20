@@ -193,8 +193,8 @@ local function register_decorate(char_str, xoff_str, yoff_str, size_str, color_s
     -- Keep decoration-specific attributes in decorate_registry
     local reg = {
         char = char_code,
-        xoffset = to_dimen(xoff_str) or 0,
-        yoffset = to_dimen(yoff_str) or 0,
+        xshift = to_dimen(xoff_str) or 0,
+        yshift = to_dimen(yoff_str) or 0,
         scale = tonumber(scale) or 1.0, -- Multiplier for font size
         font_id = font_id,              -- Store provided ID (may be nil)
         font_size = to_dimen(size_str),
@@ -335,6 +335,18 @@ constants.PENALTY_FORCE_COLUMN = -10002
 --- Force page break: Unconditionally wrap to new page
 --- Used by: \newpage, \clearpage commands
 constants.PENALTY_FORCE_PAGE = -10003
+
+--- Taitou column break: Force column break for 抬头 commands
+--- Like PENALTY_FORCE_COLUMN, but marks the next column as the taitou scope.
+--- Used by: \抬头, \相对抬头 commands
+constants.PENALTY_TAITOU = -10004
+
+--- Digital newline: Column break from DigitalContent ^^M (obeylines).
+--- Like PENALTY_FORCE_COLUMN, but consecutive occurrences always produce
+--- empty columns (even when cur_row == 0). This is needed because every
+--- newline in the .tex source must map to a column in the PDF output.
+--- Used by: DigitalContent environment obeylines handler
+constants.PENALTY_DIGITAL_NEWLINE = -10005
 
 --- Page fill marker: Allow page break, used in page splitting
 --- Note: This keeps standard TeX value for compatibility

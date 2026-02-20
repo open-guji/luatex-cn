@@ -20,7 +20,7 @@
 \RequirePackage{core/luatex-cn-core-base}
 \RequirePackage{expl3}
 \RequirePackage{xparse}
-\ProvidesExplPackage {core/luatex-cn-core-textflow} {2026/02/14} {0.2.8} {TextFlow (Jiazhu) Support for Vertical Typesetting}
+\ProvidesExplPackage {core/luatex-cn-core-textflow} {2026/02/18} {0.2.9} {TextFlow (Jiazhu) Support for Vertical Typesetting}
 
 % Default variables for textflow (can be set by higher layers like guji/jiazhu)
 \tl_new:N \l__luatexcn_textflow_default_size_tl
@@ -221,7 +221,35 @@
 
 \ExplSyntaxOff%
 
-% Command Alias for CJK
+% ============================================================
+% Chinese aliases / 中文别名
+% ============================================================
+% Simplified Chinese / 简体
 \NewCommandCopy{\文本流}{\TextFlow}
+\NewEnvironmentCopy{文本流环境}{TextFlowEnv}
+% Traditional Chinese / 繁体
+\NewEnvironmentCopy{文本流環境}{TextFlowEnv}
+
+% ============================================================
+% Chinese key aliases / 中文 Key 别名
+% ============================================================
+\ExplSyntaxOn
+\keys_define:nn { luatexcn / textflow }
+  {
+    % 简体
+    单列 .meta:n = { only-column = #1 },
+    自动均衡 .bool_set:N = \l__luatexcn_textflow_auto_balance_bool,
+    字号 .tl_set:N = \l__luatexcn_textflow_local_size_tl,
+    字体 .tl_set:N = \l__luatexcn_textflow_local_font_tl,
+    字色 .tl_set:N = \l__luatexcn_textflow_local_color_tl,
+    对齐 .tl_set:N = \l__luatexcn_textflow_local_align_tl,
+    % 繁体（与简体不同形的）
+    單列 .meta:n = { only-column = #1 },
+    自動均衡 .bool_set:N = \l__luatexcn_textflow_auto_balance_bool,
+    字號 .tl_set:N = \l__luatexcn_textflow_local_size_tl,
+    字體 .tl_set:N = \l__luatexcn_textflow_local_font_tl,
+    對齊 .tl_set:N = \l__luatexcn_textflow_local_align_tl,
+  }
+\ExplSyntaxOff
 
 \endinput%

@@ -17,16 +17,16 @@
 %
 \RequirePackage{expl3}
 \RequirePackage{xparse}
-\ProvidesExplPackage {decorate/luatex-cn-decorate} {2026/02/14} {0.2.8} {Character Decoration Support}
+\ProvidesExplPackage {decorate/luatex-cn-decorate} {2026/02/18} {0.2.9} {Character Decoration Support}
 
 % Decorate Command - Apply decoration to each character in content
-% Syntax: \decorate[char=。, color=red, xoffset=0pt, yoffset=0pt]{content}
+% Syntax: \decorate[char=。, color=red, xshift=0pt, yshift=0pt]{content}
 % Each character in {content} will have the decoration character applied
 
 \tl_new:N \l__luatexcn_decorate_char_tl
 \tl_new:N \l__luatexcn_decorate_color_tl
-\tl_new:N \l__luatexcn_decorate_xoffset_tl
-\tl_new:N \l__luatexcn_decorate_yoffset_tl
+\tl_new:N \l__luatexcn_decorate_xshift_tl
+\tl_new:N \l__luatexcn_decorate_yshift_tl
 \tl_new:N \l__luatexcn_decorate_font_size_tl
 \tl_new:N \l__luatexcn_decorate_scale_tl
 
@@ -36,12 +36,12 @@
     char .initial:n = 。,
     color .tl_set:N = \l__luatexcn_decorate_color_tl,
     color .initial:n = red,
-    xoffset .tl_set:N = \l__luatexcn_decorate_xoffset_tl,
-    xoffset .initial:n = 0pt,
-    xshift .tl_set:N = \l__luatexcn_decorate_xoffset_tl,
-    yoffset .tl_set:N = \l__luatexcn_decorate_yoffset_tl,
-    yoffset .initial:n = 0pt,
-    yshift .tl_set:N = \l__luatexcn_decorate_yoffset_tl,
+    xshift .tl_set:N = \l__luatexcn_decorate_xshift_tl,
+    xshift .initial:n = 0pt,
+    xoffset .tl_set:N = \l__luatexcn_decorate_xshift_tl,
+    yshift .tl_set:N = \l__luatexcn_decorate_yshift_tl,
+    yshift .initial:n = 0pt,
+    yoffset .tl_set:N = \l__luatexcn_decorate_yshift_tl,
     font-size .tl_set:N = \l__luatexcn_decorate_font_size_tl,
     font-size .initial:n = ,
     scale .tl_set:N = \l__luatexcn_decorate_scale_tl,
@@ -55,8 +55,8 @@
     local~constants~=~require('core.luatex-cn-constants')
     constants.register_decorate(
       "\luaescapestring{\l__luatexcn_decorate_char_tl}",
-      "\luaescapestring{\l__luatexcn_decorate_xoffset_tl}",
-      "\luaescapestring{\l__luatexcn_decorate_yoffset_tl}",
+      "\luaescapestring{\l__luatexcn_decorate_xshift_tl}",
+      "\luaescapestring{\l__luatexcn_decorate_yshift_tl}",
       "\luaescapestring{\l__luatexcn_decorate_font_size_tl}",
       "\luaescapestring{\l__luatexcn_decorate_color_tl}",
       font.current(),
@@ -73,8 +73,29 @@
   \group_end:
 }
 
-% Alias for CJK name
-\NewCommandCopy{\装饰}{\decorate}
+% ============================================================================
+% CJK Key Aliases (中文键值别名)
+% ============================================================================
+
+% --- decorate namespace ---
+\keys_define:nn { luatexcn / decorate }
+  {
+    字符 .tl_set:N = \l__luatexcn_decorate_char_tl,
+    颜色 .tl_set:N = \l__luatexcn_decorate_color_tl,
+    顏色 .tl_set:N = \l__luatexcn_decorate_color_tl,
+    横偏 .tl_set:N = \l__luatexcn_decorate_xshift_tl,
+    橫偏 .tl_set:N = \l__luatexcn_decorate_xshift_tl,
+    横移 .tl_set:N = \l__luatexcn_decorate_xshift_tl,
+    橫移 .tl_set:N = \l__luatexcn_decorate_xshift_tl,
+    纵偏 .tl_set:N = \l__luatexcn_decorate_yshift_tl,
+    縱偏 .tl_set:N = \l__luatexcn_decorate_yshift_tl,
+    纵移 .tl_set:N = \l__luatexcn_decorate_yshift_tl,
+    縱移 .tl_set:N = \l__luatexcn_decorate_yshift_tl,
+    字号 .tl_set:N = \l__luatexcn_decorate_font_size_tl,
+    字號 .tl_set:N = \l__luatexcn_decorate_font_size_tl,
+    缩放 .tl_set:N = \l__luatexcn_decorate_scale_tl,
+    縮放 .tl_set:N = \l__luatexcn_decorate_scale_tl,
+  }
 
 % ============================================================================
 % EmphasisMark (着重号/圈点) - Convenience command for emphasis marking
@@ -89,14 +110,26 @@
     color .initial:n = red,
   }
 
+% --- emphasis namespace CJK aliases ---
+\keys_define:nn { luatexcn / emphasis }
+  {
+    颜色 .tl_set:N = \l__luatexcn_emphasis_color_tl,
+    顏色 .tl_set:N = \l__luatexcn_emphasis_color_tl,
+  }
+
+% ============================================================================
+% CJK Aliases (中文别名)
+% ============================================================================
+% Simplified Chinese / 简体
+\NewCommandCopy{\装饰}{\decorate}
+
 \NewDocumentCommand{\EmphasisMark}{ O{} m }{%
   \group_begin:
     \keys_set:nn { luatexcn / emphasis } { #1 }
-    \decorate[char=。, scale = 1.5, xoffset=-0.7em, color=\l__luatexcn_emphasis_color_tl]{#2}
+    \decorate[char=。, scale = 1.5, xshift=-0.7em, color=\l__luatexcn_emphasis_color_tl]{#2}
   \group_end:
 }
 
-% Aliases for EmphasisMark
 \NewCommandCopy{\着重号}{\EmphasisMark}
 
 % ============================================================================
@@ -138,8 +171,10 @@
   \group_end:
 }
 
-% Alias with English name
 \NewCommandCopy{\改}{\fix}
+% Traditional Chinese / 繁体
+\NewCommandCopy{\裝飾}{\decorate}
+\NewCommandCopy{\著重號}{\EmphasisMark}
 
 % ============================================================================
 % Underline / WavyUnderline - Now provided by luatex-cn-linemark.sty

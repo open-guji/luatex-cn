@@ -64,6 +64,10 @@
 继续缩进两格的内容。继续缩进两格的内容。}
 \end{段落}
 
+\begin{段落}[indent=2]
+\夹注[auto-balance=false]{正常缩进两格的内容。正常缩进两格的内容。\相对抬头[1] 御定易经通注（相对抬头提一格显示）继续缩进两格的内容。继续缩进两格的内容。继续缩进两格的内容。继续缩进两格的内容。}
+\end{段落}
+
 下一段正文
 
 % Style 在夹注外部包裹测试
@@ -71,6 +75,13 @@
 
 % Style 在夹注内部使用
 一二三\夹注{普通\Style[font-color=blue]{蓝色}普通}四五
+
+\begin{段落}[indent=2]
+\夹注[auto-balance=false]{
+    \样式[grid-height=30pt,font-size=17pt]{文字进行填充}\\
+    \样式[grid-height=15pt,font-size=15pt]{文字进行压缩一二三四五六七一二三四五六七一二三四五}
+}
+\end{段落}
 
 \end{正文}
 \end{document}

@@ -1,4 +1,5 @@
-\documentclass{ltc-guji}
+\documentclass{guji}
+\setmainfont{TW-Kai}
 \显示坐标
 
 \begin{document}
@@ -7,17 +8,19 @@
   % 永樂大典 - 右上角竖排标题框（双层边框）
   \TextBox[
     floating=true,
-    x=16.5cm,
-    y=1.5cm,
-    grid-height=55pt,
-    grid-width=55pt,
+    x=15.3cm,
+    y=0.3cm,
+    grid-height=56pt,
+    grid-width=92pt,
     border-shape=rect,
-    border-width=0.8pt,
-    border-margin=2pt,
+    border-width=2pt,
+    border-margin=4pt,
     outer-border=true,
-    outer-border-thickness=1.2pt,
+    outer-border-thickness=6pt,
     outer-border-sep=4pt,
-    font-size=50pt, height=4]{永樂大典}
+    font-size=52pt,
+    height=24cm
+  ]{欽定四庫全書\夹注[align=center,font-size=20pt]{\样式[grid-height=24pt]{經部\空格[4] 簡明目錄卷一}}}
 \end{封面}
 
 
@@ -27,6 +30,31 @@
   \行[width=6cm, align=center, font-size=80pt, grid-height=90pt]{童蒙必讀書}
   \行[width=5cm, align=bottom, font-size=48pt, grid-height=54pt]{武昌書局校刊}
 \end{书名页}
+
+% 测试书名页环境（文本框自由排版）
+\begin{空白页}
+  \文本框[
+    floating=true,
+    x=5cm,
+    y=10cm,
+    font-size=28pt,
+    grid-height=28pt,
+    height=8]{檢討\臣 翁樹培覆勘}
+  \文本框[
+    floating=true,
+    x=13cm,
+    y=15cm,
+    font-size=28pt,
+    grid-height=28pt,
+    height=11]{協勘官候補洗馬\臣 劉權之}
+  \文本框[
+    floating=true,
+    x=14.5cm,
+    y=16.8cm,
+    font-size=28pt,
+    grid-height=28pt,
+    height=10]{\样式[grid-height=36pt]{謄錄舉人}\臣 李學沅}
+\end{空白页}
 
 \begin{BodyText}
 默认页面尺寸

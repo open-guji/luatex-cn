@@ -253,7 +253,9 @@ function banxin_main.render(head, layout_map, params, context, engine_ctx, page_
     end
 
     -- Resolve runtime content: page number
+    -- Support explicit page number string (for digital mode)
     local page_number = (params.start_page_number or 1) + page_idx
+    local explicit_page_number = _G.banxin and _G.banxin.explicit_page_number or nil
 
     local p_head = D.todirect(head)
 
@@ -261,6 +263,7 @@ function banxin_main.render(head, layout_map, params, context, engine_ctx, page_
         p_head = render_banxin.draw_from_layout(p_head, col_layout, {
             chapter_title = chapter_title,
             page_number = page_number,
+            explicit_page_number = explicit_page_number,
         })
     end
 

@@ -13,7 +13,7 @@
 % limitations under the License.
 
 \RequirePackage{core/luatex-cn-core-base}
-\ProvidesExplPackage{core/luatex-cn-core-content}{2026/02/14} {0.2.8}{Content layout and border support}
+\ProvidesExplPackage{core/luatex-cn-core-content}{2026/02/18} {0.2.9}{Content layout and border support}
 
 % Centralized variables for content border settings
 \bool_new:N \l__luatexcn_content_border_bool
@@ -56,6 +56,9 @@
 \tl_new:N \l__luatexcn_content_col_spacing_top_tl
 \tl_new:N \l__luatexcn_content_col_spacing_bottom_tl
 \tl_new:N \l__luatexcn_content_para_spacing_tl
+
+% Digital mode: async vbox + obeylines (each newline = column break)
+\bool_new:N \l__luatexcn_content_digital_mode_bool
 
 \keys_define:nn { luatexcn / content }
   {
@@ -160,6 +163,11 @@
     paragraph-spacing .tl_set:N = \l__luatexcn_content_para_spacing_tl,
     paragraph-spacing .initial:n = {0pt},
 
+    % Digital mode: when true, BodyText uses async vbox + obeylines
+    % (each source newline = one column break in PDF output)
+    digital-mode .bool_set:N = \l__luatexcn_content_digital_mode_bool,
+    digital-mode .initial:n = false,
+
     unknown .code:n = { \keys_set:nx { luatexcn / page } { \l_keys_key_tl = { #1 } } },
   }
 
@@ -257,19 +265,72 @@
     \group_end:
   }
 
-\NewEnviron{BodyText}[1][]{%
+% BodyText environment — uses async vbox capture (\vbox_set:Nw) so that
+% digital-mode obeylines can take effect during token reading.
+% When digital-mode is false, behaves identically to the old sync approach.
+\NewDocumentEnvironment{BodyText}{ O{} }
+  {
+    \nointerlineskip
+    \par\noindent
     \group_begin:
-    \keys_set:nn { luatexcn / book } { #1 }
-    \Content{\BODY}
+    \keys_set:nn { luatexcn / content } { #1 }
+    % Apply page geometry
+    \luatexcn_apply_geometry:
+    % Auto-layout for guji-style (computes grid dimensions if needed)
+    \__luatexcn_content_auto_layout:
+    % Common setup (font, skips, height fallback)
+    \__luatexcn_content_setup_font:
+    \__luatexcn_content_zero_skips:
+    \__luatexcn_content_calc_height:
+    % Apply background color if set
+    \__luatexcn_content_apply_background:
+    % Override \clearpage/\newpage for grid processing (scoped to this group)
+    \__luatexcn_page_override_pagebreak:
+
+    % Begin async vbox capture
+    \vbox_set:Nw \l_tmpa_box
+      \dim_set_eq:NN \hsize \c_max_dim
+      \dim_set_eq:NN \hfuzz \c_max_dim
+      \int_set:Nn \hbadness { 10000 }
+      \dim_zero:N \parindent
+
+      % Digital mode: activate obeylines for newline-as-column-break
+      \bool_if:NT \l__luatexcn_content_digital_mode_bool
+        { \luatexcndigitalobeylines }
+  }
+  {
+    \vbox_set_end:
+    \skip_zero:N \topskip
+
+    % Final sync (catches any overrides from environment optional args)
+    \__luatexcn_content_sync_to_lua:
+
+    % Initialize content style (once per content block)
+    \lua_now:n { require('core.luatex-cn-core-content').init_style() }
+
+    % Process content through three-stage pipeline
+    \lua_now:e {
+      core.process( \int_value:w \l_tmpa_box , {
+        height~=~[=[\luaescapestring{\l__luatexcn_content_height_tl}]=],
+        col_limit~=~\int_use:N~\l__luatexcn_content_n_char_per_col_int
+      })
+    }
     \group_end:
-}
-\NewEnvironmentCopy{正文}{BodyText}
+  }
 
 % Space Command - inserts ideographic space characters (U+3000) for vertical layout
 % Syntax: \Space or \Space[n]  (n = number of grid cells, default 1)
 \NewDocumentCommand{\Space}{ O{1} }
   {
     \prg_replicate:nn { #1 } { \char"3000\relax }
+    \ignorespaces
+  }
+
+% MissingChar Command - inserts a white square (U+25A1 □) as placeholder for missing/illegible characters
+% Syntax: \MissingChar or \MissingChar[n]  (n = number of missing characters, default 1)
+\NewDocumentCommand{\MissingChar}{ O{1} }
+  {
+    \prg_replicate:nn { #1 } { \char"25A1\relax }
     \ignorespaces
   }
 
@@ -364,6 +425,95 @@
   }
 
 \ExplSyntaxOff
+
+% Digital obeylines helper: make ^^M (newline) produce column breaks.
+% MUST be defined outside ExplSyntax context because the \lowercase trick
+% requires ~ to have catcode 13 (active), not catcode 10 (space).
+\def\luatexcndigitalobeylines{%
+  \obeylines
+  \begingroup\lccode`\~=`\^^M
+  \lowercase{\endgroup\def~{\luatexcnRestoreTempIndent\leavevmode\par\penalty-10005\relax}}%
+}
+
+% ============================================================
+% Chinese aliases / 中文别名
+% ============================================================
+% Simplified Chinese / 简体
 \NewCommandCopy{\空格}{\Space}
+\NewCommandCopy{\缺字}{\MissingChar}
+\NewCommandCopy{\内容设置}{\contentSetup}
+\NewCommandCopy{\内容}{\Content}
+\NewEnvironmentCopy{正文}{BodyText}
+% Traditional Chinese / 繁体
+\NewCommandCopy{\內容設置}{\contentSetup}
+\NewCommandCopy{\內容}{\Content}
+
+% ============================================================
+% Chinese key aliases / 中文 Key 别名
+% ============================================================
+\ExplSyntaxOn
+\keys_define:nn { luatexcn / content }
+  {
+    % 简体
+    边框 .bool_set:N = \l__luatexcn_content_border_bool,
+    边框粗细 .tl_set:N = \l__luatexcn_content_border_thickness_tl,
+    边框上填充 .tl_set:N = \l__luatexcn_content_border_padding_top_tl,
+    边框下填充 .tl_set:N = \l__luatexcn_content_border_padding_bottom_tl,
+    外框 .bool_set:N = \l__luatexcn_content_outer_border_bool,
+    外框粗细 .tl_set:N = \l__luatexcn_content_outer_border_thickness_tl,
+    外框间距 .tl_set:N = \l__luatexcn_content_outer_border_sep_tl,
+    边框色 .tl_set:N = \l__luatexcn_content_border_color_tl,
+    每行字数 .int_set:N = \l__luatexcn_content_n_char_per_col_int,
+    格宽 .tl_set:N = \l__luatexcn_content_grid_width_tl,
+    格高 .tl_set:N = \l__luatexcn_content_grid_height_tl,
+    纵对齐 .tl_set:N = \l__luatexcn_content_valign_tl,
+    字号 .tl_set:N = \l__luatexcn_content_font_size_tl,
+    字体名 .tl_set:N = \l__luatexcn_content_font_name_tl,
+    字体特性 .tl_set:N = \l__luatexcn_content_font_features_tl,
+    字色 .tl_set:N = \l__luatexcn_content_font_color_tl,
+    行数 .int_set:N = \l__luatexcn_content_n_column_int,
+    版面行数 .tl_set:N = \l__luatexcn_content_page_columns_tl,
+    高度 .tl_set:N = \l__luatexcn_content_height_tl,
+    列间距 .tl_set:N = \l__luatexcn_content_col_spacing_tl,
+    行距 .tl_set:N = \l__luatexcn_content_line_spacing_tl,
+    版心比例 .tl_set:N = \l__luatexcn_content_banxin_ratio_tl,
+    布局模式 .tl_set:N = \l__luatexcn_content_layout_mode_tl,
+    字间隙 .tl_set:N = \l__luatexcn_content_inter_cell_gap_tl,
+    字格高 .tl_set:N = \l__luatexcn_content_cell_height_tl,
+    字格宽 .tl_set:N = \l__luatexcn_content_cell_width_tl,
+    字格间距 .tl_set:N = \l__luatexcn_content_cell_gap_tl,
+    自动列宽 .bool_set:N = \l__luatexcn_content_auto_col_width_bool,
+    列上间距 .tl_set:N = \l__luatexcn_content_col_spacing_top_tl,
+    列下间距 .tl_set:N = \l__luatexcn_content_col_spacing_bottom_tl,
+    列间距 .meta:n = { column-spacing-top = #1, column-spacing-bottom = #1 },
+    段间距 .tl_set:N = \l__luatexcn_content_para_spacing_tl,
+    数字模式 .bool_set:N = \l__luatexcn_content_digital_mode_bool,
+    % 繁体（与简体不同形的）
+    邊框 .bool_set:N = \l__luatexcn_content_border_bool,
+    邊框粗細 .tl_set:N = \l__luatexcn_content_border_thickness_tl,
+    外框粗細 .tl_set:N = \l__luatexcn_content_outer_border_thickness_tl,
+    外框間距 .tl_set:N = \l__luatexcn_content_outer_border_sep_tl,
+    邊框色 .tl_set:N = \l__luatexcn_content_border_color_tl,
+    每行字數 .int_set:N = \l__luatexcn_content_n_char_per_col_int,
+    格寬 .tl_set:N = \l__luatexcn_content_grid_width_tl,
+    縱對齊 .tl_set:N = \l__luatexcn_content_valign_tl,
+    字號 .tl_set:N = \l__luatexcn_content_font_size_tl,
+    字體名 .tl_set:N = \l__luatexcn_content_font_name_tl,
+    字體特性 .tl_set:N = \l__luatexcn_content_font_features_tl,
+    行數 .int_set:N = \l__luatexcn_content_n_column_int,
+    版面行數 .tl_set:N = \l__luatexcn_content_page_columns_tl,
+    列間距 .tl_set:N = \l__luatexcn_content_col_spacing_tl,
+    佈局模式 .tl_set:N = \l__luatexcn_content_layout_mode_tl,
+    字間隙 .tl_set:N = \l__luatexcn_content_inter_cell_gap_tl,
+    字格寬 .tl_set:N = \l__luatexcn_content_cell_width_tl,
+    字格間距 .tl_set:N = \l__luatexcn_content_cell_gap_tl,
+    自動列寬 .bool_set:N = \l__luatexcn_content_auto_col_width_bool,
+    列上間距 .tl_set:N = \l__luatexcn_content_col_spacing_top_tl,
+    列下間距 .tl_set:N = \l__luatexcn_content_col_spacing_bottom_tl,
+    列間距 .meta:n = { column-spacing-top = #1, column-spacing-bottom = #1 },
+    段間距 .tl_set:N = \l__luatexcn_content_para_spacing_tl,
+    數字模式 .bool_set:N = \l__luatexcn_content_digital_mode_bool,
+  }
+\ExplSyntaxOff
 
 \endinput

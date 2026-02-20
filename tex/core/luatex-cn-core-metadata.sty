@@ -13,7 +13,7 @@
 % limitations under the License.
 
 \RequirePackage{core/luatex-cn-core-base}
-\ProvidesExplPackage{core/luatex-cn-core-metadata}{2026/02/14} {0.2.8}{Book metadata management}
+\ProvidesExplPackage{core/luatex-cn-core-metadata}{2026/02/18} {0.2.9}{Book metadata management}
 
 % Load Lua module
 \lua_now:n { vertical_metadata = require('core.luatex-cn-core-metadata') }
@@ -101,11 +101,29 @@
     \ResetPageNumber
   }
 
+% ============================================================================
+% CJK Key Aliases (中文键值别名)
+% ============================================================================
+\keys_define:nn { luatexcn / metadata }
+  {
+    书名 .tl_set:N = \l__luatexcn_metadata_book_name_tl,
+    書名 .tl_set:N = \l__luatexcn_metadata_book_name_tl,
+    章节标题 .tl_set:N = \l__luatexcn_metadata_chapter_title_tl,
+    章節標題 .tl_set:N = \l__luatexcn_metadata_chapter_title_tl,
+    出版商 .tl_set:N = \l__luatexcn_metadata_publisher_tl,
+  }
+
 \ExplSyntaxOff
 
-% CJK Aliases
+% ============================================================
+% Chinese aliases / 中文别名
+% ============================================================
+% Simplified Chinese / 简体
 \NewCommandCopy{\元数据设置}{\metadataSetup}
 \NewCommandCopy{\章节标记}{\ChapterMarker}
 \NewCommandCopy{\出版商}{\publisher}
+% Traditional Chinese / 繁体
+\NewCommandCopy{\元數據設置}{\metadataSetup}
+\NewCommandCopy{\章節標記}{\ChapterMarker}
 
 \endinput

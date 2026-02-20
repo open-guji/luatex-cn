@@ -16,7 +16,7 @@
 % YinZhang (印章/Seal Stamp) overlay functionality for ancient Chinese books
 %
 \RequirePackage{expl3}
-\ProvidesExplPackage {guji/luatex-cn-guji-yinzhang} {2026/02/14} {0.2.8} {Seal stamp overlay for Chinese books}
+\ProvidesExplPackage {guji/luatex-cn-guji-yinzhang} {2026/02/18} {0.2.9} {Seal stamp overlay for Chinese books}
 
 \RequirePackage{tikz}
 \RequirePackage{graphicx}
@@ -113,7 +113,29 @@
     }
   }
 
-% CJK alias
+% ============================================================================
+% CJK Key Aliases (中文键值别名)
+% ============================================================================
+\keys_define:nn { luatexcn / yinzhang }
+  {
+    不透明度 .tl_set:N = \l_luatexcn_yinzhang_opacity_tl,
+    横移 .tl_set:N = \l_luatexcn_yinzhang_xshift_tl,
+    橫移 .tl_set:N = \l_luatexcn_yinzhang_xshift_tl,
+    纵移 .tl_set:N = \l_luatexcn_yinzhang_yshift_tl,
+    縱移 .tl_set:N = \l_luatexcn_yinzhang_yshift_tl,
+    宽度 .tl_set:N = \l_luatexcn_yinzhang_width_tl,
+    寬度 .tl_set:N = \l_luatexcn_yinzhang_width_tl,
+    页 .int_set:N = \l_luatexcn_yinzhang_page_int,
+    頁 .int_set:N = \l_luatexcn_yinzhang_page_int,
+    颜色 .tl_set:N = \l_luatexcn_yinzhang_color_tl,
+    顏色 .tl_set:N = \l_luatexcn_yinzhang_color_tl,
+  }
+
+% ============================================================================
+% CJK Aliases (中文别名)
+% ============================================================================
+% Simplified Chinese / 简体
 \NewCommandCopy{\印章}{\YinZhang}
+% Traditional Chinese / 繁体 (印章简繁同形)
 
 \endinput

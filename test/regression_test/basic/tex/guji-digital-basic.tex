@@ -1,0 +1,52 @@
+\documentclass{guji-digital}
+\setmainfont{TW-Kai}
+
+\begin{document}
+
+% Test: 印章 (Seal stamp) on page 1
+\印章[
+  page=1,
+  opacity=0.5,
+  xshift=4cm,
+  yshift=5cm,
+  width=6cm
+]{文渊阁宝印.png}
+
+\begin{Banxin}
+  \BanxinUpper{史記}
+  \begin{BanxinMiddle}
+    \UpperYuwei
+    \BanxinChapter{項羽本紀}
+    \BanxinPageNumber{一}
+    \LowerYuwei
+  \end{BanxinMiddle}
+  \BanxinLower{武英殿}
+\end{Banxin}
+
+\begin{正文}
+\样式[字号=30pt]{標題文字}
+項籍者下相人也字羽初起時年二十四
+其季父項梁梁父即楚將項燕爲秦將王翦所戮者也
+項氏世世爲楚將封於項故姓項氏正常一列超出不換列
+\缩进[2]此行縮進二格排在下方偏移兩個字的位置
+\缩进[-1]此行抬頭一格排在上方偏移一個字的位置
+一二三\双列{\右小列{右列甲乙丙}\左小列{左列丁戊己}}四五六七八
+正常的一列文字內容在這裏繼續往下寫正文
+一二三\双列{\右小列{右列甲乙丙一二三四五六七八一二三四五六七八}\左小列{左列丁戊己}}
+
+此前有空行應產生一列空白
+最後一列結束也此處爲最末之字串也壹貳肆伍陸
+\换页
+一二三四五六七八九十
+\end{正文}
+
+% Test: 单页 (Single page mode)
+\begin{单页}
+\begin{正文}
+單頁模式測試
+此頁為單獨一頁
+不進行對開分頁
+\end{正文}
+\end{单页}
+
+\end{document}

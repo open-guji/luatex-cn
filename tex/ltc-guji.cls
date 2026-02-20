@@ -15,7 +15,7 @@
 % ltc-guji.cls - Legacy wrapper. Use guji.cls instead.
 
 \NeedsTeXFormat{LaTeX2e}
-\ProvidesClass{ltc-guji}[2026/02/14 0.2.8 Legacy wrapper for guji.cls]
+\ProvidesClass{ltc-guji}[2026/02/18 0.2.9 Legacy wrapper for guji.cls]
 
 % Forward all options to guji.cls
 \DeclareOption*{\PassOptionsToClass{\CurrentOption}{guji}}

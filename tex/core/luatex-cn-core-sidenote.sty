@@ -18,7 +18,7 @@
 \RequirePackage{core/luatex-cn-core-base}
 \RequirePackage{expl3}
 \RequirePackage{xparse}
-\ProvidesExplPackage {core/luatex-cn-core-sidenote} {2026/02/14} {0.2.8} {SideNode Support for Vertical Typesetting}
+\ProvidesExplPackage {core/luatex-cn-core-sidenote} {2026/02/18} {0.2.9} {SideNode Support for Vertical Typesetting}
 
 % Define keys for SideNode
 \tl_new:N \l__luatexcn_sidenote_yoffset_tl
@@ -80,8 +80,35 @@
 
 \ExplSyntaxOff%
 
-% Command Aliases for CJK
-\NewCommandCopy{\CePi}{\SideNode}
+% ============================================================
+% Chinese aliases / 中文别名
+% ============================================================
+% Simplified Chinese / 简体
 \NewCommandCopy{\侧批}{\SideNode}
+\NewCommandCopy{\CePi}{\SideNode}
+\NewCommandCopy{\侧批设置}{\sidenodeSetup}
+% Traditional Chinese / 繁体
+\NewCommandCopy{\側批}{\SideNode}
+\NewCommandCopy{\側批設置}{\sidenodeSetup}
+
+% ============================================================
+% Chinese key aliases / 中文 Key 别名
+% ============================================================
+\ExplSyntaxOn
+\keys_define:nn { luatexcn / sidenode }
+  {
+    % 简体
+    纵偏 .tl_set:N = \l__luatexcn_sidenote_yoffset_tl,
+    格高 .tl_set:N = \l__luatexcn_sidenote_grid_height_tl,
+    字号 .tl_set:N = \l__luatexcn_sidenote_font_size_tl,
+    颜色 .tl_set:N = \l__luatexcn_sidenote_color_tl,
+    边框上填充 .tl_set:N = \l__luatexcn_sidenote_padding_top_tl,
+    边框下填充 .tl_set:N = \l__luatexcn_sidenote_padding_bottom_tl,
+    % 繁体（与简体不同形的）
+    縱偏 .tl_set:N = \l__luatexcn_sidenote_yoffset_tl,
+    字號 .tl_set:N = \l__luatexcn_sidenote_font_size_tl,
+    顏色 .tl_set:N = \l__luatexcn_sidenote_color_tl,
+  }
+\ExplSyntaxOff
 
 \endinput%

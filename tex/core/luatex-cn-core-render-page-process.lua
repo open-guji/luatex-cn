@@ -95,6 +95,16 @@ local function handle_glyph_node(curr, p_head, pos, params, ctx)
 
     local final_x, final_y = text_position.calc_grid_position(pos.col, glyph_dims, glyph_params)
 
+    -- Apply style xshift/yshift offsets
+    if pos.xshift then
+        local xs = constants.resolve_dimen(pos.xshift, ctx.body_font_size or 655360)
+        if xs then final_x = final_x - xs end
+    end
+    if pos.yshift then
+        local ys = constants.resolve_dimen(pos.yshift, ctx.body_font_size or 655360)
+        if ys then final_y = final_y - ys end
+    end
+
     -- Check if glyph needs vertical rotation (font lacks vertical form)
     local needs_rotate = D.get_attribute(curr, constants.ATTR_VERT_ROTATE) == 1
 

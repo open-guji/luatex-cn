@@ -141,12 +141,26 @@ function column.collect_nodes(start_node)
 
     local function flush_jiazhu_group()
         if current_jiazhu_group and #current_jiazhu_group > 0 then
-            -- Calculate rows needed for this jiazhu group (dual-column)
-            local rows_needed = math.ceil(#current_jiazhu_group / 2)
+            -- Read auto_balance and mode from style
+            local ab = true
+            local jz_mode = 0
+            local first = current_jiazhu_group[1]
+            local sid = D.get_attribute(first, constants.ATTR_STYLE_REG_ID)
+            if sid then
+                local style = style_registry.get(sid)
+                if style and style.auto_balance == false then ab = false end
+            end
+            jz_mode = D.get_attribute(first, constants.ATTR_JIAZHU_MODE) or 0
+            local is_single = (jz_mode == 1 or jz_mode == 2)
+            local rows_needed = (is_single or not ab)
+                and #current_jiazhu_group
+                or math.ceil(#current_jiazhu_group / 2)
             table.insert(items, {
                 type = "jiazhu_group",
                 nodes = current_jiazhu_group,
-                rows = rows_needed
+                rows = rows_needed,
+                auto_balance = ab,
+                mode = jz_mode,
             })
             current_jiazhu_group = nil
         end
@@ -362,21 +376,28 @@ function column.place_nodes(ctx, start_node, layout_map, params, callbacks)
             cur_row = cur_row + row_step * v_scale + gap
 
         elseif item.type == "jiazhu_group" then
-            -- Handle jiazhu group with dual-column layout (shared with textflow)
-            local assignments = textflow.assign_balanced_sub_columns(item.nodes)
-
-            for _, a in ipairs(assignments) do
-                local jiazhu_row = cur_row + a.relative_row * v_scale
-                local entry = {
-                    page = ctx.cur_page,
-                    col = ctx.cur_col,
-                    y_sp = jiazhu_row * grid_height,
-                    sub_col = a.sub_col,
-                    v_scale = v_scale,
-                    cell_height = grid_height,
-                }
-                helpers.apply_style_attrs(entry, a.node)
-                layout_map[a.node] = entry
+            -- Use textflow.process_sequence for unified auto_balance/mode handling
+            -- process_sequence now uses sp-based capacity
+            local item_height_sp = item.rows * grid_height
+            local chunks = textflow.process_sequence(
+                item.nodes, item_height_sp, item_height_sp,
+                item.mode, item.auto_balance,
+                nil, nil, nil, grid_height, nil)
+            local chunk = chunks[1]
+            if chunk then
+                for _, a in ipairs(chunk.nodes) do
+                    -- a.relative_row is now y_offset_sp (cumulative offset in sp)
+                    local entry = {
+                        page = ctx.cur_page,
+                        col = ctx.cur_col,
+                        y_sp = cur_row * grid_height + a.relative_row * v_scale,
+                        sub_col = a.sub_col,
+                        v_scale = v_scale,
+                        cell_height = grid_height,
+                    }
+                    helpers.apply_style_attrs(entry, a.node)
+                    layout_map[a.node] = entry
+                end
             end
             cur_row = cur_row + item.rows * v_scale + gap
 

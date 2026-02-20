@@ -17,7 +17,7 @@
 %
 \RequirePackage{expl3}
 \RequirePackage{xparse}
-\ProvidesExplPackage {guji/luatex-cn-guji-judou} {2026/02/14} {0.2.8} {Judou (Punctuation Mode) Support}
+\ProvidesExplPackage {guji/luatex-cn-guji-judou} {2026/02/18} {0.2.9} {Judou (Punctuation Mode) Support}
 
 % Load Lua module for global state
 \lua_now:n { judou_mod = require('guji.luatex-cn-guji-judou') }
@@ -110,11 +110,39 @@
   }
 \NewDocumentCommand{\无标点模式}{ O{} } { \NonePunctuationMode[#1] }
 
-% Chinese aliases
+% ============================================================================
+% CJK Key Aliases (中文键值别名)
+% ============================================================================
+\keys_define:nn { luatexcn / judou }
+  {
+    句读位置 .tl_set:N = \l__luatexcn_judou_pos_tl,
+    句讀位置 .tl_set:N = \l__luatexcn_judou_pos_tl,
+    句读大小 .tl_set:N = \l__luatexcn_judou_size_tl,
+    句讀大小 .tl_set:N = \l__luatexcn_judou_size_tl,
+    句读颜色 .tl_set:N = \l__luatexcn_judou_color_tl,
+    句讀顏色 .tl_set:N = \l__luatexcn_judou_color_tl,
+    标点模式 .tl_set:N = \l__luatexcn_judou_punct_mode_tl,
+    標點模式 .tl_set:N = \l__luatexcn_judou_punct_mode_tl,
+  }
+
+% ============================================================================
+% CJK Aliases (中文别名)
+% ============================================================================
+% Simplified Chinese / 简体
+\NewCommandCopy{\句读设置}{\judouSetup}
+\NewCommandCopy{\开启句读}{\JudouOn}
+\NewCommandCopy{\关闭句读}{\JudouOff}
 \cs_new_eq:NN \开启句读模式 \JudouOn
 \cs_new_eq:NN \关闭句读模式 \JudouOff
 \cs_new_eq:NN \开启无标点模式 \NonePunctuationMode
 \cs_new_eq:NN \开启正常标点模式 \NormalPunctuationMode
+% Traditional Chinese / 繁体
+\NewCommandCopy{\句讀設置}{\judouSetup}
+\NewCommandCopy{\開啟句讀}{\JudouOn}
+\NewCommandCopy{\關閉句讀}{\JudouOff}
+\NewCommandCopy{\正常標點模式}{\NormalPunctuationMode}
+\NewCommandCopy{\句讀模式}{\JudouPunctuationMode}
+\NewCommandCopy{\無標點模式}{\NonePunctuationMode}
 
 \ExplSyntaxOff%
 %

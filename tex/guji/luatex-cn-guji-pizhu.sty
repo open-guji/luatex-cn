@@ -19,7 +19,7 @@
 %
 \RequirePackage{expl3}
 \RequirePackage{xparse}
-\ProvidesExplPackage {guji/luatex-cn-guji-pizhu} {2026/02/14} {0.2.8} {PiZhu Floating Annotation Support}
+\ProvidesExplPackage {guji/luatex-cn-guji-pizhu} {2026/02/18} {0.2.9} {PiZhu Floating Annotation Support}
 
 % PiZhu (批注) - Floating annotation box
 \tl_new:N \l__luatexcn_pizhu_font_size_tl
@@ -74,7 +74,36 @@
 
 \ExplSyntaxOff%
 
-% Command Alias for CJK
+% ============================================================================
+% CJK Aliases (中文别名)
+% ============================================================================
+% Simplified Chinese / 简体
 \NewCommandCopy{\批注}{\PiZhu}
+\NewCommandCopy{\批注设置}{\pizhuSetup}
+% Traditional Chinese / 繁体
+\NewCommandCopy{\批注設置}{\pizhuSetup}
+
+% ============================================================
+% Chinese key aliases / 中文 Key 别名
+% ============================================================
+\ExplSyntaxOn
+\keys_define:nn { luatexcn / pizhu }
+  {
+    % 简体
+    横位 .tl_set:N = \l__luatexcn_pizhu_x_tl,
+    纵位 .tl_set:N = \l__luatexcn_pizhu_y_tl,
+    高度 .tl_set:N = \l__luatexcn_pizhu_height_tl,
+    字号 .tl_set:N = \l__luatexcn_pizhu_font_size_tl,
+    颜色 .tl_set:N = \l__luatexcn_pizhu_color_tl,
+    格宽 .tl_set:N = \l__luatexcn_pizhu_grid_width_tl,
+    格高 .tl_set:N = \l__luatexcn_pizhu_grid_height_tl,
+    % 繁体（与简体不同形的）
+    橫位 .tl_set:N = \l__luatexcn_pizhu_x_tl,
+    縱位 .tl_set:N = \l__luatexcn_pizhu_y_tl,
+    字號 .tl_set:N = \l__luatexcn_pizhu_font_size_tl,
+    顏色 .tl_set:N = \l__luatexcn_pizhu_color_tl,
+    格寬 .tl_set:N = \l__luatexcn_pizhu_grid_width_tl,
+  }
+\ExplSyntaxOff
 
 \endinput%

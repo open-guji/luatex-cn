@@ -18,7 +18,7 @@
 %
 \NeedsTeXFormat{LaTeX2e}
 \RequirePackage{expl3}
-\ProvidesExplPackage {guji/luatex-cn-guji-cover} {2026/02/14} {0.2.8} {Cover page support}
+\ProvidesExplPackage {guji/luatex-cn-guji-cover} {2026/02/18} {0.2.9} {Cover page support}
 
 \RequirePackage{environ}
 \RequirePackage{xcolor}
@@ -29,6 +29,7 @@
 
 \tl_new:N \l__luatexcn_cover_body_tl
 \tl_new:N \l__luatexcn_cover_bg_color_tl
+\tl_new:N \l__luatexcn_cover_saved_bg_tl
 
 % ============================================================================
 % Key-value Configuration
@@ -55,8 +56,12 @@
   % to avoid infinite recursion (see MEMORY.md)
   \tl_set_eq:NN \l__luatexcn_cover_body_tl \BODY
   \keys_set:nn { luatexcn / cover } { #1 }%
+  % Save the global page background color, then temporarily clear it so that
+  % \begin{正文}'s apply_background does not override the cover's \pagecolor.
+  \tl_set_eq:NN \l__luatexcn_cover_saved_bg_tl \l__luatexcn_page_background_color_tl
+  \tl_clear:N \l__luatexcn_page_background_color_tl
   \begin{单页}
-    % Apply page background color if specified
+    % Apply cover-specific page background color
     \tl_if_empty:NF \l__luatexcn_cover_bg_color_tl
       {
         \tl_if_in:NnTF \l__luatexcn_cover_bg_color_tl { , }
@@ -69,11 +74,23 @@
       \l__luatexcn_cover_body_tl
     \end{正文}
   \end{单页}
-  % Restore: clear page color so it doesn't leak to following pages
-  \nopagecolor
+  % Restore the global page background color
+  \tl_set_eq:NN \l__luatexcn_page_background_color_tl \l__luatexcn_cover_saved_bg_tl
+  % Re-apply the restored background: if template has a background-color, set it
+  % back via \pagecolor; otherwise clear it.
+  \tl_if_empty:NTF \l__luatexcn_page_background_color_tl
+    { \nopagecolor }
+    {
+      \tl_if_in:NnTF \l__luatexcn_page_background_color_tl { , }
+        { \pagecolor [RGB] { \l__luatexcn_page_background_color_tl } }
+        { \pagecolor { \l__luatexcn_page_background_color_tl } }
+    }
 }
 
-% CJK alias
+% ============================================================================
+% CJK Aliases (中文别名)
+% ============================================================================
+% Simplified Chinese / 简体 (封面简繁同形)
 \NewEnvironmentCopy{封面}{Cover}
 
 \ExplSyntaxOff

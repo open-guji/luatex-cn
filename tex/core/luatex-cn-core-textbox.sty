@@ -20,7 +20,7 @@
 \RequirePackage{core/luatex-cn-core-base}
 \RequirePackage{expl3}
 \RequirePackage{xparse}
-\ProvidesExplPackage {core/luatex-cn-core-textbox} {2026/02/14} {0.2.8} {TextBox Support for Vertical Typesetting}
+\ProvidesExplPackage {core/luatex-cn-core-textbox} {2026/02/18} {0.2.9} {TextBox Support for Vertical Typesetting}
 
 % Grid Textbox Command (Simplified for Single Column)
 % Syntax: \GridTextbox[height=N, distribute=true/false]{content}
@@ -262,22 +262,81 @@
 
 \ExplSyntaxOff%
 
-% Command Aliases for CJK
-\NewCommandCopy{\文本框}{\TextBox}
-\NewCommandCopy{\填充文本框}{\FillTextBox}
-
+% ============================================================
+% Chinese aliases / 中文别名
+% ============================================================
 % Border shape shortcuts
-% 反白 uses dark gray (#333) instead of pure black for better visibility
 \NewDocumentCommand{\反白}{ m }{\TextBox[background-color={0.2 0.2 0.2}, font-color=white]{#1}}
 \NewDocumentCommand{\八角框}{ m }{\TextBox[border-shape=octagon]{#1}}
 \NewDocumentCommand{\带圈}{ m }{\TextBox[border-shape=circle]{#1}}
-% 反白八角框 uses white border for visibility on dark background
 \NewDocumentCommand{\反白八角框}{ m }{\TextBox[background-color={0.2 0.2 0.2}, font-color=white, border-shape=octagon, border-color=white]{#1}}
-
-% English aliases
+% Simplified Chinese / 简体
+\NewCommandCopy{\文本框}{\TextBox}
+\NewCommandCopy{\填充文本框}{\FillTextBox}
+% English aliases for Chinese-only commands
 \NewCommandCopy{\inverted}{\反白}
 \NewCommandCopy{\octagon}{\八角框}
 \NewCommandCopy{\circled}{\带圈}
 \NewCommandCopy{\invertedOctagon}{\反白八角框}
+% Traditional Chinese / 繁体 (带圈→帶圈)
+\NewCommandCopy{\帶圈}{\带圈}
+
+% ============================================================
+% Chinese key aliases / 中文 Key 别名
+% ============================================================
+\ExplSyntaxOn
+\keys_define:nn { luatexcn / textbox }
+  {
+    % 简体
+    高度 .tl_set:N = \l__luatexcn_textbox_height_tl,
+    列数 .int_set:N = \l__luatexcn_textbox_n_cols_int,
+    外列数 .int_set:N = \l__luatexcn_textbox_outer_cols_int,
+    内格宽 .tl_set:N = \l__luatexcn_textbox_inner_gw_tl,
+    内格高 .tl_set:N = \l__luatexcn_textbox_inner_gh_tl,
+    均分 .bool_set:N = \l__luatexcn_textbox_distribute_bool,
+    框对齐 .tl_set:N = \l__luatexcn_textbox_box_align_tl,
+    边框 .bool_set:N = \l__luatexcn_textbox_border_bool,
+    版心 .bool_set:N = \l__luatexcn_textbox_banxin_bool,
+    列对齐 .meta:n = { column-align = #1 },
+    纵对齐 .meta:n = { vertical-align = #1 },
+    悬浮 .bool_set:N = \l__luatexcn_textbox_floating_bool,
+    悬浮纸宽 .tl_set:N = \l__luatexcn_textbox_floating_paper_width_tl,
+    横位 .tl_set:N = \l__luatexcn_textbox_x_tl,
+    纵位 .tl_set:N = \l__luatexcn_textbox_y_tl,
+    底色 .tl_set:N = \l__luatexcn_textbox_bg_color_tl,
+    字色 .tl_set:N = \l__luatexcn_textbox_font_color_tl,
+    字号 .tl_set:N = \l__luatexcn_textbox_font_size_tl,
+    格宽 .meta:n = { grid-width = #1 },
+    格高 .meta:n = { grid-height = #1 },
+    边框形状 .tl_set:N = \l__luatexcn_textbox_border_shape_tl,
+    边框色 .tl_set:N = \l__luatexcn_textbox_border_color_tl,
+    边框宽 .tl_set:N = \l__luatexcn_textbox_border_width_tl,
+    边框间距 .tl_set:N = \l__luatexcn_textbox_border_margin_tl,
+    外框 .bool_set:N = \l__luatexcn_textbox_outer_border_bool,
+    外框粗细 .tl_set:N = \l__luatexcn_textbox_outer_border_thickness_tl,
+    外框间距 .tl_set:N = \l__luatexcn_textbox_outer_border_sep_tl,
+    % 繁体（与简体不同形的）
+    列數 .int_set:N = \l__luatexcn_textbox_n_cols_int,
+    外列數 .int_set:N = \l__luatexcn_textbox_outer_cols_int,
+    內格寬 .tl_set:N = \l__luatexcn_textbox_inner_gw_tl,
+    內格高 .tl_set:N = \l__luatexcn_textbox_inner_gh_tl,
+    框對齊 .tl_set:N = \l__luatexcn_textbox_box_align_tl,
+    邊框 .bool_set:N = \l__luatexcn_textbox_border_bool,
+    列對齊 .meta:n = { column-align = #1 },
+    縱對齊 .meta:n = { vertical-align = #1 },
+    懸浮 .bool_set:N = \l__luatexcn_textbox_floating_bool,
+    懸浮紙寬 .tl_set:N = \l__luatexcn_textbox_floating_paper_width_tl,
+    橫位 .tl_set:N = \l__luatexcn_textbox_x_tl,
+    縱位 .tl_set:N = \l__luatexcn_textbox_y_tl,
+    字號 .tl_set:N = \l__luatexcn_textbox_font_size_tl,
+    格寬 .meta:n = { grid-width = #1 },
+    邊框形狀 .tl_set:N = \l__luatexcn_textbox_border_shape_tl,
+    邊框色 .tl_set:N = \l__luatexcn_textbox_border_color_tl,
+    邊框寬 .tl_set:N = \l__luatexcn_textbox_border_width_tl,
+    邊框間距 .tl_set:N = \l__luatexcn_textbox_border_margin_tl,
+    外框粗細 .tl_set:N = \l__luatexcn_textbox_outer_border_thickness_tl,
+    外框間距 .tl_set:N = \l__luatexcn_textbox_outer_border_sep_tl,
+  }
+\ExplSyntaxOff
 
 \endinput%

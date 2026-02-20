@@ -26,6 +26,7 @@
 \int_const:Nn \c__luatexcn_penalty_smart_break_int { -10001 }
 \int_const:Nn \c__luatexcn_penalty_force_column_int { -10002 }
 \int_const:Nn \c__luatexcn_penalty_force_page_int { -10003 }
+\int_const:Nn \c__luatexcn_penalty_taitou_int { -10004 }
 
 % Paragraph Environment
 % Supports block indentation with first-line/hanging indent differentiation
@@ -162,25 +163,26 @@
         }}
         \setluatexattribute\cnverticalstyle{\parent_style_id}
 
-        % Restore indent attributes from parent style (using forced encoding)
-        % This ensures restored indent is also forceful, not overridden by outer stack
+        % Restore indent attributes from parent style (plain encoding).
+        % Style ID is already updated to the parent, so resolve_node_indent
+        % will correctly inherit from the style stack. Using plain (not forced)
+        % encoding avoids textflow misinterpreting restored indent as an
+        % absolute position override (which is only valid for taitou commands).
         \lua_now:n {
           local ~ sr = require('util.luatex-cn-style-registry')
           local ~ constants = require('core.luatex-cn-constants')
           local ~ indent = sr.get_indent(sr.current_id()) ~ or ~ 0
           local ~ first_indent = sr.get_first_indent(sr.current_id()) ~ or ~ -1
-
-          -- Use forced encoding for restored values too
-          local ~ forced_indent = constants.encode_forced_indent(indent)
-          local ~ forced_first = first_indent == -1 ~ and ~ forced_indent ~ or ~ constants.encode_forced_indent(first_indent)
-
-          tex.setattribute(constants.ATTR_INDENT, ~ forced_indent)
-          tex.setattribute(constants.ATTR_FIRST_INDENT, ~ forced_first)
+          tex.setattribute(constants.ATTR_INDENT, ~ indent)
+          tex.setattribute(constants.ATTR_FIRST_INDENT, ~ first_indent)
         }
 
         \bool_set_false:N \l__luatexcn_setindent_active_bool
       }
   }
+
+% Alias for non-expl3 context (used by obeylines handler in core-content.sty)
+\cs_new_eq:NN \luatexcnRestoreTempIndent \__luatexcn_restore_temp_indent:
 
 % ============================================================================
 % 抬头命令体系 (Taitou Command System)
@@ -195,7 +197,7 @@
 
 \NewDocumentCommand{\抬头}{ O{0} }
   {
-    \\
+    \penalty \int_use:N \c__luatexcn_penalty_taitou_int \scan_stop:
     \lua_now:e {
       local~constants = require('core.luatex-cn-constants')
       local~forced_val = constants.encode_forced_indent(-\int_eval:n{#1})
@@ -233,7 +235,7 @@
 
 \NewDocumentCommand{\相对抬头}{ O{1} }
   {
-    \\
+    \penalty \int_use:N \c__luatexcn_penalty_taitou_int \scan_stop:
     \lua_now:e {
       local~constants = require('core.luatex-cn-constants')
       local~sr = require('util.luatex-cn-style-registry')
@@ -258,10 +260,42 @@
     \penalty \int_use:N \c__luatexcn_penalty_force_column_int \scan_stop:
   }
 
+% ============================================================================
+% CJK Key Aliases (中文键值别名)
+% ============================================================================
+\keys_define:nn { luatexcn / paragraph }
+  {
+    缩进 .int_set:N = \l__luatexcn_paragraph_indent_int,
+    縮進 .int_set:N = \l__luatexcn_paragraph_indent_int,
+    首行缩进 .int_set:N = \l__luatexcn_paragraph_first_indent_int,
+    首行縮進 .int_set:N = \l__luatexcn_paragraph_first_indent_int,
+    末行缩进 .int_set:N = \l__luatexcn_paragraph_bottom_indent_int,
+    末行縮進 .int_set:N = \l__luatexcn_paragraph_bottom_indent_int,
+  }
+
 \ExplSyntaxOff
 
-% Support CJK environment alias
+% ============================================================
+% Chinese aliases / 中文别名
+% ============================================================
+% Simplified Chinese / 简体
 \NewEnvironmentCopy{段落}{Paragraph}
 \let\设置缩进\SetIndent
+% English pinyin aliases for Chinese-only commands
+\NewCommandCopy{\TaiTou}{\抬头}
+\NewCommandCopy{\PingTai}{\平抬}
+\NewCommandCopy{\DanTai}{\单抬}
+\NewCommandCopy{\ShuangTai}{\双抬}
+\NewCommandCopy{\SanTai}{\三抬}
+\NewCommandCopy{\NuoTai}{\挪抬}
+\NewCommandCopy{\KongTai}{\空抬}
+\NewCommandCopy{\XiangDuiTaiTou}{\相对抬头}
+\NewCommandCopy{\HuanHang}{\换行}
+% Traditional Chinese / 繁体
+\NewCommandCopy{\設置縮進}{\SetIndent}
+\NewCommandCopy{\單抬}{\单抬}
+\NewCommandCopy{\雙抬}{\双抬}
+\NewCommandCopy{\換行}{\换行}
+\NewCommandCopy{\相對抬頭}{\相对抬头}
 
 \endinput

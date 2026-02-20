@@ -142,6 +142,9 @@ local function create_grid_context(params, line_limit, p_cols)
         col_widths_sp = {}, -- col_widths_sp[page][col] = width_sp
         col_spacing_top_sp = {}, -- col_spacing_top_sp[page][col] = spacing_sp
         col_spacing_bottom_sp = {}, -- col_spacing_bottom_sp[page][col] = spacing_sp
+        -- Auto column wrap: when true (default), columns auto-wrap on overflow.
+        -- Set to false to disable auto-wrap (only explicit penalties cause column breaks).
+        auto_column_wrap = true,
     }
     ctx.page_chapter_titles[0] = ctx.chapter_title -- Initialize page 0 with the initial chapter title
     return ctx
@@ -274,10 +277,20 @@ local function wrap_to_next_column(ctx, p_cols, interval, grid_height, indent, r
         -- (reset_content only controls same-page column wraps)
         ctx.page_has_content = false
     end
-    if reset_indent then
+    -- Always reset negative cur_column_indent on column wrap:
+    -- taitou (negative indent) only applies to its own column.
+    if reset_indent or (ctx.cur_column_indent or 0) < 0 then
         ctx.cur_column_indent = 0
     end
-    move_to_next_valid_position(ctx, interval, grid_height, indent)
+    -- Negative indent (taitou) should only apply in the taitou column itself.
+    -- After column change, check if we're outside the taitou column scope.
+    local skip_indent = indent
+    if indent and indent < 0 then
+        if ctx.taitou_col == nil or ctx.cur_col ~= ctx.taitou_col or ctx.cur_page ~= ctx.taitou_page then
+            skip_indent = 0
+        end
+    end
+    move_to_next_valid_position(ctx, interval, grid_height, skip_indent)
 end
 
 _internal.wrap_to_next_column = wrap_to_next_column
@@ -310,48 +323,6 @@ end
 
 _internal.accumulate_spacing = accumulate_spacing
 
---- Handle penalty node for column/page breaks
--- @param p_val (number) Penalty value
--- @param ctx (table) Grid context
--- @param flush_buffer (function) Buffer flush function
--- @param p_cols (number) Columns per page
--- @param interval (number) Banxin interval
--- @param grid_height (number) Grid height
--- @param indent (number) Current indent
--- @return (boolean) true if handled, false otherwise
-local function handle_penalty_breaks(p_val, ctx, flush_buffer_fn, p_cols, interval, grid_height, indent, penalty_node)
-    if p_val == constants.PENALTY_FORCE_COLUMN then
-        -- Forced column break (explicit \换行 command)
-        flush_buffer_fn()
-        if ctx.cur_row > ctx.cur_column_indent then
-            -- Free mode: accumulate column width for page wrap
-            if ctx.is_free_mode then
-                local g_w = get_grid_width(ctx.params, grid_height)
-                ctx.accumulated_width_sp = ctx.accumulated_width_sp + g_w
-            end
-            wrap_to_next_column(ctx, p_cols, interval, grid_height, indent, false, true)
-        end
-        ctx.cur_column_indent = 0
-        return true
-    elseif p_val == constants.PENALTY_FORCE_PAGE then
-        -- Forced page break (\newpage, \clearpage)
-        if ctx.page_has_content then
-            flush_buffer_fn()
-            ctx.cur_page = ctx.cur_page + 1
-            ctx.cur_col = 0
-            ctx.cur_row = 0
-            ctx.cur_y_sp = 0
-            ctx.cur_column_indent = 0
-            ctx.page_has_content = false
-            move_to_next_valid_position(ctx, interval, grid_height, indent)
-        end
-        return true
-    end
-    return false
-end
-
-_internal.handle_penalty_breaks = handle_penalty_breaks
-
 --- Flush pending textflow state (advance cursor past textflow rows)
 -- Called before processing regular glyphs or penalty breaks that follow textflow
 local function flush_textflow_pending(ctx, grid_height)
@@ -362,6 +333,85 @@ local function flush_textflow_pending(ctx, grid_height)
         ctx.textflow_pending_row_used = nil
     end
 end
+
+--- Handle penalty node for column/page breaks
+-- @param p_val (number) Penalty value
+-- @param ctx (table) Grid context
+-- @param flush_buffer (function) Buffer flush function
+-- @param p_cols (number) Columns per page
+-- @param interval (number) Banxin interval
+-- @param grid_height (number) Grid height
+-- @param indent (number) Current indent
+-- @return (boolean) true if handled, false otherwise
+local function handle_penalty_breaks(p_val, ctx, flush_buffer_fn, p_cols, interval, grid_height, indent, penalty_node)
+    if p_val == constants.PENALTY_DIGITAL_NEWLINE then
+        -- DigitalContent newline: always force column break, even on empty column.
+        -- Every ^^M in DigitalContent source = one column in PDF output,
+        -- so consecutive newlines (empty lines) must produce empty columns.
+        -- Also disable auto column wrap: only explicit newlines cause column breaks.
+        ctx.auto_column_wrap = false
+
+        -- Skip this newline if it immediately follows a page break (\换页).
+        -- After PENALTY_FORCE_PAGE, the page resets to col=0, row=0, page_has_content=false.
+        -- The ^^M after \换页 is just the TeX source line ending, not a meaningful column break.
+        if ctx.cur_col == 0 and ctx.cur_row == 0 and not ctx.page_has_content then
+            return true
+        end
+
+        flush_buffer_fn()
+        if ctx.is_free_mode then
+            local g_w = get_grid_width(ctx.params, grid_height)
+            ctx.accumulated_width_sp = ctx.accumulated_width_sp + g_w
+        end
+        wrap_to_next_column(ctx, p_cols, interval, grid_height, indent, false, true)
+        ctx.cur_column_indent = 0
+        return true
+    elseif p_val == constants.PENALTY_FORCE_COLUMN or p_val == constants.PENALTY_TAITOU then
+        -- Forced column break (\换行 command) or taitou column break (\抬头 command)
+        flush_buffer_fn()
+        -- Use max(cur_column_indent, 0) to prevent negative indent (抬头) from
+        -- causing false-positive wraps.
+        local effective_indent = math.max(ctx.cur_column_indent, 0)
+        if ctx.cur_row > effective_indent then
+            -- Free mode: accumulate column width for page wrap
+            if ctx.is_free_mode then
+                local g_w = get_grid_width(ctx.params, grid_height)
+                ctx.accumulated_width_sp = ctx.accumulated_width_sp + g_w
+            end
+            wrap_to_next_column(ctx, p_cols, interval, grid_height, indent, false, true)
+        end
+        ctx.cur_column_indent = 0
+        -- Only taitou penalties record the target column for scope tracking.
+        -- Regular PENALTY_FORCE_COLUMN (paragraph breaks, \换行) must NOT
+        -- update taitou scope, otherwise stale forced negative indent from a
+        -- previous \抬头 would leak into subsequent paragraphs.
+        if p_val == constants.PENALTY_TAITOU then
+            ctx.taitou_col = ctx.cur_col
+            ctx.taitou_page = ctx.cur_page
+        end
+        return true
+    elseif p_val == constants.PENALTY_FORCE_PAGE then
+        -- Forced page break (\newpage, \clearpage)
+        -- If the current page already has no content (e.g., we just wrapped to a new page
+        -- due to column overflow), skip the redundant page break to avoid creating empty pages
+        -- in 对开 (split-page) mode.
+        if not ctx.page_has_content and ctx.cur_col == 0 and ctx.cur_row == 0 then
+            return true
+        end
+        flush_buffer_fn()
+        ctx.cur_page = ctx.cur_page + 1
+        ctx.cur_col = 0
+        ctx.cur_row = 0
+        ctx.cur_y_sp = 0
+        ctx.cur_column_indent = 0
+        ctx.page_has_content = false
+        move_to_next_valid_position(ctx, interval, grid_height, indent)
+        return true
+    end
+    return false
+end
+
+_internal.handle_penalty_breaks = handle_penalty_breaks
 
 --- Handle all penalty nodes: smart break, force column, force page
 -- Combines smart break logic (previously inline in main loop) with
@@ -374,9 +424,21 @@ local function handle_penalty_node(t, ctx, grid_height, indent, interval, p_cols
         if next_node then
             local next_is_textflow = D.get_attribute(next_node, constants.ATTR_JIAZHU) == 1
             if not next_is_textflow then
-                flush_textflow_pending(ctx, grid_height)
+                -- If column is empty (cur_row==0, e.g. after FORCE_COLUMN wrapped),
+                -- clear stale textflow pending state without advancing cur_row.
+                -- Otherwise a normal flush would re-add pending rows from the
+                -- previous column and cause a double-wrap (empty column bug).
+                if ctx.cur_row == 0 and ctx.textflow_pending_row_used then
+                    ctx.textflow_pending_sub_col = nil
+                    ctx.textflow_pending_row_used = nil
+                else
+                    flush_textflow_pending(ctx, grid_height)
+                end
                 flush_fn()
-                if ctx.cur_row > ctx.cur_column_indent then
+                -- Use max(cur_column_indent, 0) to prevent negative indent (抬头)
+                -- from causing false-positive wraps (same logic as FORCE_COLUMN).
+                local sb_effective_indent = math.max(ctx.cur_column_indent, 0)
+                if ctx.cur_row > sb_effective_indent then
                     wrap_to_next_column(ctx, p_cols, interval, grid_height, indent, false, true)
                 end
                 ctx.cur_column_indent = 0
@@ -441,6 +503,24 @@ local function resolve_node_indent(t, id, ctx, block_start_cols, grid_height, li
     -- Decode forced indent values (handles both -2 and < -1000)
     local indent_is_forced, forced_indent_value = constants.is_forced_indent(node_indent)
     local first_indent_is_forced, forced_first_indent_value = constants.is_forced_indent(node_first_indent)
+
+    -- Taitou scope: forced negative indent (抬头) only applies to the column where
+    -- the \抬头 command was issued (recorded in ctx.taitou_col/taitou_page).
+    -- Ignore stale forced negative indent on nodes outside the taitou column,
+    -- falling through to style stack inheritance (as if no forced indent was set).
+    local outside_taitou = ctx.taitou_col == nil
+        or ctx.cur_col ~= ctx.taitou_col
+        or ctx.cur_page ~= ctx.taitou_page
+    if indent_is_forced and forced_indent_value < 0 and outside_taitou then
+        indent_is_forced = false
+        forced_indent_value = nil
+        node_indent = nil  -- Clear raw attribute so style stack can take over
+    end
+    if first_indent_is_forced and forced_first_indent_value < 0 and outside_taitou then
+        first_indent_is_forced = false
+        forced_first_indent_value = nil
+        node_first_indent = nil  -- Clear raw attribute so style stack can take over
+    end
 
     -- Start with forced value (if forced) or explicit attribute (if set) or 0
     local base_indent = indent_is_forced and forced_indent_value or (node_indent or 0)
@@ -597,7 +677,7 @@ end
 -- @param flush_fn (function) Buffer flush callback
 local function handle_glyph_node(t, ctx, col_buffer, layout_map, grid_height,
                                   indent, effective_limit, distribute,
-                                  interval, p_cols, params, flush_fn)
+                                  interval, p_cols, params, flush_fn, base_indent)
     flush_textflow_pending(ctx, grid_height)
     local dec_id = D.get_attribute(t, constants.ATTR_DECORATE_ID)
     if dec_id and dec_id > 0 then
@@ -649,10 +729,11 @@ local function handle_glyph_node(t, ctx, col_buffer, layout_map, grid_height,
 
         -- Column overflow check (sp-based)
         -- In distribute mode, allow overflow (flush_buffer will squeeze later)
-        if not distribute and ctx.cur_y_sp + cell_h > ctx.col_height_sp and ctx.cur_y_sp > 0 then
+        -- When auto_column_wrap is false, only explicit penalties cause column breaks
+        if not distribute and ctx.auto_column_wrap and ctx.cur_y_sp + cell_h > ctx.col_height_sp and ctx.cur_y_sp > 0 then
             flush_fn()
             accumulate_free_mode_col_width(ctx, params)
-            wrap_to_next_column(ctx, p_cols, interval, grid_height, indent, false, false)
+            wrap_to_next_column(ctx, p_cols, interval, grid_height, base_indent or indent, false, false)
         end
 
         table.insert(col_buffer, {
@@ -923,10 +1004,43 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
 
         -- Check wrapping BEFORE placing (unified: sp-based)
         -- In distribution mode, we allow overflow so we can squeeze characters later
-        if ctx.cur_y_sp >= effective_col_height_sp and not distribute then
+        -- When auto_column_wrap is false, only explicit penalties cause column breaks
+        -- Skip auto-wrap for jiazhu (textflow) nodes: they manage column transitions
+        -- via their own callbacks.wrap(). Without this check, body text filling
+        -- exactly one column would trigger a premature wrap here, creating an
+        -- empty column before jiazhu content.
+        -- Also skip when the current non-content node (GLUE/KERN/PENALTY) is immediately
+        -- followed by a textflow node — the intermediate spacing should not cause a wrap.
+        local is_textflow_node = D.get_attribute(t, constants.ATTR_JIAZHU) == 1
+            and not (tb_w > 0 and tb_h > 0)
+        local next_is_textflow = false
+        if not is_textflow_node and id ~= constants.GLYPH then
+            -- Lookahead: skip non-content nodes to find the next content node
+            local lookahead = D.getnext(t)
+            while lookahead do
+                local la_id = D.getid(lookahead)
+                if la_id == constants.GLYPH or la_id == constants.HLIST or la_id == constants.VLIST then
+                    -- Found a content node — check if it's textflow
+                    if D.get_attribute(lookahead, constants.ATTR_JIAZHU) == 1 then
+                        next_is_textflow = true
+                    end
+                    break
+                elseif la_id == constants.GLUE or la_id == constants.KERN
+                        or la_id == constants.PENALTY or la_id == constants.WHATSIT then
+                    lookahead = D.getnext(lookahead)
+                else
+                    break
+                end
+            end
+        end
+        if ctx.auto_column_wrap and ctx.cur_y_sp >= effective_col_height_sp
+                and not distribute and not is_textflow_node and not next_is_textflow then
             do_flush()
             accumulate_free_mode_col_width(ctx, params)
-            wrap_to_next_column(ctx, p_cols, interval, grid_height, indent, true, false)
+            wrap_to_next_column(ctx, p_cols, interval, grid_height, base_indent, true, false)
+            -- After column wrap, re-resolve indent: first_indent only applies to
+            -- the block's starting column; subsequent columns use base_indent.
+            indent = get_indent_for_current_pos(ctx, block_start_cols, block_id, base_indent, first_indent)
         end
 
         apply_indentation(ctx, indent)
@@ -1031,7 +1145,9 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
         end
 
         local is_textflow = D.get_attribute(t, constants.ATTR_JIAZHU) == 1
-        if is_textflow then
+        -- Textbox nodes with jiazhu attribute should NOT enter textflow path;
+        -- they will be handled as independent textbox blocks below.
+        if is_textflow and not (tb_w > 0 and tb_h > 0) then
             local textflow = package.loaded['core.luatex-cn-core-textflow'] or
                 require('core.luatex-cn-core-textflow')
 
@@ -1092,7 +1208,7 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
             textbox.place_textbox_node(ctx, t, tb_w, tb_h, tb_params, tb_callbacks)
         elseif id == constants.GLYPH then
             handle_glyph_node(t, ctx, col_buffer, layout_map, grid_height,
-                indent, effective_limit, distribute, interval, p_cols, params, do_flush)
+                indent, effective_limit, distribute, interval, p_cols, params, do_flush, base_indent)
         elseif id == constants.GLUE or id == constants.KERN then
             t = handle_spacing_node(t, ctx, grid_height, effective_col_height_sp,
                 indent, interval, p_cols, do_flush)

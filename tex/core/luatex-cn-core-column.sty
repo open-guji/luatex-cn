@@ -24,7 +24,7 @@
 \RequirePackage{core/luatex-cn-core-base}
 \RequirePackage{expl3}
 \RequirePackage{xparse}
-\ProvidesExplPackage {core/luatex-cn-core-column} {2026/02/14} {0.2.8} {Column Support for Vertical Typesetting}
+\ProvidesExplPackage {core/luatex-cn-core-column} {2026/02/18} {0.2.9} {Column Support for Vertical Typesetting}
 
 % Default variables for column
 \tl_new:N \l__luatexcn_column_default_size_tl
@@ -208,8 +208,45 @@
 }
 \ExplSyntaxOff
 
-% Chinese alias
+% ============================================================
+% Chinese aliases / 中文别名
+% ============================================================
+% Simplified Chinese / 简体
 \NewCommandCopy{\行}{\Column}
 \NewCommandCopy{\末行}{\LastColumn}
+
+% ============================================================
+% Chinese key aliases / 中文 Key 别名
+% ============================================================
+\ExplSyntaxOn
+\keys_define:nn { luatexcn / column }
+  {
+    % 简体
+    对齐 .meta:n = { align = #1 },
+    末列 .bool_set:N = \l__luatexcn_column_last_bool,
+    字号 .tl_set:N = \l__luatexcn_column_local_size_tl,
+    字体 .tl_set:N = \l__luatexcn_column_local_font_tl,
+    字色 .tl_set:N = \l__luatexcn_column_local_color_tl,
+    宽度 .tl_set:N = \l__luatexcn_column_width_tl,
+    列宽 .tl_set:N = \l__luatexcn_column_width_tl,
+    自动宽度 .bool_set:N = \l__luatexcn_column_auto_width_bool,
+    宽度缩放 .tl_set:N = \l__luatexcn_column_width_scale_tl,
+    上间距 .tl_set:N = \l__luatexcn_column_spacing_top_tl,
+    下间距 .tl_set:N = \l__luatexcn_column_spacing_bottom_tl,
+    间距 .meta:n = { spacing-top = #1, spacing-bottom = #1 },
+    格高 .tl_set:N = \l__luatexcn_column_grid_height_tl,
+    % 繁体（与简体不同形的）
+    對齊 .meta:n = { align = #1 },
+    字號 .tl_set:N = \l__luatexcn_column_local_size_tl,
+    字體 .tl_set:N = \l__luatexcn_column_local_font_tl,
+    寬度 .tl_set:N = \l__luatexcn_column_width_tl,
+    列寬 .tl_set:N = \l__luatexcn_column_width_tl,
+    自動寬度 .bool_set:N = \l__luatexcn_column_auto_width_bool,
+    寬度縮放 .tl_set:N = \l__luatexcn_column_width_scale_tl,
+    上間距 .tl_set:N = \l__luatexcn_column_spacing_top_tl,
+    下間距 .tl_set:N = \l__luatexcn_column_spacing_bottom_tl,
+    間距 .meta:n = { spacing-top = #1, spacing-bottom = #1 },
+  }
+\ExplSyntaxOff
 
 \endinput%

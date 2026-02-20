@@ -150,6 +150,22 @@ test_utils.run_test("apply_style_attrs: copies style fields to map_entry", funct
     test_utils.assert_eq(entry.font, "SimSun")
 end)
 
+test_utils.run_test("apply_style_attrs: copies xshift/yshift to map_entry", function()
+    style_registry.clear()
+    local id = style_registry.register({
+        xshift = { value = -0.3, unit = "em" },
+        yshift = 32768,
+    })
+    local n = node.direct.new(node.id("glyph"))
+    node.direct.set_attribute(n, require("core.luatex-cn-constants").ATTR_STYLE_REG_ID, id)
+
+    local entry = {}
+    helpers.apply_style_attrs(entry, n)
+    test_utils.assert_eq(entry.xshift.value, -0.3)
+    test_utils.assert_eq(entry.xshift.unit, "em")
+    test_utils.assert_eq(entry.yshift, 32768)
+end)
+
 test_utils.run_test("apply_style_attrs: no style_id does nothing", function()
     local n = node.direct.new(node.id("glyph"))
     local entry = {}

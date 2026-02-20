@@ -301,6 +301,7 @@ local function calc_page_columns(explicit_page_cols)
         return
     end
 
+
     if explicit_page_cols > 0 then
         _G.content.page_columns = explicit_page_cols
         -- Auto-adjust grid_width to fill content area width when page_columns is explicit

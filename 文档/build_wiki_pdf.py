@@ -28,43 +28,64 @@ OUT_DIR = Path(__file__).resolve().parent  # 文档/
 # Chapter ordering – mirrors _Sidebar.md structure
 ZH_CHAPTERS = [
     # (filename without .md, display title)
+    # -- 入门 --
     ("Home", "LuaTeX-CN Wiki"),
     ("Installation", "安装指南"),
     ("Quick-Start", "快速入门"),
-    ("Templates", "模板使用与自定义"),
     ("Examples", "示例"),
+    # -- 排版功能 --
+    ("Templates", "模板使用与自定义"),
+    ("Fonts", "字体设置"),
     ("Features", "功能详解"),
+    ("ltc-book", "现代竖排"),
+    # -- 标点与句读 --
+    ("Punctuation", "标点系统"),
+    ("Judou", "句读"),
+    # -- 注释系统 --
     ("Side-Note", "夹注与侧批"),
     ("Annotation", "批注与眉批"),
-    ("Seal", "印章"),
-    ("Judou", "句读"),
-    ("Fonts", "字体设置"),
-    ("Textbox", "文本框"),
+    # -- 装饰与辅助 --
     ("Correction", "改字与装饰"),
+    ("Taitou", "抬头"),
+    ("Textbox", "文本框"),
+    ("Seal", "印章"),
+    # -- 参考 --
     ("Debug", "调试模式"),
+    ("Command-Reference", "命令索引"),
     ("Changelog", "更新日志"),
-    ("Release", "发布流程"),
+    # -- 开发者 --
     ("Development", "开发文档"),
+    ("Release", "发布流程"),
 ]
 
 EN_CHAPTERS = [
+    # -- Getting Started --
     ("EN:Home", "LuaTeX-CN Wiki"),
     ("EN:Installation", "Installation Guide"),
     ("EN:Quick-Start", "Quick Start"),
-    ("EN:Templates", "Templates and Customization"),
     ("EN:Examples", "Examples"),
+    # -- Typesetting --
+    ("EN:Templates", "Templates and Customization"),
+    ("EN:Fonts", "Fonts"),
     ("EN:Features", "Features Overview"),
+    ("EN:ltc-book", "Modern Vertical Books"),
+    # -- Punctuation --
+    ("EN:Punctuation", "Punctuation System"),
+    ("EN:Judou", "Judou (Punctuation Modes)"),
+    # -- Annotations --
     ("EN:Side-Note", "Interlinear & Side Notes"),
     ("EN:Annotation", "Annotations & Marginal Notes"),
-    ("EN:Seal", "Seals"),
-    ("EN:Judou", "Judou (Punctuation)"),
-    ("EN:Fonts", "Fonts"),
-    ("EN:Textbox", "Textbox"),
+    # -- Decorations --
     ("EN:Correction", "Correction & Decoration"),
+    ("EN:Taitou", "Elevation (Taitou)"),
+    ("EN:Textbox", "Textbox"),
+    ("EN:Seal", "Seals"),
+    # -- Reference --
     ("EN:Debug", "Debug Mode"),
     ("EN:Changelog", "Changelog"),
-    ("EN:Release", "Release Process"),
+    # -- Developer --
     ("EN:Development", "Development Documentation"),
+    ("EN:Release", "Release Process"),
 ]
 
 # ---------------------------------------------------------------------------
@@ -87,9 +108,9 @@ def read_wiki_page(name: str) -> str:
 
 
 def strip_language_toggle(md: str) -> str:
-    """Remove the first line if it's a language toggle link like '[English Version](...) | 中文版'."""
+    """Remove the first line if it's a language toggle (e.g. 'English | [中文版](Home)')."""
     lines = md.split("\n", 1)
-    if lines and re.match(r"^\[.*\]\(.*\)\s*\|", lines[0]):
+    if lines and re.match(r"^(\[.*\].*\|.*|.*\|\s*\[.*\])", lines[0]):
         return lines[1] if len(lines) > 1 else ""
     return md
 
@@ -285,8 +306,12 @@ def build_toc_html(chapters: list[tuple[str, str]], is_zh: bool) -> str:
     """Build a table-of-contents HTML block."""
     title = "目录" if is_zh else "Table of Contents"
     feature_pages = {
-        "Side-Note", "Annotation", "Seal", "Judou", "Fonts", "Textbox", "Correction",
-        "EN:Side-Note", "EN:Annotation", "EN:Seal", "EN:Judou", "EN:Fonts", "EN:Textbox", "EN:Correction",
+        "Punctuation", "Judou",
+        "Side-Note", "Annotation",
+        "Correction", "Taitou", "Textbox", "Seal",
+        "EN:Punctuation", "EN:Judou",
+        "EN:Side-Note", "EN:Annotation",
+        "EN:Correction", "EN:Taitou", "EN:Textbox", "EN:Seal",
     }
 
     items = []

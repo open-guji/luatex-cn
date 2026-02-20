@@ -1,0 +1,248 @@
+% Copyright 2026 Open-Guji (https://github.com/open-guji)
+%
+% Licensed under the Apache License, Version 2.0 (the "License");
+% you may not use this file except in compliance with the License.
+% You may obtain a copy of the License at
+%
+%     http://www.apache.org/licenses/LICENSE-2.0
+%
+% Unless required by applicable law or agreed to in writing, software
+% distributed under the License is distributed on an "AS IS" BASIS,
+% WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+% See the License for the specific language governing permissions and
+% limitations under the License.
+
+% luatex-cn-digital.sty
+% Digital-specific commands for guji-digital class.
+% Layout-centric commands for digitization workflow (缩进, 双列, 版心, etc.).
+% DigitalContent is a backward-compatible alias for BodyText (digital-mode
+% is set globally in guji-digital.cls).
+
+\NeedsTeXFormat{LaTeX2e}
+\RequirePackage{expl3}
+\RequirePackage{xparse}
+\ProvidesExplPackage {digital/luatex-cn-digital} {2026/02/18} {0.2.9}
+  {Digital-specific commands for ancient Chinese book digitization}
+
+\RequirePackage{core/luatex-cn-core-base}
+\RequirePackage{core/luatex-cn-core-textflow}
+
+% ============================================================================
+% Penalty constants
+% ============================================================================
+\int_const:Nn \c__luatexcn_digital_penalty_force_column_int { -10002 }
+\int_const:Nn \c__luatexcn_digital_penalty_newline_int { -10005 }
+
+% ============================================================================
+% DigitalContent — backward-compatible alias for BodyText
+% ============================================================================
+% DigitalContent is now an alias for BodyText. The digital-mode behavior
+% (obeylines, async vbox) is controlled by the digital-mode key in
+% luatexcn/content, which guji-digital.cls sets globally to true.
+\NewEnvironmentCopy{DigitalContent}{BodyText}
+
+% ============================================================================
+% \缩进[N] Command — Set indent for current line
+% ============================================================================
+% Positive values = indent (move text down from column top)
+% Negative values = taitou (extend text above column top into header area)
+%
+% Syntax: \缩进[2] or \缩进[-1]
+
+\NewDocumentCommand{\Indent}{ O{0} }
+  {
+    \int_compare:nNnTF { #1 } < { 0 }
+      {
+        % Negative indent = taitou:
+        % 1. Use SetIndent for proper style stack management + restore on newline
+        % 2. Insert PENALTY_TAITOU so the layout engine sets taitou scope
+        %    (ctx.taitou_col/taitou_page), required for forced negative indent
+        \SetIndent{#1}
+        \penalty \int_use:N \c__luatexcn_penalty_taitou_int \scan_stop:
+      }
+      {
+        \SetIndent{#1}
+      }
+  }
+
+% ============================================================================
+% \双列{\右小列{...}\左小列{...}} — Explicit dual-column (jiazhu)
+% ============================================================================
+% For digitization: explicitly specify right and left sub-column content.
+% Uses two consecutive TextFlow calls with only-column mode.
+%
+% Syntax: \双列{\右小列{right content}\左小列{left content}}
+
+\tl_new:N \l__luatexcn_digital_right_col_tl
+\tl_new:N \l__luatexcn_digital_left_col_tl
+\tl_new:N \l__luatexcn_digital_right_indent_tl
+\tl_new:N \l__luatexcn_digital_left_indent_tl
+
+% Keys for sub-column options
+\keys_define:nn { luatexcn / digital / subcol }
+  {
+    indent .tl_set:N = \l__luatexcn_digital_subcol_indent_tl,
+    indent .initial:n = {},
+  }
+
+\NewDocumentCommand{\RightSubCol}{ O{} +m }
+  {
+    \tl_set:Nn \l__luatexcn_digital_right_col_tl { #2 }
+    \tl_clear:N \l__luatexcn_digital_subcol_indent_tl
+    \tl_if_empty:nF { #1 }
+      { \keys_set:nn { luatexcn / digital / subcol } { #1 } }
+    \tl_set_eq:NN \l__luatexcn_digital_right_indent_tl \l__luatexcn_digital_subcol_indent_tl
+  }
+
+\NewDocumentCommand{\LeftSubCol}{ O{} +m }
+  {
+    \tl_set:Nn \l__luatexcn_digital_left_col_tl { #2 }
+    \tl_clear:N \l__luatexcn_digital_subcol_indent_tl
+    \tl_if_empty:nF { #1 }
+      { \keys_set:nn { luatexcn / digital / subcol } { #1 } }
+    \tl_set_eq:NN \l__luatexcn_digital_left_indent_tl \l__luatexcn_digital_subcol_indent_tl
+  }
+
+\NewDocumentCommand{\DualColumn}{ +m }
+  {
+    \tl_clear:N \l__luatexcn_digital_right_col_tl
+    \tl_clear:N \l__luatexcn_digital_left_col_tl
+    \tl_clear:N \l__luatexcn_digital_right_indent_tl
+    \tl_clear:N \l__luatexcn_digital_left_indent_tl
+    % Execute inner commands to collect right/left content and indent
+    #1
+    % Output right sub-column, then left sub-column
+    % TextFlow continuation mechanism: right-only ends with pending_sub_col=1,
+    % so the next left-only TextFlow starts at sub_col=2 automatically.
+    \tl_if_empty:NF \l__luatexcn_digital_right_col_tl
+      {
+        % Apply per-sub-column indent if specified
+        \tl_if_empty:NF \l__luatexcn_digital_right_indent_tl
+          { \exp_args:NV \SetIndent \l__luatexcn_digital_right_indent_tl }
+        \TextFlow[only-column=right, auto-balance=false]{ \l__luatexcn_digital_right_col_tl }
+      }
+    % When left sub-column is empty but right was non-empty, insert a
+    % full-width space as placeholder. This ensures the left-only TextFlow
+    % produces a glyph node that consumes the pending_sub_col=1 state
+    % from the right TextFlow, preventing state corruption for subsequent
+    % \DualColumn calls.
+    \tl_if_empty:NTF \l__luatexcn_digital_left_col_tl
+      {
+        \tl_if_empty:NF \l__luatexcn_digital_right_col_tl
+          {
+            \TextFlow[only-column=left, auto-balance=false]{ \char"3000\relax }
+          }
+      }
+      {
+        % Apply per-sub-column indent if specified
+        \tl_if_empty:NF \l__luatexcn_digital_left_indent_tl
+          { \exp_args:NV \SetIndent \l__luatexcn_digital_left_indent_tl }
+        \TextFlow[only-column=left, auto-balance=false]{ \l__luatexcn_digital_left_col_tl }
+      }
+  }
+
+% ============================================================================
+% Banxin (版心) Environment — Explicit banxin content specification
+% ============================================================================
+% For digitization: explicitly specify all banxin content elements.
+% This environment enables banxin and wraps sub-commands that set
+% book name, chapter title, page number, publisher, and yuwei toggles.
+%
+% Syntax:
+%   \begin{Banxin}
+%     \BanxinUpper{书名}
+%     \begin{BanxinMiddle}
+%       \UpperYuwei
+%       \BanxinChapter{章节名}
+%       \BanxinPageNumber{一}
+%       \LowerYuwei
+%     \end{BanxinMiddle}
+%     \BanxinLower{出版商}
+%   \end{Banxin}
+
+% LaTeX's \begin{...} always creates a group, so banxin sub-commands
+% must use GLOBAL assignment to ensure parameters persist after \end{Banxin}.
+% The Banxin/BanxinMiddle environments are provided for readability;
+% sub-commands can also be used standalone outside any environment.
+
+\NewDocumentEnvironment{Banxin}{ }
+  {
+    % Enable banxin and reset yuwei (global assignments inside)
+    \bool_gset_true:N \l__luatexcn_banxin_on_bool
+    \bool_gset_false:N \l__luatexcn_banxin_upper_yuwei_bool
+    \bool_gset_false:N \l__luatexcn_banxin_lower_yuwei_bool
+    % Sync to Lua
+    \lua_now:n { _G.banxin.setup({~enabled~=~true~}) }
+  }
+  { }
+
+\NewDocumentEnvironment{BanxinMiddle}{ }
+  { }
+  { }
+
+% --- Sub-commands (use global assignment to survive groups) ---
+
+\NewDocumentCommand{\BanxinUpper}{ m }
+  {
+    \tl_gset:Nn \l__luatexcn_banxin_book_name_tl { #1 }
+  }
+
+\NewDocumentCommand{\BanxinLower}{ m }
+  {
+    \tl_gset:Nn \l__luatexcn_banxin_publisher_tl { #1 }
+  }
+
+\NewDocumentCommand{\BanxinChapter}{ m }
+  {
+    \tl_gset:Nn \l__luatexcn_banxin_chapter_title_tl { #1 }
+  }
+
+\NewDocumentCommand{\BanxinPageNumber}{ m }
+  {
+    % Set explicit page number string in Lua global
+    \lua_now:e {
+      _G.banxin = _G.banxin~or~{}
+      _G.banxin.explicit_page_number = [=[\luaescapestring{#1}]=]
+    }
+  }
+
+\NewDocumentCommand{\UpperYuwei}{ }
+  {
+    \bool_gset_true:N \l__luatexcn_banxin_upper_yuwei_bool
+  }
+
+\NewDocumentCommand{\LowerYuwei}{ }
+  {
+    \bool_gset_true:N \l__luatexcn_banxin_lower_yuwei_bool
+  }
+
+% ============================================================================
+% CJK Aliases
+% ============================================================================
+% Simplified Chinese
+\NewCommandCopy{\缩进}{\Indent}
+\NewCommandCopy{\双列}{\DualColumn}
+\NewCommandCopy{\右小列}{\RightSubCol}
+\NewCommandCopy{\左小列}{\LeftSubCol}
+\NewEnvironmentCopy{数字化内容}{BodyText}
+\NewEnvironmentCopy{版心}{Banxin}
+\NewCommandCopy{\版心上部}{\BanxinUpper}
+\NewCommandCopy{\版心下部}{\BanxinLower}
+\NewCommandCopy{\版心章节}{\BanxinChapter}
+\NewCommandCopy{\版心页码}{\BanxinPageNumber}
+\NewCommandCopy{\上鱼尾}{\UpperYuwei}
+\NewCommandCopy{\下鱼尾}{\LowerYuwei}
+\NewEnvironmentCopy{版心中部}{BanxinMiddle}
+% \换页 must delegate to \newpage (not copy) because \newpage is
+% overridden inside Content groups to emit PENALTY_FORCE_PAGE.
+\NewDocumentCommand{\换页}{}{\newpage}
+% Traditional Chinese (only chars that differ from simplified)
+\NewCommandCopy{\縮進}{\Indent}
+\NewCommandCopy{\雙列}{\DualColumn}
+\NewEnvironmentCopy{數字化內容}{BodyText}
+\NewCommandCopy{\上魚尾}{\UpperYuwei}
+\NewCommandCopy{\下魚尾}{\LowerYuwei}
+\NewCommandCopy{\換頁}{\换页}
+
+\ExplSyntaxOff
+\endinput

@@ -270,13 +270,19 @@ local function flatten_vbox(head, grid_width, char_width)
                 --    (e.g., from \penalty -10002 in footnote content that caused a
                 --    paragraph line break; TeX places this penalty between HLISTs)
                 if tid == constants.HLIST and inner_has_content and parent_is_vlist then
-                    local already_has_penalty = result_tail_d
+                    local last_penalty = result_tail_d
                         and D.getid(result_tail_d) == constants.PENALTY
-                        and D.getfield(result_tail_d, "penalty") == -10002
+                        and D.getfield(result_tail_d, "penalty")
+                    local already_has_penalty = last_penalty == constants.PENALTY_FORCE_COLUMN
+                        or last_penalty == constants.PENALTY_TAITOU
+                        or last_penalty == constants.PENALTY_DIGITAL_NEWLINE
                     local next_sibling = D.getnext(t)
-                    local next_is_force_column = next_sibling
+                    local next_penalty = next_sibling
                         and D.getid(next_sibling) == constants.PENALTY
-                        and D.getfield(next_sibling, "penalty") == -10002
+                        and D.getfield(next_sibling, "penalty")
+                    local next_is_force_column = next_penalty == constants.PENALTY_FORCE_COLUMN
+                        or next_penalty == constants.PENALTY_TAITOU
+                        or next_penalty == constants.PENALTY_DIGITAL_NEWLINE
                     if not already_has_penalty and not next_is_force_column then
                         dbg.log("Adding Column Break after Line=" .. tostring(t))
                         local p = D.new(constants.PENALTY)

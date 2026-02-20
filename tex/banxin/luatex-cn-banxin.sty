@@ -17,7 +17,7 @@
 %
 \RequirePackage{expl3}
 \RequirePackage{xparse}
-\ProvidesExplPackage {banxin/luatex-cn-banxin} {2026/02/14} {0.2.8} {Ancient Book Banxin Support}
+\ProvidesExplPackage {banxin/luatex-cn-banxin} {2026/02/18} {0.2.9} {Ancient Book Banxin Support}
 
 \lua_now:e {
   package.loaded["banxin.luatex-cn-banxin-main"]~=~nil;
@@ -241,6 +241,78 @@
         \tl_set:Nn \l__luatexcn_banxin_chapter_title_tl { #1 }
       }
   }
+
+% ============================================================================
+% CJK Key Aliases (中文键值别名)
+% ============================================================================
+
+% --- book-name sub-namespace ---
+\keys_define:nn { luatexcn / banxin / book-name }
+  {
+    字号 .tl_set:N = \l__luatexcn_banxin_book_name_font_size_tl,
+    格高 .tl_set:N = \l__luatexcn_banxin_book_name_grid_height_tl,
+    对齐 .tl_set:N = \l__luatexcn_banxin_book_name_align_tl,
+  }
+
+% --- chapter sub-namespace ---
+\keys_define:nn { luatexcn / banxin / chapter }
+  {
+    字号 .tl_set:N = \l__luatexcn_banxin_chapter_title_font_size_tl,
+    格高 .tl_set:N = \l__luatexcn_banxin_chapter_title_grid_height_tl,
+    上留白 .tl_set:N = \l__luatexcn_banxin_chapter_title_top_margin_tl,
+    列数 .int_set:N = \l__luatexcn_banxin_chapter_title_cols_int,
+    列數 .int_set:N = \l__luatexcn_banxin_chapter_title_cols_int,
+  }
+
+% --- page-number sub-namespace ---
+\keys_define:nn { luatexcn / banxin / page-number }
+  {
+    字号 .tl_set:N = \l__luatexcn_banxin_page_number_font_size_tl,
+    格高 .tl_set:N = \l__luatexcn_banxin_page_number_grid_height_tl,
+    对齐 .tl_set:N = \l__luatexcn_banxin_page_number_align_tl,
+  }
+
+% --- publisher sub-namespace ---
+\keys_define:nn { luatexcn / banxin / publisher }
+  {
+    字号 .tl_set:N = \l__luatexcn_banxin_publisher_font_size_tl,
+    格高 .tl_set:N = \l__luatexcn_banxin_publisher_grid_height_tl,
+    对齐 .tl_set:N = \l__luatexcn_banxin_publisher_align_tl,
+    下留白 .tl_set:N = \l__luatexcn_banxin_publisher_bottom_margin_tl,
+  }
+
+% --- main banxin namespace ---
+\keys_define:nn { luatexcn / banxin }
+  {
+    版心 .bool_set:N = \l__luatexcn_banxin_on_bool,
+    版心上比 .tl_set:N = \l__luatexcn_banxin_upper_ratio_tl,
+    版心中比 .tl_set:N = \l__luatexcn_banxin_middle_ratio_tl,
+    版心上填充 .tl_set:N = \l__luatexcn_banxin_padding_top_tl,
+    版心下填充 .tl_set:N = \l__luatexcn_banxin_padding_bottom_tl,
+    版心分隔线 .bool_set:N = \l__luatexcn_banxin_divider_bool,
+    版心分隔線 .bool_set:N = \l__luatexcn_banxin_divider_bool,
+    上鱼尾 .bool_set:N = \l__luatexcn_banxin_upper_yuwei_bool,
+    上魚尾 .bool_set:N = \l__luatexcn_banxin_upper_yuwei_bool,
+    下鱼尾 .bool_set:N = \l__luatexcn_banxin_lower_yuwei_bool,
+    下魚尾 .bool_set:N = \l__luatexcn_banxin_lower_yuwei_bool,
+    章节标题 .tl_set:N = \l__luatexcn_banxin_chapter_title_tl,
+    章節標題 .tl_set:N = \l__luatexcn_banxin_chapter_title_tl,
+    书名 .meta:n = { book-name = {#1} },
+    書名 .meta:n = { book-name = {#1} },
+    章节 .meta:n = { chapter = {#1} },
+    章節 .meta:n = { chapter = {#1} },
+    页码 .meta:n = { page-number = {#1} },
+    頁碼 .meta:n = { page-number = {#1} },
+    出版商 .meta:n = { publisher = {#1} },
+  }
+
+% ============================================================================
+% CJK Aliases (中文别名)
+% ============================================================================
+% Simplified Chinese / 简体
+\NewCommandCopy{\版心设置}{\banxinSetup}
+% Traditional Chinese / 繁体
+\NewCommandCopy{\版心設置}{\banxinSetup}
 
 \ExplSyntaxOff%
 %

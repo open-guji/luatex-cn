@@ -1,0 +1,37 @@
+% double_colbreak_after_jiazhu.tex - 回归测试: 注(段落+夹注)结束后空列
+% 问题: \段落[indent=2] 包裹 \夹注[auto-balance=false] 时，夹注结束后
+%       出现两次换列（一次来自 flatten 的 FORCE_COLUMN，一次来自段落的
+%       SMART_BREAK），导致中间产生一个空列。
+% 根因: FORCE_COLUMN 换列后 textflow pending 状态未清除，SMART_BREAK
+%       再次 flush pending 导致二次换列。
+% 修复: SMART_BREAK 在 cur_row==0 时清除 stale pending 而不添加行数。
+\documentclass{guji}
+\setmainfont{TW-Kai}
+\禁用分页裁剪
+\无标点模式
+
+% 复现 \注 命令的结构：段落[indent=2] + 夹注[auto-balance=false]
+\NewDocumentCommand{\注}{ +m }{%
+  \begin{段落}[indent=2]
+    \夹注[auto-balance=false]{#1}%
+  \end{段落}%
+}
+
+\begin{document}
+\begin{正文}
+
+% 填充前几列，让注的内容落在可观察的位置
+一二三四五六七八九十一二三四五六七八九十
+
+% 注结束后，下一行内容应紧邻（只隔一个列），不应有空列
+\注{甲乙丙丁戊己庚辛壬癸甲乙丙丁戊己庚辛壬癸甲乙丙丁戊己庚辛壬癸甲乙丙丁戊己庚辛壬癸以順治十五年十月告成}
+
+《日講易經解義》十八卷
+
+% 带 \单抬 的注（原始 bug 场景）
+\注{國朝大學士傅以漸等奉\单抬 敕撰順治十三年十二月\单抬 世祖章皇帝以永樂易經大全繁而可刪華而寡要因\单抬 命以漸等刊其舛訛補其缺漏勒為是書以順治十五年十月告成}
+
+《御纂周易折中》二十二卷
+
+\end{正文}
+\end{document}

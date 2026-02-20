@@ -18,7 +18,7 @@
 %
 \RequirePackage{expl3}
 \RequirePackage{xparse}
-\ProvidesExplPackage {core/luatex-cn-footnote} {2026/02/14} {0.2.8} {Footnote/Jiaokan support}
+\ProvidesExplPackage {core/luatex-cn-footnote} {2026/02/18} {0.2.9} {Footnote/Jiaokan support}
 
 % ============================================================================
 % Load Lua module and set global utils
@@ -221,12 +221,42 @@
 
 \ExplSyntaxOff%
 
-% ============================================================================
-% CJK Aliases
-% ============================================================================
+% ============================================================
+% Chinese aliases / 中文别名
+% ============================================================
+% Simplified Chinese / 简体
 \NewCommandCopy{\脚注}{\Footnote}
 \NewCommandCopy{\输出脚注}{\FlushFootnote}
 \NewCommandCopy{\脚注设置}{\footnoteSetup}
 \NewCommandCopy{\重置脚注计数}{\ResetFootnoteCounter}
+% Traditional Chinese / 繁体
+\NewCommandCopy{\腳注}{\Footnote}
+\NewCommandCopy{\輸出腳注}{\FlushFootnote}
+\NewCommandCopy{\腳注設置}{\footnoteSetup}
+\NewCommandCopy{\重置腳注計數}{\ResetFootnoteCounter}
+
+% ============================================================
+% Chinese key aliases / 中文 Key 别名
+% ============================================================
+\ExplSyntaxOn
+\keys_define:nn { luatexcn / footnote }
+  {
+    % 简体
+    模式 .tl_set:N = \l__luatexcn_footnote_mode_tl,
+    编号样式 .tl_set:N = \l__luatexcn_footnote_number_style_tl,
+    分隔符 .tl_set:N = \l__luatexcn_footnote_separator_tl,
+    字体 .tl_set:N = \l__luatexcn_footnote_font_tl,
+    字号 .tl_set:N = \l__luatexcn_footnote_font_size_tl,
+    字色 .tl_set:N = \l__luatexcn_footnote_font_color_tl,
+    缩进 .dim_set:N = \l__luatexcn_footnote_indent_dim,
+    间距 .dim_set:N = \l__luatexcn_footnote_spacing_dim,
+    % 繁体（与简体不同形的）
+    編號樣式 .tl_set:N = \l__luatexcn_footnote_number_style_tl,
+    字體 .tl_set:N = \l__luatexcn_footnote_font_tl,
+    字號 .tl_set:N = \l__luatexcn_footnote_font_size_tl,
+    縮進 .dim_set:N = \l__luatexcn_footnote_indent_dim,
+    間距 .dim_set:N = \l__luatexcn_footnote_spacing_dim,
+  }
+\ExplSyntaxOff
 
 \endinput%

@@ -99,6 +99,8 @@ local function apply_style_attrs(map_entry, node_ptr)
     if style.font_size then map_entry.font_size = style.font_size end
     if style.font then map_entry.font = style.font end
     if style.textflow_align then map_entry.textflow_align = style.textflow_align end
+    if style.xshift then map_entry.xshift = style.xshift end
+    if style.yshift then map_entry.yshift = style.yshift end
 end
 
 -- =============================================================================
@@ -209,10 +211,10 @@ end
 -- @param punct_config (table|nil) Punctuation config for natural mode fallback
 -- @return (number) Cell height in sp
 local function resolve_cell_height(node, grid_height, default_cell_height, punct_config)
-    -- 1. Check node style for per-character/paragraph cell_height override
+    -- 1. Check node style for per-character/paragraph grid_height override
     local sid = D.get_attribute(node, constants.ATTR_STYLE_REG_ID)
     if sid and sid > 0 then
-        local style_ch = style_registry.get_cell_height(sid)
+        local style_ch = style_registry.get_grid_height(sid)
         if style_ch and style_ch > 0 then
             return style_ch
         end

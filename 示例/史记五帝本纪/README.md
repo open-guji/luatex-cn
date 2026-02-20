@@ -4,6 +4,7 @@
 
 ## 来源与背景
 - **原件来源**：[Internet Archive](https://archive.org/details/06054495.cn/page/n145/mode/2up)
+- colored-example.jpg 来自[台湾国立故宫博物院](https://theme.npm.edu.tw/selection/Article.aspx?sNo=04001076)。
 - **年代**：清代刻本风格
 - **内容**：摘自《史记·五帝本纪第一》
 

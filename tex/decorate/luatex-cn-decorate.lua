@@ -116,8 +116,8 @@ end
 -- @param glyph_d (number) Glyph depth
 -- @return x_bp, y_bp (in big points)
 local function calculate_decorate_position(pos, reg, ctx, base_size, font_id, char, scale, glyph_h, glyph_d)
-    local xoffset_sp = constants.resolve_dimen(reg.xoffset, base_size) or 0
-    local yoffset_sp = constants.resolve_dimen(reg.yoffset, base_size) or 0
+    local xshift_sp = constants.resolve_dimen(reg.xshift, base_size) or 0
+    local yshift_sp = constants.resolve_dimen(reg.yshift, base_size) or 0
 
     -- Fetch unscaled metrics
     local f_data = font.getfont(font_id)
@@ -129,14 +129,28 @@ local function calculate_decorate_position(pos, reg, ctx, base_size, font_id, ch
     -- Get actual column width (may differ for banxin columns)
     local col_width = text_position.get_column_width(pos.col, ctx.col_geom)
 
-    -- Horizontal Centering: align glyph's visual center to cell center
-    local v_center = text_position.get_visual_center(char, font_id) or (glyph_w / 2)
-    local scaled_v_center = v_center * scale
-    local center_offset = (col_width / 2) - scaled_v_center
-
     -- Position calculation (use previous row as decorations follow characters)
     local _, base_x = text_position.calculate_rtl_position(pos.col, ctx.p_total_cols, ctx.col_geom,
         ctx.half_thickness, ctx.shift_x)
+
+    -- TextFlow sub-column support: when decoration is inside jiazhu (sub_col > 0),
+    -- use half-column width and offset base_x to the correct sub-column.
+    local sub_col = pos.sub_col or 0
+    local effective_col_width = col_width
+    if sub_col > 0 then
+        local sub_width = col_width / 2
+        effective_col_width = sub_width
+        if sub_col == 1 then
+            base_x = base_x + sub_width  -- right sub-column
+        end
+        -- sub_col == 2: left sub-column stays at base_x
+    end
+
+    -- Horizontal Centering: align glyph's visual center to cell center
+    local v_center = text_position.get_visual_center(char, font_id) or (glyph_w / 2)
+    local scaled_v_center = v_center * scale
+    local center_offset = (effective_col_width / 2) - scaled_v_center
+
     local dec_cell_h = pos.cell_height or ctx.grid_height or 0
     local target_y_sp = math.max(0, pos.y_sp - dec_cell_h)
     local base_y = -target_y_sp - ctx.shift_y
@@ -147,8 +161,8 @@ local function calculate_decorate_position(pos, reg, ctx, base_size, font_id, ch
     local target_baseline_y = cell_center_y - scaled_ink_center
 
     -- Apply user offsets: Positive xshift moves LEFT (flow direction), positive yshift moves DOWN
-    local final_x = base_x + center_offset - xoffset_sp
-    local final_y = target_baseline_y - yoffset_sp
+    local final_x = base_x + center_offset - xshift_sp
+    local final_y = target_baseline_y - yshift_sp
 
     return final_x * utils.sp_to_bp, final_y * utils.sp_to_bp
 end

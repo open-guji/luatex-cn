@@ -93,7 +93,7 @@
 \RequirePackage{expl3}
 \RequirePackage{xparse}
 \RequirePackage{luatexbase}
-\ProvidesExplPackage {fonts/luatex-cn-font-autodetect} {2026/02/14} {0.2.8} {Automatic Chinese font detection for LuaLaTeX}
+\ProvidesExplPackage {fonts/luatex-cn-font-autodetect} {2026/02/18} {0.2.9} {Automatic Chinese font detection for LuaLaTeX}
 
 % Ensure we're using LuaTeX
 \sys_if_engine_luatex:TF
@@ -217,8 +217,23 @@
   }
 
 \DeclareDocumentCommand{\setFontFamily}{m}{\setfontfamily{#1}}
+
+% ============================================================================
+% CJK Aliases (中文别名)
+% ============================================================================
+% Simplified Chinese / 简体
 \DeclareDocumentCommand{\设置字体族}{m}{\setfontfamily{#1}}
 \DeclareDocumentCommand{\设置字体}{m}{\setmainfont{#1}}
+\NewCommandCopy{\应用自动字体}{\ApplyAutoFont}
+\NewCommandCopy{\获取字体名}{\GetAutoFontName}
+\NewCommandCopy{\获取字体特性}{\GetAutoFontFeatures}
+\NewCommandCopy{\声明字体递补}{\DeclareFontFallback}
+% Traditional Chinese / 繁体
+\NewCommandCopy{\應用自動字體}{\ApplyAutoFont}
+\NewCommandCopy{\獲取字體名}{\GetAutoFontName}
+\NewCommandCopy{\聲明字體遞補}{\DeclareFontFallback}
+\DeclareDocumentCommand{\設置字體族}{m}{\setfontfamily{#1}}
+\DeclareDocumentCommand{\設置字體}{m}{\setmainfont{#1}}
 
 \ExplSyntaxOff%
 %

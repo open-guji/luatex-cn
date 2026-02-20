@@ -18,7 +18,7 @@ for ext in "${extensions[@]}"; do
         rm -f "$file"
         echo "删除: $file"
         ((count++))
-    done < <(find . -path "./build" -prune -o -name "*.$ext" -type f -print0 2>/dev/null)
+    done < <(find . -path "./build" -prune -o -path "./.git" -prune -o -name "*.$ext" -type f -print0 2>/dev/null)
 done
 
 echo "---"

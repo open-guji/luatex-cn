@@ -17,7 +17,7 @@
 %
 \RequirePackage{expl3}
 \RequirePackage{xparse}
-\ProvidesExplPackage {guji/luatex-cn-guji-jiazhu} {2026/02/14} {0.2.8} {Jiazhu (Dual-column notes) support}
+\ProvidesExplPackage {guji/luatex-cn-guji-jiazhu} {2026/02/18} {0.2.9} {Jiazhu (Dual-column notes) support}
 
 % Load the core textflow engine
 \RequirePackage{core/luatex-cn-core-textflow}
@@ -69,11 +69,36 @@
 
 \ExplSyntaxOff%
 
-% Command Aliases for CJK
+% ============================================================================
+% CJK Aliases (中文别名)
+% ============================================================================
+% Simplified Chinese / 简体
 \NewCommandCopy{\夹注}{\JiaZhu}
+\NewCommandCopy{\夹注设置}{\jiazhuSetup}
 \NewCommandCopy{\单行夹注}{\DanHangJiaZhu}
-
-% Environment Aliases for CJK
 \NewEnvironmentCopy{夹注环境}{JiaZhuEnv}
+% Traditional Chinese / 繁体
+\NewCommandCopy{\夾注}{\JiaZhu}
+\NewCommandCopy{\夾注設置}{\jiazhuSetup}
+\NewEnvironmentCopy{夾注環境}{JiaZhuEnv}
+\NewCommandCopy{\單行夾注}{\DanHangJiaZhu}
+
+% ============================================================
+% Chinese key aliases / 中文 Key 别名
+% ============================================================
+\ExplSyntaxOn
+\keys_define:nn { luatexcn / jiazhu }
+  {
+    % 简体
+    字号 .tl_set:N = \l__luatexcn_jiazhu_size_tl,
+    字体 .tl_set:N = \l__luatexcn_jiazhu_font_tl,
+    字色 .tl_set:N = \l__luatexcn_jiazhu_font_color_tl,
+    对齐 .tl_set:N = \l__luatexcn_jiazhu_align_tl,
+    % 繁体（与简体不同形的）
+    字號 .tl_set:N = \l__luatexcn_jiazhu_size_tl,
+    字體 .tl_set:N = \l__luatexcn_jiazhu_font_tl,
+    對齊 .tl_set:N = \l__luatexcn_jiazhu_align_tl,
+  }
+\ExplSyntaxOff
 
 \endinput%

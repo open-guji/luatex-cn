@@ -20,7 +20,7 @@
 \RequirePackage{expl3}
 \RequirePackage{xparse}
 \RequirePackage{environ}
-\ProvidesExplPackage {guji/luatex-cn-guji-titlepage} {2026/02/14} {0.2.8} {Book Title Page Support}
+\ProvidesExplPackage {guji/luatex-cn-guji-titlepage} {2026/02/18} {0.2.9} {Book Title Page Support}
 
 % ============================================================================
 % Variables
@@ -53,7 +53,7 @@
 % ============================================================================
 \NewEnviron{TitlePage}[1][]{%
   % Save BODY to a unique name before nested \NewEnviron environments
-  % (SinglePage and BodyText both use \NewEnviron, which redefines \BODY)
+  % (SinglePage uses \NewEnviron, which redefines \BODY)
   \tl_set_eq:NN \l__luatexcn_titlepage_body_tl \BODY
   % Initialize col_widths array (columns will register their widths here)
   \lua_now:n { require('core.luatex-cn-core-content').init_col_widths() }%
@@ -76,8 +76,21 @@
 }
 
 % ============================================================================
-% CJK Aliases
+% CJK Key Aliases (中文键值别名)
 % ============================================================================
+\keys_define:nn { luatexcn / titlepage }
+  {
+    边框 .bool_set:N = \l__luatexcn_titlepage_border_bool,
+    邊框 .bool_set:N = \l__luatexcn_titlepage_border_bool,
+    外框 .bool_set:N = \l__luatexcn_titlepage_outer_border_bool,
+  }
+
+% ============================================================================
+% CJK Aliases (中文别名)
+% ============================================================================
+% Simplified Chinese / 简体
 \NewEnvironmentCopy{书名页}{TitlePage}
+% Traditional Chinese / 繁体
+\NewEnvironmentCopy{書名頁}{TitlePage}
 
 \endinput

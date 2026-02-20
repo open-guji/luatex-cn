@@ -17,7 +17,7 @@
 \RequirePackage{expl3}
 \RequirePackage{l3keys2e}
 \RequirePackage{core/luatex-cn-core-template}
-\ProvidesExplClass {guji} {2026/02/14} {0.2.8} {Ancient Chinese Book Class}
+\ProvidesExplClass {guji} {2026/02/18} {0.2.9} {Ancient Chinese Book Class}
 
 % ============================================================================
 % Variables (must be defined before use)
@@ -132,6 +132,16 @@
         { \exp_args:NV \setmainfont \l__luatexcn_content_font_name_tl [\l__luatexcn_content_font_features_tl] }
     }
 }
+
+% ============================================================================
+% CJK Aliases (中文别名)
+% ============================================================================
+% Simplified Chinese / 简体
+\NewCommandCopy{\古籍设置}{\gujiSetup}
+\NewCommandCopy{\定义古籍模板}{\defineGujiTemplate}
+% Traditional Chinese / 繁体
+\NewCommandCopy{\古籍設置}{\gujiSetup}
+\NewCommandCopy{\定義古籍模板}{\defineGujiTemplate}
 
 \ExplSyntaxOff
 \pagestyle{empty}

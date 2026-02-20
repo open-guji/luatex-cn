@@ -12,7 +12,7 @@
 % See the License for the specific language governing permissions and
 % limitations under the License.
 
-\ProvidesExplPackage{core/luatex-cn-core-page}{2026/02/14} {0.2.8}{Page geometry and background support}
+\ProvidesExplPackage{core/luatex-cn-core-page}{2026/02/18} {0.2.9}{Page geometry and background support}
 
 % Global token lists for page parameters (centralized)
 \tl_new:N \l__luatexcn_page_paper_width_tl
@@ -85,6 +85,9 @@
     }
     % Apply geometry when called in preamble (sets paper size)
     \luatexcn_apply_geometry:
+    % Set topskip (only safe in \pageSetup, not in per-page \luatexcn_apply_geometry:
+    % where it can trigger spurious blank pages via shipout hook interactions)
+    \dim_set:Nn \topskip { \l__luatexcn_page_topskip_tl }
     % Apply split page settings if enabled
     \__luatexcn_page_apply_split:
   }
@@ -116,13 +119,16 @@
       }
       \bool_gset_true:N \g__luatexcn_geometry_initialized_bool
     \fi
-    % Set paper/page dimensions and topskip (common for all branches)
+    % Set paper/page dimensions (common for all branches)
     % Must set both \paperwidth and \pagewidth for TikZ overlays (e.g. seal stamps)
     \dim_set:Nn \paperwidth { \l__luatexcn_page_paper_width_tl }
     \dim_set:Nn \paperheight { \l__luatexcn_page_paper_height_tl }
     \dim_set:Nn \pagewidth { \l__luatexcn_page_paper_width_tl }
     \dim_set:Nn \pageheight { \l__luatexcn_page_paper_height_tl }
-    \dim_set:Nn \topskip { \l__luatexcn_page_topskip_tl }
+    % NOTE: \topskip is intentionally NOT set here. Setting \topskip in the
+    % document body (after \clearpage) interacts with shipout hooks and can
+    % cause spurious blank pages. \topskip is set once in \pageSetup (preamble)
+    % and in \__luatexcn_content_zero_skips: (scoped to Content groups).
   }
 
 % ============================================================================
@@ -150,6 +156,29 @@
     \str_if_eq:eeTF { \lua_now:n { tex.sprint(require('core.luatex-cn-core-page').get_split_str('right_first')) } } { true }
       { \bool_set_true:N \l__luatexcn_page_split_right_first_bool }
       { \bool_set_false:N \l__luatexcn_page_split_right_first_bool }
+  }
+
+% Helper: globally set paper/page dimensions after restore inside \NewEnviron.
+% \NewEnviron creates a group; local assignments from split.enable/disable are
+% undone when the group ends.  This must be called inside the \NewEnviron body
+% AFTER \__luatexcn_page_sync_from_lua: so that the tl variables reflect the
+% restored state.  It respects split mode: when split is enabled, \paperwidth
+% and \pagewidth are set to half the paper width.
+\cs_new:Npn \__luatexcn_page_restore_dims_globally:
+  {
+    \bool_if:NTF \l__luatexcn_page_split_enabled_bool
+      {
+        \dim_gset:Nn \paperwidth { \l__luatexcn_page_paper_width_tl / 2 }
+        \dim_gset:Nn \paperheight { \l__luatexcn_page_paper_height_tl }
+        \dim_gset:Nn \pagewidth { \l__luatexcn_page_paper_width_tl / 2 }
+        \dim_gset:Nn \pageheight { \l__luatexcn_page_paper_height_tl }
+      }
+      {
+        \dim_gset:Nn \paperwidth { \l__luatexcn_page_paper_width_tl }
+        \dim_gset:Nn \paperheight { \l__luatexcn_page_paper_height_tl }
+        \dim_gset:Nn \pagewidth { \l__luatexcn_page_paper_width_tl }
+        \dim_gset:Nn \pageheight { \l__luatexcn_page_paper_height_tl }
+      }
   }
 
 \NewEnviron{Page}[1][]{%
@@ -183,12 +212,11 @@
     \lua_now:n { require('core.luatex-cn-core-page').restore() }
     % Sync restored Lua state back to TeX token lists (for subsequent code that reads them)
     \__luatexcn_page_sync_from_lua:
-    % Do NOT call \luatexcn_apply_geometry: here - it uses \newgeometry which does \clearpage
-    % and would create an empty page. The dimensions are already set by split.enable/disable.
+    % Globally restore paper/page dimensions so they survive \NewEnviron group end
+    \__luatexcn_page_restore_dims_globally:
 }
 
-% CJK alias for Page environment
-\NewEnvironmentCopy{页}{Page}
+% (CJK alias for Page moved to end of file)
 
 % ============================================================================
 % Page Split (筒子页) - splits each page into two half-pages
@@ -218,9 +246,7 @@
     \lua_now:n { require('core.luatex-cn-core-page').split.disable() }
   }
 
-% CJK aliases
-\NewCommandCopy{\启用分页裁剪}{\enableSplitPage}
-\NewCommandCopy{\禁用分页裁剪}{\disableSplitPage}
+% (CJK aliases moved to end of file)
 
 % Helper: apply split page if enabled
 \cs_new:Npn \__luatexcn_page_apply_split:
@@ -300,8 +326,6 @@
   {
     \lua_now:e { core.set_page_number(#1); }
   }
-\NewCommandCopy{\设置页码}{\SetPageNumber}
-
 % ============================================================================
 % Override page break commands for grid content
 % ============================================================================
@@ -314,6 +338,57 @@
       \directlua { core.insert_chapter_marker( "\luaescapestring{ \tl_to_str:n { ##1 } }" ) }
       \box0\relax
     }
+  }
+
+% ============================================================
+% Chinese aliases / 中文别名
+% ============================================================
+% Simplified Chinese / 简体
+\NewEnvironmentCopy{页}{Page}
+\NewCommandCopy{\页面设置}{\pageSetup}
+\NewCommandCopy{\启用分页裁剪}{\enableSplitPage}
+\NewCommandCopy{\禁用分页裁剪}{\disableSplitPage}
+\NewCommandCopy{\设置页码}{\SetPageNumber}
+\NewCommandCopy{\重置页码}{\ResetPageNumber}
+% Traditional Chinese / 繁体
+\NewCommandCopy{\頁面設置}{\pageSetup}
+\NewCommandCopy{\啟用分頁裁剪}{\enableSplitPage}
+\NewCommandCopy{\禁用分頁裁剪}{\disableSplitPage}
+\NewCommandCopy{\設置頁碼}{\SetPageNumber}
+\NewCommandCopy{\重置頁碼}{\ResetPageNumber}
+
+% ============================================================
+% Chinese key aliases / 中文 Key 别名
+% ============================================================
+\keys_define:nn { luatexcn / page }
+  {
+    % 简体
+    纸宽 .tl_set:N = \l__luatexcn_page_paper_width_tl,
+    纸高 .tl_set:N = \l__luatexcn_page_paper_height_tl,
+    底色 .tl_set:N = \l__luatexcn_page_background_color_tl,
+    上边距 .tl_set:N = \l__luatexcn_page_margin_top_tl,
+    下边距 .tl_set:N = \l__luatexcn_page_margin_bottom_tl,
+    左边距 .tl_set:N = \l__luatexcn_page_margin_left_tl,
+    右边距 .tl_set:N = \l__luatexcn_page_margin_right_tl,
+    页脚距 .tl_set:N = \l__luatexcn_page_footskip_tl,
+    页头距 .tl_set:N = \l__luatexcn_page_topskip_tl,
+    启用分页 .bool_set:N = \l__luatexcn_page_split_enabled_bool,
+    右页优先 .bool_set:N = \l__luatexcn_page_split_right_first_bool,
+    页码样式 .tl_set:N = \l__luatexcn_page_number_style_tl,
+    页码字号 .tl_set:N = \l__luatexcn_page_number_font_size_tl,
+    % 繁体（与简体不同形的）
+    紙寬 .tl_set:N = \l__luatexcn_page_paper_width_tl,
+    紙高 .tl_set:N = \l__luatexcn_page_paper_height_tl,
+    上邊距 .tl_set:N = \l__luatexcn_page_margin_top_tl,
+    下邊距 .tl_set:N = \l__luatexcn_page_margin_bottom_tl,
+    左邊距 .tl_set:N = \l__luatexcn_page_margin_left_tl,
+    右邊距 .tl_set:N = \l__luatexcn_page_margin_right_tl,
+    頁腳距 .tl_set:N = \l__luatexcn_page_footskip_tl,
+    頁頭距 .tl_set:N = \l__luatexcn_page_topskip_tl,
+    啟用分頁 .bool_set:N = \l__luatexcn_page_split_enabled_bool,
+    右頁優先 .bool_set:N = \l__luatexcn_page_split_right_first_bool,
+    頁碼樣式 .tl_set:N = \l__luatexcn_page_number_style_tl,
+    頁碼字號 .tl_set:N = \l__luatexcn_page_number_font_size_tl,
   }
 
 \endinput

@@ -204,11 +204,11 @@ function style_registry.get_border_margin(id)
     return style_registry.get_attr(id, "border_margin")
 end
 
---- Get cell height from style
+--- Get grid height override from style
 -- @param id (number) Style ID
--- @return (number|nil) Cell height in sp (nil = use default/font-based)
-function style_registry.get_cell_height(id)
-    return style_registry.get_attr(id, "cell_height")
+-- @return (number|nil) Grid height in sp (nil = use default/font-based)
+function style_registry.get_grid_height(id)
+    return style_registry.get_attr(id, "grid_height")
 end
 
 --- Get cell width from style
@@ -244,6 +244,20 @@ end
 -- @return (number|nil) Column width in sp, or nil if not found
 function style_registry.get_column_width(id)
     return style_registry.get_attr(id, "column_width")
+end
+
+--- Get xshift from style
+-- @param id (number) Style ID
+-- @return (number|table|nil) xshift value (sp number or {value,unit} table), or nil
+function style_registry.get_xshift(id)
+    return style_registry.get_attr(id, "xshift")
+end
+
+--- Get yshift from style
+-- @param id (number) Style ID
+-- @return (number|table|nil) yshift value (sp number or {value,unit} table), or nil
+function style_registry.get_yshift(id)
+    return style_registry.get_attr(id, "yshift")
 end
 
 --- Get auto-width setting from style
@@ -379,13 +393,15 @@ function style_registry.push_content_style(font_color, font_size, font, extra)
     return style_registry.push(style) or 0
 end
 
---- Build an extra table from optional grid_height, spacing_top, spacing_bottom strings
+--- Build an extra table from optional grid_height, spacing_top, spacing_bottom, xshift, yshift strings
 --- Convenience helper for TeX→Lua calls where table construction in expl3 is awkward.
 -- @param grid_height (string|nil) e.g., "1.5em"
 -- @param spacing_top (string|nil) e.g., "5pt"
 -- @param spacing_bottom (string|nil) e.g., "5pt"
+-- @param xshift (string|nil) e.g., "-0.3em"
+-- @param yshift (string|nil) e.g., "0.5em"
 -- @return (table|nil) Extra table for push_content_style, or nil if all params are nil
-function style_registry.make_extra(grid_height, spacing_top, spacing_bottom)
+function style_registry.make_extra(grid_height, spacing_top, spacing_bottom, xshift, yshift)
     local constants_mod = package.loaded['core.luatex-cn-constants'] or
         require('core.luatex-cn-constants')
     local extra = {}
@@ -400,6 +416,14 @@ function style_registry.make_extra(grid_height, spacing_top, spacing_bottom)
     end
     if spacing_bottom and spacing_bottom ~= "" then
         extra.spacing_bottom = constants_mod.to_dimen(spacing_bottom)
+        has_any = true
+    end
+    if xshift and xshift ~= "" then
+        extra.xshift = constants_mod.to_dimen(xshift)
+        has_any = true
+    end
+    if yshift and yshift ~= "" then
+        extra.yshift = constants_mod.to_dimen(yshift)
         has_any = true
     end
     return has_any and extra or nil

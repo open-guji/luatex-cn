@@ -18,7 +18,7 @@
 %
 \NeedsTeXFormat{LaTeX2e}
 \RequirePackage{expl3}
-\ProvidesExplPackage {guji/luatex-cn-guji} {2026/02/14} {0.2.8} {Guji (古籍) typesetting features}
+\ProvidesExplPackage {guji/luatex-cn-guji} {2026/02/18} {0.2.9} {Guji (古籍) typesetting features}
 
 % ============================================================================
 % Load all guji subpackages
@@ -53,6 +53,9 @@
 
 % 封面 (Cover) - Cover page with background color and floating text boxes
 \RequirePackage{guji/luatex-cn-guji-cover}
+
+% \臣 命令：输出缩小字号且向右偏移的"臣"字（用于奏章臣字缩排）
+\NewDocumentCommand{\臣}{}{\样式[font-size=0.8em, xshift=-0.3em]{臣}}
 
 % ============================================================================
 % 古籍命令重命名

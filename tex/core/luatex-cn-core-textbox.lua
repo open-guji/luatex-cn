@@ -230,13 +230,20 @@ end
 --- Recursively set indent attributes to force zero on all nodes in a list
 -- This ensures textbox content does not inherit paragraph indent (fix #37)
 -- Uses constants.INDENT_FORCE_ZERO to force 0, bypassing style stack
+-- Skips jiazhu (textflow) nodes which have their own indent semantics
 -- @param list (node) Node list head
 local function clear_indent_recursive(list)
     if not list then return end
     for n in node.traverse(list) do
-        -- Set indent to force zero (uses constant from core.luatex-cn-constants)
-        node.set_attribute(n, constants.ATTR_INDENT, constants.INDENT_FORCE_ZERO)
-        node.set_attribute(n, constants.ATTR_FIRST_INDENT, constants.INDENT_FORCE_ZERO)
+        -- Skip jiazhu nodes: they manage their own indent via \平抬/\相对抬头
+        local jiazhu_attr = node.get_attribute(n, constants.ATTR_JIAZHU)
+        if jiazhu_attr and jiazhu_attr == 1 then
+            -- do not override indent on textflow nodes
+        else
+            -- Set indent to force zero (uses constant from core.luatex-cn-constants)
+            node.set_attribute(n, constants.ATTR_INDENT, constants.INDENT_FORCE_ZERO)
+            node.set_attribute(n, constants.ATTR_FIRST_INDENT, constants.INDENT_FORCE_ZERO)
+        end
         -- Recursively process nested lists (hlist/vlist)
         local id = n.id
         if id == node.id("hlist") or id == node.id("vlist") then
@@ -295,10 +302,15 @@ local function execute_layout_pipeline(box_num, sub_params, current_indent)
     if sub_params.vertical_align and sub_params.vertical_align ~= "" then
         style_overrides.vertical_align = sub_params.vertical_align
     end
-    -- Only include background_color if explicitly set
+    -- TextBox content: only use background_color if explicitly set via TextBox parameter
+    -- Otherwise default to transparent (no inheritance from parent style stack)
+    -- This prevents inherited background from covering yinzhang and other overlays
     if sub_params.background_color and sub_params.background_color ~= "" then
         style_overrides.background_color = sub_params.background_color
+    else
+        style_overrides.background_color = ""
     end
+
     -- Only include border_shape if explicitly set and not "none"
     if sub_params.border_shape and sub_params.border_shape ~= "" and sub_params.border_shape ~= "none" then
         style_overrides.border_shape = sub_params.border_shape
@@ -582,8 +594,6 @@ function textbox.process_inner_box(box_num, params)
     local box = tex.box[box_num]
     if not box then return end
 
-    -- dbg.log(string.format("process_inner_box: floating=%s", tostring(params.floating)))
-
     -- 1. Textbox should not inherit paragraph indent
     local current_indent = 0
 
@@ -634,9 +644,6 @@ function textbox.register_floating_box(box_num, params)
         ob_extension = _G.textbox.last_ob_extension or 0,
     }
     _G.textbox.last_ob_extension = 0
-
-    dbg.log(string.format("Registered floating box ID=%d at (%s, %s)",
-        id, tostring(params.x), tostring(params.y)))
 
     -- Write anchor node
     node.write(create_floating_anchor(id))

@@ -127,8 +127,11 @@ function page.draw_background(p_head, params)
 
     -- Resolve parameters: use provided params OR read from TeX variables (luatex-cn-core-page.sty)
     -- Background Color: resolve and normalize
+    -- For textboxes: only use explicitly passed bg_rgb_str (no fallback to page background)
+    -- This prevents TextBox backgrounds from inheriting the page background color,
+    -- which would cover overlays like yinzhang (seals)
     local bg_rgb_str = params.bg_rgb_str
-    if not bg_rgb_str then
+    if not bg_rgb_str and not params.is_textbox then
         local tex_bg = utils.get_tex_tl("l__luatexcn_page_background_color_tl")
         bg_rgb_str = utils.normalize_rgb(tex_bg)
     end

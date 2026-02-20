@@ -17,7 +17,7 @@
 %
 \RequirePackage{expl3}
 \RequirePackage{xparse}
-\ProvidesExplPackage {decorate/luatex-cn-linemark} {2026/02/14} {0.2.8} {Line Mark Support (专名号/书名号)}
+\ProvidesExplPackage {decorate/luatex-cn-linemark} {2026/02/18} {0.2.9} {Line Mark Support (专名号/书名号)}
 
 % Load Lua module
 \lua_now:n { require('decorate.luatex-cn-linemark') }
@@ -99,17 +99,42 @@
     \LineMark[type=wavy, #1]{#2}
   }
 
-% CJK Aliases
+% ============================================================================
+% CJK Key Aliases (中文键值别名)
+% ============================================================================
+\keys_define:nn { luatexcn / linemark }
+  {
+    类型 .tl_set:N = \l__luatexcn_linemark_type_tl,
+    類型 .tl_set:N = \l__luatexcn_linemark_type_tl,
+    颜色 .tl_set:N = \l__luatexcn_linemark_color_tl,
+    顏色 .tl_set:N = \l__luatexcn_linemark_color_tl,
+    偏移 .tl_set:N = \l__luatexcn_linemark_offset_tl,
+    振幅 .tl_set:N = \l__luatexcn_linemark_amplitude_tl,
+    线宽 .tl_set:N = \l__luatexcn_linemark_linewidth_tl,
+    線寬 .tl_set:N = \l__luatexcn_linemark_linewidth_tl,
+    风格 .tl_set:N = \l__luatexcn_linemark_style_tl,
+    風格 .tl_set:N = \l__luatexcn_linemark_style_tl,
+  }
+
+% ============================================================================
+% CJK Aliases (中文别名)
+% ============================================================================
+% Simplified Chinese / 简体
 \cs_new_eq:NN \专名号 \ProperNameMark
 \cs_new_eq:NN \书名号 \BookTitleMark
+\cs_new_eq:NN \下划线 \ProperNameMark
+\cs_new_eq:NN \波浪线 \BookTitleMark
+\NewCommandCopy{\线标}{\LineMark}
+% Traditional Chinese / 繁体
+\NewCommandCopy{\線標}{\LineMark}
+\NewCommandCopy{\專名號}{\ProperNameMark}
+\NewCommandCopy{\書名號}{\BookTitleMark}
+\cs_new_eq:NN \下劃線 \ProperNameMark
+\cs_new_eq:NN \波浪線 \BookTitleMark
 
 % English aliases matching old names (backward compatibility)
 \cs_new_eq:NN \Underline \ProperNameMark
 \cs_new_eq:NN \WavyUnderline \BookTitleMark
-\cs_new_eq:NN \下划线 \ProperNameMark
-\cs_new_eq:NN \下劃線 \ProperNameMark
-\cs_new_eq:NN \波浪线 \BookTitleMark
-\cs_new_eq:NN \波浪線 \BookTitleMark
 
 \ExplSyntaxOff%
 %

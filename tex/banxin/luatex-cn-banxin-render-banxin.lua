@@ -484,10 +484,12 @@ end
 -- @param element (table) Page number layout element
 -- @param page_number (number) Runtime page number
 -- @return (node) Updated node list head
-local function render_page_number_from_layout(p_head, element, page_number)
-    if not page_number then return p_head end
+local function render_page_number_from_layout(p_head, element, page_number, explicit_page_number)
+    if not page_number and not explicit_page_number then return p_head end
 
-    local page_str = utils.to_chinese_numeral(page_number)
+    -- Use explicit page number string if provided (digital mode),
+    -- otherwise auto-convert numeric page number to Chinese numeral
+    local page_str = explicit_page_number or utils.to_chinese_numeral(page_number)
     if page_str == "" then return p_head end
 
     local num_chars = count_utf8_chars(page_str)
@@ -577,7 +579,7 @@ local function draw_from_layout(p_head, layout, runtime)
         elseif element.type == "chapter_title" then
             p_head = render_chapter_title_from_layout(p_head, element, runtime.chapter_title)
         elseif element.type == "page_number" then
-            p_head = render_page_number_from_layout(p_head, element, runtime.page_number)
+            p_head = render_page_number_from_layout(p_head, element, runtime.page_number, runtime.explicit_page_number)
         elseif element.type == "publisher" then
             p_head = render_text_section(p_head, element)
         end

@@ -259,6 +259,12 @@ local function init_engine_context(box_num, params)
     else
         content_height_sp = (_G.content and _G.content.content_height) or (limit * g_height)
     end
+    -- User-specified height for textbox border rendering (nil = auto)
+    local user_height_sp = nil
+    if is_textbox and h_dim and h_dim > 0 then
+        user_height_sp = h_dim
+    end
+
     local engine_ctx = {
         -- Grid dimensions
         g_width = g_width,
@@ -271,6 +277,8 @@ local function init_engine_context(box_num, params)
         page_columns = p_cols,
         -- Content area height (Phase 3: from three-layer architecture)
         content_height_sp = content_height_sp,
+        -- User-specified textbox height (sp); nil for auto-height
+        user_height_sp = user_height_sp,
         -- Border rendering
         draw_border = is_border,
         border_thickness = b_thickness,
@@ -569,7 +577,7 @@ local function generate_physical_pages(list, params, engine_ctx, plugin_contexts
     -- 3.2 Construct TeX boxes
     _G.vertical_pending_pages = {}
     local outer_shift = engine_ctx.outer_shift
-    local char_grid_height = p_info.is_textbox and p_info.h_dim or engine_ctx.content_height_sp
+    local char_grid_height = engine_ctx.content_height_sp
     local total_v_depth = char_grid_height + engine_ctx.b_padding_top + engine_ctx.b_padding_bottom +
         engine_ctx.border_thickness + outer_shift * 2
 

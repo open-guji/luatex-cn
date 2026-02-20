@@ -23,7 +23,7 @@
 %
 \RequirePackage{expl3}
 \RequirePackage{xparse}
-\ProvidesExplPackage {guji/luatex-cn-guji-mulu} {2026/02/14} {0.2.8} {Catalog/Index support for traditional books}
+\ProvidesExplPackage {guji/luatex-cn-guji-mulu} {2026/02/18} {0.2.9} {Catalog/Index support for traditional books}
 
 % Load the core column engine
 \RequirePackage{core/luatex-cn-core-column}
@@ -64,9 +64,11 @@
 \ExplSyntaxOff
 
 % ============================================================================
-% Simplified Chinese Aliases (简体中文别名)
+% CJK Aliases (中文别名)
 % ============================================================================
-
+% English pinyin alias
+\NewCommandCopy{\TiaoMu}{\条目}
+% Traditional Chinese / 繁体
 \NewCommandCopy{\條目}{\条目}
 
 \endinput

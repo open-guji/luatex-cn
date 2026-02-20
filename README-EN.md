@@ -4,7 +4,7 @@
 
 LuaTeX package for Chinese charactor typesetting, covering horizontal/vertical, tranditional/mordern layout. Currently focus on Ancient Book replication. Implemented core logic of vertical typesetting, decorative elements of traditional Chinese books, and interlinear notes.
 
-CTAN: [v0.1.1](https://ctan.org/pkg/luatex-cn) | GitHub Release: [v0.2.8](https://github.com/open-guji/luatex-cn/releases)
+CTAN: [v0.1.1](https://ctan.org/pkg/luatex-cn) | GitHub Release: [v0.2.9](https://github.com/open-guji/luatex-cn/releases)
 
 ## Features
 
@@ -17,7 +17,7 @@ CTAN: [v0.1.1](https://ctan.org/pkg/luatex-cn) | GitHub Release: [v0.2.8](https:
 
 ## Installation
 
-See [INSTALL.md](INSTALL.md) for detailed installation instructions.
+See the [Wiki Installation Guide](https://github.com/open-guji/luatex-cn/wiki/EN:Installation) for detailed instructions.
 
 Quick install:
 1. Published to CTAN/TeXLive, you can install it directly via your TeX distribution's package manager.

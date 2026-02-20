@@ -1,0 +1,21 @@
+\documentclass{guji}
+\setmainfont{TW-Kai}
+\禁用分页裁剪
+\无标点模式
+
+\NewDocumentCommand{\注}{ +m }{%
+  \begin{段落}[indent=2]
+    \夹注[auto-balance=false]{#1}%
+  \end{段落}%
+}
+\NewDocumentCommand{\國朝}{}{\相对抬头[1]{國朝}}
+
+\begin{document}
+\begin{正文}
+% 正好21字满行
+《周易象辭》二十一卷，附《尋門餘論》二卷，《圖書辨惑》一卷
+
+\注{\國朝 黃宗炎撰。宗炎力闢陳摶之學，故所解惟主義理，然根據經典，不涉空談。「尋門餘論」兼排釋氏，未免蔓衍於《易》外，而其他持論多醇正。「圖書辨惑」論《先天圖》，與陳應潤所言合；論《太極圖》，與朱彞尊、毛奇齡所考合。亦皆明確也。}
+
+\end{正文}
+\end{document}

@@ -267,6 +267,18 @@ local function render_single_page(p_head, p_max_col, p, layout_map, params, ctx,
     local grid = params.grid
     local engine = params.engine
     local page = params.page
+
+    -- For textbox with user-specified height, use that height for border rendering.
+    -- user_height_sp is only set when user explicitly specifies height (e.g., height=24cm).
+    -- Subtract 2*border_margin so that user height describes the outer border extent,
+    -- since render_borders adds border_margin back: final = shape_height + 2*border_m.
+    if page.is_textbox and engine.user_height_sp then
+        local border_m = ctx.border_margin or 0
+        local target = engine.user_height_sp - 2 * border_m
+        if target > actual_height_sp then
+            actual_height_sp = target
+        end
+    end
     local plugins = params.plugins
 
     local draw_border = engine.draw_border
@@ -280,12 +292,13 @@ local function render_single_page(p_head, p_max_col, p, layout_map, params, ctx,
 
     -- Right-align columns within content area BEFORE drawing borders
     -- Skip TitlePage (has col_widths but NOT page_col_widths_sp)
+    -- Skip TextBox (has its own coordinate system, no right-align needed)
     local page_col_widths_sp = (ctx.col_geom and ctx.col_geom.col_widths_sp and ctx.col_geom.col_widths_sp[p]) or nil
     local has_legacy_col_widths = (_G.content and _G.content.col_widths and next(_G.content.col_widths))
     local has_free_mode_widths = (page_col_widths_sp and next(page_col_widths_sp))
     local is_titlepage = has_legacy_col_widths and not has_free_mode_widths
 
-    if not is_titlepage then
+    if not is_titlepage and not page.is_textbox then
         local total_cols_width_sp
         if page_col_widths_sp and next(page_col_widths_sp) then
             -- Free Mode: sum variable column widths

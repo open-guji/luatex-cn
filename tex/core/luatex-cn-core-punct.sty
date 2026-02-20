@@ -20,7 +20,7 @@
 \RequirePackage{expl3}
 \RequirePackage{xparse}
 \ProvidesExplPackage {core/luatex-cn-core-punct}
-  {2026/02/14} {0.2.8} {Modern Punctuation Support for luatex-cn}
+  {2026/02/18} {0.2.9} {Modern Punctuation Support for luatex-cn}
 
 \RequirePackage{core/luatex-cn-core-base}
 
@@ -93,15 +93,39 @@
     \__luatexcn_punct_sync_lua:
   }
 
-% Chinese aliases
-\cs_new_eq:NN \标点设置 \punctSetup
-
 % Convenience commands
 \NewDocumentCommand{\大陆标点风格}{}
   { \punctSetup{punct-style=mainland} }
 \NewDocumentCommand{\台湾标点风格}{}
   { \punctSetup{punct-style=taiwan} }
 
+% ============================================================================
+% CJK Key Aliases (中文键值别名)
+% ============================================================================
+\keys_define:nn { luatexcn / punct }
+  {
+    标点风格 .tl_set:N = \l__luatexcn_punct_style_tl,
+    標點風格 .tl_set:N = \l__luatexcn_punct_style_tl,
+    标点压缩 .bool_set:N = \l__luatexcn_punct_squeeze_bool,
+    標點壓縮 .bool_set:N = \l__luatexcn_punct_squeeze_bool,
+    标点悬挂 .bool_set:N = \l__luatexcn_punct_hanging_bool,
+    標點懸掛 .bool_set:N = \l__luatexcn_punct_hanging_bool,
+    禁则 .bool_set:N = \l__luatexcn_punct_kinsoku_bool,
+    禁則 .bool_set:N = \l__luatexcn_punct_kinsoku_bool,
+  }
+
 \ExplSyntaxOff%
-%
+
+% ============================================================
+% Chinese aliases / 中文别名
+% ============================================================
+% Simplified Chinese / 简体
+\NewCommandCopy{\标点设置}{\punctSetup}
+\NewCommandCopy{\DaLuBiaoDianFengGe}{\大陆标点风格}
+\NewCommandCopy{\TaiWanBiaoDianFengGe}{\台湾标点风格}
+% Traditional Chinese / 繁体
+\NewCommandCopy{\標點設置}{\punctSetup}
+\NewCommandCopy{\大陸標點風格}{\大陆标点风格}
+\NewCommandCopy{\臺灣標點風格}{\台湾标点风格}
+
 \endinput%

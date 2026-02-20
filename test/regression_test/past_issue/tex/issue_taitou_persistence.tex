@@ -1,0 +1,22 @@
+\documentclass{guji}
+\setmainfont{TW-Kai}
+\禁用分页裁剪
+
+\NewDocumentCommand{\注}{ +m }{%
+  \begin{段落}[indent=2]
+    \夹注[auto-balance=false]{#1}%
+  \end{段落}%
+}
+
+\begin{document}
+\begin{正文}
+\单抬 《御纂周易折中》二十二卷
+
+后续正文应正常顶格
+
+\注{这是夹注内容}
+
+后续正文应正常顶格
+
+\end{正文}
+\end{document}

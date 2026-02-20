@@ -1,0 +1,107 @@
+% Copyright 2026 Open-Guji (https://github.com/open-guji)
+%
+% Licensed under the Apache License, Version 2.0 (the "License");
+% you may not use this file except in compliance with the License.
+% You may obtain a copy of the License at
+%
+%     http://www.apache.org/licenses/LICENSE-2.0
+%
+% Unless required by applicable law or agreed to in writing, software
+% distributed under the License is distributed on an "AS IS" BASIS,
+% WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+% See the License for the specific language governing permissions and
+% limitations under the License.
+
+% luatex-cn-core-punct.sty
+% Modern punctuation support: squeeze, kinsoku, vertical quotes, hanging
+% Works with both ltc-book and ltc-guji document classes.
+
+\NeedsTeXFormat{LaTeX2e}
+\RequirePackage{expl3}
+\RequirePackage{xparse}
+\ProvidesExplPackage {core/luatex-cn-core-punct}
+  {2026/02/09} {0.2.7} {Modern Punctuation Support for luatex-cn}
+
+\RequirePackage{core/luatex-cn-core-base}
+
+% ============================================================================
+% Load Lua module
+% ============================================================================
+
+\lua_now:n { punct_mod = require('core.luatex-cn-core-punct') }
+
+% ============================================================================
+% Variable Declarations
+% ============================================================================
+
+\tl_new:N \l__luatexcn_punct_style_tl
+\bool_new:N \l__luatexcn_punct_squeeze_bool
+\bool_new:N \l__luatexcn_punct_hanging_bool
+\bool_new:N \l__luatexcn_punct_kinsoku_bool
+
+% ============================================================================
+% Key Definitions
+% ============================================================================
+
+\keys_define:nn { luatexcn / punct }
+  {
+    punct-style .tl_set:N = \l__luatexcn_punct_style_tl,
+    punct-style .initial:n = {taiwan},
+
+    punct-squeeze .bool_set:N = \l__luatexcn_punct_squeeze_bool,
+    punct-squeeze .initial:n = {true},
+    punct-squeeze .default:n = {true},
+
+    punct-hanging .bool_set:N = \l__luatexcn_punct_hanging_bool,
+    punct-hanging .initial:n = {false},
+    punct-hanging .default:n = {true},
+
+    kinsoku .bool_set:N = \l__luatexcn_punct_kinsoku_bool,
+    kinsoku .initial:n = {true},
+    kinsoku .default:n = {true},
+  }
+
+% ============================================================================
+% Sync to Lua
+% ============================================================================
+
+\cs_new_protected:Nn \__luatexcn_punct_sync_lua:
+  {
+    \lua_now:e {
+      punct_mod.setup({
+        style~=~[=[\luaescapestring{\tl_use:N~\l__luatexcn_punct_style_tl}]=],
+        squeeze~=~\bool_if:NTF~\l__luatexcn_punct_squeeze_bool
+          {true}{false},
+        hanging~=~\bool_if:NTF~\l__luatexcn_punct_hanging_bool
+          {true}{false},
+        kinsoku~=~\bool_if:NTF~\l__luatexcn_punct_kinsoku_bool
+          {true}{false},
+      })
+    }
+  }
+
+% Sync defaults on load
+\__luatexcn_punct_sync_lua:
+
+% ============================================================================
+% User Commands
+% ============================================================================
+
+\NewDocumentCommand{\punctSetup}{ m }
+  {
+    \keys_set:nn { luatexcn / punct } { #1 }
+    \__luatexcn_punct_sync_lua:
+  }
+
+% Chinese aliases
+\cs_new_eq:NN \标点设置 \punctSetup
+
+% Convenience commands
+\NewDocumentCommand{\大陆标点风格}{}
+  { \punctSetup{punct-style=mainland} }
+\NewDocumentCommand{\台湾标点风格}{}
+  { \punctSetup{punct-style=taiwan} }
+
+\ExplSyntaxOff%
+%
+\endinput%

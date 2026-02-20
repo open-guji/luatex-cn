@@ -13,7 +13,7 @@
 % limitations under the License.
 
 \RequirePackage{core/luatex-cn-core-base}
-\ProvidesExplPackage{core/luatex-cn-core-content}{2026/02/07} {0.2.6}{Content layout and border support}
+\ProvidesExplPackage{core/luatex-cn-core-content}{2026/02/09} {0.2.7}{Content layout and border support}
 
 % Centralized variables for content border settings
 \bool_new:N \l__luatexcn_content_border_bool
@@ -37,6 +37,7 @@
 \tl_new:N \l__luatexcn_content_height_tl
 \tl_new:N \l__luatexcn_content_col_spacing_tl
 \tl_new:N \l__luatexcn_content_line_spacing_tl
+\tl_new:N \l__luatexcn_content_banxin_ratio_tl
 
 \tl_new:N \l__luatexcn_content_border_rgb_tl
 \tl_new:N \l__luatexcn_content_background_rgb_tl
@@ -44,6 +45,8 @@
 \tl_new:N \l__luatexcn_content_font_color_tl
 \tl_new:N \l__luatexcn_content_font_name_tl
 \tl_new:N \l__luatexcn_content_font_features_tl
+\tl_new:N \l__luatexcn_content_layout_mode_tl
+\tl_new:N \l__luatexcn_content_inter_cell_gap_tl
 
 \keys_define:nn { luatexcn / content }
   {
@@ -112,6 +115,15 @@
     line-spacing .tl_set:N = \l__luatexcn_content_line_spacing_tl,
     line-spacing .initial:n = { \baselineskip },
 
+    banxin-ratio .tl_set:N = \l__luatexcn_content_banxin_ratio_tl,
+    banxin-ratio .initial:n = {0.7},
+
+    layout-mode .tl_set:N = \l__luatexcn_content_layout_mode_tl,
+    layout-mode .initial:n = {grid},
+
+    inter-cell-gap .tl_set:N = \l__luatexcn_content_inter_cell_gap_tl,
+    inter-cell-gap .initial:n = {0pt},
+
     unknown .code:n = { \keys_set:nx { luatexcn / page } { \l_keys_key_tl = { #1 } } },
   }
 
@@ -141,7 +153,9 @@
         border_color~=~[=[\l__luatexcn_content_border_rgb_tl]=],
         background_color~=~[=[\l__luatexcn_content_background_rgb_tl]=],
         font_color~=~[=[\l__luatexcn_content_font_rgb_tl]=],
-        font_size~=~[=[\luaescapestring{\l__luatexcn_content_font_size_tl}]=]
+        font_size~=~[=[\luaescapestring{\l__luatexcn_content_font_size_tl}]=],
+        layout_mode~=~[=[\luaescapestring{\l__luatexcn_content_layout_mode_tl}]=],
+        inter_cell_gap~=~[=[\luaescapestring{\l__luatexcn_content_inter_cell_gap_tl}]=]
       })
     }
   }
@@ -212,15 +226,12 @@
 }
 \NewEnvironmentCopy{正文}{BodyText}
 
-% Space Command - inserts a space that occupies grid cells in vertical layout
-% In CJK text, normal ASCII spaces are often absorbed; use this for explicit spacing
-% Syntax: \Space or \Space[width]
-% Default width is 1em (one grid cell)
-\NewDocumentCommand{\Space}{ O{1em} }
+% Space Command - inserts ideographic space characters (U+3000) for vertical layout
+% Syntax: \Space or \Space[n]  (n = number of grid cells, default 1)
+\NewDocumentCommand{\Space}{ O{1} }
   {
-    \regex_match:nnTF { ^[0-9\.]+$ } { #1 }
-      { \skip_horizontal:n { \__luatexcn_to_dimen:n { \l__luatexcn_content_grid_height_tl } * #1 } }
-      { \skip_horizontal:n { \__luatexcn_to_dimen:n { #1 } } }
+    \prg_replicate:nn { #1 } { \char"3000\relax }
+    \ignorespaces
   }
 
 % ============================================================================
@@ -306,6 +317,7 @@
             n_column~=~\int_use:N~\l__luatexcn_content_n_column_int,
             n_char_per_col~=~\int_use:N~\l__luatexcn_content_n_char_per_col_int,
             grid_height~=~"\l__luatexcn_content_grid_height_tl",
+            banxin_ratio~=~"\l__luatexcn_content_banxin_ratio_tl",
           })
         }
         \LtcIfDebugT { \iow_term:x { Guji~Layout:~grid-width=\l__luatexcn_content_grid_width_tl~,~grid-height=\l__luatexcn_content_grid_height_tl~,~height=\l__luatexcn_content_height_tl } }

@@ -20,7 +20,7 @@
 \RequirePackage{core/luatex-cn-core-base}
 \RequirePackage{expl3}
 \RequirePackage{xparse}
-\ProvidesExplPackage {core/luatex-cn-core-textbox} {2026/02/07} {0.2.6} {TextBox Support for Vertical Typesetting}
+\ProvidesExplPackage {core/luatex-cn-core-textbox} {2026/02/09} {0.2.7} {TextBox Support for Vertical Typesetting}
 
 % Grid Textbox Command (Simplified for Single Column)
 % Syntax: \GridTextbox[height=N, distribute=true/false]{content}
@@ -53,6 +53,8 @@
     height .initial:n = 0,
     n-cols .int_set:N = \l__luatexcn_textbox_n_cols_int,
     n-cols .initial:n = 0,
+    outer-cols .int_set:N = \l__luatexcn_textbox_outer_cols_int,
+    outer-cols .initial:n = 0,
     inner-grid-width .tl_set:N = \l__luatexcn_textbox_inner_gw_tl,
     inner-grid-width .initial:n = {},
     inner-grid-height .tl_set:N = \l__luatexcn_textbox_inner_gh_tl,
@@ -105,15 +107,22 @@
     % Width is always 1 for outer layout (textbox occupies 1 column externally)
     \setluatexattribute\cnverticaltextboxwidth{1}
 
-    % Calculate inner grid dimensions (hybrid approach)
-    % If inner-grid-width not specified, auto-calculate: outer_width / n_cols
-    \tl_if_empty:NTF \l__luatexcn_textbox_inner_gw_tl
-      {
-        \int_compare:nNnTF \l__luatexcn_textbox_n_cols_int > 0
-          { \dim_set:Nn \l__luatexcn_textbox_inner_gw_dim { (\l__luatexcn_content_grid_width_tl) / \l__luatexcn_textbox_n_cols_int } }
-          { \dim_set:Nn \l__luatexcn_textbox_inner_gw_dim { \l__luatexcn_content_grid_width_tl } }
-      }
-      { \dim_set:Nn \l__luatexcn_textbox_inner_gw_dim { \l__luatexcn_textbox_inner_gw_tl } }
+    % Calculate inner grid width via Lua (replaces TeX-side decision tree)
+    \dim_set:Nn \l__luatexcn_textbox_inner_gw_dim {
+      \lua_now:e {
+        local ~ tb = require('core.luatex-cn-core-textbox')
+        tex.print(tostring(tb.calc_inner_grid_width({
+          inner_gw =
+            \tl_if_empty:NTF \l__luatexcn_textbox_inner_gw_tl
+              { 0 }
+              { \dim_to_decimal_in_sp:n { \l__luatexcn_textbox_inner_gw_tl } },
+          column_width = \dim_to_decimal_in_sp:n { \g__luatexcn_column_current_width_dim },
+          outer_cols = \int_use:N \l__luatexcn_textbox_outer_cols_int,
+          n_cols = \int_use:N \l__luatexcn_textbox_n_cols_int,
+          content_gw = \dim_to_decimal_in_sp:n { \l__luatexcn_content_grid_width_tl },
+        })))
+      } sp
+    }
     \tl_if_empty:NTF \l__luatexcn_textbox_inner_gh_tl
       { \dim_set:Nn \l__luatexcn_textbox_inner_gh_dim { \l__luatexcn_content_grid_height_tl } }
       { \dim_set:Nn \l__luatexcn_textbox_inner_gh_dim { \l__luatexcn_textbox_inner_gh_tl } }
@@ -201,6 +210,7 @@
 
     \lua_now:e {vertical_textbox.process_inner_box(\int_value:w~\l_tmpa_box,~{
       n_cols~=~\int_use:N~\l__luatexcn_textbox_n_cols_int,
+      outer_cols~=~\int_use:N~\l__luatexcn_textbox_outer_cols_int,
       height~=~[=[\luaescapestring{\tl_use:N \l__luatexcn_textbox_height_tl}]=],
       grid_width~=~\dim_to_decimal_in_sp:n { \l__luatexcn_textbox_inner_gw_dim },
       grid_height~=~\dim_to_decimal_in_sp:n { \l__luatexcn_textbox_inner_gh_dim },

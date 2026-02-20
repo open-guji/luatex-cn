@@ -366,7 +366,9 @@ local function apply_result_attributes(res_box, params, current_indent)
         h_sp = constants.to_dimen(h_raw) or 0
     end
 
-    local actual_cols = node.get_attribute(res_box, constants.ATTR_TEXTBOX_WIDTH) or 1
+    local outer_cols = tonumber(params.outer_cols) or 0
+    local actual_cols = (outer_cols > 0) and outer_cols
+        or node.get_attribute(res_box, constants.ATTR_TEXTBOX_WIDTH) or 1
     -- Height calculation: use actual content rows from render (already set by main.lua)
     -- only recalculate if user specified explicit height
     local height_val
@@ -484,6 +486,26 @@ textbox.floating_counter = 0
 
 -- Export setup function
 textbox.setup = textbox_setup
+
+--- Calculate inner grid width for TextBox (replaces TeX-side decision tree)
+-- @param params (table) {inner_gw, column_width, outer_cols, n_cols, content_gw}
+--   All values in sp. 0 means "not specified".
+-- @return (number) inner_gw in sp
+function textbox.calc_inner_grid_width(params)
+    if params.inner_gw and params.inner_gw > 0 then
+        return params.inner_gw
+    end
+    local base
+    if params.column_width and params.column_width > 0 then
+        base = params.column_width
+    elseif params.outer_cols and params.outer_cols > 0 then
+        base = params.content_gw * params.outer_cols
+    else
+        base = params.content_gw
+    end
+    local n = (params.n_cols and params.n_cols > 0) and params.n_cols or 1
+    return base / n
+end
 
 -- ============================================================================
 -- Plugin Standard API (插件标准接口)

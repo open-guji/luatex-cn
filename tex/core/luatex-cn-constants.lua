@@ -63,6 +63,17 @@ constants.ATTR_LINE_MARK_ID = luatexbase.attributes.cnverticallinemark or luatex
 -- Style Registry Attribute (for cross-page style preservation - Phase 2)
 constants.ATTR_STYLE_REG_ID = luatexbase.attributes.cnverticalstyle or luatexbase.new_attribute("cnverticalstyle")
 
+-- Punctuation type attribute (for modern punctuation plugin)
+-- Values: 0=none, 1=open, 2=close, 3=fullstop, 4=comma, 5=middle, 6=nobreak
+constants.ATTR_PUNCT_TYPE = luatexbase.attributes.cnverticalpuncttype or
+    luatexbase.new_attribute("cnverticalpuncttype")
+
+-- Vertical rotation attribute (for glyphs that need 90° clockwise rotation)
+-- Used when font lacks vertical glyph forms (e.g., ellipsis, em dash)
+-- Value: 1 = needs rotation, 0 or unset = normal
+constants.ATTR_VERT_ROTATE = luatexbase.attributes.cnverticalrotate or
+    luatexbase.new_attribute("cnverticalrotate")
+
 -- Attributes for Column (单列排版)
 -- ATTR_COLUMN: 1 = 标记为 Column 内容
 -- ATTR_COLUMN_ALIGN: 对齐方式 0=top, 1=bottom, 2=center, 3=stretch
@@ -71,6 +82,15 @@ constants.ATTR_COLUMN = luatexbase.attributes.cnverticalcolumn or luatexbase.new
 constants.ATTR_COLUMN_ALIGN = luatexbase.attributes.cnverticalcolumnalign or
     luatexbase.new_attribute("cnverticalcolumnalign")
 
+-- Column break with indent: value = number of grid cells to skip after column break
+constants.ATTR_COLUMN_BREAK_INDENT = luatexbase.attributes.cnverticalcolbreakindent or
+    luatexbase.new_attribute("cnverticalcolbreakindent")
+
+-- Horizontal alignment override for individual glyphs
+-- Values: 0=unset, 1=left, 2=center, 3=right
+constants.ATTR_HALIGN = luatexbase.attributes.cnverticalhalign or
+    luatexbase.new_attribute("cnverticalhalign")
+
 -- Constants for Side Pizhu
 constants.SIDENOTE_USER_ID = 202601
 constants.FLOATING_TEXTBOX_USER_ID = 202602
@@ -78,6 +98,7 @@ constants.JUDOU_USER_ID = 202603
 constants.DECORATE_USER_ID = 202604
 constants.CHAPTER_MARKER_USER_ID = 202605
 constants.BANXIN_USER_ID = 202606
+constants.FOOTNOTE_USER_ID = 202607
 
 --- 将 TeX 尺寸字符串转换为 scaled points (sp)
 local function to_dimen(dim_str)
@@ -175,7 +196,7 @@ local function register_decorate(char_str, xoff_str, yoff_str, size_str, color_s
         xoffset = to_dimen(xoff_str) or 0,
         yoffset = to_dimen(yoff_str) or 0,
         scale = tonumber(scale) or 1.0, -- Multiplier for font size
-        font_id = font_id,               -- Store provided ID (may be nil)
+        font_id = font_id,              -- Store provided ID (may be nil)
         font_size = to_dimen(size_str),
         color = color_str,
     }
@@ -308,7 +329,7 @@ end
 constants.PENALTY_SMART_BREAK = -10001
 
 --- Force column break: Unconditionally wrap to next column
---- Used by: \换列 command, some \\ commands
+--- Used by: \换行 command, some \\ commands
 constants.PENALTY_FORCE_COLUMN = -10002
 
 --- Force page break: Unconditionally wrap to new page

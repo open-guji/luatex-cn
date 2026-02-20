@@ -91,6 +91,8 @@ local textbox = package.loaded['core.luatex-cn-core-textbox'] or
     require('core.luatex-cn-core-textbox')
 local sidenote = package.loaded['core.luatex-cn-core-sidenote'] or
     require('core.luatex-cn-core-sidenote')
+local punct = package.loaded['core.luatex-cn-core-punct'] or
+    require('core.luatex-cn-core-punct')
 local judou = package.loaded['guji.luatex-cn-guji-judou'] or
     require('guji.luatex-cn-guji-judou')
 local page = package.loaded['core.luatex-cn-core-page'] or
@@ -123,10 +125,15 @@ local function set_page_number(n)
     _G.page.current_page_number = tonumber(n) or 1
 end
 
--- 加载子模块
+-- 加载子模块 (punct must be before judou - they are mutually exclusive)
+register_plugin("punct", punct)
 register_plugin("judou", judou)
 register_plugin("sidenote", sidenote)
 register_plugin("textbox", textbox)
+
+local footnote_plugin = package.loaded['core.luatex-cn-footnote'] or
+    require('core.luatex-cn-footnote')
+register_plugin("footnote", footnote_plugin)
 
 -- Helper function to safely convert dimension values to scaled points
 -- Handles both raw numbers and em unit tables returned by to_dimen
@@ -227,7 +234,7 @@ local function init_engine_context(box_num, params)
     local b_interval, p_cols
     if is_textbox then
         -- TextBox: use params directly (n_cols -> page_columns from build_sub_params)
-        b_interval = 0  -- no banxin in textbox
+        b_interval = 0 -- no banxin in textbox
         p_cols = tonumber(params.page_columns) or 100
     else
         -- Content: read from _G.content (calculated by content.setup)
@@ -241,10 +248,14 @@ local function init_engine_context(box_num, params)
     end
 
     -- 0.8 Engine Context (Shared state for plugins)
+    local banxin_w = _G.content.banxin_width
+    if not banxin_w or banxin_w <= 0 then banxin_w = g_width end
+
     local engine_ctx = {
         -- Grid dimensions
         g_width = g_width,
         g_height = g_height,
+        banxin_width = banxin_w,
         -- Layout parameters
         banxin_on = banxin_on,
         line_limit = limit,
@@ -261,17 +272,27 @@ local function init_engine_context(box_num, params)
         border_rgb_str = utils.normalize_rgb(border_color) or "0 0 0",
         b_padding_top = b_padding_top,
         b_padding_bottom = b_padding_bottom,
+        -- Body font size (for footnote marker alignment)
+        body_font_size = current_fs,
+        -- Layout mode: "grid" (fixed grid) or "natural" (variable cell height)
+        layout_mode = (not is_textbox) and (_G.content.layout_mode or "grid") or "grid",
+        col_height_sp = limit * g_height,
+        inter_cell_gap = (not is_textbox) and (_G.content.inter_cell_gap or 0) or 0,
         -- Registry data (set after layout)
     }
 
     -- Helper function to calculate reserved column coordinates
+    local text_position = package.loaded['core.luatex-cn-render-position'] or
+        require('core.luatex-cn-render-position')
     engine_ctx.get_reserved_column_coords = function(col, total_cols)
         local rtl_col = total_cols - 1 - col
         local effective_half = engine_ctx.draw_border and engine_ctx.half_thickness or 0
+        local col_x = text_position.get_column_x(rtl_col, engine_ctx.g_width,
+            engine_ctx.banxin_width, engine_ctx.n_column)
         return {
-            x = rtl_col * engine_ctx.g_width + effective_half + engine_ctx.shift_x,
+            x = col_x + effective_half + engine_ctx.shift_x,
             y = -(effective_half + engine_ctx.outer_shift),
-            width = engine_ctx.g_width,
+            width = engine_ctx.banxin_width,
             height = engine_ctx.line_limit * engine_ctx.g_height + engine_ctx.b_padding_top + engine_ctx
                 .b_padding_bottom,
         }
@@ -355,12 +376,26 @@ local function compute_grid_layout(list, params, engine_ctx, plugin_contexts, p_
 
     -- Build layout params - for non-textbox, layout-grid.lua will use global fallbacks
     -- Only pass values that are explicitly needed or textbox-specific
+    -- Build kinsoku hook from punct plugin if active
+    local hooks = nil
+    local punct_ctx = plugin_contexts["punct"]
+    if punct_ctx and punct.make_kinsoku_hook then
+        local kinsoku_fn = punct.make_kinsoku_hook(punct_ctx)
+        if kinsoku_fn then
+            hooks = { check_kinsoku = kinsoku_fn }
+        end
+    end
+
     local layout_params = {
-        distribute = params.distribute,             -- textbox-specific
-        floating = is_floating,                     -- textbox-specific
-        floating_x = floating_x,                    -- textbox-specific
-        absolute_height = p_info.h_dim,             -- textbox-specific
+        distribute = params.distribute, -- textbox-specific
+        floating = is_floating,         -- textbox-specific
+        floating_x = floating_x,        -- textbox-specific
+        absolute_height = p_info.h_dim, -- textbox-specific
         plugin_contexts = plugin_contexts,
+        hooks = hooks,                  -- kinsoku hook for layout-grid
+        layout_mode = engine_ctx.layout_mode,
+        col_height_sp = engine_ctx.col_height_sp,
+        inter_cell_gap = engine_ctx.inter_cell_gap,
     }
 
     -- For textbox: pass explicit values (no global fallback)
@@ -445,6 +480,8 @@ local function generate_physical_pages(list, params, engine_ctx, plugin_contexts
         grid = {
             width = engine_ctx.g_width,
             height = engine_ctx.g_height,
+            banxin_width = engine_ctx.banxin_width,
+            body_font_size = engine_ctx.body_font_size,
             line_limit = engine_ctx.line_limit,
             -- n_column is mainly for banxin/layout, but might be needed for some calc
             n_column = engine_ctx.n_column,

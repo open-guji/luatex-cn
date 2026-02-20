@@ -1,0 +1,13 @@
+% titlepage.tex - Test for book title page (书名页) feature
+\documentclass{ltc-guji}
+
+\begin{document}
+
+% 测试书名页环境（使用 Column 的 width 参数）
+\begin{书名页}
+  \行[width=5cm, align=top, font-size=48pt, grid-height=54pt]{光緒九年仲春}
+  \行[width=6cm, align=center, font-size=80pt, grid-height=90pt]{童蒙必讀書}
+  \行[width=5cm, align=bottom, font-size=48pt, grid-height=54pt]{武昌書局校刊}
+\end{书名页}
+
+\end{document}

@@ -18,7 +18,7 @@
 %
 \NeedsTeXFormat{LaTeX2e}
 \RequirePackage{expl3}
-\ProvidesExplPackage {guji/luatex-cn-guji} {2026/02/07} {0.2.6} {Guji (古籍) typesetting features}
+\ProvidesExplPackage {guji/luatex-cn-guji} {2026/02/09} {0.2.7} {Guji (古籍) typesetting features}
 
 % ============================================================================
 % Load all guji subpackages
@@ -44,6 +44,12 @@
 
 % 目录 (Mulu) - Catalog/Index
 \RequirePackage{guji/luatex-cn-guji-mulu}
+
+% 脚注/校勘记 (Footnote) - Footnotes and critical apparatus
+\RequirePackage{core/luatex-cn-footnote}
+
+% 书名页 (TitlePage) - Book title page with multi-column layout
+\RequirePackage{guji/luatex-cn-guji-titlepage}
 
 % ============================================================================
 % 古籍命令重命名

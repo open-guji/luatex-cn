@@ -303,6 +303,40 @@ local function to_chinese_numeral(n)
     end
 end
 
+--- 将整数逐位转换为中文数字（915 → 九一五）
+-- 每一位数字独立转换，不使用位值（百/十）
+-- @param n number 要转换的数字
+-- @return string 中文数字字符串
+local function to_chinese_digits(n)
+    if not n or n <= 0 then return "" end
+    local digit_map = {
+        [0] = "〇", "一", "二", "三", "四",
+        "五", "六", "七", "八", "九"
+    }
+    local s = tostring(n)
+    local parts = {}
+    for i = 1, #s do
+        local d = tonumber(s:sub(i, i))
+        table.insert(parts, digit_map[d] or tostring(d))
+    end
+    return table.concat(parts)
+end
+
+--- 将整数转换为圆圈数字（①②③...）
+-- Unicode circled numbers: ① U+2460 through ⑳ U+2473, then ㉑ U+3251 through ㊿ U+32BF
+-- @param n number 要转换的数字
+-- @return string 圆圈数字字符串
+local function to_circled_numeral(n)
+    if not n or n <= 0 then return "" end
+    if n <= 20 then
+        return utf8.char(0x2460 + n - 1)  -- ① = U+2460
+    elseif n <= 50 then
+        return utf8.char(0x3251 + n - 21) -- ㉑ = U+3251
+    else
+        return "(" .. tostring(n) .. ")"  -- fallback for n > 50
+    end
+end
+
 -- Chapter Marker Registry
 _G.chapter_registry = _G.chapter_registry or {}
 -- _G.chapter_registry = _G.chapter_registry or {} -- Moved inside function
@@ -389,6 +423,8 @@ local utils = {
     create_border_literal = create_border_literal,
     create_graphics_state_end = create_graphics_state_end,
     to_chinese_numeral = to_chinese_numeral,
+    to_chinese_digits = to_chinese_digits,
+    to_circled_numeral = to_circled_numeral,
 
     insert_chapter_marker = insert_chapter_marker,
 

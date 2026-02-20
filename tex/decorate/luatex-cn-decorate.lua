@@ -134,15 +134,18 @@ local function calculate_decorate_position(pos, reg, ctx, base_size, font_id, ch
         glyph_w = (f_data.characters[char].width or 0)
     end
 
+    -- Get actual column width (may differ for banxin columns)
+    local col_width = text_position.get_column_width(pos.col, ctx.grid_width, ctx.banxin_width or 0, ctx.interval or 0)
+
     -- Horizontal Centering: align glyph's visual center to cell center
     local v_center = text_position.get_visual_center(char, font_id) or (glyph_w / 2)
     local scaled_v_center = v_center * scale
-    local center_offset = (ctx.grid_width / 2) - scaled_v_center
+    local center_offset = (col_width / 2) - scaled_v_center
 
     -- Position calculation (use previous row as decorations follow characters)
     local target_row = math.max(0, pos.row - 1)
-    local rtl_col = ctx.p_total_cols - 1 - pos.col
-    local base_x = rtl_col * ctx.grid_width + ctx.half_thickness + ctx.shift_x
+    local _, base_x = text_position.calculate_rtl_position(pos.col, ctx.p_total_cols, ctx.grid_width,
+        ctx.half_thickness, ctx.shift_x, ctx.banxin_width, ctx.interval)
     local base_y = -target_row * ctx.grid_height - ctx.shift_y
 
     -- Vertical Centering: Place the glyph's ink center at cell center
@@ -233,7 +236,7 @@ function decorate.handle_node(curr, p_head, pos, params, ctx, reg_id)
     D.insert_after(p_head, g, k)
     D.insert_after(p_head, k, n_end)
 
-    dbg.log(string.format("char=%d [c:%d, r:%d] scale=%.2f pos_x=%.4f pos_y=%.4f",
+    dbg.log(string.format("char=%d [c:%d, r:%.2f] scale=%.2f pos_x=%.4f pos_y=%.4f",
         char, pos.col, pos.row, scale, x_bp, y_bp))
 
     return p_head

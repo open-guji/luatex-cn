@@ -1,0 +1,53 @@
+\documentclass{ltc-book}
+\setmainfont{TW-Kai}
+\禁用分页裁剪
+
+\begin{document}
+
+% Test 1: Basic wrapping — 12pt in 10-row column, triggers multi-column
+\Content[
+    layout-mode = natural,
+    font-size = 12pt,
+    n-column = 8,
+    n-char-per-col = 10,
+]{
+    這是自然排版模式的測試文本。每個字的格高由字號決定，而不是固定的網格高度。自動換列功能應該正常工作。標點符號只佔半格，這樣可以節省空間。
+}
+
+\newpage
+
+% Test 2: Dense punctuation — half-cell sizing, tight packing
+\Content[
+    layout-mode = natural,
+    font-size = 12pt,
+    n-column = 8,
+    n-char-per-col = 10,
+]{
+    子曰：「學而時習之，不亦說乎？」有朋自遠方來，不亦樂乎？人不知而不慍，不亦君子乎？
+}
+
+\newpage
+
+% Test 3: Long text — sustained wrapping across many columns
+\Content[
+    layout-mode = natural,
+    font-size = 12pt,
+    n-column = 8,
+    n-char-per-col = 10,
+]{
+    天地玄黃，宇宙洪荒。日月盈昃，辰宿列張。寒來暑往，秋收冬藏。閏餘成歲，律呂調陽。雲騰致雨，露結為霜。金生麗水，玉出崑岡。劍號巨闕，珠稱夜光。果珍李柰，菜重芥薑。海鹹河淡，鱗潛羽翔。龍師火帝，鳥官人皇。始制文字，乃服衣裳。推位讓國，有虞陶唐。弔民伐罪，周發殷湯。坐朝問道，垂拱平章。
+}
+
+\newpage
+
+% Test 4: Large font — fewer chars per column, more frequent wrapping
+\Content[
+    layout-mode = natural,
+    font-size = 20pt,
+    n-column = 8,
+    n-char-per-col = 10,
+]{
+    大字排版測試。每個字佔更多空間，換列更頻繁。標點「如此」佔半格。
+}
+
+\end{document}

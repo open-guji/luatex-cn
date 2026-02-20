@@ -16,7 +16,7 @@
 
 \RequirePackage{expl3}
 \RequirePackage{l3keys2e}
-\ProvidesExplClass {ltc-guji} {2026/02/07} {0.2.6} {Ancient Chinese Book Class}
+\ProvidesExplClass {ltc-guji} {2026/02/09} {0.2.7} {Ancient Chinese Book Class}
 
 % ============================================================================
 % Variables (must be defined before use)

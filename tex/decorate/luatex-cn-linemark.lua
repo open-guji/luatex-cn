@@ -269,9 +269,10 @@ function linemark.render_line_marks(p_head, entries, ctx)
                     effective_offset = math.floor(seg_offset * 0.8 + 0.5)
                 else
                     -- Normal full-width cell: center of cell
-                    local rtl_col = ctx.p_total_cols - 1 - col
-                    local cell_left_x = rtl_col * ctx.grid_width + (ctx.half_thickness or 0) + (ctx.shift_x or 0)
-                    char_center_x = cell_left_x + ctx.grid_width / 2
+                    local _, cell_left_x = text_position.calculate_rtl_position(col, ctx.p_total_cols,
+                        ctx.grid_width, ctx.half_thickness, ctx.shift_x, ctx.banxin_width, ctx.interval)
+                    local col_w = text_position.get_column_width(col, ctx.grid_width, ctx.banxin_width or 0, ctx.interval or 0)
+                    char_center_x = cell_left_x + col_w / 2
                 end
                 -- Line is at: character center - offset (to the left in physical coordinates)
                 local line_x_sp = char_center_x - effective_offset

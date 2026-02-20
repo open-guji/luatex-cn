@@ -24,12 +24,16 @@
 \RequirePackage{core/luatex-cn-core-base}
 \RequirePackage{expl3}
 \RequirePackage{xparse}
-\ProvidesExplPackage {core/luatex-cn-core-column} {2026/02/07} {0.2.6} {Column Support for Vertical Typesetting}
+\ProvidesExplPackage {core/luatex-cn-core-column} {2026/02/09} {0.2.7} {Column Support for Vertical Typesetting}
 
 % Default variables for column
 \tl_new:N \l__luatexcn_column_default_size_tl
 \tl_new:N \l__luatexcn_column_default_font_tl
 \tl_new:N \l__luatexcn_column_default_color_tl
+
+% Global dim for current column width (read by TextBox for inner-gw auto-calculation)
+% 0pt means not set (use default grid_width)
+\dim_new:N \g__luatexcn_column_current_width_dim
 
 \makeatletter
 
@@ -52,6 +56,12 @@
         font-size .tl_set:N = \l__luatexcn_column_local_size_tl,
         font .tl_set:N = \l__luatexcn_column_local_font_tl,
         font-color .tl_set:N = \l__luatexcn_column_local_color_tl,
+
+        width .tl_set:N = \l__luatexcn_column_width_tl,
+        width .initial:n = {},
+
+        grid-height .tl_set:N = \l__luatexcn_column_grid_height_tl,
+        grid-height .initial:n = {},
       }
 
     \NewDocumentCommand{\Column}{ O{} +m }
@@ -66,8 +76,21 @@
         \tl_set:Nn \l__luatexcn_column_local_size_tl {}
         \tl_set:Nn \l__luatexcn_column_local_font_tl {}
         \tl_set:Nn \l__luatexcn_column_local_color_tl {}
+        \tl_set:Nn \l__luatexcn_column_width_tl {}
+        \tl_set:Nn \l__luatexcn_column_grid_height_tl {}
 
         \keys_set:nn { luatexcn / column } { #1 }
+
+        % Handle column width: register in Lua and set global dim for TextBox
+        \tl_if_empty:NF \l__luatexcn_column_width_tl
+          {
+            \dim_gset:Nn \g__luatexcn_column_current_width_dim
+              { \l__luatexcn_column_width_tl }
+            \lua_now:e {
+              require('core.luatex-cn-core-content').register_col_width(
+                \dim_to_decimal_in_sp:n { \l__luatexcn_column_width_tl })
+            }
+          }
 
         % If last=true, add 4 to align mode
         \bool_if:NT \l__luatexcn_column_last_bool
@@ -118,7 +141,8 @@
           local ~ style_id = column.push_style(
             \tl_if_empty:NTF \l_tmpd_tl { nil } { [=[\luaescapestring{\tl_use:N \l_tmpd_tl}]=] },
             \tl_if_empty:NTF \l_tmpc_tl { nil } { [=[\luaescapestring{\tl_use:N \l_tmpc_tl}]=] },
-            \tl_if_empty:NTF \l_tmpb_tl { nil } { [=[\luaescapestring{\tl_use:N \l_tmpb_tl}]=] }
+            \tl_if_empty:NTF \l_tmpb_tl { nil } { [=[\luaescapestring{\tl_use:N \l_tmpb_tl}]=] },
+            \tl_if_empty:NTF \l__luatexcn_column_grid_height_tl { nil } { [=[\luaescapestring{\tl_use:N \l__luatexcn_column_grid_height_tl}]=] }
           )
           tex.print(tostring(style_id))
         }}
@@ -129,6 +153,9 @@
         \setluatexattribute\cnverticalstyle{\column_style_id}
 
         #2
+
+        % Reset column width after content
+        \dim_gset:Nn \g__luatexcn_column_current_width_dim { 0pt }
 
         % Pop style from stack
         \lua_now:n {
@@ -153,7 +180,7 @@
 \ExplSyntaxOff
 
 % Chinese alias
-\NewCommandCopy{\列}{\Column}
-\NewCommandCopy{\末列}{\LastColumn}
+\NewCommandCopy{\行}{\Column}
+\NewCommandCopy{\末行}{\LastColumn}
 
 \endinput%

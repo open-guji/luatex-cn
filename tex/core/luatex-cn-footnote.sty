@@ -1,0 +1,238 @@
+% Copyright 2026 Open-Guji (https://github.com/open-guji)
+%
+% Licensed under the Apache License, Version 2.0 (the "License");
+% you may not use this file except in compliance with the License.
+% You may obtain a copy of the License at
+%
+%     http://www.apache.org/licenses/LICENSE-2.0
+%
+% Unless required by applicable law or agreed to in writing, software
+% distributed under the License is distributed on an "AS IS" BASIS,
+% WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+% See the License for the specific language governing permissions and
+% limitations under the License.
+% luatex-cn-footnote.sty
+% Footnote/Jiaokan (脚注/校勘记) support for vertical typesetting
+% Mode 1: Endnotes (段末注) - footnotes output at paragraph end
+% Mode 2: Page footnotes (页下注) - footnotes at page left with separator
+%
+\RequirePackage{expl3}
+\RequirePackage{xparse}
+\ProvidesExplPackage {core/luatex-cn-footnote} {2026/02/09} {0.2.7} {Footnote/Jiaokan support}
+
+% ============================================================================
+% Load Lua module and set global utils
+% ============================================================================
+\lua_now:e {
+  require('core.luatex-cn-footnote')
+  vertical_utils = require('util.luatex-cn-utils')
+}
+
+% ============================================================================
+% Key-value Configuration
+% ============================================================================
+\tl_new:N \l__luatexcn_footnote_mode_tl
+\tl_new:N \l__luatexcn_footnote_number_style_tl
+\tl_new:N \l__luatexcn_footnote_separator_tl
+\tl_new:N \l__luatexcn_footnote_font_tl
+\tl_new:N \l__luatexcn_footnote_font_size_tl
+\tl_new:N \l__luatexcn_footnote_font_color_tl
+
+\keys_define:nn { luatexcn / footnote }
+  {
+    mode .tl_set:N = \l__luatexcn_footnote_mode_tl,
+    mode .initial:n = {endnote},
+    number-style .tl_set:N = \l__luatexcn_footnote_number_style_tl,
+    number-style .initial:n = {lujiao},
+    separator .tl_set:N = \l__luatexcn_footnote_separator_tl,
+    separator .initial:n = {blank},
+    font .tl_set:N = \l__luatexcn_footnote_font_tl,
+    font .initial:n = {},
+    font-size .tl_set:N = \l__luatexcn_footnote_font_size_tl,
+    font-size .initial:n = {0.8em},
+    font-color .tl_set:N = \l__luatexcn_footnote_font_color_tl,
+    font-color .initial:n = {},
+    indent .dim_set:N = \l__luatexcn_footnote_indent_dim,
+    indent .initial:n = {1em},
+    spacing .dim_set:N = \l__luatexcn_footnote_spacing_dim,
+    spacing .initial:n = {0.5em},
+  }
+
+% ============================================================================
+% Internal: Apply footnote font size (always from content base font-size)
+% ============================================================================
+\dim_new:N \l__luatexcn_footnote_resolved_size_dim
+\cs_new_protected:Nn \__luatexcn_footnote_apply_font_size:
+  {
+    % First, temporarily set font to base content size so that relative units
+    % (like 0.8em) resolve correctly against the base, not the current font.
+    \fontsize { \l__luatexcn_content_font_size_tl } { \l__luatexcn_content_font_size_tl } \selectfont
+    % Now resolve the footnote font-size (may contain em units)
+    \dim_set:Nn \l__luatexcn_footnote_resolved_size_dim
+      { \l__luatexcn_footnote_font_size_tl }
+    % Apply the resolved absolute size
+    \fontsize
+      { \dim_use:N \l__luatexcn_footnote_resolved_size_dim }
+      { \dim_use:N \l__luatexcn_footnote_resolved_size_dim }
+    \selectfont
+  }
+
+% ============================================================================
+% Global Storage (Mode 1)
+% ============================================================================
+\seq_new:N  \g__luatexcn_footnote_content_seq
+\int_new:N  \g__luatexcn_footnote_counter_int
+\box_new:N  \l__luatexcn_footnote_temp_box
+
+% ============================================================================
+% Setup Command (syncs to Lua _G.footnote)
+% ============================================================================
+\NewDocumentCommand{\footnoteSetup}{ m }
+  {
+    \keys_set:nn { luatexcn / footnote } { #1 }
+    \lua_now:e {
+      _G.footnote = _G.footnote~or~{}
+      _G.footnote.mode = "\l__luatexcn_footnote_mode_tl"
+      _G.footnote.number_style = "\l__luatexcn_footnote_number_style_tl"
+      _G.footnote.font_size = "\l__luatexcn_footnote_font_size_tl"
+      _G.footnote.font_color = "\l__luatexcn_footnote_font_color_tl"
+      _G.footnote.font = "\l__luatexcn_footnote_font_tl"
+    }
+  }
+
+% ============================================================================
+% Internal: Write Footnote Marker (【一】 or ①)
+% ============================================================================
+\cs_new:Nn \__luatexcn_footnote_write_marker:n
+  {
+    \str_case:VnF \l__luatexcn_footnote_number_style_tl
+      {
+        {lujiao}  { 【\lua_now:e{ tex.print(vertical_utils.to_chinese_numeral(#1)) }】 }
+        {circled} { \lua_now:e{ tex.print(vertical_utils.to_circled_numeral(#1)) } }
+      }
+      { 【\lua_now:e{ tex.print(vertical_utils.to_chinese_numeral(#1)) }】 }
+  }
+
+% ============================================================================
+% Internal: Separator (blank space or none)
+% ============================================================================
+\cs_new:Nn \__luatexcn_footnote_separator:
+  {
+    \str_case:VnF \l__luatexcn_footnote_separator_tl
+      {
+        {blank} { \hspace{1em} }
+        {none}  { }
+      }
+      { \hspace{1em} }
+  }
+
+% ============================================================================
+% \Footnote{content} - Store content + write inline marker
+% Mode 1: Store in expl3 sequence
+% Mode 2: Register in Lua and write WHATSIT anchor
+% ============================================================================
+\NewDocumentCommand{\Footnote}{ O{} +m }
+  {
+    \group_begin:
+      \int_gincr:N \g__luatexcn_footnote_counter_int
+      \str_if_eq:VnTF \l__luatexcn_footnote_mode_tl {page}
+        {
+          % Mode 2: Register in Lua for page rendering
+          \hbox_set:Nn \l__luatexcn_footnote_temp_box { #2 }
+          \lua_now:e {
+            local~footnote~=~require('core.luatex-cn-footnote')
+            footnote.register_footnote(
+              \int_use:N \l__luatexcn_footnote_temp_box,
+              \int_use:N \g__luatexcn_footnote_counter_int
+            )
+          }
+        }
+        {
+          % Mode 1: Store in sequence for paragraph-end output
+          \seq_gput_right:Nn \g__luatexcn_footnote_content_seq { #2 }
+        }
+      % Write inline marker with smaller font + right-align
+      \group_begin:
+        \tl_if_empty:NF \l__luatexcn_footnote_font_size_tl
+          { \__luatexcn_footnote_apply_font_size: }
+        \lua_now:e {
+          local~constants~=~require('core.luatex-cn-constants')
+          tex.setattribute(constants.ATTR_HALIGN,~3)
+        }
+        \__luatexcn_footnote_write_marker:n
+          { \int_use:N \g__luatexcn_footnote_counter_int }
+      \group_end:
+    \group_end:
+  }
+
+% ============================================================================
+% \FlushFootnote - Output all footnotes and reset (Mode 1 only)
+% ============================================================================
+\NewDocumentCommand{\FlushFootnote}{}
+  {
+    \str_if_eq:VnF \l__luatexcn_footnote_mode_tl {page}
+      {
+        \int_compare:nNnT
+          { \seq_count:N \g__luatexcn_footnote_content_seq } > { 0 }
+          {
+            \__luatexcn_footnote_separator:
+            % Group to contain font-size change (prevent leaking to subsequent text)
+            \group_begin:
+            % Apply footnote font-size using absolute value from content base font-size
+            % (avoid relative em units which compound across multiple FlushFootnote calls)
+            \tl_if_empty:NF \l__luatexcn_footnote_font_size_tl
+              {
+                \__luatexcn_footnote_apply_font_size:
+              }
+            \int_step_inline:nn
+              { \seq_count:N \g__luatexcn_footnote_content_seq }
+              {
+                \int_compare:nNnTF { ##1 } > { 1 }
+                  {
+                    % Column break with post-break indent via attribute
+                    \lua_now:e {
+                      local~constants~=~require('core.luatex-cn-constants')
+                      local~indent_sp~=~\dim_to_decimal_in_sp:n { \l__luatexcn_footnote_indent_dim }
+                      local~grid_h_sp~=~\dim_to_decimal_in_sp:n { \l__luatexcn_content_grid_height_tl }
+                      local~cells~=~math.max(1,~math.floor(indent_sp~/~grid_h_sp~+~0.5))
+                      tex.setattribute(constants.ATTR_COLUMN_BREAK_INDENT,~cells)
+                    }
+                    \penalty -10002\relax
+                    \lua_now:e {
+                      local~constants~=~require('core.luatex-cn-constants')
+                      tex.setattribute(constants.ATTR_COLUMN_BREAK_INDENT,~-0x7FFFFFFF)
+                    }
+                  }
+                  {
+                    % First footnote: use normal indent space
+                    \hspace{\l__luatexcn_footnote_indent_dim}
+                  }
+                \__luatexcn_footnote_write_marker:n { ##1 }
+                \seq_item:Nn \g__luatexcn_footnote_content_seq { ##1 }
+              }
+            \group_end:
+            \seq_gclear:N \g__luatexcn_footnote_content_seq
+            \int_gzero:N  \g__luatexcn_footnote_counter_int
+          }
+      }
+  }
+
+% ============================================================================
+% \ResetFootnoteCounter - Reset counter (for Mode 2 per-page reset)
+% ============================================================================
+\NewDocumentCommand{\ResetFootnoteCounter}{}
+  {
+    \int_gzero:N \g__luatexcn_footnote_counter_int
+  }
+
+\ExplSyntaxOff%
+
+% ============================================================================
+% CJK Aliases
+% ============================================================================
+\NewCommandCopy{\脚注}{\Footnote}
+\NewCommandCopy{\输出脚注}{\FlushFootnote}
+\NewCommandCopy{\脚注设置}{\footnoteSetup}
+\NewCommandCopy{\重置脚注计数}{\ResetFootnoteCounter}
+
+\endinput%

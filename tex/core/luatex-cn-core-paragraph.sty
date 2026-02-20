@@ -185,9 +185,9 @@
 % ============================================================================
 % 抬头命令体系 (Taitou Command System)
 % ============================================================================
-% 古籍行文中表示尊敬的排版规范，将文字放到列的顶端甚至伸入天头区域。
+% 古籍行文中表示尊敬的排版规范，将文字放到行的顶端甚至伸入天头区域。
 %
-% \抬头[N]  - 另起一列，比正常顶端高出N格（N=0为平抬，N>0伸入天头）
+% \抬头[N]  - 另起一行，比正常顶端高出N格（N=0为平抬，N>0伸入天头）
 % \平抬     - = \抬头[0]，顶格书写（向后兼容）
 % \单抬     - = \抬头[1]，高出1格
 % \双抬     - = \抬头[2]，高出2格
@@ -210,14 +210,16 @@
 \NewDocumentCommand{\三抬}{}{ \抬头[3] }
 
 % ============================================================================
-% 挪抬/空抬 Command (不换列，插入空格)
+% 挪抬/空抬 Command (不换行，插入空格)
 % ============================================================================
-% \挪抬[N] - 在当前位置前插入N格空白（默认1格），不换列
+% \挪抬[N] - 在当前位置前插入N格空白（默认1格），不换行
+% Uses ideographic space characters (U+3000) for consistent grid layout
 % \空抬    - = \挪抬[1]
 
 \NewDocumentCommand{\挪抬}{ O{1} }
   {
-    \Space[#1]
+    \prg_replicate:nn { #1 } { \char"3000\relax }
+    \ignorespaces
   }
 
 \NewDocumentCommand{\空抬}{}{ \挪抬[1] }
@@ -244,13 +246,13 @@
   }
 
 % ============================================================================
-% 换列 Command
+% 换行 Command
 % ============================================================================
-% \换列 - Force column break
+% \换行 - Force column break
 % Inserts PENALTY_FORCE_COLUMN to force wrapping to the next column
 % Useful for starting new sections or book entries in a fresh column
 
-\NewDocumentCommand{\换列}{}
+\NewDocumentCommand{\换行}{}
   {
     \par
     \penalty \int_use:N \c__luatexcn_penalty_force_column_int \scan_stop:

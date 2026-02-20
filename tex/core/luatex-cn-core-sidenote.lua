@@ -25,6 +25,8 @@ local style_registry = package.loaded['util.luatex-cn-style-registry'] or
     require('util.luatex-cn-style-registry')
 local judou = package.loaded['guji.luatex-cn-guji-judou'] or
     require('guji.luatex-cn-guji-judou')
+local text_position = package.loaded['core.luatex-cn-render-position'] or
+    require('core.luatex-cn-render-position')
 local D = node.direct
 
 local dbg = debug.get_debugger('sidenote')
@@ -128,7 +130,9 @@ function sidenote.render(head, layout_map, params, context, engine_ctx, page_idx
             local w = D.getfield(curr, "width") or 0
 
             local rtl_col = p_total_cols - 1 - pos.col
-            local boundary_x = (rtl_col + 1) * engine_ctx.g_width + engine_ctx.half_thickness + engine_ctx.shift_x
+            local boundary_x = text_position.get_column_x(rtl_col + 1, engine_ctx.g_width,
+                engine_ctx.banxin_width or 0, engine_ctx.n_column or 0)
+                + engine_ctx.half_thickness + engine_ctx.shift_x
             local final_x = boundary_x - (w / 2)
 
             local char_total_height = h + d
@@ -188,6 +192,8 @@ function sidenote.render(head, layout_map, params, context, engine_ctx, page_idx
             shift_x = engine_ctx.shift_x,
             shift_y = engine_ctx.shift_y,
             half_thickness = engine_ctx.half_thickness,
+            banxin_width = engine_ctx.banxin_width or 0,
+            interval = engine_ctx.n_column or 0,
         }
         sn_head = linemark_mod.render_line_marks(sn_head, linemark_entries, lm_ctx)
     end

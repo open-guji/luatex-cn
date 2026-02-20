@@ -1,0 +1,83 @@
+% Copyright 2026 Open-Guji (https://github.com/open-guji)
+%
+% Licensed under the Apache License, Version 2.0 (the "License");
+% you may not use this file except in compliance with the License.
+% You may obtain a copy of the License at
+%
+%     http://www.apache.org/licenses/LICENSE-2.0
+%
+% Unless required by applicable law or agreed to in writing, software
+% distributed under the License is distributed on an "AS IS" BASIS,
+% WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+% See the License for the specific language governing permissions and
+% limitations under the License.
+
+% luatex-cn-guji-titlepage.sty
+% Book title page (书名页) support for vertical typesetting
+% Wraps content in SinglePage with border options.
+% Columns use \Column (列) with width parameter for flexible layout.
+
+\RequirePackage{expl3}
+\RequirePackage{xparse}
+\RequirePackage{environ}
+\ProvidesExplPackage {guji/luatex-cn-guji-titlepage} {2026/02/09} {0.2.7} {Book Title Page Support}
+
+% ============================================================================
+% Variables
+% ============================================================================
+
+\bool_new:N \l__luatexcn_titlepage_border_bool
+\bool_new:N \l__luatexcn_titlepage_outer_border_bool
+\tl_new:N \l__luatexcn_titlepage_body_tl
+
+% ============================================================================
+% Key-value Configuration
+% ============================================================================
+
+\keys_define:nn { luatexcn / titlepage }
+  {
+    border .bool_set:N = \l__luatexcn_titlepage_border_bool,
+    border .initial:n = false,
+    outer-border .bool_set:N = \l__luatexcn_titlepage_outer_border_bool,
+    outer-border .initial:n = false,
+  }
+
+% ============================================================================
+% TitlePage Environment (uses \NewEnviron to capture BODY)
+% Usage:
+%   \begin{书名页}[border=true, outer-border=true]
+%     \行[width=2cm, align=top]{光緒九年仲春}
+%     \行[width=6cm, align=center]{\TextBox[font-size=32pt]{童蒙必讀書}}
+%     \行[width=2cm, align=bottom]{武昌書局校刊}
+%   \end{书名页}
+% ============================================================================
+\NewEnviron{TitlePage}[1][]{%
+  % Save BODY to a unique name before nested \NewEnviron environments
+  % (SinglePage and BodyText both use \NewEnviron, which redefines \BODY)
+  \tl_set_eq:NN \l__luatexcn_titlepage_body_tl \BODY
+  % Initialize col_widths array (columns will register their widths here)
+  \lua_now:n { require('core.luatex-cn-core-content').init_col_widths() }%
+  % Apply options
+  \keys_set:nn { luatexcn / titlepage } { #1 }%
+  % Wrap in SinglePage + Content
+  \begin{单页}
+    \bool_if:NT \l__luatexcn_titlepage_border_bool
+      { \keys_set:nn { luatexcn / content } { border = true } }
+    \bool_if:NT \l__luatexcn_titlepage_outer_border_bool
+      { \keys_set:nn { luatexcn / content } { outer-border = true } }
+    \begin{正文}
+      \l__luatexcn_titlepage_body_tl
+    \end{正文}
+    % Set page-columns from the number of registered column widths
+    \lua_now:n { require('core.luatex-cn-core-content').sync_page_columns_from_col_widths() }
+  \end{单页}
+  % Clear col_widths after page is shipped (clearpage runs inside 单页)
+  \lua_now:n { require('core.luatex-cn-core-content').clear_col_widths() }%
+}
+
+% ============================================================================
+% CJK Aliases
+% ============================================================================
+\NewEnvironmentCopy{书名页}{TitlePage}
+
+\endinput

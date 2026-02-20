@@ -122,6 +122,8 @@ _G.content.content_height = _G.content.content_height or 0
 _G.content.available_width = _G.content.available_width or 0
 _G.content.available_height = _G.content.available_height or 0
 _G.content.border_overhead_height = _G.content.border_overhead_height or 0
+_G.content.banxin_width = _G.content.banxin_width or 0
+_G.content.banxin_ratio = _G.content.banxin_ratio or 0.7
 
 -- Visual params (colors already converted to RGB strings by TeX)
 _G.content.vertical_align = _G.content.vertical_align or "center"
@@ -129,6 +131,8 @@ _G.content.border_color = _G.content.border_color or "0 0 0"
 _G.content.background_color = _G.content.background_color or nil
 _G.content.font_color = _G.content.font_color or nil
 _G.content.font_size = _G.content.font_size or 0
+_G.content.layout_mode = _G.content.layout_mode or "grid"
+_G.content.inter_cell_gap = _G.content.inter_cell_gap or 0
 
 -- ============================================================================
 -- Setup Helper Functions
@@ -171,6 +175,12 @@ local function parse_visual_params(params)
     end
     if params.font_size then
         _G.content.font_size = constants.to_dimen(params.font_size)
+    end
+    if params.layout_mode and params.layout_mode ~= "" then
+        _G.content.layout_mode = params.layout_mode
+    end
+    if params.inter_cell_gap then
+        _G.content.inter_cell_gap = constants.to_dimen(params.inter_cell_gap) or 0
     end
 end
 
@@ -235,12 +245,25 @@ local function calc_page_columns(explicit_page_cols)
     local g_width = _G.content.grid_width or 0
     local available_width = _G.content.available_width or 0
 
+    -- When col_widths has entries, set page_columns from it directly
+    local col_widths = _G.content and _G.content.col_widths
+    if col_widths and #col_widths > 0 then
+        _G.content.page_columns = #col_widths
+        return
+    end
+
     if explicit_page_cols > 0 then
         _G.content.page_columns = explicit_page_cols
+        -- Auto-adjust grid_width to fill available width when page_columns is explicit
+        if available_width > 0 then
+            _G.content.grid_width = math.floor(available_width / explicit_page_cols)
+        end
     elseif banxin_on then
         _G.content.page_columns = (2 * n_column + 1)
     elseif g_width > 0 and available_width > 0 then
-        _G.content.page_columns = math.floor(available_width / g_width + 0.1)
+        -- Use +0.5 rounding to handle banxin_ratio-induced fractional column counts
+        -- e.g. available / (available / 16.7) = 16.7 → round to 17
+        _G.content.page_columns = math.floor(available_width / g_width + 0.5)
         if _G.content.page_columns <= 0 then _G.content.page_columns = 1 end
     else
         _G.content.page_columns = math.max(1, n_column)
@@ -278,7 +301,10 @@ local function calc_auto_layout()
         local border_overhead_width = calc_border_overhead_width(
             _G.content.border_on, is_outer_border, b_thickness, ob_thickness, ob_sep)
         local raw_width = p_width - m_left - m_right - border_overhead_width
-        _G.content.grid_width = math.floor(raw_width / _G.content.page_columns)
+        local ratio = _G.content.banxin_ratio or 0.7
+        local n_col = _G.content.n_column or 8
+        _G.content.grid_width = math.floor(raw_width / (2 * n_col + ratio))
+        _G.content.banxin_width = math.floor(_G.content.grid_width * ratio)
     end
 
     -- Auto-calculate grid_height and content_height
@@ -357,11 +383,13 @@ local function guji_auto_layout(params)
     local b_padding_bottom = constants.to_dimen(params.border_padding_bottom or "0pt")
     local existing_grid_height = constants.to_dimen(params.grid_height or "0pt")
 
-    -- I. Width Logic: Calculate grid-width from n-column
+    -- I. Width Logic: Calculate grid-width from n-column (with banxin ratio)
+    local banxin_ratio = tonumber(params.banxin_ratio) or 0.7
     local border_overhead_width = calc_border_overhead_width(border_on, outer_border_on, b_thickness, ob_thickness, ob_sep)
     local available_width = p_width - m_left - m_right - border_overhead_width
-    local total_cols = 2 * n_column + 1  -- guji with banxin
-    local grid_width = math.floor(available_width / total_cols)
+    -- cw * (2 * n_column + ratio) = available_width
+    local grid_width = math.floor(available_width / (2 * n_column + banxin_ratio))
+    local banxin_width = math.floor(grid_width * banxin_ratio)
 
     -- II. Height Logic: Calculate available height
     local border_overhead_height = calc_border_overhead_height(border_on, outer_border_on, b_thickness, ob_thickness, ob_sep, b_padding_top, b_padding_bottom)
@@ -372,6 +400,10 @@ local function guji_auto_layout(params)
     local total_box_height = content_height + border_overhead_height + 2 * 65536 -- +2pt
     local margin_top = p_height - m_bottom - total_box_height
 
+    -- Store banxin dimensions in global state
+    _G.content.banxin_width = banxin_width
+    _G.content.banxin_ratio = banxin_ratio
+
     -- Convert sp to pt string and set TeX token lists
     local function to_pt(sp) return string.format("%.5fpt", sp / 65536) end
     token.set_macro("l__luatexcn_content_grid_width_tl", to_pt(grid_width))
@@ -380,12 +412,93 @@ local function guji_auto_layout(params)
     token.set_macro("l__luatexcn_page_margin_top_tl", to_pt(margin_top))
 end
 
+-- ============================================================================
+-- Shared Content Dimension Calculation
+-- ============================================================================
+
+--- Calculate content area dimensions (shared by render-page and render-border)
+-- @param params (table) {is_textbox, actual_cols, actual_rows, grid_width, grid_height,
+--   line_limit, b_padding_top, b_padding_bottom, p_total_cols, border_thickness,
+--   banxin_width, interval}
+-- @return content_width, content_height, inner_width, inner_height (all in sp)
+local function calculate_content_dimensions(params)
+    local content_width, content_height
+    local col_widths = _G.content and _G.content.col_widths
+    if params.is_textbox then
+        content_width = (params.actual_cols > 0 and params.actual_cols or 1) * params.grid_width
+        content_height = (params.actual_rows > 0 and params.actual_rows or 1) * params.grid_height
+    elseif col_widths and #col_widths > 0 then
+        content_width = 0
+        for _, w in ipairs(col_widths) do content_width = content_width + w end
+        content_height = params.line_limit * params.grid_height + params.b_padding_top + params.b_padding_bottom
+    else
+        local bw = params.banxin_width or 0
+        local iv = params.interval or 0
+        if iv > 0 and bw > 0 and bw ~= params.grid_width then
+            local n_banxin = math.floor(params.p_total_cols / (iv + 1))
+            local n_content = params.p_total_cols - n_banxin
+            content_width = n_content * params.grid_width + n_banxin * bw
+        else
+            content_width = params.p_total_cols * params.grid_width
+        end
+        content_height = params.line_limit * params.grid_height + params.b_padding_top + params.b_padding_bottom
+    end
+    local inner_width = content_width + params.border_thickness
+    local inner_height = content_height + params.border_thickness
+    return content_width, content_height, inner_width, inner_height
+end
+
+-- ============================================================================
+-- col_widths Lifecycle API
+-- ============================================================================
+
+--- Initialize col_widths array (call at TitlePage begin)
+local function init_col_widths()
+    _G.content = _G.content or {}
+    _G.content.col_widths = {}
+end
+
+--- Register a column's width (call from Column when width is specified)
+-- @param width_sp (number) Column width in scaled points
+local function register_col_width(width_sp)
+    _G.content = _G.content or {}
+    _G.content.col_widths = _G.content.col_widths or {}
+    table.insert(_G.content.col_widths, width_sp)
+end
+
+--- Get the col_widths table (read-only access)
+-- @return (table|nil) Array of column widths in sp, or nil
+local function get_col_widths()
+    return _G.content and _G.content.col_widths
+end
+
+--- Sync page_columns from col_widths count (call at TitlePage end)
+local function sync_page_columns_from_col_widths()
+    local cw = _G.content and _G.content.col_widths
+    if cw and #cw > 0 then
+        _G.content.page_columns = #cw
+    end
+end
+
+--- Clear col_widths after page is shipped (call after TitlePage end)
+local function clear_col_widths()
+    if _G.content then
+        _G.content.col_widths = nil
+    end
+end
+
 -- Create module table
 local content = {
     sync_params = sync_params,
     init_style = init_style,
     set_font_color = set_font_color,
     guji_auto_layout = guji_auto_layout,
+    calculate_content_dimensions = calculate_content_dimensions,
+    init_col_widths = init_col_widths,
+    register_col_width = register_col_width,
+    get_col_widths = get_col_widths,
+    sync_page_columns_from_col_widths = sync_page_columns_from_col_widths,
+    clear_col_widths = clear_col_widths,
 }
 
 -- Register module in package.loaded

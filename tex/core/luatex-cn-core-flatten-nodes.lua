@@ -257,11 +257,25 @@ local function flatten_vbox(head, grid_width, char_width)
                 -- IMPORTANT: Only add penalty for HLIST lines that are part of
                 -- the main vertical flow. This prevents inline HLISTs (like \box0 in decorate)
                 -- from triggering unwanted column breaks.
+                -- Skip adding penalty if:
+                -- 1. The last appended node is already a PENALTY_FORCE_COLUMN, or
+                -- 2. The next sibling in the VLIST is a PENALTY_FORCE_COLUMN
+                --    (e.g., from \penalty -10002 in footnote content that caused a
+                --    paragraph line break; TeX places this penalty between HLISTs)
                 if tid == constants.HLIST and inner_has_content and parent_is_vlist then
-                    dbg.log("Adding Column Break after Line=" .. tostring(t))
-                    local p = D.new(constants.PENALTY)
-                    D.setfield(p, "penalty", -10002)
-                    append_node(p)
+                    local already_has_penalty = result_tail_d
+                        and D.getid(result_tail_d) == constants.PENALTY
+                        and D.getfield(result_tail_d, "penalty") == -10002
+                    local next_sibling = D.getnext(t)
+                    local next_is_force_column = next_sibling
+                        and D.getid(next_sibling) == constants.PENALTY
+                        and D.getfield(next_sibling, "penalty") == -10002
+                    if not already_has_penalty and not next_is_force_column then
+                        dbg.log("Adding Column Break after Line=" .. tostring(t))
+                        local p = D.new(constants.PENALTY)
+                        D.setfield(p, "penalty", -10002)
+                        append_node(p)
+                    end
                 end
             else
                 -- 3. Process leaf nodes

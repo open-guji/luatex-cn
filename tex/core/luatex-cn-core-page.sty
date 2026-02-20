@@ -12,7 +12,7 @@
 % See the License for the specific language governing permissions and
 % limitations under the License.
 
-\ProvidesExplPackage{core/luatex-cn-core-page}{2026/02/07} {0.2.6}{Page geometry and background support}
+\ProvidesExplPackage{core/luatex-cn-core-page}{2026/02/09} {0.2.7}{Page geometry and background support}
 
 % Global token lists for page parameters (centralized)
 \tl_new:N \l__luatexcn_page_paper_width_tl
@@ -79,6 +79,9 @@
         margin_left~=~"\l__luatexcn_page_margin_left_tl",
         margin_right~=~"\l__luatexcn_page_margin_right_tl"
       })
+      _G.page~=~_G.page~or~{}
+      _G.page.number_style~=~"\l__luatexcn_page_number_style_tl"
+      _G.page.number_font_size~=~"\l__luatexcn_page_number_font_size_tl"
     }
     % Apply geometry when called in preamble (sets paper size)
     \luatexcn_apply_geometry:
@@ -225,6 +228,62 @@
     \bool_if:NT \l__luatexcn_page_split_enabled_bool
       { \enableSplitPage }
   }
+
+% ============================================================================
+% Page Number Style
+% ============================================================================
+% Supported styles:
+%   digits  - 逐位中文数字 (915 → 九一五)
+%   chinese - 传统中文数字 (915 → 九百十五)
+%   arabic  - 阿拉伯数字 (915)
+%   none    - 不显示页码
+
+\tl_new:N \l__luatexcn_page_number_style_tl
+\tl_new:N \l__luatexcn_page_number_font_size_tl
+
+\keys_define:nn { luatexcn / page }
+  {
+    page-number-style .tl_set:N = \l__luatexcn_page_number_style_tl,
+    page-number-style .initial:n = {none},
+
+    page-number-font-size .tl_set:N = \l__luatexcn_page_number_font_size_tl,
+    page-number-font-size .initial:n = {9pt},
+  }
+
+% DrawVerticalPageNumber: defined outside ExplSyntax to avoid catcode issues
+% in shipout hooks. Reads style from _G.page.number_style (synced by \pageSetup).
+\ExplSyntaxOff
+\newcommand{\DrawVerticalPageNumber}{%
+  \directlua{
+    local style = _G.page and _G.page.number_style or "none"
+    if style ~= "none" and style ~= "" then
+      local utils = require('util.luatex-cn-utils')
+      local pg = tex.count[0]
+      local s
+      if style == "digits" then
+        s = utils.to_chinese_digits(pg)
+      elseif style == "chinese" then
+        s = utils.to_chinese_numeral(pg)
+      elseif style == "arabic" then
+        s = tostring(pg)
+      else
+        return
+      end
+      local parts = {}
+      if style == "arabic" then
+        for i = 1, string.len(s) do
+          table.insert(parts, string.sub(s, i, i))
+        end
+      else
+        for p, c in utf8.codes(s) do
+          table.insert(parts, utf8.char(c))
+        end
+      end
+      tex.sprint(table.concat(parts, "\\\\\\noexpand\\relax "))
+    end
+  }%
+}
+\ExplSyntaxOn
 
 % ============================================================================
 % Page Number Commands

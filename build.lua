@@ -62,6 +62,9 @@ local translation_map = {
   ["石头记.tex"] = "shitouji.tex",
   ["石头记.pdf"] = "shitouji.pdf",
   ["首页展示"] = "homepage-showcase",
+  ["史记卷六·现代"] = "shiji-juan6-modern",
+  ["卷十六.tex"] = "juan16.tex",
+  ["卷十六.pdf"] = "juan16.pdf",
 }
 
 -- Check if string contains Chinese characters

@@ -217,9 +217,37 @@ local function mark_occupied(occupancy, p, c, r)
     occupancy[p][c][r] = true
 end
 
+--- Get cell height for a node in natural layout mode
+-- Returns font_size from style registry, or actual font size,
+-- or grid_height as fallback.
+-- Punctuation nodes (ATTR_PUNCT_TYPE > 0) get half height
+local function get_cell_height(node, grid_height)
+    local base
+    local fs = get_node_font_size(node)
+    if fs and fs > 0 then
+        base = fs
+    else
+        local fid = D.getfield(node, "font")
+        if fid then
+            local f = font.getfont(fid)
+            if f and f.size then base = f.size end
+        end
+    end
+    base = base or grid_height
+    -- Punctuation occupies half cell
+    local punct_type = D.get_attribute(node, constants.ATTR_PUNCT_TYPE)
+    if punct_type and punct_type > 0 then
+        return math.floor(base * 0.5)
+    end
+    return base
+end
+
 local function create_grid_context(params, line_limit, p_cols)
     -- Use helper for chapter_title with fallback to _G.metadata
     local initial_chapter = get_chapter_title(params)
+    local layout_mode = (params and params.layout_mode) or "grid"
+    local col_height_sp = (params and params.col_height_sp) or 0
+    local inter_cell_gap = (params and params.inter_cell_gap) or 0
     local ctx = {
         cur_page = 0,
         cur_col = 0,
@@ -233,7 +261,11 @@ local function create_grid_context(params, line_limit, p_cols)
         chapter_title = initial_chapter,
         page_chapter_titles = {}, -- To store chapter title for each page
         last_glyph_row = -1, -- Track last glyph row for detecting line changes
-        -- Can add other state if needed
+        -- Natural layout mode fields
+        layout_mode = layout_mode,
+        cur_y_sp = 0,
+        col_height_sp = col_height_sp,
+        inter_cell_gap = inter_cell_gap,
     }
     ctx.page_chapter_titles[0] = ctx.chapter_title -- Initialize page 0 with the initial chapter title
     return ctx
@@ -332,12 +364,17 @@ local function wrap_to_next_column(ctx, p_cols, interval, grid_height, indent, r
     ctx.cur_col = ctx.cur_col + 1
     ctx.cur_row = 0
     ctx.just_wrapped_column = true -- Flag for issue #54 fix
+    -- Natural mode: reset Y accumulator
+    if ctx.layout_mode == "natural" then
+        ctx.cur_y_sp = 0
+    end
     if ctx.cur_col >= p_cols then
         ctx.cur_col = 0
         ctx.cur_page = ctx.cur_page + 1
-        if reset_content then
-            ctx.page_has_content = false
-        end
+        -- Always reset page_has_content on page turn:
+        -- new page has no content yet regardless of reset_content flag.
+        -- (reset_content only controls same-page column wraps)
+        ctx.page_has_content = false
     end
     if reset_indent then
         ctx.cur_column_indent = 0
@@ -384,14 +421,26 @@ _internal.accumulate_spacing = accumulate_spacing
 -- @param grid_height (number) Grid height
 -- @param indent (number) Current indent
 -- @return (boolean) true if handled, false otherwise
-local function handle_penalty_breaks(p_val, ctx, flush_buffer_fn, p_cols, interval, grid_height, indent)
+local function handle_penalty_breaks(p_val, ctx, flush_buffer_fn, p_cols, interval, grid_height, indent, penalty_node)
     if p_val == constants.PENALTY_FORCE_COLUMN then
-        -- Forced column break (explicit \换列 command)
+        -- Forced column break (explicit \换行 command)
         flush_buffer_fn()
-        if ctx.cur_row > ctx.cur_column_indent then
-            wrap_to_next_column(ctx, p_cols, interval, grid_height, indent, false, true)
+        -- Check for post-break indent (e.g., footnote indentation)
+        local post_indent = penalty_node and D.get_attribute(penalty_node, constants.ATTR_COLUMN_BREAK_INDENT)
+        if post_indent and post_indent > 0 then
+            -- Footnote column break: wrap to new column only if current column
+            -- has actual content (not just indentation space)
+            if ctx.cur_row > ctx.cur_column_indent then
+                wrap_to_next_column(ctx, p_cols, interval, grid_height, indent, false, true)
+            end
+            ctx.cur_row = post_indent
+            ctx.cur_column_indent = 0
+        else
+            if ctx.cur_row > ctx.cur_column_indent then
+                wrap_to_next_column(ctx, p_cols, interval, grid_height, indent, false, true)
+            end
+            ctx.cur_column_indent = 0
         end
-        ctx.cur_column_indent = 0
         return true
     elseif p_val == constants.PENALTY_FORCE_PAGE then
         -- Forced page break (\newpage, \clearpage)
@@ -512,6 +561,38 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
             end
         end
 
+        -- Natural mode: recalculate positions with tight packing
+        -- Only stretch when remaining space < min_cell_height (nearly full column)
+        if ctx.layout_mode == "natural" and N > 0 and not distribute then
+            local total_cells = 0
+            local min_cell = math.huge
+            for _, e in ipairs(col_buffer) do
+                local ch = e.cell_height or grid_height
+                total_cells = total_cells + ch
+                if ch < min_cell then min_cell = ch end
+            end
+            local remaining = ctx.col_height_sp - total_cells
+
+            if N == 1 then
+                col_buffer[1].relative_row = 0
+            elseif remaining > 0 and remaining < min_cell and N > 1 then
+                -- Nearly full: distribute remaining space for bottom alignment
+                local gap = remaining / (N - 1)
+                local y = 0
+                for _, e in ipairs(col_buffer) do
+                    e.relative_row = y / grid_height
+                    y = y + (e.cell_height or grid_height) + gap
+                end
+            else
+                -- Normal: tight packing, no stretching
+                local y = 0
+                for _, e in ipairs(col_buffer) do
+                    e.relative_row = y / grid_height
+                    y = y + (e.cell_height or grid_height)
+                end
+            end
+        end
+
         for i, entry in ipairs(col_buffer) do
             local row = distribute_rows[i] or entry.relative_row
             local v_scale = (distribute and N > 1) and v_scale_all or 1.0
@@ -528,9 +609,9 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
                 is_block = entry.is_block,
                 width = entry.width,
                 height = entry.height,
-                v_scale = v_scale
+                v_scale = v_scale,
+                cell_height = entry.cell_height,
             }
-
             -- Only add optional style fields if they are set
             if font_color then
                 map_entry.font_color = font_color
@@ -550,7 +631,10 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
 
             layout_map[entry.node] = map_entry
         end
-        col_buffer = {}
+        -- Clear buffer in-place to preserve reference for external hooks (kinsoku)
+        for i = #col_buffer, 1, -1 do
+            col_buffer[i] = nil
+        end
     end
 
     local t = d_head
@@ -863,44 +947,82 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
                 -- Clear wrapped flag - we've processed a regular character
                 ctx.just_wrapped_column = false
 
-                table.insert(col_buffer, {
-                    node = t,
-                    page = ctx.cur_page,
-                    col = ctx.cur_col,
-                    relative_row = ctx.cur_row,
-                    height = (D.getfield(t, "height") or 0) + (D.getfield(t, "depth") or 0)
-                })
-                ctx.cur_row = ctx.cur_row + 1
-                ctx.page_has_content = true
-                move_to_next_valid_position(ctx, interval, grid_height, indent)
+                if ctx.layout_mode == "natural" then
+                    local cell_h = get_cell_height(t, grid_height)
+                    -- Column overflow check
+                    if ctx.cur_y_sp + cell_h > ctx.col_height_sp and ctx.cur_y_sp > 0 then
+                        flush_buffer()
+                        wrap_to_next_column(ctx, p_cols, interval, grid_height, indent, false, false)
+                    end
+                    table.insert(col_buffer, {
+                        node = t,
+                        page = ctx.cur_page,
+                        col = ctx.cur_col,
+                        relative_row = ctx.cur_y_sp / grid_height,
+                        height = (D.getfield(t, "height") or 0) + (D.getfield(t, "depth") or 0),
+                        cell_height = cell_h,
+                    })
+                    ctx.cur_y_sp = ctx.cur_y_sp + cell_h + ctx.inter_cell_gap
+                    ctx.cur_row = math.floor(ctx.cur_y_sp / grid_height + 0.5)
+                    ctx.page_has_content = true
+                else
+                    table.insert(col_buffer, {
+                        node = t,
+                        page = ctx.cur_page,
+                        col = ctx.cur_col,
+                        relative_row = ctx.cur_row,
+                        height = (D.getfield(t, "height") or 0) + (D.getfield(t, "depth") or 0)
+                    })
+                    ctx.cur_row = ctx.cur_row + 1
+                    ctx.page_has_content = true
+
+                    -- Kinsoku (line-breaking rules) hook:
+                    -- When column is about to wrap, check if we need to adjust
+                    -- to prevent forbidden characters at column start/end
+                    if not distribute and params and params.hooks
+                        and params.hooks.check_kinsoku then
+                        params.hooks.check_kinsoku(
+                            t, ctx, effective_limit, col_buffer,
+                            flush_buffer, wrap_to_next_column,
+                            p_cols, interval, grid_height, indent)
+                    end
+
+                    move_to_next_valid_position(ctx, interval, grid_height, indent)
+                end
             end
         elseif id == constants.GLUE or id == constants.KERN then
             -- Accumulate consecutive spacing nodes
             local net_width, lookahead = accumulate_spacing(t)
 
-            local threshold = (grid_height or 655360) * 0.25
-            if net_width > threshold then
-                local num_cells = math.floor(net_width / (grid_height or 655360) + 0.5)
-                if num_cells < 1 then num_cells = 1 end
+            if ctx.layout_mode == "natural" then
+                -- Natural mode: accumulate sp directly, no quantization
+                if net_width > 0 and ctx.cur_y_sp > 0 then
+                    ctx.cur_y_sp = ctx.cur_y_sp + net_width
+                    if ctx.cur_y_sp > ctx.col_height_sp then
+                        flush_buffer()
+                        wrap_to_next_column(ctx, p_cols, interval, grid_height, indent, false, false)
+                    end
+                end
+            else
+                local threshold = (grid_height or 655360) * 0.25
+                if net_width > threshold then
+                    local num_cells = math.floor(net_width / (grid_height or 655360) + 0.5)
+                    if num_cells < 1 then num_cells = 1 end
 
-                if ctx.cur_row > ctx.cur_column_indent then
-                    dbg.log(string.format("  SPACING: val=%.2fpt, grid_h=%.2fpt, num_cells=%d",
-                        net_width / 65536, (grid_height or 0) / 65536, num_cells))
+                    if ctx.cur_row > ctx.cur_column_indent then
+                        dbg.log(string.format("  SPACING: val=%.2fpt, grid_h=%.2fpt, num_cells=%d",
+                            net_width / 65536, (grid_height or 0) / 65536, num_cells))
 
-                    for i = 1, num_cells do
-                        ctx.cur_row = ctx.cur_row + 1
-                        if ctx.cur_row >= effective_limit then
-                            flush_buffer()
-                            wrap_to_next_column(ctx, p_cols, interval, grid_height, indent, false, false)
-                        else
-                            move_to_next_valid_position(ctx, interval, grid_height, indent)
+                        for i = 1, num_cells do
+                            ctx.cur_row = ctx.cur_row + 1
+                            if ctx.cur_row >= effective_limit then
+                                flush_buffer()
+                                wrap_to_next_column(ctx, p_cols, interval, grid_height, indent, false, false)
+                            else
+                                move_to_next_valid_position(ctx, interval, grid_height, indent)
+                            end
                         end
                     end
-                else
-                    -- if debug.is_enabled("layout") then
-                    --     debug.log("layout", string.format("  SPACING: val=%.2fpt IGNORED (at top or within indent)",
-                    --         net_width / 65536))
-                    -- end
                 end
             end
 
@@ -909,7 +1031,6 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
             goto start_of_loop
         elseif id == constants.PENALTY then
             local p_val = D.getfield(t, "penalty")
-
             -- Smart column break: Check next node type before deciding
             if p_val == constants.PENALTY_SMART_BREAK then
                 local next_node = D.getnext(t)
@@ -933,7 +1054,7 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
                     -- If next is textflow, don't break - let textflow continue naturally
                 end
             else
-                handle_penalty_breaks(p_val, ctx, flush_buffer, p_cols, interval, grid_height, indent)
+                handle_penalty_breaks(p_val, ctx, flush_buffer, p_cols, interval, grid_height, indent, t)
             end
         end
 

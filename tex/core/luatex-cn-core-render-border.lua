@@ -35,6 +35,8 @@ local drawing = package.loaded['util.luatex-cn-drawing'] or
     require('util.luatex-cn-drawing')
 local page_mod = package.loaded['core.luatex-cn-core-page'] or
     require('core.luatex-cn-core-page')
+local text_position = package.loaded['core.luatex-cn-render-position'] or
+    require('core.luatex-cn-render-position')
 
 -- ============================================================================
 -- Column Border Drawing
@@ -70,17 +72,37 @@ local function draw_column_borders(p_head, params)
     local border_rgb_str = params.border_rgb_str
     local banxin_cols = params.banxin_cols or {} -- Set of column indices to skip
     local col_min_rows = params.col_min_rows or {} -- Per-column min row for taitou raised border
+    local banxin_width = params.banxin_width or 0
+    local interval = params.interval or 0
 
     local b_thickness_bp = border_thickness * sp_to_bp
     local half_thickness = math.floor(border_thickness / 2)
+
+    -- Variable-width column borders: when col_widths is set,
+    -- each column has its own width in sp.
+    local col_widths = _G.content and _G.content.col_widths
+    if col_widths and #col_widths > 0 then
+        for i = 1, #col_widths do
+            local logical_col = i - 1
+            local rtl_col = total_cols - 1 - logical_col
+            local tx_bp = (text_position.get_column_x_var(rtl_col, col_widths, total_cols) + half_thickness + shift_x) * sp_to_bp
+            local ty_bp = -(half_thickness + outer_shift) * sp_to_bp
+            local tw_bp = col_widths[i] * sp_to_bp
+            local th_bp = -(line_limit * grid_height + b_padding_top + b_padding_bottom) * sp_to_bp
+
+            local literal = utils.create_border_literal(b_thickness_bp, border_rgb_str, tx_bp, ty_bp, tw_bp, th_bp)
+            p_head = utils.insert_pdf_literal(p_head, literal)
+        end
+        return p_head
+    end
 
     for col = 0, total_cols - 1 do
         -- Skip banxin columns (they are drawn separately by banxin module)
         if not banxin_cols[col] then
             local rtl_col = total_cols - 1 - col
-            local tx_bp = (rtl_col * grid_width + half_thickness + shift_x) * sp_to_bp
+            local tx_bp = (text_position.get_column_x(rtl_col, grid_width, banxin_width, interval) + half_thickness + shift_x) * sp_to_bp
             local ty_bp = -(half_thickness + outer_shift) * sp_to_bp
-            local tw_bp = grid_width * sp_to_bp
+            local tw_bp = text_position.get_column_width(col, grid_width, banxin_width, interval) * sp_to_bp
             local th_bp = -(line_limit * grid_height + b_padding_top + b_padding_bottom) * sp_to_bp
 
             -- Taitou raised border: extend column upward for negative row columns
@@ -174,10 +196,11 @@ local function draw_outer_border(p_head, params)
         end
     end
 
-    -- Column boundary X positions:
-    -- cb[b] = (b * grid_width + half_thickness + shift_x) * sp_to_bp
+    -- Column boundary X positions (supports mixed column widths)
+    local banxin_width = params.banxin_width or 0
+    local interval = params.interval or 0
     local function cb(b)
-        return (b * grid_width + half_thickness + shift_x) * sp_to_bp
+        return (text_position.get_column_x(b, grid_width, banxin_width, interval) + half_thickness + shift_x) * sp_to_bp
     end
 
     -- Construct path: counter-clockwise from bottom-left
@@ -283,17 +306,26 @@ local function render_borders(p_head, params)
     local b_padding_bottom = params.b_padding_bottom
     local is_textbox = params.is_textbox
 
-    -- Calculate content dimensions
-    local content_width, content_height
-    if is_textbox then
-        content_width = (actual_cols > 0 and actual_cols or 1) * grid_width
-        content_height = (actual_rows > 0 and actual_rows or 1) * grid_height
-    else
-        content_width = p_total_cols * grid_width
-        content_height = line_limit * grid_height + b_padding_top + b_padding_bottom
-    end
-    local inner_width = content_width + border_thickness
-    local inner_height = content_height + border_thickness
+    local banxin_width = params.banxin_width or 0
+    local interval = params.interval or 0
+
+    -- Calculate content dimensions (shared logic in content module)
+    local content_mod = package.loaded['core.luatex-cn-core-content'] or
+        require('core.luatex-cn-core-content')
+    local _, _, inner_width, inner_height = content_mod.calculate_content_dimensions({
+        is_textbox = is_textbox,
+        actual_cols = actual_cols,
+        actual_rows = actual_rows,
+        grid_width = grid_width,
+        grid_height = grid_height,
+        line_limit = line_limit,
+        b_padding_top = b_padding_top,
+        b_padding_bottom = b_padding_bottom,
+        p_total_cols = p_total_cols,
+        border_thickness = border_thickness,
+        banxin_width = banxin_width,
+        interval = interval,
+    })
 
     -- 1. Draw column borders
     if params.draw_border and p_total_cols > 0 then
@@ -301,6 +333,8 @@ local function render_borders(p_head, params)
             total_cols = p_total_cols,
             grid_width = grid_width,
             grid_height = grid_height,
+            banxin_width = banxin_width,
+            interval = interval,
             line_limit = line_limit,
             border_thickness = border_thickness,
             b_padding_top = b_padding_top,
@@ -326,6 +360,8 @@ local function render_borders(p_head, params)
             total_cols = p_total_cols,
             grid_width = grid_width,
             grid_height = grid_height,
+            banxin_width = banxin_width,
+            interval = interval,
             half_thickness = math.floor(border_thickness / 2),
             shift_x = params.shift_x,
         })

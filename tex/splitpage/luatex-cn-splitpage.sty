@@ -16,7 +16,7 @@
 % Automatic page splitting for traditional Chinese book formats (筒子页)
 %
 \RequirePackage{expl3}
-\ProvidesExplPackage {splitpage/luatex-cn-splitpage} {2026/01/31} {0.2.2} {Page splitting for Chinese traditional books}
+\ProvidesExplPackage {splitpage/luatex-cn-splitpage} {2026/02/01} {0.2.3} {Page splitting for Chinese traditional books}
 
 % Check if LuaTeX is being used
 \sys_if_engine_luatex:TF
@@ -38,6 +38,10 @@
 % Key-value configuration
 \keys_define:nn { luatexcn / splitpage }
   {
+    % Whether split page is enabled
+    enabled .bool_set:N = \l__luatexcn_sp_enabled_bool,
+    enabled .initial:n = true,
+
     % Source page dimensions (the large paper before splitting)
     source-width .tl_set:N = \l__luatexcn_sp_source_width_tl,
     source-width .initial:n = {296mm},
@@ -48,8 +52,6 @@
     % Output order: right-first (default) or left-first
     right-first .bool_set:N = \l__luatexcn_sp_right_first_bool,
     right-first .initial:n = true,
-
-
   }
 
 % Setup command
@@ -58,6 +60,7 @@
     \keys_set:nn { luatexcn / splitpage } { #1 }
     \lua_now:e {
       splitpage.configure({
+        enabled~=~\bool_if:NTF~\l__luatexcn_sp_enabled_bool~{true}~{false},
         source_width~=~"\luaescapestring{\l__luatexcn_sp_source_width_tl}",
         source_height~=~"\luaescapestring{\l__luatexcn_sp_source_height_tl}",
         right_first~=~\bool_if:NTF~\l__luatexcn_sp_right_first_bool~{true}~{false},
@@ -74,6 +77,7 @@
       }
     \lua_now:e {
       splitpage.configure({
+        enabled~=~\bool_if:NTF~\l__luatexcn_sp_enabled_bool~{true}~{false},
         source_width~=~"\luaescapestring{\l__luatexcn_sp_source_width_tl}",
         source_height~=~"\luaescapestring{\l__luatexcn_sp_source_height_tl}",
         right_first~=~\bool_if:NTF~\l__luatexcn_sp_right_first_bool~{true}~{false},

@@ -19,7 +19,7 @@
 %
 \RequirePackage{expl3}
 \RequirePackage{xparse}
-\ProvidesExplPackage {guji/luatex-cn-guji-pizhu} {2026/01/31} {0.2.2} {PiZhu Floating Annotation Support}
+\ProvidesExplPackage {guji/luatex-cn-guji-pizhu} {2026/02/01} {0.2.3} {PiZhu Floating Annotation Support}
 
 % PiZhu (批注) - Floating annotation box
 \tl_new:N \l__luatexcn_pizhu_font_size_tl
@@ -54,6 +54,7 @@
   \group_begin:
     \keys_set:nn { luatexcn / pizhu } { #1 }
     % Build keyval list with expansion so token list values are expanded
+    % Note: border=false ensures pizhu never has border (even if parent context has border)
     \tl_set:Nx \l_tmpa_tl {
       floating=true,
       floating-paper-width=\l__luatexcn_page_paper_width_tl,
@@ -63,7 +64,8 @@
       font-color=\exp_not:V \l__luatexcn_pizhu_color_tl,
       font-size=\l__luatexcn_pizhu_font_size_tl,
       grid-width=\l__luatexcn_pizhu_grid_width_tl,
-      grid-height=\l__luatexcn_pizhu_grid_height_tl
+      grid-height=\l__luatexcn_pizhu_grid_height_tl,
+      border=false
     }
     % Use \use:x to properly expand the keyval list for xparse optional argument
     \use:x { \exp_not:N \TextBox [\l_tmpa_tl]{\exp_not:n{#2}} }

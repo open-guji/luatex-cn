@@ -141,6 +141,34 @@ function style_registry.get_first_indent(id)
     return style_registry.get_attr(id, "first_indent")
 end
 
+--- Get border setting from style
+-- @param id (number) Style ID
+-- @return (boolean|nil) Border setting, or nil if not found
+function style_registry.get_border(id)
+    return style_registry.get_attr(id, "border")
+end
+
+--- Get border width from style
+-- @param id (number) Style ID
+-- @return (string|nil) Border width (e.g., "0.4pt"), or nil if not found
+function style_registry.get_border_width(id)
+    return style_registry.get_attr(id, "border_width")
+end
+
+--- Get border color from style
+-- @param id (number) Style ID
+-- @return (string|nil) Border color RGB string, or nil if not found
+function style_registry.get_border_color(id)
+    return style_registry.get_attr(id, "border_color")
+end
+
+--- Get outer border setting from style
+-- @param id (number) Style ID
+-- @return (boolean|nil) Outer border setting, or nil if not found
+function style_registry.get_outer_border(id)
+    return style_registry.get_attr(id, "outer_border")
+end
+
 -- ============================================================================
 -- Style Stack Functions (Phase 3: Style Inheritance)
 -- ============================================================================

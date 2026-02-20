@@ -18,7 +18,7 @@
 
 \RequirePackage{expl3}
 \RequirePackage{l3keys2e}
-\ProvidesExplClass {ltc-book} {2026/01/31} {0.2.2} {Chinese Vertical Book Class}
+\ProvidesExplClass {ltc-book} {2026/02/01} {0.2.3} {Chinese Vertical Book Class}
 
 \tl_new:N \l_luatexcn_book_initial_template_tl
 
@@ -121,10 +121,8 @@
     \dim_zero:N \parskip
     \dim_zero:N \parindent
 
-    \tl_if_empty:NT \l__luatexcn_content_height_tl
-      {
-        \tl_set:Nx \l__luatexcn_content_height_tl { \dim_eval:n { \l__luatexcn_page_paper_height_tl - \l__luatexcn_page_margin_top_tl - \l__luatexcn_page_margin_bottom_tl } }
-      }
+    % Calculate height if not set
+    \__luatexcn_content_calc_height:
 
 
     \luatexcn_apply_geometry:

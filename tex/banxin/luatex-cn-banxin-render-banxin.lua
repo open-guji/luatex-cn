@@ -161,18 +161,6 @@ local function create_literal_node(literal_str)
     return D.todirect(n)
 end
 
---- 批量插入 PDF literal 节点到链表头部
--- @param p_head (node) 当前链表头
--- @param literals (table) PDF literal 字符串数组
--- @return (node) 新的链表头
-local function insert_literals(p_head, literals)
-    for _, lit in ipairs(literals) do
-        local lit_node = create_literal_node(lit)
-        p_head = D.insert_before(p_head, p_head, lit_node)
-    end
-    return p_head
-end
-
 -- ============================================================================
 -- Draw Banxin Internals (版心内部绘制)
 -- ============================================================================
@@ -294,9 +282,12 @@ end
 -- Text Rendering Functions (文字渲染)
 -- ============================================================================
 
+-- Forward declaration
+local create_vertical_text
+
 --- 创建竖向排列的文字链
 -- 将字符按从上到下的顺序排列在单列中。
-local function create_vertical_text(text, params)
+create_vertical_text = function(text, params)
     if not text or text == "" then
         return nil
     end
@@ -413,79 +404,29 @@ local function create_vertical_text(text, params)
     return head
 end
 
---- 计算书名文字的渲染参数
--- @param params (table) 输入参数
--- @param upper_height (number) 上区域高度 (sp)
--- @return (table|nil) 渲染参数，如果书名为空则返回 nil
-local function calculate_book_name_params(params, upper_height)
-    local book_name = params.book_name or ""
-    if book_name == "" then return nil end
-
-    -- Use resolve_dimen for safety
-    local f_size = constants.resolve_dimen(params.font_size, 655360)
-    local b_padding_top = constants.resolve_dimen(params.b_padding_top, f_size)
-    local b_padding_bottom = constants.resolve_dimen(params.b_padding_bottom, f_size)
-    local effective_b = params.draw_border and constants.resolve_dimen(params.border_thickness, f_size) or 0
-    local adj_height = upper_height - effective_b - b_padding_top - b_padding_bottom
-    local num_chars = count_utf8_chars(book_name)
-
-    local grid_h = constants.resolve_dimen(constants.to_dimen(params.book_name_grid_height), f_size)
-    local total_text_height
-    if grid_h and grid_h > 0 then
-        total_text_height = grid_h * num_chars
-    else
-        if num_chars * f_size > adj_height then
-            f_size = adj_height / num_chars
-        end
-        total_text_height = num_chars * f_size
+--- Generic function to render a text section
+-- Consolidates the common pattern used by book_name, chapter, page_number, publisher
+-- @param p_head (node) Current list head
+-- @param layout (table|nil) Layout params with: text, x, y_top, width, height, v_align, h_align, font_size
+-- @return (node) Updated list head
+local function render_text_section(p_head, layout)
+    if not layout or not layout.text or layout.text == "" then
+        return p_head
     end
-
-    local block_y_top = params.y - effective_b - b_padding_top
-    local y_start
-    if params.book_name_align == "top" then
-        y_start = block_y_top
-    else
-        y_start = block_y_top - (adj_height - total_text_height) / 2
-    end
-
-
-    return {
-        text = book_name,
-        x = params.x,
-        y_top = y_start,
-        width = params.width,
-        height = total_text_height,
-        num_cells = num_chars,
-        v_align = "center",
-        h_align = "center",
-        font_size = f_size,
-    }
-end
-
---- 渲染书名文字
--- @param p_head (node) 当前链表头
--- @param params (table) 输入参数
--- @param upper_height (number) 上区域高度 (sp)
--- @return (node) 新的链表头
-local function render_book_name(p_head, params, upper_height)
-    local text_params = calculate_book_name_params(params, upper_height)
-    if not text_params then return p_head end
-
-    local glyph_chain = create_vertical_text(text_params.text, {
-        x = text_params.x,
-        y_top = text_params.y_top,
-        width = text_params.width,
-        height = text_params.height,
-        num_cells = text_params.num_cells,
-        v_align = text_params.v_align,
-        h_align = text_params.h_align,
-        font_size = text_params.font_size,
+    local chain = create_vertical_text(layout.text, {
+        x = layout.x,
+        y_top = layout.y_top,
+        width = layout.width,
+        height = layout.height,
+        num_cells = layout.num_cells,
+        v_align = layout.v_align or "center",
+        h_align = layout.h_align or "center",
+        font_size = layout.font_size,
+        font_scale = layout.font_scale,
     })
-
-    if glyph_chain then
-        p_head = prepend_chain(p_head, glyph_chain)
+    if chain then
+        p_head = prepend_chain(p_head, chain)
     end
-
     return p_head
 end
 
@@ -501,265 +442,6 @@ local function parse_chapter_title(chapter_title)
         table.insert(parts, s)
     end
     return parts
-end
-
---- 计算章节标题的布局参数
--- @param params (table) 输入参数
--- @param upper_height (number) 上区域高度 (sp)
--- @param middle_height (number) 中区域高度 (sp)
--- @param yuwei_dims (table) 鱼尾尺寸
--- @return (table|nil) 布局参数，如果标题为空则返回 nil
-local function calculate_chapter_title_layout(params, upper_height, middle_height, yuwei_dims)
-    local chapter_title = params.chapter_title or ""
-    if chapter_title == "" then return nil end
-
-    local parts = parse_chapter_title(chapter_title)
-    if #parts == 0 then return nil end
-
-    local chapter_top_margin = params.chapter_title_top_margin or (65536 * 40)
-    local upper_yuwei_total = params.upper_yuwei ~= false and calculate_yuwei_total_height(yuwei_dims) or 0
-    local lower_yuwei_total = params.lower_yuwei ~= false and calculate_yuwei_total_height(yuwei_dims) or 0
-
-    local middle_y_top = params.y - upper_height
-    local base_f_size = constants.resolve_dimen(params.font_size, 655360)
-    local title_top_margin = constants.resolve_dimen(params.chapter_title_top_margin, base_f_size) or 0
-
-
-    local chapter_y_top = middle_y_top - upper_yuwei_total - title_top_margin
-    local available_height = middle_height - upper_yuwei_total - lower_yuwei_total - title_top_margin
-    if available_height <= 0 then
-        available_height = middle_height * 0.3 -- Fallback
-    end
-
-    local n_cols = math.max(#parts, params.chapter_title_cols or 1)
-
-
-    return {
-        parts = parts,
-        n_cols = n_cols,
-        chapter_title = chapter_title,
-        y_top = chapter_y_top, -- This is the top of the available area for the title
-        available_height = available_height,
-    }
-end
-
---- 渲染章节标题
--- @param p_head (node) 当前链表头
--- @param params (table) 输入参数
--- @param upper_height (number) 上区域高度 (sp)
--- @param middle_height (number) 中区域高度 (sp)
--- @param yuwei_dims (table) 鱼尾尺寸
--- @return (node) 新的链表头
-local function render_chapter_title(p_head, params, upper_height, middle_height, yuwei_dims)
-    local layout = calculate_chapter_title_layout(params, upper_height, middle_height, yuwei_dims)
-    if not layout then return p_head end
-
-    local parts = layout.parts
-    local n_cols = math.max(#parts, params.chapter_title_cols or 1)
-    local col_width = params.width / n_cols
-
-    -- Use resolve_dimen for safety
-    local base_f_size = constants.resolve_dimen(params.font_size, 655360)
-    local title_font_size = constants.resolve_dimen(params.chapter_title_font_size, base_f_size)
-    local font_scale = nil
-    if not title_font_size then
-        font_scale = 0.5 -- Default scale for banxin titles if not specified
-        title_font_size = base_f_size * font_scale
-    end
-
-    local desired_grid_h = constants.resolve_dimen(params.chapter_title_grid_height, title_font_size)
-    if not desired_grid_h or desired_grid_h <= 0 then
-        -- Default spacing: slightly more than font size to avoid overlap
-        desired_grid_h = title_font_size * 1.1
-    end
-
-    for i, sub_text in ipairs(parts) do
-        local c = i - 1
-        local sub_x = params.x + (n_cols - 1 - c) * col_width
-
-        local col_h_align = "center"
-        if n_cols > 1 then
-            if i == 1 then
-                col_h_align = "right"
-            elseif i == #parts then
-                col_h_align = "left"
-            end
-        end
-
-        local num_chars = count_utf8_chars(sub_text)
-        local total_h = num_chars * desired_grid_h
-
-        -- Top-align (respecting layout.y_top which already accounts for margin)
-        local new_y_top = layout.y_top
-
-        local chapter_chain = create_vertical_text(sub_text, {
-            x = sub_x,
-            y_top = new_y_top,
-            width = col_width,
-            height = total_h,
-            v_align = "center",
-            h_align = col_h_align,
-            font_size = title_font_size,
-            font_scale = font_scale,
-        })
-
-        if chapter_chain then
-            p_head = prepend_chain(p_head, chapter_chain)
-        end
-    end
-
-    return p_head
-end
-
---- 计算页码的布局参数
--- @param params (table) 输入参数
--- @param upper_height (number) 上区域高度 (sp)
--- @param middle_height (number) 中区域高度 (sp)
--- @param yuwei_dims (table) 鱼尾尺寸
--- @return (table|nil) 布局参数，如果页码为空则返回 nil
-local function calculate_page_number_layout(params, upper_height, middle_height, yuwei_dims)
-    if not params.page_number then return nil end
-
-    local page_str = utils.to_chinese_numeral(params.page_number)
-    if page_str == "" then return nil end
-
-    local upper_yuwei_total = params.upper_yuwei and calculate_yuwei_total_height(yuwei_dims) or 0
-    local lower_yuwei_total = params.lower_yuwei and calculate_yuwei_total_height(yuwei_dims) or 0
-
-    local middle_y_bottom = params.y - upper_height - middle_height
-    local page_right_margin = 65536 * 2
-    local page_bottom_margin = params.b_padding_bottom or (65536 * 15)
-
-    local num_chars = count_utf8_chars(page_str)
-
-    local base_f_size = constants.resolve_dimen(params.font_size, 655360)
-    local f_size = constants.resolve_dimen(params.page_number_font_size, base_f_size) or (65536 * 10)
-    local grid_h = constants.resolve_dimen(params.page_number_grid_height, f_size)
-    if not grid_h or grid_h <= 0 then
-        grid_h = f_size * 1.2
-    end
-    local container_height = grid_h * num_chars
-
-
-    local p_v_align = "bottom"
-    local p_h_align = "right"
-    local page_y_top = middle_y_bottom + lower_yuwei_total + page_bottom_margin + container_height
-
-    if params.page_number_align == "center" then
-        p_v_align = "center"
-        p_h_align = "center"
-        local available_middle_h = middle_height - upper_yuwei_total - lower_yuwei_total
-        local center_y = middle_y_bottom + lower_yuwei_total + available_middle_h / 2
-        page_y_top = center_y + container_height / 2
-    elseif params.page_number_align == "bottom-center" then
-        p_v_align = "bottom"
-        p_h_align = "center"
-    end
-
-    return {
-        text = page_str,
-        x = params.x,
-        y_top = page_y_top,
-        width = params.width - (params.page_number_align == "center" and 0 or page_right_margin),
-        height = container_height,
-        v_align = p_v_align,
-        h_align = p_h_align,
-        font_size = f_size,
-    }
-end
-
---- 渲染页码
--- @param p_head (node) 当前链表头
--- @param params (table) 输入参数
--- @param upper_height (number) 上区域高度 (sp)
--- @param middle_height (number) 中区域高度 (sp)
--- @param yuwei_dims (table) 鱼尾尺寸
--- @return (node) 新的链表头
-local function render_page_number(p_head, params, upper_height, middle_height, yuwei_dims)
-    local layout = calculate_page_number_layout(params, upper_height, middle_height, yuwei_dims)
-    if not layout then return p_head end
-
-    local page_chain = create_vertical_text(layout.text, {
-        x = layout.x,
-        y_top = layout.y_top,
-        width = layout.width,
-        height = layout.height,
-        v_align = layout.v_align,
-        h_align = layout.h_align,
-        font_size = layout.font_size,
-    })
-
-    if page_chain then
-        p_head = prepend_chain(p_head, page_chain)
-    end
-
-    return p_head
-end
-
---- 计算出版社的布局参数
--- @param params (table) 输入参数
--- @param height (number) 版心总高度
--- @return (table|nil) 布局参数
-local function calculate_publisher_layout(params, height)
-    local publisher = params.publisher or ""
-    if publisher == "" then return nil end
-
-    -- Use resolve_dimen for safety
-    local base_f_size = constants.resolve_dimen(params.font_size, 655360) or 655360
-    local f_size = constants.resolve_dimen(params.publisher_font_size, base_f_size)
-    if not f_size or f_size <= 0 then
-        f_size = 65536 * 10 -- Default 10pt
-    end
-
-    local grid_h = constants.resolve_dimen(params.publisher_grid_height, f_size)
-    if not grid_h or grid_h <= 0 then
-        grid_h = math.floor(f_size * 1.2 + 0.5) -- Default 1.2 line height
-    end
-
-    local num_chars = count_utf8_chars(publisher)
-    local container_height = grid_h * num_chars
-    local bottom_margin = constants.resolve_dimen(params.publisher_bottom_margin, f_size) or (65536 * 5)
-
-    local banxin_bottom_y = params.y - height
-    local y_top = banxin_bottom_y + bottom_margin + container_height
-
-
-    return {
-        text = publisher,
-        x = params.x,
-        y_top = y_top,
-        width = params.width,
-        height = container_height,
-        v_align = "bottom",
-        h_align = params.publisher_align == "center" and "center" or "right",
-        font_size = f_size,
-    }
-end
-
---- 渲染出版社文字
--- @param p_head (node) 当前链表头
--- @param params (table) 输入参数
--- @param height (number) 版心总高度
--- @return (node) 新的链表头
-local function render_publisher(p_head, params, height)
-    local layout = calculate_publisher_layout(params, height)
-    if not layout then return p_head end
-
-    local pub_chain = create_vertical_text(layout.text, {
-        x = layout.x,
-        y_top = layout.y_top,
-        width = layout.width,
-        height = layout.height,
-        v_align = layout.v_align,
-        h_align = layout.h_align,
-        font_size = layout.font_size,
-    })
-
-    if pub_chain then
-        p_head = prepend_chain(p_head, pub_chain)
-    end
-
-    return p_head
 end
 
 -- ============================================================================
@@ -782,64 +464,161 @@ local function render_debug_rects(p_head, x, y, width, height)
 end
 
 -- ============================================================================
--- Main Entry Point (主入口函数)
+-- Layout-Based Rendering Functions (布局驱动渲染)
 -- ============================================================================
 
---- 绘制完整的版心列，包括边框、分隔线、鱼尾和文字
--- @param p_head (node) 节点列表头部
--- @param params (table) 参数表
--- @return (node) 更新后的头部
-local function draw_banxin_column(p_head, params)
-    local x = params.x
-    local y = params.y
-    local width = params.width
-    local height = params.height
-    local border_thickness = params.border_thickness
-    local color_str = params.color_str or "0 0 0"
+--- Render chapter title from layout data with runtime content
+-- @param p_head (node) Node list head
+-- @param element (table) Chapter title layout element
+-- @param chapter_title (string) Runtime chapter title content
+-- @return (node) Updated node list head
+local function render_chapter_title_from_layout(p_head, element, chapter_title)
+    if not chapter_title or chapter_title == "" then return p_head end
 
+    local parts = parse_chapter_title(chapter_title)
+    if #parts == 0 then return p_head end
+
+    local n_cols = math.max(#parts, element.n_cols or 1)
+    local col_width = element.width / n_cols
+
+    for i, sub_text in ipairs(parts) do
+        local c = i - 1
+        local sub_x = element.x + (n_cols - 1 - c) * col_width
+
+        local col_h_align = "center"
+        if n_cols > 1 then
+            if i == 1 then
+                col_h_align = "right"
+            elseif i == #parts then
+                col_h_align = "left"
+            end
+        end
+
+        local num_chars = count_utf8_chars(sub_text)
+        local total_h = num_chars * element.grid_height
+
+        p_head = render_text_section(p_head, {
+            text = sub_text,
+            x = sub_x,
+            y_top = element.y_top,
+            width = col_width,
+            height = total_h,
+            v_align = "center",
+            h_align = col_h_align,
+            font_size = element.font_size,
+            font_scale = element.font_scale,
+        })
+    end
+
+    return p_head
+end
+
+--- Render page number from layout data with runtime content
+-- @param p_head (node) Node list head
+-- @param element (table) Page number layout element
+-- @param page_number (number) Runtime page number
+-- @return (node) Updated node list head
+local function render_page_number_from_layout(p_head, element, page_number)
+    if not page_number then return p_head end
+
+    local page_str = utils.to_chinese_numeral(page_number)
+    if page_str == "" then return p_head end
+
+    local num_chars = count_utf8_chars(page_str)
+    local container_height = element.grid_height * num_chars
+
+    -- Recalculate y_top based on actual character count
+    local page_y_top
+    if element.v_align == "center" then
+        local available_middle_h = element.middle_height - element.upper_yuwei_total - element.lower_yuwei_total
+        local center_y = element.middle_y_bottom + element.lower_yuwei_total + available_middle_h / 2
+        page_y_top = center_y + container_height / 2
+    else
+        page_y_top = element.middle_y_bottom + element.lower_yuwei_total + element.page_bottom_margin + container_height
+    end
+
+    p_head = render_text_section(p_head, {
+        text = page_str,
+        x = element.x,
+        y_top = page_y_top,
+        width = element.width,
+        height = container_height,
+        v_align = element.v_align,
+        h_align = element.h_align,
+        font_size = element.font_size,
+    })
+
+    return p_head
+end
+
+--- Draw banxin column from pre-calculated layout
+-- This function uses layout data calculated in the layout stage
+-- and resolves runtime content (page number, chapter title) at render time.
+-- @param p_head (node) Node list head
+-- @param layout (table) Pre-calculated layout from banxin-layout module
+-- @param runtime (table) Runtime content { chapter_title, page_number }
+-- @return (node) Updated node list head
+local function draw_from_layout(p_head, layout, runtime)
+    local col = layout.column
+    local decorations = layout.decorations
+    local regions = layout.regions
 
     -- 1. Draw border
-    if params.draw_border then
-        local border_literal = create_border_literal(x, y, width, height, border_thickness, color_str)
+    if col.draw_border then
+        local border_literal = create_border_literal(
+            col.x, col.y, col.width, col.height,
+            col.border_thickness, col.color_str
+        )
         p_head = D.insert_before(p_head, p_head, create_literal_node(border_literal))
     end
 
-    -- 2. Draw banxin dividers and yuwei
-    local banxin_params = {
-        x = x,
-        y = y,
-        width = width,
-        total_height = height,
-        upper_ratio = params.upper_ratio or 0.28,
-        middle_ratio = params.middle_ratio or 0.56,
-        color_str = color_str,
-        border_thickness = border_thickness,
-        lower_yuwei = params.lower_yuwei,
-        upper_yuwei = params.upper_yuwei,
-        banxin_divider = params.banxin_divider,
-    }
-    local banxin_result = draw_banxin(banxin_params)
-    p_head = insert_literals(p_head, banxin_result.literals)
+    -- 2. Draw dividers
+    if decorations.draw_dividers then
+        local divider_literals = draw_dividers(
+            col.x, col.y, col.width,
+            regions.upper.height, regions.middle.height,
+            col.border_thickness, col.color_str
+        )
+        for _, lit in ipairs(divider_literals) do
+            p_head = D.insert_before(p_head, p_head, create_literal_node(lit))
+        end
+    end
 
-    -- Calculate shared values for text rendering
-    local upper_height = banxin_result.upper_height
-    local middle_height = height * (params.middle_ratio or 0.56)
-    local yuwei_dims = calculate_yuwei_dimensions(width)
+    -- 3. Draw fish tails (yuwei)
+    local div1_y = col.y - regions.upper.height
+    local div2_y = div1_y - regions.middle.height
 
-    -- 3. Render book name
-    p_head = render_book_name(p_head, params, upper_height)
+    if decorations.upper_yuwei then
+        local upper_lit = draw_upper_yuwei(
+            col.x, div1_y, col.width,
+            decorations.yuwei_dims, col.color_str, col.border_thickness
+        )
+        p_head = D.insert_before(p_head, p_head, create_literal_node(upper_lit))
+    end
 
-    -- 4. Render chapter title
-    p_head = render_chapter_title(p_head, params, upper_height, middle_height, yuwei_dims)
+    if decorations.lower_yuwei then
+        local lower_lit = draw_lower_yuwei(
+            col.x, div2_y, col.width,
+            decorations.yuwei_dims, col.color_str, col.border_thickness
+        )
+        p_head = D.insert_before(p_head, p_head, create_literal_node(lower_lit))
+    end
 
-    -- 5. Render page number
-    p_head = render_page_number(p_head, params, upper_height, middle_height, yuwei_dims)
+    -- 4. Render text elements
+    for _, element in ipairs(layout.elements) do
+        if element.type == "book_name" then
+            p_head = render_text_section(p_head, element)
+        elseif element.type == "chapter_title" then
+            p_head = render_chapter_title_from_layout(p_head, element, runtime.chapter_title)
+        elseif element.type == "page_number" then
+            p_head = render_page_number_from_layout(p_head, element, runtime.page_number)
+        elseif element.type == "publisher" then
+            p_head = render_text_section(p_head, element)
+        end
+    end
 
-    -- 6. Render publisher
-    p_head = render_publisher(p_head, params, height)
-
-    -- 7. Debug rectangles
-    p_head = render_debug_rects(p_head, x, y, width, height)
+    -- 5. Debug rectangles
+    p_head = render_debug_rects(p_head, col.x, col.y, col.width, col.height)
 
     return p_head
 end
@@ -850,7 +629,7 @@ end
 
 local banxin = {
     draw_banxin = draw_banxin,
-    draw_banxin_column = draw_banxin_column,
+    draw_from_layout = draw_from_layout,
     -- Internal functions exported for testing
     _internal = {
         count_utf8_chars = count_utf8_chars,
@@ -858,10 +637,7 @@ local banxin = {
         calculate_yuwei_total_height = calculate_yuwei_total_height,
         create_border_literal = create_border_literal,
         create_divider_literal = create_divider_literal,
-        calculate_book_name_params = calculate_book_name_params,
         parse_chapter_title = parse_chapter_title,
-        calculate_chapter_title_layout = calculate_chapter_title_layout,
-        calculate_page_number_layout = calculate_page_number_layout,
     },
 }
 

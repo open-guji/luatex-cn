@@ -192,7 +192,8 @@ local function init_engine_context(box_num, params)
     local b_padding_top = _G.content.border_padding_top or 0
     local b_padding_bottom = _G.content.border_padding_bottom or 0
     local is_border = _G.content.border_on or false
-    local is_outer_border = _G.content.outer_border_on or false
+    -- TextBox never has outer border (content-only feature)
+    local is_outer_border = is_textbox and false or (_G.content.outer_border_on or false)
 
     -- 0.4 Visual Flags & Features (use global _G.banxin set by banxin.setup)
     local banxin_on = _G.banxin and _G.banxin.enabled or false
@@ -422,10 +423,14 @@ local function generate_physical_pages(list, params, engine_ctx, plugin_contexts
     if p_info.is_textbox then
         -- TextBox: pass explicit visual params (no global fallback)
         visual_ctx.vertical_align = params.vertical_align or "center"
-        visual_ctx.border_rgb = params.border_color
         visual_ctx.bg_rgb = params.background_color
         visual_ctx.font_rgb = params.font_color
         visual_ctx.font_size = constants.to_dimen(params.font_size)
+        -- Border shape parameters (resolved from style stack in textbox.lua)
+        visual_ctx.border_shape = params.border_shape or "none"
+        visual_ctx.border_color = params.border_color or ""
+        visual_ctx.border_width = params.border_width or "0.4pt"
+        visual_ctx.border_margin = params.border_margin or "1pt"
     end
     -- For non-textbox: render-page.lua will read from _G.content via calculate_render_context()
 
@@ -480,14 +485,34 @@ local function generate_physical_pages(list, params, engine_ctx, plugin_contexts
     for i, page_info in ipairs(pages) do
         local new_box = node.new("hlist")
         new_box.dir = "TLT"
-        new_box.list = page_info.head
+
+        -- For TextBox: wrap content with q/Q to scope any color changes
+        -- This prevents font_color from leaking to subsequent text in the outer document
+        local content_head = page_info.head
+        if p_info.is_textbox then
+            local D = node.direct
+            local d_head = D.todirect(content_head)
+            -- Insert "q" (save state) at beginning
+            d_head = utils.insert_pdf_literal(d_head, "q")
+            -- Find tail and insert "Q" (restore state) at end
+            local tail = d_head
+            while D.getnext(tail) do
+                tail = D.getnext(tail)
+            end
+            local q_restore = utils.create_pdf_literal("Q")
+            D.insert_after(d_head, tail, q_restore)
+            content_head = D.tonode(d_head)
+        end
+
+        new_box.list = content_head
         new_box.width = page_info.cols * engine_ctx.g_width + engine_ctx.border_thickness + outer_shift * 2
         new_box.height = 0
         new_box.depth = total_v_depth
 
         if p_info.is_textbox then
             node.set_attribute(new_box, constants.ATTR_TEXTBOX_WIDTH, page_info.cols)
-            node.set_attribute(new_box, constants.ATTR_TEXTBOX_HEIGHT, engine_ctx.line_limit)
+            -- Use actual content rows for auto-height, or line_limit for fixed-height
+            node.set_attribute(new_box, constants.ATTR_TEXTBOX_HEIGHT, page_info.rows or engine_ctx.line_limit)
         else
             node.set_attribute(new_box, constants.ATTR_TEXTBOX_WIDTH, 0)
             node.set_attribute(new_box, constants.ATTR_TEXTBOX_HEIGHT, 0)
@@ -506,11 +531,33 @@ local function typeset(box_num, params)
     local list, engine_ctx, plugin_contexts, p_info = init_engine_context(box_num, params)
     if not list then return 0 end
 
+    -- For content (non-textbox): push border settings to style stack
+    local style_registry
+    local is_textbox = (params.is_textbox == true)
+    if not is_textbox then
+        style_registry = package.loaded['util.luatex-cn-style-registry'] or
+            require('util.luatex-cn-style-registry')
+        style_registry.push({
+            border = _G.content.border_on or false,
+            border_width = _G.content.border_thickness and
+                tostring(math.floor(_G.content.border_thickness / 65536 * 100 + 0.5) / 100) .. "pt" or "0.4pt",
+            border_color = _G.content.border_color or "",
+            outer_border = _G.content.outer_border_on or false,
+        })
+    end
+
     list = flatten_node_stream(list, params, engine_ctx, plugin_contexts, p_info)
 
     local layout_results = compute_grid_layout(list, params, engine_ctx, plugin_contexts, p_info)
 
-    return generate_physical_pages(list, params, engine_ctx, plugin_contexts, layout_results, p_info)
+    local total_pages = generate_physical_pages(list, params, engine_ctx, plugin_contexts, layout_results, p_info)
+
+    -- Pop style stack for content
+    if not is_textbox and style_registry then
+        style_registry.pop()
+    end
+
+    return total_pages
 end
 
 --- Load a prepared page into a TeX box register

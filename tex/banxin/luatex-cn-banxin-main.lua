@@ -85,8 +85,9 @@ local function read_banxin_params()
 
         -- Book name
         book_name = get_tl("l__luatexcn_banxin_book_name_tl") or "",
-        book_name_align = get_tl("l__luatexcn_banxin_book_name_align_tl") or "center",
+        book_name_font_size = parse_dim(get_tl("l__luatexcn_banxin_book_name_font_size_tl")),
         book_name_grid_height = parse_dim(get_tl("l__luatexcn_banxin_book_name_grid_height_tl")),
+        book_name_align = get_tl("l__luatexcn_banxin_book_name_align_tl") or "center",
 
         -- Chapter title
         chapter_title = get_tl("l__luatexcn_banxin_chapter_title_tl") or "",
@@ -116,37 +117,34 @@ end
 -- 1. Load sub-modules using full namespaced paths
 local render_banxin = package.loaded['banxin.luatex-cn-banxin-render-banxin'] or
     require('banxin.luatex-cn-banxin-render-banxin')
--- Note: render_banxin will itself require banxin.render_yuwei if configured correctly
+local banxin_layout = package.loaded['banxin.luatex-cn-banxin-layout'] or
+    require('banxin.luatex-cn-banxin-layout')
 
---- 在保留列（Reserved Column）上渲染版心内容
--- @param p_head (node) 当前页面节点列表头部
--- @param params (table) 来自 vertical 引擎的渲染参数
--- @return (node) 更新后的节点列表头部
-local function render_reserved_column(p_head, params)
-    -- Simply forward to the drawing logic
-    -- The vertical engine already passes the necessary context in 'params'
-    -- including: x, y, width, height, font_size, border_color (as string), etc.
-    return render_banxin.draw_banxin_column(p_head, params)
-end
-
--- 2. Register Hooks
--- We overwrite the default no-op hooks in vertical.hooks
-_G.core.hooks.render_reserved_column = render_reserved_column
-
--- 3. Export module table for TeX/other modules
+-- 2. Export module table for TeX/other modules
 local banxin_main = {}
 
 --- Initialize Banxin Plugin
+-- Captures banxin parameters early for use in layout and render stages
 function banxin_main.initialize(params, engine_ctx)
     -- Read banxin_on directly from TeX variable
     local banxin_on = utils.get_tex_bool("l__luatexcn_banxin_on_bool")
     -- Banxin is active if banxin_on is true or implicitly via n_column
     local is_active = banxin_on or (tonumber(params.n_column) or 0) > 0
 
-    dbg.log(string.format("Initialized. Active=%s", tostring(is_active)))
+    if not is_active then
+        dbg.log("Initialized. Active=false")
+        return { active = false }
+    end
+
+    -- Capture banxin parameters early (moved from render stage)
+    local bp = read_banxin_params()
+
+    dbg.log(string.format("Initialized. Active=true, book_name='%s'", bp.book_name or ""))
 
     return {
-        active = is_active
+        active = true,
+        params = bp,           -- Store captured parameters
+        layout_cache = {},     -- Will store per-page layout data
     }
 end
 
@@ -156,88 +154,111 @@ function banxin_main.flatten(nodes, engine_ctx, context)
 end
 
 --- Layout hook for Banxin
+-- Calculates layout data for all banxin columns across all pages
+-- and stores in context.layout_cache for the render stage
 function banxin_main.layout(list, layout_map, engine_ctx, context)
     if not (context and context.active) then return end
+    if engine_ctx.n_column <= 0 then return end
 
-    dbg.log(string.format("Layout hook called. Total pages: %d", engine_ctx.total_pages or 0))
+    local total_pages = engine_ctx.total_pages or 0
+    local p_cols = engine_ctx.page_columns or 0
+    local bp = context.params
+
+    dbg.log(string.format("Layout hook: calculating for %d pages, %d cols/page", total_pages, p_cols))
+
+    -- Calculate layout for each page's reserved columns
+    for page_idx = 0, total_pages - 1 do
+        local reserved_cols = engine_ctx.get_reserved_cols(page_idx, p_cols)
+
+        context.layout_cache[page_idx] = {}
+
+        for col = 0, p_cols - 1 do
+            if reserved_cols[col] then
+                local coords = engine_ctx.get_reserved_column_coords(col, p_cols)
+
+                -- Prepare layout params from captured context params
+                local b_padding_top = bp.padding_top > 0 and bp.padding_top or engine_ctx.b_padding_top
+                local b_padding_bottom = bp.padding_bottom > 0 and bp.padding_bottom or engine_ctx.b_padding_bottom
+
+                local layout_params = {
+                    x = coords.x,
+                    y = coords.y,
+                    width = coords.width,
+                    height = coords.height,
+                    border_thickness = engine_ctx.border_thickness,
+                    color_str = engine_ctx.border_rgb_str,
+                    draw_border = engine_ctx.draw_border,
+                    upper_ratio = bp.upper_ratio,
+                    middle_ratio = bp.middle_ratio,
+                    book_name = bp.book_name,
+                    book_name_font_size = bp.book_name_font_size > 0 and bp.book_name_font_size or nil,
+                    book_name_grid_height = bp.book_name_grid_height > 0 and bp.book_name_grid_height or nil,
+                    book_name_align = bp.book_name_align,
+                    b_padding_top = b_padding_top,
+                    b_padding_bottom = b_padding_bottom,
+                    upper_yuwei = bp.upper_yuwei,
+                    lower_yuwei = bp.lower_yuwei,
+                    banxin_divider = bp.divider,
+                    chapter_title = bp.chapter_title,
+                    chapter_title_top_margin = bp.chapter_title_top_margin > 0 and bp.chapter_title_top_margin or (65536 * 20),
+                    chapter_title_cols = bp.chapter_title_cols > 0 and bp.chapter_title_cols or 1,
+                    chapter_title_font_size = bp.chapter_title_font_size > 0 and bp.chapter_title_font_size or nil,
+                    chapter_title_grid_height = bp.chapter_title_grid_height > 0 and bp.chapter_title_grid_height or nil,
+                    page_number_align = bp.page_number_align,
+                    page_number_font_size = bp.page_number_font_size > 0 and bp.page_number_font_size or nil,
+                    publisher = bp.publisher,
+                    publisher_font_size = bp.publisher_font_size > 0 and bp.publisher_font_size or nil,
+                    publisher_grid_height = bp.publisher_grid_height > 0 and bp.publisher_grid_height or nil,
+                    publisher_bottom_margin = bp.publisher_bottom_margin > 0 and bp.publisher_bottom_margin or nil,
+                    publisher_align = bp.publisher_align,
+                    font_size = _G.content.font_size or 655360,
+                }
+
+                -- Calculate layout using the layout module
+                local col_layout = banxin_layout.calculate_column_layout(layout_params)
+                context.layout_cache[page_idx][col] = col_layout
+
+                dbg.log(string.format("  Page %d, col %d: layout calculated", page_idx, col))
+            end
+        end
+    end
+
+    dbg.log(string.format("Layout hook completed: cached %d pages", total_pages))
 end
 
 --- Render hook for Banxin
+-- Uses pre-calculated layout from layout stage and resolves runtime content
 -- @param head (node) Page list head
 -- @param layout_map (table) Main layout map
--- @param params (table) Render parameters (only non-banxin params used now)
--- @param context (table) Plugin context
+-- @param params (table) Render parameters
+-- @param context (table) Plugin context (contains layout_cache)
 -- @param page_idx (number) Current page index (0-based)
 -- @param p_total_cols (number) Total columns on this page
-function banxin_main.render(head, layout_map, params, context, engine_ctx, page_idx, p_total_cols)
+function banxin_main.render(head, layout_map, params, context, engine_ctx, page_idx, _)
     if not (context and context.active) then return head end
-
     if engine_ctx.n_column <= 0 then return head end
 
-    local reserved_cols = engine_ctx.get_reserved_cols(page_idx, p_total_cols)
+    local page_layout = context.layout_cache and context.layout_cache[page_idx]
+    if not page_layout then return head end
 
-    -- Read banxin parameters directly from TeX variables
-    local bp = read_banxin_params()
+    local bp = context.params
 
-    -- Content/styling parameters
-    local b_padding_top = bp.padding_top > 0 and bp.padding_top or engine_ctx.b_padding_top
-    local b_padding_bottom = bp.padding_bottom > 0 and bp.padding_bottom or engine_ctx.b_padding_bottom
-
-    -- Chapter title: use page-specific if available, otherwise from TeX variable
+    -- Resolve runtime content: chapter title (may vary per page)
     local chapter_title = bp.chapter_title
     if engine_ctx.page_chapter_titles and engine_ctx.page_chapter_titles[page_idx] then
         chapter_title = engine_ctx.page_chapter_titles[page_idx]
     end
 
+    -- Resolve runtime content: page number
+    local page_number = (params.start_page_number or 1) + page_idx
+
     local p_head = D.todirect(head)
 
-    for col = 0, p_total_cols - 1 do
-        if reserved_cols[col] then
-            -- Get pre-calculated coordinates from engine
-            local coords = engine_ctx.get_reserved_column_coords(col, p_total_cols)
-
-            p_head = render_banxin.draw_banxin_column(p_head, {
-                -- Core geometry from engine (no manual calculation needed)
-                x = coords.x,
-                y = coords.y,
-                width = coords.width,
-                height = coords.height,
-                border_thickness = engine_ctx.border_thickness,
-                color_str = engine_ctx.border_rgb_str,
-                draw_border = engine_ctx.draw_border,
-                -- Grid dimensions (still needed for text layout)
-                grid_width = engine_ctx.g_width,
-                grid_height = engine_ctx.g_height,
-                shift_y = engine_ctx.shift_y,
-                -- Content parameters (read directly from TeX)
-                upper_ratio = bp.upper_ratio,
-                middle_ratio = bp.middle_ratio,
-                lower_ratio = 1 - bp.upper_ratio - bp.middle_ratio,
-                book_name = bp.book_name,
-                vertical_align = params.visual and params.visual.vertical_align or params.vertical_align,
-                b_padding_top = b_padding_top,
-                b_padding_bottom = b_padding_bottom,
-                lower_yuwei = bp.lower_yuwei,
-                chapter_title = chapter_title,
-                chapter_title_top_margin = bp.chapter_title_top_margin > 0 and bp.chapter_title_top_margin or
-                    (65536 * 20),
-                chapter_title_cols = bp.chapter_title_cols > 0 and bp.chapter_title_cols or 1,
-                chapter_title_font_size = bp.chapter_title_font_size > 0 and bp.chapter_title_font_size or nil,
-                chapter_title_grid_height = bp.chapter_title_grid_height > 0 and bp.chapter_title_grid_height or nil,
-                book_name_grid_height = bp.book_name_grid_height > 0 and bp.book_name_grid_height or nil,
-                book_name_align = bp.book_name_align,
-                upper_yuwei = bp.upper_yuwei,
-                banxin_divider = bp.divider,
-                page_number_align = bp.page_number_align,
-                page_number_font_size = bp.page_number_font_size > 0 and bp.page_number_font_size or nil,
-                page_number = (params.start_page_number or 1) + page_idx,
-                font_size = _G.content.font_size or (params.visual and params.visual.font_size) or params.font_size,
-                publisher = bp.publisher,
-                publisher_font_size = bp.publisher_font_size > 0 and bp.publisher_font_size or nil,
-                publisher_grid_height = bp.publisher_grid_height > 0 and bp.publisher_grid_height or nil,
-                publisher_bottom_margin = bp.publisher_bottom_margin > 0 and bp.publisher_bottom_margin or nil,
-            })
-        end
+    for _, col_layout in pairs(page_layout) do
+        p_head = render_banxin.draw_from_layout(p_head, col_layout, {
+            chapter_title = chapter_title,
+            page_number = page_number,
+        })
     end
 
     return D.tonode(p_head)
@@ -248,8 +269,7 @@ local banxin_plugin = {
     flatten = banxin_main.flatten,
     layout = banxin_main.layout,
     render = banxin_main.render,
-    render_reserved_column = render_reserved_column,
-    setup = banxin_setup,  -- Export setup for _G.banxin access after require
+    setup = banxin_setup,
 }
 
 -- Registry as plugin if core engine is present

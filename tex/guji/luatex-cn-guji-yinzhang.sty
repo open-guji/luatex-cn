@@ -1,0 +1,101 @@
+% Copyright 2026 Open-Guji (https://github.com/open-guji)
+%
+% Licensed under the Apache License, Version 2.0 (the "License");
+% you may not use this file except in compliance with the License.
+% You may obtain a copy of the License at
+%
+%     http://www.apache.org/licenses/LICENSE-2.0
+%
+% Unless required by applicable law or agreed to in writing, software
+% distributed under the License is distributed on an "AS IS" BASIS,
+% WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+% See the License for the specific language governing permissions and
+% limitations under the License.
+
+% luatex-cn-guji-yinzhang.sty
+% YinZhang (印章/Seal Stamp) overlay functionality for ancient Chinese books
+%
+\RequirePackage{expl3}
+\ProvidesExplPackage {guji/luatex-cn-guji-yinzhang} {2026/02/01} {0.2.3} {Seal stamp overlay for Chinese books}
+
+\RequirePackage{tikz}
+\RequirePackage{graphicx}
+
+% ============================================================================
+% YinZhang (印章) Command - Add seal/stamp overlay on specified page
+% ============================================================================
+
+% Declare global variables for YinZhang
+\int_new:N \g_luatexcn_yinzhang_target_page_int
+\tl_new:N \g_luatexcn_yinzhang_image_path_tl
+\tl_new:N \g_luatexcn_yinzhang_opacity_tl
+\tl_new:N \g_luatexcn_yinzhang_xshift_tl
+\tl_new:N \g_luatexcn_yinzhang_yshift_tl
+\tl_new:N \g_luatexcn_yinzhang_width_tl
+\tl_new:N \g_luatexcn_yinzhang_color_tl
+
+\keys_define:nn { luatexcn / yinzhang }
+  {
+    opacity .tl_set:N = \l_luatexcn_yinzhang_opacity_tl,
+    opacity .initial:n = {0.7},
+
+    xshift .tl_set:N = \l_luatexcn_yinzhang_xshift_tl,
+    xshift .initial:n = {-5.3cm},
+
+    yshift .tl_set:N = \l_luatexcn_yinzhang_yshift_tl,
+    yshift .initial:n = {-6.4cm},
+
+    width .tl_set:N = \l_luatexcn_yinzhang_width_tl,
+    width .initial:n = {12.9cm},
+
+    page .int_set:N = \l_luatexcn_yinzhang_page_int,
+    page .initial:n = {1},
+
+    color .tl_set:N = \l_luatexcn_yinzhang_color_tl,
+    color .initial:n = {},
+  }
+
+\NewDocumentCommand{\YinZhang}{ O{} m }
+  {
+    % Set default values for each call (avoid parameter leakage)
+    \int_set:Nn \l_luatexcn_yinzhang_page_int { 1 }
+    \tl_set:Nn \l_luatexcn_yinzhang_opacity_tl { 1 }
+    \tl_set:Nn \l_luatexcn_yinzhang_xshift_tl { 0cm }
+    \tl_set:Nn \l_luatexcn_yinzhang_yshift_tl { 0cm }
+    \tl_set:Nn \l_luatexcn_yinzhang_width_tl { 10cm }
+    \tl_set:Nn \l_luatexcn_yinzhang_color_tl { }
+
+    % Parse options
+    \keys_set:nn { luatexcn / yinzhang } { #1 }
+
+    % Store parameters globally for hook access
+    \int_gset_eq:NN \g_luatexcn_yinzhang_target_page_int \l_luatexcn_yinzhang_page_int
+    \tl_gset:Nn \g_luatexcn_yinzhang_image_path_tl { #2 }
+    \tl_gset_eq:NN \g_luatexcn_yinzhang_opacity_tl \l_luatexcn_yinzhang_opacity_tl
+    \tl_gset_eq:NN \g_luatexcn_yinzhang_xshift_tl \l_luatexcn_yinzhang_xshift_tl
+    \tl_gset_eq:NN \g_luatexcn_yinzhang_yshift_tl \l_luatexcn_yinzhang_yshift_tl
+    \tl_gset_eq:NN \g_luatexcn_yinzhang_width_tl \l_luatexcn_yinzhang_width_tl
+    \tl_gset_eq:NN \g_luatexcn_yinzhang_color_tl \l_luatexcn_yinzhang_color_tl
+
+    \AddToHook{shipout/background}{
+      \int_compare:nNnT { \value{page} } = { \g_luatexcn_yinzhang_target_page_int }
+        {
+          \begin{tikzpicture}[overlay]
+            \node[
+              anchor=north~east,
+              opacity=\g_luatexcn_yinzhang_opacity_tl,
+              inner~sep=0pt,
+              xshift=-\g_luatexcn_yinzhang_xshift_tl,
+              yshift=-\g_luatexcn_yinzhang_yshift_tl
+            ]~at~(\paperwidth,~0)~{
+              \includegraphics[width=\g_luatexcn_yinzhang_width_tl]{\g_luatexcn_yinzhang_image_path_tl}
+            };
+          \end{tikzpicture}
+        }
+    }
+  }
+
+% CJK alias
+\NewCommandCopy{\印章}{\YinZhang}
+
+\endinput

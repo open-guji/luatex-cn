@@ -18,7 +18,7 @@
 
 \RequirePackage{expl3}
 \RequirePackage{l3keys2e}
-\ProvidesExplClass {ltc-guji} {2026/01/31} {0.2.2} {Ancient Chinese Book Class (Template Support)}
+\ProvidesExplClass {ltc-guji} {2026/02/01} {0.2.3} {Ancient Chinese Book Class (Template Support)}
 
 \tl_new:N \l_luatexcn_guji_initial_template_tl
 \prop_new:N \g_luatexcn_guji_template_map_prop
@@ -90,6 +90,12 @@
 % Enable banxin by default for guji class
 \banxinSetup{ banxin = true }
 
+% Load yinzhang (印章/seal stamp) module
+\RequirePackage{guji/luatex-cn-guji-yinzhang}
+
+% Load meipi (眉批/headnote) module
+\RequirePackage{guji/luatex-cn-guji-meipi}
+
 % 3. Page Geometry - Will be applied dynamically via tsemplate
 % Default values stored in key-value system below
 
@@ -118,18 +124,6 @@
 
 \keys_define:nn { luatexcn / guji }
   {
-    % Grid and font settings - forward to content namespace
-
-
-
-
-    % Guji-specific settings
-
-
-    banxin .code:n = { \keys_set:nn { luatexcn / banxin } { banxin = {#1} } },
-
-    font-name .code:n = { \keys_set:nn { luatexcn / content } { font-name = #1 } },
-
     debug .code:n = {
       \str_if_eq:nnTF { #1 } { true }
         { \LtcDebugOn }
@@ -139,13 +133,12 @@
 
     font-features .code:n = { \keys_set:nn { luatexcn / content } { font-features = #1 } },
 
-    % Split page (筒子页) configuration
-    split-page .bool_set:N = \l_luatexcn_guji_split_page_bool,
-    split-page .initial:n = true,
+    % Split page (筒子页) configuration - forward to splitpage namespace
+    split-page .code:n = { \keys_set:nn { luatexcn / splitpage } { enabled = #1 } },
+    split-page .default:n = true,
 
-    split-page-right-first .bool_set:N = \l_luatexcn_guji_split_right_first_bool,
-    split-page-right-first .initial:n = true,
-
+    split-page-right-first .code:n = { \keys_set:nn { luatexcn / splitpage } { right-first = #1 } },
+    split-page-right-first .default:n = true,
 
     template .code:n = {
       % Ensure standard catcodes for config files (preserve spaces)
@@ -168,12 +161,11 @@
 % 5b. Split page setup
 \cs_new:Npn \__luatexcn_guji_apply_split_page:
   {
-    \bool_if:NT \l_luatexcn_guji_split_page_bool
+    \bool_if:NT \l__luatexcn_sp_enabled_bool
       {
         \exp_args:Nx \splitpageSetup{
           source-width = \l__luatexcn_page_paper_width_tl,
           source-height = \l__luatexcn_page_paper_height_tl,
-          right-first = \bool_if:NTF \l_luatexcn_guji_split_right_first_bool {true} {false}
         }
         \enableSplitPage
       }
@@ -196,19 +188,8 @@
   \PackageWarning{luatex-cn-guji}{Config file~configs/luatex-cn-guji-default.cfg~not~found}
 }
 
-% Define \title and \chapter metadata commands
-% These forward to the banxin namespace
-\RenewDocumentCommand{\title}{ m }
-  {
-    \keys_set:nn { luatexcn / banxin } { book-name = {#1} }
-    \gdef\@title{#1}
-  }
-
-\NewDocumentCommand{\publisher}{ m }
-  {
-    \keys_set:nn { luatexcn / banxin } { publisher = {#1} }
-  }
-\NewCommandCopy{\出版商}{\publisher}
+% Note: \title and \publisher are defined in core/luatex-cn-core-metadata.sty
+% They forward to banxin namespace automatically
 
 % Command to reset page number to 1
 \NewDocumentCommand{\ResetPageNumber}{ }
@@ -240,81 +221,6 @@
       }
   }
 
-% ============================================================================
-% YinZhang (印章) Command - Add seal/stamp overlay on specified page
-% ============================================================================
-
-% Declare global variables for YinZhang
-% Declare global variables for YinZhang
-\int_new:N \g_luatexcn_guji_yinzhang_target_page_int
-\tl_new:N \g_luatexcn_guji_yinzhang_image_path_tl
-\tl_new:N \g_luatexcn_guji_yinzhang_opacity_tl
-\tl_new:N \g_luatexcn_guji_yinzhang_xshift_tl
-\tl_new:N \g_luatexcn_guji_yinzhang_yshift_tl
-\tl_new:N \g_luatexcn_guji_yinzhang_width_tl
-\tl_new:N \g_luatexcn_guji_yinzhang_color_tl
-
-\keys_define:nn { luatexcn / guji / yinzhang }
-  {
-    opacity .tl_set:N = \l_luatexcn_guji_yinzhang_opacity_tl,
-    opacity .initial:n = {0.7},
-    
-    xshift .tl_set:N = \l_luatexcn_guji_yinzhang_xshift_tl,
-    xshift .initial:n = {-5.3cm},
-    
-    yshift .tl_set:N = \l_luatexcn_guji_yinzhang_yshift_tl,
-    yshift .initial:n = {-6.4cm},
-    
-    width .tl_set:N = \l_luatexcn_guji_yinzhang_width_tl,
-    width .initial:n = {12.9cm},
-    
-    page .int_set:N = \l_luatexcn_guji_yinzhang_page_int,
-    page .initial:n = {1},
-    
-    color .tl_set:N = \l_luatexcn_guji_yinzhang_color_tl,
-    color .initial:n = {},
-  }
-
-\NewDocumentCommand{\YinZhang}{ O{} m }
-  {
-    % Set default values for each call (avoid parameter leakage)
-    \int_set:Nn \l_luatexcn_guji_yinzhang_page_int { 1 }
-    \tl_set:Nn \l_luatexcn_guji_yinzhang_opacity_tl { 1 }
-    \tl_set:Nn \l_luatexcn_guji_yinzhang_xshift_tl { 0cm }
-    \tl_set:Nn \l_luatexcn_guji_yinzhang_yshift_tl { 0cm }
-    \tl_set:Nn \l_luatexcn_guji_yinzhang_width_tl { 10cm }
-    \tl_set:Nn \l_luatexcn_guji_yinzhang_color_tl { }
-    
-    % Parse options
-    \keys_set:nn { luatexcn / guji / yinzhang } { #1 }
-    
-    % Store parameters globally for hook access
-    \int_gset_eq:NN \g_luatexcn_guji_yinzhang_target_page_int \l_luatexcn_guji_yinzhang_page_int
-    \tl_gset:Nn \g_luatexcn_guji_yinzhang_image_path_tl { #2 }
-    \tl_gset_eq:NN \g_luatexcn_guji_yinzhang_opacity_tl \l_luatexcn_guji_yinzhang_opacity_tl
-    \tl_gset_eq:NN \g_luatexcn_guji_yinzhang_xshift_tl \l_luatexcn_guji_yinzhang_xshift_tl
-    \tl_gset_eq:NN \g_luatexcn_guji_yinzhang_yshift_tl \l_luatexcn_guji_yinzhang_yshift_tl
-    \tl_gset_eq:NN \g_luatexcn_guji_yinzhang_width_tl \l_luatexcn_guji_yinzhang_width_tl
-    \tl_gset_eq:NN \g_luatexcn_guji_yinzhang_color_tl \l_luatexcn_guji_yinzhang_color_tl
-    
-    \AddToHook{shipout/background}{
-      \int_compare:nNnT { \value{page} } = { \g_luatexcn_guji_yinzhang_target_page_int }
-        {
-          \begin{tikzpicture}[overlay]
-            \node[
-              anchor=north~east,
-              opacity=\g_luatexcn_guji_yinzhang_opacity_tl,
-              inner~sep=0pt,
-              xshift=-\g_luatexcn_guji_yinzhang_xshift_tl,
-              yshift=-\g_luatexcn_guji_yinzhang_yshift_tl
-            ]~at~(\paperwidth,~0)~{
-              \includegraphics[width=\g_luatexcn_guji_yinzhang_width_tl]{\g_luatexcn_guji_yinzhang_image_path_tl}
-            };
-          \end{tikzpicture}
-        }
-    }
-  }
-
 % 6. Load Common Templates (if any)
 \InputIfFileExists{guji_common.def}{}{}
 
@@ -325,46 +231,14 @@
     \keys_set:nn { luatexcn / guji } { #1 }
     % Note: book-name is set directly by \title command
     % No fallback from \@title to avoid LaTeX's default error-throwing definition
-    % Font selection logic:
-    % 1. If user specified font-name in the environment options, use it
-    % 2. Otherwise, rely on the font set at class load or in preamble
-    \tl_if_empty:NF \l__luatexcn_content_font_name_tl
-      {
-        \tl_if_empty:NTF \l__luatexcn_content_font_features_tl
-          {
-            % No features specified, use default for CJK vertical
-            \exp_args:NV \setmainfont \l__luatexcn_content_font_name_tl [RawFeature={+vert,+vrt2}]
-          }
-          {
-            \exp_args:NV \setmainfont \l__luatexcn_content_font_name_tl [\l__luatexcn_content_font_features_tl]
-          }
-      }
-    \fontsize{\l__luatexcn_content_font_size_tl}{\l__luatexcn_content_line_spacing_tl}\selectfont
-    
-    % Zero out vertical skips for exact grid layout
-    \dim_zero:N \topskip
-    \dim_zero:N \parskip
-    \dim_zero:N \partopsep
-    
-    % --- Auto-Layout Logic ---
-    % Either n-char OR grid-height must be specified (mutually exclusive)
-    %
-    % Mode A: n-char specified (grid-height auto-calculated)
-    %   grid-height = available-height / n-char
-    %   height = available-height
-    %
-    % Mode B: grid-height specified (n-char auto-calculated, may truncate)
-    %   n-char = floor(available-height / grid-height)
-    %   height = n-char * grid-height
+    % Setup font using shared helper
+    \__luatexcn_content_setup_font:
 
+    % --- Auto-Layout Logic (TeX calculation for exact precision) ---
     % I. Width Logic (Auto-calculated from n-column)
-    % 1. Calculate raw content area width
     \dim_set:Nn \l_tmpa_dim { \l__luatexcn_page_paper_width_tl }
     \dim_sub:Nn \l_tmpa_dim { \l__luatexcn_page_margin_left_tl }
     \dim_sub:Nn \l_tmpa_dim { \l__luatexcn_page_margin_right_tl }
-    % \l_tmpa_dim = content-width
-
-    % 2. Calculate border overhead (width) - using content variables
     \dim_set:Nn \l_tmpb_dim { 0pt }
     \bool_if:NT \l__luatexcn_content_outer_border_bool {
       \dim_add:Nn \l_tmpb_dim { (\l__luatexcn_content_outer_border_sep_tl + \l__luatexcn_content_outer_border_thickness_tl) * 2 }
@@ -372,28 +246,15 @@
     \bool_if:NT \l__luatexcn_content_border_bool {
       \dim_add:Nn \l_tmpb_dim { \l__luatexcn_content_border_thickness_tl }
     }
-    % \l_tmpb_dim = border-overhead-width
-
-    % 3. Calculate grid-width
-    % total-cols = 2 * n-column + 1
     \int_set:Nn \l_tmpa_int { 2 * \l__luatexcn_content_n_column_int + 1 }
-    
-    % grid-width = (content-width - border-overhead) / total-cols
     \dim_sub:Nn \l_tmpa_dim { \l_tmpb_dim }
-    % available-for-grids / total-cols
     \int_set:Nn \l_tmpb_int { \dim_to_decimal_in_sp:n { \l_tmpa_dim } / \l_tmpa_int }
     \tl_set:Nx \l__luatexcn_content_grid_width_tl { \dim_eval:n { \l_tmpb_int sp } }
 
-    \LtcIfDebugT { \iow_term:x { Guji~Layout~Width:~total-cols=\int_use:N~\l_tmpa_int~,~grid-width=\l__luatexcn_content_grid_width_tl } }
-
     % II. Height Logic
-    % 1. Calculate raw content area height
     \dim_set:Nn \l_tmpa_dim { \l__luatexcn_page_paper_height_tl }
     \dim_sub:Nn \l_tmpa_dim { \l__luatexcn_page_margin_top_tl }
     \dim_sub:Nn \l_tmpa_dim { \l__luatexcn_page_margin_bottom_tl }
-    % \l_tmpa_dim = content-height
-
-    % 2. Calculate border overhead - using content variables
     \dim_set:Nn \l_tmpb_dim { 0pt }
     \bool_if:NT \l__luatexcn_content_outer_border_bool {
       \dim_add:Nn \l_tmpb_dim { (\l__luatexcn_content_outer_border_sep_tl + \l__luatexcn_content_outer_border_thickness_tl) * 2 }
@@ -401,74 +262,43 @@
     \bool_if:NT \l__luatexcn_content_border_bool {
       \dim_add:Nn \l_tmpb_dim { \l__luatexcn_content_border_padding_top_tl + \l__luatexcn_content_border_padding_bottom_tl + \l__luatexcn_content_border_thickness_tl }
     }
-    % \l_tmpb_dim = border-overhead
-
-    % 3. Calculate available height for text
     \dim_sub:Nn \l_tmpa_dim { \l_tmpb_dim }
-    % \l_tmpa_dim = available-height
 
-    % 4. Determine mode and calculate grid dimensions
+    % Calculate grid-height and content-height
     \int_compare:nNnTF { \l__luatexcn_content_n_char_per_col_int } > { 0 }
       {
-        % Mode A: n-char-per-col specified, calculate grid-height (floor to avoid overflow)
-        % grid-height = floor(available-height / n-char-per-col)
         \int_set:Nn \l_tmpa_int { \dim_to_decimal_in_sp:n { \l_tmpa_dim } / \l__luatexcn_content_n_char_per_col_int }
         \dim_set:Nn \l_luatexcn_guji_grid_height_dim { \l_tmpa_int sp }
         \tl_set:Nx \l__luatexcn_content_grid_height_tl { \dim_use:N \l_luatexcn_guji_grid_height_dim }
-        % height = grid-height * n-char-per-col (may be slightly less than available)
         \dim_set:Nn \l_tmpa_dim { \l_luatexcn_guji_grid_height_dim * \l__luatexcn_content_n_char_per_col_int }
         \tl_set:Nx \l__luatexcn_content_height_tl { \dim_use:N \l_tmpa_dim }
-        \LtcIfDebugT { \iow_term:x { Guji~Mode~A:~n-char-per-col=\int_use:N~\l__luatexcn_content_n_char_per_col_int~,~grid-height=\l__luatexcn_content_grid_height_tl~,~height=\l__luatexcn_content_height_tl } }
       }
       {
-        % Mode B: grid-height specified, calculate fitting rows
         \tl_if_empty:NTF \l__luatexcn_content_grid_height_tl
+          { \msg_error:nn { guji } { missing-grid-param } }
           {
-            \msg_error:nn { guji } { missing-grid-param }
-          }
-          {
-            % Calculate max rows: floor(available-height / grid-height)
             \int_set:Nn \l_tmpa_int { \dim_ratio:nn { \l_tmpa_dim } { \l__luatexcn_content_grid_height_tl } }
-            % height = rows * grid-height
             \dim_set:Nn \l_tmpa_dim { \l__luatexcn_content_grid_height_tl * \l_tmpa_int }
             \tl_set:Nx \l__luatexcn_content_height_tl { \dim_use:N \l_tmpa_dim }
-            \LtcIfDebugT { \iow_term:x { Guji~Mode~B:~grid-height=\l__luatexcn_content_grid_height_tl~,~rows=\int_use:N~\l_tmpa_int~,~height=\l__luatexcn_content_height_tl } }
           }
       }
 
-    % 5. Calculate total box height (content + border overhead + safety)
+    % Calculate total box height and adjust top margin
     \dim_set:Nn \l_tmpb_dim { \l_tmpa_dim + \l_tmpb_dim + 2pt }
-
-    % 6. Adjust top margin to preserve bottom margin
     \tl_set:Nx \l__luatexcn_page_margin_top_tl {
       \dim_eval:n { \l__luatexcn_page_paper_height_tl - \l__luatexcn_page_margin_bottom_tl - \l_tmpb_dim }
     }
 
-    % Log final layout
-    \LtcIfDebugT { \iow_term:x { Guji~Layout:~TextHeight=\dim_use:N~\l_tmpb_dim~,~TopMargin=\l__luatexcn_page_margin_top_tl } }
+    \LtcIfDebugT { \iow_term:x { Guji~Layout:~grid-width=\l__luatexcn_content_grid_width_tl~,~grid-height=\l__luatexcn_content_grid_height_tl~,~height=\l__luatexcn_content_height_tl } }
 
     % Update geometry for this environment
     \luatexcn_apply_geometry:
     
-    % Apply background color if specified
-    \tl_if_empty:NF \l__luatexcn_page_background_color_tl
-      {
-        \tl_if_in:NnTF \l__luatexcn_page_background_color_tl { , }
-          { \pagecolor [RGB] { \l__luatexcn_page_background_color_tl } }
-          { \pagecolor { \l__luatexcn_page_background_color_tl } }
-      }
-    
-    % Zap all vertical spacing
-    \dim_zero:N \topskip
-    \dim_zero:N \parskip
-    \dim_zero:N \partopsep
-    \dim_zero:N \topsep
-    \dim_zero:N \itemsep
-    \dim_zero:N \parsep
-    \dim_zero:N \baselineskip
-    \dim_zero:N \lineskip
-    \dim_zero:N \lineskiplimit
-    \dim_zero:N \parindent
+    % Apply background color using shared helper
+    \__luatexcn_content_apply_background:
+
+    % Zero all vertical skips using shared helper
+    \__luatexcn_content_zero_skips:
 
     \keys_set:nx { luatexcn / vertical }
       {
@@ -525,9 +355,6 @@
     \__luatexcn_guji_apply_split_page:
 }
 \ExplSyntaxOff
-%
-% Command Aliases (CJK support)
-\NewCommandCopy{\印章}{\YinZhang}%
 %
 % Environment Aliases (CJK support)
 \NewEnvironmentCopy{正文}{guji-content}%

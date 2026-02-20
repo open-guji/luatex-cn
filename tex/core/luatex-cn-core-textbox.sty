@@ -20,7 +20,7 @@
 \RequirePackage{core/luatex-cn-core-base}
 \RequirePackage{expl3}
 \RequirePackage{xparse}
-\ProvidesExplPackage {core/luatex-cn-core-textbox} {2026/01/31} {0.2.2} {TextBox Support for Vertical Typesetting}
+\ProvidesExplPackage {core/luatex-cn-core-textbox} {2026/02/01} {0.2.3} {TextBox Support for Vertical Typesetting}
 
 % Grid Textbox Command (Simplified for Single Column)
 % Syntax: \GridTextbox[height=N, distribute=true/false]{content}
@@ -41,6 +41,11 @@
 \tl_new:N \l__luatexcn_textbox_font_rgb_tl
 \tl_new:N \l__luatexcn_textbox_font_size_tl
 \tl_new:N \l__luatexcn_textbox_floating_paper_width_tl
+\tl_new:N \l__luatexcn_textbox_border_shape_tl
+\tl_new:N \l__luatexcn_textbox_border_color_tl
+\tl_new:N \l__luatexcn_textbox_border_width_tl
+\tl_new:N \l__luatexcn_textbox_border_margin_tl
+\tl_new:N \l__luatexcn_textbox_border_rgb_tl
 
 \keys_define:nn { luatexcn / textbox }
   {
@@ -80,6 +85,15 @@
     font-size .initial:n = {},
     grid-width .tl_set:N = \l__luatexcn_textbox_inner_gw_tl,
     grid-height .tl_set:N = \l__luatexcn_textbox_inner_gh_tl,
+    % Border shape parameters (rect/octagon/circle)
+    border-shape .tl_set:N = \l__luatexcn_textbox_border_shape_tl,
+    border-shape .initial:n = {none},
+    border-color .tl_set:N = \l__luatexcn_textbox_border_color_tl,
+    border-color .initial:n = {},
+    border-width .tl_set:N = \l__luatexcn_textbox_border_width_tl,
+    border-width .initial:n = {0.4pt},
+    border-margin .tl_set:N = \l__luatexcn_textbox_border_margin_tl,
+    border-margin .initial:n = {0pt},
   }
 
 \NewDocumentCommand{\TextBox}{ O{} +m }
@@ -162,6 +176,17 @@
       { \tl_set_eq:NN \l__luatexcn_textbox_font_rgb_tl \l__luatexcn_textbox_font_color_tl }
     \tl_replace_all:Nnn \l__luatexcn_textbox_font_rgb_tl { , } { ~ }
 
+    % Convert border color to RGB
+    \tl_set:No \l__luatexcn_textbox_border_color_tl { \l__luatexcn_textbox_border_color_tl }
+    \cs_if_exist:cTF { color @ \l__luatexcn_textbox_border_color_tl }
+      {
+        \exp_args:NV \extractcolorspec \l__luatexcn_textbox_border_color_tl \l_tmpa_tl
+        \exp_args:NNx \convertcolorspec \l_tmpa_tl { rgb } \l_tmpb_tl
+        \tl_set:Nx \l__luatexcn_textbox_border_rgb_tl { \l_tmpb_tl }
+      }
+      { \tl_set_eq:NN \l__luatexcn_textbox_border_rgb_tl \l__luatexcn_textbox_border_color_tl }
+    \tl_replace_all:Nnn \l__luatexcn_textbox_border_rgb_tl { , } { ~ }
+
     % Setup textbox params in _G.textbox (parsed once, used in Lua)
     \lua_now:e {
       vertical_textbox.setup({
@@ -183,7 +208,11 @@
       border~=~"\bool_if:NTF~\l__luatexcn_textbox_border_bool~{true}{false}",
       background_color~=~[=[\l__luatexcn_textbox_bg_rgb_tl]=],
       font_color~=~[=[\l__luatexcn_textbox_font_rgb_tl]=],
-      font_size~=~[=[\luaescapestring{\l__luatexcn_textbox_font_size_tl}]=]
+      font_size~=~[=[\luaescapestring{\l__luatexcn_textbox_font_size_tl}]=],
+      border_shape~=~"\luaescapestring{\tl_use:N~\l__luatexcn_textbox_border_shape_tl}",
+      border_color~=~[=[\l__luatexcn_textbox_border_rgb_tl]=],
+      border_width~=~[=[\luaescapestring{\l__luatexcn_textbox_border_width_tl}]=],
+      border_margin~=~[=[\luaescapestring{\l__luatexcn_textbox_border_margin_tl}]=]
     }) }
     \setluatexattribute\cnverticaltextboxwidth{0}
     \setluatexattribute\cnverticaltextboxheight{0}
@@ -214,5 +243,19 @@
 % Command Aliases for CJK
 \NewCommandCopy{\文本框}{\TextBox}
 \NewCommandCopy{\填充文本框}{\FillTextBox}
+
+% Border shape shortcuts
+% 反白 uses dark gray (#333) instead of pure black for better visibility
+\NewDocumentCommand{\反白}{ m }{\TextBox[background-color={0.2 0.2 0.2}, font-color=white]{#1}}
+\NewDocumentCommand{\八角框}{ m }{\TextBox[border-shape=octagon]{#1}}
+\NewDocumentCommand{\带圈}{ m }{\TextBox[border-shape=circle]{#1}}
+% 反白八角框 uses white border for visibility on dark background
+\NewDocumentCommand{\反白八角框}{ m }{\TextBox[background-color={0.2 0.2 0.2}, font-color=white, border-shape=octagon, border-color=white]{#1}}
+
+% English aliases
+\NewCommandCopy{\inverted}{\反白}
+\NewCommandCopy{\octagon}{\八角框}
+\NewCommandCopy{\circled}{\带圈}
+\NewCommandCopy{\invertedOctagon}{\反白八角框}
 
 \endinput%

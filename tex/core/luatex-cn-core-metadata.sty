@@ -13,7 +13,7 @@
 % limitations under the License.
 
 \RequirePackage{core/luatex-cn-core-base}
-\ProvidesExplPackage{core/luatex-cn-core-metadata}{2026/01/31} {0.2.2}{Book metadata management}
+\ProvidesExplPackage{core/luatex-cn-core-metadata}{2026/02/01} {0.2.3}{Book metadata management}
 
 % Load Lua module
 \lua_now:n { vertical_metadata = require('core.luatex-cn-core-metadata') }
@@ -56,6 +56,30 @@
   }
 
 % ============================================================================
+% Document Metadata Commands
+% ============================================================================
+% \title - Set book title (also sets banxin book-name)
+% Uses RenewDocumentCommand since article class defines \title
+\RenewDocumentCommand{\title}{ m }
+  {
+    \tl_set:Nn \l__luatexcn_metadata_book_name_tl { #1 }
+    % Forward to banxin if available
+    \cs_if_exist:NT \l__luatexcn_banxin_book_name_tl
+      { \keys_set:nn { luatexcn / banxin } { book-name = {#1} } }
+    % Set LaTeX's @title for compatibility
+    \gdef\@title{#1}
+  }
+
+% \publisher - Set publisher name (also sets banxin publisher)
+\NewDocumentCommand{\publisher}{ m }
+  {
+    \tl_set:Nn \l__luatexcn_metadata_publisher_tl { #1 }
+    % Forward to banxin if available
+    \cs_if_exist:NT \l__luatexcn_banxin_publisher_tl
+      { \keys_set:nn { luatexcn / banxin } { publisher = {#1} } }
+  }
+
+% ============================================================================
 % Chapter Marker Command
 % ============================================================================
 % Insert a chapter marker that will trigger chapter title change on subsequent pages
@@ -70,5 +94,6 @@
 % CJK Aliases
 \NewCommandCopy{\元数据设置}{\metadataSetup}
 \NewCommandCopy{\章节标记}{\ChapterMarker}
+\NewCommandCopy{\出版商}{\publisher}
 
 \endinput

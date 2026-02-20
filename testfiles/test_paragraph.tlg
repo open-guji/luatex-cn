@@ -3,9 +3,7 @@ Don't change this file in any respect.
 ============================================================
 TEST 1: Basic Paragraph
 ============================================================
-Guji Layout Width: total-cols=17, grid-width=50.30588pt
-Guji Mode A: n-char-per-col=21, grid-height=28.00476pt, height=588.09998pt
-Guji Layout: TextHeight=614.49997pt, TopMargin=188.50003pt
+Guji Layout: grid-width=50.30588pt, grid-height=28.00476pt, height=588.09998pt
 Package geometry Warning: `paperwidth': not available in `\newgeometry'; skipped.
 Package geometry Warning: `paperheight': not available in `\newgeometry'; skipped.
 *geometry* verbose mode - [ newgeometry ] result:
@@ -39,46 +37,48 @@ Package geometry Warning: `paperheight': not available in `\newgeometry'; skippe
 * \@mparswitchfalse
 * \@reversemarginfalse
 * (1in=72.27pt=25.4mm, 1cm=28.453pt)
-^^[[36m[banxin]^^[[0m Initialized. Active=true
+^^[[36m[banxin]^^[[0m Initialized. Active=true, book_name=''
 ^^[[36m[core]^^[[0m Stage 0: Initialized with g_height=28.00 pt, limit=21, p_cols=17
-^^[[36m[flatten]^^[[0m Adding Column Break after Line=594
-^^[[36m[flatten]^^[[0m Adding Column Break after Line=809
-^^[[36m[flatten]^^[[0m Adding Column Break after Line=911
-^^[[36m[core]^^[[0m Stage 1: Flattened head=<node    nil <    897 >    938 : glyph 256>
+^^[[36m[flatten]^^[[0m Adding Column Break after Line=443
+^^[[36m[flatten]^^[[0m Adding Column Break after Line=782
+^^[[36m[flatten]^^[[0m Adding Column Break after Line=884
+^^[[36m[core]^^[[0m Stage 1: Flattened head=<node    nil <    870 >    911 : glyph 256>
 ^^[[36m[core]^^[[0m Stage 1: Processed punctuation.
-^^[[36m[layout]^^[[0m   Node=897 ID=29 [p:0, c:0, r:0]
-^^[[36m[layout]^^[[0m   Node=938 ID=29 [p:0, c:0, r:1]
-^^[[36m[layout]^^[[0m   Node=953 ID=29 [p:0, c:0, r:2]
-^^[[36m[layout]^^[[0m   Node=968 ID=29 [p:0, c:0, r:3]
-^^[[36m[layout]^^[[0m   Node=983 ID=14 [p:0, c:0, r:4]
-^^[[36m[layout]^^[[0m   Node=994 ID=14 [p:0, c:0, r:4]
-^^[[36m[layout]^^[[0m   Node=1001 ID=29 [p:0, c:1, r:0]
-^^[[36m[layout]^^[[0m   Node=1024 ID=29 [p:0, c:1, r:4]
-^^[[36m[layout]^^[[0m   Node=1047 ID=29 [p:0, c:1, r:5]
-^^[[36m[layout]^^[[0m   Node=1070 ID=29 [p:0, c:1, r:6]
-^^[[36m[layout]^^[[0m   Node=1093 ID=29 [p:0, c:1, r:7]
-^^[[36m[layout]^^[[0m   Node=1116 ID=29 [p:0, c:1, r:8]
-^^[[36m[layout]^^[[0m   Node=1139 ID=29 [p:0, c:1, r:9]
-^^[[36m[layout]^^[[0m   Node=1162 ID=29 [p:0, c:1, r:10]
-^^[[36m[layout]^^[[0m   Node=1185 ID=29 [p:0, c:1, r:11]
-^^[[36m[layout]^^[[0m   Node=1208 ID=29 [p:0, c:1, r:12]
-^^[[36m[layout]^^[[0m   Node=1231 ID=29 [p:0, c:1, r:13]
-^^[[36m[layout]^^[[0m   Node=1254 ID=29 [p:0, c:1, r:14]
-^^[[36m[layout]^^[[0m   Node=1277 ID=29 [p:0, c:1, r:15]
-^^[[36m[layout]^^[[0m   Node=1300 ID=29 [p:0, c:1, r:16]
-^^[[36m[layout]^^[[0m   Node=1323 ID=29 [p:0, c:1, r:17]
-^^[[36m[layout]^^[[0m   Node=1346 ID=29 [p:0, c:1, r:18]
-^^[[36m[layout]^^[[0m   Node=1369 ID=14 [p:0, c:1, r:19]
-^^[[36m[layout]^^[[0m   Node=1388 ID=14 [p:0, c:1, r:19]
-^^[[36m[layout]^^[[0m   Node=1391 ID=29 [p:0, c:2, r:0]
-^^[[36m[layout]^^[[0m   Node=1406 ID=29 [p:0, c:2, r:1]
-^^[[36m[layout]^^[[0m   Node=1421 ID=29 [p:0, c:2, r:2]
-^^[[36m[layout]^^[[0m   Node=1436 ID=29 [p:0, c:2, r:3]
-^^[[36m[layout]^^[[0m   Node=1451 ID=14 [p:0, c:2, r:4]
-^^[[36m[layout]^^[[0m   Node=1462 ID=14 [p:0, c:2, r:4]
+^^[[36m[layout]^^[[0m   Node=870 ID=29 [p:0, c:0, r:0]
+^^[[36m[layout]^^[[0m   Node=911 ID=29 [p:0, c:0, r:1]
+^^[[36m[layout]^^[[0m   Node=926 ID=29 [p:0, c:0, r:2]
+^^[[36m[layout]^^[[0m   Node=941 ID=29 [p:0, c:0, r:3]
+^^[[36m[layout]^^[[0m   Node=956 ID=14 [p:0, c:0, r:4]
+^^[[36m[layout]^^[[0m   Node=967 ID=14 [p:0, c:0, r:4]
+^^[[36m[layout]^^[[0m   Node=974 ID=29 [p:0, c:1, r:0]
+^^[[36m[layout]^^[[0m   Node=997 ID=29 [p:0, c:1, r:4]
+^^[[36m[layout]^^[[0m   Node=1020 ID=29 [p:0, c:1, r:5]
+^^[[36m[layout]^^[[0m   Node=1043 ID=29 [p:0, c:1, r:6]
+^^[[36m[layout]^^[[0m   Node=1066 ID=29 [p:0, c:1, r:7]
+^^[[36m[layout]^^[[0m   Node=1089 ID=29 [p:0, c:1, r:8]
+^^[[36m[layout]^^[[0m   Node=1112 ID=29 [p:0, c:1, r:9]
+^^[[36m[layout]^^[[0m   Node=1135 ID=29 [p:0, c:1, r:10]
+^^[[36m[layout]^^[[0m   Node=1158 ID=29 [p:0, c:1, r:11]
+^^[[36m[layout]^^[[0m   Node=1181 ID=29 [p:0, c:1, r:12]
+^^[[36m[layout]^^[[0m   Node=1204 ID=29 [p:0, c:1, r:13]
+^^[[36m[layout]^^[[0m   Node=1227 ID=29 [p:0, c:1, r:14]
+^^[[36m[layout]^^[[0m   Node=1250 ID=29 [p:0, c:1, r:15]
+^^[[36m[layout]^^[[0m   Node=1273 ID=29 [p:0, c:1, r:16]
+^^[[36m[layout]^^[[0m   Node=1296 ID=29 [p:0, c:1, r:17]
+^^[[36m[layout]^^[[0m   Node=1319 ID=29 [p:0, c:1, r:18]
+^^[[36m[layout]^^[[0m   Node=1342 ID=14 [p:0, c:1, r:19]
+^^[[36m[layout]^^[[0m   Node=1361 ID=14 [p:0, c:1, r:19]
+^^[[36m[layout]^^[[0m   Node=1364 ID=29 [p:0, c:2, r:0]
+^^[[36m[layout]^^[[0m   Node=1379 ID=29 [p:0, c:2, r:1]
+^^[[36m[layout]^^[[0m   Node=1394 ID=29 [p:0, c:2, r:2]
+^^[[36m[layout]^^[[0m   Node=1409 ID=29 [p:0, c:2, r:3]
+^^[[36m[layout]^^[[0m   Node=1424 ID=14 [p:0, c:2, r:4]
+^^[[36m[layout]^^[[0m   Node=1435 ID=14 [p:0, c:2, r:4]
 ^^[[36m[layout]^^[[0m Layout map built. Total entries: 24, Total pages: 1
 ^^[[36m[core]^^[[0m Stage 2: Laid out total_pages = 1
-^^[[36m[banxin]^^[[0m Layout hook called. Total pages: 1
+^^[[36m[banxin]^^[[0m Layout hook: calculating for 1 pages, 17 cols/page
+^^[[36m[banxin]^^[[0m   Page 0, col 8: layout calculated
+^^[[36m[banxin]^^[[0m Layout hook completed: cached 1 pages
 ^^[[36m[core]^^[[0m Stage 2: Calculated floating positions.
 ^^[[36m[render]^^[[0m [render] apply_positions: border=nil, font=nil
 ^^[[36m[yuwei]^^[[0m Drawing yuwei with style=black, direction=1, color=0.0000 0.0000 0.0000
@@ -89,9 +89,7 @@ Package geometry Warning: `paperheight': not available in `\newgeometry'; skippe
 ============================================================
 TEST 2:  Paragraph Full Column
 ============================================================
-Guji Layout Width: total-cols=17, grid-width=50.30588pt
-Guji Mode A: n-char-per-col=21, grid-height=28.00476pt, height=588.09998pt
-Guji Layout: TextHeight=614.49997pt, TopMargin=188.50003pt
+Guji Layout: grid-width=50.30588pt, grid-height=28.00476pt, height=588.09998pt
 Package geometry Warning: `paperwidth': not available in `\newgeometry'; skipped.
 Package geometry Warning: `paperheight': not available in `\newgeometry'; skipped.
 *geometry* verbose mode - [ newgeometry ] result:
@@ -125,39 +123,41 @@ Package geometry Warning: `paperheight': not available in `\newgeometry'; skippe
 * \@mparswitchfalse
 * \@reversemarginfalse
 * (1in=72.27pt=25.4mm, 1cm=28.453pt)
-^^[[36m[banxin]^^[[0m Initialized. Active=true
+^^[[36m[banxin]^^[[0m Initialized. Active=true, book_name=''
 ^^[[36m[core]^^[[0m Stage 0: Initialized with g_height=28.00 pt, limit=21, p_cols=17
-^^[[36m[flatten]^^[[0m Adding Column Break after Line=509
-^^[[36m[flatten]^^[[0m Adding Column Break after Line=2546
-^^[[36m[core]^^[[0m Stage 1: Flattened head=<node    nil <   3441 >    890 : glyph 256>
+^^[[36m[flatten]^^[[0m Adding Column Break after Line=3188
+^^[[36m[flatten]^^[[0m Adding Column Break after Line=2500
+^^[[36m[core]^^[[0m Stage 1: Flattened head=<node    nil <   2952 >    572 : glyph 256>
 ^^[[36m[core]^^[[0m Stage 1: Processed punctuation.
-^^[[36m[layout]^^[[0m   Node=3441 ID=29 [p:0, c:0, r:0]
-^^[[36m[layout]^^[[0m   Node=890 ID=29 [p:0, c:0, r:6]
-^^[[36m[layout]^^[[0m   Node=573 ID=29 [p:0, c:0, r:7]
-^^[[36m[layout]^^[[0m   Node=566 ID=29 [p:0, c:0, r:8]
-^^[[36m[layout]^^[[0m   Node=628 ID=29 [p:0, c:0, r:9]
-^^[[36m[layout]^^[[0m   Node=587 ID=29 [p:0, c:0, r:10]
-^^[[36m[layout]^^[[0m   Node=580 ID=29 [p:0, c:0, r:11]
-^^[[36m[layout]^^[[0m   Node=818 ID=29 [p:0, c:0, r:12]
-^^[[36m[layout]^^[[0m   Node=649 ID=29 [p:0, c:0, r:13]
-^^[[36m[layout]^^[[0m   Node=666 ID=29 [p:0, c:0, r:14]
-^^[[36m[layout]^^[[0m   Node=673 ID=29 [p:0, c:0, r:15]
-^^[[36m[layout]^^[[0m   Node=680 ID=29 [p:0, c:0, r:16]
-^^[[36m[layout]^^[[0m   Node=687 ID=29 [p:0, c:0, r:17]
-^^[[36m[layout]^^[[0m   Node=3392 ID=29 [p:0, c:0, r:18]
-^^[[36m[layout]^^[[0m   Node=2115 ID=29 [p:0, c:0, r:19]
-^^[[36m[layout]^^[[0m   Node=2160 ID=29 [p:0, c:0, r:20]
-^^[[36m[layout]^^[[0m   Node=1743 ID=14 [p:0, c:0, r:21]
-^^[[36m[layout]^^[[0m   Node=1758 ID=14 [p:0, c:1, r:0]
-^^[[36m[layout]^^[[0m   Node=2130 ID=29 [p:0, c:1, r:0]
-^^[[36m[layout]^^[[0m   Node=2145 ID=29 [p:0, c:1, r:1]
-^^[[36m[layout]^^[[0m   Node=2175 ID=29 [p:0, c:1, r:2]
-^^[[36m[layout]^^[[0m   Node=3308 ID=29 [p:0, c:1, r:3]
-^^[[36m[layout]^^[[0m   Node=1761 ID=14 [p:0, c:1, r:4]
-^^[[36m[layout]^^[[0m   Node=1764 ID=14 [p:0, c:1, r:4]
+^^[[36m[layout]^^[[0m   Node=2952 ID=29 [p:0, c:0, r:0]
+^^[[36m[layout]^^[[0m   Node=572 ID=29 [p:0, c:0, r:6]
+^^[[36m[layout]^^[[0m   Node=586 ID=29 [p:0, c:0, r:7]
+^^[[36m[layout]^^[[0m   Node=622 ID=29 [p:0, c:0, r:8]
+^^[[36m[layout]^^[[0m   Node=601 ID=29 [p:0, c:0, r:9]
+^^[[36m[layout]^^[[0m   Node=791 ID=29 [p:0, c:0, r:10]
+^^[[36m[layout]^^[[0m   Node=639 ID=29 [p:0, c:0, r:11]
+^^[[36m[layout]^^[[0m   Node=646 ID=29 [p:0, c:0, r:12]
+^^[[36m[layout]^^[[0m   Node=653 ID=29 [p:0, c:0, r:13]
+^^[[36m[layout]^^[[0m   Node=660 ID=29 [p:0, c:0, r:14]
+^^[[36m[layout]^^[[0m   Node=667 ID=29 [p:0, c:0, r:15]
+^^[[36m[layout]^^[[0m   Node=674 ID=29 [p:0, c:0, r:16]
+^^[[36m[layout]^^[[0m   Node=681 ID=29 [p:0, c:0, r:17]
+^^[[36m[layout]^^[[0m   Node=688 ID=29 [p:0, c:0, r:18]
+^^[[36m[layout]^^[[0m   Node=3346 ID=29 [p:0, c:0, r:19]
+^^[[36m[layout]^^[[0m   Node=2088 ID=29 [p:0, c:0, r:20]
+^^[[36m[layout]^^[[0m   Node=1713 ID=14 [p:0, c:0, r:21]
+^^[[36m[layout]^^[[0m   Node=1716 ID=14 [p:0, c:1, r:0]
+^^[[36m[layout]^^[[0m   Node=2133 ID=29 [p:0, c:1, r:0]
+^^[[36m[layout]^^[[0m   Node=2103 ID=29 [p:0, c:1, r:1]
+^^[[36m[layout]^^[[0m   Node=2118 ID=29 [p:0, c:1, r:2]
+^^[[36m[layout]^^[[0m   Node=2148 ID=29 [p:0, c:1, r:3]
+^^[[36m[layout]^^[[0m   Node=1731 ID=14 [p:0, c:1, r:4]
+^^[[36m[layout]^^[[0m   Node=1734 ID=14 [p:0, c:1, r:4]
 ^^[[36m[layout]^^[[0m Layout map built. Total entries: 20, Total pages: 1
 ^^[[36m[core]^^[[0m Stage 2: Laid out total_pages = 1
-^^[[36m[banxin]^^[[0m Layout hook called. Total pages: 1
+^^[[36m[banxin]^^[[0m Layout hook: calculating for 1 pages, 17 cols/page
+^^[[36m[banxin]^^[[0m   Page 0, col 8: layout calculated
+^^[[36m[banxin]^^[[0m Layout hook completed: cached 1 pages
 ^^[[36m[core]^^[[0m Stage 2: Calculated floating positions.
 ^^[[36m[render]^^[[0m [render] apply_positions: border=nil, font=nil
 ^^[[36m[yuwei]^^[[0m Drawing yuwei with style=black, direction=1, color=0.0000 0.0000 0.0000

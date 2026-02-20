@@ -1,0 +1,210 @@
+% Copyright 2026 Open-Guji (https://github.com/open-guji)
+% ... (License header omitted for brevity)
+% luatex-cn-guji-meipi.sty
+% MeiPi (眉批) auto-positioned annotation support for vertical typesetting
+% This is a subpackage of luatex_cn
+%
+% NOTE: This file must be loaded AFTER TextBox and PiZhu are defined
+%
+
+\RequirePackage{expl3}
+\RequirePackage{xparse}
+\ProvidesExplPackage {guji/luatex-cn-guji-meipi} {2026/02/01} {0.2.3} {MeiPi Auto-Positioned Annotation Support}
+
+% Load the Lua module
+\lua_now:n { require('guji.luatex-cn-guji-meipi') }
+
+% MeiPi (眉批) - Auto-positioned floating annotation box
+\tl_new:N \l__luatexcn_meipi_font_size_tl
+\tl_new:N \l__luatexcn_meipi_color_tl
+\tl_new:N \l__luatexcn_meipi_grid_width_tl
+\tl_new:N \l__luatexcn_meipi_grid_height_tl
+\tl_new:N \l__luatexcn_meipi_x_tl
+\tl_new:N \l__luatexcn_meipi_y_tl
+\tl_new:N \l__luatexcn_meipi_height_tl
+\tl_new:N \l__luatexcn_meipi_spacing_tl
+\tl_new:N \l__luatexcn_meipi_gap_tl
+
+\keys_define:nn { luatexcn / meipi }
+  {
+    x .tl_set:N = \l__luatexcn_meipi_x_tl,
+    x .initial:n = {},
+    y .tl_set:N = \l__luatexcn_meipi_y_tl,
+    y .initial:n = {},
+    height .tl_set:N = \l__luatexcn_meipi_height_tl,
+    height .initial:n = {7},
+    font-size .tl_set:N = \l__luatexcn_meipi_font_size_tl,
+    font-size .initial:n = {18pt},
+    color .tl_set:N = \l__luatexcn_meipi_color_tl,
+    color .initial:n = {1~0~0},
+    grid-width .tl_set:N = \l__luatexcn_meipi_grid_width_tl,
+    grid-width .initial:n = {20pt},
+    grid-height .tl_set:N = \l__luatexcn_meipi_grid_height_tl,
+    grid-height .initial:n = {19pt},
+    spacing .tl_set:N = \l__luatexcn_meipi_spacing_tl,
+    spacing .initial:n = {10pt},
+    gap .tl_set:N = \l__luatexcn_meipi_gap_tl,
+    gap .initial:n = {0pt},
+  }
+
+\NewDocumentCommand{\meipiSetup}{ m }
+  {
+    \keys_set:nn { luatexcn / meipi } { #1 }
+    \lua_now:e {
+      local~meipi~=~require('guji.luatex-cn-guji-meipi')
+      meipi.setup({
+        spacing~=~[=[\luaescapestring{\l__luatexcn_meipi_spacing_tl}]=],
+        gap~=~[=[\luaescapestring{\l__luatexcn_meipi_gap_tl}]=]
+      })
+    }
+  }
+
+% Internal: Calculate annotation dimensions by typesetting content in a temp box
+\dim_new:N \l__luatexcn_meipi_box_width_dim
+\dim_new:N \l__luatexcn_meipi_box_height_dim
+\box_new:N \l__luatexcn_meipi_temp_box
+\tl_new:N \l__luatexcn_meipi_width_sp_tl
+\tl_new:N \l__luatexcn_meipi_height_sp_tl
+
+\NewDocumentCommand{\MeiPi}{ O{} +m }{%
+  \group_begin:
+    \keys_set:nn { luatexcn / meipi } { #1 }
+    
+    % Ensure grid dimensions are set to defaults if empty (defensive)
+    \tl_if_empty:NT \l__luatexcn_meipi_grid_width_tl { \tl_set:Nn \l__luatexcn_meipi_grid_width_tl { 20pt } }
+    \tl_if_empty:NT \l__luatexcn_meipi_grid_height_tl { \tl_set:Nn \l__luatexcn_meipi_grid_height_tl { 19pt } }
+
+    % Setup Lua parameters for gap and spacing
+    \lua_now:e {
+      local~meipi~=~require('guji.luatex-cn-guji-meipi')
+      meipi.setup({
+        spacing~=~[=[\luaescapestring{\l__luatexcn_meipi_spacing_tl}]=],
+        gap~=~[=[\luaescapestring{\l__luatexcn_meipi_gap_tl}]=]
+      })
+    }
+
+    % 1. Create a temporary non-floating TextBox to measure dimensions
+    % We use \use:x to expand variables before passing to TextBox
+    % This ensures that \regex_match_... inside TextBox sees actual values (digits) not macro names
+    \hbox_set:Nn \l__luatexcn_meipi_temp_box {
+       \use:x {
+         \exp_not:N \TextBox [
+            height = \l__luatexcn_meipi_height_tl,
+            font-size = \l__luatexcn_meipi_font_size_tl,
+            font-color = \l__luatexcn_meipi_color_tl,
+            grid-width = \l__luatexcn_meipi_grid_width_tl,
+            grid-height = \l__luatexcn_meipi_grid_height_tl,
+            floating = false
+         ] { \exp_not:n { #2 } }
+       }
+    }
+
+    % 2. Measure actual dimensions
+    \dim_set:Nn \l__luatexcn_meipi_box_width_dim { \wd\l__luatexcn_meipi_temp_box }
+    
+    % Calculate height for Y positioning
+    % Safe calculation: if contains 'pt' or units, use as is. Else use FP math.
+    \str_if_in:NnT \l__luatexcn_meipi_height_tl { p }
+    {
+         \dim_set:Nn \l__luatexcn_meipi_box_height_dim { \l__luatexcn_meipi_height_tl }
+    }
+    \str_if_in:NnF \l__luatexcn_meipi_height_tl { p }
+    {
+         \tl_if_empty:NTF \l__luatexcn_meipi_height_tl
+         { 
+             % Fallback if height not specified: 5 lines of grid height
+             \dim_set:Nn \l__luatexcn_meipi_box_height_dim { \fp_to_dim:n { 5 * \dim_to_fp:n { \l__luatexcn_meipi_grid_height_tl } } }
+         }
+         { 
+             % Use FP math to be absolutely safe (avoid dim expressions * operator issues)
+             \dim_set:Nn \l__luatexcn_meipi_box_height_dim { 
+                \fp_to_dim:n { 
+                    \l__luatexcn_meipi_height_tl * \dim_to_fp:n { \l__luatexcn_meipi_grid_height_tl } 
+                } 
+             }
+         }
+    }
+
+    % 3. Calculate coordinates based on what's provided
+    % Prepare dimension values in sp for Lua
+    \tl_set:Nx \l__luatexcn_meipi_width_sp_tl { \dim_to_decimal_in_sp:n { \l__luatexcn_meipi_box_width_dim } }
+    \tl_set:Nx \l__luatexcn_meipi_height_sp_tl { \dim_to_decimal_in_sp:n { \l__luatexcn_meipi_box_height_dim } }
+
+    \tl_if_empty:NTF \l__luatexcn_meipi_x_tl
+      {
+        % X not provided
+        \tl_if_empty:NTF \l__luatexcn_meipi_y_tl
+          {
+            % Case 1: Neither X nor Y provided - calculate both
+            \lua_now:e {
+              require('guji.luatex-cn-guji-meipi').calculate_and_store(
+                "\l__luatexcn_meipi_width_sp_tl",
+                "\l__luatexcn_meipi_height_sp_tl"
+              )
+            }
+            \tl_set:Nx \l__luatexcn_meipi_x_tl { \lua_now:e { tex.sprint(_G.meipi_x) } }
+            \tl_set:Nx \l__luatexcn_meipi_y_tl { \lua_now:e { tex.sprint(_G.meipi_y) } }
+          }
+          {
+            % Case 2: Only Y provided - calculate X (keep spacing from previous meipi)
+            \lua_now:e {
+              require('guji.luatex-cn-guji-meipi').calculate_x_and_store(
+                "\l__luatexcn_meipi_width_sp_tl",
+                "\l__luatexcn_meipi_height_sp_tl",
+                "\l__luatexcn_meipi_y_tl"
+              )
+            }
+            \tl_set:Nx \l__luatexcn_meipi_x_tl { \lua_now:e { tex.sprint(_G.meipi_x) } }
+          }
+      }
+      {
+        % X is provided
+        \tl_if_empty:NTF \l__luatexcn_meipi_y_tl
+          {
+            % Case 3: Only X provided - calculate Y and register annotation
+            \lua_now:e {
+              require('guji.luatex-cn-guji-meipi').calculate_y_and_store(
+                "\l__luatexcn_meipi_width_sp_tl",
+                "\l__luatexcn_meipi_height_sp_tl",
+                "\l__luatexcn_meipi_x_tl"
+              )
+            }
+            \tl_set:Nx \l__luatexcn_meipi_y_tl { \lua_now:e { tex.sprint(_G.meipi_y) } }
+          }
+          {
+            % Case 4: Both X and Y provided - register annotation for tracking
+            \lua_now:e {
+              require('guji.luatex-cn-guji-meipi').register_with_fixed_xy(
+                "\l__luatexcn_meipi_width_sp_tl",
+                "\l__luatexcn_meipi_height_sp_tl",
+                "\l__luatexcn_meipi_x_tl",
+                "\l__luatexcn_meipi_y_tl"
+              )
+            }
+          }
+      }
+
+    % 4. Register the captured box as a floating box
+    \lua_now:e {
+        local~vertical_textbox~=~require('core.luatex-cn-core-textbox')
+        local~box_num~=~\int_use:N \l__luatexcn_meipi_temp_box
+        vertical_textbox.register_floating_box(box_num, {
+            x~=~[=[\luaescapestring{\l__luatexcn_meipi_x_tl}]=],
+            y~=~[=[\luaescapestring{\l__luatexcn_meipi_y_tl}]=]
+        })
+    }
+    
+  \group_end:
+}
+
+% Reset MeiPi registry at the start of each document
+\AtBeginDocument{
+  \lua_now:n { require('guji.luatex-cn-guji-meipi').reset() }
+}
+
+\ExplSyntaxOff%
+
+% Command Alias for CJK
+\NewCommandCopy{\眉批}{\MeiPi}
+
+\endinput%

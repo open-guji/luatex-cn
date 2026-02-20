@@ -50,6 +50,10 @@ local to_sp = constants.to_dimen
 function splitpage.configure(params)
     params = params or {}
 
+    if params.enabled ~= nil then
+        splitpage.enabled = params.enabled
+    end
+
     if params.source_width then
         splitpage.source_width = to_sp(params.source_width)
     end
@@ -64,7 +68,8 @@ function splitpage.configure(params)
         splitpage.right_first = params.right_first
     end
 
-    dbg.log(string.format("Configured: source=%.1fmm x %.1fmm, target=%.1fmm x %.1fmm",
+    dbg.log(string.format("Configured: enabled=%s, source=%.1fmm x %.1fmm, target=%.1fmm x %.1fmm",
+        tostring(splitpage.enabled),
         splitpage.source_width / 65536 / 72.27 * 25.4,
         splitpage.source_height / 65536 / 72.27 * 25.4,
         splitpage.target_width / 65536 / 72.27 * 25.4,

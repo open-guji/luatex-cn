@@ -13,7 +13,7 @@
 % limitations under the License.
 
 \RequirePackage{core/luatex-cn-core-base}
-\ProvidesExplPackage{core/luatex-cn-core-content}{2026/01/31} {0.2.2}{Content layout and border support}
+\ProvidesExplPackage{core/luatex-cn-core-content}{2026/02/01} {0.2.3}{Content layout and border support}
 
 % Centralized variables for content border settings
 \bool_new:N \l__luatexcn_content_border_bool
@@ -194,6 +194,103 @@
       { \skip_horizontal:n { \__luatexcn_to_dimen:n { \l__luatexcn_content_grid_height_tl } * #1 } }
       { \skip_horizontal:n { \__luatexcn_to_dimen:n { #1 } } }
   }
+
+% ============================================================================
+% Shared Helper Functions for Content Environments
+% ============================================================================
+
+% Helper: Setup font if font-name is specified
+% Uses RawFeature={+vert,+vrt2} as default for CJK vertical typesetting
+\cs_new_protected:Npn \__luatexcn_content_setup_font:
+  {
+    \tl_if_empty:NF \l__luatexcn_content_font_name_tl
+      {
+        \tl_if_empty:NTF \l__luatexcn_content_font_features_tl
+          {
+            \exp_args:NV \setmainfont \l__luatexcn_content_font_name_tl [RawFeature={+vert,+vrt2}]
+          }
+          {
+            \exp_args:NV \setmainfont \l__luatexcn_content_font_name_tl [\l__luatexcn_content_font_features_tl]
+          }
+      }
+    \fontsize{\l__luatexcn_content_font_size_tl}{\l__luatexcn_content_line_spacing_tl}\selectfont
+  }
+
+% Helper: Zero out vertical skips for exact grid layout
+\cs_new_protected:Npn \__luatexcn_content_zero_skips:
+  {
+    \dim_zero:N \topskip
+    \dim_zero:N \parskip
+    \dim_zero:N \partopsep
+    \dim_zero:N \topsep
+    \dim_zero:N \itemsep
+    \dim_zero:N \parsep
+    \dim_zero:N \baselineskip
+    \dim_zero:N \lineskip
+    \dim_zero:N \lineskiplimit
+    \dim_zero:N \parindent
+  }
+
+% Helper: Calculate height from page dimensions if not set
+\cs_new_protected:Npn \__luatexcn_content_calc_height:
+  {
+    \tl_if_empty:NT \l__luatexcn_content_height_tl
+      {
+        \tl_set:Nx \l__luatexcn_content_height_tl
+          {
+            \dim_eval:n
+              {
+                \l__luatexcn_page_paper_height_tl
+                - \l__luatexcn_page_margin_top_tl
+                - \l__luatexcn_page_margin_bottom_tl
+              }
+          }
+      }
+  }
+
+% Helper: Apply background color if specified
+\cs_new_protected:Npn \__luatexcn_content_apply_background:
+  {
+    \tl_if_empty:NF \l__luatexcn_page_background_color_tl
+      {
+        \tl_if_in:NnTF \l__luatexcn_page_background_color_tl { , }
+          { \pagecolor [RGB] { \l__luatexcn_page_background_color_tl } }
+          { \pagecolor { \l__luatexcn_page_background_color_tl } }
+      }
+  }
+
+% ============================================================================
+% Base Content Environment (ltc-content)
+% A minimal content environment that classes can extend
+% ============================================================================
+
+\RequirePackage{environ}
+
+\NewEnviron{ltc-content}[1][]{%
+    \group_begin:
+    \keys_set:nn { luatexcn / content } { #1 }
+
+    % Setup font
+    \__luatexcn_content_setup_font:
+
+    % Zero skips
+    \__luatexcn_content_zero_skips:
+
+    % Calculate height if not set
+    \__luatexcn_content_calc_height:
+
+    % Apply geometry
+    \luatexcn_apply_geometry:
+
+    % Apply background color
+    \__luatexcn_content_apply_background:
+
+    % Process content
+    \nointerlineskip
+    \__luatexcn_content_process_grid:n { \BODY }
+    \group_end:
+    \clearpage
+}
 
 \ExplSyntaxOff
 \NewCommandCopy{\空格}{\Space}

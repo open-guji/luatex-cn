@@ -232,6 +232,7 @@ local function create_grid_context(params, line_limit, p_cols)
         page_has_content = false,
         chapter_title = initial_chapter,
         page_chapter_titles = {}, -- To store chapter title for each page
+        last_glyph_row = -1, -- Track last glyph row for detecting line changes
         -- Can add other state if needed
     }
     ctx.page_chapter_titles[0] = ctx.chapter_title -- Initialize page 0 with the initial chapter title
@@ -240,7 +241,18 @@ end
 
 
 local function apply_indentation(ctx, indent)
-    if not indent or indent <= 0 then return end
+    if not indent or indent == 0 then return end
+    if indent < 0 then
+        -- 负缩进（抬头）：列起始时设置 cur_row 为负值
+        -- 用 cur_column_indent 追踪是否已应用，防止每个字符都重置
+        -- （因为 -1+1=0，若用 cur_row<=0 判断会反复触发）
+        if (ctx.cur_column_indent or 0) == 0 then
+            ctx.cur_row = indent
+            ctx.cur_column_indent = indent
+        end
+        return
+    end
+    -- 正缩进：保持原有逻辑
     if ctx.cur_row < indent then ctx.cur_row = indent end
     if indent > (ctx.cur_column_indent or 0) then ctx.cur_column_indent = indent end
     if ctx.cur_row < (ctx.cur_column_indent or 0) then ctx.cur_row = ctx.cur_column_indent end
@@ -314,9 +326,12 @@ _internal.move_to_next_valid_position = move_to_next_valid_position
 -- @param reset_indent (boolean) Whether to reset column indent
 -- @param reset_content (boolean) Whether to reset page_has_content flag
 local function wrap_to_next_column(ctx, p_cols, interval, grid_height, indent, reset_indent, reset_content)
+    -- Pop temporary indents when changing column
+    style_registry.pop_temporary()
+
     ctx.cur_col = ctx.cur_col + 1
     ctx.cur_row = 0
-    ctx.just_wrapped_column = true  -- Flag for issue #54 fix
+    ctx.just_wrapped_column = true -- Flag for issue #54 fix
     if ctx.cur_col >= p_cols then
         ctx.cur_col = 0
         ctx.cur_page = ctx.cur_page + 1
@@ -370,16 +385,16 @@ _internal.accumulate_spacing = accumulate_spacing
 -- @param indent (number) Current indent
 -- @return (boolean) true if handled, false otherwise
 local function handle_penalty_breaks(p_val, ctx, flush_buffer_fn, p_cols, interval, grid_height, indent)
-    if p_val == -10002 then
-        -- Forced column break (paragraph end)
+    if p_val == constants.PENALTY_FORCE_COLUMN then
+        -- Forced column break (explicit \换列 command)
         flush_buffer_fn()
         if ctx.cur_row > ctx.cur_column_indent then
             wrap_to_next_column(ctx, p_cols, interval, grid_height, indent, false, true)
         end
         ctx.cur_column_indent = 0
         return true
-    elseif p_val == -10003 then
-        -- Forced page break
+    elseif p_val == constants.PENALTY_FORCE_PAGE then
+        -- Forced page break (\newpage, \clearpage)
         if ctx.page_has_content then
             flush_buffer_fn()
             ctx.cur_page = ctx.cur_page + 1
@@ -527,6 +542,12 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
                 map_entry.font = font
             end
 
+            -- Check for line mark attribute (专名号/书名号)
+            local lm_id = D.get_attribute(entry.node, constants.ATTR_LINE_MARK_ID)
+            if lm_id and lm_id > 0 then
+                map_entry.line_mark_id = lm_id
+            end
+
             layout_map[entry.node] = map_entry
         end
         col_buffer = {}
@@ -584,24 +605,51 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
         node_count = node_count + 1
 
         -- Advanced Indentation Logic
-        -- Priority: 1) Node attribute (from Paragraph), 2) Style stack (inherited)
-        -- Special value -2 means "force 0, bypass style stack" (used by TextBox)
+        --[[
+        ===================================================================
+        Indent Resolution Logic (Refactored 2026-02-06)
+        ===================================================================
+
+        Three-tier priority system for determining indent:
+
+        1. FORCED INDENT (highest priority)
+           - Encoded as negative values < INDENT_FORCE_BASE (-1000)
+           - Special case: INDENT_FORCE_ZERO (-2) forces indent to 0
+           - General case: (INDENT_FORCE_BASE - value) forces indent to value
+           - Used by: \SetIndent, \平抬, TextBox (to prevent inheriting)
+           - Bypasses all other mechanisms including style stack
+
+        2. EXPLICIT INDENT (medium priority)
+           - Positive attribute values (> 0)
+           - Set directly by Paragraph environment or user code
+           - Does NOT bypass style stack (0 means "check stack")
+
+        3. STYLE STACK INHERITANCE (lowest priority)
+           - When attribute is 0 or nil and not forced
+           - Inherits from parent style (Paragraph, TextFlow, etc.)
+           - Allows nested contexts to share indent settings
+
+        Examples:
+        - \begin{段落}[indent=2] → sets base to 2 (explicit)
+        - \SetIndent{1} → forces to 1 (forced, bypasses stack)
+        - \SetIndent{0} → forces to 0 (forced, not inherited!)
+        - \夹注{...} → inherits from outer Paragraph (stack)
+        ===================================================================
+        ]]--
+
         local block_id = D.get_attribute(t, constants.ATTR_BLOCK_ID)
         local node_indent = D.get_attribute(t, constants.ATTR_INDENT)
         local node_first_indent = D.get_attribute(t, constants.ATTR_FIRST_INDENT)
 
-        -- Sentinel value for "force indent to 0, don't check style stack"
-        local FORCE_ZERO_INDENT = -2
+        -- Decode forced indent values (handles both -2 and < -1000)
+        local indent_is_forced, forced_indent_value = constants.is_forced_indent(node_indent)
+        local first_indent_is_forced, forced_first_indent_value = constants.is_forced_indent(node_first_indent)
 
-        -- Handle sentinel value: -2 means "force 0"
-        local indent_is_forced = (node_indent == FORCE_ZERO_INDENT)
-        local first_indent_is_forced = (node_first_indent == FORCE_ZERO_INDENT)
+        -- Start with forced value (if forced) or explicit attribute (if set) or 0
+        local base_indent = indent_is_forced and forced_indent_value or (node_indent or 0)
+        local first_indent = first_indent_is_forced and forced_first_indent_value or (node_first_indent or -1)
 
-        -- Get indent from node attribute or style stack
-        local base_indent = indent_is_forced and 0 or (node_indent or 0)
-        local first_indent = first_indent_is_forced and 0 or (node_first_indent or -1)
-
-        -- If node doesn't have explicit indent (and not forced), check style stack
+        -- If not forced and no explicit value, inherit from style stack
         if not indent_is_forced and (node_indent == nil or node_indent == 0) then
             local style_id = D.get_attribute(t, constants.ATTR_STYLE_REG_ID)
             if style_id then
@@ -612,7 +660,7 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
             end
         end
 
-        -- If node doesn't have explicit first_indent (and not forced), check style stack
+        -- Same logic for first_indent
         if not first_indent_is_forced and (node_first_indent == nil or node_first_indent == -1) then
             local style_id = D.get_attribute(t, constants.ATTR_STYLE_REG_ID)
             if style_id then
@@ -738,7 +786,7 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
             local tb_params = {
                 effective_limit = effective_limit,
                 p_cols = p_cols,
-                indent = 0  -- Textbox should not inherit paragraph indent
+                indent = 0 -- Textbox should not inherit paragraph indent
             }
             local tb_callbacks = {
                 flush = flush_buffer,
@@ -757,6 +805,13 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
 
             textbox.place_textbox_node(ctx, t, tb_w, tb_h, tb_params, tb_callbacks)
         elseif id == constants.GLYPH then
+            -- Flush pending textflow state before processing regular glyph
+            -- This ensures "后续文字" continues after textflow, not from start
+            if ctx.textflow_pending_sub_col and ctx.textflow_pending_row_used then
+                ctx.cur_row = ctx.cur_row + ctx.textflow_pending_row_used
+                ctx.textflow_pending_sub_col = nil
+                ctx.textflow_pending_row_used = nil
+            end
             local dec_id = D.get_attribute(t, constants.ATTR_DECORATE_ID)
             if dec_id and dec_id > 0 then
                 -- Decorate Marker: position for the PREVIOUS character
@@ -770,7 +825,7 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
                     -- Column just wrapped - use previous character's position
                     dec_page = ctx.last_char_page or ctx.cur_page
                     dec_col = ctx.last_char_col or ctx.cur_col
-                    dec_row = ctx.last_char_row + 1  -- +1 because render subtracts 1
+                    dec_row = ctx.last_char_row + 1 -- +1 because render subtracts 1
                 end
 
                 local map_entry = {
@@ -795,6 +850,12 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
                 layout_map[t] = map_entry
                 -- DO NOT increment cur_row - marker is zero-width overlay
             else
+                -- Detect line change and clear temporary indents
+                if ctx.cur_row ~= ctx.last_glyph_row then
+                    style_registry.pop_temporary()
+                    ctx.last_glyph_row = ctx.cur_row
+                end
+
                 -- Track last character position for decoration markers
                 ctx.last_char_page = ctx.cur_page
                 ctx.last_char_col = ctx.cur_col
@@ -848,7 +909,32 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
             goto start_of_loop
         elseif id == constants.PENALTY then
             local p_val = D.getfield(t, "penalty")
-            handle_penalty_breaks(p_val, ctx, flush_buffer, p_cols, interval, grid_height, indent)
+
+            -- Smart column break: Check next node type before deciding
+            if p_val == constants.PENALTY_SMART_BREAK then
+                local next_node = D.getnext(t)
+                if next_node then
+                    local next_is_textflow = D.get_attribute(next_node, constants.ATTR_JIAZHU) == 1
+                    if not next_is_textflow then
+                        -- Flush pending textflow state before checking cur_row
+                        -- (auto-balance=false textflow may have rows_used=0, leaving cur_row un-advanced)
+                        if ctx.textflow_pending_sub_col and ctx.textflow_pending_row_used then
+                            ctx.cur_row = ctx.cur_row + ctx.textflow_pending_row_used
+                            ctx.textflow_pending_sub_col = nil
+                            ctx.textflow_pending_row_used = nil
+                        end
+                        -- Next node is regular text, break to new column
+                        flush_buffer()
+                        if ctx.cur_row > ctx.cur_column_indent then
+                            wrap_to_next_column(ctx, p_cols, interval, grid_height, indent, false, true)
+                        end
+                        ctx.cur_column_indent = 0
+                    end
+                    -- If next is textflow, don't break - let textflow continue naturally
+                end
+            else
+                handle_penalty_breaks(p_val, ctx, flush_buffer, p_cols, interval, grid_height, indent)
+            end
         end
 
         t = D.getnext(t)

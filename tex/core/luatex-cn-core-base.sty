@@ -18,7 +18,7 @@
 \RequirePackage{luatexbase}
 \RequirePackage{enumitem}
 
-\ProvidesExplPackage {core/luatex-cn-core-base} {2026/02/06} {0.2.5} {Core base for luatex-cn}
+\ProvidesExplPackage {core/luatex-cn-core-base} {2026/02/07} {0.2.6} {Core base for luatex-cn}
 
 % ============================================================================
 % Attributes
@@ -36,6 +36,7 @@
 \newluatexattribute\cnverticalstyle
 \newluatexattribute\cnverticalcolumn
 \newluatexattribute\cnverticalcolumnalign
+\newluatexattribute\cnverticallinemark
 
 \lua_now:e {
   luatex_cn_debug.register_module("vertical", { color = "yellow" })

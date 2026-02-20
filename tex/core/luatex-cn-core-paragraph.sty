@@ -20,6 +20,13 @@
 \RequirePackage{core/luatex-cn-core-base}
 \ExplSyntaxOn
 
+% ============================================================================
+% Penalty Constants (synchronized with constants.lua)
+% ============================================================================
+\int_const:Nn \c__luatexcn_penalty_smart_break_int { -10001 }
+\int_const:Nn \c__luatexcn_penalty_force_column_int { -10002 }
+\int_const:Nn \c__luatexcn_penalty_force_page_int { -10003 }
+
 % Paragraph Environment
 % Supports block indentation with first-line/hanging indent differentiation
 % Syntax: \begin{Paragraph}[indent=2, first-indent=0, bottom-indent=1]
@@ -60,9 +67,22 @@
 
     % Set Bottom Indent (still via attribute, as it's less common)
     \setluatexattribute\cnverticalrightindent{\l__luatexcn_paragraph_bottom_indent_int}
+
+    % Redefine \\ to restore temporary indent after line break
+    \cs_set_eq:NN \__luatexcn_original_newline: \\
+    \cs_set:Npn \\ {
+      \__luatexcn_restore_temp_indent:
+      \__luatexcn_original_newline:
+    }
   }
   {
-    % Pop style from stack and reset cnverticalstyle to parent
+    % Restore \\ to original definition
+    \cs_set_eq:NN \\ \__luatexcn_original_newline:
+
+    % First restore any temporary indent
+    \__luatexcn_restore_temp_indent:
+
+    % Pop paragraph style from stack and reset cnverticalstyle to parent
     \edef\parent_style_id{\lua_now:n {
       local ~ style_registry = require('util.luatex-cn-style-registry')
       style_registry.pop()
@@ -75,11 +95,171 @@
     \setluatexattribute\cnverticalfirstindent{-1}
     \setluatexattribute\cnverticalrightindent{0}
     \par
+    % Insert smart column break marker: check next node type
+    % If next node is textflow, don't break; if regular text, break to new column
+    \penalty \int_use:N \c__luatexcn_penalty_smart_break_int \scan_stop:
+  }
+
+% ============================================================================
+% Temporary Indent Command
+% ============================================================================
+% \SetIndent{<value>} - Forcefully set indent for current line
+%
+% IMPORTANT (Breaking Change as of 2026-02-06 Refactor):
+% - \SetIndent is now FULLY FORCEFUL and bypasses style stack inheritance
+% - \SetIndent{0} will force indent to 0, not inherit from parent
+% - \SetIndent{3} will force indent to 3, regardless of context
+% - The indent is automatically restored after \\ or at line end
+%
+% Examples:
+%   \begin{段落}[indent=2]
+%     \SetIndent{1}第一列缩进一格\\     % Forces indent to 1
+%     第二列缩进两格\\                   % Restores to 2 (段落 base)
+%   \end{段落}
+%
+%   \夹注{内容 \SetIndent{0} 顶格}      % Forces indent to 0 in 夹注
+%
+% Implementation: Uses forced indent encoding (constants.encode_forced_indent)
+% to set a special attribute value that bypasses style stack lookup.
+% ============================================================================
+
+\bool_new:N \l__luatexcn_setindent_active_bool
+
+\NewDocumentCommand{\SetIndent}{ m }
+  {
+    % Push temporary indent to style stack for restoration on \\
+    \edef\temp_style_id{\lua_now:e {
+      local ~ sr = require('util.luatex-cn-style-registry')
+      tex.print(sr.push_indent(#1, ~ -1, ~ true)) ~ -- ~ third ~ arg ~ marks ~ as ~ temporary
+    }}
+    \setluatexattribute\cnverticalstyle{\temp_style_id}
+
+    % IMPORTANT: Use forced indent encoding to bypass style stack inheritance
+    % This makes \SetIndent fully forceful - it sets the exact value regardless
+    % of style stack, fixing the issue where \SetIndent{0} was ignored
+    \lua_now:n {
+      local ~ constants = require('core.luatex-cn-constants')
+      local ~ forced_value = constants.encode_forced_indent(#1)
+      tex.setattribute(constants.ATTR_INDENT, ~ forced_value)
+      tex.setattribute(constants.ATTR_FIRST_INDENT, ~ forced_value)
+    }
+
+    % Mark that SetIndent is active (for \\ to restore)
+    \bool_set_true:N \l__luatexcn_setindent_active_bool
+  }
+
+% Helper to restore indent (called by \\ and paragraph end)
+\cs_new:Nn \__luatexcn_restore_temp_indent:
+  {
+    \bool_if:NT \l__luatexcn_setindent_active_bool
+      {
+        % Pop temporary indent and restore to parent style
+        \edef\parent_style_id{\lua_now:n {
+          local ~ sr = require('util.luatex-cn-style-registry')
+          sr.pop_temporary()
+          local ~ current_id = sr.current_id() ~ or ~ 0
+          tex.print(current_id)
+        }}
+        \setluatexattribute\cnverticalstyle{\parent_style_id}
+
+        % Restore indent attributes from parent style (using forced encoding)
+        % This ensures restored indent is also forceful, not overridden by outer stack
+        \lua_now:n {
+          local ~ sr = require('util.luatex-cn-style-registry')
+          local ~ constants = require('core.luatex-cn-constants')
+          local ~ indent = sr.get_indent(sr.current_id()) ~ or ~ 0
+          local ~ first_indent = sr.get_first_indent(sr.current_id()) ~ or ~ -1
+
+          -- Use forced encoding for restored values too
+          local ~ forced_indent = constants.encode_forced_indent(indent)
+          local ~ forced_first = first_indent == -1 ~ and ~ forced_indent ~ or ~ constants.encode_forced_indent(first_indent)
+
+          tex.setattribute(constants.ATTR_INDENT, ~ forced_indent)
+          tex.setattribute(constants.ATTR_FIRST_INDENT, ~ forced_first)
+        }
+
+        \bool_set_false:N \l__luatexcn_setindent_active_bool
+      }
+  }
+
+% ============================================================================
+% 抬头命令体系 (Taitou Command System)
+% ============================================================================
+% 古籍行文中表示尊敬的排版规范，将文字放到列的顶端甚至伸入天头区域。
+%
+% \抬头[N]  - 另起一列，比正常顶端高出N格（N=0为平抬，N>0伸入天头）
+% \平抬     - = \抬头[0]，顶格书写（向后兼容）
+% \单抬     - = \抬头[1]，高出1格
+% \双抬     - = \抬头[2]，高出2格
+% \三抬     - = \抬头[3]，高出3格
+
+\NewDocumentCommand{\抬头}{ O{0} }
+  {
+    \\
+    \lua_now:e {
+      local~constants = require('core.luatex-cn-constants')
+      local~forced_val = constants.encode_forced_indent(-\int_eval:n{#1})
+      tex.setattribute(constants.ATTR_INDENT,~forced_val)
+      tex.setattribute(constants.ATTR_FIRST_INDENT,~forced_val)
+    }
+  }
+
+\NewDocumentCommand{\平抬}{}{ \抬头[0] }
+\NewDocumentCommand{\单抬}{}{ \抬头[1] }
+\NewDocumentCommand{\双抬}{}{ \抬头[2] }
+\NewDocumentCommand{\三抬}{}{ \抬头[3] }
+
+% ============================================================================
+% 挪抬/空抬 Command (不换列，插入空格)
+% ============================================================================
+% \挪抬[N] - 在当前位置前插入N格空白（默认1格），不换列
+% \空抬    - = \挪抬[1]
+
+\NewDocumentCommand{\挪抬}{ O{1} }
+  {
+    \Space[#1]
+  }
+
+\NewDocumentCommand{\空抬}{}{ \挪抬[1] }
+
+% ============================================================================
+% 相对抬头 Command (相对当前缩进上移)
+% ============================================================================
+% \相对抬头[N] - 相对当前缩进位置上移N格（默认1格）
+% 例：当前 indent=2 时，\相对抬头[1] → 目标 indent=1
+%     当前 indent=2 时，\相对抬头[3] → 目标 indent=-1（伸入天头1格）
+
+\NewDocumentCommand{\相对抬头}{ O{1} }
+  {
+    \\
+    \lua_now:e {
+      local~constants = require('core.luatex-cn-constants')
+      local~sr = require('util.luatex-cn-style-registry')
+      local~current_indent = sr.get_indent(sr.current_id())~or~0
+      local~target = current_indent - \int_eval:n{#1}
+      local~forced_val = constants.encode_forced_indent(target)
+      tex.setattribute(constants.ATTR_INDENT,~forced_val)
+      tex.setattribute(constants.ATTR_FIRST_INDENT,~forced_val)
+    }
+  }
+
+% ============================================================================
+% 换列 Command
+% ============================================================================
+% \换列 - Force column break
+% Inserts PENALTY_FORCE_COLUMN to force wrapping to the next column
+% Useful for starting new sections or book entries in a fresh column
+
+\NewDocumentCommand{\换列}{}
+  {
+    \par
+    \penalty \int_use:N \c__luatexcn_penalty_force_column_int \scan_stop:
   }
 
 \ExplSyntaxOff
 
 % Support CJK environment alias
 \NewEnvironmentCopy{段落}{Paragraph}
+\let\设置缩进\SetIndent
 
 \endinput

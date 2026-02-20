@@ -17,7 +17,7 @@
 %
 \RequirePackage{expl3}
 \RequirePackage{xparse}
-\ProvidesExplPackage {decorate/luatex-cn-decorate} {2026/02/06} {0.2.5} {Character Decoration Support}
+\ProvidesExplPackage {decorate/luatex-cn-decorate} {2026/02/07} {0.2.6} {Character Decoration Support}
 
 % Decorate Command - Apply decoration to each character in content
 % Syntax: \decorate[char=。, color=red, xoffset=0pt, yoffset=0pt]{content}
@@ -142,94 +142,10 @@
 \NewCommandCopy{\改}{\fix}
 
 % ============================================================================
-% underline (下划线/左划线) - Draw a line on the left side of text
-% For vertical typesetting, this appears on the left (equivalent to underline)
-% Syntax: \underline[color=red, offset=0.6em]{content}
+% Underline / WavyUnderline - Now provided by luatex-cn-linemark.sty
+% The old glyph-based implementation has been replaced with PDF line drawing.
+% Commands \Underline, \WavyUnderline, \下划线, \波浪线 etc. are defined there.
 % ============================================================================
-\tl_new:N \l__luatexcn_underline_color_tl
-\tl_new:N \l__luatexcn_underline_offset_tl
-
-\keys_define:nn { luatexcn / underline }
-  {
-    color .tl_set:N = \l__luatexcn_underline_color_tl,
-    color .initial:n = red,
-    offset .tl_set:N = \l__luatexcn_underline_offset_tl,
-    offset .initial:n = 0.6em,
-  }
-
-% Internal: add line segment decoration for each character
-\cs_new:Npn \__luatexcn_underline_one:n #1 {
-  #1
-  \lua_now:e {
-    local~constants~=~require('core.luatex-cn-constants')
-    constants.register_decorate(
-      "│",
-      "\luaescapestring{\l__luatexcn_underline_offset_tl}",
-      "0pt",
-      nil,
-      "\luaescapestring{\l__luatexcn_underline_color_tl}",
-      font.current(),
-      "1.2"
-    )
-  }
-  \box0\scan_stop:
-}
-
-\NewDocumentCommand{\Underline}{ O{} m }{%
-  \group_begin:
-    \keys_set:nn { luatexcn / underline } { #1 }
-    \tl_map_function:nN { #2 } \__luatexcn_underline_one:n
-  \group_end:
-}
-
-% Aliases
-\NewCommandCopy{\下划线}{\Underline}
-\NewCommandCopy{\下劃線}{\Underline}
-
-% ============================================================================
-% WavyUnderline (波浪线) - Draw a wavy line on the left side of text
-% Syntax: \WavyUnderline[color=red, offset=0.6em]{content}
-% ============================================================================
-\tl_new:N \l__luatexcn_wavy_color_tl
-\tl_new:N \l__luatexcn_wavy_offset_tl
-
-\keys_define:nn { luatexcn / wavy }
-  {
-    color .tl_set:N = \l__luatexcn_wavy_color_tl,
-    color .initial:n = red,
-    offset .tl_set:N = \l__luatexcn_wavy_offset_tl,
-    offset .initial:n = 0.6em,
-  }
-
-% Internal: add wavy line segment decoration for each character
-% Using U+FE34 ︴ (PRESENTATION FORM FOR VERTICAL WAVY LOW LINE) for vertical typesetting
-\cs_new:Npn \__luatexcn_wavy_one:n #1 {
-  #1
-  \lua_now:e {
-    local~constants~=~require('core.luatex-cn-constants')
-    constants.register_decorate(
-      "︴",
-      "\luaescapestring{\l__luatexcn_wavy_offset_tl}",
-      "0pt",
-      nil,
-      "\luaescapestring{\l__luatexcn_wavy_color_tl}",
-      font.current(),
-      "1.0"
-    )
-  }
-  \box0\scan_stop:
-}
-
-\NewDocumentCommand{\WavyUnderline}{ O{} m }{%
-  \group_begin:
-    \keys_set:nn { luatexcn / wavy } { #1 }
-    \tl_map_function:nN { #2 } \__luatexcn_wavy_one:n
-  \group_end:
-}
-
-% Aliases
-\NewCommandCopy{\波浪线}{\WavyUnderline}
-\NewCommandCopy{\波浪線}{\WavyUnderline}
 
 \ExplSyntaxOff%
 %

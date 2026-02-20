@@ -15,23 +15,15 @@
 % Catalog/Index (目录) support for traditional book typesetting
 % This is a subpackage of luatex_cn
 %
-% Usage:
-%   \begin{目錄}
-%       \卷{一}
-%       \部{經部一}
-%       \類{易類}
-%   \end{目錄}
 %
-%   Or with raw commands:
-%   \begin{目錄}
-%       \條目[1]{卷一}
-%       \條目[2]{經部一}
-%       \條目[3]{易類}
-%   \end{目錄}
+%   Or with raw commands (level = number of indent spaces, default 0):
+%       \條目{卷一}           % level 0, no indent
+%       \條目[1]{經部一}      % level 1, 1 space indent
+%       \條目[2]{易類}        % level 2, 2 spaces indent
 %
 \RequirePackage{expl3}
 \RequirePackage{xparse}
-\ProvidesExplPackage {guji/luatex-cn-guji-mulu} {2026/02/06} {0.2.5} {Catalog/Index support for traditional books}
+\ProvidesExplPackage {guji/luatex-cn-guji-mulu} {2026/02/07} {0.2.6} {Catalog/Index support for traditional books}
 
 % Load the core column engine
 \RequirePackage{core/luatex-cn-core-column}
@@ -41,16 +33,17 @@
 % ============================================================================
 
 % Output column with level-based indent
-% #1: level (1, 2, 3, ...)
+% #1: level (0, 1, 2, 3, ...) - represents actual number of full-width spaces
 % #2: content
 \cs_new:Nn \__luatexcn_mulu_output_column:nn
   {
     \int_case:nn { #1 }
       {
-        { 1 } { \Column{ #2 } }
-        { 2 } { \Column{ 　#2 } }
-        { 3 } { \Column{ 　　#2 } }
-        { 4 } { \Column{ 　　　#2 } }
+        { 0 } { \Column{ #2 } }
+        { 1 } { \Column{ 　#2 } }
+        { 2 } { \Column{ 　　#2 } }
+        { 3 } { \Column{ 　　　#2 } }
+        { 4 } { \Column{ 　　　　#2 } }
       }
   }
 
@@ -59,7 +52,7 @@
 % ============================================================================
 
 % \条目[level]{content} - Output a column entry with level-based indent
-\NewDocumentCommand{\条目}{ O{1} +m }
+\NewDocumentCommand{\条目}{ O{0} +m }
   {
     \__luatexcn_mulu_output_column:nn { #1 } { #2 }
   }

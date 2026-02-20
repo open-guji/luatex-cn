@@ -1,0 +1,116 @@
+% Copyright 2026 Open-Guji (https://github.com/open-guji)
+%
+% Licensed under the Apache License, Version 2.0 (the "License");
+% you may not use this file except in compliance with the License.
+% You may obtain a copy of the License at
+%
+%     http://www.apache.org/licenses/LICENSE-2.0
+%
+% Unless required by applicable law or agreed to in writing, software
+% distributed under the License is distributed on an "AS IS" BASIS,
+% WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+% See the License for the specific language governing permissions and
+% limitations under the License.
+% luatex-cn-linemark.sty
+% Line Mark support for vertical typesetting (专名号/书名号)
+% Uses PDF graphics commands instead of font glyphs
+%
+\RequirePackage{expl3}
+\RequirePackage{xparse}
+\ProvidesExplPackage {decorate/luatex-cn-linemark} {2026/02/07} {0.2.6} {Line Mark Support (专名号/书名号)}
+
+% Load Lua module
+\lua_now:n { require('decorate.luatex-cn-linemark') }
+
+% ============================================================================
+% Key-Value Parameters
+% ============================================================================
+\tl_new:N \l__luatexcn_linemark_type_tl
+\tl_new:N \l__luatexcn_linemark_color_tl
+\tl_new:N \l__luatexcn_linemark_offset_tl
+\tl_new:N \l__luatexcn_linemark_amplitude_tl
+\tl_new:N \l__luatexcn_linemark_linewidth_tl
+\tl_new:N \l__luatexcn_linemark_style_tl
+
+\keys_define:nn { luatexcn / linemark }
+  {
+    type .tl_set:N = \l__luatexcn_linemark_type_tl,
+    type .initial:n = straight,
+    color .tl_set:N = \l__luatexcn_linemark_color_tl,
+    color .initial:n = black,
+    offset .tl_set:N = \l__luatexcn_linemark_offset_tl,
+    offset .initial:n = 0.6em,
+    amplitude .tl_set:N = \l__luatexcn_linemark_amplitude_tl,
+    amplitude .initial:n = medium,
+    line-width .tl_set:N = \l__luatexcn_linemark_linewidth_tl,
+    line-width .initial:n = 0.8pt,
+    style .tl_set:N = \l__luatexcn_linemark_style_tl,
+    style .initial:n = standard,
+  }
+
+% ============================================================================
+% LineMark - Unified base command
+% ============================================================================
+% Syntax: \LineMark[type=straight, color=black, offset=0.6em]{content}
+%
+% Sets ATTR_LINE_MARK_ID on all characters in {content}.
+% The attribute value is a group_id pointing to _G.line_mark_registry.
+% Rendering is done by linemark.render_line_marks() in the render phase.
+%
+\NewDocumentCommand{\LineMark}{ O{} m }
+  {
+    \group_begin:
+      \keys_set:nn { luatexcn / linemark } { #1 }
+      % Register group in Lua and get group_id back via macro
+      \lua_now:e
+        {
+          local~c~=~require('core.luatex-cn-constants')
+          c.register_line_mark(
+            "\luaescapestring{\tl_use:N~\l__luatexcn_linemark_type_tl}",
+            "\luaescapestring{\tl_use:N~\l__luatexcn_linemark_color_tl}",
+            "\luaescapestring{\tl_use:N~\l__luatexcn_linemark_offset_tl}",
+            "\luaescapestring{\tl_use:N~\l__luatexcn_linemark_amplitude_tl}",
+            "\luaescapestring{\tl_use:N~\l__luatexcn_linemark_linewidth_tl}",
+            "\luaescapestring{\tl_use:N~\l__luatexcn_linemark_style_tl}"
+          )
+        }
+      % Set attribute on all following characters (auto-propagates in TeX)
+      \setluatexattribute\cnverticallinemark{\g__luatexcn_line_mark_gid}
+      % Output content - characters inherit the attribute
+      #2
+      % Reset attribute
+      \unsetluatexattribute\cnverticallinemark
+    \group_end:
+  }
+
+% ============================================================================
+% Convenience Commands
+% ============================================================================
+
+% 专名号 (Proper Name Mark) - straight line on left side
+\NewDocumentCommand{\ProperNameMark}{ O{} m }
+  {
+    \LineMark[type=straight, #1]{#2}
+  }
+
+% 书名号 (Book Title Mark) - wavy line on left side
+\NewDocumentCommand{\BookTitleMark}{ O{} m }
+  {
+    \LineMark[type=wavy, #1]{#2}
+  }
+
+% CJK Aliases
+\cs_new_eq:NN \专名号 \ProperNameMark
+\cs_new_eq:NN \书名号 \BookTitleMark
+
+% English aliases matching old names (backward compatibility)
+\cs_new_eq:NN \Underline \ProperNameMark
+\cs_new_eq:NN \WavyUnderline \BookTitleMark
+\cs_new_eq:NN \下划线 \ProperNameMark
+\cs_new_eq:NN \下劃線 \ProperNameMark
+\cs_new_eq:NN \波浪线 \BookTitleMark
+\cs_new_eq:NN \波浪線 \BookTitleMark
+
+\ExplSyntaxOff%
+%
+\endinput%

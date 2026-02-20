@@ -58,6 +58,7 @@ constants.ATTR_DECORATE_ID = 202610
 constants.ATTR_DECORATE_VISUAL_CENTER = 202611
 constants.ATTR_DECORATE_FONT = 202612
 constants.ATTR_CHAPTER_REG_ID = 202613
+constants.ATTR_LINE_MARK_ID = luatexbase.attributes.cnverticallinemark or luatexbase.new_attribute("cnverticallinemark")
 
 -- Style Registry Attribute (for cross-page style preservation - Phase 2)
 constants.ATTR_STYLE_REG_ID = luatexbase.attributes.cnverticalstyle or luatexbase.new_attribute("cnverticalstyle")
@@ -212,6 +213,111 @@ local function register_decorate(char_str, xoff_str, yoff_str, size_str, color_s
 end
 
 constants.register_decorate = register_decorate
+
+-- ============================================================================
+-- Line Mark Registration (for 专名号/书名号 - PDF-drawn lines)
+-- ============================================================================
+_G.line_mark_registry = _G.line_mark_registry or {}
+_G.line_mark_group_counter = _G.line_mark_group_counter or 0
+
+--- Register a line mark group and return group_id
+-- @param type_str (string) "straight" or "wavy"
+-- @param color_str (string) Color name or RGB (e.g., "red", "0 0 0")
+-- @param offset_str (string) Offset from text center (e.g., "0.6em")
+-- @param amplitude_str (string) Wavy amplitude: "small", "medium", "large"
+-- @param linewidth_str (string) Line width (e.g., "0.4pt")
+-- @param style_str (string) Wavy style: "standard" (tight, like U+FE34) or "cursive" (wide, expressive)
+-- @return (number) group_id
+local function register_line_mark(type_str, color_str, offset_str, amplitude_str, linewidth_str, style_str)
+    _G.line_mark_group_counter = _G.line_mark_group_counter + 1
+    local gid = _G.line_mark_group_counter
+
+    _G.line_mark_registry[gid] = {
+        type = type_str or "straight",
+        color = color_str or "black",
+        offset = to_dimen(offset_str) or { value = 0.6, unit = "em" },
+        amplitude = amplitude_str or "medium",
+        linewidth = to_dimen(linewidth_str) or tex.sp("0.8pt"),
+        style = style_str or "standard",
+    }
+
+    -- Pass group_id back to TeX via macro
+    token.set_macro("g__luatexcn_line_mark_gid", tostring(gid))
+    return gid
+end
+
+constants.register_line_mark = register_line_mark
+
+-- ============================================================================
+-- Indent Constants
+-- ============================================================================
+-- Special values for indent attributes to control indent behavior
+
+--- Force indent to be exactly 0, bypassing style stack inheritance
+constants.INDENT_FORCE_ZERO = -2
+
+--- Inherit indent from style stack (default when attribute is 0 or unset)
+constants.INDENT_INHERIT = 0
+
+--- Base value for encoding forced indent values
+--- Forced indent value N is encoded as: INDENT_FORCE_BASE - N
+--- Example: Force indent=3 => attribute = -1000 - 3 = -1003
+--- This allows forcing any positive indent value, not just 0
+constants.INDENT_FORCE_BASE = -1000
+
+--- Check if an indent attribute value represents a forced indent
+--- @param attr_value number The indent attribute value
+--- @return boolean is_forced Whether this is a forced indent
+--- @return number|nil forced_value The forced indent value if forced, nil otherwise
+function constants.is_forced_indent(attr_value)
+    if not attr_value then
+        return false, nil
+    end
+
+    if attr_value == constants.INDENT_FORCE_ZERO then
+        return true, 0
+    end
+
+    if attr_value < constants.INDENT_FORCE_ZERO then
+        local value = constants.INDENT_FORCE_BASE - attr_value
+        return true, value
+    end
+
+    return false, nil
+end
+
+--- Encode a forced indent value to an attribute value
+--- @param indent_value number The indent value to force
+--- @return number The encoded attribute value
+function constants.encode_forced_indent(indent_value)
+    if indent_value == 0 then
+        return constants.INDENT_FORCE_ZERO
+    else
+        return constants.INDENT_FORCE_BASE - indent_value
+    end
+end
+
+-- ============================================================================
+-- Penalty Constants for Column/Page Breaks
+-- ============================================================================
+-- Special penalty values to control column and page breaking behavior
+
+--- Smart column break: Check next node type before deciding
+--- If next is textflow, don't break; if next is regular text, break to new column
+--- Used by: Paragraph environment end
+constants.PENALTY_SMART_BREAK = -10001
+
+--- Force column break: Unconditionally wrap to next column
+--- Used by: \换列 command, some \\ commands
+constants.PENALTY_FORCE_COLUMN = -10002
+
+--- Force page break: Unconditionally wrap to new page
+--- Used by: \newpage, \clearpage commands
+constants.PENALTY_FORCE_PAGE = -10003
+
+--- Page fill marker: Allow page break, used in page splitting
+--- Note: This keeps standard TeX value for compatibility
+constants.PENALTY_PAGE_FILL = -10000
 
 package.loaded['core.luatex-cn-constants'] = constants
 return constants

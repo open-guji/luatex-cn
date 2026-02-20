@@ -44,8 +44,9 @@ local textflow = {}
 -- @param font_size (string|nil) Font size string (e.g., "14pt")
 -- @param font (string|nil) Font family name
 -- @param textflow_align (string|nil) TextFlow alignment (outward, inward, center, left, right)
+-- @param auto_balance (boolean|nil) Whether to auto-balance last column (default true)
 -- @return (number) Style ID
-function textflow.push_style(font_color, font_size, font, textflow_align)
+function textflow.push_style(font_color, font_size, font, textflow_align, auto_balance)
     local style = {}
     if font_color and font_color ~= "" then
         style.font_color = font_color
@@ -60,6 +61,12 @@ function textflow.push_style(font_color, font_size, font, textflow_align)
     -- Inheritance handled by style_registry
     if textflow_align and textflow_align ~= "" then
         style.textflow_align = textflow_align
+    end
+    -- auto_balance defaults to true if not specified
+    if auto_balance == false then
+        style.auto_balance = false
+    else
+        style.auto_balance = true
     end
     return style_registry.push(style)
 end
@@ -129,10 +136,21 @@ end
 -- @param textflow_nodes (table) Consecutive textflow node list (direct nodes)
 -- @param available_rows (number) Remaining rows in current column
 -- @param line_limit (number) Total row limit per column
--- @return (table) chunks: { {nodes_with_attr, rows_used, is_full_column}, ... }
-function textflow.process_sequence(textflow_nodes, available_rows, line_limit, mode)
+-- @param mode (number) Mode: 1=right only, 2=left only, 0=balanced
+-- @param auto_balance (boolean) Whether to auto-balance last chunk (default true)
+-- @param start_sub_col (number|nil) Starting sub-column (1=right, 2=left), nil means start fresh
+-- @param start_row_offset (number|nil) Starting row offset when continuing from previous textflow
+-- @return (table) chunks: { {nodes_with_attr, rows_used, is_full_column, end_sub_col, end_row_used}, ... }
+function textflow.process_sequence(textflow_nodes, available_rows, line_limit, mode, auto_balance, start_sub_col,
+                                   start_row_offset)
     local total_nodes = #textflow_nodes
-    if total_nodes == 0 then return {} end
+    if total_nodes == 0 then return {}, nil, nil end
+
+    -- Default auto_balance to true
+    if auto_balance == nil then auto_balance = true end
+
+    -- Track sub-column continuation state
+    local continue_on_left = (start_sub_col == 2)
 
     local chunks = {}
     local current_idx = 1
@@ -156,27 +174,83 @@ function textflow.process_sequence(textflow_nodes, available_rows, line_limit, m
         local rows_used
         local is_full = false
 
-        if remaining <= capacity then
+        -- Adjust capacity for continuation on left sub-column
+        local effective_capacity = capacity
+        if first_chunk and continue_on_left and not is_single_column then
+            -- We have h rows available in left sub-column from previous textflow
+            -- Plus h*2 for subsequent full columns
+            effective_capacity = h + (remaining > h and (capacity - h) or 0)
+        end
+
+        local is_last_chunk = (remaining <= effective_capacity)
+
+        if is_last_chunk then
             chunk_size = remaining
             if is_single_column then
                 rows_used = remaining
-            else
+            elseif auto_balance then
+                -- Auto-balance: split evenly between right and left
                 rows_used = math.ceil(chunk_size / 2)
+            elseif first_chunk and continue_on_left then
+                -- Continuing on left: nodes go to left sub-column first
+                -- Check if chunk_size exceeds available rows in left sub-column
+                if chunk_size > h then
+                    -- Left sub-column overflow: only take what fits
+                    chunk_size = h
+                    rows_used = h
+                    is_full = true
+                else
+                    rows_used = math.min(chunk_size, h) -- Use available rows in current column
+                end
+            else
+                -- No auto-balance: fill right then left sub-column
+                -- Check if chunk_size exceeds capacity (right + left both at h)
+                local right_will_use = math.min(chunk_size, h)
+                local left_will_use = chunk_size - right_will_use
+                if left_will_use > h then
+                    -- Left sub-column overflow: need to wrap
+                    chunk_size = h + h  -- Only take what fits (right full + left full)
+                    rows_used = h
+                    is_full = true
+                elseif chunk_size <= h then
+                    -- Only right sub-column used
+                    rows_used = 0  -- Allow next textflow to use left
+                else
+                    -- Both sub-columns used
+                    rows_used = h
+                end
             end
         else
             chunk_size = capacity
             rows_used = h
             is_full = true
+
+            -- CRITICAL FIX: When continue_on_left, all nodes go to left sub-column
+            -- Must not exceed h (available rows in left sub-column)
+            if first_chunk and continue_on_left and not is_single_column then
+                if chunk_size > h then
+                    chunk_size = h
+                end
+            end
         end
 
         local chunk_nodes = {}
         local right_count
+        local left_start_offset = 0 -- Row offset for left sub-column nodes
+
         if is_single_column then
             if mode == 1 then            -- Right only
                 right_count = chunk_size -- All go to right (sub_col 1)
             else                         -- Left only (mode 2)
                 right_count = 0          -- None go to right
             end
+        elseif first_chunk and continue_on_left and not auto_balance then
+            -- Continuing on left sub-column from previous textflow
+            right_count = 0 -- All go to left
+            -- left_start_offset stays 0 - relative_row should start at 0
+        elseif not auto_balance then
+            -- No auto-balance: fill right sub-column first, overflow to left
+            right_count = math.min(chunk_size, h)
         else
             right_count = math.ceil(chunk_size / 2)
         end
@@ -197,6 +271,10 @@ function textflow.process_sequence(textflow_nodes, available_rows, line_limit, m
                 if is_single_column then
                     sub_col = 2
                     relative_row = i
+                elseif first_chunk and continue_on_left then
+                    -- Continuing on left from previous textflow - start at row 0
+                    sub_col = 2
+                    relative_row = i - right_count -- right_count is 0, so this is just i
                 else
                     sub_col = 2
                     relative_row = i - right_count
@@ -213,17 +291,41 @@ function textflow.process_sequence(textflow_nodes, available_rows, line_limit, m
             })
         end
 
+        -- Track ending state for next textflow continuation
+        local end_sub_col = nil
+        local end_row_used = nil
+        if not auto_balance and not is_full then
+            -- For non-balanced, non-full chunks, track where we ended
+            if right_count > 0 and right_count == chunk_size then
+                -- Ended on right sub-column
+                end_sub_col = 1
+                end_row_used = right_count
+            elseif right_count == 0 and chunk_size > 0 then
+                -- Used only left sub-column
+                end_sub_col = 2
+                end_row_used = left_start_offset + chunk_size
+            end
+        end
+
         table.insert(chunks, {
             nodes = chunk_nodes,
             rows_used = rows_used,
-            is_full_column = is_full
+            is_full_column = is_full,
+            end_sub_col = end_sub_col,
+            end_row_used = end_row_used
         })
 
         current_idx = current_idx + chunk_size
         first_chunk = false
+        continue_on_left = false -- Only applies to first chunk
     end
 
-    return chunks
+    -- Return chunks and final state for potential continuation
+    local final_chunk = chunks[#chunks]
+    local final_sub_col = final_chunk and final_chunk.end_sub_col or nil
+    local final_row_used = final_chunk and final_chunk.end_row_used or nil
+
+    return chunks, final_sub_col, final_row_used
 end
 
 --- Place textflow nodes into layout map
@@ -247,8 +349,29 @@ function textflow.place_nodes(ctx, start_node, layout_map, params, callbacks)
     -- Process textflow sequence into chunks
     local available_in_first = params.effective_limit - ctx.cur_row
     local capacity_per_subsequent = params.line_limit - params.base_indent - params.r_indent
-    local chunks = textflow.process_sequence(nodes, available_in_first, capacity_per_subsequent,
-        params.textflow_mode)
+
+    -- Get auto_balance from style (read from first node)
+    local auto_balance = true
+    if #nodes > 0 then
+        local style_id = D.get_attribute(nodes[1], constants.ATTR_STYLE_REG_ID)
+        local style = style_registry.get(style_id)
+        if style and style.auto_balance == false then
+            auto_balance = false
+        end
+    end
+
+    -- Get continuation state from ctx (if available)
+    local start_sub_col = nil
+    local start_row_offset = nil
+    if not auto_balance and ctx.textflow_pending_sub_col == 1 then
+        -- Previous textflow ended on right, continue on left
+        start_sub_col = 2
+        start_row_offset = ctx.textflow_pending_row_used or 0
+    end
+
+    local chunks, final_sub_col, final_row_used = textflow.process_sequence(
+        nodes, available_in_first, capacity_per_subsequent,
+        params.textflow_mode, auto_balance, start_sub_col, start_row_offset)
 
     -- Place chunks into layout_map
     -- Read style from node attribute (set by TeX layer)
@@ -274,10 +397,24 @@ function textflow.place_nodes(ctx, start_node, layout_map, params, callbacks)
         for _, node_info in ipairs(chunk.nodes) do
             -- Note: ATTR_STYLE_REG_ID is already set by TeX layer
 
+            -- Check if this node has forced indent (e.g., from \平抬 command)
+            local node_indent_attr = D.get_attribute(node_info.node, constants.ATTR_INDENT)
+            local is_forced, forced_indent_value = constants.is_forced_indent(node_indent_attr)
+
+            -- Calculate row: if forced indent, use forced value as base; otherwise use cur_row
+            local node_row
+            if is_forced then
+                -- 强制缩进：\平抬 (value=0) 或 \抬头[N] (value=-N) 等
+                node_row = forced_indent_value + node_info.relative_row
+            else
+                -- Normal case: offset by cur_row
+                node_row = ctx.cur_row + node_info.relative_row
+            end
+
             local entry = {
                 page = ctx.cur_page,
                 col = ctx.cur_col,
-                row = ctx.cur_row + node_info.relative_row,
+                row = node_row,
                 sub_col = node_info.sub_col
             }
 
@@ -295,9 +432,34 @@ function textflow.place_nodes(ctx, start_node, layout_map, params, callbacks)
                 entry.textflow_align = textflow_align_str
             end
 
+            -- Check for line mark attribute (专名号/书名号)
+            local lm_id = D.get_attribute(node_info.node, constants.ATTR_LINE_MARK_ID)
+            if lm_id and lm_id > 0 then
+                entry.line_mark_id = lm_id
+            end
+
             layout_map[node_info.node] = entry
         end
-        ctx.cur_row = ctx.cur_row + chunk.rows_used
+
+        -- Advance cur_row appropriately
+        if i == 1 and start_sub_col == 2 then
+            -- Continuing on left: advance by max of pending (right) and current (left) rows
+            local pending_rows = ctx.textflow_pending_row_used or 0
+            ctx.cur_row = ctx.cur_row + math.max(pending_rows, chunk.rows_used)
+        else
+            ctx.cur_row = ctx.cur_row + chunk.rows_used
+        end
+    end
+
+    -- Update ctx with final sub-column state for next textflow
+    if not auto_balance and final_sub_col == 1 then
+        -- Ended on right sub-column, next textflow can continue on left
+        ctx.textflow_pending_sub_col = 1
+        ctx.textflow_pending_row_used = final_row_used
+    else
+        -- Clear pending state (used both sub-columns or auto-balanced)
+        ctx.textflow_pending_sub_col = nil
+        ctx.textflow_pending_row_used = nil
     end
 
     return temp_t

@@ -87,6 +87,8 @@ local textbox_mod = package.loaded['core.luatex-cn-core-textbox'] or
     require('core.luatex-cn-core-textbox')
 local render_border = package.loaded['core.luatex-cn-core-render-border'] or
     require('core.luatex-cn-core-render-border')
+local linemark_mod = package.loaded['decorate.luatex-cn-linemark'] or
+    require('decorate.luatex-cn-linemark')
 
 
 -- Internal functions for unit testing
@@ -368,6 +370,8 @@ local function process_page_nodes(p_head, layout_map, params, ctx)
     local curr = p_head
     -- Initialize last_font_id with current fallback font
     ctx.last_font_id = ctx.last_font_id or params.font_id or font.current()
+    -- Initialize line mark collection for this page
+    ctx.line_mark_entries = ctx.line_mark_entries or {}
     while curr do
         local next_curr = D.getnext(curr)
         local id = D.getid(curr)
@@ -392,6 +396,24 @@ local function process_page_nodes(p_head, layout_map, params, ctx)
                             p_head = handle_glyph_node(curr, p_head, pos, params, ctx)
                             if dbg.is_enabled() then
                                 p_head = handle_debug_drawing(curr, p_head, pos, ctx)
+                            end
+                            -- Collect line mark entries for batch rendering
+                            if pos.line_mark_id then
+                                local lm_entry = {
+                                    group_id = pos.line_mark_id,
+                                    col = pos.col,
+                                    row = pos.row,
+                                    font_size = pos.font_size,
+                                    sub_col = pos.sub_col,
+                                }
+                                -- For sub-column chars, capture actual X center from rendered position
+                                -- so linemark doesn't need to recalculate textflow alignment
+                                if pos.sub_col and pos.sub_col > 0 then
+                                    local gw = D.getfield(curr, "width") or 0
+                                    local gx = D.getfield(curr, "xoffset") or 0
+                                    lm_entry.x_center_sp = gx + gw / 2
+                                end
+                                ctx.line_mark_entries[#ctx.line_mark_entries + 1] = lm_entry
                             end
                         end
                     else
@@ -512,6 +534,21 @@ local function render_single_page(p_head, p_max_col, p_max_row, p, layout_map, p
     -- Reserved columns (computed via engine_ctx helper function)
     local reserved_cols = grid.get_reserved_cols and grid.get_reserved_cols(p, p_total_cols) or {}
 
+    -- Scan layout_map for taitou columns (negative row = raised border)
+    local col_min_rows = {}
+    local scan_t = p_head
+    while scan_t do
+        local pos = layout_map[scan_t]
+        if pos then
+            local col = pos.col
+            local row = math.floor(pos.row or 0)
+            if row < 0 and (not col_min_rows[col] or row < col_min_rows[col]) then
+                col_min_rows[col] = row
+            end
+        end
+        scan_t = D.getnext(scan_t)
+    end
+
     -- Borders, background, and decorative frames (handled by render_border module)
     p_head = render_border.render_borders(p_head, {
         -- Grid and dimensions
@@ -541,6 +578,8 @@ local function render_single_page(p_head, p_max_col, p_max_row, p, layout_map, p
         border_width = ctx.border_width,
         border_margin = ctx.border_margin,
         background_rgb_str = ctx.background_rgb_str,
+        -- Taitou raised border
+        col_min_rows = col_min_rows,
     })
 
     -- Font color
@@ -553,6 +592,11 @@ local function render_single_page(p_head, p_max_col, p_max_row, p, layout_map, p
     ctx_node.p_total_cols = p_total_cols
 
     p_head = process_page_nodes(p_head, layout_map, params, ctx_node)
+
+    -- Render Line Marks (专名号/书名号) - batch PDF drawing after all glyphs are positioned
+    if ctx_node.line_mark_entries and #ctx_node.line_mark_entries > 0 then
+        p_head = linemark_mod.render_line_marks(p_head, ctx_node.line_mark_entries, ctx_node)
+    end
 
     -- Render Floating TextBoxes
     if plugins.floating_map then

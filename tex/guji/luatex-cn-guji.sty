@@ -18,7 +18,7 @@
 %
 \NeedsTeXFormat{LaTeX2e}
 \RequirePackage{expl3}
-\ProvidesExplPackage {guji/luatex-cn-guji} {2026/02/06} {0.2.5} {Guji (古籍) typesetting features}
+\ProvidesExplPackage {guji/luatex-cn-guji} {2026/02/07} {0.2.6} {Guji (古籍) typesetting features}
 
 % ============================================================================
 % Load all guji subpackages
@@ -50,8 +50,7 @@
 % ============================================================================
 
 \NewCommandCopy{\圈点}{\EmphasisMark}
-\NewCommandCopy{\专名号}{\Underline}
-\NewCommandCopy{\书名号}{\WavyUnderline}
+% \专名号 and \书名号 are now provided by luatex-cn-linemark.sty
 
 \ExplSyntaxOff
 \endinput

@@ -17,7 +17,7 @@
 %
 \RequirePackage{expl3}
 \RequirePackage{xparse}
-\ProvidesExplPackage {guji/luatex-cn-guji-jiazhu} {2026/02/06} {0.2.5} {Jiazhu (Dual-column notes) support}
+\ProvidesExplPackage {guji/luatex-cn-guji-jiazhu} {2026/02/07} {0.2.6} {Jiazhu (Dual-column notes) support}
 
 % Load the core textflow engine
 \RequirePackage{core/luatex-cn-core-textflow}
@@ -57,10 +57,23 @@
     \TextFlow[#1]{#2}
   }
 
+% Jiazhu Environment - Allows command expansion (e.g., \平抬)
+% Same as \JiaZhu but uses environment form to allow content expansion
+\NewDocumentEnvironment{JiaZhuEnv}{ O{} }
+  {
+    \TextFlowEnv[#1]
+  }
+  {
+    \endTextFlowEnv
+  }
+
 \ExplSyntaxOff%
 
 % Command Aliases for CJK
 \NewCommandCopy{\夹注}{\JiaZhu}
 \NewCommandCopy{\单行夹注}{\DanHangJiaZhu}
+
+% Environment Aliases for CJK
+\NewEnvironmentCopy{夹注环境}{JiaZhuEnv}
 
 \endinput%

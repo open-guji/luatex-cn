@@ -16,7 +16,7 @@
 % YinZhang (印章/Seal Stamp) overlay functionality for ancient Chinese books
 %
 \RequirePackage{expl3}
-\ProvidesExplPackage {guji/luatex-cn-guji-yinzhang} {2026/02/06} {0.2.5} {Seal stamp overlay for Chinese books}
+\ProvidesExplPackage {guji/luatex-cn-guji-yinzhang} {2026/02/07} {0.2.6} {Seal stamp overlay for Chinese books}
 
 \RequirePackage{tikz}
 \RequirePackage{graphicx}
@@ -69,7 +69,23 @@
     \keys_set:nn { luatexcn / yinzhang } { #1 }
 
     % Store parameters globally for hook access
-    \int_gset_eq:NN \g_luatexcn_yinzhang_target_page_int \l_luatexcn_yinzhang_page_int
+    % In split mode: map big page to TeX page (right half-page only)
+    %   big_page N -> TeX page 2*N-1 (right_first) or 2*N (left_first)
+    % In normal mode: target_page = user's page value directly
+    \int_gset:Nn \g_luatexcn_yinzhang_target_page_int {
+      \lua_now:e {
+        local~big_page~=~\int_use:N \l_luatexcn_yinzhang_page_int ;~
+        if~_G.page~and~_G.page.split~and~_G.page.split.enabled~then~
+          if~_G.page.split.right_first~then~
+            tex.sprint(2~*~big_page~-~1)~
+          else~
+            tex.sprint(2~*~big_page)~
+          end;~
+        else~
+          tex.sprint(big_page)~
+        end
+      }
+    }
     \tl_gset:Nn \g_luatexcn_yinzhang_image_path_tl { #2 }
     \tl_gset_eq:NN \g_luatexcn_yinzhang_opacity_tl \l_luatexcn_yinzhang_opacity_tl
     \tl_gset_eq:NN \g_luatexcn_yinzhang_xshift_tl \l_luatexcn_yinzhang_xshift_tl
@@ -78,6 +94,8 @@
     \tl_gset_eq:NN \g_luatexcn_yinzhang_color_tl \l_luatexcn_yinzhang_color_tl
 
     \AddToHook{shipout/background}{
+      % In split mode: map TeX page to big page and only render on right half-page
+      % In normal mode: TeX page matches target_page directly
       \int_compare:nNnT { \value{page} } = { \g_luatexcn_yinzhang_target_page_int }
         {
           \begin{tikzpicture}[overlay]

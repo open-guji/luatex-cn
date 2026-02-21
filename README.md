@@ -4,7 +4,7 @@
 
 致力于基于 LuaTeX 引擎实现最纯粹、最高质量的中文排版支持。已完成对常见古籍版式的像素级复刻，能够直观地处理版心、夹注、侧批、眉批、脚注、印章、句读、改字、标点等等功能。同时支持现代繁体竖排，支持大陆与台湾不同标点标准。灵活支持用户自定义模板。
 
-CTAN: [v0.1.1](https://ctan.org/pkg/luatex-cn) | GitHub Release: [v0.3.0](https://github.com/open-guji/luatex-cn/releases)
+CTAN: [v0.3.0](https://ctan.org/pkg/luatex-cn) | GitHub Release: [v0.3.0](https://github.com/open-guji/luatex-cn/releases)
 
 > **[Wiki 用户手册](https://github.com/open-guji/luatex-cn/wiki)** ｜ **[快速入门](https://github.com/open-guji/luatex-cn/wiki/Quick-Start)** ｜ **[命令索引](https://github.com/open-guji/luatex-cn/wiki/Command-Reference)** ｜ **[更新日志](https://github.com/open-guji/luatex-cn/wiki/Changelog)**
 

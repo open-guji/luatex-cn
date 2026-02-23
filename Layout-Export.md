@@ -4,6 +4,8 @@
 
 `luatex-cn` 支持将排版后的布局信息导出为 JSON 文件，包含每个字符的精确坐标、页面信息、列信息、夹注和侧批数据。此功能可用于排版质量检测、自动化测试、或与外部系统集成。
 
+输出格式与 `guji-platform` 的 `PageLayout` 数据结构对齐，下游可直接解析，无需额外转换。
+
 ## 启用导出
 
 在文档 preamble 中添加：
@@ -90,7 +92,7 @@
 | 字段 | 类型 | 说明 |
 |------|------|------|
 | `col_index` | number | 列索引（0-indexed，从右往左） |
-| `is_banxin` | boolean | 是否为版心列 |
+| `position` | object | 列位置 `{left_x, right_x}`（pt） |
 | `characters` | array | 该列的字符数组 |
 
 ### characters 数组
@@ -101,15 +103,45 @@
 |------|------|------|
 | `char` | string | 字符本身 |
 | `unicode` | number | Unicode 码点 |
-| `row_index` | number | 行索引（1-indexed，从上往下） |
-| `absolute_x_pt` | number | 绝对 X 坐标（pt，页面左边起算） |
-| `absolute_y_pt` | number | 绝对 Y 坐标（pt，页面顶部起算） |
-| `relative_y_pt` | number | 列内相对 Y 坐标（pt，列顶部起算） |
-| `cell_height_pt` | number | 格高（pt） |
-| `is_jiazhu` | boolean | 是否为夹注字符 |
-| `sub_col` | number | 夹注子列（1=右小列，2=左小列），仅夹注字符有此字段 |
-| `font_size_pt` | number | 字号（pt），仅当与默认不同时出现 |
-| `font_color` | string | 字体颜色，仅当与默认不同时出现 |
+| `row_index` | number | 行索引（0-indexed，从上往下） |
+| `position` | object | 字符位置 `{x, y_top, y_bottom}`（pt） |
+| `type` | string | 字符类型：`"normal"` 或 `"jiazhu"` |
+| `confidence` | number | 置信度（TeX 固定为 1.0） |
+| `jiazhu` | object | 夹注信息 `{sub_col: 1或2}`，仅 `type="jiazhu"` 时出现 |
+| `style` | object | 样式信息 `{font_size_pt, font_color}`，仅当与默认不同时出现 |
+
+#### position 对象
+
+```json
+{
+  "x": 811.19,
+  "y_top": 12.40,
+  "y_bottom": 40.40
+}
+```
+
+- `x`: 列中心 X 坐标（pt）
+- `y_top`: 字符上边界 Y 坐标（pt）
+- `y_bottom`: 字符下边界 Y 坐标（pt）
+
+#### jiazhu 对象
+
+```json
+{
+  "sub_col": 1
+}
+```
+
+- `sub_col`: 1=右子列，2=左子列
+
+#### style 对象
+
+```json
+{
+  "font_size_pt": 8.0,
+  "font_color": "0.8 0 0"
+}
+```
 
 ### sidenotes 数组
 
@@ -132,7 +164,7 @@
 - **X 轴**：向右为正
 - **Y 轴**：向下为正
 - **列序**：`col_index=0` 为最右列，向左递增
-- **行序**：`row_index=1` 为列内第一个字（最上方）
+- **行序**：`row_index=0` 为列内第一个字（最上方）
 - **单位**：所有坐标和尺寸均为 pt（1pt = 1/72.27 inch）
 
 ## 完整示例
@@ -164,27 +196,23 @@
       "columns": [
         {
           "col_index": 0,
-          "is_banxin": false,
+          "position": { "left_x": 811.19, "right_x": 811.19 },
           "characters": [
             {
               "char": "史",
               "unicode": 21490,
-              "row_index": 1,
-              "absolute_x_pt": 811.19,
-              "absolute_y_pt": 12.40,
-              "relative_y_pt": 0,
-              "cell_height_pt": 28.00,
-              "is_jiazhu": false
+              "row_index": 0,
+              "position": { "x": 811.19, "y_top": 12.40, "y_bottom": 40.40 },
+              "type": "normal",
+              "confidence": 1.0
             },
             {
               "char": "記",
               "unicode": 35352,
-              "row_index": 2,
-              "absolute_x_pt": 811.19,
-              "absolute_y_pt": 40.40,
-              "relative_y_pt": 28.00,
-              "cell_height_pt": 28.00,
-              "is_jiazhu": false
+              "row_index": 1,
+              "position": { "x": 811.19, "y_top": 40.40, "y_bottom": 68.40 },
+              "type": "normal",
+              "confidence": 1.0
             }
           ]
         }
@@ -194,6 +222,21 @@
   ]
 }
 ```
+
+## 与 guji-platform 集成
+
+输出格式与 `guji-platform` 的 `PageLayout` 数据结构对齐：
+
+| 导出字段 | PageLayout 对应 | 说明 |
+|---------|---------------|------|
+| `row_index` | `Character.row_index` | 均为 0-indexed |
+| `position.x/y_top/y_bottom` | `CharPosition` | 直接映射 |
+| `type` | `Character.type` | `"normal"` / `"jiazhu"` |
+| `confidence` | `Character.confidence` | TeX 固定 1.0 |
+| `jiazhu.sub_col` | `JiazhuInfo.sub_col` | 直接映射 |
+| `style` | `CharStyle` | 直接映射 |
+
+下游 `from_tex_layout()` 可直接读取，无需额外转换。
 
 ## 使用场景
 

@@ -4,6 +4,8 @@ English | [中文版](Layout-Export)
 
 `luatex-cn` can export layout information to a JSON file after typesetting, including precise coordinates for every character, page info, column info, interlinear notes (jiazhu), and side notes. This feature is useful for regression testing, quality assurance, or integration with external systems.
 
+The output format is aligned with `guji-platform`'s `PageLayout` data structure, enabling direct downstream parsing without additional conversion.
+
 ## Enabling Export
 
 Add to your document preamble:
@@ -90,7 +92,7 @@ Each column contains:
 | Field | Type | Description |
 |-------|------|-------------|
 | `col_index` | number | Column index (0-indexed, right to left) |
-| `is_banxin` | boolean | Whether this is a banxin (center fold) column |
+| `position` | object | Column position `{left_x, right_x}` (pt) |
 | `characters` | array | Array of characters in this column |
 
 ### characters Array
@@ -101,15 +103,45 @@ Each character contains:
 |-------|------|-------------|
 | `char` | string | The character itself |
 | `unicode` | number | Unicode code point |
-| `row_index` | number | Row index (1-indexed, top to bottom) |
-| `absolute_x_pt` | number | Absolute X coordinate (pt, from page left) |
-| `absolute_y_pt` | number | Absolute Y coordinate (pt, from page top) |
-| `relative_y_pt` | number | Relative Y within column (pt, from column top) |
-| `cell_height_pt` | number | Cell height (pt) |
-| `is_jiazhu` | boolean | Whether this is an interlinear note character |
-| `sub_col` | number | Jiazhu sub-column (1=right, 2=left), only present for jiazhu characters |
-| `font_size_pt` | number | Font size (pt), only present when different from default |
-| `font_color` | string | Font color, only present when different from default |
+| `row_index` | number | Row index (0-indexed, top to bottom) |
+| `position` | object | Character position `{x, y_top, y_bottom}` (pt) |
+| `type` | string | Character type: `"normal"` or `"jiazhu"` |
+| `confidence` | number | Confidence score (always 1.0 for TeX) |
+| `jiazhu` | object | Jiazhu info `{sub_col: 1 or 2}`, only present when `type="jiazhu"` |
+| `style` | object | Style info `{font_size_pt, font_color}`, only present when different from default |
+
+#### position Object
+
+```json
+{
+  "x": 811.19,
+  "y_top": 12.40,
+  "y_bottom": 40.40
+}
+```
+
+- `x`: Column center X coordinate (pt)
+- `y_top`: Character top boundary Y coordinate (pt)
+- `y_bottom`: Character bottom boundary Y coordinate (pt)
+
+#### jiazhu Object
+
+```json
+{
+  "sub_col": 1
+}
+```
+
+- `sub_col`: 1=right sub-column, 2=left sub-column
+
+#### style Object
+
+```json
+{
+  "font_size_pt": 8.0,
+  "font_color": "0.8 0 0"
+}
+```
 
 ### sidenotes Array
 
@@ -132,7 +164,7 @@ Side note characters contain `char`, `unicode`, `page`, `col`, `y_pt`, and `cell
 - **X axis**: Positive to the right
 - **Y axis**: Positive downward
 - **Column order**: `col_index=0` is the rightmost column, increasing leftward
-- **Row order**: `row_index=1` is the first character in a column (topmost)
+- **Row order**: `row_index=0` is the first character in a column (topmost)
 - **Unit**: All coordinates and dimensions are in pt (1pt = 1/72.27 inch)
 
 ## Example Output
@@ -164,17 +196,15 @@ Side note characters contain `char`, `unicode`, `page`, `col`, `y_pt`, and `cell
       "columns": [
         {
           "col_index": 0,
-          "is_banxin": false,
+          "position": { "left_x": 811.19, "right_x": 811.19 },
           "characters": [
             {
               "char": "史",
               "unicode": 21490,
-              "row_index": 1,
-              "absolute_x_pt": 811.19,
-              "absolute_y_pt": 12.40,
-              "relative_y_pt": 0,
-              "cell_height_pt": 28.00,
-              "is_jiazhu": false
+              "row_index": 0,
+              "position": { "x": 811.19, "y_top": 12.40, "y_bottom": 40.40 },
+              "type": "normal",
+              "confidence": 1.0
             }
           ]
         }
@@ -184,6 +214,21 @@ Side note characters contain `char`, `unicode`, `page`, `col`, `y_pt`, and `cell
   ]
 }
 ```
+
+## Integration with guji-platform
+
+The output format is aligned with `guji-platform`'s `PageLayout` data structure:
+
+| Export Field | PageLayout Mapping | Notes |
+|-------------|-------------------|-------|
+| `row_index` | `Character.row_index` | Both 0-indexed |
+| `position.x/y_top/y_bottom` | `CharPosition` | Direct mapping |
+| `type` | `Character.type` | `"normal"` / `"jiazhu"` |
+| `confidence` | `Character.confidence` | Always 1.0 for TeX |
+| `jiazhu.sub_col` | `JiazhuInfo.sub_col` | Direct mapping |
+| `style` | `CharStyle` | Direct mapping |
+
+Downstream `from_tex_layout()` can read the data directly without additional conversion.
 
 ## Use Cases
 

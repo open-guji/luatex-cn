@@ -8,6 +8,25 @@
 
 ## 启用导出
 
+导出功能默认关闭，有两种启用方式：
+
+### 方式 1：环境变量（推荐用于测试和验证）
+
+无需修改 `.tex` 文件，直接在编译命令前设置环境变量：
+
+```bash
+ENABLE_EXPORT=1 lualatex yourfile.tex
+```
+
+编译完成后自动生成 `yourfile-layout.json`。
+
+**优点**：
+- 无需修改源文件
+- 适合批量验证和自动化测试
+- 可临时开启/关闭导出
+
+### 方式 2：文档内命令
+
 在文档 preamble 中添加：
 
 ```latex
@@ -20,9 +39,7 @@
 \enableLayoutExport
 ```
 
-默认情况下，导出功能处于关闭状态。启用后，编译完成时会自动在当前目录生成 `<jobname>-layout.json` 文件。
-
-### 自定义文件名
+#### 自定义文件名
 
 ```latex
 \enableLayoutExport[filename=my-output.json]

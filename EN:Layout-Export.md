@@ -8,6 +8,25 @@ The output format is aligned with `guji-platform`'s `PageLayout` data structure,
 
 ## Enabling Export
 
+Export is disabled by default. There are two ways to enable it:
+
+### Method 1: Environment Variable (Recommended for Testing)
+
+No need to modify your `.tex` file - just set an environment variable before compilation:
+
+```bash
+ENABLE_EXPORT=1 lualatex yourfile.tex
+```
+
+This will automatically generate `yourfile-layout.json` after compilation.
+
+**Advantages**:
+- No source file modification required
+- Ideal for batch validation and automated testing
+- Easy to toggle export on/off
+
+### Method 2: In-Document Command
+
 Add to your document preamble:
 
 ```latex
@@ -20,9 +39,7 @@ Or using the Chinese alias:
 \开启排版导出
 ```
 
-Export is disabled by default. When enabled, a `<jobname>-layout.json` file is generated automatically after compilation.
-
-### Custom Filename
+#### Custom Filename
 
 ```latex
 \enableLayoutExport[filename=my-output.json]

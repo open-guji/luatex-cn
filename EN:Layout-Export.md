@@ -17,7 +17,7 @@ Add to your document preamble:
 Or using the Chinese alias:
 
 ```latex
-\启用排版导出
+\开启排版导出
 ```
 
 Export is disabled by default. When enabled, a `<jobname>-layout.json` file is generated automatically after compilation.

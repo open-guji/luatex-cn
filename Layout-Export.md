@@ -55,6 +55,7 @@
 | `grid_width_pt` | number | 网格列宽（pt） |
 | `grid_height_pt` | number | 网格行高（pt） |
 | `line_limit` | number | 每列最大字数 |
+| `columns_count` | number | 每页总列数 |
 | `split_page.enabled` | boolean | 是否启用筒子页 |
 
 ### pages 数组
@@ -147,6 +148,7 @@
     "grid_width_pt": 51.2096,
     "grid_height_pt": 28.0048,
     "line_limit": 21,
+    "columns_count": 17,
     "split_page": { "enabled": false }
   },
   "pages": [

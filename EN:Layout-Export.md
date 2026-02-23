@@ -55,6 +55,7 @@ Global document information:
 | `grid_width_pt` | number | Grid column width (pt) |
 | `grid_height_pt` | number | Grid row height (pt) |
 | `line_limit` | number | Maximum characters per column |
+| `columns_count` | number | Total columns per page |
 | `split_page.enabled` | boolean | Whether split page (tube page) is enabled |
 
 ### pages Array
@@ -147,6 +148,7 @@ Side note characters contain `char`, `unicode`, `page`, `col`, `y_pt`, and `cell
     "grid_width_pt": 51.2096,
     "grid_height_pt": 28.0048,
     "line_limit": 21,
+    "columns_count": 17,
     "split_page": { "enabled": false }
   },
   "pages": [

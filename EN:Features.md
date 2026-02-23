@@ -51,6 +51,7 @@ Multiple ways to add comments to the text:
 - **Style Registry**: Multi-attribute style storage with cross-page preservation.
 - **Metadata System**: Centralized book metadata management.
 - **[[Debug Mode | EN:Debug]]**: Grid visualization and layout debugging.
+- **[[Layout Export | EN:Layout-Export]]**: `\enableLayoutExport` exports layout results to JSON, including precise character coordinates, page/column/row info, jiazhu and sidenote data.
 - **Plugin Architecture**: Standardized plugin API with three-phase interfaces.
 
 ## 9. Template System

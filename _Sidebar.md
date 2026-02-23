@@ -26,6 +26,7 @@
 
 ### 参考
 * [[调试模式 | Debug]]
+* [[排版坐标导出 | Layout-Export]]
 * **[[命令索引 | Command-Reference]]**
 * [[更新日志 | Changelog]]
 
@@ -55,6 +56,7 @@
     * [[Correction & Decoration | EN:Correction]]
     * [[Elevation | EN:Taitou]]
 * [[Debug Mode | EN:Debug]]
+* [[Layout Export | EN:Layout-Export]]
 * [[Command Reference | Command-Reference]]
 * [[Changelog | EN:Changelog]]
 

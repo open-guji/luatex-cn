@@ -21,7 +21,7 @@
 \NeedsTeXFormat{LaTeX2e}
 \RequirePackage{expl3}
 \RequirePackage{xparse}
-\ProvidesExplPackage {digital/luatex-cn-digital} {2026/02/19} {0.3.0}
+\ProvidesExplPackage {digital/luatex-cn-digital} {2026/02/26} {0.3.1}
   {Digital-specific commands for ancient Chinese book digitization}
 
 \RequirePackage{core/luatex-cn-core-base}
@@ -41,29 +41,7 @@
 % luatexcn/content, which guji-digital.cls sets globally to true.
 \NewEnvironmentCopy{DigitalContent}{BodyText}
 
-% ============================================================================
-% \缩进[N] Command — Set indent for current line
-% ============================================================================
-% Positive values = indent (move text down from column top)
-% Negative values = taitou (extend text above column top into header area)
-%
-% Syntax: \缩进[2] or \缩进[-1]
-
-\NewDocumentCommand{\Indent}{ O{0} }
-  {
-    \int_compare:nNnTF { #1 } < { 0 }
-      {
-        % Negative indent = taitou:
-        % 1. Use SetIndent for proper style stack management + restore on newline
-        % 2. Insert PENALTY_TAITOU so the layout engine sets taitou scope
-        %    (ctx.taitou_col/taitou_page), required for forced negative indent
-        \SetIndent{#1}
-        \penalty \int_use:N \c__luatexcn_penalty_taitou_int \scan_stop:
-      }
-      {
-        \SetIndent{#1}
-      }
-  }
+% \Indent / \缩进 is now defined in core/luatex-cn-core-paragraph.sty
 
 % ============================================================================
 % \双列{\右小列{...}\左小列{...}} — Explicit dual-column (jiazhu)
@@ -118,7 +96,7 @@
       {
         % Apply per-sub-column indent if specified
         \tl_if_empty:NF \l__luatexcn_digital_right_indent_tl
-          { \exp_args:NV \SetIndent \l__luatexcn_digital_right_indent_tl }
+          { \exp_args:NV \__luatexcn_set_indent:n \l__luatexcn_digital_right_indent_tl }
         \TextFlow[only-column=right, auto-balance=false]{ \l__luatexcn_digital_right_col_tl }
       }
     % When left sub-column is empty but right was non-empty, insert a
@@ -126,17 +104,22 @@
     % produces a glyph node that consumes the pending_sub_col=1 state
     % from the right TextFlow, preventing state corruption for subsequent
     % \DualColumn calls.
+    % Output left sub-column (even if empty)
+    % When left is empty and right was non-empty, the empty TextFlow call
+    % will trigger the pending_sub_col cleanup logic in textflow.lua:434-438,
+    % which properly advances cur_row without generating any glyph nodes.
     \tl_if_empty:NTF \l__luatexcn_digital_left_col_tl
       {
         \tl_if_empty:NF \l__luatexcn_digital_right_col_tl
           {
-            \TextFlow[only-column=left, auto-balance=false]{ \char"3000\relax }
+            % Empty left column: call TextFlow with empty content to consume pending state
+            \TextFlow[only-column=left, auto-balance=false]{ }
           }
       }
       {
         % Apply per-sub-column indent if specified
         \tl_if_empty:NF \l__luatexcn_digital_left_indent_tl
-          { \exp_args:NV \SetIndent \l__luatexcn_digital_left_indent_tl }
+          { \exp_args:NV \__luatexcn_set_indent:n \l__luatexcn_digital_left_indent_tl }
         \TextFlow[only-column=left, auto-balance=false]{ \l__luatexcn_digital_left_col_tl }
       }
   }
@@ -220,11 +203,11 @@
 % CJK Aliases
 % ============================================================================
 % Simplified Chinese
-\NewCommandCopy{\缩进}{\Indent}
+% \缩进 is defined in core/luatex-cn-core-paragraph.sty
 \NewCommandCopy{\双列}{\DualColumn}
 \NewCommandCopy{\右小列}{\RightSubCol}
 \NewCommandCopy{\左小列}{\LeftSubCol}
-\NewEnvironmentCopy{数字化内容}{BodyText}
+% Note: 数字化内容 已废弃，请使用 \正文 (BodyText 在 digital-mode 下自动 obeylines)
 \NewEnvironmentCopy{版心}{Banxin}
 \NewCommandCopy{\版心上部}{\BanxinUpper}
 \NewCommandCopy{\版心下部}{\BanxinLower}
@@ -237,7 +220,7 @@
 % overridden inside Content groups to emit PENALTY_FORCE_PAGE.
 \NewDocumentCommand{\换页}{}{\newpage}
 % Traditional Chinese (only chars that differ from simplified)
-\NewCommandCopy{\縮進}{\Indent}
+% \縮進 is defined in core/luatex-cn-core-paragraph.sty
 \NewCommandCopy{\雙列}{\DualColumn}
 \NewEnvironmentCopy{數字化內容}{BodyText}
 \NewCommandCopy{\上魚尾}{\UpperYuwei}

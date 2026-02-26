@@ -18,7 +18,7 @@
 %
 \NeedsTeXFormat{LaTeX2e}
 \RequirePackage{expl3}
-\ProvidesExplPackage {luatex-cn-core} {2026/02/19} {0.3.0} {Core features for luatex-cn}
+\ProvidesExplPackage {luatex-cn-core} {2026/02/26} {0.3.1} {Core features for luatex-cn}
 
 % Check if LuaTeX is being used
 \sys_if_engine_luatex:TF
@@ -42,6 +42,7 @@
 % Load core modules in order
 \RequirePackage{core/luatex-cn-core-base}
 \RequirePackage{core/luatex-cn-core-metadata}
+\RequirePackage{core/luatex-cn-core-document}  % Document-level style (NEW)
 \RequirePackage{core/luatex-cn-core-page}
 \RequirePackage{core/luatex-cn-core-content}
 \RequirePackage{core/luatex-cn-core-paragraph}
@@ -50,6 +51,7 @@
 \RequirePackage{core/luatex-cn-core-column}
 \RequirePackage{core/luatex-cn-core-style}
 \RequirePackage{core/luatex-cn-core-punct}
+\RequirePackage{core/luatex-cn-core-export}
 \RequirePackage{decorate/luatex-cn-decorate}
 \RequirePackage{decorate/luatex-cn-linemark}
 \RequirePackage{banxin/luatex-cn-banxin}

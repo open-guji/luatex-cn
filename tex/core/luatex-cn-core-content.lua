@@ -225,6 +225,9 @@ local function push_content_base_style()
         return string.format("%.5fpt", sp / 65536)
     end
 
+    -- Ensure _G.document exists (fallback)
+    _G.document = _G.document or {}
+
     local base_style = {
         indent = 0,
         first_indent = -1,  -- -1 means inherit from indent
@@ -245,11 +248,16 @@ local function push_content_base_style()
         cell_gap = _G.content.cell_gap
             or ((_G.content.layout_mode ~= "grid") and _G.content.inter_cell_gap or 0),
     }
+    -- Inherit from document-level defaults, allow content-level override
     if _G.content.font_color then
         base_style.font_color = _G.content.font_color
+    elseif _G.document.font_color and _G.document.font_color ~= "" then
+        base_style.font_color = _G.document.font_color
     end
     if _G.content.font_size then
         base_style.font_size = _G.content.font_size
+    elseif _G.document.font_size and _G.document.font_size ~= "" then
+        base_style.font_size = _G.document.font_size
     end
 
     style_registry.push(base_style)

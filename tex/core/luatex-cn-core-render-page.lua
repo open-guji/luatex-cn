@@ -132,7 +132,12 @@ local function calculate_render_context(ctx)
     -- Visual params from ctx.visual (populated by main.lua)
     local vertical_align = visual.vertical_align or "center"
     local background_rgb_str = utils.normalize_rgb(visual.bg_rgb)
+    -- Fallback to document-level font_color if current style has no font_color
     local text_rgb_str = utils.normalize_rgb(visual.font_rgb)
+    if not text_rgb_str then
+        _G.document = _G.document or {}
+        text_rgb_str = utils.normalize_rgb(_G.document.font_color)
+    end
     -- Border shape decoration parameters
     local border_shape = visual.border_shape or "none"
     local border_color_str = utils.normalize_rgb(visual.border_color) or "0 0 0"

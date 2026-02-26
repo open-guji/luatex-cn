@@ -642,6 +642,15 @@ local function typeset(box_num, params)
 
     local layout_results = compute_grid_layout(list, params, engine_ctx, plugin_contexts, p_info)
 
+    -- JSON export: collect layout data BEFORE generate_physical_pages,
+    -- because render's group_nodes_by_page() destroys the node list linkage.
+    if _G.export and _G.export.enabled and not p_info.is_textbox then
+        local export_mod = package.loaded['core.luatex-cn-core-export']
+        if export_mod and export_mod.is_enabled() then
+            export_mod.collect(list, layout_results, engine_ctx, plugin_contexts, p_info)
+        end
+    end
+
     local total_pages = generate_physical_pages(list, params, engine_ctx, plugin_contexts, layout_results, p_info)
 
     return total_pages

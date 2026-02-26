@@ -191,7 +191,7 @@ local function move_to_next_valid_position(ctx, interval, grid_height, indent)
             ctx.banxin_registry[ctx.cur_page][ctx.cur_col] = true
 
             ctx.cur_col = ctx.cur_col + 1
-            if ctx.cur_col >= ctx.p_cols then
+            if ctx.auto_column_wrap ~= false and ctx.cur_col >= ctx.p_cols then
                 ctx.cur_col = 0
                 ctx.cur_page = ctx.cur_page + 1
             end
@@ -205,7 +205,7 @@ local function move_to_next_valid_position(ctx, interval, grid_height, indent)
         -- Skip Center Gap
         while is_center_gap_col(ctx.cur_col, ctx.params, grid_height) do
             ctx.cur_col = ctx.cur_col + 1
-            if ctx.cur_col >= ctx.p_cols then
+            if ctx.auto_column_wrap ~= false and ctx.cur_col >= ctx.p_cols then
                 ctx.cur_col = 0
                 ctx.cur_page = ctx.cur_page + 1
             end
@@ -256,18 +256,30 @@ local function wrap_to_next_column(ctx, p_cols, interval, grid_height, indent, r
     ctx.just_wrapped_column = true -- Flag for issue #54 fix
     -- Always reset Y accumulator on column wrap (unified layout)
     ctx.cur_y_sp = 0
+    -- Clear textflow pending state: when a column break occurs, any pending
+    -- "right sub-column waiting for left" state is no longer valid. Without
+    -- this, flush_textflow_pending() would incorrectly advance cur_row in the
+    -- new column (e.g., empty \左小列{} followed by ^^M newline in digital mode).
+    ctx.textflow_pending_sub_col = nil
+    ctx.textflow_pending_row_used = nil
 
     local should_wrap_page = false
 
-    if ctx.is_free_mode and ctx.content_width > 0 then
-        -- Free mode: check if accumulated width exceeds available width
-        if ctx.accumulated_width_sp >= ctx.content_width then
-            should_wrap_page = true
-            ctx.accumulated_width_sp = 0 -- Reset for new page
+    -- In digital mode (auto_column_wrap==false), never auto-wrap pages.
+    -- Only explicit \换页 (PENALTY_FORCE_PAGE) triggers page breaks.
+    -- Content overflowing beyond p_cols will render outside the border,
+    -- making errors visible without cascading to subsequent pages.
+    if ctx.auto_column_wrap ~= false then
+        if ctx.is_free_mode and ctx.content_width > 0 then
+            -- Free mode: check if accumulated width exceeds available width
+            if ctx.accumulated_width_sp >= ctx.content_width then
+                should_wrap_page = true
+                ctx.accumulated_width_sp = 0 -- Reset for new page
+            end
+        else
+            -- Grid mode: use fixed column count
+            should_wrap_page = (ctx.cur_col >= p_cols)
         end
-    else
-        -- Grid mode: use fixed column count
-        should_wrap_page = (ctx.cur_col >= p_cols)
     end
 
     if should_wrap_page then
@@ -497,35 +509,58 @@ end
 -- @param line_limit (number) Max rows per column
 -- @return indent, r_indent, effective_limit, effective_col_height_sp, tb_w, tb_h
 local function resolve_node_indent(t, id, ctx, block_start_cols, grid_height, line_limit)
+    -- Penalty nodes don't occupy layout space — they should never carry indent.
+    -- TeX's attribute inheritance causes penalty nodes inside \Column to inherit
+    -- forced indent from \Indent, leading to empty columns in layout grid.
+    if id == constants.PENALTY then
+        local effective_limit = line_limit
+        local effective_col_height_sp = effective_limit * grid_height
+        return 0, 0, effective_limit, effective_col_height_sp, 0, 0, 0, -1, nil
+    end
+
     local block_id = D.get_attribute(t, constants.ATTR_BLOCK_ID)
     local node_indent = D.get_attribute(t, constants.ATTR_INDENT)
     local node_first_indent = D.get_attribute(t, constants.ATTR_FIRST_INDENT)
 
-    -- Decode forced indent values (handles both -2 and < -1000)
-    local indent_is_forced, forced_indent_value = constants.is_forced_indent(node_indent)
-    local first_indent_is_forced, forced_first_indent_value = constants.is_forced_indent(node_first_indent)
+    -- Decode indent: two categories with different scope rules
+    --   Taitou indent (\抬头/\平抬/\相对抬头): scoped to taitou column
+    --   Suojin indent (\缩进[N]): not affected by taitou scope
+    local indent_is_taitou, taitou_indent_value = constants.is_taitou_indent(node_indent)
+    local indent_is_suojin, suojin_indent_value = constants.is_suojin_indent(node_indent)
+    local first_indent_is_taitou, first_taitou_value = constants.is_taitou_indent(node_first_indent)
+    local first_indent_is_suojin, first_suojin_value = constants.is_suojin_indent(node_first_indent)
 
-    -- Taitou scope: forced negative indent (抬头) only applies to the column where
-    -- the \抬头 command was issued (recorded in ctx.taitou_col/taitou_page).
-    -- Ignore stale forced negative indent on nodes outside the taitou column,
-    -- falling through to style stack inheritance (as if no forced indent was set).
-    local outside_taitou = ctx.taitou_col == nil
-        or ctx.cur_col ~= ctx.taitou_col
-        or ctx.cur_page ~= ctx.taitou_page
-    if indent_is_forced and forced_indent_value < 0 and outside_taitou then
+    local indent_is_forced = indent_is_taitou or indent_is_suojin
+    local first_indent_is_forced = first_indent_is_taitou or first_indent_is_suojin
+
+    -- Taitou scope check: taitou indent only applies in the taitou column.
+    -- When taitou_col is set (by PENALTY_TAITOU handler), nodes outside that
+    -- column have their taitou values cleared and fall back to style stack.
+    -- When taitou_col is nil (no active scope), taitou values pass through
+    -- because wrap_to_next_column already cleared the scope — any remaining
+    -- taitou-encoded nodes are in the correct (target) column.
+    local outside_taitou = ctx.taitou_col ~= nil
+        and (ctx.cur_col ~= ctx.taitou_col or ctx.cur_page ~= ctx.taitou_page)
+    if indent_is_taitou and outside_taitou then
+        indent_is_taitou = false
         indent_is_forced = false
-        forced_indent_value = nil
-        node_indent = nil  -- Clear raw attribute so style stack can take over
+        node_indent = nil
     end
-    if first_indent_is_forced and forced_first_indent_value < 0 and outside_taitou then
+    if first_indent_is_taitou and outside_taitou then
+        first_indent_is_taitou = false
         first_indent_is_forced = false
-        forced_first_indent_value = nil
-        node_first_indent = nil  -- Clear raw attribute so style stack can take over
+        node_first_indent = nil
     end
+    -- Note: suojin indent is NOT affected by taitou scope.
 
-    -- Start with forced value (if forced) or explicit attribute (if set) or 0
-    local base_indent = indent_is_forced and forced_indent_value or (node_indent or 0)
-    local first_indent = first_indent_is_forced and forced_first_indent_value or (node_first_indent or -1)
+    -- Resolve base_indent: forced (taitou or suojin) > explicit > style stack
+    local forced_indent_value = indent_is_taitou and taitou_indent_value
+        or indent_is_suojin and suojin_indent_value or nil
+    local base_indent = forced_indent_value or (node_indent or 0)
+
+    local forced_first_value = first_indent_is_taitou and first_taitou_value
+        or first_indent_is_suojin and first_suojin_value or nil
+    local first_indent = forced_first_value or (node_first_indent or -1)
 
     -- If not forced and no explicit value, inherit from style stack
     if not indent_is_forced and (node_indent == nil or node_indent == 0) then
@@ -1004,6 +1039,7 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
               base_indent, first_indent, block_id =
             resolve_node_indent(t, id, ctx, block_start_cols, grid_height, line_limit)
 
+
         -- Check wrapping BEFORE placing (unified: sp-based)
         -- In distribution mode, we allow overflow so we can squeeze characters later
         -- When auto_column_wrap is false, only explicit penalties cause column breaks
@@ -1040,12 +1076,45 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
             do_flush()
             accumulate_free_mode_col_width(ctx, params)
             wrap_to_next_column(ctx, p_cols, interval, grid_height, base_indent, true, false)
-            -- After column wrap, re-resolve indent: first_indent only applies to
-            -- the block's starting column; subsequent columns use base_indent.
+            -- After column wrap, fully re-resolve indent: the column change may
+            -- invalidate taitou scope (\平抬/\抬头 only affects one column),
+            -- and first_indent only applies to the block's starting column.
+            indent, r_indent, effective_limit, effective_col_height_sp, tb_w, tb_h,
+                base_indent, first_indent, block_id =
+                resolve_node_indent(t, id, ctx, block_start_cols, grid_height, line_limit)
             indent = get_indent_for_current_pos(ctx, block_start_cols, block_id, base_indent, first_indent)
         end
 
-        apply_indentation(ctx, indent)
+        -- Skip apply_indentation for textflow nodes with forced indent:
+        -- textflow handles forced indent (from \缩进[N]) internally via
+        -- base_y_sp = ni_indent_val * gh. Applying it here would advance
+        -- ctx.cur_row, causing the left sub-column to inherit the right's indent.
+        -- Normal indent (from style stack, e.g., \段落[indent=2]) must still
+        -- be applied so ctx.cur_row is set correctly for textflow layout.
+        --
+        -- However, when \缩进[N] is at the line level (before regular text + textflow),
+        -- the suojin forced indent attribute leaks to textflow nodes. If cur_column_indent
+        -- already equals the forced indent value, it means apply_indentation was
+        -- already called for preceding regular text — clear the forced indent so
+        -- textflow continues from ctx.cur_row instead of jumping back.
+        -- IMPORTANT: Only clear suojin-encoded indents (\缩进[N]).
+        -- Taitou-encoded indents (\平抬/\单抬/\相对抬头) must be passed through
+        -- to textflow intact, as they represent intentional forced positioning.
+        if is_textflow_node then
+            local tf_indent_attr = D.get_attribute(t, constants.ATTR_INDENT)
+            local tf_is_suojin, tf_indent_val = constants.is_suojin_indent(tf_indent_attr)
+            if tf_is_suojin then
+                if (ctx.cur_column_indent or 0) == tf_indent_val then
+                    -- Suojin forced indent already consumed by preceding regular text;
+                    -- clear it so textflow uses ctx.cur_row as base position.
+                    D.set_attribute(t, constants.ATTR_INDENT, 0)
+                end
+            else
+                apply_indentation(ctx, indent)
+            end
+        else
+            apply_indentation(ctx, indent)
+        end
 
         -- Check for Column (单列排版) first
         local is_column = D.get_attribute(t, constants.ATTR_COLUMN) == 1
@@ -1061,8 +1130,11 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
             do_flush()
             -- In grid mode or if current column has content, wrap to next column
             -- In free mode with space available, allow columns side-by-side
+            -- Use cur_column_indent as threshold: if cur_row only advanced due to
+            -- apply_indentation (not actual content), don't wrap.
             local should_wrap_before_column = false
-            if ctx.cur_row > 0 then
+            local col_indent_threshold = math.max(ctx.cur_column_indent or 0, 0)
+            if ctx.cur_row > col_indent_threshold then
                 if not ctx.is_free_mode then
                     -- Grid mode: always wrap
                     should_wrap_before_column = true
@@ -1094,7 +1166,8 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
                 line_limit = line_limit,
                 grid_height = grid_height,
                 p_cols = p_cols,
-                interval = interval
+                interval = interval,
+                indent = indent,
             }
             local column_callbacks = {
                 flush = do_flush,
@@ -1176,6 +1249,7 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
             }
 
             t = textflow.place_nodes(ctx, t, layout_map, place_params, callbacks)
+            ctx.page_has_content = true
 
             if not t then break end
             goto start_of_loop

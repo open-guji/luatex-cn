@@ -1,0 +1,113 @@
+% Copyright 2026 Open-Guji (https://github.com/open-guji)
+%
+% Licensed under the Apache License, Version 2.0 (the "License");
+% you may not use this file except in compliance with the License.
+% You may obtain a copy of the License at
+%
+%     http://www.apache.org/licenses/LICENSE-2.0
+%
+% Unless required by applicable law or agreed to in writing, software
+% distributed under the License is distributed on an "AS IS" BASIS,
+% WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+% See the License for the specific language governing permissions and
+% limitations under the License.
+%
+% ============================================================================
+% Layout Export Module
+% ============================================================================
+%
+% This module exports the layout information (page, column, row, character)
+% to a JSON file after compilation.
+%
+% Usage:
+%   Method 1: Environment variable (recommended for testing/validation)
+%     ENABLE_EXPORT=1 lualatex yourfile.tex
+%
+%   Method 2: In-document command
+%     \开启排版导出
+%     % or
+%     \enableLayoutExport
+%
+% Output:
+%   <jobname>-layout.json
+%
+% JSON Format:
+%   Compatible with guji_layout.PageLayout schema
+%   Contains: pages[], document metadata, generator info
+
+\RequirePackage{core/luatex-cn-core-base}
+\ProvidesExplPackage{core/luatex-cn-core-export}{2026/02/26} {0.3.1}{Layout export to JSON}
+
+% Load Lua module
+\lua_now:n { layout_export = require('core.luatex-cn-core-export') }
+
+% ============================================================================
+% Global state
+% ============================================================================
+\bool_new:N \g__luatexcn_export_enabled_bool
+\tl_new:N \l__luatexcn_export_filename_tl
+
+% ============================================================================
+% Key-Value Interface
+% ============================================================================
+\keys_define:nn { luatexcn / export }
+  {
+    enabled .bool_gset:N = \g__luatexcn_export_enabled_bool,
+    enabled .initial:n = false,
+
+    filename .tl_set:N = \l__luatexcn_export_filename_tl,
+    filename .initial:n = {},
+  }
+
+% ============================================================================
+% Enable Command
+% ============================================================================
+\NewDocumentCommand{\enableLayoutExport}{ O{} }
+  {
+    \keys_set:nn { luatexcn / export } { enabled = true, #1 }
+    \lua_now:e {
+      layout_export.enable({
+        filename~=~[=[\luaescapestring{\l__luatexcn_export_filename_tl}]=]
+      })
+    }
+  }
+
+% ============================================================================
+% Auto-enable via environment variable
+% ============================================================================
+\ExplSyntaxOff
+\directlua{
+  if os.getenv("ENABLE_EXPORT") == "1" then
+    layout_export.enable({filename = ""})
+    tex.sprint("\\ExplSyntaxOn\\bool_gset_true:N\\g__luatexcn_export_enabled_bool\\ExplSyntaxOff")
+  end
+}
+\ExplSyntaxOn
+
+% ============================================================================
+% Write JSON at end of document
+% ============================================================================
+\AddToHook{enddocument/afterlastpage}{
+  \bool_if:NT \g__luatexcn_export_enabled_bool
+    {
+      \lua_now:n { layout_export.write_json() }
+    }
+}
+
+% ============================================================================
+% CJK Key Aliases
+% ============================================================================
+\keys_define:nn { luatexcn / export }
+  {
+    启用 .bool_gset:N = \g__luatexcn_export_enabled_bool,
+    文件名 .tl_set:N = \l__luatexcn_export_filename_tl,
+  }
+
+\ExplSyntaxOff
+
+% ============================================================
+% Chinese aliases / 中文别名
+% ============================================================
+\NewCommandCopy{\开启排版导出}{\enableLayoutExport}
+
+\endinput

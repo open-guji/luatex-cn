@@ -16,6 +16,7 @@ local tests = {
     -- Core layer (pure function tests)
     "test/unit_test/core/core-punct-test.lua",
     "test/unit_test/core/core-metadata-test.lua",
+    "test/unit_test/core/core-export-test.lua",
     "test/unit_test/core/core-page-split-test.lua",
     "test/unit_test/core/render-position-test.lua",
     "test/unit_test/core/layout-grid-helpers-test.lua",

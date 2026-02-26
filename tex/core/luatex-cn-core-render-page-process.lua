@@ -161,16 +161,28 @@ local function handle_glyph_node(curr, p_head, pos, params, ctx)
     D.insert_after(p_head, curr, k)
 
     -- Apply font_color if stored in layout_map (Phase 2: General style preservation)
-    -- This handles cross-page font_color preservation for all components (jiazhu, sidenote, etc.)
+    -- Skip wrapping when font_color matches the page-level default (avoids redundant
+    -- q/Q pairs that introduce ET/cm/BT coordinate transforms and float precision loss)
     local font_color = pos.font_color
     if font_color and font_color ~= "" then
         local rgb_str = utils.normalize_rgb(font_color)
-        local color_cmd = utils.create_color_literal(rgb_str, false) -- false = fill color (rg)
-        local color_push = utils.create_pdf_literal("q " .. color_cmd)
-        local color_pop = utils.create_pdf_literal("Q")
-
-        p_head = D.insert_before(p_head, curr, color_push)
-        D.insert_after(p_head, k, color_pop) -- Insert after the kern
+        -- Only wrap if color differs from page default (both must be non-nil and different)
+        if rgb_str and ctx.text_rgb_str and rgb_str ~= ctx.text_rgb_str then
+            -- Different from page default: wrap with q/Q for color isolation
+            local color_cmd = utils.create_color_literal(rgb_str, false) -- false = fill color (rg)
+            local color_push = utils.create_pdf_literal("q " .. color_cmd)
+            local color_pop = utils.create_pdf_literal("Q")
+            p_head = D.insert_before(p_head, curr, color_push)
+            D.insert_after(p_head, k, color_pop) -- Insert after the kern
+        elseif not ctx.text_rgb_str and rgb_str then
+            -- No page-level color but char has color: must wrap
+            local color_cmd = utils.create_color_literal(rgb_str, false)
+            local color_push = utils.create_pdf_literal("q " .. color_cmd)
+            local color_pop = utils.create_pdf_literal("Q")
+            p_head = D.insert_before(p_head, curr, color_push)
+            D.insert_after(p_head, k, color_pop)
+        end
+        -- When rgb_str == ctx.text_rgb_str: page-level rg already set, no wrapping needed
     end
 
     return p_head

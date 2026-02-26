@@ -1,0 +1,26 @@
+% shuanglie_after_newpage.tex - 回归测试: \换页 后紧跟 \双列(左小列为空) 导致列合并
+% 问题: \换页 后 page_has_content=false, \双列{\右小列{...}\左小列{}} 的
+%       textflow 因 rows_used=0 (只有右小列, pending 等待左小列) 不更新
+%       page_has_content 和 cur_row, 导致 \双列{} 后的 ^^M
+%       (PENALTY_DIGITAL_NEWLINE) 被错误跳过
+% 触发条件: \换页 + \双列(左小列为空) + 后续无 \缩进
+% 结果: \双列{} 后面的行被合并到同一列
+% 修复: textflow.place_nodes 放置内容后设置 page_has_content = true
+\documentclass{ltc-guji-digital}
+\setmainfont{TW-Kai}
+\关闭分页
+
+\title{测试}
+\chapter{测试}
+
+\begin{document}
+\begin{正文}
+一二三四五六七八九十一二三四五六七八九十一
+一二三四五六七八九十一二三四五六七八九十一
+\换页
+\双列{\右小列{復之初爻矣}\左小列{}}
+下一行应在新列
+一二三四五六七八九十一二三四五六七八九十一
+\双列{\右小列{\缩进[2] 乾隆二十年大學士傅恒等奉}\左小列{敕撰以本}}
+\end{正文}
+\end{document}

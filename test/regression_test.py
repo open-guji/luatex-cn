@@ -5,6 +5,7 @@ import shutil
 import sys
 import argparse
 import re
+import json
 from pathlib import Path
 
 # image_compare lives in scripts/
@@ -94,6 +95,17 @@ def process_file(tex_file, mode, pdf_dir, baseline_dir, current_dir, diff_dir):
     if not pdf_file or not pdf_file.exists():
         return False, "Compilation failed", log_list
 
+    # Check for JSON layout export file.
+    # JSON may be in pdf_dir (if output-directory is respected) or in tex_file's
+    # directory (lualatex cwd). Check both locations.
+    json_file = pdf_dir / f"{tex_file.stem}-layout.json"
+    if not json_file.exists():
+        json_in_texdir = tex_file.parent / f"{tex_file.stem}-layout.json"
+        if json_in_texdir.exists():
+            # Move it to pdf_dir for consistent handling
+            shutil.move(str(json_in_texdir), str(json_file))
+    has_json = json_file.exists()
+
     if mode == "save":
         # 2. Convert to PNGs in a temp location first (use current_dir as temp)
         new_pngs = pdf_to_pngs_logged(pdf_file, current_dir, log_list)
@@ -119,7 +131,33 @@ def process_file(tex_file, mode, pdf_dir, baseline_dir, current_dir, diff_dir):
                     break
             images_match = all_match
 
-        if images_match:
+        # Save JSON baseline if present
+        json_saved = False
+        if has_json:
+            baseline_json = baseline_dir / json_file.name
+            if baseline_json.exists():
+                # Compare with existing baseline JSON
+                try:
+                    with open(json_file, 'r', encoding='utf-8') as f:
+                        new_data = json.load(f)
+                    with open(baseline_json, 'r', encoding='utf-8') as f:
+                        old_data = json.load(f)
+                    if new_data == old_data:
+                        log_list.append(f"JSON baseline unchanged for {tex_file.name}")
+                    else:
+                        shutil.copy2(str(json_file), str(baseline_json))
+                        log_list.append(f"JSON baseline updated for {tex_file.name}")
+                        json_saved = True
+                except (json.JSONDecodeError, IOError) as e:
+                    log_list.append(f"WARNING: JSON comparison error: {e}, overwriting baseline")
+                    shutil.copy2(str(json_file), str(baseline_json))
+                    json_saved = True
+            else:
+                shutil.copy2(str(json_file), str(baseline_json))
+                log_list.append(f"JSON baseline saved for {tex_file.name}")
+                json_saved = True
+
+        if images_match and not json_saved:
             log_list.append(f"No visual changes - deleting PDF for {tex_file.name}")
             for png in new_pngs:
                 png.unlink()
@@ -135,8 +173,9 @@ def process_file(tex_file, mode, pdf_dir, baseline_dir, current_dir, diff_dir):
                 shutil.move(str(png), str(baseline_dir / png.name))
             for diff_png in diff_dir.glob(f"diff_{pdf_file.stem}-*.png"):
                 diff_png.unlink()
-            log_list.append(f"Saved {len(new_pngs)} baseline pages.")
-            return True, f"Saved {len(new_pngs)} pages", log_list
+            extra = " + JSON" if json_saved else ""
+            log_list.append(f"Saved {len(new_pngs)} baseline pages{extra}.")
+            return True, f"Saved {len(new_pngs)} pages{extra}", log_list
 
     elif mode == "check":
         # 2. Convert to PNGs in current
@@ -169,14 +208,41 @@ def process_file(tex_file, mode, pdf_dir, baseline_dir, current_dir, diff_dir):
             else:
                 return False, f"Comparison error on page {i+1}", log_list
 
-        if total_diff_pixels == 0:
+        # Check JSON baseline if present
+        json_ok = True
+        json_info = ""
+        baseline_json = baseline_dir / f"{tex_file.stem}-layout.json"
+        if has_json and baseline_json.exists():
+            try:
+                with open(json_file, 'r', encoding='utf-8') as f:
+                    current_data = json.load(f)
+                with open(baseline_json, 'r', encoding='utf-8') as f:
+                    baseline_data = json.load(f)
+                if current_data == baseline_data:
+                    log_list.append(f"JSON matches baseline for {tex_file.name}")
+                else:
+                    json_ok = False
+                    log_list.append(f"FAIL: JSON differs from baseline for {tex_file.name}")
+            except (json.JSONDecodeError, IOError) as e:
+                json_ok = False
+                log_list.append(f"FAIL: JSON comparison error for {tex_file.name}: {e}")
+        elif has_json and not baseline_json.exists():
+            log_list.append(f"WARNING: JSON output exists but no baseline JSON for {tex_file.name}")
+        elif not has_json and baseline_json.exists():
+            json_ok = False
+            log_list.append(f"FAIL: Baseline JSON exists but no JSON output for {tex_file.name}")
+
+        if not json_ok:
+            json_info = " + JSON mismatch"
+
+        if total_diff_pixels == 0 and json_ok:
             log_list.append(f"SUCCESS: {tex_file.name} matches baseline (all {len(current_pngs)} pages).")
             for png in current_pngs:
                 png.unlink()
             if pdf_file.exists():
                 pdf_file.unlink()
             return True, 0, log_list
-        elif total_diff_pixels < DIFF_THRESHOLD:
+        elif total_diff_pixels < DIFF_THRESHOLD and json_ok:
             log_list.append(f"WARNING: {tex_file.name} has minor differences ({total_diff_pixels} pixels), but they are below threshold ({DIFF_THRESHOLD}). Marking as PASSED.")
             for png in current_pngs:
                 png.unlink()
@@ -187,8 +253,11 @@ def process_file(tex_file, mode, pdf_dir, baseline_dir, current_dir, diff_dir):
                 pdf_file.unlink()
             return True, f"{total_diff_pixels} pixels (ignored)", log_list
         else:
-            log_list.append(f"FAIL: {tex_file.name} differs on pages: {failing_pages}")
-            return False, f"{total_diff_pixels} total pixels diff", log_list
+            if not json_ok and total_diff_pixels == 0:
+                log_list.append(f"FAIL: {tex_file.name} JSON mismatch")
+                return False, f"JSON mismatch", log_list
+            log_list.append(f"FAIL: {tex_file.name} differs on pages: {failing_pages}{json_info}")
+            return False, f"{total_diff_pixels} total pixels diff{json_info}", log_list
 
 
 def resolve_files_in_suite(file_args, tex_dir):

@@ -342,8 +342,10 @@ function column.place_nodes(ctx, start_node, layout_map, params, callbacks)
     local v_scale = 1.0
     local gap = 0
 
+    -- Apply indent offset for top-aligned columns
+    local col_indent = params.indent or 0
     if align_mode == column.ALIGN_TOP then
-        start_row = 0
+        start_row = math.max(col_indent, 0)
     elseif align_mode == column.ALIGN_BOTTOM then
         start_row = math.max(0, line_limit - total_height)
     elseif align_mode == column.ALIGN_CENTER then

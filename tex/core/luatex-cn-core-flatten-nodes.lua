@@ -140,15 +140,26 @@ _internal.get_box_indentation = get_box_indentation
 -- @return (direct node) 复制后的节点
 local function copy_node_with_attributes(t, indent, r_indent)
     local copy = D.copy(t)
-    if indent > 0 then
-        -- Don't overwrite forced indent values on individual nodes
-        -- (e.g., footnote indent set via tex.setattribute with encode_forced_indent)
-        local existing = D.get_attribute(copy, constants.ATTR_INDENT) or 0
-        if not constants.is_forced_indent(existing) then
-            D.set_attribute(copy, constants.ATTR_INDENT, indent)
+    local tid = D.getid(t)
+    if tid == constants.PENALTY then
+        -- Penalty nodes don't occupy layout space — clear any inherited
+        -- indent attributes to prevent Column boundary markers from causing
+        -- layout grid to create empty columns.
+        -- Use set_attribute with 0 since unset_attribute may not be available
+        -- in all LuaTeX versions and 0 means "no indent" in resolve_node_indent.
+        D.set_attribute(copy, constants.ATTR_INDENT, 0)
+        D.set_attribute(copy, constants.ATTR_FIRST_INDENT, 0)
+    else
+        if indent > 0 then
+            -- Don't overwrite command-level indent values on individual nodes
+            -- (e.g., \缩进 or \抬头 set via tex.setattribute with encode_suojin/taitou_indent)
+            local existing = D.get_attribute(copy, constants.ATTR_INDENT) or 0
+            if not constants.is_any_command_indent(existing) then
+                D.set_attribute(copy, constants.ATTR_INDENT, indent)
+            end
         end
+        if r_indent > 0 then D.set_attribute(copy, constants.ATTR_RIGHT_INDENT, r_indent) end
     end
-    if r_indent > 0 then D.set_attribute(copy, constants.ATTR_RIGHT_INDENT, r_indent) end
 
     -- CRITICAL: Preserve textflow attributes (they are set by \TextFlow command)
     local textflow_attr = D.get_attribute(t, constants.ATTR_JIAZHU)

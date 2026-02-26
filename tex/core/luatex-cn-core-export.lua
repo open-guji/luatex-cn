@@ -506,12 +506,40 @@ function export.collect(list, layout_results, engine_ctx, plugin_contexts, p_inf
     for pg = 0, total_pages - 1 do
         local page_data = pages[pg]
         if page_data then
-            -- Convert columns from map to sorted array
+            -- Convert columns from map to sorted array, filling gaps with empty columns
             local cols_array = {}
-            for _, col_data in pairs(page_data.columns) do
-                table.insert(cols_array, col_data)
+            local max_col_index = -1
+
+            -- First pass: find the maximum column index that actually has content
+            for col_idx, _ in pairs(page_data.columns) do
+                if col_idx > max_col_index then
+                    max_col_index = col_idx
+                end
             end
-            table.sort(cols_array, function(a, b) return a.col_index < b.col_index end)
+
+            -- Second pass: build array from 0 to max_col_index, filling gaps
+            for col_idx = 0, max_col_index do
+                local col_data = page_data.columns[col_idx]
+                if col_data then
+                    table.insert(cols_array, col_data)
+                else
+                    -- Empty column: create a placeholder with correct x position
+                    local rtl_col = p_cols - 1 - col_idx
+                    local col_x_sp = text_position.get_column_x(rtl_col, col_geom)
+                    local abs_x_sp = col_x_sp + shift_x + half_thickness
+                    local abs_x_pt = abs_x_sp * SP_TO_PT
+
+                    table.insert(cols_array, {
+                        col_index = col_idx,
+                        position = {
+                            left_x = abs_x_pt,
+                            right_x = abs_x_pt,
+                        },
+                        characters = {},
+                    })
+                end
+            end
+
             page_data.columns = cols_array
             table.insert(pages_array, page_data)
         end

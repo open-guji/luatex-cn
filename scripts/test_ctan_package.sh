@@ -7,7 +7,8 @@ set -e
 
 # Configuration
 PROJECT_DIR="/home/lishaodong/workspace/luatex-cn"
-CTAN_ZIP="$PROJECT_DIR/luatex-cn-ctan.zip"
+VERSION=$(cat "$PROJECT_DIR/VERSION" | tr -d '[:space:]')
+CTAN_ZIP="$PROJECT_DIR/luatex-cn-ctan-v${VERSION}.zip"
 EXAMPLE_DIR="$PROJECT_DIR/示例"
 TEST_EXAMPLE_DIR="$PROJECT_DIR/test_example"
 WORK_DIR="$TEST_EXAMPLE_DIR/ctan"

@@ -198,70 +198,219 @@ test_utils.run_test("resolve_dimen: empty string returns nil", function()
 end)
 
 -- ============================================================================
--- is_forced_indent / encode_forced_indent
+-- Taitou indent encoding (抬头系列)
 -- ============================================================================
 
-test_utils.run_test("encode_forced_indent: zero indent", function()
-    local encoded = constants.encode_forced_indent(0)
-    test_utils.assert_eq(encoded, constants.INDENT_FORCE_ZERO)
+test_utils.run_test("encode_taitou_indent: zero indent", function()
+    local encoded = constants.encode_taitou_indent(0)
+    test_utils.assert_eq(encoded, constants.INDENT_TAITOU_ZERO)
 end)
 
-test_utils.run_test("encode_forced_indent: positive indent", function()
-    local encoded = constants.encode_forced_indent(3)
-    test_utils.assert_eq(encoded, constants.INDENT_FORCE_BASE - 3)
+test_utils.run_test("encode_taitou_indent: positive indent", function()
+    local encoded = constants.encode_taitou_indent(3)
+    test_utils.assert_eq(encoded, constants.INDENT_TAITOU_BASE - 3)
 end)
 
-test_utils.run_test("is_forced_indent: detects force zero", function()
-    local is_forced, value = constants.is_forced_indent(constants.INDENT_FORCE_ZERO)
-    test_utils.assert_true(is_forced)
+test_utils.run_test("encode_taitou_indent: negative indent (taitou into header)", function()
+    local encoded = constants.encode_taitou_indent(-2)
+    test_utils.assert_eq(encoded, constants.INDENT_TAITOU_BASE - (-2))
+    test_utils.assert_eq(encoded, constants.INDENT_TAITOU_BASE + 2)
+end)
+
+test_utils.run_test("is_taitou_indent: detects taitou zero", function()
+    local ok, value = constants.is_taitou_indent(constants.INDENT_TAITOU_ZERO)
+    test_utils.assert_true(ok)
     test_utils.assert_eq(value, 0)
 end)
 
-test_utils.run_test("is_forced_indent: detects forced positive", function()
-    local encoded = constants.encode_forced_indent(5)
-    local is_forced, value = constants.is_forced_indent(encoded)
-    test_utils.assert_true(is_forced)
+test_utils.run_test("is_taitou_indent: detects taitou positive", function()
+    local encoded = constants.encode_taitou_indent(5)
+    local ok, value = constants.is_taitou_indent(encoded)
+    test_utils.assert_true(ok)
     test_utils.assert_eq(value, 5)
 end)
 
-test_utils.run_test("is_forced_indent: roundtrip", function()
-    for i = 0, 10 do
-        local encoded = constants.encode_forced_indent(i)
-        local is_forced, value = constants.is_forced_indent(encoded)
-        test_utils.assert_true(is_forced)
-        test_utils.assert_eq(value, i, "roundtrip failed for indent=" .. i)
+test_utils.run_test("is_taitou_indent: roundtrip", function()
+    for i = -3, 10 do
+        local encoded = constants.encode_taitou_indent(i)
+        local ok, value = constants.is_taitou_indent(encoded)
+        test_utils.assert_true(ok)
+        test_utils.assert_eq(value, i, "taitou roundtrip failed for indent=" .. i)
     end
 end)
 
-test_utils.run_test("is_forced_indent: normal indent not forced", function()
-    local is_forced = constants.is_forced_indent(2)
-    test_utils.assert_eq(is_forced, false)
+test_utils.run_test("is_taitou_indent: normal indent not taitou", function()
+    local ok = constants.is_taitou_indent(2)
+    test_utils.assert_eq(ok, false)
 end)
 
-test_utils.run_test("is_forced_indent: nil not forced", function()
-    local is_forced = constants.is_forced_indent(nil)
-    test_utils.assert_eq(is_forced, false)
+test_utils.run_test("is_taitou_indent: nil not taitou", function()
+    local ok = constants.is_taitou_indent(nil)
+    test_utils.assert_eq(ok, false)
 end)
 
-test_utils.run_test("is_forced_indent: INDENT_INHERIT not forced", function()
-    local is_forced = constants.is_forced_indent(constants.INDENT_INHERIT)
-    test_utils.assert_eq(is_forced, false)
+test_utils.run_test("is_taitou_indent: suojin value not taitou", function()
+    local suojin = constants.encode_suojin_indent(3)
+    local ok = constants.is_taitou_indent(suojin)
+    test_utils.assert_eq(ok, false)
+end)
+
+-- ============================================================================
+-- Suojin indent encoding (缩进系列)
+-- ============================================================================
+
+test_utils.run_test("encode_suojin_indent: zero indent", function()
+    local encoded = constants.encode_suojin_indent(0)
+    test_utils.assert_eq(encoded, constants.INDENT_SUOJIN_ZERO)
+end)
+
+test_utils.run_test("encode_suojin_indent: positive indent", function()
+    local encoded = constants.encode_suojin_indent(3)
+    test_utils.assert_eq(encoded, constants.INDENT_SUOJIN_BASE - 3)
+end)
+
+test_utils.run_test("is_suojin_indent: detects suojin zero", function()
+    local ok, value = constants.is_suojin_indent(constants.INDENT_SUOJIN_ZERO)
+    test_utils.assert_true(ok)
+    test_utils.assert_eq(value, 0)
+end)
+
+test_utils.run_test("is_suojin_indent: detects suojin positive", function()
+    local encoded = constants.encode_suojin_indent(5)
+    local ok, value = constants.is_suojin_indent(encoded)
+    test_utils.assert_true(ok)
+    test_utils.assert_eq(value, 5)
+end)
+
+test_utils.run_test("is_suojin_indent: roundtrip", function()
+    for i = 0, 10 do
+        local encoded = constants.encode_suojin_indent(i)
+        local ok, value = constants.is_suojin_indent(encoded)
+        test_utils.assert_true(ok)
+        test_utils.assert_eq(value, i, "suojin roundtrip failed for indent=" .. i)
+    end
+end)
+
+test_utils.run_test("is_suojin_indent: normal indent not suojin", function()
+    local ok = constants.is_suojin_indent(2)
+    test_utils.assert_eq(ok, false)
+end)
+
+test_utils.run_test("is_suojin_indent: nil not suojin", function()
+    local ok = constants.is_suojin_indent(nil)
+    test_utils.assert_eq(ok, false)
+end)
+
+test_utils.run_test("is_suojin_indent: taitou value not suojin", function()
+    local taitou = constants.encode_taitou_indent(3)
+    local ok = constants.is_suojin_indent(taitou)
+    test_utils.assert_eq(ok, false)
+end)
+
+-- ============================================================================
+-- is_any_command_indent (unified check)
+-- ============================================================================
+
+test_utils.run_test("is_any_command_indent: detects taitou", function()
+    local encoded = constants.encode_taitou_indent(2)
+    local ok, value = constants.is_any_command_indent(encoded)
+    test_utils.assert_true(ok)
+    test_utils.assert_eq(value, 2)
+end)
+
+test_utils.run_test("is_any_command_indent: detects suojin", function()
+    local encoded = constants.encode_suojin_indent(4)
+    local ok, value = constants.is_any_command_indent(encoded)
+    test_utils.assert_true(ok)
+    test_utils.assert_eq(value, 4)
+end)
+
+test_utils.run_test("is_any_command_indent: normal indent not command", function()
+    local ok = constants.is_any_command_indent(2)
+    test_utils.assert_eq(ok, false)
+end)
+
+test_utils.run_test("is_any_command_indent: nil not command", function()
+    local ok = constants.is_any_command_indent(nil)
+    test_utils.assert_eq(ok, false)
+end)
+
+test_utils.run_test("is_any_command_indent: INDENT_INHERIT not command", function()
+    local ok = constants.is_any_command_indent(constants.INDENT_INHERIT)
+    test_utils.assert_eq(ok, false)
+end)
+
+-- ============================================================================
+-- Deprecated aliases (backward compatibility)
+-- ============================================================================
+
+test_utils.run_test("encode_forced_indent: deprecated alias works (maps to taitou)", function()
+    local encoded = constants.encode_forced_indent(3)
+    local ok, value = constants.is_taitou_indent(encoded)
+    test_utils.assert_true(ok)
+    test_utils.assert_eq(value, 3)
+end)
+
+test_utils.run_test("is_forced_indent: deprecated alias works (maps to is_any_command_indent)", function()
+    local taitou = constants.encode_taitou_indent(2)
+    local suojin = constants.encode_suojin_indent(4)
+    local ok1, v1 = constants.is_forced_indent(taitou)
+    test_utils.assert_true(ok1)
+    test_utils.assert_eq(v1, 2)
+    local ok2, v2 = constants.is_forced_indent(suojin)
+    test_utils.assert_true(ok2)
+    test_utils.assert_eq(v2, 4)
 end)
 
 -- ============================================================================
 -- Indent constants
 -- ============================================================================
 
-test_utils.run_test("INDENT_FORCE_ZERO is -2", function()
-    test_utils.assert_eq(constants.INDENT_FORCE_ZERO, -2)
+test_utils.run_test("INDENT_TAITOU_ZERO is -2", function()
+    test_utils.assert_eq(constants.INDENT_TAITOU_ZERO, -2)
+end)
+
+test_utils.run_test("INDENT_SUOJIN_ZERO is -3", function()
+    test_utils.assert_eq(constants.INDENT_SUOJIN_ZERO, -3)
 end)
 
 test_utils.run_test("INDENT_INHERIT is 0", function()
     test_utils.assert_eq(constants.INDENT_INHERIT, 0)
 end)
 
-test_utils.run_test("INDENT_FORCE_BASE is -1000", function()
-    test_utils.assert_eq(constants.INDENT_FORCE_BASE, -1000)
+test_utils.run_test("INDENT_TAITOU_BASE is -1000", function()
+    test_utils.assert_eq(constants.INDENT_TAITOU_BASE, -1000)
+end)
+
+test_utils.run_test("INDENT_SUOJIN_BASE is -2000", function()
+    test_utils.assert_eq(constants.INDENT_SUOJIN_BASE, -2000)
+end)
+
+test_utils.run_test("INDENT_FORCE_ZERO is alias for INDENT_TAITOU_ZERO", function()
+    test_utils.assert_eq(constants.INDENT_FORCE_ZERO, constants.INDENT_TAITOU_ZERO)
+end)
+
+test_utils.run_test("INDENT_FORCE_BASE is alias for INDENT_TAITOU_BASE", function()
+    test_utils.assert_eq(constants.INDENT_FORCE_BASE, constants.INDENT_TAITOU_BASE)
+end)
+
+-- ============================================================================
+-- Taitou and suojin encoding ranges don't overlap
+-- ============================================================================
+
+test_utils.run_test("taitou and suojin ranges are disjoint", function()
+    for i = 0, 10 do
+        local taitou = constants.encode_taitou_indent(i)
+        local suojin = constants.encode_suojin_indent(i)
+        -- They should not be equal
+        test_utils.assert_true(taitou ~= suojin,
+            "taitou and suojin should differ for indent=" .. i)
+        -- Each should only be detected by its own classifier
+        local t_ok = constants.is_taitou_indent(suojin)
+        test_utils.assert_eq(t_ok, false, "suojin should not be detected as taitou for indent=" .. i)
+        local s_ok = constants.is_suojin_indent(taitou)
+        test_utils.assert_eq(s_ok, false, "taitou should not be detected as suojin for indent=" .. i)
+    end
 end)
 
 -- ============================================================================

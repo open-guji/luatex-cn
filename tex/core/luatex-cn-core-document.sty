@@ -1,0 +1,75 @@
+% Copyright 2026 Open-Guji (https://github.com/open-guji)
+%
+% Licensed under the Apache License, Version 2.0 (the "License");
+% you may not use this file except in compliance with the License.
+% You may obtain a copy of the License at
+%
+%     http://www.apache.org/licenses/LICENSE-2.0
+%
+% Unless required by applicable law or agreed to in writing, software
+% distributed under the License is distributed on an "AS IS" BASIS,
+% WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+% See the License for the specific language governing permissions and
+% limitations under the License.
+
+\ProvidesExplPackage{core/luatex-cn-core-document}{2026/02/26}{0.3.0}{Document-level style settings}
+
+% ==============================================================================
+% Document-level style parameters (base defaults for all content)
+% ==============================================================================
+
+\tl_new:N \l__luatexcn_document_font_color_tl
+\tl_new:N \l__luatexcn_document_font_size_tl
+\tl_new:N \l__luatexcn_document_font_tl
+\tl_new:N \l__luatexcn_document_background_color_tl
+
+% Key-value interface for document setup
+\keys_define:nn { luatexcn / document }
+  {
+    font-color .tl_set:N = \l__luatexcn_document_font_color_tl,
+    font-color .initial:n = {},
+
+    font-size .tl_set:N = \l__luatexcn_document_font_size_tl,
+    font-size .initial:n = {},
+
+    font .tl_set:N = \l__luatexcn_document_font_tl,
+    font .initial:n = {},
+
+    background-color .tl_set:N = \l__luatexcn_document_background_color_tl,
+    background-color .initial:n = {},
+  }
+
+% Sync TeX variables to Lua _G.document table
+\cs_new_protected:Npn \__luatexcn_document_sync_to_lua:
+  {
+    \lua_now:e {
+      _G.document~=~_G.document~or~\iow_char:N \{~\iow_char:N \}
+      _G.document.font_color~=~[=[\luaescapestring{\l__luatexcn_document_font_color_tl}]=]
+      _G.document.font_size~=~[=[\luaescapestring{\l__luatexcn_document_font_size_tl}]=]
+      _G.document.font~=~[=[\luaescapestring{\l__luatexcn_document_font_tl}]=]
+      _G.document.background_color~=~[=[\luaescapestring{\l__luatexcn_document_background_color_tl}]=]
+    }
+  }
+
+% User-facing command to set document-level styles
+\NewDocumentCommand{\documentSetup}{m}
+  {
+    \keys_set:nn { luatexcn / document } { #1 }
+    \__luatexcn_document_sync_to_lua:
+  }
+
+% Initialize document style stack at \begin{document}
+\AtBeginDocument{
+    % Sync current settings to Lua
+    \__luatexcn_document_sync_to_lua:
+    % Push document-level base style onto style stack
+    \lua_now:n { require('core.luatex-cn-core-document').init_document_style() }
+}
+
+% Simplified Chinese aliases
+\NewCommandCopy{\文档设置}{\documentSetup}
+
+% Traditional Chinese aliases
+\NewCommandCopy{\文檔設置}{\documentSetup}
+
+\endinput

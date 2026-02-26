@@ -59,10 +59,15 @@ guji-digital.cls
 
 ### 2. `\缩进[N]` — 当前行缩进
 
-直接复用 `\SetIndent`：
+内部通过 `\__luatexcn_set_indent:n` 实现，负值额外插入 `PENALTY_TAITOU`：
 
 ```latex
-\NewDocumentCommand{\缩进}{ O{0} }{ \SetIndent{#1} }
+\NewDocumentCommand{\Indent}{ O{0} }
+  {
+    \int_compare:nNnTF { #1 } < { 0 }
+      { \__luatexcn_set_indent:n{#1} \penalty\c__luatexcn_penalty_taitou_int }
+      { \__luatexcn_set_indent:n{#1} }
+  }
 ```
 
 - 正值 = 缩进，负值 = 抬头（伸入天头）

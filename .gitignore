@@ -2,6 +2,10 @@
 /build/
 *.zip
 
+# build
+*/*/.venv/
+**/.mcp_tmp/
+
 # test
 */test.*
 test_example/
@@ -58,3 +62,10 @@ ai_must_read/ONGOING.md
 *.figlist
 *.auxlock
 
+# Converter validation artifacts
+全书复刻/**/tex/*-layout.json
+全书复刻/**/tex/*-digital.pdf
+全书复刻/**/tex/*-digital-layout.json
+全书复刻/**/tex/layout_comparison_report.json
+全书复刻/**/tex/排版一致性比较报告.md
+全书复刻/**/tex/*.pdf

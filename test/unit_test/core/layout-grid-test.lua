@@ -160,6 +160,25 @@ test_utils.run_test("handle_penalty_breaks: PENALTY_FORCE_COLUMN does NOT set ta
 end)
 
 -- ============================================================================
+-- wrap_to_next_column: taitou scope preserved for resolve_node_indent
+-- ============================================================================
+
+test_utils.run_test("wrap_to_next_column: preserves taitou scope for outside_taitou check", function()
+    local ctx = make_penalty_ctx({ cur_col = 2, taitou_col = 2, taitou_page = 1 })
+    layout_grid._internal.wrap_to_next_column(ctx, 10, 0, 65536 * 20, 0, false, true)
+    -- Taitou scope is preserved so resolve_node_indent can detect "outside scope"
+    test_utils.assert_eq(ctx.taitou_col, 2)
+    test_utils.assert_eq(ctx.taitou_page, 1)
+end)
+
+test_utils.run_test("wrap_to_next_column: negative indent reset to 0", function()
+    local ctx = make_penalty_ctx({ cur_col = 2, cur_column_indent = -1 })
+    layout_grid._internal.wrap_to_next_column(ctx, 10, 0, 65536 * 20, 0, false, true)
+    -- Negative indent (taitou) should be reset to 0 on column wrap
+    test_utils.assert_eq(ctx.cur_column_indent, 0)
+end)
+
+-- ============================================================================
 -- PENALTY_DIGITAL_NEWLINE: always wraps even on empty column (cur_row == 0)
 -- ============================================================================
 

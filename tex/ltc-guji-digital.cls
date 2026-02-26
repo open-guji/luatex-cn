@@ -29,15 +29,13 @@
 \tl_new:N \l_luatexcn_digital_initial_template_tl
 \prop_new:N \g_luatexcn_digital_template_map_prop
 
-% Template name mappings (Chinese -> Internal)
+% Template name mappings (Chinese -> Internal) - same as guji.cls
 \prop_gset_from_keyval:Nn \g_luatexcn_digital_template_map_prop
   {
     四库全书彩色 = SiKuQuanShu-colored,
     四庫全書彩色 = SiKuQuanShu-colored,
     红楼梦甲戌本 = HongLouMengJiaXuBen,
     紅樓夢甲戌本 = HongLouMengJiaXuBen,
-    四库全书文渊阁简明目录 = SikuWenyuanMulu,
-    四庫全書文淵閣簡明目錄 = SikuWenyuanMulu
   }
 
 % ============================================================================
@@ -52,8 +50,8 @@
         % Check if it's a Chinese template name, map to internal name
         \prop_get:NVNT \g_luatexcn_digital_template_map_prop \l_tmpa_tl \l_tmpb_tl
           { \tl_set_eq:NN \l_tmpa_tl \l_tmpb_tl }
-        % Try template files, if not found pass to article
-        \luatexcn_if_template_exist:VnTF \l_tmpa_tl { luatex-cn-digital- }
+        % Try template files (use guji config files), if not found pass to article
+        \luatexcn_if_template_exist:VnTF \l_tmpa_tl { luatex-cn-guji- }
           { \tl_set_eq:NN \l_luatexcn_digital_initial_template_tl \l_tmpa_tl }
           { \PassOptionsToClass { \l_tmpa_tl } { article } }
       }
@@ -76,17 +74,9 @@
 \RequirePackage{debug/luatex-cn-debug}
 \RequirePackage{digital/luatex-cn-digital}
 
-% Guji features - load all subpackages same as guji.cls for full compatibility
-\RequirePackage{guji/luatex-cn-guji-judou}     % 句读 - Classical punctuation
-\RequirePackage{guji/luatex-cn-guji-jiazhu}    % 夹注 - Interlinear notes
-\RequirePackage{guji/luatex-cn-guji-pizhu}     % 批注 - Marginal notes
-\RequirePackage{guji/luatex-cn-guji-meipi}     % 眉批 - Head annotations
-\RequirePackage{guji/luatex-cn-guji-yinzhang}  % 印章 - Seal stamps
-\RequirePackage{guji/luatex-cn-guji-danye}     % 单页 - Single page mode
-\RequirePackage{guji/luatex-cn-guji-mulu}      % 目录 - Catalog entries
-\RequirePackage{core/luatex-cn-footnote}       % 脚注 - Footnotes
-\RequirePackage{guji/luatex-cn-guji-titlepage} % 书名页 - Title page
-\RequirePackage{guji/luatex-cn-guji-cover}     % 封面 - Cover page
+% Guji features - load guji package (which loads all subpackages internally)
+% Same as guji.cls for full compatibility
+\RequirePackage{guji/luatex-cn-guji}           % 古籍功能包（内部加载所有子包）
 
 % Enable banxin by default
 \banxinSetup{ banxin = true }
@@ -101,8 +91,8 @@
 \keys_define:nn { luatexcn / digital }
   {
     template .code:n = {
-      \luatexcn_if_template_exist:nnTF { #1 } { luatex-cn-digital- }
-        { \luatexcn_load_template:nn { #1 } { luatex-cn-digital- } }
+      \luatexcn_if_template_exist:nnTF { #1 } { luatex-cn-guji- }
+        { \luatexcn_load_template:nn { #1 } { luatex-cn-guji- } }
         { \msg_warning:nnn { luatexcn } { template-not-found } { #1 } }
     },
   }
@@ -114,13 +104,16 @@
     \keys_set:nV { luatexcn / digital } \l_tmpa_tl
   }
 
+% Alias for compatibility with guji.cls config files
+\NewCommandCopy{\gujiSetup}{\digitalSetup}
+
 % ============================================================================
 % Initialization
 % ============================================================================
 
-% Load default config
-\InputIfFileExists{configs/luatex-cn-digital-default.cfg}{}{
-  \PackageWarning{ltc-guji-digital}{Config~file~configs/luatex-cn-digital-default.cfg~not~found}
+% Load default config (use guji default config)
+\InputIfFileExists{configs/luatex-cn-guji-default.cfg}{}{
+  \PackageWarning{ltc-guji-digital}{Config~file~configs/luatex-cn-guji-default.cfg~not~found}
 }
 
 % Apply initial template from class options
@@ -146,8 +139,7 @@
 \NewCommandCopy{\数字化设置}{\digitalSetup}
 \NewCommandCopy{\數字化設置}{\digitalSetup}
 
-% Guji command aliases (same as guji.cls)
-\NewCommandCopy{\圈点}{\EmphasisMark}
+% Note: Guji command aliases (like \圈点) are already provided by guji/luatex-cn-guji.sty
 
 \ExplSyntaxOff
 \pagestyle{empty}

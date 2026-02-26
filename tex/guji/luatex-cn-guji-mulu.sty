@@ -29,32 +29,14 @@
 \RequirePackage{core/luatex-cn-core-column}
 
 % ============================================================================
-% Internal Functions
-% ============================================================================
-
-% Output column with level-based indent
-% #1: level (0, 1, 2, 3, ...) - represents actual number of full-width spaces
-% #2: content
-\cs_new:Nn \__luatexcn_mulu_output_column:nn
-  {
-    \int_case:nn { #1 }
-      {
-        { 0 } { \Column{ #2 } }
-        { 1 } { \Column{ 　#2 } }
-        { 2 } { \Column{ 　　#2 } }
-        { 3 } { \Column{ 　　　#2 } }
-        { 4 } { \Column{ 　　　　#2 } }
-      }
-  }
-
-% ============================================================================
 % User Commands
 % ============================================================================
 
 % \条目[level]{content} - Output a column entry with level-based indent
+% Uses \Indent to set indent via attributes (no space characters inserted).
 \NewDocumentCommand{\条目}{ O{0} +m }
   {
-    \__luatexcn_mulu_output_column:nn { #1 } { #2 }
+    \Column{ \Indent[#1] #2 }
   }
 
 % ============================================================================

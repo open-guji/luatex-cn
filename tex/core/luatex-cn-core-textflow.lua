@@ -108,11 +108,12 @@ end
 -- as content glyphs. Instead they are recorded in a separate table keyed by the
 -- preceding content glyph so that place_textflow_segment can position them correctly.
 -- @param start_node (node) Starting node
+-- @param opts (table|nil) Options: { skip_leading_taitou = bool }
 -- @return nodes (table) List of glyph nodes collected
 -- @return next_node (node|nil) The next node after collected segment
 -- @return hit_column_break (boolean) True if stopped due to PENALTY_FORCE_COLUMN
 -- @return decorate_map (table) Map: content_node → {decorate_node, ...}
-function textflow.collect_nodes(start_node)
+function textflow.collect_nodes(start_node, opts)
     local nodes = {}
     local decorate_map = {}
     local temp_t = start_node
@@ -161,12 +162,24 @@ function textflow.collect_nodes(start_node)
             end
         elseif tid == constants.PENALTY then
             local p_val = D.getfield(temp_t, "penalty")
-            if p_val == constants.PENALTY_FORCE_COLUMN or p_val == constants.PENALTY_TAITOU
+            if p_val == constants.PENALTY_FORCE_COLUMN
                 or p_val == constants.PENALTY_DIGITAL_NEWLINE then
                 -- Column break inside textflow: stop collecting, skip penalty
                 temp_t = D.getnext(temp_t)
                 hit_column_break = true
                 break
+            end
+            if p_val == constants.PENALTY_TAITOU then
+                -- In digital mode (skip_leading_taitou=true), a PENALTY_TAITOU at the
+                -- start of a segment (e.g., \缩进[-1] at start of \右小列) should be
+                -- skipped rather than triggering a column break. In normal (semantic)
+                -- mode, PENALTY_TAITOU always triggers a segment break.
+                local skip_leading = opts and opts.skip_leading_taitou
+                if not skip_leading or #nodes > 0 then
+                    temp_t = D.getnext(temp_t)
+                    hit_column_break = true
+                    break
+                end
             end
         elseif tid == constants.GLYPH then
             -- Stop when JIAZHU_MODE changes (e.g., right-only → left-only in \双列).
@@ -447,7 +460,7 @@ local function place_textflow_segment(ctx, nodes, layout_map, params, callbacks,
     local orig_base_indent = params.base_indent
     local orig_first_indent = params.first_indent
     local node_indent_attr = D.get_attribute(nodes[1], constants.ATTR_INDENT)
-    local is_forced, forced_indent_value = constants.is_forced_indent(node_indent_attr)
+    local is_forced, forced_indent_value = constants.is_any_command_indent(node_indent_attr)
     if is_forced then
         local sid = D.get_attribute(nodes[1], constants.ATTR_STYLE_REG_ID)
         if sid then
@@ -486,7 +499,6 @@ local function place_textflow_segment(ctx, nodes, layout_map, params, callbacks,
     if is_forced and forced_indent_value < ctx.cur_row then
         forced_indent_extra_sp = (ctx.cur_row - forced_indent_value) * gh
     end
-
     -- Build node_heights table: per-node grid-height from style override
     local node_heights = nil
     for i, n in ipairs(nodes) do
@@ -555,7 +567,7 @@ local function place_textflow_segment(ctx, nodes, layout_map, params, callbacks,
 
             -- Check if this node has forced indent (e.g., from \平抬 command)
             local ni_attr = D.get_attribute(node_info.node, constants.ATTR_INDENT)
-            local ni_forced, ni_indent_val = constants.is_forced_indent(ni_attr)
+            local ni_forced, ni_indent_val = constants.is_any_command_indent(ni_attr)
 
             -- Forced indent only applies in the first chunk AND the first sub-column.
             -- When text flows to the other sub-column or overflows to next big column,
@@ -677,7 +689,7 @@ function textflow.place_nodes(ctx, start_node, layout_map, params, callbacks)
         end
         if first_glyph then
             local ni = D.get_attribute(first_glyph, constants.ATTR_INDENT)
-            local forced = constants.is_forced_indent(ni)
+            local forced = constants.is_any_command_indent(ni)
             if forced then
                 local sid = D.get_attribute(first_glyph, constants.ATTR_STYLE_REG_ID)
                 if sid then
@@ -693,8 +705,10 @@ function textflow.place_nodes(ctx, start_node, layout_map, params, callbacks)
     local temp_t = start_node
 
     -- Loop: collect segments separated by force-column penalties
+    local collect_opts = ctx.auto_column_wrap == false
+        and { skip_leading_taitou = true } or nil
     while true do
-        local nodes, next_t, hit_column_break, decorate_map = textflow.collect_nodes(temp_t)
+        local nodes, next_t, hit_column_break, decorate_map = textflow.collect_nodes(temp_t, collect_opts)
         if callbacks.debug then
             callbacks.debug(string.format("  [layout] Collected %d textflow glyphs (column_break=%s)",
                 #nodes, tostring(hit_column_break)))

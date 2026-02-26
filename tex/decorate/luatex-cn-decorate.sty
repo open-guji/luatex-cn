@@ -105,7 +105,7 @@
 \keys_define:nn { luatexcn / emphasis }
   {
     color .tl_set:N = \l__luatexcn_emphasis_color_tl,
-    color .initial:n = red,
+    color .initial:n = black,
   }
 
 % --- emphasis namespace CJK aliases ---
@@ -124,7 +124,7 @@
 \NewDocumentCommand{\EmphasisMark}{ O{} m }{%
   \group_begin:
     \keys_set:nn { luatexcn / emphasis } { #1 }
-    \decorate[char=。, scale = 1.5, xshift=-0.7em, color=\l__luatexcn_emphasis_color_tl]{#2}
+    \decorate[char=○, scale = 0.3, xshift=-0.7em, color=\l__luatexcn_emphasis_color_tl]{#2}
   \group_end:
 }
 

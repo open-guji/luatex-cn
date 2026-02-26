@@ -272,50 +272,109 @@ constants.register_line_mark = register_line_mark
 -- ============================================================================
 -- Indent Constants
 -- ============================================================================
--- Special values for indent attributes to control indent behavior
-
---- Force indent to be exactly 0, bypassing style stack inheritance
-constants.INDENT_FORCE_ZERO = -2
+-- Two categories of forced indent encoding:
+--   1. Taitou indent: from \抬头/\平抬/\相对抬头, scoped to one column (taitou scope)
+--   2. Suojin indent: from \缩进[N], scoped until \\ or \end{段落} (temp style)
+-- Each category uses a separate encoding range so resolve_node_indent can
+-- apply the correct scope rules.
 
 --- Inherit indent from style stack (default when attribute is 0 or unset)
 constants.INDENT_INHERIT = 0
 
---- Base value for encoding forced indent values
---- Forced indent value N is encoded as: INDENT_FORCE_BASE - N
---- Example: Force indent=3 => attribute = -1000 - 3 = -1003
---- This allows forcing any positive indent value, not just 0
-constants.INDENT_FORCE_BASE = -1000
+-- -- Taitou encoding (from \抬头 family) -- --
 
---- Check if an indent attribute value represents a forced indent
+--- Taitou force indent=0 (\平抬 = \抬头[0])
+constants.INDENT_TAITOU_ZERO = -2
+
+--- Base for taitou forced indent: attr = INDENT_TAITOU_BASE - N
+--- Example: \单抬 → indent=-1 → attr = -1000 - (-1) = -999
+constants.INDENT_TAITOU_BASE = -1000
+
+-- -- Suojin encoding (from \缩进 command) -- --
+
+--- Suojin force indent=0 (\缩进[0])
+constants.INDENT_SUOJIN_ZERO = -3
+
+--- Base for suojin forced indent: attr = INDENT_SUOJIN_BASE - N
+--- Example: \缩进[3] → attr = -2000 - 3 = -2003
+constants.INDENT_SUOJIN_BASE = -2000
+
+-- -- Backward-compatible aliases (deprecated, use taitou/suojin variants) -- --
+constants.INDENT_FORCE_ZERO = constants.INDENT_TAITOU_ZERO
+constants.INDENT_FORCE_BASE = constants.INDENT_TAITOU_BASE
+
+--- Check if attr is a taitou indent (from \抬头/\平抬/\相对抬头)
 --- @param attr_value number The indent attribute value
---- @return boolean is_forced Whether this is a forced indent
---- @return number|nil forced_value The forced indent value if forced, nil otherwise
-function constants.is_forced_indent(attr_value)
-    if not attr_value then
-        return false, nil
-    end
-
-    if attr_value == constants.INDENT_FORCE_ZERO then
+--- @return boolean, number|nil
+function constants.is_taitou_indent(attr_value)
+    if not attr_value then return false, nil end
+    if attr_value == constants.INDENT_TAITOU_ZERO then
         return true, 0
     end
-
-    if attr_value < constants.INDENT_FORCE_ZERO then
-        local value = constants.INDENT_FORCE_BASE - attr_value
-        return true, value
+    -- Taitou range: (SUOJIN_BASE, TAITOU_ZERO) excluding SUOJIN_ZERO
+    -- Positive indent N>0: attr = BASE - N → attr < BASE (e.g., -1001, -1002, ...)
+    -- Negative indent N<0: attr = BASE - N → attr > BASE (e.g., -999, -998, ...)
+    -- Both directions are covered by: attr < -2 and attr > -2000 and attr != -3
+    if attr_value < constants.INDENT_TAITOU_ZERO
+        and attr_value > constants.INDENT_SUOJIN_BASE
+        and attr_value ~= constants.INDENT_SUOJIN_ZERO then
+        return true, constants.INDENT_TAITOU_BASE - attr_value
     end
-
     return false, nil
 end
 
---- Encode a forced indent value to an attribute value
+--- Check if attr is a suojin indent (from \缩进[N])
+--- @param attr_value number The indent attribute value
+--- @return boolean, number|nil
+function constants.is_suojin_indent(attr_value)
+    if not attr_value then return false, nil end
+    if attr_value == constants.INDENT_SUOJIN_ZERO then
+        return true, 0
+    end
+    -- Range: attr <= -2000
+    if attr_value <= constants.INDENT_SUOJIN_BASE then
+        return true, constants.INDENT_SUOJIN_BASE - attr_value
+    end
+    return false, nil
+end
+
+--- Check if attr is any command-level forced indent (taitou or suojin)
+--- @param attr_value number The indent attribute value
+--- @return boolean, number|nil
+function constants.is_any_command_indent(attr_value)
+    local ok, val = constants.is_taitou_indent(attr_value)
+    if ok then return true, val end
+    return constants.is_suojin_indent(attr_value)
+end
+
+--- Encode a taitou indent value (from \抬头/\平抬/\相对抬头)
 --- @param indent_value number The indent value to force
 --- @return number The encoded attribute value
-function constants.encode_forced_indent(indent_value)
+function constants.encode_taitou_indent(indent_value)
     if indent_value == 0 then
-        return constants.INDENT_FORCE_ZERO
-    else
-        return constants.INDENT_FORCE_BASE - indent_value
+        return constants.INDENT_TAITOU_ZERO
     end
+    return constants.INDENT_TAITOU_BASE - indent_value
+end
+
+--- Encode a suojin indent value (from \缩进[N])
+--- @param indent_value number The indent value to force
+--- @return number The encoded attribute value
+function constants.encode_suojin_indent(indent_value)
+    if indent_value == 0 then
+        return constants.INDENT_SUOJIN_ZERO
+    end
+    return constants.INDENT_SUOJIN_BASE - indent_value
+end
+
+--- Deprecated: use is_taitou_indent or is_any_command_indent instead
+function constants.is_forced_indent(attr_value)
+    return constants.is_any_command_indent(attr_value)
+end
+
+--- Deprecated: use encode_taitou_indent or encode_suojin_indent instead
+function constants.encode_forced_indent(indent_value)
+    return constants.encode_taitou_indent(indent_value)
 end
 
 -- ============================================================================

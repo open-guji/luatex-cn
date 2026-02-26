@@ -1,18 +1,19 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-guji → guji-digital 通用转换引擎
+Semantic → Digital 转换引擎
 
-将使用 guji.cls（语义模式）编写的古籍排版文件转换为 guji-digital（布局模式）格式。
+将使用 ltc-guji（语义模式）编写的古籍排版文件转换为 ltc-guji-digital（布局模式）格式。
 支持插件机制，允许模板特有命令的扩展处理。
 
 用法:
-    python3 converter.py --input INPUT.tex --output OUTPUT.tex [--plugin PLUGIN.py]
-    python3 converter.py --input INPUT.tex --output OUTPUT.tex --plugin plugins/siku_mulu.py
+    python3 semantic_to_digital.py --input INPUT.tex --output OUTPUT.tex [--plugin PLUGIN.py]
+    python3 semantic_to_digital.py --input INPUT.tex --output OUTPUT.tex --plugin plugins/siku_mulu.py
 """
 
 import argparse
 import importlib.util
+import json
 import re
 import sys
 from pathlib import Path
@@ -26,12 +27,9 @@ PUNCTUATION = "，。、；：「」『』《》〈〉·？！（）〔〕"
 DEFAULT_N_CHAR_PER_COL = 21
 DEFAULT_N_COLUMN = 8
 
-# 模板名映射（guji → digital）
-TEMPLATE_MAP = {
-    "四库全书彩色": "SiKuQuanShu-colored",
-    "四库全书": "default",
-    "红楼梦甲戌本": "HongLouMengJiaXuBen",
-}
+# 注：已弃用模板名映射，现在直接保留原模板名
+# converter 只替换 documentclass 名称（ltc-guji → ltc-guji-digital），
+# 不修改模板参数，确保 digital 版本使用与原文件完全相同的配置
 
 # 应该被去掉的 \usepackage 行
 REMOVE_USEPACKAGE = {"enumitem", "tikz"}
@@ -100,6 +98,56 @@ def extract_brace_content(text: str, start: int = 0) -> tuple[str, int]:
     return text[begin:], len(text)
 
 
+def load_patch_file(input_path: Path) -> list[dict]:
+    """
+    加载手动调整文件（patch file）
+
+    Patch 文件格式 (JSON):
+    {
+      "patches": [
+        {
+          "source_pattern": "\\注{\\样式[grid-height=24pt]{宋趙彥肅撰",
+          "reason": "grid-height=24pt 导致容量增加",
+          "replacement": [
+            "\\缩进[2] 宋趙彥肅撰。其說推尋卦畫，即象數以求其理。朱子《語錄》",
+            "\\缩进[2] 頗病其取義太密；然研索於《易》中，完勝支離於易外也。"
+          ]
+        }
+      ]
+    }
+
+    返回: [{"source_pattern": str, "replacement": [str], "reason": str}, ...]
+    """
+    patch_path = input_path.parent / f"{input_path.stem}.patch.json"
+    if not patch_path.exists():
+        return []
+
+    try:
+        with open(patch_path, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+
+        patches = []
+        if data and 'patches' in data:
+            for patch in data['patches']:
+                source_pattern = patch.get('source_pattern')
+                replacement = patch.get('replacement', [])
+                reason = patch.get('reason', '')
+                if source_pattern and replacement:
+                    patches.append({
+                        'source_pattern': source_pattern,
+                        'replacement': replacement,
+                        'reason': reason,
+                    })
+                    print(f"  Loaded patch: {source_pattern[:40]}... → {len(replacement)} lines")
+
+        if patches:
+            print(f"✓ Loaded {len(patches)} patches from {patch_path.name}")
+        return patches
+    except Exception as e:
+        print(f"⚠ Failed to load patch file {patch_path}: {e}")
+        return []
+
+
 def extract_optional_arg(text: str, start: int = 0) -> tuple[str | None, int]:
     """提取可选参数 [...]。返回 (content_or_None, end_pos)"""
     s = text[start:].lstrip()
@@ -127,23 +175,27 @@ class Parser:
     """解析 guji.cls TeX 文件为语义块列表"""
 
     def __init__(self, plugin: ConverterPlugin | None = None,
-                 n_char_per_col: int = DEFAULT_N_CHAR_PER_COL):
+                 n_char_per_col: int = DEFAULT_N_CHAR_PER_COL,
+                 patches: list[dict] | None = None):
         self.plugin = plugin
         self.n_char_per_col = n_char_per_col
+        self.patches = patches or []
         self.blocks: list[dict] = []
 
-    def parse(self, content: str) -> tuple[str, str, str, list[dict]]:
+    def parse(self, content: str) -> tuple[str, str, str, list[dict], str]:
         """
         解析完整的 TeX 文件。
-        返回 (preamble, preserved_envs, body_blocks_after_processing, footer)
+        返回 (preamble, preserved_before, blocks, preserved_after, footer)
 
         preamble = 文档头（documentclass 到 \\begin{document}）
-        preserved_envs = 封面 + 书名页（原样保留）
+        preserved_before = \\begin{正文} 之前的封面/空白页（原样保留）
         blocks = 正文解析后的语义块
+        preserved_after = \\end{正文} 之后的封面/空白页（原样保留）
+        footer = \\end{document}
         """
         # 分离文档各部分
         preamble, body, footer = self._split_document(content)
-        preserved, main_content = self._split_body(body)
+        preserved_before, main_content, preserved_after = self._split_body(body)
 
         # 解析正文内容
         self.blocks = []
@@ -153,7 +205,7 @@ class Parser:
         if self.plugin:
             self.blocks = self.plugin.postprocess_blocks(self.blocks)
 
-        return preamble, preserved, self.blocks, footer
+        return preamble, preserved_before, self.blocks, preserved_after, footer
 
     def _split_document(self, content: str) -> tuple[str, str, str]:
         """分离 preamble、body、footer"""
@@ -167,22 +219,38 @@ class Parser:
         footer = content[m_end.start():]
         return preamble, body, footer
 
-    def _split_body(self, body: str) -> tuple[str, str]:
-        """分离封面/书名页（原样保留）和正文"""
-        # 查找 \begin{正文} 或 \begin{BodyText}
-        m = re.search(r'\\begin\{(正文|BodyText)\}', body)
-        if not m:
-            return '', body
+    def _split_body(self, body: str) -> tuple[str, str, str]:
+        """分离前置环境、正文、后置环境
 
-        preserved = body[:m.start()]
-        main_content = body[m.start():]
-        return preserved, main_content
+        返回: (preserved_before, main_content, preserved_after)
+        - preserved_before: \begin{正文} 之前的内容（封面、空白页等）
+        - main_content: \begin{正文}...\end{正文} 的完整内容
+        - preserved_after: \end{正文} 之后的内容（结尾的封面、空白页等）
+        """
+        # 查找 \begin{正文} 和 \end{正文}
+        m_begin = re.search(r'\\begin\{(正文|BodyText)\}', body)
+        m_end = re.search(r'\\end\{(正文|BodyText)\}', body)
+
+        if not m_begin:
+            return '', body, ''
+
+        if not m_end:
+            # 只有 begin 没有 end（不应该发生，但防御性处理）
+            preserved_before = body[:m_begin.start()]
+            main_content = body[m_begin.start():]
+            return preserved_before, main_content, ''
+
+        preserved_before = body[:m_begin.start()]
+        main_content = body[m_begin.start():m_end.end()]
+        preserved_after = body[m_end.end():]
+
+        return preserved_before, main_content, preserved_after
 
     def _parse_body(self, content: str):
         """解析 \\begin{正文}...\\end{正文} 内的内容"""
         # 去掉 \begin{正文} 和 \end{正文}
         content = re.sub(r'\\begin\{(正文|BodyText)\}\s*', '', content, count=1)
-        content = re.sub(r'\\end\{(正文|BodyText)\}\s*', '', content, count=1)
+        content = re.sub(r'\\end\{(正文|BodyText)\}\s*$', '', content, count=1)
 
         lines = content.split('\n')
         i = 0
@@ -253,6 +321,28 @@ class Parser:
                 text = main_text + jz_text
             self.blocks.append({"type": "tiaumu", "level": level, "text": text})
             return 1
+
+        # \注{...} — 等同于 indent=2 的夹注
+        m = re.match(r'\\注\{', stripped)
+        if m:
+            # 检查是否有 patch 匹配
+            for patch in self.patches:
+                if patch['source_pattern'] in line:
+                    print(f"  ✓ Applied patch at line {idx+1}: {patch.get('reason', '')}")
+                    self.blocks.append({
+                        "type": "patch",
+                        "lines": patch['replacement'],
+                    })
+                    # 消耗完整的 \注{...} 块（跳过多行）
+                    return self._count_brace_block_lines(lines, idx)
+
+            # 没有 patch，正常解析
+            return self._parse_zhu_or_an(lines, idx, "zhu", indent=2)
+
+        # \按{...} — 等同于 indent=4 的夹注（可能跨多行）
+        m = re.match(r'\\按\{', stripped)
+        if m:
+            return self._parse_zhu_or_an(lines, idx, "an", indent=4)
 
         # 插件命令处理
         if self.plugin:
@@ -369,6 +459,156 @@ class Parser:
 
         return consumed
 
+    def _count_brace_block_lines(self, lines: list[str], idx: int) -> int:
+        """计算一个花括号块跨越的行数（用于跳过 patch 的源行）"""
+        depth = 0
+        consumed = 0
+
+        for i in range(idx, len(lines)):
+            line = lines[i]
+            consumed += 1
+
+            for ch in line:
+                if ch == '{':
+                    depth += 1
+                elif ch == '}':
+                    depth -= 1
+                    if depth == 0:
+                        return consumed
+
+        return consumed
+
+    def _parse_zhu_or_an(self, lines: list[str], idx: int, zhu_type: str, indent: int) -> int:
+        """解析 \\注{...} 或 \\按{...}，可能跨多行，内容包含复杂命令"""
+        # 收集完整的 {...} 内容
+        combined = ''
+        consumed = 0
+        depth = 0
+        found_opening = False
+
+        for i in range(idx, len(lines)):
+            line = lines[i].strip()
+            combined += line + ' '
+            consumed += 1
+
+            # 计算花括号深度
+            for ch in line:
+                if ch == '{':
+                    depth += 1
+                    found_opening = True
+                elif ch == '}':
+                    depth -= 1
+                    if found_opening and depth == 0:
+                        # 找到完整的 {...}
+                        brace_start = combined.find('{')
+                        content, end_pos = extract_brace_content(combined, brace_start)
+
+                        # 检查是否包含 \國朝 命令（需要特殊处理）
+                        if r'\國朝' in content:
+                            # 将内容按 \國朝 分段
+                            segments = self._split_by_guochao(content, indent)
+                            if segments:
+                                self.blocks.append({
+                                    "type": "jiazhu",
+                                    "indent": indent,
+                                    "segments": segments,
+                                    "zhu_type": zhu_type,
+                                    "standalone": True,
+                                })
+                        else:
+                            # 正常处理
+                            content = self._expand_special_commands(content)
+                            content = strip_punct(content)
+                            if content:
+                                self.blocks.append({
+                                    "type": "jiazhu",
+                                    "indent": indent,
+                                    "text": content,
+                                    "zhu_type": zhu_type,
+                                    "standalone": True,
+                                })
+                        return consumed
+
+        # 如果没有找到完整的 {...}，返回消耗的行数
+        return consumed
+
+    def _split_by_guochao(self, text: str, base_indent: int) -> list[dict]:
+        """
+        将包含 \\國朝 的文本分段
+
+        \\國朝 = \\相对抬头[1]{國朝}，效果：
+        - 触发换行（开始新段）
+        - 新段 indent = base_indent - 1
+
+        返回: [{"text": ..., "indent_delta": ..., "force_break": ...}, ...]
+        """
+        segments = []
+        parts = re.split(r'(\\國朝\s*)', text)  # 保留分隔符
+
+        for i, part in enumerate(parts):
+            if not part.strip():
+                continue
+
+            if part.strip().startswith(r'\國朝'):
+                # 这是 \國朝 命令本身，跳过（已包含在下一段的开头）
+                continue
+
+            # 确定 indent_delta
+            if i == 0:
+                # 第一段：使用原始 indent
+                indent_delta = 0
+                force_break = False
+            else:
+                # \國朝 后的段：indent - 1（相对抬头[1]）
+                indent_delta = -1
+                force_break = True
+
+            # 如果这是 \國朝 后的段，在开头添加"國朝"
+            if i > 0 and i % 2 == 0 and parts[i-1].strip().startswith(r'\國朝'):
+                part = '國朝' + part
+
+            # 展开其他特殊命令
+            expanded = self._expand_special_commands(part)
+            expanded = strip_punct(expanded)
+
+            if expanded:
+                segments.append({
+                    "text": expanded,
+                    "indent_delta": indent_delta,
+                    "force_break": force_break,
+                })
+
+        return segments
+
+    def _expand_special_commands(self, text: str) -> str:
+        """展开文本中的特殊命令，提取实际文本内容"""
+        # \单抬{...} - 去掉命令，保留内容
+        text = re.sub(r'\\单抬\{([^}]+)\}', r'\1', text)
+        # \单抬 - 去掉命令本身（后面可能有0个或多个空格）
+        text = re.sub(r'\\单抬\s*', '', text)
+
+        # \平抬{...} - 去掉命令，保留内容
+        text = re.sub(r'\\平抬\{([^}]+)\}', r'\1', text)
+        # \平抬 - 去掉命令本身
+        text = re.sub(r'\\平抬\s*', '', text)
+
+        # \相对抬头[N]{...} - 去掉命令，保留内容
+        text = re.sub(r'\\相对抬头\[\d+\]\{([^}]+)\}', r'\1', text)
+
+        # \國朝 - 保留文本
+        text = re.sub(r'\\國朝\s*', '國朝', text)
+
+        # \样式[...]{...} - 去掉命令，保留内容
+        # 使用非贪婪匹配，处理嵌套的花括号
+        text = re.sub(r'\\样式\[[^\]]*\]\{([^}]+)\}', r'\1', text)
+
+        # \\ - 去掉 LaTeX 换行符（在 digital 的 obeylines 模式下不需要）
+        text = re.sub(r'\\\\\s*', '', text)
+
+        # 去掉书名号
+        text = strip_book_markers(text)
+        return text
+
 
 # =============================================================================
 # Stage 2: 语义块 → 列数据
@@ -383,56 +623,93 @@ class Layouter:
     """
 
     def __init__(self, n_char_per_col: int = DEFAULT_N_CHAR_PER_COL,
-                 plugin: ConverterPlugin | None = None):
+                 plugin: ConverterPlugin | None = None,
+                 n_column_per_page: int = 16):
         self.n_char_per_col = n_char_per_col
         self.plugin = plugin
+        self.n_column_per_page = n_column_per_page  # 每页的列数（左右合计）
 
     def layout(self, blocks: list[dict]) -> list[dict]:
-        """将语义块列表转换为列数据列表"""
+        """将语义块列表转换为列数据列表，并在页面满时自动插入换页"""
         columns = []
+        current_page_columns = 0  # 当前页已生成的列数
         i = 0
         while i < len(blocks):
             block = blocks[i]
             btype = block["type"]
 
-            if btype == "chapter":
-                columns.append({"type": "chapter", "text": block["text"]})
+            # 存储本次迭代新增的列
+            new_cols = []
+
+            if btype == "patch":
+                # 手动 patch：直接插入预定义的 digital 行
+                for line in block["lines"]:
+                    new_cols.append({"type": "patch_line", "text": line})
+            elif btype == "chapter":
+                new_cols.append({"type": "chapter", "text": block["text"]})
             elif btype == "newpage":
-                columns.append({"type": "newpage"})
+                # 手动换页，重置计数器
+                new_cols.append({"type": "newpage"})
+                current_page_columns = 0
             elif btype == "yinzhang":
-                columns.append({"type": "yinzhang", "raw": block["raw"]})
+                new_cols.append({"type": "yinzhang", "raw": block["raw"]})
             elif btype == "text":
-                columns.append({
+                new_cols.append({
                     "type": "single",
                     "indent": block.get("indent", 0),
                     "text": block["text"],
                 })
             elif btype == "tiaumu":
-                columns.append({
+                new_cols.append({
                     "type": "single",
                     "indent": block["level"],
                     "text": block["text"],
+                    "source": "tiaumu",  # Mark source for Generator
                 })
             elif btype == "paragraph":
-                cols = self._layout_paragraph(block)
-                columns.extend(cols)
+                new_cols = self._layout_paragraph(block)
             elif btype == "jiazhu":
                 # 收集连续的 jiazhu 块，合并为统一的小列流
-                jiazhu_run = [block]
-                j = i + 1
-                while j < len(blocks) and blocks[j]["type"] == "jiazhu":
-                    jiazhu_run.append(blocks[j])
-                    j += 1
-                cols = self._layout_jiazhu_run(jiazhu_run)
-                columns.extend(cols)
-                i = j - 1  # 跳过已消耗的块（外层 i += 1 会再加1）
+                # 但如果当前块是 standalone，则不合并
+                if block.get("standalone", False):
+                    # 独立的 jiazhu 块，不与其他合并
+                    new_cols = self._layout_jiazhu_run([block])
+                else:
+                    # 收集连续的非 standalone jiazhu 块
+                    jiazhu_run = [block]
+                    j = i + 1
+                    while j < len(blocks) and blocks[j]["type"] == "jiazhu" and not blocks[j].get("standalone", False):
+                        jiazhu_run.append(blocks[j])
+                        j += 1
+                    new_cols = self._layout_jiazhu_run(jiazhu_run)
+                    i = j - 1  # 跳过已消耗的块（外层 i += 1 会再加1）
             else:
                 if "text" in block:
-                    columns.append({
+                    new_cols.append({
                         "type": "single",
                         "indent": block.get("indent", 0),
                         "text": block["text"],
                     })
+
+            # 添加新列并检查是否需要换页
+            for col in new_cols:
+                # 计算本列的实际列数（dual 类型算 1 列，single 类型也算 1 列）
+                col_count = 1
+                if col["type"] in ("chapter", "yinzhang"):
+                    col_count = 0  # 不占用列数
+
+                # 检查是否会超出当前页
+                if current_page_columns > 0 and current_page_columns + col_count > self.n_column_per_page:
+                    # 需要换页
+                    columns.append({"type": "newpage"})
+                    current_page_columns = 0
+
+                columns.append(col)
+                if col["type"] == "newpage":
+                    current_page_columns = 0
+                else:
+                    current_page_columns += col_count
+
             i += 1
 
         return columns
@@ -563,8 +840,8 @@ class Generator:
     def __init__(self, plugin: ConverterPlugin | None = None):
         self.plugin = plugin
 
-    def generate(self, preamble: str, preserved: str, columns: list[dict],
-                 footer: str) -> str:
+    def generate(self, preamble: str, preserved_before: str, columns: list[dict],
+                 preserved_after: str, footer: str) -> str:
         """生成完整的 digital TeX 文件"""
         parts = []
 
@@ -572,12 +849,15 @@ class Generator:
         parts.append(self._convert_preamble(preamble))
         parts.append('')
 
-        # 保留的环境（封面、书名页）
-        if preserved.strip():
-            parts.append(preserved.rstrip())
+        # 前置环境（\begin{正文} 之前的封面、书名页）
+        if preserved_before.strip():
+            parts.append(preserved_before.rstrip())
             parts.append('')
 
-        # 查找第一个 chapter 并输出在 \begin{数字化内容} 之前
+        # 正文环境 (ltc-guji-digital 中自动启用 digital-mode)
+        parts.append('\\begin{正文}')
+
+        # 第一个 chapter 也在正文环境内输出（避免在环境外触发换页产生空白页）
         first_chapter = None
         for col in columns:
             if col["type"] == "chapter":
@@ -587,9 +867,6 @@ class Generator:
         if first_chapter:
             parts.append(f'\\chapter{{{first_chapter}}}')
 
-        # 数字化内容
-        parts.append('\\begin{数字化内容}')
-
         # 生成列
         chapter_count = 0
         for col in columns:
@@ -598,35 +875,45 @@ class Generator:
             if ctype == "chapter":
                 chapter_count += 1
                 if chapter_count == 1:
-                    # 第一个 chapter 已在 preamble 区域输出，跳过
+                    # 第一个 chapter 已在上面输出，跳过
                     continue
-                # 后续 chapter：关闭数字化内容 → 换页 → 输出 chapter → 重新开始
-                # 如果前面已有 \换页，先去掉（避免在数字化内容内留下孤立的换页）
-                if parts and parts[-1] == '\\换页':
-                    parts.pop()
-                parts.append('\\end{数字化内容}')
-                parts.append('\\newpage')
+                # 后续 chapter：直接在 \正文 环境内输出
+                # digital 模式下 \chapter 在环境内可正常工作，不需要关闭再重开
                 parts.append(f'\\chapter{{{col["text"]}}}')
-                parts.append('\\begin{数字化内容}')
                 continue
 
             if ctype == "newpage":
-                # 避免连续换页
-                if not parts or parts[-1] != '\\换页':
-                    parts.append('\\换页')
+                # 直接输出换页命令，保留原文件的所有换页
+                parts.append('\\换页')
                 continue
 
             if ctype == "yinzhang":
                 parts.append(col["raw"] + '%')
                 continue
 
+            if ctype == "patch_line":
+                # 手动 patch 行：直接输出预定义的内容
+                parts.append(col["text"])
+                continue
+
             if ctype == "single":
                 indent = col.get("indent", 0)
                 text = col["text"]
-                if indent != 0:
-                    parts.append(f'\\缩进[{indent}] {text}')
+                source = col.get("source", "")
+
+                # Different indent handling for different sources:
+                # - tiaumu (\条目): output actual spaces (guji.cls uses \Column{　text})
+                # - paragraph (\begin{段落}): use \缩进[N] (guji.cls uses attributes only)
+                if source == "tiaumu":
+                    # 条目: output actual full-width spaces
+                    indent_str = '　' * indent
+                    parts.append(f'{indent_str}{text}')
                 else:
-                    parts.append(text)
+                    # 段落: use \缩进[N] command
+                    if indent != 0:
+                        parts.append(f'\\缩进[{indent}] {text}')
+                    else:
+                        parts.append(text)
                 continue
 
             if ctype == "dual":
@@ -635,15 +922,20 @@ class Generator:
                 left = col.get("left", "")
                 r_opt = f'[indent={col["right_indent"]}]' if col.get("right_indent") is not None else ''
                 l_opt = f'[indent={col["left_indent"]}]' if col.get("left_indent") is not None else ''
-                # 总是输出 \缩进[N]（即使 N=0），确保抬头后的列 indent 明确
-                prefix = f'\\缩进[{indent}]'
+                # Use \缩进[N] command (always output, even if N=0) for explicit indent control
+                prefix = f'\\缩进[{indent}]' if indent != 0 else ''
                 line = f'{prefix}\\双列{{\\右小列{r_opt}{{{right}}}\\左小列{l_opt}{{{left}}}}}'
                 parts.append(line)
                 continue
 
         parts.append('')
-        parts.append('\\end{数字化内容}')
-        parts.append('\\end{document}')
+        parts.append('\\end{正文}')
+
+        # 后置环境（\end{正文} 之后的封面、空白页）
+        if preserved_after.strip():
+            parts.append(preserved_after.rstrip())
+
+        parts.append(footer.rstrip())
         parts.append('')
 
         return '\n'.join(parts)
@@ -652,17 +944,16 @@ class Generator:
         """转换文档头"""
         lines = preamble.split('\n')
         result = []
-        template_map = dict(TEMPLATE_MAP)
-        if self.plugin:
-            template_map.update(self.plugin.get_template_mapping())
 
         for line in lines:
-            # documentclass 替换
+            # documentclass 替换：只替换 class 名，保留原模板名
+            # 例：\documentclass[四库全书文渊阁简明目录]{ltc-guji}
+            #  → \documentclass[四库全书文渊阁简明目录]{ltc-guji-digital}
             m = re.match(r'(\\documentclass)\[(.+?)\]\{(ltc-guji|guji)\}', line)
             if m:
                 template_name = m.group(2)
-                digital_name = template_map.get(template_name, template_name)
-                result.append(f'\\documentclass[{digital_name}]{{ltc-guji-digital}}')
+                # 直接保留原模板名，不做映射
+                result.append(f'\\documentclass[{template_name}]{{ltc-guji-digital}}')
                 continue
 
             # 去掉不需要的 \usepackage
@@ -736,9 +1027,12 @@ def convert(input_path: str, output_path: str, plugin_path: str | None = None,
 
     print(f"读取输入: {input_path} ({len(content)} 字符)")
 
+    # 加载 patch 文件（如果存在）
+    patches = load_patch_file(Path(input_path))
+
     # Stage 1: 解析
-    parser = Parser(plugin=plugin, n_char_per_col=n_char_per_col)
-    preamble, preserved, blocks, footer = parser.parse(content)
+    parser = Parser(plugin=plugin, n_char_per_col=n_char_per_col, patches=patches)
+    preamble, preserved_before, blocks, preserved_after, footer = parser.parse(content)
     print(f"Stage 1 完成: 解析到 {len(blocks)} 个语义块")
 
     # 统计语义块类型
@@ -756,7 +1050,7 @@ def convert(input_path: str, output_path: str, plugin_path: str | None = None,
 
     # Stage 3: 生成
     generator = Generator(plugin=plugin)
-    output = generator.generate(preamble, preserved, columns, footer)
+    output = generator.generate(preamble, preserved_before, columns, preserved_after, footer)
     print(f"Stage 3 完成: 输出 {len(output)} 字符")
 
     # 写入输出文件

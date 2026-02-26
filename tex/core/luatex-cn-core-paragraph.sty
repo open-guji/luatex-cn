@@ -111,31 +111,32 @@
   }
 
 % ============================================================================
-% Temporary Indent Command
+% Indent Commands
 % ============================================================================
-% \SetIndent{<value>} - Forcefully set indent for current line
+% \Indent[N] / \缩进[N] - Set indent for current line (default 0)
 %
-% IMPORTANT (Breaking Change as of 2026-02-06 Refactor):
-% - \SetIndent is now FULLY FORCEFUL and bypasses style stack inheritance
-% - \SetIndent{0} will force indent to 0, not inherit from parent
-% - \SetIndent{3} will force indent to 3, regardless of context
-% - The indent is automatically restored after \\ or at line end
+% Positive values = indent (move text down from column top)
+% Negative values = taitou (extend text above column top into header area)
+%
+% The indent is automatically restored after \\ or at line end.
 %
 % Examples:
 %   \begin{段落}[indent=2]
-%     \SetIndent{1}第一列缩进一格\\     % Forces indent to 1
-%     第二列缩进两格\\                   % Restores to 2 (段落 base)
+%     \缩进[1]第一列缩进一格\\     % Forces indent to 1
+%     第二列缩进两格\\              % Restores to 2 (段落 base)
 %   \end{段落}
 %
-%   \夹注{内容 \SetIndent{0} 顶格}      % Forces indent to 0 in 夹注
+%   \夹注{内容 \缩进[0] 顶格}      % Forces indent to 0 in 夹注
 %
 % Implementation: Uses forced indent encoding (constants.encode_forced_indent)
 % to set a special attribute value that bypasses style stack lookup.
+% Negative values additionally insert PENALTY_TAITOU for layout engine.
 % ============================================================================
 
 \bool_new:N \l__luatexcn_setindent_active_bool
 
-\NewDocumentCommand{\SetIndent}{ m }
+% Internal: forcefully set indent, bypassing style stack inheritance
+\cs_new:Nn \__luatexcn_set_indent:n
   {
     % Push temporary indent to style stack for restoration on \\
     \edef\temp_style_id{\lua_now:e {
@@ -144,18 +145,40 @@
     }}
     \setluatexattribute\cnverticalstyle{\temp_style_id}
 
-    % IMPORTANT: Use forced indent encoding to bypass style stack inheritance
-    % This makes \SetIndent fully forceful - it sets the exact value regardless
-    % of style stack, fixing the issue where \SetIndent{0} was ignored
+    % Use suojin encoding (distinct from taitou) to bypass style stack inheritance.
+    % Suojin indent is NOT affected by taitou scope in resolve_node_indent.
     \lua_now:n {
       local ~ constants = require('core.luatex-cn-constants')
-      local ~ forced_value = constants.encode_forced_indent(#1)
+      local ~ forced_value = constants.encode_suojin_indent(#1)
       tex.setattribute(constants.ATTR_INDENT, ~ forced_value)
       tex.setattribute(constants.ATTR_FIRST_INDENT, ~ forced_value)
     }
 
-    % Mark that SetIndent is active (for \\ to restore)
+    % Mark that indent override is active (for \\ to restore)
     \bool_set_true:N \l__luatexcn_setindent_active_bool
+  }
+
+% Public command: \Indent[N] (default 0)
+\NewDocumentCommand{\Indent}{ O{0} }
+  {
+    \int_compare:nNnTF { #1 } < { 0 }
+      {
+        % Negative indent = taitou behavior:
+        % 1. Push temp style so \\ can restore indent (via \__luatexcn_set_indent:n)
+        % 2. Override encoding to taitou + emit PENALTY_TAITOU for layout scope
+        \__luatexcn_set_indent:n { #1 }
+        \penalty \int_use:N \c__luatexcn_penalty_taitou_int \scan_stop:
+        \lua_now:e {
+          local~constants = require('core.luatex-cn-constants')
+          local~forced_val = constants.encode_taitou_indent(\int_eval:n{#1})
+          tex.setattribute(constants.ATTR_INDENT,~forced_val)
+          tex.setattribute(constants.ATTR_FIRST_INDENT,~forced_val)
+        }
+      }
+      {
+        % Non-negative indent: use suojin encoding (temp style scope until \\)
+        \__luatexcn_set_indent:n { #1 }
+      }
   }
 
 % Helper to restore indent (called by \\ and paragraph end)
@@ -209,7 +232,7 @@
     \penalty \int_use:N \c__luatexcn_penalty_taitou_int \scan_stop:
     \lua_now:e {
       local~constants = require('core.luatex-cn-constants')
-      local~forced_val = constants.encode_forced_indent(-\int_eval:n{#1})
+      local~forced_val = constants.encode_taitou_indent(-\int_eval:n{#1})
       tex.setattribute(constants.ATTR_INDENT,~forced_val)
       tex.setattribute(constants.ATTR_FIRST_INDENT,~forced_val)
     }
@@ -250,7 +273,7 @@
       local~sr = require('util.luatex-cn-style-registry')
       local~current_indent = sr.get_indent(sr.current_id())~or~0
       local~target = current_indent - \int_eval:n{#1}
-      local~forced_val = constants.encode_forced_indent(target)
+      local~forced_val = constants.encode_taitou_indent(target)
       tex.setattribute(constants.ATTR_INDENT,~forced_val)
       tex.setattribute(constants.ATTR_FIRST_INDENT,~forced_val)
     }
@@ -289,7 +312,7 @@
 % ============================================================
 % Simplified Chinese / 简体
 \NewEnvironmentCopy{段落}{Paragraph}
-\let\设置缩进\SetIndent
+\NewCommandCopy{\缩进}{\Indent}
 % English pinyin aliases for Chinese-only commands
 \NewCommandCopy{\TaiTou}{\抬头}
 \NewCommandCopy{\PingTai}{\平抬}
@@ -301,7 +324,7 @@
 \NewCommandCopy{\XiangDuiTaiTou}{\相对抬头}
 \NewCommandCopy{\HuanHang}{\换行}
 % Traditional Chinese / 繁体
-\NewCommandCopy{\設置縮進}{\SetIndent}
+\NewCommandCopy{\縮進}{\Indent}
 \NewCommandCopy{\單抬}{\单抬}
 \NewCommandCopy{\雙抬}{\双抬}
 \NewCommandCopy{\換行}{\换行}

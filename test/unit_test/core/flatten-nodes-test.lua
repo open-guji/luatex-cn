@@ -79,13 +79,22 @@ test_utils.run_test("copy_node_with_attributes: zero indent not set", function()
     test_utils.assert_true(attr == nil or attr == 0)
 end)
 
-test_utils.run_test("copy_node_with_attributes: preserves forced indent", function()
+test_utils.run_test("copy_node_with_attributes: preserves taitou indent", function()
     local g = D.new(constants.GLYPH)
-    local forced = constants.encode_forced_indent(3)
-    D.set_attribute(g, constants.ATTR_INDENT, forced)
+    local taitou = constants.encode_taitou_indent(3)
+    D.set_attribute(g, constants.ATTR_INDENT, taitou)
     local copy = flatten._internal.copy_node_with_attributes(g, 5, 0)
-    -- Should NOT overwrite the forced indent
-    test_utils.assert_eq(D.get_attribute(copy, constants.ATTR_INDENT), forced)
+    -- Should NOT overwrite the taitou forced indent
+    test_utils.assert_eq(D.get_attribute(copy, constants.ATTR_INDENT), taitou)
+end)
+
+test_utils.run_test("copy_node_with_attributes: preserves suojin indent", function()
+    local g = D.new(constants.GLYPH)
+    local suojin = constants.encode_suojin_indent(2)
+    D.set_attribute(g, constants.ATTR_INDENT, suojin)
+    local copy = flatten._internal.copy_node_with_attributes(g, 5, 0)
+    -- Should NOT overwrite the suojin forced indent
+    test_utils.assert_eq(D.get_attribute(copy, constants.ATTR_INDENT), suojin)
 end)
 
 -- ============================================================================

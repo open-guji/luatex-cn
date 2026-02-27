@@ -36,9 +36,11 @@ def pdf_to_pngs(pdf_file: Path, output_dir: Path, dpi: int = 300) -> list:
     output_dir = Path(output_dir)
     pdf_file = Path(pdf_file)
 
-    # Clean up old images for this file
+    # Clean up old images for this file (use regex to avoid matching longer stems,
+    # e.g. "guji-*.png" must not delete "guji-digital-basic-1.png")
     for old_png in output_dir.glob(f"{pdf_file.stem}-*.png"):
-        old_png.unlink()
+        if re.match(rf"^{re.escape(pdf_file.stem)}-\d+\.png$", old_png.name):
+            old_png.unlink()
 
     output_prefix = str(output_dir / pdf_file.stem)
     result = subprocess.run(

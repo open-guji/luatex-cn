@@ -233,6 +233,45 @@
     \int_gzero:N \g__luatexcn_footnote_counter_int
   }
 
+% ============================================================================
+% \FootnoteParagraph{content} - Unnumbered footnote paragraph
+% Outputs content with footnote font-size and indent, but no marker/number.
+% Used for standalone annotations (e.g., 索隱 notes) not referenced in main text.
+% ============================================================================
+\NewDocumentCommand{\FootnoteParagraph}{ +m }
+  {
+    \group_begin:
+      % Apply footnote font-size
+      \tl_if_empty:NF \l__luatexcn_footnote_font_size_tl
+        { \__luatexcn_footnote_apply_font_size: }
+      % Set indent = indent + marker_height (align with numbered footnotes)
+      \lua_now:e {
+        local~constants~=~require('core.luatex-cn-constants')~
+        local~sr~=~require('util.luatex-cn-style-registry')~
+        local~fn_grid_h~=~\dim_to_decimal_in_sp:n { \l__luatexcn_footnote_resolved_size_dim }~
+        local~content_grid_h~=~\dim_to_decimal_in_sp:n { \l__luatexcn_content_grid_height_tl }~
+        local~indent_fn~=~\int_use:N \l__luatexcn_footnote_indent_int ~
+        local~marker_fn~=~\int_use:N \l__luatexcn_footnote_marker_height_int ~
+        local~total_fn~=~indent_fn~+~marker_fn~
+        local~indent_float~=~total_fn~*~fn_grid_h~/~content_grid_h~
+        local~sid~=~sr.push_indent(indent_float,~indent_float)~
+        tex.setattribute(constants.ATTR_STYLE_REG_ID,~sid)
+      }
+      % Block ID + force column break
+      \int_gincr:N \g_luatexcn_paragraph_block_id_int
+      \setluatexattribute\cnverticalblockid
+        { \int_use:N \g_luatexcn_paragraph_block_id_int }
+      \penalty -10002\relax
+      % Output content (no marker)
+      #1
+      % Pop style
+      \lua_now:e {
+        local~sr~=~require('util.luatex-cn-style-registry')
+        sr.pop()
+      }
+    \group_end:
+  }
+
 \ExplSyntaxOff%
 
 % ============================================================
@@ -243,11 +282,13 @@
 \NewCommandCopy{\输出脚注}{\FlushFootnote}
 \NewCommandCopy{\脚注设置}{\footnoteSetup}
 \NewCommandCopy{\重置脚注计数}{\ResetFootnoteCounter}
+\NewCommandCopy{\脚注段落}{\FootnoteParagraph}
 % Traditional Chinese / 繁体
 \NewCommandCopy{\腳注}{\Footnote}
 \NewCommandCopy{\輸出腳注}{\FlushFootnote}
 \NewCommandCopy{\腳注設置}{\footnoteSetup}
 \NewCommandCopy{\重置腳注計數}{\ResetFootnoteCounter}
+\NewCommandCopy{\腳注段落}{\FootnoteParagraph}
 
 % ============================================================
 % Chinese key aliases / 中文 Key 别名

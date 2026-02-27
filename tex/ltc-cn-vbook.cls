@@ -111,10 +111,10 @@
     page-number-x .initial:n = {3mm},
 
     page-number-y .tl_set:N = \l_cn_vbook_page_number_y_tl,
-    page-number-y .initial:n = {8mm},
+    page-number-y .initial:n = {52mm},
 
     header-y .tl_set:N = \l_cn_vbook_header_y_tl,
-    header-y .initial:n = {25mm},
+    header-y .initial:n = {52mm},
   }
 
 % Sync positions to plain TeX dimensions for shipout hook use

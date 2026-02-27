@@ -117,36 +117,32 @@ local function is_center_gap_col(col, params, grid_height)
     local banxin_on = get_banxin_on(params)
     if not banxin_on then return false end
 
-    -- If we have a banxin column (reserved column), it already occupies the center gap.
-    -- No need to skip additional columns for center gap.
-    local interval = tonumber(params.n_column) or 0
-    if interval > 0 then
-        -- Banxin mode: reserved columns handle the center gap
-        return false
-    end
-
-    -- Legacy center gap logic (for cases without banxin columns)
     local g_width = get_grid_width(params, grid_height)
 
-    local paper_w = params.paper_width  -- 0 set at layout_params definition
+    local paper_w = params.paper_width
     if paper_w <= 0 then return false end
-
-    -- Get total columns for RTL conversion
-    local total_cols = params.page_columns or 1
-    if total_cols <= 0 then total_cols = 1 end
-
-    -- Convert logical column (0-indexed from right) to physical column (0-indexed from left)
-    local rtl_col = total_cols - 1 - col
 
     local center = paper_w / 2
     local gap_half_width = 15 * 65536 -- 15pt in sp
 
-    local floating_x = params.floating_x  -- 0 set at layout_params definition
-    if floating_x <= 0 then
+    local floating_x = params.floating_x or 0
+
+    -- Determine physical column position based on context:
+    -- TextBox with floating_x > 0 (e.g. meipi): col is physical (left-to-right)
+    -- Main text (floating_x = 0): col is logical (right-to-left), need RTL conversion
+    local phys_col
+    if floating_x > 0 then
+        -- TextBox: col is physical column index, floating_x is absolute x position
+        phys_col = col
+    else
+        -- Main text: convert logical RTL col to physical LTR col
+        local total_cols = params.page_columns or 1
+        if total_cols <= 0 then total_cols = 1 end
+        phys_col = total_cols - 1 - col
         floating_x = get_margin_right(params)
     end
 
-    local col_right_x = floating_x + rtl_col * g_width
+    local col_right_x = floating_x + phys_col * g_width
     local col_left_x = col_right_x + g_width
 
     local gap_left = center - gap_half_width

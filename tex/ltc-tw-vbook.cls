@@ -92,12 +92,12 @@
 % ============================================================================
 % Running Header + Page Number via eso-pic (shipout hook)
 % ============================================================================
-% Displays running header (book name / chapter title) and page number
-% on the outer margin of each page (alternating left/right for odd/even).
+% Displays running header and page number on each page.
+% Both on inner margin (binding side): header at top, page number at bottom.
 %
 % Layout:
-%   Odd pages:  left side  — chapter title (top) + page number (bottom)
-%   Even pages: right side — book name (top) + page number (bottom)
+%   Odd pages (right page):  left side — chapter title (top) + page number (bottom)
+%   Even pages (left page):  right side — book name (top) + page number (bottom)
 %
 % Users can override by redefining \cnVbookPageNumberHook.
 
@@ -186,14 +186,14 @@
         tex.sprint("\\AtPageUpperLeft{\\put(\\LenToUnit{\\cnVbookPageNumX},-\\LenToUnit{\\cnVbookHeaderY}){\\parbox[t]{2em}{\\centering\\fontsize{\\cnVbookHeaderFontSize}{13pt}\\selectfont\\DrawVerticalText{" .. header_text .. "}}}}")
       end
       if show_number then
-        tex.sprint("\\AtPageLowerLeft{\\put(\\LenToUnit{" .. pw_cmd .. "},\\LenToUnit{\\cnVbookPageNumY}){\\parbox[b]{2em}{\\centering\\fontsize{\\cnVbookPageNumFontSize}{13pt}\\selectfont\\DrawVerticalPageNumber}}}")
+        tex.sprint("\\AtPageLowerLeft{\\put(\\LenToUnit{\\cnVbookPageNumX},\\LenToUnit{\\cnVbookPageNumY}){\\parbox[b]{2em}{\\centering\\fontsize{\\cnVbookPageNumFontSize}{13pt}\\selectfont\\DrawVerticalPageNumber}}}")
       end
     else
       if show_header then
         tex.sprint("\\AtPageUpperLeft{\\put(\\LenToUnit{" .. pw_cmd .. "},-\\LenToUnit{\\cnVbookHeaderY}){\\parbox[t]{2em}{\\centering\\fontsize{\\cnVbookHeaderFontSize}{13pt}\\selectfont\\DrawVerticalText{" .. header_text .. "}}}}")
       end
       if show_number then
-        tex.sprint("\\AtPageLowerLeft{\\put(\\LenToUnit{\\cnVbookPageNumX},\\LenToUnit{\\cnVbookPageNumY}){\\parbox[b]{2em}{\\centering\\fontsize{\\cnVbookPageNumFontSize}{13pt}\\selectfont\\DrawVerticalPageNumber}}}")
+        tex.sprint("\\AtPageLowerLeft{\\put(\\LenToUnit{" .. pw_cmd .. "},\\LenToUnit{\\cnVbookPageNumY}){\\parbox[b]{2em}{\\centering\\fontsize{\\cnVbookPageNumFontSize}{13pt}\\selectfont\\DrawVerticalPageNumber}}}")
       end
     end
   }%

@@ -692,6 +692,7 @@ function textbox.place_textbox_node(ctx, node, tb_w, tb_h, params, callbacks)
         end
     end
 
+    local gh = params.grid_height or 655360
     callbacks.push_buffer({
         node = node,
         page = ctx.cur_page,
@@ -700,7 +701,8 @@ function textbox.place_textbox_node(ctx, node, tb_w, tb_h, params, callbacks)
         y_sp = ctx.cur_y_sp,
         is_block = true,
         width = tb_w,
-        height = tb_h
+        height = tb_h,
+        cell_height = tb_h * gh,
     })
     ctx.cur_row = ctx.cur_row + tb_h
     ctx.cur_y_sp = ctx.cur_row * (params.grid_height or 655360)

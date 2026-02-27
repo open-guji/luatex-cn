@@ -52,10 +52,12 @@
     font-size .initial:n = {0.8em},
     font-color .tl_set:N = \l__luatexcn_footnote_font_color_tl,
     font-color .initial:n = {},
-    indent .dim_set:N = \l__luatexcn_footnote_indent_dim,
-    indent .initial:n = {1em},
+    indent .int_set:N = \l__luatexcn_footnote_indent_int,
+    indent .initial:n = {2},
     spacing .dim_set:N = \l__luatexcn_footnote_spacing_dim,
     spacing .initial:n = {0.5em},
+    marker-height .int_set:N = \l__luatexcn_footnote_marker_height_int,
+    marker-height .initial:n = {2},
   }
 
 % ============================================================================
@@ -180,8 +182,7 @@
             % an unwanted empty column in vertical layout.
             % Group to contain font-size change (prevent leaking to subsequent text)
             \group_begin:
-            % Apply footnote font-size using absolute value from content base font-size
-            % (avoid relative em units which compound across multiple FlushFootnote calls)
+            % Apply footnote font-size (absolute value from content base font-size)
             \tl_if_empty:NF \l__luatexcn_footnote_font_size_tl
               {
                 \__luatexcn_footnote_apply_font_size:
@@ -189,20 +190,33 @@
             \int_step_inline:nn
               { \seq_count:N \g__luatexcn_footnote_content_seq }
               {
-                % Forced ATTR_INDENT ensures each footnote column starts indented.
-                % Note: ATTR_COLUMN_BREAK_INDENT on penalty is unreliable because
-                % TeX's paragraph builder may create new penalty nodes without
-                % custom attributes. Forced ATTR_INDENT on glyphs survives flatten.
+                % Hanging indent: all sizes in footnote-grid units (= footnote font size).
+                % indent (int) = leading blank cells, marker-height (int) = marker cells.
+                % Convert to float content-grid-cells for the layout engine.
                 \lua_now:e {
-                  local~constants~=~require('core.luatex-cn-constants')
-                  local~indent_sp~=~\dim_to_decimal_in_sp:n { \l__luatexcn_footnote_indent_dim }
-                  local~grid_h_sp~=~\dim_to_decimal_in_sp:n { \l__luatexcn_content_grid_height_tl }
-                  local~cells~=~math.max(1,~math.floor(indent_sp~/~grid_h_sp~+~0.5))
-                  tex.setattribute(constants.ATTR_INDENT,~constants.encode_suojin_indent(cells))
+                  local~constants~=~require('core.luatex-cn-constants')~
+                  local~sr~=~require('util.luatex-cn-style-registry')~
+                  local~fn_grid_h~=~\dim_to_decimal_in_sp:n { \l__luatexcn_footnote_resolved_size_dim }~
+                  local~content_grid_h~=~\dim_to_decimal_in_sp:n { \l__luatexcn_content_grid_height_tl }~
+                  local~indent_fn~=~\int_use:N \l__luatexcn_footnote_indent_int ~
+                  local~marker_fn~=~\int_use:N \l__luatexcn_footnote_marker_height_int ~
+                  local~hang_fn~=~indent_fn~+~marker_fn~
+                  local~first_float~=~indent_fn~*~fn_grid_h~/~content_grid_h~
+                  local~hang_float~=~hang_fn~*~fn_grid_h~/~content_grid_h~
+                  local~sid~=~sr.push_indent(hang_float,~first_float)~
+                  tex.setattribute(constants.ATTR_STYLE_REG_ID,~sid)
                 }
+                \int_gincr:N \g_luatexcn_paragraph_block_id_int
+                \setluatexattribute\cnverticalblockid
+                  { \int_use:N \g_luatexcn_paragraph_block_id_int }
                 \penalty -10002\relax
+                % Output marker directly (natural layout stacks characters automatically)
                 \__luatexcn_footnote_write_marker:n { ##1 }
                 \seq_item:Nn \g__luatexcn_footnote_content_seq { ##1 }
+                \lua_now:e {
+                  local~sr~=~require('util.luatex-cn-style-registry')
+                  sr.pop()
+                }
               }
             \group_end:
             \seq_gclear:N \g__luatexcn_footnote_content_seq
@@ -248,15 +262,17 @@
     字体 .tl_set:N = \l__luatexcn_footnote_font_tl,
     字号 .tl_set:N = \l__luatexcn_footnote_font_size_tl,
     字体颜色 .tl_set:N = \l__luatexcn_footnote_font_color_tl,
-    缩进 .dim_set:N = \l__luatexcn_footnote_indent_dim,
+    缩进 .int_set:N = \l__luatexcn_footnote_indent_int,
     间距 .dim_set:N = \l__luatexcn_footnote_spacing_dim,
+    序号高度 .int_set:N = \l__luatexcn_footnote_marker_height_int,
     % 繁体（与简体不同形的）
     編號樣式 .tl_set:N = \l__luatexcn_footnote_number_style_tl,
     字體 .tl_set:N = \l__luatexcn_footnote_font_tl,
     字號 .tl_set:N = \l__luatexcn_footnote_font_size_tl,
     字體顏色 .tl_set:N = \l__luatexcn_footnote_font_color_tl,
-    縮進 .dim_set:N = \l__luatexcn_footnote_indent_dim,
+    縮進 .int_set:N = \l__luatexcn_footnote_indent_int,
     間距 .dim_set:N = \l__luatexcn_footnote_spacing_dim,
+    序號高度 .int_set:N = \l__luatexcn_footnote_marker_height_int,
   }
 \ExplSyntaxOff
 

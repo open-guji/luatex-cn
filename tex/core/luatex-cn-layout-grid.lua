@@ -831,7 +831,7 @@ local function flush_buffer(col_buffer, ctx, grid_height, distribute, layout_map
     if distribute and N > 1 then
         local total_char_height = 0
         for _, entry in ipairs(col_buffer) do
-            local ch = entry.height or grid_height
+            local ch = entry.cell_height or entry.height or grid_height
             if ch <= 0 then ch = grid_height end
             total_char_height = total_char_height + ch
         end
@@ -844,7 +844,7 @@ local function flush_buffer(col_buffer, ctx, grid_height, distribute, layout_map
             local current_y = col_start_y
             for i = 1, N do
                 local entry = col_buffer[i]
-                local ch = (entry.height or grid_height)
+                local ch = entry.cell_height or entry.height or grid_height
                 if ch <= 0 then ch = grid_height end
                 ch = ch * v_scale_all
                 local y_center = current_y + ch / 2
@@ -858,7 +858,7 @@ local function flush_buffer(col_buffer, ctx, grid_height, distribute, layout_map
             local current_y = col_start_y
             for i = 1, N do
                 local entry = col_buffer[i]
-                local ch = (entry.height or grid_height)
+                local ch = entry.cell_height or entry.height or grid_height
                 if ch <= 0 then ch = grid_height end
                 local y_center = current_y + ch / 2
                 distribute_y_sp[i] = y_center - grid_height * 0.5
@@ -1029,7 +1029,7 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
         end
 
         if node_count < 200 then
-            dbg.log(string.format("  Node=%s ID=%d [p:%d, c:%d, r:%d]", tostring(t), id, ctx.cur_page,
+            dbg.log(string.format("  Node=%s ID=%d [p:%d, c:%d, r:%.1f]", tostring(t), id, ctx.cur_page,
                 ctx.cur_col, ctx.cur_row))
         end
         node_count = node_count + 1

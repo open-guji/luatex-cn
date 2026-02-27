@@ -867,8 +867,11 @@ local function flush_buffer(col_buffer, ctx, grid_height, distribute, layout_map
         end
     end
 
-    -- Natural mode (no default_cell_height): recalculate positions with tight packing
-    -- Only stretch when remaining space < min_cell_height (nearly full column)
+    -- Natural mode (no default_cell_height): recalculate positions.
+    -- Justify nearly-full columns so top/bottom characters align across columns.
+    -- Layout phase accumulates y_sp with gap for overflow checks, but flush
+    -- recalculates from scratch. For nearly-full columns, distribute the full
+    -- available space (including gap) evenly to align top and bottom.
     if not ctx.default_cell_height and N > 0 and not distribute then
         local total_cells = 0
         local min_cell = math.huge
@@ -877,13 +880,25 @@ local function flush_buffer(col_buffer, ctx, grid_height, distribute, layout_map
             total_cells = total_cells + ch
             if ch < min_cell then min_cell = ch end
         end
-        local remaining = ctx.col_height_sp - total_cells - col_start_y
+        -- Check remaining based on layout-phase spacing (with gap) to detect full columns
+        local base_gap = ctx.default_cell_gap or 0
+        local occupied_with_gap = total_cells + (N - 1) * base_gap + col_start_y
+        local remaining_with_gap = ctx.col_height_sp - occupied_with_gap
+
+        -- Target bottom: where the last char should end after justification.
+        -- Use layout-phase occupied height (with gap), capped at col_height_sp.
+        -- This preserves the original gap-based spacing rather than stretching
+        -- to the full col_height_sp (which would over-stretch when punctuation
+        -- marks occupy half cells).
+        local target_bottom = math.min(occupied_with_gap, ctx.col_height_sp)
 
         if N == 1 then
             -- Keep original y_sp (preserves indent offset)
-        elseif remaining > 0 and remaining < min_cell and N > 1 then
-            -- Nearly full: distribute remaining space for bottom alignment
-            local gap = remaining / (N - 1)
+        elseif remaining_with_gap >= 0 and remaining_with_gap < min_cell + base_gap and N > 1 then
+            -- Nearly full (can't fit one more char with gap): justify
+            -- Distribute gap so last char's bottom aligns to target_bottom
+            local total_gap = target_bottom - total_cells - col_start_y
+            local gap = total_gap / (N - 1)
             local y = col_start_y
             for _, e in ipairs(col_buffer) do
                 e.y_sp = y

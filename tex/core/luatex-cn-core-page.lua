@@ -104,6 +104,34 @@ function page.restore()
     end
 end
 
+--- Get effective left/right margins for a given page number.
+-- When inner/outer margins are set, they take priority over left/right.
+-- twoside controls whether odd/even pages swap inner/outer.
+-- @param page_num (number, optional) Page number (defaults to current_page_number)
+-- @return m_left, m_right (sp values)
+function page.get_effective_margins(page_num)
+    local m_left = _G.page.margin_left or 0
+    local m_right = _G.page.margin_right or 0
+    local m_inner = _G.page.margin_inner or 0
+    local m_outer = _G.page.margin_outer or 0
+    if m_inner > 0 or m_outer > 0 then
+        if _G.page.twoside then
+            local pn = page_num or _G.page.current_page_number or 1
+            if pn % 2 == 1 then
+                m_left = m_inner
+                m_right = m_outer
+            else
+                m_left = m_outer
+                m_right = m_inner
+            end
+        else
+            m_left = m_inner
+            m_right = m_outer
+        end
+    end
+    return m_left, m_right
+end
+
 --- Get restored dimension as string for TeX
 -- @param key The dimension key (paper_width, paper_height, etc.)
 -- @return String representation of the dimension in pt
@@ -220,13 +248,13 @@ end
 -- @param box_num The TeX box number
 -- @param total_pages Total number of pages to output
 function page.output_pages(box_num, total_pages)
-    -- Get margins (geometry is set to 0, we manually add margins here)
-    local m_left = (_G.page and _G.page.margin_left) or 0
     local m_top = (_G.page and _G.page.margin_top) or 0
-    local m_left_pt = m_left / 65536
     local m_top_pt = m_top / 65536
 
     for i = 0, total_pages - 1 do
+        -- Get effective margins per page (may differ for twoside odd/even)
+        local m_left = page.get_effective_margins(i + 1)
+        local m_left_pt = m_left / 65536
         tex.print(string.format("\\directlua{core.load_page(%d, %d)}", box_num, i))
         -- Use \vbox with raised content to add top margin without affecting page breaks
         tex.print("\\par\\nointerlineskip")

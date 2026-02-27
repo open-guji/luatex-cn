@@ -274,19 +274,23 @@ local function calc_content_area_width()
     local m_inner = _G.page and _G.page.margin_inner or 0
     local m_outer = _G.page and _G.page.margin_outer or 0
 
-    -- Determine actual margins based on twoside mode and current page number
-    if twoside and (m_inner > 0 or m_outer > 0) then
-        local page_num = _G.page.current_page_number or 1
-        -- Odd pages (1, 3, 5, ...): inner on left, outer on right
-        -- Even pages (2, 4, 6, ...): outer on left, inner on right
-        if page_num % 2 == 1 then
-            -- Odd page
+    -- When inner/outer margins are set, they take priority over left/right.
+    -- twoside controls whether odd/even pages swap inner/outer.
+    -- Without twoside: inner=left, outer=right (fixed).
+    -- With twoside: odd pages inner=left, even pages inner=right (mirrored).
+    if m_inner > 0 or m_outer > 0 then
+        if twoside then
+            local page_num = _G.page.current_page_number or 1
+            if page_num % 2 == 1 then
+                m_left = m_inner
+                m_right = m_outer
+            else
+                m_left = m_outer
+                m_right = m_inner
+            end
+        else
             m_left = m_inner
             m_right = m_outer
-        else
-            -- Even page
-            m_left = m_outer
-            m_right = m_inner
         end
     end
 
@@ -372,19 +376,20 @@ local function calc_auto_layout()
     local m_inner = _G.page and _G.page.margin_inner or 0
     local m_outer = _G.page and _G.page.margin_outer or 0
 
-    -- Determine actual margins based on twoside mode and current page number
-    if twoside and (m_inner > 0 or m_outer > 0) then
-        local page_num = _G.page.current_page_number or 1
-        -- Odd pages (1, 3, 5, ...): inner on left, outer on right
-        -- Even pages (2, 4, 6, ...): outer on left, inner on right
-        if page_num % 2 == 1 then
-            -- Odd page
+    -- When inner/outer margins are set, they take priority over left/right.
+    if m_inner > 0 or m_outer > 0 then
+        if twoside then
+            local page_num = _G.page.current_page_number or 1
+            if page_num % 2 == 1 then
+                m_left = m_inner
+                m_right = m_outer
+            else
+                m_left = m_outer
+                m_right = m_inner
+            end
+        else
             m_left = m_inner
             m_right = m_outer
-        else
-            -- Even page
-            m_left = m_outer
-            m_right = m_inner
         end
     end
 

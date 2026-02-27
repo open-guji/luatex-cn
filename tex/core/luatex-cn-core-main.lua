@@ -191,6 +191,26 @@ local function init_engine_context(box_num, params)
     local m_left = _G.page.margin_left or 0
     local m_right = _G.page.margin_right or 0
 
+    -- When inner/outer margins are set, they take priority over left/right.
+    -- twoside controls whether odd/even pages swap inner/outer.
+    local m_inner = _G.page.margin_inner or 0
+    local m_outer = _G.page.margin_outer or 0
+    if m_inner > 0 or m_outer > 0 then
+        if _G.page.twoside then
+            local page_num = _G.page.current_page_number or 1
+            if page_num % 2 == 1 then
+                m_left = m_inner
+                m_right = m_outer
+            else
+                m_left = m_outer
+                m_right = m_inner
+            end
+        else
+            m_left = m_inner
+            m_right = m_outer
+        end
+    end
+
     -- Border settings: read from style stack
     -- Content pushes {border, outer_border, border_width, border_color}
     -- TextBox pushes {outer_border=false, border_width, border_color} and border if explicit

@@ -36,10 +36,12 @@
 \directlua{ local~x~=~1;~--[[注释]]--~local~y~=~2 }
 ```
 
+**特别注意**：即使在 `\ExplSyntaxOff` 中，当 `\directlua` 出现在 `\newcommand` 定义体内时，行结束符在**宏定义时**就被 tokenize 为空格。因此 `--` 仍会注释掉后续所有代码，且**不会报错**——Lua 代码静默截断。
+
 **最佳实践**：
 - 复杂 Lua 逻辑放在独立 `.lua` 文件中
 - `\directlua` 只负责 `require()` 和简单调用
-- 避免在 `\directlua` 中使用 `--` 行注释
+- 避免在 `\directlua` 中使用 `--` 行注释（无论 catcode 环境）
 
 ### 1.2 Lua 模块加载
 

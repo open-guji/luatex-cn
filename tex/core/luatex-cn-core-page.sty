@@ -30,6 +30,9 @@
 \bool_new:N \l__luatexcn_page_twoside_bool
 \tl_new:N \l__luatexcn_page_margin_inner_tl
 \tl_new:N \l__luatexcn_page_margin_outer_tl
+% Running header support (书名/章节名 displayed on outer margin)
+\bool_new:N \l__luatexcn_page_header_enabled_bool
+\tl_new:N \l__luatexcn_page_header_font_size_tl
 
 \keys_define:nn { luatexcn / page }
   {
@@ -77,6 +80,13 @@
     margin-outer .tl_set:N = \l__luatexcn_page_margin_outer_tl,
     margin-outer .initial:n = {},
 
+    % Running header (书名/章节名 on outer margin)
+    header-enabled .bool_set:N = \l__luatexcn_page_header_enabled_bool,
+    header-enabled .initial:n = false,
+
+    header-font-size .tl_set:N = \l__luatexcn_page_header_font_size_tl,
+    header-font-size .initial:n = {9pt},
+
     unknown .code:n = {},
   }
 
@@ -99,6 +109,8 @@
       _G.page~=~_G.page~or~{}
       _G.page.number_style~=~"\l__luatexcn_page_number_style_tl"
       _G.page.number_font_size~=~"\l__luatexcn_page_number_font_size_tl"
+      _G.page.header_enabled~=~\bool_if:NTF~\l__luatexcn_page_header_enabled_bool~{true}~{false};
+      _G.page.header_font_size~=~"\l__luatexcn_page_header_font_size_tl"
     }
     % Apply geometry when called in preamble (sets paper size)
     \luatexcn_apply_geometry:
@@ -326,6 +338,20 @@
     end
   }%
 }
+
+% DrawVerticalText: renders arbitrary text vertically (one character per line).
+% Used by vbook running headers to display book name / chapter title.
+\newcommand{\DrawVerticalText}[1]{%
+  \directlua{
+    local s = "\luaescapestring{#1}"
+    if s == "" then return end
+    local parts = {}
+    for p, c in utf8.codes(s) do
+      table.insert(parts, utf8.char(c))
+    end
+    tex.sprint(table.concat(parts, "\\\\\\noexpand\\relax "))
+  }%
+}
 \ExplSyntaxOn
 
 % ============================================================================
@@ -393,6 +419,8 @@
     右页优先 .bool_set:N = \l__luatexcn_page_split_right_first_bool,
     页码样式 .tl_set:N = \l__luatexcn_page_number_style_tl,
     页码字号 .tl_set:N = \l__luatexcn_page_number_font_size_tl,
+    启用页眉 .bool_set:N = \l__luatexcn_page_header_enabled_bool,
+    页眉字号 .tl_set:N = \l__luatexcn_page_header_font_size_tl,
     % 繁体（与简体不同形的）
     紙寬 .tl_set:N = \l__luatexcn_page_paper_width_tl,
     紙高 .tl_set:N = \l__luatexcn_page_paper_height_tl,
@@ -406,6 +434,8 @@
     右頁優先 .bool_set:N = \l__luatexcn_page_split_right_first_bool,
     頁碼樣式 .tl_set:N = \l__luatexcn_page_number_style_tl,
     頁碼字號 .tl_set:N = \l__luatexcn_page_number_font_size_tl,
+    啟用頁眉 .bool_set:N = \l__luatexcn_page_header_enabled_bool,
+    頁眉字號 .tl_set:N = \l__luatexcn_page_header_font_size_tl,
   }
 
 \endinput

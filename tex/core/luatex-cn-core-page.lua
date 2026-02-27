@@ -33,6 +33,10 @@ _G.page.margin_top = _G.page.margin_top or 0
 _G.page.margin_bottom = _G.page.margin_bottom or 0
 _G.page.margin_left = _G.page.margin_left or 0
 _G.page.margin_right = _G.page.margin_right or 0
+-- Two-side margin support
+_G.page.twoside = _G.page.twoside or false
+_G.page.margin_inner = _G.page.margin_inner or 0
+_G.page.margin_outer = _G.page.margin_outer or 0
 
 -- Stack for saving/restoring page settings
 _G.page.saved_stack = _G.page.saved_stack or {}
@@ -47,6 +51,10 @@ function page.setup(params)
     if params.margin_bottom then _G.page.margin_bottom = constants.to_dimen(params.margin_bottom) end
     if params.margin_left then _G.page.margin_left = constants.to_dimen(params.margin_left) end
     if params.margin_right then _G.page.margin_right = constants.to_dimen(params.margin_right) end
+    -- Two-side margin support
+    if params.twoside ~= nil then _G.page.twoside = params.twoside end
+    if params.margin_inner then _G.page.margin_inner = constants.to_dimen(params.margin_inner) end
+    if params.margin_outer then _G.page.margin_outer = constants.to_dimen(params.margin_outer) end
 end
 
 --- Save current page settings to stack
@@ -58,6 +66,10 @@ function page.save()
         margin_bottom = _G.page.margin_bottom,
         margin_left = _G.page.margin_left,
         margin_right = _G.page.margin_right,
+        -- Two-side margin state
+        twoside = _G.page.twoside,
+        margin_inner = _G.page.margin_inner,
+        margin_outer = _G.page.margin_outer,
         -- Split page state
         split_enabled = _G.page.split.enabled,
         split_right_first = _G.page.split.right_first,
@@ -76,6 +88,10 @@ function page.restore()
         _G.page.margin_bottom = saved.margin_bottom
         _G.page.margin_left = saved.margin_left
         _G.page.margin_right = saved.margin_right
+        -- Restore two-side margin state
+        _G.page.twoside = saved.twoside
+        _G.page.margin_inner = saved.margin_inner
+        _G.page.margin_outer = saved.margin_outer
         -- Restore split page state
         _G.page.split.enabled = saved.split_enabled
         _G.page.split.right_first = saved.split_right_first

@@ -18,6 +18,7 @@ local tests = {
     "test/unit_test/core/core-metadata-test.lua",
     "test/unit_test/core/core-export-test.lua",
     "test/unit_test/core/core-page-split-test.lua",
+    "test/unit_test/core/page-twoside-test.lua",
     "test/unit_test/core/render-position-test.lua",
     "test/unit_test/core/layout-grid-helpers-test.lua",
     "test/unit_test/core/flatten-nodes-test.lua",

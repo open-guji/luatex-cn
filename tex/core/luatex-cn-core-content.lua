@@ -265,10 +265,30 @@ end
 
 --- Calculate total box and content area width from page dimensions
 -- Implements three-layer structure: Page → Total Box → Content Area
+-- Supports two-side margin mode (inner/outer for alternating odd/even pages)
 local function calc_content_area_width()
     local p_width = _G.page and _G.page.paper_width or 0
     local m_left = _G.page and _G.page.margin_left or 0
     local m_right = _G.page and _G.page.margin_right or 0
+    local twoside = _G.page and _G.page.twoside or false
+    local m_inner = _G.page and _G.page.margin_inner or 0
+    local m_outer = _G.page and _G.page.margin_outer or 0
+
+    -- Determine actual margins based on twoside mode and current page number
+    if twoside and (m_inner > 0 or m_outer > 0) then
+        local page_num = _G.page.current_page_number or 1
+        -- Odd pages (1, 3, 5, ...): inner on left, outer on right
+        -- Even pages (2, 4, 6, ...): outer on left, inner on right
+        if page_num % 2 == 1 then
+            -- Odd page
+            m_left = m_inner
+            m_right = m_outer
+        else
+            -- Even page
+            m_left = m_outer
+            m_right = m_inner
+        end
+    end
 
     -- Layer 1: Total Box (Page - Margins)
     local total_width = p_width - m_left - m_right
@@ -332,6 +352,7 @@ end
 -- Layer 1: Total Box (Page - Margins)
 -- Layer 2: Border overhead
 -- Layer 3: Content Area (Total - Border)
+-- Supports two-side margin mode (inner/outer for alternating odd/even pages)
 local function calc_auto_layout()
     local b_thickness = _G.content.border_on and _G.content.border_thickness or 0
     local is_outer_border = _G.content.outer_border_on
@@ -347,6 +368,25 @@ local function calc_auto_layout()
     local m_right = _G.page and _G.page.margin_right or 0
     local m_top = _G.page and _G.page.margin_top or 0
     local m_bottom = _G.page and _G.page.margin_bottom or 0
+    local twoside = _G.page and _G.page.twoside or false
+    local m_inner = _G.page and _G.page.margin_inner or 0
+    local m_outer = _G.page and _G.page.margin_outer or 0
+
+    -- Determine actual margins based on twoside mode and current page number
+    if twoside and (m_inner > 0 or m_outer > 0) then
+        local page_num = _G.page.current_page_number or 1
+        -- Odd pages (1, 3, 5, ...): inner on left, outer on right
+        -- Even pages (2, 4, 6, ...): outer on left, inner on right
+        if page_num % 2 == 1 then
+            -- Odd page
+            m_left = m_inner
+            m_right = m_outer
+        else
+            -- Even page
+            m_left = m_outer
+            m_right = m_inner
+        end
+    end
 
     -- ========== Layer 1: Total Box ==========
     local total_width = p_width - m_left - m_right

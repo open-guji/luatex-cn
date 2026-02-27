@@ -26,6 +26,10 @@
 \tl_new:N \l__luatexcn_page_topskip_tl
 \bool_new:N \l__luatexcn_page_split_enabled_bool
 \bool_new:N \l__luatexcn_page_split_right_first_bool
+% Two-side margin support (for alternating odd/even page margins)
+\bool_new:N \l__luatexcn_page_twoside_bool
+\tl_new:N \l__luatexcn_page_margin_inner_tl
+\tl_new:N \l__luatexcn_page_margin_outer_tl
 
 \keys_define:nn { luatexcn / page }
   {
@@ -63,6 +67,16 @@
     page-split-right-first .bool_set:N = \l__luatexcn_page_split_right_first_bool,
     page-split-right-first .initial:n = true,
 
+    % Two-side margin configuration (mirror margins for odd/even pages)
+    twoside .bool_set:N = \l__luatexcn_page_twoside_bool,
+    twoside .initial:n = false,
+
+    margin-inner .tl_set:N = \l__luatexcn_page_margin_inner_tl,
+    margin-inner .initial:n = {},
+
+    margin-outer .tl_set:N = \l__luatexcn_page_margin_outer_tl,
+    margin-outer .initial:n = {},
+
     unknown .code:n = {},
   }
 
@@ -77,7 +91,10 @@
         margin_top~=~"\l__luatexcn_page_margin_top_tl",
         margin_bottom~=~"\l__luatexcn_page_margin_bottom_tl",
         margin_left~=~"\l__luatexcn_page_margin_left_tl",
-        margin_right~=~"\l__luatexcn_page_margin_right_tl"
+        margin_right~=~"\l__luatexcn_page_margin_right_tl",
+        twoside~=~\bool_if:NTF~\l__luatexcn_page_twoside_bool~{true}~{false},
+        margin_inner~=~"\l__luatexcn_page_margin_inner_tl",
+        margin_outer~=~"\l__luatexcn_page_margin_outer_tl"
       })
       _G.page~=~_G.page~or~{}
       _G.page.number_style~=~"\l__luatexcn_page_number_style_tl"

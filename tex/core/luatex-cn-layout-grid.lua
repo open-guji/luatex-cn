@@ -770,6 +770,11 @@ local function handle_glyph_node(t, ctx, col_buffer, layout_map, grid_height,
             flush_fn()
             accumulate_free_mode_col_width(ctx, params)
             wrap_to_next_column(ctx, p_cols, interval, grid_height, base_indent or indent, false, false)
+            -- Re-apply indentation after column wrap: wrap resets cur_y_sp=0,
+            -- but this character (the first in the new column) needs indent applied.
+            -- The main loop's apply_indentation was already called before entering
+            -- handle_glyph_node, so it won't run again for this node.
+            apply_indentation(ctx, base_indent or indent)
         end
 
         table.insert(col_buffer, {

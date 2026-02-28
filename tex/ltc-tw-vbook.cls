@@ -89,6 +89,19 @@
     { \ApplyAutoFont }
 }
 
+% Set natural layout mode as default for modern vertical books
+\ExplSyntaxOff
+\AtBeginDocument{
+  \directlua{
+    _G.content = _G.content or {}
+    if not _G.content.layout_mode then
+      _G.content.layout_mode = "natural"
+      _G.content.inter_cell_gap = 2 * 65536
+    end
+  }
+}
+\ExplSyntaxOn
+
 % ============================================================================
 % Running Header + Page Number via eso-pic (shipout hook)
 % ============================================================================

@@ -698,6 +698,25 @@ local function handle_spacing_node(t, ctx, grid_height, effective_col_height_sp,
     return lookahead
 end
 
+--- Helper: Calculate actual accumulated height in column buffer
+-- Returns total height of all characters + gaps between them
+-- @param col_buffer (table) Buffer of character entries
+-- @param base_gap (number) Default gap between characters in sp
+-- @return (number) Total accumulated height in sp
+local function calculate_buffer_height(col_buffer, base_gap)
+    if #col_buffer == 0 then return 0 end
+    local total_height = 0
+    for i, entry in ipairs(col_buffer) do
+        total_height = total_height + (entry.cell_height or 0)
+        if i < #col_buffer then
+            total_height = total_height + base_gap
+        end
+    end
+    return total_height
+end
+
+_internal.calculate_buffer_height = calculate_buffer_height
+
 --- Handle glyph node: decoration markers and regular characters
 -- @param t (direct node) Current glyph node
 -- @param ctx (table) Grid context
@@ -764,9 +783,28 @@ local function handle_glyph_node(t, ctx, col_buffer, layout_map, grid_height,
         ctx.last_char_cell_height = cell_h
 
         -- Column overflow check (sp-based)
-        -- In distribute mode, allow overflow (flush_buffer will squeeze later)
-        -- When auto_column_wrap is false, only explicit penalties cause column breaks
-        if not distribute and ctx.auto_column_wrap and ctx.cur_y_sp + cell_h > ctx.col_height_sp and ctx.cur_y_sp > 0 then
+        -- Natural mode: use actual accumulated height from buffer instead of cur_y_sp
+        -- Grid mode: use cur_y_sp (which is synchronized with cur_row * grid_height)
+        local should_wrap = false
+        if not distribute and ctx.auto_column_wrap and ctx.cur_y_sp > 0 then
+            if ctx.default_cell_height then
+                -- Grid mode: use cur_y_sp (synchronized with grid)
+                should_wrap = (ctx.cur_y_sp + cell_h > ctx.col_height_sp)
+            else
+                -- Natural mode: calculate actual height from buffer
+                local col_start_y = #col_buffer > 0 and col_buffer[1].y_sp or 0
+                local base_gap = ctx.default_cell_gap or 0
+                local buffer_height = calculate_buffer_height(col_buffer, base_gap)
+                local next_y = col_start_y + buffer_height + cell_h
+                -- Add one more gap for the character we're about to add
+                if #col_buffer > 0 then
+                    next_y = next_y + base_gap
+                end
+                should_wrap = (next_y > ctx.col_height_sp)
+            end
+        end
+
+        if should_wrap then
             flush_fn()
             accumulate_free_mode_col_width(ctx, params)
             wrap_to_next_column(ctx, p_cols, interval, grid_height, base_indent or indent, false, false)
@@ -1091,8 +1129,25 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
                 end
             end
         end
-        if ctx.auto_column_wrap and ctx.cur_y_sp >= effective_col_height_sp
-                and not distribute and not is_textflow_node and not next_is_textflow then
+        -- Pre-node column wrap check: use actual buffer height in natural mode
+        local should_wrap_before_node = false
+        if ctx.auto_column_wrap and not distribute and not is_textflow_node and not next_is_textflow then
+            if ctx.default_cell_height then
+                -- Grid mode: use cur_y_sp
+                should_wrap_before_node = (ctx.cur_y_sp >= effective_col_height_sp)
+            else
+                -- Natural mode: use actual buffer height
+                if #col_buffer > 0 then
+                    local col_start_y = col_buffer[1].y_sp or 0
+                    local base_gap = ctx.default_cell_gap or 0
+                    local buffer_height = calculate_buffer_height(col_buffer, base_gap)
+                    local total_height = col_start_y + buffer_height
+                    should_wrap_before_node = (total_height >= effective_col_height_sp)
+                end
+            end
+        end
+
+        if should_wrap_before_node then
             do_flush()
             accumulate_free_mode_col_width(ctx, params)
             wrap_to_next_column(ctx, p_cols, interval, grid_height, base_indent, true, false)

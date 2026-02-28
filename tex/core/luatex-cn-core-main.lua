@@ -315,11 +315,11 @@ local function init_engine_context(box_num, params)
         -- Unified layout: default_cell_height (nil=natural, >0=grid) and default_cell_gap
         -- Grid mode: every character occupies exactly one grid_height cell, no gap
         -- Natural mode: cell height determined by font_size, with user-specified gap
-        -- Textbox always uses grid mode; non-textbox follows _G.content.layout_mode
-        default_cell_height = (is_textbox or (_G.content.layout_mode or "grid") == "grid")
+        -- Mode decision: respect user's layout_mode setting even for textbox-based content
+        default_cell_height = ((_G.content.layout_mode or "grid") == "grid")
             and g_height or nil,
         default_cell_width = nil,  -- reserved for future per-character width override
-        default_cell_gap = (not is_textbox and (_G.content.layout_mode or "grid") ~= "grid")
+        default_cell_gap = ((_G.content.layout_mode or "grid") ~= "grid")
             and (_G.content.inter_cell_gap or 0) or 0,
         col_height_sp = content_height_sp,
         -- Column geometry bundle for position functions

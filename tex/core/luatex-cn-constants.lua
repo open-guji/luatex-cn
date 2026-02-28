@@ -40,6 +40,8 @@ constants.ATTR_TEXTBOX_WIDTH = luatexbase.attributes.cnverticaltextboxwidth or
     luatexbase.new_attribute("cnverticaltextboxwidth")
 constants.ATTR_TEXTBOX_HEIGHT = luatexbase.attributes.cnverticaltextboxheight or
     luatexbase.new_attribute("cnverticaltextboxheight")
+constants.ATTR_TEXTBOX_HEIGHT_SP = luatexbase.attributes.cnverticaltextboxheightsp or
+    luatexbase.new_attribute("cnverticaltextboxheightsp")
 constants.ATTR_TEXTBOX_DISTRIBUTE = luatexbase.attributes.cnverticaltextboxdistribute or
     luatexbase.new_attribute("cnverticaltextboxdistribute")
 

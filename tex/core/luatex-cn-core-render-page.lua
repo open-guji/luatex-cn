@@ -142,11 +142,27 @@ local function calculate_render_context(ctx)
     local border_shape = visual.border_shape or "none"
     local border_color_str = utils.normalize_rgb(visual.border_color) or "0 0 0"
     local border_width = constants.to_dimen(visual.border_width) or (65536 * 0.4)
-    local border_margin = constants.to_dimen(visual.border_margin) or (65536 * 1)
+    local border_margin = constants.resolve_dimen(visual.border_margin, grid_height) or (65536 * 1)
+    -- Separate x/y margins: if border_margin_x/y set, use them; else fallback to border_margin
+    local border_margin_x = (visual.border_margin_x and visual.border_margin_x ~= "")
+        and constants.resolve_dimen(visual.border_margin_x, grid_width) or border_margin
+    local border_margin_y = (visual.border_margin_y and visual.border_margin_y ~= "")
+        and constants.resolve_dimen(visual.border_margin_y, grid_height) or border_margin
+    local outer_margin = constants.resolve_dimen(visual.outer_margin, grid_height) or 0
     -- Textbox outer border (drawn around decorative shape, not via body text mechanism)
     local textbox_outer_border = visual.textbox_outer_border or false
     local textbox_ob_thickness = constants.to_dimen(visual.textbox_ob_thickness) or (65536 * 1)
     local textbox_ob_sep = constants.to_dimen(visual.textbox_ob_sep) or (65536 * 2)
+
+    -- Available width for glyph squeeze inside bordered TextBox
+    -- When border_margin_x > 0, chars wider than (grid_width - 2*margin_x) get h-scaled
+    local border_avail_width = 0
+    if border_shape ~= "none" and border_margin_x > 0 and grid_width > 0 then
+        local avail = grid_width - 2 * border_margin_x
+        if avail > 0 and avail < grid_width then
+            border_avail_width = avail
+        end
+    end
 
     -- Colors: border from engine (already normalized in main.lua)
     local b_rgb_str = engine.border_rgb_str
@@ -192,6 +208,10 @@ local function calculate_render_context(ctx)
         border_color_str = border_color_str,
         border_width = border_width,
         border_margin = border_margin,
+        border_margin_x = border_margin_x,
+        border_margin_y = border_margin_y,
+        outer_margin = outer_margin,
+        border_avail_width = border_avail_width,
         -- Textbox outer border params
         textbox_outer_border = textbox_outer_border,
         textbox_ob_thickness = textbox_ob_thickness,
@@ -275,11 +295,11 @@ local function render_single_page(p_head, p_max_col, p, layout_map, params, ctx,
 
     -- For textbox with user-specified height, use that height for border rendering.
     -- user_height_sp is only set when user explicitly specifies height (e.g., height=24cm).
-    -- Subtract 2*border_margin so that user height describes the outer border extent,
-    -- since render_borders adds border_margin back: final = shape_height + 2*border_m.
+    -- Subtract 2*border_margin_y so that user height describes the outer border extent,
+    -- since render_borders adds border_margin_y back: final = shape_height + 2*border_m_y.
     if page.is_textbox and engine.user_height_sp then
-        local border_m = ctx.border_margin or 0
-        local target = engine.user_height_sp - 2 * border_m
+        local border_m_y = ctx.border_margin_y or ctx.border_margin or 0
+        local target = engine.user_height_sp - 2 * border_m_y
         if target > actual_height_sp then
             actual_height_sp = target
         end
@@ -382,6 +402,8 @@ local function render_single_page(p_head, p_max_col, p, layout_map, params, ctx,
         border_color_str = ctx.border_color_str,
         border_width = ctx.border_width,
         border_margin = ctx.border_margin,
+        border_margin_x = ctx.border_margin_x,
+        border_margin_y = ctx.border_margin_y,
         background_rgb_str = ctx.background_rgb_str,
         -- Taitou raised border
         col_min_y_sp = col_min_y_sp,
@@ -425,6 +447,16 @@ local function render_single_page(p_head, p_max_col, p, layout_map, params, ctx,
     -- This ensures TextBox output box has correct dimensions in main document flow
     local return_cols = page.is_textbox and actual_cols or p_total_cols
     local return_height_sp = page.is_textbox and actual_height_sp or engine.content_height_sp
+    -- Include border_margin in TextBox height only in natural layout mode
+    -- In grid mode, height is quantized to integer rows so margin is absorbed by ceil()
+    local is_natural = _G.content and _G.content.layout_mode == "natural"
+    if page.is_textbox and is_natural and ctx.border_shape ~= "none" and (ctx.border_margin or 0) > 0 then
+        return_height_sp = return_height_sp + 2 * ctx.border_margin
+    end
+    -- Add outer_margin for extra spacing after TextBox (independent of layout mode)
+    if page.is_textbox and (ctx.outer_margin or 0) > 0 then
+        return_height_sp = return_height_sp + ctx.outer_margin
+    end
     return D.tonode(p_head), return_cols, return_height_sp
 end
 

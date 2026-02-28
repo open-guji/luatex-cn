@@ -45,6 +45,9 @@
 \tl_new:N \l__luatexcn_textbox_border_color_tl
 \tl_new:N \l__luatexcn_textbox_border_width_tl
 \tl_new:N \l__luatexcn_textbox_border_margin_tl
+\tl_new:N \l__luatexcn_textbox_border_margin_x_tl
+\tl_new:N \l__luatexcn_textbox_border_margin_y_tl
+\tl_new:N \l__luatexcn_textbox_outer_margin_tl
 \tl_new:N \l__luatexcn_textbox_border_rgb_tl
 \bool_new:N \l__luatexcn_textbox_outer_border_bool
 \tl_new:N \l__luatexcn_textbox_outer_border_thickness_tl
@@ -97,6 +100,12 @@
     border-width .initial:n = {0.4pt},
     border-margin .tl_set:N = \l__luatexcn_textbox_border_margin_tl,
     border-margin .initial:n = {0pt},
+    border-margin-x .tl_set:N = \l__luatexcn_textbox_border_margin_x_tl,
+    border-margin-x .initial:n = {},
+    border-margin-y .tl_set:N = \l__luatexcn_textbox_border_margin_y_tl,
+    border-margin-y .initial:n = {},
+    outer-margin .tl_set:N = \l__luatexcn_textbox_outer_margin_tl,
+    outer-margin .initial:n = {0pt},
     outer-border .bool_set:N = \l__luatexcn_textbox_outer_border_bool,
     outer-border .initial:n = false,
     outer-border-thickness .tl_set:N = \l__luatexcn_textbox_outer_border_thickness_tl,
@@ -230,6 +239,9 @@
       border_color~=~[=[\l__luatexcn_textbox_border_rgb_tl]=],
       border_width~=~[=[\luaescapestring{\l__luatexcn_textbox_border_width_tl}]=],
       border_margin~=~[=[\luaescapestring{\l__luatexcn_textbox_border_margin_tl}]=],
+      border_margin_x~=~[=[\luaescapestring{\l__luatexcn_textbox_border_margin_x_tl}]=],
+      border_margin_y~=~[=[\luaescapestring{\l__luatexcn_textbox_border_margin_y_tl}]=],
+      outer_margin~=~[=[\luaescapestring{\l__luatexcn_textbox_outer_margin_tl}]=],
       outer_border~=~\bool_if:NTF~\l__luatexcn_textbox_outer_border_bool~{true}{false},
       outer_border_thickness~=~[=[\luaescapestring{\l__luatexcn_textbox_outer_border_thickness_tl}]=],
       outer_border_sep~=~[=[\luaescapestring{\l__luatexcn_textbox_outer_border_sep_tl}]=]
@@ -268,6 +280,7 @@
 \NewDocumentCommand{\八角框}{ m }{\TextBox[border-shape=octagon]{#1}}
 \NewDocumentCommand{\带圈}{ m }{\TextBox[border-shape=circle]{#1}}
 \NewDocumentCommand{\反白八角框}{ m }{\TextBox[background-color={0.2 0.2 0.2}, font-color=white, border-shape=octagon, border-color=white]{#1}}
+\NewDocumentCommand{\墨围}{ m }{\TextBox[border-shape=rect, grid-width=1em, grid-height=1.2em, border-margin-x=0.05em, border-margin-y=0.1em, outer-margin=0.15em]{#1}}
 % Simplified Chinese / 简体
 \NewCommandCopy{\文本框}{\TextBox}
 \NewCommandCopy{\填充文本框}{\FillTextBox}
@@ -276,8 +289,10 @@
 \NewCommandCopy{\octagon}{\八角框}
 \NewCommandCopy{\circled}{\带圈}
 \NewCommandCopy{\invertedOctagon}{\反白八角框}
+\NewCommandCopy{\bordered}{\墨围}
 % Traditional Chinese / 繁体 (带圈→帶圈)
 \NewCommandCopy{\帶圈}{\带圈}
+\NewCommandCopy{\墨圍}{\墨围}
 
 % ============================================================
 % Chinese key aliases / 中文 Key 别名
@@ -308,6 +323,9 @@
     边框色 .tl_set:N = \l__luatexcn_textbox_border_color_tl,
     边框宽 .tl_set:N = \l__luatexcn_textbox_border_width_tl,
     边框间距 .tl_set:N = \l__luatexcn_textbox_border_margin_tl,
+    边框横距 .tl_set:N = \l__luatexcn_textbox_border_margin_x_tl,
+    边框纵距 .tl_set:N = \l__luatexcn_textbox_border_margin_y_tl,
+    外间距 .tl_set:N = \l__luatexcn_textbox_outer_margin_tl,
     外框 .bool_set:N = \l__luatexcn_textbox_outer_border_bool,
     外框粗细 .tl_set:N = \l__luatexcn_textbox_outer_border_thickness_tl,
     外框间距 .tl_set:N = \l__luatexcn_textbox_outer_border_sep_tl,
@@ -331,6 +349,9 @@
     邊框色 .tl_set:N = \l__luatexcn_textbox_border_color_tl,
     邊框寬 .tl_set:N = \l__luatexcn_textbox_border_width_tl,
     邊框間距 .tl_set:N = \l__luatexcn_textbox_border_margin_tl,
+    邊框橫距 .tl_set:N = \l__luatexcn_textbox_border_margin_x_tl,
+    邊框縱距 .tl_set:N = \l__luatexcn_textbox_border_margin_y_tl,
+    外間距 .tl_set:N = \l__luatexcn_textbox_outer_margin_tl,
     外框粗細 .tl_set:N = \l__luatexcn_textbox_outer_border_thickness_tl,
     外框間距 .tl_set:N = \l__luatexcn_textbox_outer_border_sep_tl,
   }

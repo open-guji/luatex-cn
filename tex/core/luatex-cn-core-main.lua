@@ -534,6 +534,9 @@ local function generate_physical_pages(list, params, engine_ctx, plugin_contexts
         border_color = current_style.border_color or "0 0 0",
         border_width = current_style.border_width or "0.4pt",
         border_margin = current_style.border_margin or params.border_margin or "1pt",
+        border_margin_x = params.border_margin_x,
+        border_margin_y = params.border_margin_y,
+        outer_margin = params.outer_margin or "0pt",
         -- Textbox outer border (separate from body text outer border, drawn around decorative shape)
         textbox_outer_border = params.outer_border or false,
         textbox_ob_thickness = params.outer_border_thickness,
@@ -637,6 +640,10 @@ local function generate_physical_pages(list, params, engine_ctx, plugin_contexts
                 and math.ceil(page_info.height_sp / engine_ctx.g_height)
                 or engine_ctx.line_limit
             node.set_attribute(new_box, constants.ATTR_TEXTBOX_HEIGHT, tb_rows)
+            -- Store precise height in sp for natural layout mode
+            if page_info.height_sp then
+                node.set_attribute(new_box, constants.ATTR_TEXTBOX_HEIGHT_SP, math.floor(page_info.height_sp))
+            end
         else
             node.set_attribute(new_box, constants.ATTR_TEXTBOX_WIDTH, 0)
             node.set_attribute(new_box, constants.ATTR_TEXTBOX_HEIGHT, 0)

@@ -206,6 +206,23 @@ function footnote.render(head, layout_map, render_ctx, ctx, engine_ctx, page_idx
 
                         fn_row = fn_row + 1
                         node_count = node_count + 1
+                    elseif nid == constants.HLIST or nid == constants.VLIST then
+                        -- TextBox block: already rendered, just position it
+                        local tb_h_rows = D.get_attribute(node_head, constants.ATTR_TEXTBOX_HEIGHT) or 0
+                        if tb_h_rows > 0 then
+                            local box_h = D.getfield(node_head, "height") or 0
+                            local box_w = D.getfield(node_head, "width") or 0
+                            local final_y_top = -(fn_row * engine_ctx.g_height + engine_ctx.shift_y)
+                            D.setfield(node_head, "shift", -final_y_top + box_h)
+                            local k_pre = D.new(constants.KERN)
+                            D.setfield(k_pre, "kern", fn_x)
+                            local k_post = D.new(constants.KERN)
+                            D.setfield(k_post, "kern", -(fn_x + box_w))
+                            d_head = D.insert_before(d_head, node_head, k_pre)
+                            D.insert_after(d_head, node_head, k_post)
+                            fn_row = fn_row + tb_h_rows
+                            node_count = node_count + 1
+                        end
                     end
                     node_head = D.getnext(node_head)
                 end

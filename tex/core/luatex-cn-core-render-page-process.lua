@@ -62,6 +62,12 @@ local function handle_glyph_node(curr, p_head, pos, params, ctx)
     local w = D.getfield(curr, "width") or 0
 
     local v_scale = pos.v_scale or 1.0
+    -- Per-glyph horizontal scale: squeeze when char is wider than border available width
+    local h_scale = 1.0
+    local avail_w = ctx.border_avail_width or 0
+    if avail_w > 0 and w > avail_w then
+        h_scale = avail_w / w
+    end
 
     -- column_aligns is textbox-specific, still comes from params.visual
     local h_align = "center"
@@ -136,18 +142,19 @@ local function handle_glyph_node(curr, p_head, pos, params, ctx)
 
         p_head = D.insert_before(p_head, curr, n_start)
         D.insert_after(p_head, curr, n_end)
-    elseif v_scale == 1.0 then
+    elseif v_scale == 1.0 and h_scale == 1.0 then
         D.setfield(curr, "xoffset", final_x)
         D.setfield(curr, "yoffset", final_y)
     else
-        -- Squeeze using PDF matrix
-        local x_bp = final_x * utils.sp_to_bp
+        -- Squeeze using PDF matrix: [h_scale 0 0 v_scale x y]
+        -- When h_scale < 1, shift x to center the squeezed glyph within its cell
+        local h_center_offset = (h_scale < 1.0) and (w * (1.0 - h_scale) / 2) or 0
+        local x_bp = (final_x + h_center_offset) * utils.sp_to_bp
         local y_bp = final_y * utils.sp_to_bp
         D.setfield(curr, "xoffset", 0)
         D.setfield(curr, "yoffset", 0)
 
-        -- Matrix: [1 0 0 v_scale x y]
-        local literal_str = string.format("q 1 0 0 %.4f %.4f %.4f cm", v_scale, x_bp, y_bp)
+        local literal_str = string.format("q %.4f 0 0 %.4f %.4f %.4f cm", h_scale, v_scale, x_bp, y_bp)
         local n_start = utils.create_pdf_literal(literal_str)
         local n_end = utils.create_pdf_literal(utils.create_graphics_state_end())
 
@@ -196,6 +203,18 @@ local function handle_block_node(curr, p_head, pos, ctx)
     local rtl_col_left = ctx.p_total_cols - (pos.col + (pos.width or 1))
     local final_x = text_position.get_column_x(rtl_col_left, ctx.col_geom)
         + ctx.half_thickness + ctx.shift_x
+
+    -- Center TextBox content within outer column.
+    -- TextBox grid_width may differ from outer column width; offset to center.
+    local tb_w_attr = D.get_attribute(curr, constants.ATTR_TEXTBOX_WIDTH)
+    if tb_w_attr and tb_w_attr > 0 then
+        local col_width = text_position.get_column_width(pos.col, ctx.col_geom)
+        local tb_content_width = (pos.width or 1) * col_width
+        if w < tb_content_width then
+            -- TextBox narrower than column: center it
+            final_x = final_x + math.floor((tb_content_width - w) / 2)
+        end
+    end
 
     local final_y_top = -pos.y_sp - ctx.shift_y
     D.setfield(curr, "shift", -final_y_top + h)

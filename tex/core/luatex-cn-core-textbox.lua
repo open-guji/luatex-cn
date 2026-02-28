@@ -218,6 +218,9 @@ local function build_sub_params(params, col_aligns)
         border_shape = params.border_shape or "none",
         border_width = border_width,
         border_margin = params.border_margin or "1pt",
+        border_margin_x = params.border_margin_x,
+        border_margin_y = params.border_margin_y,
+        outer_margin = params.outer_margin or "0pt",
         -- Outer border params (textbox-level)
         outer_border = (params.outer_border == true or params.outer_border == "true"),
         outer_border_thickness = params.outer_border_thickness,
@@ -693,6 +696,10 @@ function textbox.place_textbox_node(ctx, node, tb_w, tb_h, params, callbacks)
     end
 
     local gh = params.grid_height or 655360
+    -- Use precise sp height only in natural layout mode (not grid mode)
+    local is_natural = _G.content and _G.content.layout_mode == "natural"
+    local height_sp = is_natural and D.get_attribute(node, constants.ATTR_TEXTBOX_HEIGHT_SP) or nil
+    local cell_height = height_sp or (tb_h * gh)
     callbacks.push_buffer({
         node = node,
         page = ctx.cur_page,
@@ -702,10 +709,10 @@ function textbox.place_textbox_node(ctx, node, tb_w, tb_h, params, callbacks)
         is_block = true,
         width = tb_w,
         height = tb_h,
-        cell_height = tb_h * gh,
+        cell_height = cell_height,
     })
     ctx.cur_row = ctx.cur_row + tb_h
-    ctx.cur_y_sp = ctx.cur_row * (params.grid_height or 655360)
+    ctx.cur_y_sp = ctx.cur_y_sp + cell_height
     callbacks.move_next()
 end
 

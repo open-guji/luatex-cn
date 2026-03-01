@@ -210,8 +210,18 @@
                 \setluatexattribute\cnverticalblockid
                   { \int_use:N \g_luatexcn_paragraph_block_id_int }
                 \penalty -10002\relax
-                % Output marker directly (natural layout stacks characters automatically)
+                % Mark marker glyphs: value = target total height in sp
+                \lua_now:e {
+                  local~c~=~require('core.luatex-cn-constants')
+                  local~fn_h~=~\dim_to_decimal_in_sp:n { \l__luatexcn_footnote_resolved_size_dim }
+                  local~total_sp~=~math.floor(\int_use:N \l__luatexcn_footnote_marker_height_int ~*~fn_h)
+                  tex.setattribute(c.ATTR_FOOTNOTE_MARKER,~total_sp)
+                }
                 \__luatexcn_footnote_write_marker:n { ##1 }
+                \lua_now:e {
+                  local~c~=~require('core.luatex-cn-constants')
+                  tex.setattribute(c.ATTR_FOOTNOTE_MARKER,~-2147483647)
+                }
                 \seq_item:Nn \g__luatexcn_footnote_content_seq { ##1 }
                 \lua_now:e {
                   local~sr~=~require('util.luatex-cn-style-registry')

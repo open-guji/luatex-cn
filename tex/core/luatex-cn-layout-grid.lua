@@ -942,6 +942,48 @@ local function flush_buffer(col_buffer, ctx, grid_height, distribute, layout_map
         end
     end
 
+    -- Redistribute footnote marker groups (︻一︼ etc.) to fixed height.
+    -- Attribute value = total target height in sp (e.g., 2 * 12pt = 24pt).
+    -- Layout: open bracket 0.25*fn_size at top, middle chars 1.5*fn_size centered,
+    --         close bracket 0.25*fn_size at bottom.
+    do
+        local i = 1
+        while i <= N do
+            local mv = D.get_attribute(col_buffer[i].node, constants.ATTR_FOOTNOTE_MARKER)
+            if mv and mv > 0 then
+                local gs, ge = i, i
+                while ge + 1 <= N do
+                    local nv = D.get_attribute(col_buffer[ge + 1].node, constants.ATTR_FOOTNOTE_MARKER)
+                    if nv == mv then ge = ge + 1 else break end
+                end
+                local glen = ge - gs + 1
+                if glen >= 3 then
+                    local total_h = mv  -- already in sp
+                    local bracket_h = math.floor(total_h / 8)  -- ~0.25 * fn_size per bracket
+                    local mid_total = total_h - 2 * bracket_h
+                    local mid_count = glen - 2
+                    local mid_slot = mid_total / mid_count
+                    local sy = col_buffer[gs].y_sp
+                    -- Open bracket
+                    col_buffer[gs].y_sp = sy
+                    col_buffer[gs].cell_height = bracket_h
+                    -- Middle characters
+                    local mid_start = sy + bracket_h
+                    for j = gs + 1, ge - 1 do
+                        col_buffer[j].y_sp = mid_start + (j - gs - 1) * mid_slot
+                        col_buffer[j].cell_height = math.floor(mid_slot)
+                    end
+                    -- Close bracket
+                    col_buffer[ge].y_sp = sy + total_h - bracket_h
+                    col_buffer[ge].cell_height = bracket_h
+                end
+                i = ge + 1
+            else
+                i = i + 1
+            end
+        end
+    end
+
     for i, entry in ipairs(col_buffer) do
         local y_sp = distribute_y_sp[i] or entry.y_sp
         local v_scale = (distribute and N > 1) and v_scale_all or 1.0

@@ -93,6 +93,10 @@ constants.ATTR_COLUMN_BREAK_INDENT = luatexbase.attributes.cnverticalcolbreakind
 constants.ATTR_HALIGN = luatexbase.attributes.cnverticalhalign or
     luatexbase.new_attribute("cnverticalhalign")
 
+-- Footnote marker group: value = marker_height (number of content grid cells)
+constants.ATTR_FOOTNOTE_MARKER = luatexbase.attributes.cnverticalfnmarker or
+    luatexbase.new_attribute("cnverticalfnmarker")
+
 -- Constants for Side Pizhu
 constants.SIDENOTE_USER_ID = 202601
 constants.FLOATING_TEXTBOX_USER_ID = 202602

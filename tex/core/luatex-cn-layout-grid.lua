@@ -909,39 +909,78 @@ local function flush_buffer(col_buffer, ctx, grid_height, distribute, layout_map
     -- Natural mode (no default_cell_height): recalculate positions.
     -- Natural mode gap strategy (0.1em proportional gap):
     --   1. Base gap = 0.1 * cell_height per character (proportional to font size)
-    --   2. If column is nearly full (remaining < 1 char), stretch gap so
-    --      total height = col_height_sp (bottom-aligned with full columns)
+    --   2. If column is nearly full (remaining < 1 char), stretch stretchable gaps
+    --      so total height = col_height_sp (bottom-aligned with full columns)
+    --   Stretchable gaps: only between regular text glyphs (not marker groups, not blocks)
     if not ctx.default_cell_height and N > 0 and not distribute then
+        -- Classify each gap: stretchable, fixed, or none
+        -- gap_fixed[i] = fixed gap size in sp (0 for markers, 0.1em for blocks)
+        -- is_stretchable[i] = true only for text-text gaps
+        local is_stretchable = {}
+        local gap_fixed = {}
         local total_cells = 0
+        local total_fixed_gaps = 0
         local total_base_gaps = 0
+        local n_stretchable = 0
         for i, e in ipairs(col_buffer) do
             local ch = e.cell_height or grid_height
             total_cells = total_cells + ch
             if i < N then
-                total_base_gaps = total_base_gaps + math.floor(ch * GAP_RATIO)
+                local cur_is_marker = D.get_attribute(e.node, constants.ATTR_FOOTNOTE_MARKER)
+                local nxt = col_buffer[i + 1]
+                local nxt_is_marker = D.get_attribute(nxt.node, constants.ATTR_FOOTNOTE_MARKER)
+                local cur_is_block = e.is_block
+                if (cur_is_marker and cur_is_marker > 0)
+                    or (nxt_is_marker and nxt_is_marker > 0) then
+                    -- Marker groups: no gap
+                    is_stretchable[i] = false
+                    gap_fixed[i] = 0
+                elseif cur_is_block then
+                    -- Block (墨围 etc.): fixed 0.1em gap, not stretchable
+                    local fg = math.floor(ch * GAP_RATIO)
+                    is_stretchable[i] = false
+                    gap_fixed[i] = fg
+                    total_fixed_gaps = total_fixed_gaps + fg
+                else
+                    -- Regular text: stretchable 0.1em gap
+                    local bg = math.floor(ch * GAP_RATIO)
+                    is_stretchable[i] = true
+                    gap_fixed[i] = bg
+                    n_stretchable = n_stretchable + 1
+                    total_base_gaps = total_base_gaps + bg
+                end
             end
         end
-        local occupied = total_cells + total_base_gaps + col_start_y
+        local occupied = total_cells + total_base_gaps + total_fixed_gaps + col_start_y
         local remaining = ctx.col_height_sp - occupied
 
         if N == 1 then
             -- Keep original y_sp (preserves indent offset)
-        elseif remaining >= 0 and remaining < grid_height + math.floor(grid_height * GAP_RATIO) and N > 1 then
-            -- Nearly full: stretch gap so last char bottom = col_height_sp
-            local total_gap = ctx.col_height_sp - total_cells - col_start_y
-            local gap = total_gap / (N - 1)
+        elseif remaining >= 0 and remaining < grid_height + math.floor(grid_height * GAP_RATIO) and N > 1 and n_stretchable > 0 then
+            -- Nearly full: stretch only stretchable gaps; fixed gaps keep their size
+            local total_available = ctx.col_height_sp - total_cells - col_start_y - total_fixed_gaps
+            local stretch_gap = total_available / n_stretchable
             local y = col_start_y
-            for _, e in ipairs(col_buffer) do
+            for i, e in ipairs(col_buffer) do
                 e.y_sp = y
-                y = y + (e.cell_height or grid_height) + gap
+                local ch = e.cell_height or grid_height
+                if i < N then
+                    y = y + ch + (is_stretchable[i] and stretch_gap or gap_fixed[i])
+                else
+                    y = y + ch
+                end
             end
         else
-            -- Not full: use 0.1em gap per character
+            -- Not full: use 0.1em for stretchable and block gaps; 0 for markers
             local y = col_start_y
-            for _, e in ipairs(col_buffer) do
+            for i, e in ipairs(col_buffer) do
                 local ch = e.cell_height or grid_height
                 e.y_sp = y
-                y = y + ch + math.floor(ch * GAP_RATIO)
+                if i < N then
+                    y = y + ch + gap_fixed[i]
+                else
+                    y = y + ch
+                end
             end
         end
     end

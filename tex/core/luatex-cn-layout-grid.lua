@@ -382,8 +382,6 @@ local function handle_penalty_breaks(p_val, ctx, flush_buffer_fn, p_cols, interv
     elseif p_val == constants.PENALTY_FORCE_COLUMN or p_val == constants.PENALTY_TAITOU then
         -- Forced column break (\换行 command) or taitou column break (\抬头 command)
         flush_buffer_fn()
-        -- Use max(cur_column_indent, 0) to prevent negative indent (抬头) from
-        -- causing false-positive wraps.
         local effective_indent = math.max(ctx.cur_column_indent, 0)
         if ctx.cur_row > effective_indent then
             -- Free mode: accumulate column width for page wrap
@@ -808,10 +806,6 @@ local function handle_glyph_node(t, ctx, col_buffer, layout_map, grid_height,
             flush_fn()
             accumulate_free_mode_col_width(ctx, params)
             wrap_to_next_column(ctx, p_cols, interval, grid_height, base_indent or indent, false, false)
-            -- Re-apply indentation after column wrap: wrap resets cur_y_sp=0,
-            -- but this character (the first in the new column) needs indent applied.
-            -- The main loop's apply_indentation was already called before entering
-            -- handle_glyph_node, so it won't run again for this node.
             apply_indentation(ctx, base_indent or indent)
         end
 
@@ -911,36 +905,27 @@ local function flush_buffer(col_buffer, ctx, grid_height, distribute, layout_map
     end
 
     -- Natural mode (no default_cell_height): recalculate positions.
-    -- Justify nearly-full columns so top/bottom characters align across columns.
-    -- Layout phase accumulates y_sp with gap for overflow checks, but flush
-    -- recalculates from scratch. For nearly-full columns, distribute the full
-    -- available space (including gap) evenly to align top and bottom.
+    -- Two-pass gap strategy:
+    --   1. Base gap = 1pt between all characters (uniform minimum spacing)
+    --   2. If column is nearly full (remaining < 1 char), stretch gap so
+    --      total height = col_height_sp (bottom-aligned with full columns)
     if not ctx.default_cell_height and N > 0 and not distribute then
         local total_cells = 0
-        local min_cell = math.huge
         for _, e in ipairs(col_buffer) do
-            local ch = e.cell_height or grid_height
-            total_cells = total_cells + ch
-            if ch < min_cell then min_cell = ch end
+            total_cells = total_cells + (e.cell_height or grid_height)
         end
-        -- Check remaining based on layout-phase spacing (with gap) to detect full columns
-        local base_gap = ctx.default_cell_gap or 0
-        local occupied_with_gap = total_cells + (N - 1) * base_gap + col_start_y
-        local remaining_with_gap = ctx.col_height_sp - occupied_with_gap
 
-        -- Target bottom: where the last char should end after justification.
-        -- Use layout-phase occupied height (with gap), capped at col_height_sp.
-        -- This preserves the original gap-based spacing rather than stretching
-        -- to the full col_height_sp (which would over-stretch when punctuation
-        -- marks occupy half cells).
-        local target_bottom = math.min(occupied_with_gap, ctx.col_height_sp)
+        local render_gap = 1 * 65536  -- 1pt base gap for rendering
+        local layout_gap = ctx.default_cell_gap or 0  -- 2pt gap used in layout phase
+        -- Use layout-phase gap to check if column was "full" during layout
+        local occupied_layout = total_cells + (N - 1) * layout_gap + col_start_y
+        local remaining_layout = ctx.col_height_sp - occupied_layout
 
         if N == 1 then
             -- Keep original y_sp (preserves indent offset)
-        elseif remaining_with_gap >= 0 and remaining_with_gap < min_cell + base_gap and N > 1 then
-            -- Nearly full (can't fit one more char with gap): justify
-            -- Distribute gap so last char's bottom aligns to target_bottom
-            local total_gap = target_bottom - total_cells - col_start_y
+        elseif remaining_layout >= 0 and remaining_layout < grid_height + layout_gap and N > 1 then
+            -- Nearly full: stretch gap so last char bottom = col_height_sp
+            local total_gap = ctx.col_height_sp - total_cells - col_start_y
             local gap = total_gap / (N - 1)
             local y = col_start_y
             for _, e in ipairs(col_buffer) do
@@ -948,11 +933,11 @@ local function flush_buffer(col_buffer, ctx, grid_height, distribute, layout_map
                 y = y + (e.cell_height or grid_height) + gap
             end
         else
-            -- Normal: tight packing, no stretching
+            -- Not full: use fixed 1pt gap
             local y = col_start_y
             for _, e in ipairs(col_buffer) do
                 e.y_sp = y
-                y = y + (e.cell_height or grid_height)
+                y = y + (e.cell_height or grid_height) + render_gap
             end
         end
     end

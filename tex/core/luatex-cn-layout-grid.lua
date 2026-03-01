@@ -94,7 +94,6 @@ local mark_occupied = h.mark_occupied
 local get_cell_height = h.get_cell_height
 local resolve_cell_height = h.resolve_cell_height
 local resolve_cell_width = h.resolve_cell_width
-local resolve_cell_gap = h.resolve_cell_gap
 
 -- Export _internal for testing
 local _internal = {}
@@ -699,15 +698,17 @@ end
 --- Helper: Calculate actual accumulated height in column buffer
 -- Returns total height of all characters + gaps between them
 -- @param col_buffer (table) Buffer of character entries
--- @param base_gap (number) Default gap between characters in sp
 -- @return (number) Total accumulated height in sp
-local function calculate_buffer_height(col_buffer, base_gap)
+local GAP_RATIO = 0.1  -- 0.1em: gap between characters = 10% of cell height
+
+local function calculate_buffer_height(col_buffer)
     if #col_buffer == 0 then return 0 end
     local total_height = 0
     for i, entry in ipairs(col_buffer) do
-        total_height = total_height + (entry.cell_height or 0)
+        local ch = entry.cell_height or 0
+        total_height = total_height + ch
         if i < #col_buffer then
-            total_height = total_height + base_gap
+            total_height = total_height + math.floor(ch * GAP_RATIO)
         end
     end
     return total_height
@@ -771,7 +772,8 @@ local function handle_glyph_node(t, ctx, col_buffer, layout_map, grid_height,
         -- Unified layout: resolve cell height and gap
         local cell_h = resolve_cell_height(t, grid_height, ctx.default_cell_height, ctx.punct_config)
         local cell_w = resolve_cell_width(t, ctx.default_cell_width)
-        local gap = resolve_cell_gap(t, ctx.default_cell_gap)
+        -- Natural mode: 0.1em gap (proportional to font size); grid mode: 0
+        local gap = ctx.default_cell_height and 0 or math.floor(cell_h * GAP_RATIO)
 
         -- Track last character position for decoration markers
         ctx.last_char_page = ctx.cur_page
@@ -791,12 +793,12 @@ local function handle_glyph_node(t, ctx, col_buffer, layout_map, grid_height,
             else
                 -- Natural mode: calculate actual height from buffer
                 local col_start_y = #col_buffer > 0 and col_buffer[1].y_sp or 0
-                local base_gap = ctx.default_cell_gap or 0
-                local buffer_height = calculate_buffer_height(col_buffer, base_gap)
+                local buffer_height = calculate_buffer_height(col_buffer)
                 local next_y = col_start_y + buffer_height + cell_h
-                -- Add one more gap for the character we're about to add
+                -- Add 0.1em gap for the character we're about to add
                 if #col_buffer > 0 then
-                    next_y = next_y + base_gap
+                    local prev_ch = col_buffer[#col_buffer].cell_height or 0
+                    next_y = next_y + math.floor(prev_ch * GAP_RATIO)
                 end
                 should_wrap = (next_y > ctx.col_height_sp)
             end
@@ -905,25 +907,26 @@ local function flush_buffer(col_buffer, ctx, grid_height, distribute, layout_map
     end
 
     -- Natural mode (no default_cell_height): recalculate positions.
-    -- Two-pass gap strategy:
-    --   1. Base gap = 1pt between all characters (uniform minimum spacing)
+    -- Natural mode gap strategy (0.1em proportional gap):
+    --   1. Base gap = 0.1 * cell_height per character (proportional to font size)
     --   2. If column is nearly full (remaining < 1 char), stretch gap so
     --      total height = col_height_sp (bottom-aligned with full columns)
     if not ctx.default_cell_height and N > 0 and not distribute then
         local total_cells = 0
-        for _, e in ipairs(col_buffer) do
-            total_cells = total_cells + (e.cell_height or grid_height)
+        local total_base_gaps = 0
+        for i, e in ipairs(col_buffer) do
+            local ch = e.cell_height or grid_height
+            total_cells = total_cells + ch
+            if i < N then
+                total_base_gaps = total_base_gaps + math.floor(ch * GAP_RATIO)
+            end
         end
-
-        local render_gap = 1 * 65536  -- 1pt base gap for rendering
-        local layout_gap = ctx.default_cell_gap or 0  -- 2pt gap used in layout phase
-        -- Use layout-phase gap to check if column was "full" during layout
-        local occupied_layout = total_cells + (N - 1) * layout_gap + col_start_y
-        local remaining_layout = ctx.col_height_sp - occupied_layout
+        local occupied = total_cells + total_base_gaps + col_start_y
+        local remaining = ctx.col_height_sp - occupied
 
         if N == 1 then
             -- Keep original y_sp (preserves indent offset)
-        elseif remaining_layout >= 0 and remaining_layout < grid_height + layout_gap and N > 1 then
+        elseif remaining >= 0 and remaining < grid_height + math.floor(grid_height * GAP_RATIO) and N > 1 then
             -- Nearly full: stretch gap so last char bottom = col_height_sp
             local total_gap = ctx.col_height_sp - total_cells - col_start_y
             local gap = total_gap / (N - 1)
@@ -933,11 +936,12 @@ local function flush_buffer(col_buffer, ctx, grid_height, distribute, layout_map
                 y = y + (e.cell_height or grid_height) + gap
             end
         else
-            -- Not full: use fixed 1pt gap
+            -- Not full: use 0.1em gap per character
             local y = col_start_y
             for _, e in ipairs(col_buffer) do
+                local ch = e.cell_height or grid_height
                 e.y_sp = y
-                y = y + (e.cell_height or grid_height) + render_gap
+                y = y + ch + math.floor(ch * GAP_RATIO)
             end
         end
     end
@@ -1166,8 +1170,7 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
                 -- Natural mode: use actual buffer height
                 if #col_buffer > 0 then
                     local col_start_y = col_buffer[1].y_sp or 0
-                    local base_gap = ctx.default_cell_gap or 0
-                    local buffer_height = calculate_buffer_height(col_buffer, base_gap)
+                    local buffer_height = calculate_buffer_height(col_buffer)
                     local total_height = col_start_y + buffer_height
                     should_wrap_before_node = (total_height >= effective_col_height_sp)
                 end

@@ -931,8 +931,19 @@ local function flush_buffer(col_buffer, ctx, grid_height, distribute, layout_map
                 local nxt_is_marker = D.get_attribute(nxt.node, constants.ATTR_FOOTNOTE_MARKER)
                 local cur_is_block = e.is_block
                 if (cur_is_marker and cur_is_marker > 0)
-                    or (nxt_is_marker and nxt_is_marker > 0) then
-                    -- Marker groups: no gap
+                    and (nxt_is_marker and nxt_is_marker > 0) then
+                    -- Inside marker group: no gap
+                    is_stretchable[i] = false
+                    gap_fixed[i] = 0
+                elseif (cur_is_marker and cur_is_marker > 0)
+                    and not (nxt_is_marker and nxt_is_marker > 0) then
+                    -- Marker end → next element: fixed 0.2em gap (based on grid_height)
+                    local fg = math.floor(grid_height * 0.2)
+                    is_stretchable[i] = false
+                    gap_fixed[i] = fg
+                    total_fixed_gaps = total_fixed_gaps + fg
+                elseif (nxt_is_marker and nxt_is_marker > 0) then
+                    -- Before marker group start: no gap
                     is_stretchable[i] = false
                     gap_fixed[i] = 0
                 elseif cur_is_block then

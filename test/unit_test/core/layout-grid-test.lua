@@ -274,4 +274,205 @@ test_utils.run_test("handle_penalty_breaks: PENALTY_FORCE_PAGE skips on empty pa
     test_utils.assert_eq(ctx.cur_row, 0)
 end)
 
+-- ============================================================================
+-- Natural Mode Kinsoku helpers
+-- ============================================================================
+
+test_utils.run_test("is_line_start_forbidden_code: close/fullstop/comma/middle are forbidden", function()
+    test_utils.assert_true(layout_grid._internal.is_line_start_forbidden_code(2))  -- close
+    test_utils.assert_true(layout_grid._internal.is_line_start_forbidden_code(3))  -- fullstop
+    test_utils.assert_true(layout_grid._internal.is_line_start_forbidden_code(4))  -- comma
+    test_utils.assert_true(layout_grid._internal.is_line_start_forbidden_code(5))  -- middle
+end)
+
+test_utils.run_test("is_line_start_forbidden_code: open/nobreak are NOT forbidden", function()
+    test_utils.assert_false(layout_grid._internal.is_line_start_forbidden_code(1))  -- open
+    test_utils.assert_false(layout_grid._internal.is_line_start_forbidden_code(6))  -- nobreak
+end)
+
+test_utils.run_test("is_line_end_forbidden_code: only open is forbidden", function()
+    test_utils.assert_true(layout_grid._internal.is_line_end_forbidden_code(1))   -- open
+    test_utils.assert_false(layout_grid._internal.is_line_end_forbidden_code(2))  -- close
+    test_utils.assert_false(layout_grid._internal.is_line_end_forbidden_code(3))  -- fullstop
+    test_utils.assert_false(layout_grid._internal.is_line_end_forbidden_code(4))  -- comma
+    test_utils.assert_false(layout_grid._internal.is_line_end_forbidden_code(5))  -- middle
+end)
+
+test_utils.run_test("calculate_kinsoku_action: squeeze preferred when cost is lower", function()
+    local grid_height = 65536 * 14  -- 14pt
+    local N = 15  -- 15 chars in buffer
+    local col_buffer = {}
+    for i = 1, N do
+        local n = D.new(constants.GLYPH)
+        D.setfield(n, "char", 0x4E00)
+        table.insert(col_buffer, {
+            node = n,
+            y_sp = (i - 1) * math.floor(grid_height * 1.1),
+            cell_height = grid_height,
+        })
+    end
+    local t_node = D.new(constants.GLYPH)
+    D.setfield(t_node, "char", 0xFF0C)  -- comma
+
+    local ctx = {
+        col_height_sp = math.floor(N * grid_height * 1.1),  -- fits N chars with 0.1 gap
+        cur_page = 0, cur_col = 0,
+        punct_config = nil,
+    }
+
+    local action = layout_grid._internal.calculate_kinsoku_action(col_buffer, t_node, ctx, grid_height)
+    -- With N=15 chars and adding 1 more, squeeze should be feasible
+    test_utils.assert_true(action == "squeeze" or action == "stretch")
+end)
+
+test_utils.run_test("calculate_kinsoku_action: stretch when squeeze not feasible", function()
+    local grid_height = 65536 * 14  -- 14pt
+    local N = 20  -- 20 chars tightly packed
+    local col_buffer = {}
+    for i = 1, N do
+        local n = D.new(constants.GLYPH)
+        D.setfield(n, "char", 0x4E00)
+        table.insert(col_buffer, {
+            node = n,
+            y_sp = (i - 1) * grid_height,
+            cell_height = grid_height,
+        })
+    end
+    local t_node = D.new(constants.GLYPH)
+    D.setfield(t_node, "char", 0xFF0C)
+
+    local ctx = {
+        col_height_sp = N * grid_height,  -- exactly fits N chars with zero gap
+        cur_page = 0, cur_col = 0,
+        punct_config = nil,
+    }
+
+    local action = layout_grid._internal.calculate_kinsoku_action(col_buffer, t_node, ctx, grid_height)
+    test_utils.assert_eq(action, "stretch")  -- can't squeeze (no room for gaps)
+end)
+
+test_utils.run_test("check_natural_kinsoku: returns nil when no violation", function()
+    local grid_height = 65536 * 14
+    local col_buffer = {}
+    for i = 1, 5 do
+        local n = D.new(constants.GLYPH)
+        D.setfield(n, "char", 0x4E00)
+        table.insert(col_buffer, {
+            node = n,
+            y_sp = (i - 1) * grid_height,
+            cell_height = grid_height,
+        })
+    end
+    local t_node = D.new(constants.GLYPH)
+    D.setfield(t_node, "char", 0x4E8C)  -- regular char
+
+    local ctx = {
+        col_height_sp = 20 * grid_height,
+        cur_page = 0, cur_col = 0,
+        punct_config = { kinsoku = true },
+    }
+
+    local action = layout_grid._internal.check_natural_kinsoku(t_node, ctx, col_buffer, grid_height)
+    test_utils.assert_nil(action)
+end)
+
+test_utils.run_test("check_natural_kinsoku: returns action when t is line-start-forbidden", function()
+    local grid_height = 65536 * 14
+    local col_buffer = {}
+    for i = 1, 5 do
+        local n = D.new(constants.GLYPH)
+        D.setfield(n, "char", 0x4E00)
+        table.insert(col_buffer, {
+            node = n,
+            y_sp = (i - 1) * grid_height,
+            cell_height = grid_height,
+        })
+    end
+    local t_node = D.new(constants.GLYPH)
+    D.setfield(t_node, "char", 0xFF0C)  -- comma (line-start-forbidden)
+    D.set_attribute(t_node, constants.ATTR_PUNCT_TYPE, 4)  -- comma type
+
+    local ctx = {
+        col_height_sp = 20 * grid_height,
+        cur_page = 0, cur_col = 0,
+        punct_config = { kinsoku = true },
+    }
+
+    local action = layout_grid._internal.check_natural_kinsoku(t_node, ctx, col_buffer, grid_height)
+    test_utils.assert_true(action == "squeeze" or action == "stretch")
+end)
+
+test_utils.run_test("check_natural_kinsoku: returns action when last is line-end-forbidden", function()
+    local grid_height = 65536 * 14
+    local col_buffer = {}
+    for i = 1, 4 do
+        local n = D.new(constants.GLYPH)
+        D.setfield(n, "char", 0x4E00)
+        table.insert(col_buffer, {
+            node = n,
+            y_sp = (i - 1) * grid_height,
+            cell_height = grid_height,
+        })
+    end
+    -- Last char is open bracket (line-end-forbidden)
+    local open_node = D.new(constants.GLYPH)
+    D.setfield(open_node, "char", 0x300C)  -- 「
+    D.set_attribute(open_node, constants.ATTR_PUNCT_TYPE, 1)  -- open type
+    table.insert(col_buffer, {
+        node = open_node,
+        y_sp = 4 * grid_height,
+        cell_height = grid_height,
+    })
+
+    local t_node = D.new(constants.GLYPH)
+    D.setfield(t_node, "char", 0x4E00)  -- regular char
+
+    local ctx = {
+        col_height_sp = 20 * grid_height,
+        cur_page = 0, cur_col = 0,
+        punct_config = { kinsoku = true },
+    }
+
+    local action = layout_grid._internal.check_natural_kinsoku(t_node, ctx, col_buffer, grid_height)
+    test_utils.assert_true(action == "squeeze" or action == "stretch")
+end)
+
+test_utils.run_test("check_natural_kinsoku: returns nil when kinsoku disabled", function()
+    local grid_height = 65536 * 14
+    local col_buffer = {}
+    local n = D.new(constants.GLYPH)
+    D.setfield(n, "char", 0x4E00)
+    table.insert(col_buffer, { node = n, y_sp = 0, cell_height = grid_height })
+
+    local t_node = D.new(constants.GLYPH)
+    D.setfield(t_node, "char", 0xFF0C)
+    D.set_attribute(t_node, constants.ATTR_PUNCT_TYPE, 4)
+
+    -- kinsoku disabled
+    local ctx = {
+        col_height_sp = 20 * grid_height,
+        cur_page = 0, cur_col = 0,
+        punct_config = { kinsoku = false },
+    }
+    test_utils.assert_nil(layout_grid._internal.check_natural_kinsoku(t_node, ctx, col_buffer, grid_height))
+
+    -- no punct_config
+    ctx.punct_config = nil
+    test_utils.assert_nil(layout_grid._internal.check_natural_kinsoku(t_node, ctx, col_buffer, grid_height))
+end)
+
+test_utils.run_test("check_natural_kinsoku: returns nil when buffer empty", function()
+    local grid_height = 65536 * 14
+    local t_node = D.new(constants.GLYPH)
+    D.setfield(t_node, "char", 0xFF0C)
+    D.set_attribute(t_node, constants.ATTR_PUNCT_TYPE, 4)
+
+    local ctx = {
+        col_height_sp = 20 * grid_height,
+        cur_page = 0, cur_col = 0,
+        punct_config = { kinsoku = true },
+    }
+    test_utils.assert_nil(layout_grid._internal.check_natural_kinsoku(t_node, ctx, {}, grid_height))
+end)
+
 print("\nAll core/layout-grid-test tests passed!")

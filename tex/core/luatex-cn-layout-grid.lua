@@ -721,6 +721,101 @@ end
 
 _internal.calculate_buffer_height = calculate_buffer_height
 
+-- ============================================================================
+-- Natural Mode Kinsoku (Line-breaking Rules)
+-- ============================================================================
+-- Punctuation type codes (from ATTR_PUNCT_TYPE):
+-- 1=open, 2=close, 3=fullstop, 4=comma, 5=middle, 6=nobreak
+
+local function is_line_start_forbidden_code(code)
+    return code == 2 or code == 3 or code == 4 or code == 5
+end
+
+local function is_line_end_forbidden_code(code)
+    return code == 1
+end
+
+--- Calculate whether to squeeze or stretch for kinsoku resolution.
+-- Compares per-gap cost of each option and returns the cheaper one.
+-- @param col_buffer (table) Current column buffer (N chars)
+-- @param t_node (direct node) The character about to be placed
+-- @param ctx (table) Grid context
+-- @param grid_height (number) Grid height in sp
+-- @return (string) "squeeze" or "stretch"
+local function calculate_kinsoku_action(col_buffer, t_node, ctx, grid_height)
+    local N = #col_buffer
+    if N < 2 then return "stretch" end
+
+    local col_start_y = col_buffer[1].y_sp or 0
+    local available = ctx.col_height_sp - col_start_y
+    local base_gap = math.floor(grid_height * GAP_RATIO)
+
+    local total_cells = 0
+    for _, e in ipairs(col_buffer) do
+        total_cells = total_cells + (e.cell_height or grid_height)
+    end
+
+    -- Squeeze: fit N+1 chars in column (N gaps)
+    local t_cell_h = resolve_cell_height(t_node, grid_height, nil, ctx.punct_config)
+    local total_squeeze = total_cells + t_cell_h
+    local n_gaps_squeeze = N
+    local squeeze_cost = math.huge
+    if total_squeeze < available and n_gaps_squeeze > 0 then
+        local new_gap = (available - total_squeeze) / n_gaps_squeeze
+        squeeze_cost = math.abs(new_gap - base_gap)
+    end
+
+    -- Stretch: keep N-1 chars in column (N-2 gaps)
+    local last_cell_h = col_buffer[N].cell_height or grid_height
+    local total_stretch = total_cells - last_cell_h
+    local n_gaps_stretch = N - 2
+    local stretch_cost = math.huge
+    if n_gaps_stretch > 0 then
+        local new_gap = (available - total_stretch) / n_gaps_stretch
+        stretch_cost = math.abs(new_gap - base_gap)
+    elseif N == 2 then
+        stretch_cost = 0
+    end
+
+    dbg.log(string.format(
+        "kinsoku cost: squeeze=%.2f stretch=%.2f (base_gap=%d, N=%d) [p:%d c:%d]",
+        squeeze_cost, stretch_cost, base_gap, N, ctx.cur_page, ctx.cur_col))
+
+    return squeeze_cost <= stretch_cost and "squeeze" or "stretch"
+end
+
+--- Check if a kinsoku violation would occur at column wrap point.
+-- Called when should_wrap=true in natural mode.
+-- @param t (direct node) Character about to be placed (would go to next column)
+-- @param ctx (table) Grid context
+-- @param col_buffer (table) Current column buffer
+-- @param grid_height (number) Grid height in sp
+-- @return (string|nil) "squeeze", "stretch", or nil (no violation)
+local function check_natural_kinsoku(t, ctx, col_buffer, grid_height)
+    if #col_buffer < 1 then return nil end
+    if not ctx.punct_config or not ctx.punct_config.kinsoku then return nil end
+
+    -- Case 1: t is line-start-forbidden (would start new column)
+    local t_code = D.get_attribute(t, constants.ATTR_PUNCT_TYPE)
+    if t_code and t_code > 0 and is_line_start_forbidden_code(t_code) then
+        return calculate_kinsoku_action(col_buffer, t, ctx, grid_height)
+    end
+
+    -- Case 2: last buffer char is line-end-forbidden (would end current column)
+    local last = col_buffer[#col_buffer]
+    local last_code = D.get_attribute(last.node, constants.ATTR_PUNCT_TYPE)
+    if last_code and last_code > 0 and is_line_end_forbidden_code(last_code) then
+        return calculate_kinsoku_action(col_buffer, t, ctx, grid_height)
+    end
+
+    return nil
+end
+
+_internal.is_line_start_forbidden_code = is_line_start_forbidden_code
+_internal.is_line_end_forbidden_code = is_line_end_forbidden_code
+_internal.calculate_kinsoku_action = calculate_kinsoku_action
+_internal.check_natural_kinsoku = check_natural_kinsoku
+
 --- Handle glyph node: decoration markers and regular characters
 -- @param t (direct node) Current glyph node
 -- @param ctx (table) Grid context
@@ -806,6 +901,40 @@ local function handle_glyph_node(t, ctx, col_buffer, layout_map, grid_height,
                     next_y = next_y + math.floor(prev_ch * GAP_RATIO)
                 end
                 should_wrap = (next_y > ctx.col_height_sp)
+            end
+        end
+
+        -- Natural mode kinsoku check (before flush)
+        if should_wrap and not ctx.default_cell_height then
+            local kinsoku_action = check_natural_kinsoku(t, ctx, col_buffer, grid_height)
+            if kinsoku_action == "squeeze" then
+                should_wrap = false
+                dbg.log(string.format(
+                    "natural kinsoku: SQUEEZE (char 0x%04X) [p:%d c:%d]",
+                    D.getfield(t, "char") or 0, ctx.cur_page, ctx.cur_col))
+            elseif kinsoku_action == "stretch" then
+                local pulled = table.remove(col_buffer)
+                flush_fn()
+                accumulate_free_mode_col_width(ctx, params)
+                wrap_to_next_column(ctx, p_cols, interval, grid_height, base_indent or indent, false, false)
+                apply_indentation(ctx, base_indent or indent)
+                table.insert(col_buffer, {
+                    node = pulled.node,
+                    page = ctx.cur_page,
+                    col = ctx.cur_col,
+                    y_sp = ctx.cur_y_sp,
+                    height = pulled.height,
+                    cell_height = pulled.cell_height,
+                    cell_width = pulled.cell_width,
+                })
+                local ph = pulled.cell_height or grid_height
+                ctx.cur_y_sp = ctx.cur_y_sp + ph + math.floor(ph * GAP_RATIO)
+                ctx.cur_row = math.floor(ctx.cur_y_sp / grid_height + 0.5)
+                ctx.page_has_content = true
+                should_wrap = false
+                dbg.log(string.format(
+                    "natural kinsoku: STRETCH (char 0x%04X) [p:%d c:%d]",
+                    D.getfield(t, "char") or 0, ctx.cur_page, ctx.cur_col))
             end
         end
 
@@ -972,6 +1101,32 @@ local function flush_buffer(col_buffer, ctx, grid_height, distribute, layout_map
 
         if N == 1 then
             -- Keep original y_sp (preserves indent offset)
+        elseif remaining < 0 and N > 1 and n_stretchable > 0 then
+            -- Overfull (kinsoku squeeze): compress stretchable gaps to fit
+            local total_available = ctx.col_height_sp - total_cells - col_start_y - total_fixed_gaps
+            if total_available > 0 then
+                local squeeze_gap = total_available / n_stretchable
+                local y = col_start_y
+                for i, e in ipairs(col_buffer) do
+                    e.y_sp = y
+                    local ch = e.cell_height or grid_height
+                    if i < N then
+                        y = y + ch + (is_stretchable[i] and squeeze_gap or gap_fixed[i])
+                    else
+                        y = y + ch
+                    end
+                end
+            else
+                -- Even with zero gaps, chars don't fit. Stack tight.
+                local y = col_start_y
+                for i, e in ipairs(col_buffer) do
+                    e.y_sp = y
+                    local ch = e.cell_height or grid_height
+                    if i < N then
+                        y = y + ch + (is_stretchable[i] and 0 or (gap_fixed[i] or 0))
+                    end
+                end
+            end
         elseif remaining >= 0 and remaining < grid_height + math.floor(grid_height * GAP_RATIO) and N > 1 and n_stretchable > 0 then
             -- Nearly full: stretch only stretchable gaps; fixed gaps keep their size
             local total_available = ctx.col_height_sp - total_cells - col_start_y - total_fixed_gaps
@@ -1229,6 +1384,18 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
                     local total_height = col_start_y + buffer_height
                     should_wrap_before_node = (total_height >= effective_col_height_sp)
                 end
+            end
+        end
+
+        -- Natural mode kinsoku at pre-node wrap: if the upcoming glyph would
+        -- cause a kinsoku violation when placed at the start of a new column,
+        -- suppress the pre-node wrap and let handle_glyph_node's kinsoku logic
+        -- resolve it (squeeze the current column or stretch by pulling a char).
+        if should_wrap_before_node and not ctx.default_cell_height
+                and id == constants.GLYPH then
+            local kinsoku_action = check_natural_kinsoku(t, ctx, col_buffer, grid_height)
+            if kinsoku_action then
+                should_wrap_before_node = false
             end
         end
 

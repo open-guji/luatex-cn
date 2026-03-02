@@ -563,6 +563,9 @@ local function generate_physical_pages(list, params, engine_ctx, plugin_contexts
             -- NOTE: Reads from _G.content because textbox needs outer content's col_widths_sp
             -- (textbox typeset has its own layout_results which won't contain outer content's data)
             col_widths_sp = _G.content and _G.content.col_widths_sp or nil,
+            -- Column spacing (right/left margins per column)
+            col_spacing_top_sp = _G.content and _G.content.col_spacing_top_sp or nil,
+            col_spacing_bottom_sp = _G.content and _G.content.col_spacing_bottom_sp or nil,
             -- Content width for right-align calculation
             content_width = engine_ctx.content_width,
         },

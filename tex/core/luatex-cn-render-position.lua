@@ -297,6 +297,14 @@ local function calc_grid_position(col, glyph_dims, params)
         base_x = get_column_x_var(rtl_col, col_widths, total_cols)
             + (half_thickness or 0) + (shift_x or 0)
         col_width = get_column_width_var(col, col_widths)
+        -- Adjust for column spacing: shift base_x past left margin (spacing_bottom)
+        -- and reduce col_width to content area only
+        local sp_bottom = params.col_spacing_bottom and params.col_spacing_bottom[col + 1] or 0
+        local sp_top = params.col_spacing_top and params.col_spacing_top[col + 1] or 0
+        if sp_bottom > 0 or sp_top > 0 then
+            base_x = base_x + sp_bottom
+            col_width = col_width - sp_bottom - sp_top
+        end
     else
         -- Uniform-width columns mode
         rtl_col, base_x = calculate_rtl_position(col, total_cols, col_geom, half_thickness, shift_x)

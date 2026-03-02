@@ -247,10 +247,29 @@ local function handle_debug_drawing(curr, p_head, pos, ctx)
     end
 
     if show_me then
-        local _, tx_sp = text_position.calculate_rtl_position(pos.col, ctx.p_total_cols, ctx.col_geom,
-            ctx.half_thickness, ctx.shift_x)
+        local col_widths = glyph_params.col_widths
+        local tx_sp, tw_sp
+        if col_widths and #col_widths > 0 then
+            -- Variable-width columns mode
+            local total_cols = ctx.p_total_cols
+            local rtl_col = total_cols - 1 - pos.col
+            tx_sp = text_position.get_column_x_var(rtl_col, col_widths, total_cols)
+                + (ctx.half_thickness or 0) + (ctx.shift_x or 0)
+            tw_sp = text_position.get_column_width_var(pos.col, col_widths)
+            -- Adjust for spacing: shift past left margin and reduce width to content area
+            local sp_bottom = glyph_params.col_spacing_bottom and glyph_params.col_spacing_bottom[pos.col + 1] or 0
+            local sp_top = glyph_params.col_spacing_top and glyph_params.col_spacing_top[pos.col + 1] or 0
+            if sp_bottom > 0 or sp_top > 0 then
+                tx_sp = tx_sp + sp_bottom
+                tw_sp = tw_sp - sp_bottom - sp_top
+            end
+        else
+            -- Uniform-width columns mode
+            _, tx_sp = text_position.calculate_rtl_position(pos.col, ctx.p_total_cols, ctx.col_geom,
+                ctx.half_thickness, ctx.shift_x)
+            tw_sp = text_position.get_column_width(pos.col, ctx.col_geom)
+        end
         local ty_sp = -pos.y_sp - (ctx.shift_y or 0)
-        local tw_sp = text_position.get_column_width(pos.col, ctx.col_geom)
         local th_sp = -(pos.cell_height or ctx.grid_height)
 
         if pos.sub_col and pos.sub_col > 0 then
@@ -286,6 +305,9 @@ local function process_page_nodes(p_head, layout_map, params, ctx)
     glyph_params.body_font_size = ctx.body_font_size
     -- Phase 2.4: Prefer Free Mode col_widths_sp[page], fall back to TitlePage col_widths
     glyph_params.col_widths = ctx.page_col_widths_sp or (_G.content and _G.content.col_widths)
+    -- Column spacing for glyph offset within columns that have spacing
+    glyph_params.col_spacing_top = ctx.page_col_spacing_top_sp
+    glyph_params.col_spacing_bottom = ctx.page_col_spacing_bottom_sp
 
     while curr do
         local next_curr = D.getnext(curr)

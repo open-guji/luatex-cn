@@ -1363,12 +1363,23 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
                     local g_width = get_grid_width(params, 0)
                     local actual_width_sp = col_width_sp or (cols_used * g_width)
 
+                    -- Add spacing to column width (spacing-top = right margin, spacing-bottom = left margin)
+                    local sp_top = style_id and style_reg.get_spacing_top(style_id) or 0
+                    local sp_bot = style_id and style_reg.get_spacing_bottom(style_id) or 0
+                    local total_width_sp = actual_width_sp + (sp_top or 0) + (sp_bot or 0)
+
                     -- Initialize page array if needed
                     ctx.col_widths_sp[col_start_page] = ctx.col_widths_sp[col_start_page] or {}
-                    ctx.col_widths_sp[col_start_page][col_start_col + 1] = actual_width_sp  -- 1-indexed for render-position
+                    ctx.col_widths_sp[col_start_page][col_start_col + 1] = total_width_sp  -- 1-indexed for render-position
+
+                    -- Record spacing separately for render-position offset calculation
+                    ctx.col_spacing_top_sp[col_start_page] = ctx.col_spacing_top_sp[col_start_page] or {}
+                    ctx.col_spacing_top_sp[col_start_page][col_start_col + 1] = sp_top or 0
+                    ctx.col_spacing_bottom_sp[col_start_page] = ctx.col_spacing_bottom_sp[col_start_page] or {}
+                    ctx.col_spacing_bottom_sp[col_start_page][col_start_col + 1] = sp_bot or 0
 
                     -- Accumulate for page wrap decision
-                    ctx.accumulated_width_sp = ctx.accumulated_width_sp + actual_width_sp
+                    ctx.accumulated_width_sp = ctx.accumulated_width_sp + total_width_sp
                 end
             end
             goto start_of_loop

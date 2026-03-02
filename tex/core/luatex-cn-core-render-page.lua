@@ -174,6 +174,9 @@ local function calculate_render_context(ctx)
         interval = interval,
         -- Phase 2.4: Free Mode column widths (page -> col -> width_sp)
         col_widths_sp = grid.col_widths_sp,
+        -- Column spacing (right/left margins per column)
+        col_spacing_top_sp = grid.col_spacing_top_sp,
+        col_spacing_bottom_sp = grid.col_spacing_bottom_sp,
     }
 
     return {
@@ -424,6 +427,9 @@ local function render_single_page(p_head, p_max_col, p, layout_map, params, ctx,
     -- Phase 2.4: Pass page-specific column widths for Free Mode
     ctx_node.page_num = p
     ctx_node.page_col_widths_sp = page_col_widths_sp
+    -- Pass page-specific column spacing for glyph offset within column
+    ctx_node.page_col_spacing_top_sp = (ctx.col_geom and ctx.col_geom.col_spacing_top_sp and ctx.col_geom.col_spacing_top_sp[p]) or nil
+    ctx_node.page_col_spacing_bottom_sp = (ctx.col_geom and ctx.col_geom.col_spacing_bottom_sp and ctx.col_geom.col_spacing_bottom_sp[p]) or nil
     -- Apply the computed right-alignment shift_x
     ctx_node.shift_x = shift_x
 

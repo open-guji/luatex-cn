@@ -60,6 +60,11 @@
 % Digital mode: async vbox + obeylines (each newline = column break)
 \bool_new:N \l__luatexcn_content_digital_mode_bool
 
+% Content-level indent defaults (pushed to style stack in BodyText)
+\tl_new:N \l__luatexcn_content_indent_tl
+\tl_new:N \l__luatexcn_content_first_indent_tl
+\bool_new:N \l__luatexcn_content_has_indent_bool
+
 \keys_define:nn { luatexcn / content }
   {
     border .bool_set:N = \l__luatexcn_content_border_bool,
@@ -167,6 +172,14 @@
     % (each source newline = one column break in PDF output)
     digital-mode .bool_set:N = \l__luatexcn_content_digital_mode_bool,
     digital-mode .initial:n = false,
+
+    % Content-level indent defaults (pushed to style stack in BodyText begin)
+    % first-indent: indent for first column of each paragraph (after \par or blank line)
+    % indent: indent for non-first columns
+    indent .tl_set:N = \l__luatexcn_content_indent_tl,
+    indent .initial:n = {},
+    first-indent .tl_set:N = \l__luatexcn_content_first_indent_tl,
+    first-indent .initial:n = {},
 
     unknown .code:n = { \keys_set:nx { luatexcn / page } { \l_keys_key_tl = { #1 } } },
   }
@@ -287,6 +300,22 @@
     % Override \clearpage/\newpage for grid processing (scoped to this group)
     \__luatexcn_page_override_pagebreak:
 
+    % Content-level indent defaults: push to style stack if configured
+    \bool_set_false:N \l__luatexcn_content_has_indent_bool
+    \bool_lazy_or:nnT
+      { ! \tl_if_empty_p:N \l__luatexcn_content_indent_tl }
+      { ! \tl_if_empty_p:N \l__luatexcn_content_first_indent_tl }
+      {
+        \__luatexcn_style_init_and_parse:n {}
+        \tl_if_empty:NTF \l__luatexcn_content_indent_tl
+          { \tl_set:Nn \l__luatexcn_style_indent_tl { 0 } }
+          { \tl_set_eq:NN \l__luatexcn_style_indent_tl \l__luatexcn_content_indent_tl }
+        \tl_if_empty:NF \l__luatexcn_content_first_indent_tl
+          { \tl_set_eq:NN \l__luatexcn_style_first_indent_tl \l__luatexcn_content_first_indent_tl }
+        \__luatexcn_style_push_and_set:
+        \bool_set_true:N \l__luatexcn_content_has_indent_bool
+      }
+
     % Begin async vbox capture
     \vbox_set:Nw \l_tmpa_box
       \dim_set_eq:NN \hsize \c_max_dim
@@ -301,6 +330,14 @@
       \cs_set:Npn \\ {
         \luatexcnRestoreTempIndent
         \__luatexcn_original_newline_body:
+      }
+
+      % Paragraph detection: increment block_id at each TeX paragraph start
+      % so layout engine applies first-indent at paragraph boundaries
+      % (\par or blank lines trigger new TeX paragraphs → \everypar fires)
+      \everypar{
+        \int_gincr:N \g_luatexcn_paragraph_block_id_int
+        \setluatexattribute\cnverticalblockid { \int_use:N \g_luatexcn_paragraph_block_id_int }
       }
 
       % Digital mode: activate obeylines for newline-as-column-break
@@ -324,6 +361,9 @@
         col_limit~=~\int_use:N~\l__luatexcn_content_n_char_per_col_int
       })
     }
+    % Pop content-level indent from style stack (if pushed in begin)
+    \bool_if:NT \l__luatexcn_content_has_indent_bool
+      { \__luatexcn_style_pop_with_indent_reset: }
     \group_end:
   }
 
@@ -496,6 +536,8 @@
     列间距 .meta:n = { column-spacing-top = #1, column-spacing-bottom = #1 },
     段间距 .tl_set:N = \l__luatexcn_content_para_spacing_tl,
     数字模式 .bool_set:N = \l__luatexcn_content_digital_mode_bool,
+    缩进 .tl_set:N = \l__luatexcn_content_indent_tl,
+    首行缩进 .tl_set:N = \l__luatexcn_content_first_indent_tl,
     % 繁体（与简体不同形的）
     邊框 .bool_set:N = \l__luatexcn_content_border_bool,
     邊框粗細 .tl_set:N = \l__luatexcn_content_border_thickness_tl,
@@ -522,6 +564,8 @@
     列間距 .meta:n = { column-spacing-top = #1, column-spacing-bottom = #1 },
     段間距 .tl_set:N = \l__luatexcn_content_para_spacing_tl,
     數字模式 .bool_set:N = \l__luatexcn_content_digital_mode_bool,
+    縮進 .tl_set:N = \l__luatexcn_content_indent_tl,
+    首行縮進 .tl_set:N = \l__luatexcn_content_first_indent_tl,
   }
 \ExplSyntaxOff
 

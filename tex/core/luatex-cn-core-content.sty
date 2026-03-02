@@ -294,6 +294,15 @@
       \int_set:Nn \hbadness { 10000 }
       \dim_zero:N \parindent
 
+      % Global \\ hook: restore temporary indent (\缩进[N]) on line break.
+      % Safe to call unconditionally — \luatexcnRestoreTempIndent is a no-op
+      % when no temporary indent is active (guarded by bool).
+      \cs_set_eq:NN \__luatexcn_original_newline_body: \\
+      \cs_set:Npn \\ {
+        \luatexcnRestoreTempIndent
+        \__luatexcn_original_newline_body:
+      }
+
       % Digital mode: activate obeylines for newline-as-column-break
       \bool_if:NT \l__luatexcn_content_digital_mode_bool
         { \luatexcndigitalobeylines }

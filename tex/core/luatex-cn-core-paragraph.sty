@@ -29,84 +29,30 @@
 \int_const:Nn \c__luatexcn_penalty_taitou_int { -10004 }
 
 % Paragraph Environment
-% Supports block indentation with first-line/hanging indent differentiation
-% Syntax: \begin{Paragraph}[indent=2, first-indent=0, bottom-indent=1]
+% Thin wrapper around StyleEnv: uses style keys + adds SMART_BREAK at end.
+% Supports all style keys (indent, first-indent, bottom-indent, font-size, etc.)
+% Syntax: \begin{Paragraph}[indent=2, first-indent=0, font-color=red]
 
 \int_new:N \g_luatexcn_paragraph_block_id_int
-\tl_new:N \l__luatexcn_paragraph_first_indent_tl
-\tl_new:N \l__luatexcn_paragraph_bottom_indent_tl
-
-\keys_define:nn { luatexcn / paragraph }
-  {
-    indent .int_set:N = \l__luatexcn_paragraph_indent_int,
-    indent .initial:n = 0,
-    first-indent .tl_set:N = \l__luatexcn_paragraph_first_indent_tl,
-    first-indent .initial:n = {}, % empty means use indent value
-    bottom-indent .tl_set:N = \l__luatexcn_paragraph_bottom_indent_tl,
-    bottom-indent .initial:n = {}, % empty means use indent value
-  }
 
 \NewDocumentEnvironment{Paragraph}{ O{} }
   {
     \par
-    \int_gincr:N \g_luatexcn_paragraph_block_id_int
-    \keys_set:nn { luatexcn / paragraph } { #1 }
-
-    % Set Block ID
-    \setluatexattribute\cnverticalblockid { \int_use:N \g_luatexcn_paragraph_block_id_int }
-
-    % Push style to stack with indent values
-    \tl_if_empty:NTF \l__luatexcn_paragraph_first_indent_tl
-      { \edef\paragraph_style_id{\lua_now:e {
-        local ~ sr = require('util.luatex-cn-style-registry')
-        tex.print(sr.push_indent(\int_use:N \l__luatexcn_paragraph_indent_int, -1))
-      }} }
-      { \edef\paragraph_style_id{\lua_now:e {
-        local ~ sr = require('util.luatex-cn-style-registry')
-        tex.print(sr.push_indent(\int_use:N \l__luatexcn_paragraph_indent_int, tonumber("\l__luatexcn_paragraph_first_indent_tl")))
-      }} }
-    \setluatexattribute\cnverticalstyle{\paragraph_style_id}
-
-    % Set indent attributes (used by layout-grid.lua)
-    \setluatexattribute\cnverticalindent{\l__luatexcn_paragraph_indent_int}
-    \tl_if_empty:NTF \l__luatexcn_paragraph_first_indent_tl
-      { \setluatexattribute\cnverticalfirstindent{\l__luatexcn_paragraph_indent_int} }
-      { \setluatexattribute\cnverticalfirstindent{\l__luatexcn_paragraph_first_indent_tl} }
-
-    % Set Bottom Indent (still via attribute, as it's less common)
-    \tl_if_empty:NTF \l__luatexcn_paragraph_bottom_indent_tl
-      { \setluatexattribute\cnverticalrightindent{0} }
-      { \setluatexattribute\cnverticalrightindent{\l__luatexcn_paragraph_bottom_indent_tl} }
-
-    % Redefine \\ to restore temporary indent after line break
-    \cs_set_eq:NN \__luatexcn_original_newline: \\
-    \cs_set:Npn \\ {
-      \__luatexcn_restore_temp_indent:
-      \__luatexcn_original_newline:
-    }
+    \group_begin:
+    \__luatexcn_style_init_and_parse:n { #1 }
+    % Default indent to 0 for Paragraph (StyleEnv leaves it empty)
+    \tl_if_empty:NT \l__luatexcn_style_indent_tl
+      { \tl_set:Nn \l__luatexcn_style_indent_tl { 0 } }
+    \__luatexcn_style_apply_font:
+    \__luatexcn_style_push_and_set:
   }
   {
-    % Restore \\ to original definition
-    \cs_set_eq:NN \\ \__luatexcn_original_newline:
-
-    % First restore any temporary indent
+    % Restore any temporary indent (\缩进[N])
     \__luatexcn_restore_temp_indent:
-
-    % Pop paragraph style from stack and reset cnverticalstyle to parent
-    \edef\parent_style_id{\lua_now:n {
-      local ~ style_registry = require('util.luatex-cn-style-registry')
-      style_registry.pop()
-      local ~ current_id = style_registry.current_id() ~ or ~ 0
-      tex.print(current_id)
-    }}
-    \setluatexattribute\cnverticalstyle{\parent_style_id}
-    % Reset indent attributes
-    \setluatexattribute\cnverticalindent{0}
-    \setluatexattribute\cnverticalfirstindent{-1}
-    \setluatexattribute\cnverticalrightindent{0}
+    \__luatexcn_style_pop_with_indent_reset:
+    \group_end:
     \par
-    % Insert smart column break marker: check next node type
-    % If next node is textflow, don't break; if regular text, break to new column
+    % Smart column break: wrap to next column unless followed by textflow
     \penalty \int_use:N \c__luatexcn_penalty_smart_break_int \scan_stop:
   }
 
@@ -290,19 +236,6 @@
   {
     \par
     \penalty \int_use:N \c__luatexcn_penalty_force_column_int \scan_stop:
-  }
-
-% ============================================================================
-% CJK Key Aliases (中文键值别名)
-% ============================================================================
-\keys_define:nn { luatexcn / paragraph }
-  {
-    缩进 .int_set:N = \l__luatexcn_paragraph_indent_int,
-    縮進 .int_set:N = \l__luatexcn_paragraph_indent_int,
-    首行缩进 .tl_set:N = \l__luatexcn_paragraph_first_indent_tl,
-    首行縮進 .tl_set:N = \l__luatexcn_paragraph_first_indent_tl,
-    末行缩进 .tl_set:N = \l__luatexcn_paragraph_bottom_indent_tl,
-    末行縮進 .tl_set:N = \l__luatexcn_paragraph_bottom_indent_tl,
   }
 
 \ExplSyntaxOff

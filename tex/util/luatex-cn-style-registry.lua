@@ -393,15 +393,18 @@ function style_registry.push_content_style(font_color, font_size, font, extra)
     return style_registry.push(style) or 0
 end
 
---- Build an extra table from optional grid_height, spacing_top, spacing_bottom, xshift, yshift strings
+--- Build an extra table from optional grid_height, spacing_top, spacing_bottom, xshift, yshift,
+--- indent, first_indent strings.
 --- Convenience helper for TeX→Lua calls where table construction in expl3 is awkward.
 -- @param grid_height (string|nil) e.g., "1.5em"
 -- @param spacing_top (string|nil) e.g., "5pt"
 -- @param spacing_bottom (string|nil) e.g., "5pt"
 -- @param xshift (string|nil) e.g., "-0.3em"
 -- @param yshift (string|nil) e.g., "0.5em"
+-- @param indent (number|string|nil) e.g., 2 or "2"
+-- @param first_indent (number|string|nil) e.g., 0 or "0", nil means inherit from indent
 -- @return (table|nil) Extra table for push_content_style, or nil if all params are nil
-function style_registry.make_extra(grid_height, spacing_top, spacing_bottom, xshift, yshift)
+function style_registry.make_extra(grid_height, spacing_top, spacing_bottom, xshift, yshift, indent, first_indent)
     local constants_mod = package.loaded['core.luatex-cn-constants'] or
         require('core.luatex-cn-constants')
     local extra = {}
@@ -425,6 +428,20 @@ function style_registry.make_extra(grid_height, spacing_top, spacing_bottom, xsh
     if yshift and yshift ~= "" then
         extra.yshift = constants_mod.to_dimen(yshift)
         has_any = true
+    end
+    if indent then
+        local v = tonumber(indent)
+        if v then
+            extra.indent = v
+            has_any = true
+        end
+    end
+    if first_indent and first_indent ~= "" then
+        local v = tonumber(first_indent)
+        if v then
+            extra.first_indent = v
+            has_any = true
+        end
     end
     return has_any and extra or nil
 end

@@ -170,8 +170,19 @@ def overlay_compare(
 
         n_pages = max(len(pages_a), len(pages_b))
 
-        # Determine which pages to compare
-        if pages_spec:
+        # If file A is a single image, --pages selects which page of file B to
+        # compare against (the image is always treated as page 1 of A).
+        # e.g. --pages 2  →  compare image vs page 2 of the PDF.
+        a_is_image = file_a.suffix.lower() in (".png", ".jpg", ".jpeg", ".tiff", ".bmp")
+        if a_is_image and len(pages_a) == 1:
+            b_page = int(pages_spec) if pages_spec and pages_spec.isdigit() else 1
+            if b_page < 1 or b_page > len(pages_b):
+                print(f"ERROR: --pages {b_page} is out of range (file B has {len(pages_b)} page(s))")
+                sys.exit(1)
+            # Swap so the comparison loop sees A[0] vs B[b_page-1]
+            pages_b = [pages_b[b_page - 1]]
+            page_list = [1]
+        elif pages_spec:
             page_list = parse_page_range(pages_spec, n_pages)
         else:
             page_list = list(range(1, n_pages + 1))

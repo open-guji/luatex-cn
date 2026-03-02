@@ -95,6 +95,9 @@ local get_cell_height = h.get_cell_height
 local resolve_cell_height = h.resolve_cell_height
 local resolve_cell_width = h.resolve_cell_width
 
+-- Gap between characters in natural mode = 10% of cell height (0.1em)
+local GAP_RATIO = 0.1
+
 -- Export _internal for testing
 local _internal = {}
 _internal.get_banxin_on = get_banxin_on
@@ -169,9 +172,12 @@ local function apply_indentation(ctx, indent)
         if ctx.cur_row < (ctx.cur_column_indent or 0) then ctx.cur_row = ctx.cur_column_indent end
     end
     -- Sync sp accumulator when cur_row changed (unified layout)
+    -- In natural mode, each cell occupies (grid_height + gap) where gap = 0.1em (GAP_RATIO).
+    -- Grid mode (default_cell_height set): no gap between characters.
     if ctx.cur_row ~= old_row then
         local gh = (ctx.params and ctx.params.grid_height) or 655360
-        ctx.cur_y_sp = ctx.cur_row * gh
+        local cell_gap = ctx.default_cell_height and 0 or math.floor(gh * GAP_RATIO)
+        ctx.cur_y_sp = ctx.cur_row * (gh + cell_gap)
     end
 end
 
@@ -699,7 +705,6 @@ end
 -- Returns total height of all characters + gaps between them
 -- @param col_buffer (table) Buffer of character entries
 -- @return (number) Total accumulated height in sp
-local GAP_RATIO = 0.1  -- 0.1em: gap between characters = 10% of cell height
 
 local function calculate_buffer_height(col_buffer)
     if #col_buffer == 0 then return 0 end

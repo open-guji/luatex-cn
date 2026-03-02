@@ -116,12 +116,15 @@ end
 --- Reset the global page number to 1
 local function reset_page_number()
     _G.page.current_page_number = 1
+    tex.count[0] = 1
 end
 
 --- Set the global page number to a specific value
 -- @param n (number) The page number to set
 local function set_page_number(n)
-    _G.page.current_page_number = tonumber(n) or 1
+    local num = tonumber(n) or 1
+    _G.page.current_page_number = num
+    tex.count[0] = num
 end
 
 -- 加载子模块 (judou must be before punct - punct reads judou's plugin context to check punct_mode)

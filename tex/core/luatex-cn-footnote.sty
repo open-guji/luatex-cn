@@ -204,7 +204,9 @@
                   local~first_float~=~indent_fn~*~fn_grid_h~/~content_grid_h~
                   local~hang_float~=~hang_fn~*~fn_grid_h~/~content_grid_h~
                   local~sid~=~sr.push_indent(hang_float,~first_float)~
-                  tex.setattribute(constants.ATTR_STYLE_REG_ID,~sid)
+                  tex.setattribute(constants.ATTR_STYLE_REG_ID,~sid)~
+                  tex.setattribute(constants.ATTR_INDENT,~0)~
+                  tex.setattribute(constants.ATTR_FIRST_INDENT,~-1)
                 }
                 \int_gincr:N \g_luatexcn_paragraph_block_id_int
                 \setluatexattribute\cnverticalblockid
@@ -265,7 +267,9 @@
         local~total_fn~=~indent_fn~+~marker_fn~+~0.2~
         local~indent_float~=~total_fn~*~fn_grid_h~/~content_grid_h~
         local~sid~=~sr.push_indent(indent_float,~indent_float)~
-        tex.setattribute(constants.ATTR_STYLE_REG_ID,~sid)
+        tex.setattribute(constants.ATTR_STYLE_REG_ID,~sid)~
+        tex.setattribute(constants.ATTR_INDENT,~0)~
+        tex.setattribute(constants.ATTR_FIRST_INDENT,~-1)
       }
       % Block ID + force column break
       \int_gincr:N \g_luatexcn_paragraph_block_id_int

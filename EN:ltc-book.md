@@ -60,6 +60,61 @@ Or use `\documentclass[中华书局]{ltc-cn-vbook}` which automatically sets mai
 
 You can also switch to judou mode: `\开启句读模式`
 
+## Two-side Mirror Margins (v0.3.2+)
+
+vbook enables twoside mode (`twoside=true`) by default, automatically mirroring inner/outer margins on odd/even pages:
+
+- **Inner margin** (`margin-inner`): Binding side (odd pages = right, even pages = left)
+- **Outer margin** (`margin-outer`): Reading side
+
+```latex
+\pageSetup{
+    twoside = true,
+    margin-inner = 16mm,   % binding side
+    margin-outer = 24mm,   % outer side
+}
+```
+
+## Running Headers (v0.3.2+)
+
+vbook supports running headers that alternate between chapter name and book title.
+
+```latex
+\pageSetup{
+    header-enabled = true,
+    header-font-size = 9pt,
+    header-y = 52mm,
+}
+```
+
+| Page | Header Content | Position |
+|------|---------------|----------|
+| Odd (right) | Chapter name (`\chapter{...}`) | Left (binding side) |
+| Even (left) | Book title (`\title{...}`) | Right (binding side) |
+
+Use `\skipHeader` to suppress headers on specific pages (e.g., title pages).
+
+## Paragraph Indentation (v0.3.2+)
+
+vbook supports first-line paragraph indentation:
+
+```latex
+\contentSetup{
+    first-indent = 2,   % indent first line by 2 characters
+}
+```
+
+The layout engine automatically detects paragraph boundaries and applies indentation.
+
+## Volume & Chapter Title Commands (v0.3.2+)
+
+| Command | Description | Example |
+|---------|-------------|---------|
+| `\卷名{...}` | Volume title (24pt, 48pt top spacing) | `\卷名{史記卷六}` |
+| `\章节名{...}` | Chapter title (20pt, 2-char indent) | `\章节名{秦始皇本紀}` |
+
+`\章节名` automatically calls `\chapter` to update running headers.
+
 ## Footnote System
 
 Built-in footnote support with endnote and page-bottom modes.
@@ -86,6 +141,7 @@ Built-in footnote support with endnote and page-bottom modes.
 |---------|---------|-------------|
 | `\Footnote{...}` | `\脚注{...}` | Add footnote |
 | `\FlushFootnote` | `\输出脚注` | Output endnotes |
+| `\FootnoteParagraph{...}` | `\脚注段落{...}` | Unnumbered footnote block |
 | `\footnoteSetup{...}` | `\脚注设置{...}` | Configure |
 | `\ResetFootnoteCounter` | `\重置脚注计数` | Reset counter |
 

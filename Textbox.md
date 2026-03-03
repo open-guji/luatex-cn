@@ -39,6 +39,32 @@
 ```
 等同于 `\TextBox[height=10, box-align=fill]{内容}`。
 
+## 墨围 (v0.3.2+)
+
+`\墨围` (`\bordered`) 是一个细边矩形框快捷命令，用于对正文中的特定标注（如"索隱"、"集解"、"正義"等）添加边框强调。
+
+### 使用方法
+
+```latex
+\墨围{集解}裴駰曰……
+\墨围{索隱}司馬貞曰……
+```
+
+### 边框间距控制
+
+通过 TextBox 的 `border-margin-x` / `border-margin-y` 参数可分别控制横向和纵向的边框与内容间距：
+
+```latex
+\TextBox[border, border-margin-x=2pt, border-margin-y=1pt]{内容}
+```
+
+| 参数 | 说明 | 默认值 |
+|------|------|--------|
+| `border-margin` | 统一边框间距 | `0pt` |
+| `border-margin-x` | 横向边框间距 | _(跟随 border-margin)_ |
+| `border-margin-y` | 纵向边框间距 | _(跟随 border-margin)_ |
+| `outer-margin` | 文本框外部间距 | `0pt` |
+
 ## 浮动批注 (Floating Box)
 
 通过设置 `floating=true`，可以将文本框放置在页面的绝对坐标位置，常用于制作**批注**。

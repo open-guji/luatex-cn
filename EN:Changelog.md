@@ -4,6 +4,39 @@ English | [中文版](Changelog)
 
 All notable changes to this project will be documented here.
 
+## [0.3.2] - 2026-03-02
+
+Full implementation of modern vertical typesetting (Zhonghua Shuju style).
+
+- ✨ **Paragraph Indentation**: Paragraph detection and vbook first-line indent, indent style merged into StyleEnv
+- ✨ **Running Headers**: Alternating odd/even page headers showing chapter/book name, page numbers on inner margin
+- ✨ **Two-side Mirror Margins**: Added twoside mirror margin support, enabled by default in vbook
+- ✨ **Footnote Enhancement**: Hanging indent for footnote continuation, `\FootnoteParagraph` for unnumbered footnote blocks, footnote numbering alignment
+- ✨ **Moquan (Ink Border) Command**: Added `\墨围` command with separate border padding control
+- ✨ **Column Spacing**: Free Mode column spacing, near-full column justification in natural mode
+- ✨ **Overlay Compare Tool**: Added `overlay_compare.py` red-blue overlay comparison tool
+- 🐛 **Kinsoku Rules**: Fixed natural mode kinsoku rules applying across all layout paths
+- 🐛 **Footnote Fix**: Fixed footnote paragraph indent loss after cross-column continuation
+- 🐛 **vbook Fix**: Fixed Lua number format error and Taiwan traditional Chinese command aliases
+- 🐛 **Annotation Color**: Fixed pizhu default color RGB parsing error from expl3 space eating
+- 🐛 **Character Spacing**: Unified natural mode spacing strategy, changed to 0.1em proportional spacing
+- 🐛 **Column Stretch**: Footnote numbering and moquan excluded from column stretch
+
+## [0.3.1] - 2026-02-26
+
+Focus on optimizing guji-digital document class for facsimile typesetting.
+
+- ✨ **Document-level Style System**: New `\ConfigDocument` command for document-level style presets and attribute passing
+- ✨ **Digitization Toolchain**: Bidirectional conversion tools (`semantic_to_digital.py` / `digital_to_semantic.py`)
+- ✨ **Layout Export**: Export layout JSON via `ENABLE_EXPORT=1` environment variable for automated validation
+- ✨ **PDF Page Mapping**: Simplified spread page semantics, correct single/double page mapping
+- 🐛 **Indent System Refactor**: Split taitou and suojin indent types, fixed attribute passing bugs
+- 🐛 **Textflow Layout**: Fixed taitou indent being incorrectly cleared in textflow
+- 🐛 **Decoration Symbols**: Changed circle dot/emphasis mark character from `。` to `○` for better visuals
+- 🐛 **Page Break Fix**: Fixed `\双列` typesetting after `\换页`
+- 🐛 **Flat Taitou Fix**: Fixed `\平抬` not working inside jiazhu
+- 📦 **Template Updates**: Added Wuliang Quanzhi template, restructured Siku Quanshu template folder
+
 ## [0.3.0] - 2026-02-18
 
 Project is now stable for full-book typesetting.

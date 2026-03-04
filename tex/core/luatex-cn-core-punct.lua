@@ -207,6 +207,76 @@ local VERT_FORM_MAP = {
     [0x2019] = 0xFE44, -- ' → ﹄ (right single → vertical right white corner bracket)
 }
 
+-- ============================================================================
+-- tounicode-based reverse mapping for GSUB-substituted punctuation
+-- ============================================================================
+-- Some fonts (e.g. KingHwa_OldSong) have vert GSUB entries that map punctuation
+-- to glyphs without a standard Unicode codepoint. luaotfload's node mode then
+-- assigns these glyphs Private Use Area (PUA) codepoints (U+F0000+), causing
+-- punct.classify() to fail.
+--
+-- This cache maps (font_id, substituted_char) → original_codepoint by reading
+-- the glyph's tounicode field from font.getfont().characters.
+-- Key: font_id, Value: { [pua_char] = original_codepoint, ... }
+local font_tounicode_cache = {}
+
+--- Parse a tounicode string (hex) into a numeric codepoint.
+-- Only handles single codepoints (4 hex digits). Multi-codepoint tounicode
+-- (surrogate pairs, ligatures) returns nil.
+-- @param tu_str (string) Hex string like "FF0C" or "3001"
+-- @return (number|nil) Codepoint, or nil if not a single codepoint
+local function parse_tounicode(tu_str)
+    if not tu_str or #tu_str ~= 4 then return nil end
+    return tonumber(tu_str, 16)
+end
+
+--- Resolve the original Unicode codepoint for a possibly-substituted glyph.
+-- If the glyph's char is in the PUA range and has a tounicode pointing to
+-- a known punctuation codepoint, return that original codepoint.
+-- Results are cached per font.
+-- @param fid (number) Font ID
+-- @param char (number) Current char code (possibly PUA)
+-- @return (number|nil) Original codepoint if resolved, nil otherwise
+local function resolve_original_codepoint(fid, char)
+    -- Only attempt resolution for PUA-range chars
+    -- Supplementary PUA-A: U+F0000..U+FFFFF
+    -- Supplementary PUA-B: U+100000..U+10FFFD
+    -- BMP PUA: U+E000..U+F8FF
+    if not (char >= 0xE000 and char <= 0xF8FF)
+       and not (char >= 0xF0000 and char <= 0xFFFFF)
+       and not (char >= 0x100000) then
+        return nil
+    end
+
+    -- Check cache
+    local fc = font_tounicode_cache[fid]
+    if fc then
+        return fc[char]  -- may be nil (already checked, not a punct)
+    end
+
+    -- Build cache for this font: scan characters for PUA entries with
+    -- tounicode pointing to known punctuation
+    fc = {}
+    font_tounicode_cache[fid] = fc
+
+    local fdata = font.getfont(fid)
+    if not fdata or not fdata.characters then return nil end
+
+    for code, ch_data in pairs(fdata.characters) do
+        -- Only cache PUA-range chars
+        if ((code >= 0xE000 and code <= 0xF8FF) or
+            (code >= 0xF0000 and code <= 0xFFFFF) or
+            code >= 0x100000) and ch_data.tounicode then
+            local orig = parse_tounicode(ch_data.tounicode)
+            if orig and punct.classify(orig) then
+                fc[code] = orig
+            end
+        end
+    end
+
+    return fc[char]
+end
+
 -- Punctuation type numeric codes (for ATTR_PUNCT_TYPE attribute)
 local PUNCT_CODES = {
     open     = 1,
@@ -485,6 +555,23 @@ function punct.flatten(head, params, ctx)
 
                 -- 2. Classify punctuation and set attribute
                 local ptype = punct.classify(char)
+
+                -- 2b. If classification failed, the char may have been GSUB-substituted
+                -- by the font's vert/vrt2 feature to a PUA codepoint. Try to resolve
+                -- the original Unicode codepoint via the glyph's tounicode field.
+                if not ptype then
+                    local fid = D.getfont(t)
+                    local orig = resolve_original_codepoint(fid, char)
+                    if orig then
+                        ptype = punct.classify(orig)
+                        if ptype then
+                            dbg.log(string.format(
+                                "punct: resolved PUA 0x%05X -> 0x%04X (%s) via tounicode",
+                                char, orig, ptype))
+                        end
+                    end
+                end
+
                 if ptype then
                     local code = PUNCT_CODES[ptype]
                     D.set_attribute(t, constants.ATTR_PUNCT_TYPE, code)

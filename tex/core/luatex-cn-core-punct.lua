@@ -847,7 +847,8 @@ function punct.render(head, layout_map, render_ctx, ctx, engine_ctx, page_idx, p
                             if is_pua_char then
                                 local y_deviation = math.abs(ratio_y - 0.5)
                                 if y_deviation > 0.03 then
-                                    local comp_y = math.floor((ratio_y - 0.5) * glyph_width + 0.5)
+                                    -- Use 1.5x multiplier for stronger downward compensation
+                                    local comp_y = math.floor((ratio_y - 0.5) * glyph_width * 1.5 + 0.5)
                                     cur_y = cur_y + comp_y
                                 end
                             end

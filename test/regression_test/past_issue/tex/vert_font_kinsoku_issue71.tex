@@ -1,0 +1,33 @@
+% vert_font_kinsoku_issue71.tex - 回归测试: OpenType vert 特性下标点禁则和位置
+% Issue: https://github.com/open-guji/luatex-cn/issues/71
+%
+% 问题 1: 使用 \setmainfont[RawFeature={vert}]{KingHwa_OldSong} 时，
+%          字体的 vert GSUB 将标点映射到 PUA 码位 (如 ，U+FF0C → 0xF00A0)，
+%          导致 punct.classify() 无法识别标点类型，禁则（kinsoku）失效，
+%          逗号、句号等出现在列首。
+%
+% 问题 2: PUA 码位的标点在 INK_CENTER_CHARS 检查中失败，
+%          导致 ink center 补偿被跳过，但 MAINLAND_OFFSETS 仍然应用，
+%          逗号、句号、顿号位置过于偏右。
+%
+% 修复: 通过 tounicode 反查将 PUA 码位解析回原始 Unicode，
+%       同时扩展 get_ink_center_ratio 和 punct.render 支持 PUA 字符。
+\documentclass{ltc-cn-vbook}
+\setmainfont[RawFeature={vert}]{KingHwa_OldSong}
+\title{禁則測試}
+\chapter{第一}
+\begin{document}
+\begin{BodyText}
+天地玄黃，宇宙洪荒。日月盈昃，辰宿列張。
+寒來暑往，秋收冬藏。閏餘成歲，律呂調陽。
+雲騰致雨，露結為霜。金生麗水，玉出崑岡。
+劍號巨闕，珠稱夜光。果珍李柰，菜重芥薑。
+海鹹河淡，鱗潛羽翔。龍師火帝，鳥官人皇。
+始制文字、乃服衣裳。推位讓國、有虞陶唐。
+弔民伐罪：周發殷湯；坐朝問道：垂拱平章！
+此乃千字文也？愛育黎首、臣伏戎羌。
+遐邇壹體，率賓歸王。鳴鳳在竹，白駒食場。
+化被草木，賴及萬方。蓋此身髮，四大五常。
+恭惟鞠養，豈敢毀傷。女慕貞潔，男效才良。
+\end{BodyText}
+\end{document}

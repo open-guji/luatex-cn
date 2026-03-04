@@ -46,20 +46,30 @@ local INK_CENTER_CHARS = {
     [0xFF1F] = true, -- ？
 }
 
---- Get ink center ratio for a glyph in a given font.
--- Returns the horizontal center of the glyph ink as a ratio of advance width.
--- For a perfectly centered glyph this is 0.5.
+--- Parse a tounicode string (hex) into a numeric codepoint.
+-- Only handles single codepoints (4 hex digits). Multi-codepoint tounicode
+-- (surrogate pairs, ligatures) returns nil.
+-- @param tu_str (string) Hex string like "FF0C" or "3001"
+-- @return (number|nil) Codepoint, or nil if not a single codepoint
+local function parse_tounicode(tu_str)
+    if not tu_str or #tu_str ~= 4 then return nil end
+    return tonumber(tu_str, 16)
+end
+
+--- Get ink center ratios for a glyph in a given font.
+-- Returns the center of the glyph ink as ratios of advance width (x and y).
+-- For a perfectly centered glyph both are 0.5.
 -- @param fid (number) Font ID
 -- @param charcode (number) Unicode codepoint
--- @return (number) Ink center ratio (0..1), or 0.5 if unknown
+-- @return (number, number) Ink center ratio x, y (0..1), or 0.5, 0.5 if unknown
 local function get_ink_center_ratio(fid, charcode)
     -- Check cache first
     local font_cache = font_ink_center_cache[fid]
     if font_cache then
-        local ratio = font_cache[charcode]
-        if ratio then return ratio end
+        local entry = font_cache[charcode]
+        if entry then return entry.x, entry.y end
         -- Already analyzed this font but char not found
-        if font_cache._analyzed then return 0.5 end
+        if font_cache._analyzed then return 0.5, 0.5 end
     end
 
     -- Analyze font using fontloader
@@ -68,22 +78,44 @@ local function get_ink_center_ratio(fid, charcode)
     font_cache._analyzed = true
 
     local f = font.getfont(fid)
-    if not f or not f.filename then return 0.5 end
+    if not f or not f.filename then return 0.5, 0.5 end
 
     local ok, raw = pcall(fontloader.open, f.filename)
-    if not ok or not raw then return 0.5 end
+    if not ok or not raw then return 0.5, 0.5 end
 
     local ok2, info = pcall(fontloader.to_table, raw)
     fontloader.close(raw)
-    if not ok2 or not info or not info.glyphs then return 0.5 end
+    if not ok2 or not info or not info.glyphs then return 0.5, 0.5 end
 
-    -- Scan all glyphs for target characters
+    -- Scan all glyphs for target characters (by Unicode)
     for i = 0, (info.glyphcnt or 0) - 1 do
         local g = info.glyphs[i]
         if g and g.unicode and INK_CENTER_CHARS[g.unicode] and g.width and g.width > 0 then
             if g.boundingbox then
                 local cx = (g.boundingbox[1] + g.boundingbox[3]) / 2
-                font_cache[g.unicode] = cx / g.width
+                local cy = (g.boundingbox[2] + g.boundingbox[4]) / 2
+                font_cache[g.unicode] = { x = cx / g.width, y = cy / g.width }
+            end
+        end
+    end
+
+    -- Also cache ink centers for PUA chars whose tounicode points to
+    -- INK_CENTER_CHARS (e.g. vert GSUB substituted punctuation).
+    -- Use glyph index from font.getfont() to look up fontloader bounding box.
+    if f.characters then
+        for code, ch_data in pairs(f.characters) do
+            if ((code >= 0xE000 and code <= 0xF8FF) or
+                (code >= 0xF0000 and code <= 0xFFFFF) or
+                code >= 0x100000) and ch_data.tounicode and ch_data.index then
+                local orig = parse_tounicode(ch_data.tounicode)
+                if orig and INK_CENTER_CHARS[orig] then
+                    local g = info.glyphs[ch_data.index]
+                    if g and g.width and g.width > 0 and g.boundingbox then
+                        local cx = (g.boundingbox[1] + g.boundingbox[3]) / 2
+                        local cy = (g.boundingbox[2] + g.boundingbox[4]) / 2
+                        font_cache[code] = { x = cx / g.width, y = cy / g.width }
+                    end
+                end
             end
         end
     end
@@ -91,7 +123,9 @@ local function get_ink_center_ratio(fid, charcode)
     dbg.log(string.format("punct: analyzed font %d ink centers: %s",
         fid, f.filename))
 
-    return font_cache[charcode] or 0.5
+    local entry = font_cache[charcode]
+    if entry then return entry.x, entry.y end
+    return 0.5, 0.5
 end
 
 -- ============================================================================
@@ -219,16 +253,6 @@ local VERT_FORM_MAP = {
 -- the glyph's tounicode field from font.getfont().characters.
 -- Key: font_id, Value: { [pua_char] = original_codepoint, ... }
 local font_tounicode_cache = {}
-
---- Parse a tounicode string (hex) into a numeric codepoint.
--- Only handles single codepoints (4 hex digits). Multi-codepoint tounicode
--- (surrogate pairs, ligatures) returns nil.
--- @param tu_str (string) Hex string like "FF0C" or "3001"
--- @return (number|nil) Codepoint, or nil if not a single codepoint
-local function parse_tounicode(tu_str)
-    if not tu_str or #tu_str ~= 4 then return nil end
-    return tonumber(tu_str, 16)
-end
 
 --- Resolve the original Unicode codepoint for a possibly-substituted glyph.
 -- If the glyph's char is in the PUA range and has a tounicode pointing to
@@ -801,12 +825,32 @@ function punct.render(head, layout_map, render_ctx, ctx, engine_ctx, page_idx, p
                         local ci = fi and fi.characters and fi.characters[char]
                         if ci and ci.width then glyph_width = ci.width end
 
-                        if INK_CENTER_CHARS[char] then
-                            local ratio = get_ink_center_ratio(fid, char)
-                            -- compensation = how far the ink center is from advance center
-                            -- ratio < 0.5 means ink is left of center → shift right
-                            local comp_x = math.floor((0.5 - ratio) * glyph_width + 0.5)
+                        local needs_ink_comp = INK_CENTER_CHARS[char]
+                        local is_pua_char = false
+                        if not needs_ink_comp then
+                            local orig = resolve_original_codepoint(fid, char)
+                            if orig and INK_CENTER_CHARS[orig] then
+                                needs_ink_comp = true
+                                is_pua_char = true  -- This is a PUA char (vert GSUB substituted)
+                            end
+                        end
+                        if needs_ink_comp then
+                            local ratio_x, ratio_y = get_ink_center_ratio(fid, char)
+                            -- X-axis compensation: ink left of center → shift right (positive offset)
+                            -- ratio_x < 0.5 means ink is left → (0.5 - ratio_x) > 0 → shift right
+                            local comp_x = math.floor((0.5 - ratio_x) * glyph_width + 0.5)
                             cur_x = cur_x + comp_x
+
+                            -- Y-axis compensation: ONLY for PUA chars (vert GSUB substituted glyphs)
+                            -- Normal fonts have well-centered punctuation, but vert forms from
+                            -- fonts like KingHwa_OldSong may have significant y-axis deviation.
+                            if is_pua_char then
+                                local y_deviation = math.abs(ratio_y - 0.5)
+                                if y_deviation > 0.03 then
+                                    local comp_y = math.floor((ratio_y - 0.5) * glyph_width + 0.5)
+                                    cur_y = cur_y + comp_y
+                                end
+                            end
                         end
                     end
 
@@ -829,5 +873,15 @@ function punct.render(head, layout_map, render_ctx, ctx, engine_ctx, page_idx, p
 
     return D.tonode(d_head)
 end
+
+-- Export internal functions for unit testing
+punct._internal = {
+    parse_tounicode = parse_tounicode,
+    resolve_original_codepoint = resolve_original_codepoint,
+    get_ink_center_ratio = get_ink_center_ratio,
+    INK_CENTER_CHARS = INK_CENTER_CHARS,
+    font_tounicode_cache = font_tounicode_cache,
+    font_ink_center_cache = font_ink_center_cache,
+}
 
 return punct

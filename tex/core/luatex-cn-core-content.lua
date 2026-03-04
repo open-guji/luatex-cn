@@ -87,14 +87,14 @@ local function calc_grid_dimensions(available_height, n_char_per_col, existing_g
         -- Mode A: n-char-per-col specified, calculate grid-height
         grid_height = math.floor(available_height / n_char_per_col)
         content_height = grid_height * n_char_per_col
-    elseif existing_grid_height > 0 and available_height > 0 then
+    elseif existing_grid_height and existing_grid_height > 0 and available_height > 0 then
         -- Mode B: grid-height specified, calculate fitting rows
         grid_height = existing_grid_height
         local rows = math.floor(available_height / grid_height)
         content_height = grid_height * rows
     else
         -- Fallback: use available height
-        grid_height = existing_grid_height
+        grid_height = existing_grid_height or 0
         content_height = available_height
     end
     return grid_height, content_height
@@ -499,7 +499,9 @@ local function guji_auto_layout(params)
     local ob_sep = constants.to_dimen(params.outer_border_sep or "0pt")
     local b_padding_top = constants.to_dimen(params.border_padding_top or "0pt")
     local b_padding_bottom = constants.to_dimen(params.border_padding_bottom or "0pt")
-    local existing_grid_height = constants.to_dimen(params.grid_height or "0pt")
+    -- Use resolve_dimen to handle em units (requires font_size context)
+    local grid_height_raw = constants.to_dimen(params.grid_height or "0pt")
+    local existing_grid_height = constants.resolve_dimen(grid_height_raw, _G.content.font_size) or 0
 
     -- I. Width Logic: Calculate grid-width from n-column (with banxin ratio)
     local banxin_ratio = tonumber(params.banxin_ratio) or 0.7

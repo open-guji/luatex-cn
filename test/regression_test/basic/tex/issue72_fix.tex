@@ -1,0 +1,25 @@
+% Issue #72: \改 字命令在夹注环境有问题
+% https://github.com/open-guji/luatex-cn/issues/72
+\documentclass{ltc-guji}
+\setmainfont{TW-Kai}
+\关闭分页
+\开启排版导出
+
+\title{测试}
+\chapter{测试 Issue 72}
+
+\begin{document}
+
+\begin{正文}
+% 测试 1: 正文中的 \改 命令
+不以手當以挾也隱肘則太\改{大}伏也
+
+% 测试 2: 夹注中的 \改 命令（原始 issue 中的例子）
+\夹注{不以手，當以挾也。隱肘則太\改{大}伏也。咡，口也。覆手而循之，所以拭其不潔也。}
+
+% 测试 3: 混合使用
+测试混合使用\改{甲}字\夹注{夹注中也可以用\改{乙}字}继续正文
+
+\end{正文}
+
+\end{document}

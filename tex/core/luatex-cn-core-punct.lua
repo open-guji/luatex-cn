@@ -844,11 +844,13 @@ function punct.render(head, layout_map, render_ctx, ctx, engine_ctx, page_idx, p
                             -- Y-axis compensation: ONLY for PUA chars (vert GSUB substituted glyphs)
                             -- Normal fonts have well-centered punctuation, but vert forms from
                             -- fonts like KingHwa_OldSong may have significant y-axis deviation.
+                            -- ratio_y > 0.5 means ink is high → negative offset shifts down
                             if is_pua_char then
                                 local y_deviation = math.abs(ratio_y - 0.5)
                                 if y_deviation > 0.03 then
                                     -- Use 1.5x multiplier for stronger downward compensation
-                                    local comp_y = math.floor((ratio_y - 0.5) * glyph_width * 1.5 + 0.5)
+                                    -- Note: positive yoffset moves UP, so we need (0.5 - ratio_y) for downward
+                                    local comp_y = math.floor((0.5 - ratio_y) * glyph_width * 1.5 + 0.5)
                                     cur_y = cur_y + comp_y
                                 end
                             end

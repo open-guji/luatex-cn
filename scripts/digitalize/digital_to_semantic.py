@@ -450,13 +450,14 @@ class ReverseConverter:
         if not block_data:
             return [lines[start_index]], 1
 
-        # Step 2: 将 subcol 对扁平化为 subcol 流（剥离 \样式 包装）
+        # Step 2: 将 subcol 对扁平化为 subcol 流（保留 \样式 包装）
         subcol_flow = []  # [(text, indent, optional_arg)]
+        line_style = ''  # 行级 \样式 包装（如 \样式[grid-height=24pt]{ ）
         for r_text, r_indent, l_text, l_indent, l_opt, style_pre, style_suf in block_data:
-            r_clean = strip_yangshi(r_text)
-            l_clean = strip_yangshi(l_text)
-            subcol_flow.append((r_clean, r_indent, None))
-            subcol_flow.append((l_clean, l_indent, l_opt))
+            subcol_flow.append((r_text, r_indent, None))
+            subcol_flow.append((l_text, l_indent, l_opt))
+            if style_pre and not line_style:
+                line_style = style_pre  # 记录行级 \样式
 
         # Step 3: 按 base indent 分组
         groups = self._group_subcols(subcol_flow)
@@ -467,6 +468,10 @@ class ReverseConverter:
             merged = ''.join(subcol_texts)
             if not merged:
                 continue
+            # 行级 \样式 包装（如果有）
+            if line_style:
+                merged = f'{line_style}{merged}}}'
+                line_style = ''  # 只用一次
             if base_indent >= self.an_indent:
                 output.append(f'\\按{{{merged}}}\n')
             else:
@@ -534,22 +539,25 @@ class ReverseConverter:
     def _apply_taitou(self, text: str, indent: Optional[int], base_indent: int) -> str:
         r"""根据 indent 和 base_indent 应用抬头命令。
         在 \注 和 \按 上下文中都适用。
+        \按 上下文中抬头命令前加换行（匹配目标格式）。
         """
+        # \按 上下文中抬头命令在新行，\注 上下文中内联
+        nl = '\n' if base_indent >= self.an_indent else ''
         if indent == -1:
-            return f'\\单抬 {text}'
+            return f'{nl}\\单抬 {text}'
         elif indent is None or indent == 0:
-            return f'\\平抬 {text}'
+            return f'{nl}\\平抬 {text}'
         elif 0 < indent < base_indent:
             keyword = self._extract_taitou_keyword(text)
             if keyword:
                 diff = base_indent - indent
                 rest = text[len(keyword):]
                 if keyword == '國朝' and diff == 1:
-                    return f'\\國朝 {rest}' if rest else '\\國朝'
+                    return f'{nl}\\國朝 {rest}' if rest else f'{nl}\\國朝'
                 else:
-                    return f'\\相对抬头[{diff}]{{{keyword}}} {rest}'
+                    return f'{nl}\\相对抬头[{diff}]{{{keyword}}} {rest}'
             else:
-                return f'\\平抬 {text}'
+                return f'{nl}\\平抬 {text}'
         return text
 
     def _has_continuation(self, lines: List[str], from_index: int, target_indent: int) -> bool:

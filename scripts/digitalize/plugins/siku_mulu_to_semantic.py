@@ -254,13 +254,25 @@ class SikuMuluToSemanticPlugin(DigitalToSemanticPlugin):
         # 2. 在书名行前添加空行（书名行 = 不以 \ 开头的正文行，后面跟 \注）
         content = re.sub(r'(?<!\n)\n([^\\\n][^\n]*\n\\注)', r'\n\n\1', content)
 
-        # 3. 移除连续的多个空行（保留最多两个换行）
+        # 3. 在 \begin{段落} 前添加空行
+        content = re.sub(r'(?<!\n)\n(\\begin\{段落\})', r'\n\n\1', content)
+
+        # 4. 在 \end{段落} 后添加空行
+        content = re.sub(r'(\\end\{段落\})\n(?!\n)', r'\1\n\n', content)
+
+        # 5. 在 \chapter 后的连续纯文本行之间添加空行
+        # 例: "欽定四庫全書簡明目錄\n聖諭" → "欽定四庫全書簡明目錄\n\n聖諭"
+        content = re.sub(
+            r'(\\chapter\{[^}]*\}\n[^\\\n][^\n]*)\n([^\\\n])',
+            r'\1\n\n\2', content)
+
+        # 6. 移除连续的多个空行（保留最多两个换行）
         content = re.sub(r'\n{3,}', '\n\n', content)
 
-        # 4. 在 \newpage 后添加空行
+        # 7. 在 \newpage 后添加空行
         content = re.sub(r'(\\newpage)\n(?!\n)', r'\1\n\n', content)
 
-        # 5. 在 \chapter 前添加空行
-        content = re.sub(r'(?<!\n)\n(\\chapter)', r'\n\n\1', content)
+        # 8. 在 \chapter 前添加空行（但不在 \begin{正文} 后面）
+        content = re.sub(r'(?<!\n)(?<!正文\})\n(\\chapter)', r'\n\n\1', content)
 
         return content

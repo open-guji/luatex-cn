@@ -657,7 +657,11 @@ class ReverseConverter:
             else:
                 break
 
-        merged = ''.join(collected)
+        # 行末加 % 防止换行产生空格（TeX 竖排中换行=空格，会破坏排版）
+        if len(collected) > 1:
+            merged = '%\n'.join(c.rstrip('\n') for c in collected) + '\n'
+        else:
+            merged = ''.join(collected)
         return [f'\\begin{{段落}}[indent={next_indent}, first-indent=0]\n{merged}\\end{{段落}}\n'], consumed
 
     def _convert_suojin_text(self, lines: List[str], start_index: int, first_indent: int) -> Tuple[List[str], int]:
@@ -703,8 +707,8 @@ class ReverseConverter:
             # 单行 → \条目（即使中间有 \换页 也只有一行文本）
             return [f'\\条目[{first_indent}]{{{collected_texts[0]}}}\n'], consumed
         else:
-            # 多行 → \段落
-            merged = '\n'.join(collected_texts) + '\n'
+            # 多行 → \段落（行末加 % 防止换行空格）
+            merged = '%\n'.join(collected_texts) + '\n'
             return [f'\\begin{{段落}}[indent={first_indent}]\n{merged}\\end{{段落}}\n'], consumed
 
     def _convert_tiaommu_with_jiazhu(self, line: str, indent: int, text: str, shuanglie_rest: str) -> List[str]:

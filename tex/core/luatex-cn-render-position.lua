@@ -235,8 +235,10 @@ local function get_visual_center(char_code, font_id)
 
     local bbox = c.boundingbox
     -- If not in characters table, try descriptions in raw data using character index
-    if not bbox and c.index and f.shared and f.shared.rawdata and f.shared.rawdata.descriptions then
-        local desc = f.shared.rawdata.descriptions[c.index]
+    if not bbox and f.shared and f.shared.rawdata and f.shared.rawdata.descriptions then
+        local descs = f.shared.rawdata.descriptions
+        -- Try glyph index first, then unicode (some fonts like Noto CJK use unicode as key)
+        local desc = (c.index and descs[c.index]) or descs[char_code]
         if desc and desc.boundingbox then
             bbox = desc.boundingbox
         end

@@ -60,6 +60,13 @@
 % Digital mode: async vbox + obeylines (each newline = column break)
 \bool_new:N \l__luatexcn_content_digital_mode_bool
 
+% Band (分栏) mode: divide page into horizontal bands
+\int_new:N \l__luatexcn_content_n_bands_int
+\tl_new:N \l__luatexcn_content_band_gap_tl
+\tl_new:N \l__luatexcn_content_band_mode_tl
+\tl_new:N \l__luatexcn_content_band_heights_tl
+\tl_new:N \l__luatexcn_content_band_columns_tl
+
 % Content-level indent defaults (pushed to style stack in BodyText)
 \tl_new:N \l__luatexcn_content_indent_tl
 \tl_new:N \l__luatexcn_content_first_indent_tl
@@ -173,6 +180,26 @@
     digital-mode .bool_set:N = \l__luatexcn_content_digital_mode_bool,
     digital-mode .initial:n = false,
 
+    % Band (分栏) settings: divide page into horizontal bands
+    % Each band contains vertical columns flowing right-to-left
+    n-bands .int_set:N = \l__luatexcn_content_n_bands_int,
+    n-bands .initial:n = 1,
+
+    band-gap .tl_set:N = \l__luatexcn_content_band_gap_tl,
+    band-gap .initial:n = {0pt},
+
+    % Band mode: "auto" = text flows across pages, "per-page" = each page independent
+    band-mode .tl_set:N = \l__luatexcn_content_band_mode_tl,
+    band-mode .initial:n = {auto},
+
+    % Manual band heights (comma-separated dim list, optional)
+    band-heights .tl_set:N = \l__luatexcn_content_band_heights_tl,
+    band-heights .initial:n = {},
+
+    % Columns per band (optional, defaults to page-columns)
+    band-columns .tl_set:N = \l__luatexcn_content_band_columns_tl,
+    band-columns .initial:n = {},
+
     % Content-level indent defaults (pushed to style stack in BodyText begin)
     % first-indent: indent for first column of each paragraph (after \par or blank line)
     % indent: indent for non-first columns
@@ -215,7 +242,12 @@
         inter_cell_gap~=~[=[\luaescapestring{\l__luatexcn_content_inter_cell_gap_tl}]=],
         cell_height~=~[=[\luaescapestring{\l__luatexcn_content_cell_height_tl}]=],
         cell_width~=~[=[\luaescapestring{\l__luatexcn_content_cell_width_tl}]=],
-        cell_gap~=~[=[\luaescapestring{\l__luatexcn_content_cell_gap_tl}]=]
+        cell_gap~=~[=[\luaescapestring{\l__luatexcn_content_cell_gap_tl}]=],
+        n_bands~=~\int_use:N~\l__luatexcn_content_n_bands_int,
+        band_gap~=~[=[\luaescapestring{\l__luatexcn_content_band_gap_tl}]=],
+        band_mode~=~[=[\luaescapestring{\l__luatexcn_content_band_mode_tl}]=],
+        band_heights~=~[=[\luaescapestring{\l__luatexcn_content_band_heights_tl}]=],
+        band_columns~=~[=[\luaescapestring{\l__luatexcn_content_band_columns_tl}]=]
       })
     }
   }
@@ -538,6 +570,11 @@
     数字模式 .bool_set:N = \l__luatexcn_content_digital_mode_bool,
     缩进 .tl_set:N = \l__luatexcn_content_indent_tl,
     首行缩进 .tl_set:N = \l__luatexcn_content_first_indent_tl,
+    分栏 .int_set:N = \l__luatexcn_content_n_bands_int,
+    栏间距 .tl_set:N = \l__luatexcn_content_band_gap_tl,
+    栏模式 .tl_set:N = \l__luatexcn_content_band_mode_tl,
+    栏高度 .tl_set:N = \l__luatexcn_content_band_heights_tl,
+    栏列数 .tl_set:N = \l__luatexcn_content_band_columns_tl,
     % 繁体（与简体不同形的）
     邊框 .bool_set:N = \l__luatexcn_content_border_bool,
     邊框粗細 .tl_set:N = \l__luatexcn_content_border_thickness_tl,
@@ -566,7 +603,16 @@
     數字模式 .bool_set:N = \l__luatexcn_content_digital_mode_bool,
     縮進 .tl_set:N = \l__luatexcn_content_indent_tl,
     首行縮進 .tl_set:N = \l__luatexcn_content_first_indent_tl,
+    分欄 .int_set:N = \l__luatexcn_content_n_bands_int,
+    欄間距 .tl_set:N = \l__luatexcn_content_band_gap_tl,
+    欄模式 .tl_set:N = \l__luatexcn_content_band_mode_tl,
+    欄高度 .tl_set:N = \l__luatexcn_content_band_heights_tl,
+    欄列數 .tl_set:N = \l__luatexcn_content_band_columns_tl,
   }
 \ExplSyntaxOff
+
+% Band break command / 换栏命令
+\NewDocumentCommand{\换栏}{}{ \penalty -10006\relax }
+\NewDocumentCommand{\換欄}{}{ \penalty -10006\relax }
 
 \endinput

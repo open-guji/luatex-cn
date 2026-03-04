@@ -153,7 +153,8 @@ local function calculate_decorate_position(pos, reg, ctx, base_size, font_id, ch
 
     local dec_cell_h = pos.cell_height or ctx.grid_height or 0
     local target_y_sp = math.max(0, pos.y_sp - dec_cell_h)
-    local base_y = -target_y_sp - ctx.shift_y
+    local band_y_off = pos.band_y_offset_sp or 0
+    local base_y = -target_y_sp - band_y_off - ctx.shift_y
 
     -- Vertical Centering: Place the glyph's ink center at cell center
     local cell_center_y = base_y - dec_cell_h / 2

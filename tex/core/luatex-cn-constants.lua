@@ -413,6 +413,12 @@ constants.PENALTY_TAITOU = -10004
 --- Used by: DigitalContent environment obeylines handler
 constants.PENALTY_DIGITAL_NEWLINE = -10005
 
+--- Band break: Force wrap to next band (horizontal strip) in multi-band layout.
+--- In band mode, a page is divided into N horizontal bands, each with its own
+--- set of columns. This penalty forces the layout to skip to the next band.
+--- Used by: \换栏 command
+constants.PENALTY_BAND_BREAK = -10006
+
 --- Page fill marker: Allow page break, used in page splitting
 --- Note: This keeps standard TeX value for compatibility
 constants.PENALTY_PAGE_FILL = -10000

@@ -148,7 +148,61 @@ local function create_grid_context(params, line_limit, p_cols)
         -- Auto column wrap: when true (default), columns auto-wrap on overflow.
         -- Set to false to disable auto-wrap (only explicit penalties cause column breaks).
         auto_column_wrap = true,
+        -- Band (分栏) mode: divide page into horizontal bands
+        n_bands = 1,
+        cur_band = 0,
+        band_heights_sp = {},     -- band_heights_sp[band_idx] = height_sp
+        band_y_offsets_sp = {},   -- band_y_offsets_sp[band_idx] = y_offset_sp
+        band_line_limits = {},    -- band_line_limits[band_idx] = max_rows
+        band_cols_per_band = p_cols,
+        band_mode = "auto",
+        band_gap_sp = 0,
     }
+    -- Initialize band parameters
+    local n_bands = params.n_bands or 1
+    if n_bands > 1 then
+        local band_gap_sp = params.band_gap_sp or 0
+        local total_gap = band_gap_sp * (n_bands - 1)
+        local available_height = col_height_sp - total_gap
+        local band_heights = params.band_heights  -- user-specified per-band heights
+
+        local offset = 0
+        for i = 0, n_bands - 1 do
+            local h
+            if band_heights and band_heights[i + 1] then
+                h = band_heights[i + 1]
+            else
+                h = math.floor(available_height / n_bands)
+            end
+            ctx.band_heights_sp[i] = h
+            ctx.band_y_offsets_sp[i] = offset
+            ctx.band_line_limits[i] = default_cell_height and math.floor(h / default_cell_height)
+                or line_limit
+            offset = offset + h + band_gap_sp
+        end
+
+        ctx.n_bands = n_bands
+        ctx.band_cols_per_band = (params.band_columns and params.band_columns > 0)
+            and params.band_columns or p_cols
+        ctx.band_mode = params.band_mode or "auto"
+        ctx.band_gap_sp = band_gap_sp
+        -- Free mode (p_cols >= 10000): compute actual column count from content width
+        if ctx.band_cols_per_band >= 10000 then
+            local grid_w = params.grid_width or params.grid_height
+            local cw = params.content_width or 0
+            if cw > 0 and grid_w > 0 then
+                ctx.band_cols_per_band = math.floor(cw / grid_w)
+            end
+        end
+        -- Set initial line_limit to band 0's limit
+        ctx.line_limit = ctx.band_line_limits[0]
+        ctx.col_height_sp = ctx.band_heights_sp[0]
+    else
+        ctx.band_heights_sp[0] = col_height_sp
+        ctx.band_y_offsets_sp[0] = 0
+        ctx.band_line_limits[0] = line_limit
+    end
+
     ctx.page_chapter_titles[0] = ctx.chapter_title -- Initialize page 0 with the initial chapter title
     return ctx
 end
@@ -222,7 +276,7 @@ local function move_to_next_valid_position(ctx, interval, grid_height, indent)
             if indent then apply_indentation(ctx, indent) end
         end
         -- Skip Occupied
-        if is_occupied(ctx.occupancy, ctx.cur_page, ctx.cur_col, ctx.cur_row) then
+        if is_occupied(ctx.occupancy, ctx.cur_page, ctx.cur_band, ctx.cur_col, ctx.cur_row) then
             ctx.cur_row = ctx.cur_row + 1
             ctx.cur_y_sp = ctx.cur_row * grid_height
             if ctx.cur_row >= ctx.line_limit then
@@ -275,7 +329,27 @@ local function wrap_to_next_column(ctx, p_cols, interval, grid_height, indent, r
     -- Content overflowing beyond p_cols will render outside the border,
     -- making errors visible without cascading to subsequent pages.
     if ctx.auto_column_wrap ~= false then
-        if ctx.is_free_mode and ctx.content_width > 0 then
+        if ctx.n_bands > 1 then
+            -- Band mode: columns wrap within each band, then to next band
+            local cols_in_band = ctx.band_cols_per_band
+            if ctx.cur_col >= cols_in_band then
+                ctx.cur_col = 0
+                ctx.cur_band = ctx.cur_band + 1
+                if ctx.cur_band >= ctx.n_bands then
+                    if ctx.band_mode == "auto" then
+                        ctx.cur_band = 0
+                        should_wrap_page = true
+                    else
+                        -- per-page mode: stay on last band (overflow visible)
+                        ctx.cur_band = ctx.n_bands - 1
+                    end
+                end
+                -- Update line_limit and col_height for current band
+                ctx.line_limit = ctx.band_line_limits[ctx.cur_band]
+                ctx.col_height_sp = ctx.band_heights_sp[ctx.cur_band]
+                ctx.cur_y_sp = 0
+            end
+        elseif ctx.is_free_mode and ctx.content_width > 0 then
             -- Free mode: check if accumulated width exceeds available width
             if ctx.accumulated_width_sp >= ctx.content_width then
                 should_wrap_page = true
@@ -294,6 +368,12 @@ local function wrap_to_next_column(ctx, p_cols, interval, grid_height, indent, r
         -- new page has no content yet regardless of reset_content flag.
         -- (reset_content only controls same-page column wraps)
         ctx.page_has_content = false
+        -- Reset band to 0 on page turn
+        if ctx.n_bands > 1 then
+            ctx.cur_band = 0
+            ctx.line_limit = ctx.band_line_limits[0]
+            ctx.col_height_sp = ctx.band_heights_sp[0]
+        end
     end
     -- Always reset negative cur_column_indent on column wrap:
     -- taitou (negative indent) only applies to its own column.
@@ -421,7 +501,37 @@ local function handle_penalty_breaks(p_val, ctx, flush_buffer_fn, p_cols, interv
         ctx.cur_y_sp = 0
         ctx.cur_column_indent = 0
         ctx.page_has_content = false
+        -- Reset band to 0 on explicit page break
+        if ctx.n_bands > 1 then
+            ctx.cur_band = 0
+            ctx.line_limit = ctx.band_line_limits[0]
+            ctx.col_height_sp = ctx.band_heights_sp[0]
+        end
         move_to_next_valid_position(ctx, interval, grid_height, indent)
+        return true
+    elseif p_val == constants.PENALTY_BAND_BREAK then
+        -- Forced band break (\换栏 command)
+        -- Skip to the next horizontal band (or next page if on last band)
+        if ctx.n_bands > 1 then
+            flush_buffer_fn()
+            ctx.cur_col = 0
+            ctx.cur_row = 0
+            ctx.cur_y_sp = 0
+            ctx.cur_column_indent = 0
+            ctx.cur_band = ctx.cur_band + 1
+            if ctx.cur_band >= ctx.n_bands then
+                if ctx.band_mode == "auto" then
+                    ctx.cur_band = 0
+                    ctx.cur_page = ctx.cur_page + 1
+                    ctx.page_has_content = false
+                else
+                    ctx.cur_band = ctx.n_bands - 1
+                end
+            end
+            ctx.line_limit = ctx.band_line_limits[ctx.cur_band]
+            ctx.col_height_sp = ctx.band_heights_sp[ctx.cur_band]
+            move_to_next_valid_position(ctx, interval, grid_height, indent)
+        end
         return true
     end
     return false
@@ -516,8 +626,9 @@ local function resolve_node_indent(t, id, ctx, block_start_cols, grid_height, li
     -- TeX's attribute inheritance causes penalty nodes inside \Column to inherit
     -- forced indent from \Indent, leading to empty columns in layout grid.
     if id == constants.PENALTY then
-        local effective_limit = line_limit
-        local effective_col_height_sp = effective_limit * grid_height
+        local effective_limit = ctx.line_limit or line_limit
+        local effective_col_height_sp = math.min(effective_limit * grid_height,
+            ctx.col_height_sp or (effective_limit * grid_height))
         return 0, 0, effective_limit, effective_col_height_sp, 0, 0, 0, -1, nil
     end
 
@@ -598,9 +709,10 @@ local function resolve_node_indent(t, id, ctx, block_start_cols, grid_height, li
         tb_h = D.get_attribute(t, constants.ATTR_TEXTBOX_HEIGHT) or 0
     end
 
-    local effective_limit = line_limit - r_indent
+    local effective_limit = (ctx.line_limit or line_limit) - r_indent
     if effective_limit < indent + 1 then effective_limit = indent + 1 end
-    local effective_col_height_sp = effective_limit * grid_height
+    local effective_col_height_sp = math.min(effective_limit * grid_height,
+        ctx.col_height_sp or (effective_limit * grid_height))
 
     return indent, r_indent, effective_limit, effective_col_height_sp, tb_w, tb_h, base_indent, first_indent, block_id
 end
@@ -841,18 +953,22 @@ local function handle_glyph_node(t, ctx, col_buffer, layout_map, grid_height,
         local dec_page = ctx.cur_page
         local dec_col = ctx.cur_col
         local dec_y_sp = ctx.cur_y_sp
+        local dec_band = ctx.cur_band
 
         if ctx.just_wrapped_column and ctx.last_char_row then
             -- Column just wrapped - use previous character's position
             dec_page = ctx.last_char_page or ctx.cur_page
             dec_col = ctx.last_char_col or ctx.cur_col
             dec_y_sp = (ctx.last_char_y_sp or 0) + (ctx.last_char_cell_height or grid_height)
+            dec_band = ctx.last_char_band or ctx.cur_band
         end
 
         local map_entry = {
             page = dec_page,
             col = dec_col,
+            band = dec_band,
             y_sp = dec_y_sp,
+            band_y_offset_sp = ctx.band_y_offsets_sp[dec_band] or 0,
         }
 
         apply_style_attrs(map_entry, t)
@@ -878,6 +994,7 @@ local function handle_glyph_node(t, ctx, col_buffer, layout_map, grid_height,
         -- Track last character position for decoration markers
         ctx.last_char_page = ctx.cur_page
         ctx.last_char_col = ctx.cur_col
+        ctx.last_char_band = ctx.cur_band
         ctx.last_char_row = ctx.cur_row
         ctx.last_char_y_sp = ctx.cur_y_sp
         ctx.last_char_cell_height = cell_h
@@ -922,6 +1039,7 @@ local function handle_glyph_node(t, ctx, col_buffer, layout_map, grid_height,
                     node = pulled.node,
                     page = ctx.cur_page,
                     col = ctx.cur_col,
+                    band = ctx.cur_band,
                     y_sp = ctx.cur_y_sp,
                     height = pulled.height,
                     cell_height = pulled.cell_height,
@@ -949,6 +1067,7 @@ local function handle_glyph_node(t, ctx, col_buffer, layout_map, grid_height,
             node = t,
             page = ctx.cur_page,
             col = ctx.cur_col,
+            band = ctx.cur_band,
             y_sp = ctx.cur_y_sp,
             height = (D.getfield(t, "height") or 0) + (D.getfield(t, "depth") or 0),
             cell_height = cell_h,
@@ -1205,7 +1324,9 @@ local function flush_buffer(col_buffer, ctx, grid_height, distribute, layout_map
         local map_entry = {
             page = entry.page,
             col = entry.col,
+            band = entry.band or 0,
             y_sp = y_sp,
+            band_y_offset_sp = ctx.band_y_offsets_sp[entry.band or 0] or 0,
             is_block = entry.is_block,
             width = entry.width,
             height = entry.height,
@@ -1317,7 +1438,9 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
             local map_entry = {
                 page = ctx.cur_page,
                 col = ctx.cur_col,
+                band = ctx.cur_band,
                 y_sp = ctx.cur_y_sp,
+                band_y_offset_sp = ctx.band_y_offsets_sp[ctx.cur_band] or 0,
             }
             apply_style_attrs(map_entry, t)
 

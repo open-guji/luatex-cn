@@ -212,6 +212,31 @@ local function parse_visual_params(params)
     if params.cell_gap and params.cell_gap ~= "" then
         _G.content.cell_gap = constants.to_dimen(params.cell_gap)
     end
+    -- Band (分栏) parameters
+    if params.n_bands then
+        _G.content.n_bands = tonumber(params.n_bands) or 1
+    end
+    if params.band_gap and params.band_gap ~= "" then
+        _G.content.band_gap = constants.to_dimen(params.band_gap) or 0
+    end
+    if params.band_mode and params.band_mode ~= "" then
+        _G.content.band_mode = params.band_mode
+    end
+    if params.band_heights and params.band_heights ~= "" then
+        local heights = {}
+        for dim_str in params.band_heights:gmatch("[^,]+") do
+            dim_str = dim_str:match("^%s*(.-)%s*$")  -- trim
+            if dim_str ~= "" then
+                table.insert(heights, constants.to_dimen(dim_str) or 0)
+            end
+        end
+        if #heights > 0 then
+            _G.content.band_heights = heights
+        end
+    end
+    if params.band_columns and params.band_columns ~= "" then
+        _G.content.band_columns = tonumber(params.band_columns) or 0
+    end
 end
 
 --- Push content base style to style stack

@@ -691,7 +691,7 @@ function textbox.place_textbox_node(ctx, node, tb_w, tb_h, params, callbacks)
 
     for c = ctx.cur_col, ctx.cur_col + tb_w - 1 do
         for r = ctx.cur_row, ctx.cur_row + tb_h - 1 do
-            callbacks.mark_occupied(ctx.occupancy, ctx.cur_page, c, r)
+            callbacks.mark_occupied(ctx.occupancy, ctx.cur_page, ctx.cur_band, c, r)
         end
     end
 
@@ -704,6 +704,7 @@ function textbox.place_textbox_node(ctx, node, tb_w, tb_h, params, callbacks)
         node = node,
         page = ctx.cur_page,
         col = ctx.cur_col,
+        band = ctx.cur_band,
         relative_row = ctx.cur_row,
         y_sp = ctx.cur_y_sp,
         is_block = true,

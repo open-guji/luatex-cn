@@ -607,7 +607,9 @@ local function place_textflow_segment(ctx, nodes, layout_map, params, callbacks,
             local entry = {
                 page = ctx.cur_page,
                 col = ctx.cur_col,
+                band = ctx.cur_band,
                 y_sp = base_y_sp + node_info.relative_row,  -- relative_row is y_offset_sp
+                band_y_offset_sp = ctx.band_y_offsets_sp and ctx.band_y_offsets_sp[ctx.cur_band] or 0,
                 sub_col = node_info.sub_col,
                 cell_height = node_cell_h,
             }
@@ -634,7 +636,9 @@ local function place_textflow_segment(ctx, nodes, layout_map, params, callbacks,
                         local dec_entry = {
                             page = entry.page,
                             col = entry.col,
+                            band = entry.band,
                             y_sp = entry.y_sp + node_cell_h,
+                            band_y_offset_sp = entry.band_y_offset_sp,
                             sub_col = entry.sub_col,
                         }
                         helpers.apply_style_attrs(dec_entry, dec_node)

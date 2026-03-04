@@ -368,7 +368,9 @@ function column.place_nodes(ctx, start_node, layout_map, params, callbacks)
             local entry = {
                 page = ctx.cur_page,
                 col = ctx.cur_col,
+                band = ctx.cur_band,
                 y_sp = cur_row * grid_height,
+                band_y_offset_sp = ctx.band_y_offsets_sp and ctx.band_y_offsets_sp[ctx.cur_band] or 0,
                 v_scale = v_scale,
                 cell_height = helpers.resolve_cell_height(item.node, grid_height, nil, ctx.punct_config),
                 cell_width = helpers.resolve_cell_width(item.node, nil),
@@ -392,7 +394,9 @@ function column.place_nodes(ctx, start_node, layout_map, params, callbacks)
                     local entry = {
                         page = ctx.cur_page,
                         col = ctx.cur_col,
+                        band = ctx.cur_band,
                         y_sp = cur_row * grid_height + a.relative_row * v_scale,
+                        band_y_offset_sp = ctx.band_y_offsets_sp and ctx.band_y_offsets_sp[ctx.cur_band] or 0,
                         sub_col = a.sub_col,
                         v_scale = v_scale,
                         cell_height = grid_height,
@@ -407,7 +411,9 @@ function column.place_nodes(ctx, start_node, layout_map, params, callbacks)
             local entry = {
                 page = ctx.cur_page,
                 col = ctx.cur_col,
+                band = ctx.cur_band,
                 y_sp = cur_row * grid_height,
+                band_y_offset_sp = ctx.band_y_offsets_sp and ctx.band_y_offsets_sp[ctx.cur_band] or 0,
                 is_block = true,
                 height = item.height,
                 v_scale = v_scale

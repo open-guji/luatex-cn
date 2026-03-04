@@ -157,16 +157,18 @@ end
 -- Occupancy map functions
 -- =============================================================================
 
-local function is_occupied(occupancy, p, c, r)
+local function is_occupied(occupancy, p, b, c, r)
     if not occupancy[p] then return false end
-    if not occupancy[p][c] then return false end
-    return occupancy[p][c][r] == true
+    if not occupancy[p][b] then return false end
+    if not occupancy[p][b][c] then return false end
+    return occupancy[p][b][c][r] == true
 end
 
-local function mark_occupied(occupancy, p, c, r)
+local function mark_occupied(occupancy, p, b, c, r)
     if not occupancy[p] then occupancy[p] = {} end
-    if not occupancy[p][c] then occupancy[p][c] = {} end
-    occupancy[p][c][r] = true
+    if not occupancy[p][b] then occupancy[p][b] = {} end
+    if not occupancy[p][b][c] then occupancy[p][b][c] = {} end
+    occupancy[p][b][c][r] = true
 end
 
 -- =============================================================================

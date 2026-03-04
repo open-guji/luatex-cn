@@ -98,6 +98,7 @@ local function handle_glyph_node(curr, p_head, pos, params, ctx)
     glyph_params.cell_height = pos.cell_height
     glyph_params.cell_width = pos.cell_width
     glyph_params.y_sp = pos.y_sp
+    glyph_params.band_y_offset_sp = pos.band_y_offset_sp or 0
 
     local final_x, final_y = text_position.calc_grid_position(pos.col, glyph_dims, glyph_params)
 
@@ -216,7 +217,7 @@ local function handle_block_node(curr, p_head, pos, ctx)
         end
     end
 
-    local final_y_top = -pos.y_sp - ctx.shift_y
+    local final_y_top = -pos.y_sp - (pos.band_y_offset_sp or 0) - ctx.shift_y
     D.setfield(curr, "shift", -final_y_top + h)
 
     local k_pre = D.new(constants.KERN)
@@ -269,7 +270,7 @@ local function handle_debug_drawing(curr, p_head, pos, ctx)
                 ctx.half_thickness, ctx.shift_x)
             tw_sp = text_position.get_column_width(pos.col, ctx.col_geom)
         end
-        local ty_sp = -pos.y_sp - (ctx.shift_y or 0)
+        local ty_sp = -pos.y_sp - (pos.band_y_offset_sp or 0) - (ctx.shift_y or 0)
         local th_sp = -(pos.cell_height or ctx.grid_height)
 
         if pos.sub_col and pos.sub_col > 0 then
@@ -390,7 +391,7 @@ local function process_page_nodes(p_head, layout_map, params, ctx)
                     _, final_x = text_position.calculate_rtl_position(pos.col, ctx.p_total_cols, ctx.col_geom,
                         ctx.half_thickness, ctx.shift_x)
                 end
-                local final_y = -pos.y_sp - (ctx.shift_y or 0)
+                local final_y = -pos.y_sp - (pos.band_y_offset_sp or 0) - (ctx.shift_y or 0)
 
                 -- Insert kern to move to correct position, then kern back
                 local k_pre = D.new(constants.KERN)

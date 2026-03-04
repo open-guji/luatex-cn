@@ -460,6 +460,12 @@ local function compute_grid_layout(list, params, engine_ctx, plugin_contexts, p_
             or (_G.metadata and _G.metadata.chapter_title)
             or "",
         content_width = engine_ctx.content_width,
+        -- Band (分栏) parameters
+        n_bands = _G.content.n_bands or 1,
+        band_gap_sp = _G.content.band_gap or 0,
+        band_mode = _G.content.band_mode or "auto",
+        band_heights = _G.content.band_heights,
+        band_columns = _G.content.band_columns or 0,
     }
 
     -- Banxin: textbox uses center-gap logic; non-textbox uses global banxin_on

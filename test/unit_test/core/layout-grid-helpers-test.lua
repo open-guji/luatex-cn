@@ -9,32 +9,41 @@ local style_registry = require("util.luatex-cn-style-registry")
 
 test_utils.run_test("is_occupied: empty map returns false", function()
     local occ = {}
-    test_utils.assert_eq(helpers.is_occupied(occ, 1, 2, 3), false)
+    test_utils.assert_eq(helpers.is_occupied(occ, 1, 0, 2, 3), false)
 end)
 
 test_utils.run_test("mark_occupied: marks and is_occupied returns true", function()
     local occ = {}
-    helpers.mark_occupied(occ, 1, 2, 3)
-    test_utils.assert_eq(helpers.is_occupied(occ, 1, 2, 3), true)
+    helpers.mark_occupied(occ, 1, 0, 2, 3)
+    test_utils.assert_eq(helpers.is_occupied(occ, 1, 0, 2, 3), true)
 end)
 
 test_utils.run_test("is_occupied: different position returns false", function()
     local occ = {}
-    helpers.mark_occupied(occ, 1, 2, 3)
-    test_utils.assert_eq(helpers.is_occupied(occ, 1, 2, 4), false)
-    test_utils.assert_eq(helpers.is_occupied(occ, 1, 3, 3), false)
-    test_utils.assert_eq(helpers.is_occupied(occ, 2, 2, 3), false)
+    helpers.mark_occupied(occ, 1, 0, 2, 3)
+    test_utils.assert_eq(helpers.is_occupied(occ, 1, 0, 2, 4), false)
+    test_utils.assert_eq(helpers.is_occupied(occ, 1, 0, 3, 3), false)
+    test_utils.assert_eq(helpers.is_occupied(occ, 2, 0, 2, 3), false)
 end)
 
 test_utils.run_test("mark_occupied: multiple positions", function()
     local occ = {}
-    helpers.mark_occupied(occ, 1, 0, 0)
-    helpers.mark_occupied(occ, 1, 0, 1)
-    helpers.mark_occupied(occ, 2, 3, 5)
-    test_utils.assert_eq(helpers.is_occupied(occ, 1, 0, 0), true)
-    test_utils.assert_eq(helpers.is_occupied(occ, 1, 0, 1), true)
-    test_utils.assert_eq(helpers.is_occupied(occ, 2, 3, 5), true)
-    test_utils.assert_eq(helpers.is_occupied(occ, 1, 0, 2), false)
+    helpers.mark_occupied(occ, 1, 0, 0, 0)
+    helpers.mark_occupied(occ, 1, 0, 0, 1)
+    helpers.mark_occupied(occ, 2, 0, 3, 5)
+    test_utils.assert_eq(helpers.is_occupied(occ, 1, 0, 0, 0), true)
+    test_utils.assert_eq(helpers.is_occupied(occ, 1, 0, 0, 1), true)
+    test_utils.assert_eq(helpers.is_occupied(occ, 2, 0, 3, 5), true)
+    test_utils.assert_eq(helpers.is_occupied(occ, 1, 0, 0, 2), false)
+end)
+
+test_utils.run_test("mark_occupied: different bands are independent", function()
+    local occ = {}
+    helpers.mark_occupied(occ, 1, 0, 2, 3)
+    helpers.mark_occupied(occ, 1, 1, 2, 3)
+    test_utils.assert_eq(helpers.is_occupied(occ, 1, 0, 2, 3), true)
+    test_utils.assert_eq(helpers.is_occupied(occ, 1, 1, 2, 3), true)
+    test_utils.assert_eq(helpers.is_occupied(occ, 1, 2, 2, 3), false)
 end)
 
 -- ============================================================================

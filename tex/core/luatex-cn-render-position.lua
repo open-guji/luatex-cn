@@ -338,7 +338,8 @@ local function calc_grid_position(col, glyph_dims, params)
     -- Calculate Y offset based on vertical alignment
     -- cell_height: actual cell height for this glyph (set by layout for all glyph entries)
     local cell_height = params.cell_height
-    local y_offset = -params.y_sp - (shift_y or 0)
+    local band_y_off = params.band_y_offset_sp or 0
+    local y_offset = -params.y_sp - band_y_off - (shift_y or 0)
 
     if v_align == "top" then
         y_offset = y_offset - h

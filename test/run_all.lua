@@ -25,6 +25,7 @@ local tests = {
 
     -- Core layer (complex modules, smoke tests)
     "test/unit_test/core/layout-grid-test.lua",
+    "test/unit_test/core/layout-grid-band-test.lua",
     "test/unit_test/core/render-page-test.lua",
     "test/unit_test/core/core-column-test.lua",
 

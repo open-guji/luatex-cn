@@ -124,18 +124,20 @@ function textflow.collect_nodes(start_node, opts)
     while temp_t do
         -- Check if this node belongs to the textflow sequence.
         -- Decorate markers (e.g., judou marks created by judou.flatten) are
-        -- zero-width glyph nodes that do NOT carry ATTR_JIAZHU because they
-        -- were newly created after flatten_vbox. They must be skipped over
-        -- (not collected as content) so they don't break the textflow sequence.
-        local is_jiazhu = D.get_attribute(temp_t, constants.ATTR_JIAZHU) == 1
+        -- zero-width glyph nodes that carry ATTR_DECORATE_ID. They must be
+        -- skipped over (not collected as content) so they don't break the
+        -- textflow sequence. Note: inside jiazhu, decorate markers may also
+        -- carry ATTR_JIAZHU=1 (inherited from TeX context), so we must check
+        -- for decorate BEFORE the jiazhu check.
         local tid = D.getid(temp_t)
         local is_decorate = false
-        if not is_jiazhu and tid == constants.GLYPH then
+        if tid == constants.GLYPH then
             local dec_id = D.get_attribute(temp_t, constants.ATTR_DECORATE_ID)
             if dec_id and dec_id > 0 then
                 is_decorate = true
             end
         end
+        local is_jiazhu = not is_decorate and D.get_attribute(temp_t, constants.ATTR_JIAZHU) == 1
 
         if not is_jiazhu and not is_decorate then
             break

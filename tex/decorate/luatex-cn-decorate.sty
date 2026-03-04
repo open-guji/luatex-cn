@@ -139,12 +139,13 @@
 \NewDocumentCommand{\fix}{ m }{%
   \group_begin:
     % First: overlay a 、 symbol to mark deletion (centered on the character)
+    % yshift=0.15em nudges the scaled 、 downward for better vertical centering
     \lua_now:e {
       local~constants~=~require('core.luatex-cn-constants')
       constants.register_decorate(
         "、",
         "0em",
-        "0em",
+        "0.15em",
         nil,
         "black",
         nil,

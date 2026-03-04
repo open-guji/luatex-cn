@@ -196,9 +196,12 @@ function linemark.render_line_marks(p_head, entries, ctx)
                 local curr = group_entries[i]
                 local same_col = curr.col == prev.col
                 local same_sub = (curr.sub_col or 0) == (prev.sub_col or 0)
-                -- Consecutive: curr starts within prev cell bottom + small tolerance
-                local prev_bottom = prev.y_sp + (prev.cell_height or ctx.grid_height)
-                local tolerance = ctx.grid_height * 0.01
+                -- Consecutive: curr starts within prev cell bottom + tolerance
+                -- In natural mode, characters have ~0.1em inter-cell gap plus possible
+                -- stretch/squeeze adjustment, so tolerance must cover this gap.
+                local prev_cell_h = prev.cell_height or ctx.grid_height
+                local prev_bottom = prev.y_sp + prev_cell_h
+                local tolerance = prev_cell_h * 0.2
                 if same_col and same_sub and (curr.y_sp <= prev_bottom + tolerance) then
                     cur_seg[#cur_seg + 1] = curr
                 else

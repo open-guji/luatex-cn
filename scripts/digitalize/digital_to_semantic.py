@@ -450,7 +450,19 @@ class ReverseConverter:
         if not block_data:
             return [lines[start_index]], 1
 
-        # Step 2: 将 subcol 对扁平化为 subcol 流（保留 \样式 包装）
+        # Step 2: 检测 \注→\按 过渡处是否需要 \换行
+        # 条件: \注 最后一行的 \左小列 为空（内容仅排到右列），后面紧接 \按
+        needs_newline_before_an = False
+        for i in range(len(block_data) - 1):
+            _, r_indent, l_text, _, _, _, _ = block_data[i]
+            _, next_r_indent, _, _, _, _, _ = block_data[i + 1]
+            if (r_indent is not None and r_indent <= self.zhu_indent and
+                    not l_text and
+                    next_r_indent is not None and next_r_indent >= self.an_indent):
+                needs_newline_before_an = True
+                break
+
+        # Step 3: 将 subcol 对扁平化为 subcol 流（保留 \样式 包装）
         subcol_flow = []  # [(text, indent, optional_arg)]
         line_style = ''  # 行级 \样式 包装（如 \样式[grid-height=24pt]{ ）
         for r_text, r_indent, l_text, l_indent, l_opt, style_pre, style_suf in block_data:
@@ -459,11 +471,12 @@ class ReverseConverter:
             if style_pre and not line_style:
                 line_style = style_pre  # 记录行级 \样式
 
-        # Step 3: 按 base indent 分组
+        # Step 4: 按 base indent 分组
         groups = self._group_subcols(subcol_flow)
 
-        # Step 4: 生成输出
+        # Step 5: 生成输出
         output = []
+        prev_was_zhu = False
         for base_indent, subcol_texts in groups:
             merged = ''.join(subcol_texts)
             if not merged:
@@ -473,9 +486,14 @@ class ReverseConverter:
                 merged = f'{line_style}{merged}}}'
                 line_style = ''  # 只用一次
             if base_indent >= self.an_indent:
+                # \注 内容仅排到右列就结束，后接 \按 → 插入 \换行
+                if needs_newline_before_an and prev_was_zhu:
+                    output.append('\\换行\n')
                 output.append(f'\\按{{{merged}}}\n')
+                prev_was_zhu = False
             else:
                 output.append(f'\\注{{{merged}}}\n')
+                prev_was_zhu = True
 
         if not output:
             return [lines[start_index]], 1

@@ -577,6 +577,11 @@ local function generate_physical_pages(list, params, engine_ctx, plugin_contexts
             col_spacing_bottom_sp = _G.content and _G.content.col_spacing_bottom_sp or nil,
             -- Content width for right-align calculation
             content_width = engine_ctx.content_width,
+            -- Band (分栏) info for border rendering
+            n_bands = _G.content and _G.content.n_bands or 1,
+            band_gap_sp = _G.content and _G.content.band_gap or 0,
+            band_heights_sp = _G.content and _G.content.band_heights_sp or nil,
+            band_y_offsets_sp = _G.content and _G.content.band_y_offsets_sp or nil,
         },
         page = p_info,       -- { p_width, p_height, m_*, is_textbox, is_outer_border, ob_* }
         engine = engine_ctx, -- { border_thickness, draw_border, shifts, colors, reserved_cols helpers }

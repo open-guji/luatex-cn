@@ -120,6 +120,98 @@ local function draw_column_borders(p_head, params)
 end
 
 -- ============================================================================
+-- Band Border Drawing (分栏边框)
+-- ============================================================================
+
+--- 绘制分栏边框（每栏外框 + 栏间分隔线）
+-- @param p_head (node) 节点列表头部（直接引用）
+-- @param params (table) 参数表:
+--   - n_bands: 栏数
+--   - band_heights_sp: band_heights_sp[band_idx] = height_sp
+--   - band_y_offsets_sp: band_y_offsets_sp[band_idx] = y_offset_sp
+--   - inner_width: 内容区域宽度 (sp)
+--   - border_thickness: 边框厚度 (sp)
+--   - border_rgb_str: RGB 颜色字符串
+--   - shift_x: 水平偏移 (sp)
+--   - outer_shift: 外边框偏移 (sp)
+--   - band_gap_sp: 栏间距 (sp)
+-- @return (node) 更新后的头部
+local function draw_band_borders(p_head, params)
+    local sp_to_bp = utils.sp_to_bp
+    local n_bands = params.n_bands
+    local band_heights_sp = params.band_heights_sp
+    local band_y_offsets_sp = params.band_y_offsets_sp
+    local inner_width = params.inner_width
+    local border_thickness = params.border_thickness
+    local border_rgb_str = params.border_rgb_str
+    local shift_x = params.shift_x or 0
+    local outer_shift = params.outer_shift or 0
+    local banxin_width = params.banxin_width or 0
+
+    local b_thickness_bp = border_thickness * sp_to_bp
+    local half_thickness = math.floor(border_thickness / 2)
+
+    -- Calculate first and last band positions
+    local first_band_top = band_y_offsets_sp[0] or 0
+    local last_band_bottom = (band_y_offsets_sp[n_bands - 1] or 0) +
+                             (band_heights_sp[n_bands - 1] or 0)
+
+    -- Determine content start X (after banxin)
+    -- Note: In vertical layout, banxin is on the left side
+    local content_start_x = shift_x + banxin_width
+    local content_width = inner_width - banxin_width
+
+    -- Draw left and right vertical borders (covering content area only, excluding banxin)
+    local left_x_bp = (half_thickness + content_start_x) * sp_to_bp
+    local right_x_bp = left_x_bp + content_width * sp_to_bp
+    local vert_top_y_bp = -(half_thickness + outer_shift + first_band_top) * sp_to_bp
+    local vert_bottom_y_bp = -(half_thickness + outer_shift + last_band_bottom) * sp_to_bp
+
+    -- Left vertical line (right edge of banxin area)
+    local left_line = string.format(
+        "q %.2f w %s RG %.4f %.4f m %.4f %.4f l S Q",
+        b_thickness_bp, border_rgb_str,
+        left_x_bp, vert_top_y_bp, left_x_bp, vert_bottom_y_bp)
+    p_head = utils.insert_pdf_literal(p_head, left_line)
+
+    -- Right vertical line (right edge of content area)
+    local right_line = string.format(
+        "q %.2f w %s RG %.4f %.4f m %.4f %.4f l S Q",
+        b_thickness_bp, border_rgb_str,
+        right_x_bp, vert_top_y_bp, right_x_bp, vert_bottom_y_bp)
+    p_head = utils.insert_pdf_literal(p_head, right_line)
+
+    -- Draw horizontal lines: top of first band + bottom of each band
+    -- These lines span the content area only (excluding banxin)
+    for band = 0, n_bands - 1 do
+        local band_y = band_y_offsets_sp[band] or 0
+        local band_h = band_heights_sp[band] or 0
+
+        -- Top line only for the first band
+        if band == 0 then
+            local top_y = band_y
+            local horz_top_y_bp = -(half_thickness + outer_shift + top_y) * sp_to_bp
+            local top_line = string.format(
+                "q %.2f w %s RG %.4f %.4f m %.4f %.4f l S Q",
+                b_thickness_bp, border_rgb_str,
+                left_x_bp, horz_top_y_bp, right_x_bp, horz_top_y_bp)
+            p_head = utils.insert_pdf_literal(p_head, top_line)
+        end
+
+        -- Bottom line of this band (serves as divider for next band)
+        local bottom_y = band_y + band_h
+        local horz_bottom_y_bp = -(half_thickness + outer_shift + bottom_y) * sp_to_bp
+        local bottom_line = string.format(
+            "q %.2f w %s RG %.4f %.4f m %.4f %.4f l S Q",
+            b_thickness_bp, border_rgb_str,
+            left_x_bp, horz_bottom_y_bp, right_x_bp, horz_bottom_y_bp)
+        p_head = utils.insert_pdf_literal(p_head, bottom_line)
+    end
+
+    return p_head
+end
+
+-- ============================================================================
 -- Outer Border Drawing
 -- ============================================================================
 
@@ -330,8 +422,8 @@ local function render_borders(p_head, params)
         interval = interval,
     })
 
-    -- 1. Draw column borders
-    if params.draw_border and p_total_cols > 0 then
+    -- 1. Draw column borders (skip in band mode — bands have their own frames)
+    if params.draw_border and p_total_cols > 0 and not params.band_mode then
         p_head = draw_column_borders(p_head, {
             total_cols = p_total_cols,
             grid_width = grid_width,
@@ -346,8 +438,24 @@ local function render_borders(p_head, params)
         })
     end
 
-    -- 2. Draw outer border
-    if params.draw_outer_border_flag and p_total_cols > 0 then
+    -- 1b. Band borders (per-band frames + divider lines between bands)
+    if params.band_mode and params.n_bands and params.n_bands > 1 then
+        p_head = draw_band_borders(p_head, {
+            n_bands = params.n_bands,
+            band_heights_sp = params.band_heights_sp,
+            band_y_offsets_sp = params.band_y_offsets_sp,
+            inner_width = inner_width,
+            border_thickness = border_thickness,
+            border_rgb_str = params.b_rgb_str,
+            shift_x = params.shift_x,
+            outer_shift = params.outer_shift,
+            band_gap_sp = params.band_gap_sp,
+            banxin_width = params.banxin_width or 0,
+        })
+    end
+
+    -- 2. Draw outer border (skip in band mode — band frames replace it)
+    if params.draw_outer_border_flag and p_total_cols > 0 and not params.band_mode then
         p_head = draw_outer_border(p_head, {
             inner_width = inner_width,
             inner_height = inner_height,
@@ -473,6 +581,7 @@ end
 
 local render_border = {
     draw_column_borders = draw_column_borders,
+    draw_band_borders = draw_band_borders,
     draw_outer_border = draw_outer_border,
     render_borders = render_borders,
 }

@@ -219,6 +219,11 @@ local function calculate_render_context(ctx)
         textbox_outer_border = textbox_outer_border,
         textbox_ob_thickness = textbox_ob_thickness,
         textbox_ob_sep = textbox_ob_sep,
+        -- Band (分栏) border params
+        n_bands = grid.n_bands or 1,
+        band_gap_sp = grid.band_gap_sp or 0,
+        band_heights_sp = grid.band_heights_sp,
+        band_y_offsets_sp = grid.band_y_offsets_sp,
     }
 end
 
@@ -414,6 +419,12 @@ local function render_single_page(p_head, p_max_col, p, layout_map, params, ctx,
         textbox_outer_border = ctx.textbox_outer_border,
         textbox_ob_thickness = ctx.textbox_ob_thickness,
         textbox_ob_sep = ctx.textbox_ob_sep,
+        -- Band (分栏) border params
+        band_mode = (ctx.n_bands and ctx.n_bands > 1),
+        n_bands = ctx.n_bands,
+        band_heights_sp = ctx.band_heights_sp,
+        band_y_offsets_sp = ctx.band_y_offsets_sp,
+        band_gap_sp = ctx.band_gap_sp,
     })
 
     -- Font color

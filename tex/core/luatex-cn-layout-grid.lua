@@ -1767,6 +1767,13 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
 
     export_free_mode_data(ctx, layout_map, params)
 
+    -- Export band layout info for render layer (border drawing)
+    if ctx.n_bands > 1 and _G.content then
+        _G.content.band_heights_sp = ctx.band_heights_sp
+        _G.content.band_y_offsets_sp = ctx.band_y_offsets_sp
+        _G.content.band_cols_per_band = ctx.band_cols_per_band
+    end
+
     return layout_map, ctx.cur_page + 1, ctx.page_chapter_titles, ctx.banxin_registry, ctx.page_resets
 end
 

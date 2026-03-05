@@ -464,13 +464,33 @@ local function render_borders(p_head, params)
     -- 1c. Inline table band divider lines (per-page table band info)
     local ptb = params.page_table_bands
     if params.draw_border and ptb and ptb.n_bands and ptb.n_bands > 1 then
-        -- Calculate table region with column range limits
-        local table_start = ptb.table_start_col or 0
+        -- table_start_col is a logical column index (0 = rightmost).
+        -- draw_band_borders uses RTL column indices (0 = leftmost).
+        -- Convert logical range to RTL range.
+        local table_start_logical = ptb.table_start_col or 0
         local table_cols = ptb.actual_band_cols or p_total_cols
-        if table_start + table_cols > p_total_cols then
-            table_cols = p_total_cols - table_start
+
+        -- Find end logical column by stepping through content columns,
+        -- skipping banxin (reserved) columns in between.
+        local end_logical = table_start_logical
+        local placed = 0
+        local iv = col_geom.interval or 0
+        while placed < table_cols do
+            local is_bx = (iv > 0) and ((end_logical % (iv + 1)) == iv)
+            if not is_bx then
+                placed = placed + 1
+            end
+            if placed < table_cols then
+                end_logical = end_logical + 1
+            end
         end
-        local table_end = table_start + table_cols - 1
+
+        -- Convert logical columns to RTL columns
+        local range_start_rtl = p_total_cols - 1 - end_logical
+        local range_end_rtl = p_total_cols - 1 - table_start_logical
+        if range_start_rtl < 0 then range_start_rtl = 0 end
+        if range_end_rtl >= p_total_cols then range_end_rtl = p_total_cols - 1 end
+
         p_head = draw_band_borders(p_head, {
             n_bands = ptb.n_bands,
             band_heights_sp = ptb.band_heights_sp,
@@ -482,8 +502,8 @@ local function render_borders(p_head, params)
             band_gap_sp = ptb.band_gap_sp,
             col_geom = col_geom,
             total_cols = p_total_cols,
-            col_range_start = table_start,
-            col_range_end = table_end,
+            col_range_start = range_start_rtl,
+            col_range_end = range_end_rtl,
         })
     end
 

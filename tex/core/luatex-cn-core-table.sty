@@ -118,6 +118,7 @@
 
 \NewDocumentCommand{\Cell}{ O{} +m }
   {
+    \int_zero:N \l__luatexcn_cell_col_width_int
     \keys_set:nn { luatexcn / cell } { #1 }
     \lua_now:e {
       require('core.luatex-cn-core-table').begin_cell(

@@ -1,0 +1,25 @@
+\documentclass{ltc-guji}
+\setmainfont{TW-Kai}
+\关闭分页
+\无标点模式
+
+\NewDocumentCommand{\注}{ +m }{%
+  \begin{段落}[indent=2]
+    \夹注[auto-balance=false]{#1}%
+  \end{段落}%
+}
+\NewDocumentCommand{\國朝}{}{\相对抬头[1]{國朝}}
+
+% 复现 bug: 换页后 紧接 夹注及抬头，会多空一格。
+% 模拟四库全书简明目录的结构
+\begin{document}
+\begin{正文}
+
+田間易學十二卷
+\换页 % 第69、70页
+
+\注{\國朝 錢澄之撰澄之初問易於黃道周故頗詳於數學後乃兼求義理參取於王弼孔穎達程子朱子之間其謂先天河洛皆因易而作圖用錢義方之說謂圖中奇偶乃揲蓍之法非畫卦之本用陳應潤之說也}
+
+\end{正文}
+\end{document}
+

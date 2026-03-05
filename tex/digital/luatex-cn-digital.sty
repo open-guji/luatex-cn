@@ -216,16 +216,13 @@
 \NewCommandCopy{\上鱼尾}{\UpperYuwei}
 \NewCommandCopy{\下鱼尾}{\LowerYuwei}
 \NewEnvironmentCopy{版心中部}{BanxinMiddle}
-% \换页 must delegate to \newpage (not copy) because \newpage is
 % overridden inside Content groups to emit PENALTY_FORCE_PAGE.
-\NewDocumentCommand{\换页}{}{\newpage}
 % Traditional Chinese (only chars that differ from simplified)
 % \縮進 is defined in core/luatex-cn-core-paragraph.sty
 \NewCommandCopy{\雙列}{\DualColumn}
 \NewEnvironmentCopy{數字化內容}{BodyText}
 \NewCommandCopy{\上魚尾}{\UpperYuwei}
 \NewCommandCopy{\下魚尾}{\LowerYuwei}
-\NewCommandCopy{\換頁}{\换页}
 
 \ExplSyntaxOff
 \endinput

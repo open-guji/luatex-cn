@@ -393,12 +393,16 @@
 \NewCommandCopy{\关闭分页}{\disableSplitPage}
 \NewCommandCopy{\设置页码}{\SetPageNumber}
 \NewCommandCopy{\重置页码}{\ResetPageNumber}
+% \换页 must delegate to \newpage (not copy) because \newpage is
+% overridden inside Content groups to emit PENALTY_FORCE_PAGE.
+\NewDocumentCommand{\换页}{}{\newpage}
 % Traditional Chinese / 繁体
 \NewCommandCopy{\頁面設置}{\pageSetup}
 \NewCommandCopy{\開啟分頁}{\enableSplitPage}
 \NewCommandCopy{\關閉分頁}{\disableSplitPage}
 \NewCommandCopy{\設置頁碼}{\SetPageNumber}
 \NewCommandCopy{\重置頁碼}{\ResetPageNumber}
+\NewCommandCopy{\換頁}{\换页}
 
 % ============================================================
 % Chinese key aliases / 中文 Key 别名

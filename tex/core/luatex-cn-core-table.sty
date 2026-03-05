@@ -1,0 +1,121 @@
+% Copyright 2026 Open-Guji (https://github.com/open-guji)
+%
+% Licensed under the Apache License, Version 2.0 (the "License");
+% you may not use this file except in compliance with the License.
+% You may obtain a copy of the License at
+%
+%     http://www.apache.org/licenses/LICENSE-2.0
+%
+% Unless required by applicable law or agreed to in writing, software
+% distributed under the License is distributed on an "AS IS" BASIS,
+% WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+% See the License for the specific language governing permissions and
+% limitations under the License.
+
+% luatex-cn-core-table.sty
+% Table environment for vertical typesetting
+% Provides \begin{Table} / \begin{表格} environment and \Cell / \单元格 command
+
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesExplPackage{luatex-cn-core-table}{2026/03/05}{0.1.0}
+  {Table environment for luatex-cn vertical typesetting}
+
+\ExplSyntaxOn
+
+% ============================================================================
+% Table Parameters
+% ============================================================================
+
+\int_new:N \l__luatexcn_table_n_bands_int
+\tl_new:N \l__luatexcn_table_band_gap_tl
+\tl_new:N \l__luatexcn_table_band_heights_tl
+\tl_new:N \l__luatexcn_table_n_cols_tl
+\int_new:N \l__luatexcn_table_header_rows_int
+\int_new:N \l__luatexcn_cell_col_width_int
+
+\keys_define:nn { luatexcn / table }
+  {
+    n-bands .int_set:N = \l__luatexcn_table_n_bands_int,
+    n-bands .initial:n = 2,
+    band-gap .tl_set:N = \l__luatexcn_table_band_gap_tl,
+    band-gap .initial:n = {0pt},
+    band-heights .tl_set:N = \l__luatexcn_table_band_heights_tl,
+    band-heights .initial:n = {},
+    n-columns .tl_set:N = \l__luatexcn_table_n_cols_tl,
+    n-columns .initial:n = {},
+    header-rows .int_set:N = \l__luatexcn_table_header_rows_int,
+    header-rows .initial:n = 0,
+  }
+
+\keys_define:nn { luatexcn / cell }
+  {
+    col-width .int_set:N = \l__luatexcn_cell_col_width_int,
+    col-width .initial:n = 0,
+  }
+
+% ============================================================================
+% Table Environment
+% ============================================================================
+
+\NewDocumentEnvironment{Table}{ O{} }
+  {
+    \keys_set:nn { luatexcn / table } { #1 }
+    \lua_now:n { require('core.luatex-cn-core-table').init() }
+    \begin{BodyText}[
+      n-bands = \int_use:N \l__luatexcn_table_n_bands_int,
+      band-gap = \l__luatexcn_table_band_gap_tl,
+      band-heights = \l__luatexcn_table_band_heights_tl,
+      border = true,
+    ]
+  }
+  {
+    \end{BodyText}
+    \lua_now:n { require('core.luatex-cn-core-table').cleanup() }
+  }
+
+% ============================================================================
+% Cell Command
+% ============================================================================
+
+\NewDocumentCommand{\Cell}{ O{} +m }
+  {
+    \keys_set:nn { luatexcn / cell } { #1 }
+    \lua_now:e {
+      require('core.luatex-cn-core-table').begin_cell(
+        \int_use:N \l__luatexcn_cell_col_width_int
+      )
+    }
+    #2
+  }
+
+% ============================================================================
+% Chinese Aliases
+% ============================================================================
+
+\NewEnvironmentCopy{表格}{Table}
+\NewCommandCopy{\单元格}{\Cell}
+\NewCommandCopy{\單元格}{\Cell}
+
+\keys_define:nn { luatexcn / table }
+  {
+    分栏 .int_set:N = \l__luatexcn_table_n_bands_int,
+    栏间距 .tl_set:N = \l__luatexcn_table_band_gap_tl,
+    栏高度 .tl_set:N = \l__luatexcn_table_band_heights_tl,
+    列数 .tl_set:N = \l__luatexcn_table_n_cols_tl,
+    表头栏数 .int_set:N = \l__luatexcn_table_header_rows_int,
+    分欄 .int_set:N = \l__luatexcn_table_n_bands_int,
+    欄間距 .tl_set:N = \l__luatexcn_table_band_gap_tl,
+    欄高度 .tl_set:N = \l__luatexcn_table_band_heights_tl,
+    列數 .tl_set:N = \l__luatexcn_table_n_cols_tl,
+    表頭欄數 .int_set:N = \l__luatexcn_table_header_rows_int,
+  }
+
+\keys_define:nn { luatexcn / cell }
+  {
+    列宽 .int_set:N = \l__luatexcn_cell_col_width_int,
+    列寬 .int_set:N = \l__luatexcn_cell_col_width_int,
+  }
+
+\ExplSyntaxOff
+
+\endinput

@@ -518,6 +518,10 @@ local function handle_penalty_breaks(p_val, ctx, flush_buffer_fn, p_cols, interv
             ctx.cur_row = 0
             ctx.cur_y_sp = 0
             ctx.cur_column_indent = 0
+            -- Reset table cell index for new band (row)
+            if _G.content and _G.content.table_mode then
+                _G.content.table_render_cell_idx = 0
+            end
             ctx.cur_band = ctx.cur_band + 1
             if ctx.cur_band >= ctx.n_bands then
                 if ctx.band_mode == "auto" then
@@ -530,6 +534,38 @@ local function handle_penalty_breaks(p_val, ctx, flush_buffer_fn, p_cols, interv
             end
             ctx.line_limit = ctx.band_line_limits[ctx.cur_band]
             ctx.col_height_sp = ctx.band_heights_sp[ctx.cur_band]
+            move_to_next_valid_position(ctx, interval, grid_height, indent)
+        end
+        return true
+    elseif p_val == constants.PENALTY_CELL_BREAK then
+        -- Cell break in table mode: jump to next column group
+        -- The current cell's col_width is stored in _G.content.table_col_groups
+        if _G.content and _G.content.table_mode then
+            flush_buffer_fn()
+            local col_groups = _G.content.table_col_groups or {}
+            local cell_idx = _G.content.table_render_cell_idx or 0
+            local cell_width = col_groups[cell_idx + 1] or 0
+
+            if cell_width > 0 then
+                -- Fixed-width cell: jump by cell_width columns
+                ctx.cur_col = ctx.cur_col + (cell_width - (ctx.cur_col % cell_width == 0 and 0 or (ctx.cur_col % cell_width)))
+                -- Actually: jump to start of next group
+                -- We need to track cumulative position
+                local cum = 0
+                for i = 1, cell_idx + 1 do
+                    cum = cum + (col_groups[i] or 0)
+                end
+                ctx.cur_col = cum
+            else
+                -- Unlimited width: this cell extends to end of row
+                -- Cell break after unlimited = move to start of row (which means band break)
+                -- This shouldn't normally happen (unlimited = last cell)
+            end
+
+            ctx.cur_row = 0
+            ctx.cur_y_sp = 0
+            ctx.cur_column_indent = 0
+            _G.content.table_render_cell_idx = cell_idx + 1
             move_to_next_valid_position(ctx, interval, grid_height, indent)
         end
         return true

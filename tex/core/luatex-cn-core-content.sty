@@ -612,7 +612,13 @@
 \ExplSyntaxOff
 
 % Band break command / 换栏命令
-\NewDocumentCommand{\换栏}{}{ \penalty -10006\relax }
-\NewDocumentCommand{\換欄}{}{ \penalty -10006\relax }
+\NewDocumentCommand{\换栏}{}{%
+  \directlua{require('core.luatex-cn-core-table').reset_band_cells()}%
+  \penalty -10006\relax
+}
+\NewDocumentCommand{\換欄}{}{%
+  \directlua{require('core.luatex-cn-core-table').reset_band_cells()}%
+  \penalty -10006\relax
+}
 
 \endinput

@@ -419,6 +419,12 @@ constants.PENALTY_DIGITAL_NEWLINE = -10005
 --- Used by: \换栏 command
 constants.PENALTY_BAND_BREAK = -10006
 
+--- Cell break: Force jump to next column group in table mode.
+--- In table mode, each cell occupies a column group (a set of consecutive columns).
+--- This penalty forces the layout to skip to the start of the next column group.
+--- Used by: \单元格 / \Cell command
+constants.PENALTY_CELL_BREAK = -10007
+
 --- Page fill marker: Allow page break, used in page splitting
 --- Note: This keeps standard TeX value for compatibility
 constants.PENALTY_PAGE_FILL = -10000

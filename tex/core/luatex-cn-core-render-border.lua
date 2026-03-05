@@ -123,7 +123,7 @@ end
 -- Band Border Drawing (分栏边框)
 -- ============================================================================
 
---- 绘制分栏边框（每栏外框 + 栏间分隔线）
+--- 绘制分栏边框（栏间水平分隔线，在版心列处断开）
 -- @param p_head (node) 节点列表头部（直接引用）
 -- @param params (table) 参数表:
 --   - n_bands: 栏数
@@ -135,6 +135,8 @@ end
 --   - shift_x: 水平偏移 (sp)
 --   - outer_shift: 外边框偏移 (sp)
 --   - band_gap_sp: 栏间距 (sp)
+--   - col_geom: 列几何参数 { grid_width, banxin_width, interval }
+--   - total_cols: 总列数
 -- @return (node) 更新后的头部
 local function draw_band_borders(p_head, params)
     local sp_to_bp = utils.sp_to_bp
@@ -146,66 +148,67 @@ local function draw_band_borders(p_head, params)
     local border_rgb_str = params.border_rgb_str
     local shift_x = params.shift_x or 0
     local outer_shift = params.outer_shift or 0
-    local banxin_width = params.banxin_width or 0
 
     local b_thickness_bp = border_thickness * sp_to_bp
     local half_thickness = math.floor(border_thickness / 2)
 
-    -- Calculate first and last band positions
-    local first_band_top = band_y_offsets_sp[0] or 0
-    local last_band_bottom = (band_y_offsets_sp[n_bands - 1] or 0) +
-                             (band_heights_sp[n_bands - 1] or 0)
+    local col_geom = params.col_geom or {}
+    local interval = col_geom.interval or 0
+    local banxin_width = col_geom.banxin_width or 0
+    local grid_width = col_geom.grid_width or 0
+    local total_cols = params.total_cols or 0
 
-    -- Determine content start X (after banxin)
-    -- Note: In vertical layout, banxin is on the left side
-    local content_start_x = shift_x + banxin_width
-    local content_width = inner_width - banxin_width
+    -- Build list of horizontal line segments, skipping banxin columns.
+    -- Segments are pairs of {left_x_sp, right_x_sp} in page coordinates.
+    local segments = {}
+    if interval > 0 and banxin_width > 0 and banxin_width ~= grid_width and total_cols > 0 then
+        -- There are banxin columns: split the line at each banxin column
+        local seg_start = nil
+        for rtl_col = 0, total_cols - 1 do
+            local col = total_cols - 1 - rtl_col
+            local is_banxin = (col % (interval + 1)) == interval
+            local col_x = text_position.get_column_x(rtl_col, col_geom)
+            local col_w = text_position.get_column_width(col, col_geom)
+            if is_banxin then
+                -- End current segment before this banxin column
+                if seg_start ~= nil then
+                    segments[#segments + 1] = { seg_start, col_x }
+                    seg_start = nil
+                end
+            else
+                if seg_start == nil then
+                    seg_start = col_x
+                end
+                -- Extend segment to right edge of this column
+                -- (will be closed at next banxin or end)
+            end
+            -- If last column, close segment
+            if rtl_col == total_cols - 1 and seg_start ~= nil then
+                segments[#segments + 1] = { seg_start, col_x + col_w }
+            end
+        end
+    else
+        -- No banxin: single segment across full width
+        segments[1] = { 0, inner_width - border_thickness }
+    end
 
-    -- Draw left and right vertical borders (covering content area only, excluding banxin)
-    local left_x_bp = (half_thickness + content_start_x) * sp_to_bp
-    local right_x_bp = left_x_bp + content_width * sp_to_bp
-    local vert_top_y_bp = -(half_thickness + outer_shift + first_band_top) * sp_to_bp
-    local vert_bottom_y_bp = -(half_thickness + outer_shift + last_band_bottom) * sp_to_bp
-
-    -- Left vertical line (right edge of banxin area)
-    local left_line = string.format(
-        "q %.2f w %s RG %.4f %.4f m %.4f %.4f l S Q",
-        b_thickness_bp, border_rgb_str,
-        left_x_bp, vert_top_y_bp, left_x_bp, vert_bottom_y_bp)
-    p_head = utils.insert_pdf_literal(p_head, left_line)
-
-    -- Right vertical line (right edge of content area)
-    local right_line = string.format(
-        "q %.2f w %s RG %.4f %.4f m %.4f %.4f l S Q",
-        b_thickness_bp, border_rgb_str,
-        right_x_bp, vert_top_y_bp, right_x_bp, vert_bottom_y_bp)
-    p_head = utils.insert_pdf_literal(p_head, right_line)
-
-    -- Draw horizontal lines: top of first band + bottom of each band
-    -- These lines span the content area only (excluding banxin)
-    for band = 0, n_bands - 1 do
+    -- Draw horizontal divider lines between bands (not top/bottom/left/right outer edges).
+    -- The outer frame is drawn by draw_column_borders + draw_outer_border.
+    for band = 0, n_bands - 2 do
         local band_y = band_y_offsets_sp[band] or 0
         local band_h = band_heights_sp[band] or 0
+        local divider_y = band_y + band_h
+        local horz_y_bp = -(half_thickness + outer_shift + divider_y) * sp_to_bp
 
-        -- Top line only for the first band
-        if band == 0 then
-            local top_y = band_y
-            local horz_top_y_bp = -(half_thickness + outer_shift + top_y) * sp_to_bp
-            local top_line = string.format(
+        for _, seg in ipairs(segments) do
+            local left_x_bp = (half_thickness + shift_x + seg[1]) * sp_to_bp
+            local right_x_bp = (half_thickness + shift_x + seg[2]) * sp_to_bp
+            local line = string.format(
                 "q %.2f w %s RG %.4f %.4f m %.4f %.4f l S Q",
                 b_thickness_bp, border_rgb_str,
-                left_x_bp, horz_top_y_bp, right_x_bp, horz_top_y_bp)
-            p_head = utils.insert_pdf_literal(p_head, top_line)
+                left_x_bp, horz_y_bp, right_x_bp, horz_y_bp)
+            p_head = utils.insert_pdf_literal(p_head, line)
         end
-
-        -- Bottom line of this band (serves as divider for next band)
-        local bottom_y = band_y + band_h
-        local horz_bottom_y_bp = -(half_thickness + outer_shift + bottom_y) * sp_to_bp
-        local bottom_line = string.format(
-            "q %.2f w %s RG %.4f %.4f m %.4f %.4f l S Q",
-            b_thickness_bp, border_rgb_str,
-            left_x_bp, horz_bottom_y_bp, right_x_bp, horz_bottom_y_bp)
-        p_head = utils.insert_pdf_literal(p_head, bottom_line)
     end
 
     return p_head
@@ -422,8 +425,8 @@ local function render_borders(p_head, params)
         interval = interval,
     })
 
-    -- 1. Draw column borders (skip in band mode — bands have their own frames)
-    if params.draw_border and p_total_cols > 0 and not params.band_mode then
+    -- 1. Draw column borders (inner borders between columns)
+    if params.draw_border and p_total_cols > 0 then
         p_head = draw_column_borders(p_head, {
             total_cols = p_total_cols,
             grid_width = grid_width,
@@ -438,8 +441,9 @@ local function render_borders(p_head, params)
         })
     end
 
-    -- 1b. Band borders (per-band frames + divider lines between bands)
-    if params.band_mode and params.n_bands and params.n_bands > 1 then
+    -- 1b. Band divider lines (horizontal lines between bands)
+    -- Only draw when border is enabled (respects border=false setting)
+    if params.draw_border and params.n_bands and params.n_bands > 1 then
         p_head = draw_band_borders(p_head, {
             n_bands = params.n_bands,
             band_heights_sp = params.band_heights_sp,
@@ -450,12 +454,13 @@ local function render_borders(p_head, params)
             shift_x = params.shift_x,
             outer_shift = params.outer_shift,
             band_gap_sp = params.band_gap_sp,
-            banxin_width = params.banxin_width or 0,
+            col_geom = col_geom,
+            total_cols = p_total_cols,
         })
     end
 
-    -- 2. Draw outer border (skip in band mode — band frames replace it)
-    if params.draw_outer_border_flag and p_total_cols > 0 and not params.band_mode then
+    -- 2. Draw outer border
+    if params.draw_outer_border_flag and p_total_cols > 0 then
         p_head = draw_outer_border(p_head, {
             inner_width = inner_width,
             inner_height = inner_height,

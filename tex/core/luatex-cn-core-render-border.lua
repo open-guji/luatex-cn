@@ -158,13 +158,17 @@ local function draw_band_borders(p_head, params)
     local grid_width = col_geom.grid_width or 0
     local total_cols = params.total_cols or 0
 
+    -- Optional column range for inline table borders
+    local range_start = params.col_range_start or 0
+    local range_end = params.col_range_end or (total_cols - 1)
+
     -- Build list of horizontal line segments, skipping banxin columns.
     -- Segments are pairs of {left_x_sp, right_x_sp} in page coordinates.
     local segments = {}
     if interval > 0 and banxin_width > 0 and banxin_width ~= grid_width and total_cols > 0 then
         -- There are banxin columns: split the line at each banxin column
         local seg_start = nil
-        for rtl_col = 0, total_cols - 1 do
+        for rtl_col = range_start, range_end do
             local col = total_cols - 1 - rtl_col
             local is_banxin = (col % (interval + 1)) == interval
             local col_x = text_position.get_column_x(rtl_col, col_geom)
@@ -179,11 +183,9 @@ local function draw_band_borders(p_head, params)
                 if seg_start == nil then
                     seg_start = col_x
                 end
-                -- Extend segment to right edge of this column
-                -- (will be closed at next banxin or end)
             end
-            -- If last column, close segment
-            if rtl_col == total_cols - 1 and seg_start ~= nil then
+            -- If last column in range, close segment
+            if rtl_col == range_end and seg_start ~= nil then
                 segments[#segments + 1] = { seg_start, col_x + col_w }
             end
         end
@@ -456,6 +458,32 @@ local function render_borders(p_head, params)
             band_gap_sp = params.band_gap_sp,
             col_geom = col_geom,
             total_cols = p_total_cols,
+        })
+    end
+
+    -- 1c. Inline table band divider lines (per-page table band info)
+    local ptb = params.page_table_bands
+    if params.draw_border and ptb and ptb.n_bands and ptb.n_bands > 1 then
+        -- Calculate table region with column range limits
+        local table_start = ptb.table_start_col or 0
+        local table_cols = ptb.actual_band_cols or p_total_cols
+        if table_start + table_cols > p_total_cols then
+            table_cols = p_total_cols - table_start
+        end
+        local table_end = table_start + table_cols - 1
+        p_head = draw_band_borders(p_head, {
+            n_bands = ptb.n_bands,
+            band_heights_sp = ptb.band_heights_sp,
+            band_y_offsets_sp = ptb.band_y_offsets_sp,
+            border_thickness = border_thickness,
+            border_rgb_str = params.b_rgb_str,
+            shift_x = params.shift_x,
+            outer_shift = params.outer_shift,
+            band_gap_sp = ptb.band_gap_sp,
+            col_geom = col_geom,
+            total_cols = p_total_cols,
+            col_range_start = table_start,
+            col_range_end = table_end,
         })
     end
 

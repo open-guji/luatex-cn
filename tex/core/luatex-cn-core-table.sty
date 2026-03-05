@@ -55,6 +55,41 @@
   }
 
 % ============================================================================
+% Internal: build band_heights Lua table from comma-separated dimensions
+% ============================================================================
+
+\tl_new:N \l__luatexcn_table_band_heights_lua_tl
+\tl_new:N \l__luatexcn_table_n_cols_lua_tl
+
+\cs_new_protected:Nn \__luatexcn_table_build_params:
+  {
+    % Convert band-heights comma list to Lua table: {h1_sp, h2_sp, ...}
+    \tl_if_empty:NTF \l__luatexcn_table_band_heights_tl
+      { \tl_set:Nn \l__luatexcn_table_band_heights_lua_tl { nil } }
+      {
+        \tl_set:Nn \l__luatexcn_table_band_heights_lua_tl { \c_left_brace_str }
+        \bool_set_true:N \l_tmpa_bool
+        \exp_args:NV \clist_map_function:nN
+          \l__luatexcn_table_band_heights_tl
+          \__luatexcn_table_heights_item:n
+        \tl_put_right:Nn \l__luatexcn_table_band_heights_lua_tl { \c_right_brace_str }
+      }
+    % Convert n-columns to Lua number or nil
+    \tl_if_empty:NTF \l__luatexcn_table_n_cols_tl
+      { \tl_set:Nn \l__luatexcn_table_n_cols_lua_tl { nil } }
+      { \tl_set_eq:NN \l__luatexcn_table_n_cols_lua_tl \l__luatexcn_table_n_cols_tl }
+  }
+
+\cs_new_protected:Nn \__luatexcn_table_heights_item:n
+  {
+    \bool_if:NTF \l_tmpa_bool
+      { \bool_set_false:N \l_tmpa_bool }
+      { \tl_put_right:Nn \l__luatexcn_table_band_heights_lua_tl { ,~ } }
+    \tl_put_right:Nx \l__luatexcn_table_band_heights_lua_tl
+      { \dim_to_decimal_in_sp:n { #1 } }
+  }
+
+% ============================================================================
 % Table Environment (inline within BodyText)
 % ============================================================================
 % Tables emit PENALTY_TABLE_START at begin and PENALTY_TABLE_END at end.
@@ -63,10 +98,13 @@
 \NewDocumentEnvironment{Table}{ O{} }
   {
     \keys_set:nn { luatexcn / table } { #1 }
+    \__luatexcn_table_build_params:
     \lua_now:e {
       require('core.luatex-cn-core-table').init({
         n_bands~=~\int_use:N \l__luatexcn_table_n_bands_int,
         band_gap_sp~=~\dim_to_decimal_in_sp:n { \l__luatexcn_table_band_gap_tl },
+        band_heights~=~\l__luatexcn_table_band_heights_lua_tl,
+        n_columns~=~\l__luatexcn_table_n_cols_lua_tl,
       })
     }
   }

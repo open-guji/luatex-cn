@@ -419,12 +419,14 @@ local function render_single_page(p_head, p_max_col, p, layout_map, params, ctx,
         textbox_outer_border = ctx.textbox_outer_border,
         textbox_ob_thickness = ctx.textbox_ob_thickness,
         textbox_ob_sep = ctx.textbox_ob_sep,
-        -- Band (分栏) border params
+        -- Band (分栏) border params (per-page inline table overrides global)
         band_mode = (ctx.n_bands and ctx.n_bands > 1),
         n_bands = ctx.n_bands,
         band_heights_sp = ctx.band_heights_sp,
         band_y_offsets_sp = ctx.band_y_offsets_sp,
         band_gap_sp = ctx.band_gap_sp,
+        -- Per-page inline table band info
+        page_table_bands = _G.content and _G.content.page_table_bands and _G.content.page_table_bands[p] or nil,
     })
 
     -- Font color

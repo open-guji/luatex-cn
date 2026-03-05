@@ -604,7 +604,6 @@ local function handle_penalty_breaks(p_val, ctx, flush_buffer_fn, p_cols, interv
         local band_y_offsets_sp = {}
         local band_line_limits = {}
         local band_heights = tp.band_heights
-
         local offset = 0
         for i = 0, n_bands - 1 do
             local h
@@ -624,7 +623,7 @@ local function handle_penalty_breaks(p_val, ctx, flush_buffer_fn, p_cols, interv
         ctx.band_heights_sp = band_heights_sp
         ctx.band_y_offsets_sp = band_y_offsets_sp
         ctx.band_line_limits = band_line_limits
-        ctx.band_cols_per_band = p_cols
+        ctx.band_cols_per_band = (tp.n_columns and tp.n_columns > 0) and tp.n_columns or p_cols
         ctx.band_mode = "auto"
         ctx.band_gap_sp = band_gap_sp
         ctx.cur_band = 0
@@ -645,6 +644,34 @@ local function handle_penalty_breaks(p_val, ctx, flush_buffer_fn, p_cols, interv
         -- Record table end info for border rendering
         ctx.table_end_col = ctx.cur_col
         ctx.table_end_page = ctx.cur_page
+
+        -- Calculate actual table width from col_groups
+        -- Due to reset_band_cells(), col_groups only contains the LAST band's cells
+        -- (earlier bands overwrite same indices). So all entries = one band's cells.
+        local col_groups = (_G.content and _G.content.table_col_groups) or {}
+        local actual_band_cols = 0
+        for i = 1, #col_groups do
+            local w = col_groups[i] or 0
+            actual_band_cols = actual_band_cols + (w > 0 and w or 1)
+        end
+        if actual_band_cols == 0 then
+            actual_band_cols = ctx.band_cols_per_band
+        end
+
+        -- Save per-page inline table band info for border rendering
+        ctx.page_table_bands = ctx.page_table_bands or {}
+        local start_page = ctx.table_start_page or ctx.cur_page
+        local end_page = ctx.cur_page
+        for pg = start_page, end_page do
+            ctx.page_table_bands[pg] = {
+                n_bands = ctx.n_bands,
+                band_heights_sp = ctx.band_heights_sp,
+                band_y_offsets_sp = ctx.band_y_offsets_sp,
+                band_gap_sp = ctx.band_gap_sp or 0,
+                table_start_col = ctx.table_start_col or 0,
+                actual_band_cols = actual_band_cols,
+            }
+        end
 
         -- Move to next column after the table
         ctx.cur_col = ctx.cur_col + (ctx.cur_row > 0 and 1 or 0)
@@ -1920,6 +1947,11 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
         _G.content.band_heights_sp = ctx.band_heights_sp
         _G.content.band_y_offsets_sp = ctx.band_y_offsets_sp
         _G.content.band_cols_per_band = ctx.band_cols_per_band
+    end
+
+    -- Export per-page inline table band info for render layer
+    if ctx.page_table_bands and _G.content then
+        _G.content.page_table_bands = ctx.page_table_bands
     end
 
     return layout_map, ctx.cur_page + 1, ctx.page_chapter_titles, ctx.banxin_registry, ctx.page_resets

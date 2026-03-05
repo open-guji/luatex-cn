@@ -13,12 +13,13 @@
 % limitations under the License.
 
 % luatex-cn-core-table.sty
-% Table environment for vertical typesetting
-% Provides \begin{Table} / \begin{表格} environment and \Cell / \单元格 command
+% Inline table environment for vertical typesetting.
+% Tables are embedded within \begin{正文}...\end{正文} (BodyText).
+% Provides \begin{Table} / \begin{表格} environment and \Cell / \单元格 command.
 
 \NeedsTeXFormat{LaTeX2e}
-\ProvidesExplPackage{luatex-cn-core-table}{2026/03/05}{0.1.0}
-  {Table environment for luatex-cn vertical typesetting}
+\ProvidesExplPackage{luatex-cn-core-table}{2026/03/05}{0.2.0}
+  {Inline table environment for luatex-cn vertical typesetting}
 
 \ExplSyntaxOn
 
@@ -54,22 +55,22 @@
   }
 
 % ============================================================================
-% Table Environment
+% Table Environment (inline within BodyText)
 % ============================================================================
+% Tables emit PENALTY_TABLE_START at begin and PENALTY_TABLE_END at end.
+% The layout engine dynamically switches to band mode for the table section.
 
 \NewDocumentEnvironment{Table}{ O{} }
   {
     \keys_set:nn { luatexcn / table } { #1 }
-    \lua_now:n { require('core.luatex-cn-core-table').init() }
-    \begin{BodyText}[
-      n-bands = \int_use:N \l__luatexcn_table_n_bands_int,
-      band-gap = \l__luatexcn_table_band_gap_tl,
-      band-heights = \l__luatexcn_table_band_heights_tl,
-      border = true,
-    ]
+    \lua_now:e {
+      require('core.luatex-cn-core-table').init({
+        n_bands~=~\int_use:N \l__luatexcn_table_n_bands_int,
+        band_gap_sp~=~\dim_to_decimal_in_sp:n { \l__luatexcn_table_band_gap_tl },
+      })
+    }
   }
   {
-    \end{BodyText}
     \lua_now:n { require('core.luatex-cn-core-table').cleanup() }
   }
 

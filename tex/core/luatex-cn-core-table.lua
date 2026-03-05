@@ -14,25 +14,49 @@
 -- ============================================================================
 -- luatex-cn-core-table.lua - Table mode support
 -- ============================================================================
+--
+-- Tables are inline sections within BodyText that use band (分栏) mode.
+-- \begin{表格} emits PENALTY_TABLE_START, \end{表格} emits PENALTY_TABLE_END.
+-- The layout engine dynamically switches to band mode upon TABLE_START and
+-- restores single-band mode upon TABLE_END.
+--
+-- Table parameters (n_bands, band_gap_sp, band_heights) are stored in
+-- _G.content.table_params before the TABLE_START penalty is emitted.
+-- ============================================================================
+
+local constants = require('core.luatex-cn-constants')
 
 local table_mod = {}
 
---- Initialize table mode
+--- Initialize table mode and emit TABLE_START penalty
 -- Called at \begin{Table} start
-function table_mod.init()
+-- @param params table with n_bands, band_gap_sp, band_heights (optional)
+function table_mod.init(params)
     _G.content = _G.content or {}
     _G.content.table_mode = true
     _G.content.table_col_groups = {}
     _G.content.table_cell_idx = 0
     _G.content.table_render_cell_idx = 0
+    _G.content.table_params = params or {}
+
+    local n = node.new("penalty")
+    n.penalty = constants.PENALTY_TABLE_START
+    node.write(n)
 end
 
---- Clean up table mode
+--- Clean up table mode and emit TABLE_END penalty
 -- Called at \end{Table} end
 function table_mod.cleanup()
+    local n = node.new("penalty")
+    n.penalty = constants.PENALTY_TABLE_END
+    node.write(n)
+
     if _G.content then
         _G.content.table_mode = false
-        _G.content.table_col_groups = nil
+        -- NOTE: Do NOT clear table_col_groups or table_params here.
+        -- Layout runs in post_linebreak_filter AFTER cleanup(),
+        -- so TABLE_START/CELL_BREAK handling still needs this data.
+        -- They will be cleared by TABLE_END handling in layout-grid.
         _G.content.table_cell_idx = nil
         _G.content.table_render_cell_idx = nil
     end
@@ -44,15 +68,13 @@ function table_mod.begin_cell(col_width)
     _G.content = _G.content or {}
     local cell_idx = _G.content.table_cell_idx or 0
 
-    -- Record column group width (0 = unlimited)
     _G.content.table_col_groups = _G.content.table_col_groups or {}
     _G.content.table_col_groups[cell_idx + 1] = col_width
     _G.content.table_cell_idx = cell_idx + 1
 
-    -- If not the first cell in this band, emit cell break penalty
     if cell_idx > 0 then
         local n = node.new("penalty")
-        n.penalty = -10007  -- PENALTY_CELL_BREAK
+        n.penalty = constants.PENALTY_CELL_BREAK
         node.write(n)
     end
 end

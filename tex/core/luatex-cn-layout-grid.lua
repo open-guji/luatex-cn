@@ -331,9 +331,10 @@ local function wrap_to_next_column(ctx, p_cols, interval, grid_height, indent, r
     if ctx.auto_column_wrap ~= false then
         if ctx.n_bands > 1 then
             -- Band mode: columns wrap within each band, then to next band
+            local band_start = ctx.table_start_col or 0
             local cols_in_band = ctx.band_cols_per_band
-            if ctx.cur_col >= cols_in_band then
-                ctx.cur_col = 0
+            if ctx.cur_col >= band_start + cols_in_band then
+                ctx.cur_col = band_start
                 ctx.cur_band = ctx.cur_band + 1
                 if ctx.cur_band >= ctx.n_bands then
                     if ctx.band_mode == "auto" then
@@ -514,13 +515,13 @@ local function handle_penalty_breaks(p_val, ctx, flush_buffer_fn, p_cols, interv
         -- Skip to the next horizontal band (or next page if on last band)
         if ctx.n_bands > 1 then
             flush_buffer_fn()
-            ctx.cur_col = 0
+            ctx.cur_col = ctx.table_start_col or 0
             ctx.cur_row = 0
             ctx.cur_y_sp = 0
             ctx.cur_column_indent = 0
             -- Reset table cell index for new band (row)
-            if _G.content and _G.content.table_mode then
-                _G.content.table_render_cell_idx = 0
+            if ctx.table_start_col ~= nil then
+                ctx.table_render_cell_idx = 0
             end
             ctx.cur_band = ctx.cur_band + 1
             if ctx.cur_band >= ctx.n_bands then
@@ -539,35 +540,145 @@ local function handle_penalty_breaks(p_val, ctx, flush_buffer_fn, p_cols, interv
         return true
     elseif p_val == constants.PENALTY_CELL_BREAK then
         -- Cell break in table mode: jump to next column group
-        -- The current cell's col_width is stored in _G.content.table_col_groups
-        if _G.content and _G.content.table_mode then
+        -- Use ctx.table_start_col to detect table mode (not _G.content.table_mode
+        -- which is already cleared by cleanup() before layout runs)
+        if ctx.table_start_col ~= nil then
             flush_buffer_fn()
-            local col_groups = _G.content.table_col_groups or {}
-            local cell_idx = _G.content.table_render_cell_idx or 0
+            local col_groups = (_G.content and _G.content.table_col_groups) or {}
+            local cell_idx = ctx.table_render_cell_idx or 0
             local cell_width = col_groups[cell_idx + 1] or 0
 
             if cell_width > 0 then
-                -- Fixed-width cell: jump by cell_width columns
-                ctx.cur_col = ctx.cur_col + (cell_width - (ctx.cur_col % cell_width == 0 and 0 or (ctx.cur_col % cell_width)))
-                -- Actually: jump to start of next group
-                -- We need to track cumulative position
+                -- Fixed-width cell: jump to start of next group
+                local band_start = ctx.table_start_col
                 local cum = 0
                 for i = 1, cell_idx + 1 do
                     cum = cum + (col_groups[i] or 0)
                 end
-                ctx.cur_col = cum
-            else
-                -- Unlimited width: this cell extends to end of row
-                -- Cell break after unlimited = move to start of row (which means band break)
-                -- This shouldn't normally happen (unlimited = last cell)
+                ctx.cur_col = band_start + cum
             end
 
             ctx.cur_row = 0
             ctx.cur_y_sp = 0
             ctx.cur_column_indent = 0
-            _G.content.table_render_cell_idx = cell_idx + 1
+            ctx.table_render_cell_idx = cell_idx + 1
             move_to_next_valid_position(ctx, interval, grid_height, indent)
         end
+        return true
+    elseif p_val == constants.PENALTY_TABLE_START then
+        -- Begin inline table section: switch to band mode dynamically
+        flush_buffer_fn()
+        -- Start table on a new column
+        if ctx.cur_row > 0 or ctx.cur_col > 0 then
+            ctx.cur_col = ctx.cur_col + (ctx.cur_row > 0 and 1 or 0)
+            ctx.cur_row = 0
+            ctx.cur_y_sp = 0
+            ctx.cur_column_indent = 0
+        end
+
+        -- Save pre-table state
+        ctx.saved_band_state = {
+            n_bands = ctx.n_bands,
+            band_heights_sp = ctx.band_heights_sp,
+            band_y_offsets_sp = ctx.band_y_offsets_sp,
+            band_line_limits = ctx.band_line_limits,
+            band_cols_per_band = ctx.band_cols_per_band,
+            band_mode = ctx.band_mode,
+            band_gap_sp = ctx.band_gap_sp,
+            line_limit = ctx.line_limit,
+            col_height_sp = ctx.col_height_sp,
+        }
+
+        -- Read table params from _G.content.table_params
+        local tp = (_G.content and _G.content.table_params) or {}
+        local n_bands = tp.n_bands or 2
+        local band_gap_sp = tp.band_gap_sp or 0
+        local col_height_sp = ctx.saved_band_state.col_height_sp
+        local default_cell_height = ctx.default_cell_height
+        local orig_line_limit = ctx.saved_band_state.line_limit
+
+        -- Calculate band layout
+        local total_gap = band_gap_sp * (n_bands - 1)
+        local available_height = col_height_sp - total_gap
+        local band_heights_sp = {}
+        local band_y_offsets_sp = {}
+        local band_line_limits = {}
+        local band_heights = tp.band_heights
+
+        local offset = 0
+        for i = 0, n_bands - 1 do
+            local h
+            if band_heights and band_heights[i + 1] then
+                h = band_heights[i + 1]
+            else
+                h = math.floor(available_height / n_bands)
+            end
+            band_heights_sp[i] = h
+            band_y_offsets_sp[i] = offset
+            band_line_limits[i] = default_cell_height
+                and math.floor(h / default_cell_height) or orig_line_limit
+            offset = offset + h + band_gap_sp
+        end
+
+        ctx.n_bands = n_bands
+        ctx.band_heights_sp = band_heights_sp
+        ctx.band_y_offsets_sp = band_y_offsets_sp
+        ctx.band_line_limits = band_line_limits
+        ctx.band_cols_per_band = p_cols
+        ctx.band_mode = "auto"
+        ctx.band_gap_sp = band_gap_sp
+        ctx.cur_band = 0
+        ctx.line_limit = band_line_limits[0]
+        ctx.col_height_sp = band_heights_sp[0]
+
+        -- Record table start column and init cell tracking
+        ctx.table_start_col = ctx.cur_col
+        ctx.table_start_page = ctx.cur_page
+        ctx.table_render_cell_idx = 0
+
+        move_to_next_valid_position(ctx, interval, grid_height, indent)
+        return true
+    elseif p_val == constants.PENALTY_TABLE_END then
+        -- End inline table section: restore pre-table band state
+        flush_buffer_fn()
+
+        -- Record table end info for border rendering
+        ctx.table_end_col = ctx.cur_col
+        ctx.table_end_page = ctx.cur_page
+
+        -- Move to next column after the table
+        ctx.cur_col = ctx.cur_col + (ctx.cur_row > 0 and 1 or 0)
+        ctx.cur_row = 0
+        ctx.cur_y_sp = 0
+        ctx.cur_column_indent = 0
+
+        -- Restore saved band state
+        if ctx.saved_band_state then
+            local s = ctx.saved_band_state
+            ctx.n_bands = s.n_bands
+            ctx.band_heights_sp = s.band_heights_sp
+            ctx.band_y_offsets_sp = s.band_y_offsets_sp
+            ctx.band_line_limits = s.band_line_limits
+            ctx.band_cols_per_band = s.band_cols_per_band
+            ctx.band_mode = s.band_mode
+            ctx.band_gap_sp = s.band_gap_sp
+            ctx.line_limit = s.line_limit
+            ctx.col_height_sp = s.col_height_sp
+            ctx.cur_band = 0
+            ctx.saved_band_state = nil
+        end
+
+        -- Clean up table-specific ctx state
+        ctx.table_start_col = nil
+        ctx.table_start_page = nil
+        ctx.table_render_cell_idx = nil
+        -- Clean up table data that were preserved for layout
+        if _G.content then
+            _G.content.table_col_groups = nil
+            _G.content.table_params = nil
+        end
+
+        move_to_next_valid_position(ctx, interval, grid_height, indent)
         return true
     end
     return false
@@ -1468,6 +1579,7 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
 
         ::start_of_loop::
         local id = D.getid(t)
+
 
         if id == constants.WHATSIT then
             -- Position transparently at current cursor

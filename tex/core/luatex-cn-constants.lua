@@ -425,6 +425,16 @@ constants.PENALTY_BAND_BREAK = -10006
 --- Used by: \单元格 / \Cell command
 constants.PENALTY_CELL_BREAK = -10007
 
+--- Table start: Begin inline table section within BodyText.
+--- Triggers dynamic switch to band mode. Table parameters are read from
+--- _G.content.table_params (n_bands, band_gap_sp, band_heights).
+--- Used by: \begin{表格} / \begin{Table}
+constants.PENALTY_TABLE_START = -10008
+
+--- Table end: End inline table section, restore single-band mode.
+--- Used by: \end{表格} / \end{Table}
+constants.PENALTY_TABLE_END = -10009
+
 --- Page fill marker: Allow page break, used in page splitting
 --- Note: This keeps standard TeX value for compatibility
 constants.PENALTY_PAGE_FILL = -10000

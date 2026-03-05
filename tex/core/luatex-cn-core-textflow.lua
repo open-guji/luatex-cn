@@ -725,6 +725,20 @@ function textflow.place_nodes(ctx, start_node, layout_map, params, callbacks)
 
         if hit_column_break then
             -- Column break inside textflow: advance to next sub-column.
+            -- Special case: PENALTY_TAITOU at the very start of textflow (before any
+            -- glyphs collected) produces an empty segment. When the current column has
+            -- no content yet (page_has_content=false or cur_row at indent baseline),
+            -- skip the wrap to avoid wasting an empty column. The taitou info is
+            -- already encoded in ATTR_INDENT of subsequent glyphs.
+            if #nodes == 0 and not ctx.page_has_content then
+                -- Apply paragraph indent since the skipped PENALTY_TAITOU won't
+                -- trigger column change + indent application.
+                local chunk_indent = callbacks.get_indent(params.block_id, orig_base_indent, orig_first_indent)
+                if ctx.cur_row < chunk_indent then
+                    ctx.cur_row = chunk_indent
+                    ctx.cur_y_sp = ctx.cur_row * (params.grid_height or 655360)
+                end
+                temp_t = next_t
             -- Two cases:
             --   (a) Previous segment ended on RIGHT sub-col (pending_sub_col==1):
             --       → Next segment starts on LEFT sub-col of same big column.
@@ -732,7 +746,7 @@ function textflow.place_nodes(ctx, start_node, layout_map, params, callbacks)
             --   (b) Previous segment ended on LEFT sub-col or both filled (pending_sub_col==nil or 2):
             --       → Next segment goes to the next big column's RIGHT sub-col.
             --       → Call callbacks.wrap() to advance to next big column.
-            if ctx.textflow_pending_sub_col == 1 then
+            elseif ctx.textflow_pending_sub_col == 1 then
                 -- Case (a): right → left in same big column
                 temp_t = next_t
             else

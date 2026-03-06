@@ -30,6 +30,7 @@
         font-color .tl_set:N = \l__luatexcn_style_color_tl,
 
         grid-height .tl_set:N = \l__luatexcn_style_grid_height_tl,
+        grid-width .tl_set:N = \l__luatexcn_style_grid_width_tl,
 
         spacing-top .tl_set:N = \l__luatexcn_style_spacing_top_tl,
         spacing-bottom .tl_set:N = \l__luatexcn_style_spacing_bottom_tl,
@@ -62,7 +63,8 @@
               \tl_if_empty:NTF \l__luatexcn_style_xshift_tl { nil } { [=[\luaescapestring{\l__luatexcn_style_xshift_tl}]=] },
               \tl_if_empty:NTF \l__luatexcn_style_yshift_tl { nil } { [=[\luaescapestring{\l__luatexcn_style_yshift_tl}]=] },
               \tl_if_empty:NTF \l__luatexcn_style_indent_tl { nil } { \l__luatexcn_style_indent_tl },
-              \tl_if_empty:NTF \l__luatexcn_style_first_indent_tl { nil } { \l__luatexcn_style_first_indent_tl }
+              \tl_if_empty:NTF \l__luatexcn_style_first_indent_tl { nil } { \l__luatexcn_style_first_indent_tl },
+              \tl_if_empty:NTF \l__luatexcn_style_grid_width_tl { nil } { [=[\luaescapestring{\l__luatexcn_style_grid_width_tl}]=] }
             )
           )
           tex.print(tostring(style_id))
@@ -115,6 +117,7 @@
         \tl_set:Nn \l__luatexcn_style_font_tl {}
         \tl_set:Nn \l__luatexcn_style_color_tl {}
         \tl_set:Nn \l__luatexcn_style_grid_height_tl {}
+        \tl_set:Nn \l__luatexcn_style_grid_width_tl {}
         \tl_set:Nn \l__luatexcn_style_spacing_top_tl {}
         \tl_set:Nn \l__luatexcn_style_spacing_bottom_tl {}
         \tl_set:Nn \l__luatexcn_style_xshift_tl {}
@@ -190,6 +193,7 @@
     字体 .tl_set:N = \l__luatexcn_style_font_tl,
     字体颜色 .tl_set:N = \l__luatexcn_style_color_tl,
     格高 .tl_set:N = \l__luatexcn_style_grid_height_tl,
+    格宽 .tl_set:N = \l__luatexcn_style_grid_width_tl,
     上间距 .tl_set:N = \l__luatexcn_style_spacing_top_tl,
     下间距 .tl_set:N = \l__luatexcn_style_spacing_bottom_tl,
     间距 .meta:n = { spacing-top = #1, spacing-bottom = #1 },
@@ -207,6 +211,7 @@
     間距 .meta:n = { spacing-top = #1, spacing-bottom = #1 },
     橫移 .tl_set:N = \l__luatexcn_style_xshift_tl,
     縱移 .tl_set:N = \l__luatexcn_style_yshift_tl,
+    格寬 .tl_set:N = \l__luatexcn_style_grid_width_tl,
     縮進 .tl_set:N = \l__luatexcn_style_indent_tl,
     首行縮進 .tl_set:N = \l__luatexcn_style_first_indent_tl,
     末行縮進 .tl_set:N = \l__luatexcn_style_bottom_indent_tl,

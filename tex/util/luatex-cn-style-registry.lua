@@ -408,7 +408,7 @@ function style_registry.push_content_style(font_color, font_size, font, extra)
 end
 
 --- Build an extra table from optional grid_height, spacing_top, spacing_bottom, xshift, yshift,
---- indent, first_indent strings.
+--- indent, first_indent, grid_width strings.
 --- Convenience helper for TeX→Lua calls where table construction in expl3 is awkward.
 -- @param grid_height (string|nil) e.g., "1.5em"
 -- @param spacing_top (string|nil) e.g., "5pt"
@@ -417,14 +417,19 @@ end
 -- @param yshift (string|nil) e.g., "0.5em"
 -- @param indent (number|string|nil) e.g., 2 or "2"
 -- @param first_indent (number|string|nil) e.g., 0 or "0", nil means inherit from indent
+-- @param grid_width (string|nil) e.g., "1cm" — stored as cell_width in style
 -- @return (table|nil) Extra table for push_content_style, or nil if all params are nil
-function style_registry.make_extra(grid_height, spacing_top, spacing_bottom, xshift, yshift, indent, first_indent)
+function style_registry.make_extra(grid_height, spacing_top, spacing_bottom, xshift, yshift, indent, first_indent, grid_width)
     local constants_mod = package.loaded['core.luatex-cn-constants'] or
         require('core.luatex-cn-constants')
     local extra = {}
     local has_any = false
     if grid_height and grid_height ~= "" then
         extra.grid_height = constants_mod.to_dimen(grid_height)
+        has_any = true
+    end
+    if grid_width and grid_width ~= "" then
+        extra.cell_width = constants_mod.to_dimen(grid_width)
         has_any = true
     end
     if spacing_top and spacing_top ~= "" then

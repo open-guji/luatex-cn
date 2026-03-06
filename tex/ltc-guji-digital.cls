@@ -36,6 +36,8 @@
     四庫全書彩色 = SiKuQuanShu-colored,
     红楼梦甲戌本 = HongLouMengJiaXuBen,
     紅樓夢甲戌本 = HongLouMengJiaXuBen,
+    欧式族谱 = oushizupu,
+    歐式族譜 = oushizupu,
   }
 
 % ============================================================================

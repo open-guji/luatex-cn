@@ -64,7 +64,6 @@ local function draw_column_borders(p_head, params)
     local outer_shift = params.outer_shift
     local border_rgb_str = params.border_rgb_str
     local banxin_cols = params.banxin_cols or {} -- Set of column indices to skip
-    local skip_cols = params.skip_cols or {}     -- Additional columns to skip (e.g. table with column_border=false)
     local col_min_y_sp = params.col_min_y_sp or {} -- Per-column min y_sp for taitou raised border
     local col_geom = params.col_geom or {
         grid_width = grid_width,
@@ -95,8 +94,8 @@ local function draw_column_borders(p_head, params)
     end
 
     for col = 0, total_cols - 1 do
-        -- Skip banxin columns and table columns with column_border=false
-        if not banxin_cols[col] and not skip_cols[col] then
+        -- Skip banxin columns (they are drawn separately by banxin module)
+        if not banxin_cols[col] then
             local rtl_col = total_cols - 1 - col
             local tx_bp = (text_position.get_column_x(rtl_col, col_geom) + half_thickness + shift_x) * sp_to_bp
             local ty_bp = -(half_thickness + outer_shift) * sp_to_bp
@@ -434,28 +433,9 @@ local function render_borders(p_head, params)
     local draw_bnd_border = params.draw_band_border
     if draw_bnd_border == nil then draw_bnd_border = params.draw_border end
 
-    -- Build skip_cols set: columns in table ranges where column_border=false
-    local skip_cols = {}
-    local ptb = params.page_table_bands
-    if ptb and ptb.column_border == false then
-        local table_start = ptb.table_start_col or 0
-        local table_cols = ptb.actual_band_cols or 0
-        local iv = col_geom.interval or 0
-        local logical = table_start
-        local placed = 0
-        while placed < table_cols do
-            local is_bx = (iv > 0) and ((logical % (iv + 1)) == iv)
-            if not is_bx then
-                skip_cols[logical] = true
-                placed = placed + 1
-            end
-            if placed < table_cols then
-                logical = logical + 1
-            end
-        end
-    end
-
     -- 1. Draw column borders (inner borders between columns)
+    -- Note: Table-level column_border only controls future cell dividers,
+    -- NOT the Content-level grid lines (those are always drawn when draw_col_border is true).
     if draw_col_border and p_total_cols > 0 then
         p_head = draw_column_borders(p_head, {
             total_cols = p_total_cols,
@@ -467,7 +447,6 @@ local function render_borders(p_head, params)
             outer_shift = params.outer_shift,
             border_rgb_str = params.b_rgb_str,
             banxin_cols = params.reserved_cols,
-            skip_cols = skip_cols,
             col_min_y_sp = params.col_min_y_sp,
         })
     end

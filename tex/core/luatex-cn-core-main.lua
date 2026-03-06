@@ -551,6 +551,7 @@ local function generate_physical_pages(list, params, engine_ctx, plugin_contexts
         border_margin = current_style.border_margin or params.border_margin or "1pt",
         border_margin_x = params.border_margin_x,
         border_margin_y = params.border_margin_y,
+        border_offset = params.border_offset,
         outer_margin = params.outer_margin or "0pt",
         -- Textbox outer border (separate from body text outer border, drawn around decorative shape)
         textbox_outer_border = params.outer_border or false,

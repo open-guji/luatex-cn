@@ -572,28 +572,33 @@ local function render_borders(p_head, params)
     end
 
     -- 4. Draw border frame decoration
+    -- border_offset: extra outward expansion for frame only (not background fill),
+    -- used when inverted background needs visible gap between fill and stroke.
     if border_shape and border_shape ~= "none" then
         local border_color = params.border_color_str or params.b_rgb_str or "0 0 0"
         local border_w = params.border_width or (65536 * 0.4)
         local border_m = params.border_margin or 0
         local border_m_x = params.border_margin_x or border_m
         local border_m_y = params.border_margin_y or border_m
+        local b_off = params.border_offset or 0
+        local frame_m_x = border_m_x + b_off
+        local frame_m_y = border_m_y + b_off
 
         if border_shape == "rect" then
             p_head = drawing.draw_rect_frame(p_head, {
-                x = -border_m_x,
-                y = border_m_y,
-                width = shape_width + 2 * border_m_x,
-                height = shape_height + 2 * border_m_y,
+                x = -frame_m_x,
+                y = frame_m_y,
+                width = shape_width + 2 * frame_m_x,
+                height = shape_height + 2 * frame_m_y,
                 line_width = border_w,
                 color_str = border_color,
             })
         elseif border_shape == "octagon" then
             p_head = drawing.draw_octagon_frame(p_head, {
-                x = -border_m,
-                y = border_m,
-                width = shape_width + 2 * border_m,
-                height = shape_height + 2 * border_m,
+                x = -(border_m + b_off),
+                y = border_m + b_off,
+                width = shape_width + 2 * (border_m + b_off),
+                height = shape_height + 2 * (border_m + b_off),
                 line_width = border_w,
                 color_str = border_color,
             })
@@ -601,7 +606,7 @@ local function render_borders(p_head, params)
             p_head = drawing.draw_circle_frame(p_head, {
                 cx = shape_width / 2,
                 cy = -shape_height / 2,
-                radius = math.max(shape_width, shape_height) / 2 + border_m,
+                radius = math.max(shape_width, shape_height) / 2 + border_m + b_off,
                 line_width = border_w,
                 color_str = border_color,
             })

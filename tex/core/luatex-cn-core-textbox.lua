@@ -220,6 +220,7 @@ local function build_sub_params(params, col_aligns)
         border_margin = params.border_margin or "1pt",
         border_margin_x = params.border_margin_x,
         border_margin_y = params.border_margin_y,
+        border_offset = params.border_offset,
         outer_margin = params.outer_margin or "0pt",
         -- Outer border params (textbox-level)
         outer_border = (params.outer_border == true or params.outer_border == "true"),

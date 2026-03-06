@@ -104,6 +104,8 @@
     border-margin-x .initial:n = {},
     border-margin-y .tl_set:N = \l__luatexcn_textbox_border_margin_y_tl,
     border-margin-y .initial:n = {},
+    border-offset .tl_set:N = \l__luatexcn_textbox_border_offset_tl,
+    border-offset .initial:n = {0pt},
     outer-margin .tl_set:N = \l__luatexcn_textbox_outer_margin_tl,
     outer-margin .initial:n = {0pt},
     outer-border .bool_set:N = \l__luatexcn_textbox_outer_border_bool,
@@ -241,6 +243,7 @@
       border_margin~=~[=[\luaescapestring{\l__luatexcn_textbox_border_margin_tl}]=],
       border_margin_x~=~[=[\luaescapestring{\l__luatexcn_textbox_border_margin_x_tl}]=],
       border_margin_y~=~[=[\luaescapestring{\l__luatexcn_textbox_border_margin_y_tl}]=],
+      border_offset~=~[=[\luaescapestring{\l__luatexcn_textbox_border_offset_tl}]=],
       outer_margin~=~[=[\luaescapestring{\l__luatexcn_textbox_outer_margin_tl}]=],
       outer_border~=~\bool_if:NTF~\l__luatexcn_textbox_outer_border_bool~{true}{false},
       outer_border_thickness~=~[=[\luaescapestring{\l__luatexcn_textbox_outer_border_thickness_tl}]=],
@@ -289,7 +292,16 @@
 
 % ============================================================
 % Border shape shortcuts (using cell-based sizing)
+%
+% 修饰词组合命名体系:
+%   反白     = 黑底白字（无边框）
+%   墨围     = 矩形边框
+%   八角墨围 = 八角形边框
+%   反白     = 可叠加（墨围反白、八角墨围反白）
+%   带圈     = 圆形边框（独立）
 % ============================================================
+
+% -- 反白：黑底白字，无边框 --
 \NewDocumentCommand{\反白}{ m }
   {
     \__luatexcn_textbox_resolve_cell_gw:N \l_tmpa_dim
@@ -301,39 +313,8 @@
       grid-height=\l_tmpb_dim
     ]{#1}
   }
-\NewDocumentCommand{\八角框}{ m }
-  {
-    \__luatexcn_textbox_resolve_cell_gw:N \l_tmpa_dim
-    \__luatexcn_textbox_resolve_cell_gh:N \l_tmpb_dim
-    \TextBox[
-      border-shape=octagon,
-      grid-width=\l_tmpa_dim,
-      grid-height=\l_tmpb_dim
-    ]{#1}
-  }
-\NewDocumentCommand{\带圈}{ m }
-  {
-    \__luatexcn_textbox_resolve_cell_gw:N \l_tmpa_dim
-    \__luatexcn_textbox_resolve_cell_gh:N \l_tmpb_dim
-    \TextBox[
-      border-shape=circle,
-      grid-width=\l_tmpa_dim,
-      grid-height=\l_tmpb_dim
-    ]{#1}
-  }
-\NewDocumentCommand{\反白八角框}{ m }
-  {
-    \__luatexcn_textbox_resolve_cell_gw:N \l_tmpa_dim
-    \__luatexcn_textbox_resolve_cell_gh:N \l_tmpb_dim
-    \TextBox[
-      background-color={0.2~0.2~0.2},
-      font-color=white,
-      border-shape=octagon,
-      border-color=white,
-      grid-width=\l_tmpa_dim,
-      grid-height=\l_tmpb_dim
-    ]{#1}
-  }
+
+% -- 墨围：矩形黑色边框 --
 \NewDocumentCommand{\墨围}{ m }
   {
     \__luatexcn_textbox_resolve_cell_gw:N \l_tmpa_dim
@@ -349,23 +330,95 @@
     ]{#1}
   }
 
+% -- 墨围反白：矩形黑色边框 + 黑底白字 --
+% border-offset 使黑色边框线画在背景之外（白色区域上可见）
+\NewDocumentCommand{\墨围反白}{ m }
+  {
+    \__luatexcn_textbox_resolve_cell_gw:N \l_tmpa_dim
+    \__luatexcn_textbox_resolve_cell_gh:N \l_tmpb_dim
+    \dim_set:Nn \l_tmpb_dim { \l_tmpa_dim * 12 / 10 }
+    \TextBox[
+      background-color={0.2~0.2~0.2},
+      font-color=white,
+      border-shape=rect,
+      grid-width=\l_tmpa_dim,
+      grid-height=\l_tmpb_dim,
+      border-margin-x=0.05em,
+      border-margin-y=0.1em,
+      border-offset=0.1em,
+      outer-margin=0.15em
+    ]{#1}
+  }
+
+% -- 八角墨围：八角形黑色边框 --
+\NewDocumentCommand{\八角墨围}{ m }
+  {
+    \__luatexcn_textbox_resolve_cell_gw:N \l_tmpa_dim
+    \__luatexcn_textbox_resolve_cell_gh:N \l_tmpb_dim
+    \dim_set:Nn \l_tmpb_dim { \l_tmpa_dim * 12 / 10 }
+    \TextBox[
+      border-shape=octagon,
+      grid-width=\l_tmpa_dim,
+      grid-height=\l_tmpb_dim,
+      border-margin-x=0.05em,
+      border-margin-y=0.1em,
+      outer-margin=0.15em
+    ]{#1}
+  }
+
+% -- 八角墨围反白：八角形黑色边框 + 黑底白字 --
+% border-offset 使黑色边框线画在背景之外（白色区域上可见）
+\NewDocumentCommand{\八角墨围反白}{ m }
+  {
+    \__luatexcn_textbox_resolve_cell_gw:N \l_tmpa_dim
+    \__luatexcn_textbox_resolve_cell_gh:N \l_tmpb_dim
+    \dim_set:Nn \l_tmpb_dim { \l_tmpa_dim * 12 / 10 }
+    \TextBox[
+      background-color={0.2~0.2~0.2},
+      font-color=white,
+      border-shape=octagon,
+      grid-width=\l_tmpa_dim,
+      grid-height=\l_tmpb_dim,
+      border-margin-x=0.05em,
+      border-margin-y=0.1em,
+      border-offset=0.1em,
+      outer-margin=0.15em
+    ]{#1}
+  }
+
+% -- 带圈：圆形边框 --
+\NewDocumentCommand{\带圈}{ m }
+  {
+    \__luatexcn_textbox_resolve_cell_gw:N \l_tmpa_dim
+    \__luatexcn_textbox_resolve_cell_gh:N \l_tmpb_dim
+    \TextBox[
+      border-shape=circle,
+      grid-width=\l_tmpa_dim,
+      grid-height=\l_tmpb_dim
+    ]{#1}
+  }
+
 \ExplSyntaxOff%
 
 % ============================================================
-% Chinese aliases / 中文别名
+% Aliases / 别名
 % ============================================================
 % Simplified Chinese / 简体
 \NewCommandCopy{\文本框}{\TextBox}
 \NewCommandCopy{\填充文本框}{\FillTextBox}
-% English aliases for Chinese-only commands
+% English
 \NewCommandCopy{\inverted}{\反白}
-\NewCommandCopy{\octagon}{\八角框}
-\NewCommandCopy{\circled}{\带圈}
-\NewCommandCopy{\invertedOctagon}{\反白八角框}
 \NewCommandCopy{\bordered}{\墨围}
-% Traditional Chinese / 繁体 (带圈→帶圈)
+\NewCommandCopy{\borderedInverted}{\墨围反白}
+\NewCommandCopy{\octagonBordered}{\八角墨围}
+\NewCommandCopy{\octagonBorderedInverted}{\八角墨围反白}
+\NewCommandCopy{\circled}{\带圈}
+% Traditional Chinese / 繁体
 \NewCommandCopy{\帶圈}{\带圈}
 \NewCommandCopy{\墨圍}{\墨围}
+\NewCommandCopy{\墨圍反白}{\墨围反白}
+\NewCommandCopy{\八角墨圍}{\八角墨围}
+\NewCommandCopy{\八角墨圍反白}{\八角墨围反白}
 
 % ============================================================
 % Chinese key aliases / 中文 Key 别名

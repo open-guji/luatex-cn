@@ -148,6 +148,8 @@ local function calculate_render_context(ctx)
         and constants.resolve_dimen(visual.border_margin_x, grid_width) or border_margin
     local border_margin_y = (visual.border_margin_y and visual.border_margin_y ~= "")
         and constants.resolve_dimen(visual.border_margin_y, grid_height) or border_margin
+    local border_offset = (visual.border_offset and visual.border_offset ~= "")
+        and constants.resolve_dimen(visual.border_offset, grid_width) or 0
     local outer_margin = constants.resolve_dimen(visual.outer_margin, grid_height) or 0
     -- Textbox outer border (drawn around decorative shape, not via body text mechanism)
     local textbox_outer_border = visual.textbox_outer_border or false
@@ -213,6 +215,7 @@ local function calculate_render_context(ctx)
         border_margin = border_margin,
         border_margin_x = border_margin_x,
         border_margin_y = border_margin_y,
+        border_offset = border_offset,
         outer_margin = outer_margin,
         border_avail_width = border_avail_width,
         -- Textbox outer border params
@@ -416,6 +419,7 @@ local function render_single_page(p_head, p_max_col, p, layout_map, params, ctx,
         border_margin = ctx.border_margin,
         border_margin_x = ctx.border_margin_x,
         border_margin_y = ctx.border_margin_y,
+        border_offset = ctx.border_offset,
         background_rgb_str = ctx.background_rgb_str,
         -- Taitou raised border
         col_min_y_sp = col_min_y_sp,

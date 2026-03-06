@@ -657,6 +657,8 @@ local function generate_physical_pages(list, params, engine_ctx, plugin_contexts
 
         if p_info.is_textbox then
             node.set_attribute(new_box, constants.ATTR_TEXTBOX_WIDTH, page_info.cols)
+            -- Store inner grid_width for precise centering in handle_block_node
+            node.set_attribute(new_box, constants.ATTR_TEXTBOX_GRID_WIDTH, engine_ctx.g_width)
             -- Use actual content height for auto-height, or line_limit for fixed-height
             -- height_sp is in scaled points; convert to row count for occupancy grid
             local tb_rows = page_info.height_sp

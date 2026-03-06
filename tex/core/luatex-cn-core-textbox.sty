@@ -270,17 +270,90 @@
       { \TextBox[#1, box-align=fill]{#2} }          % New syntax: key-value options
   }
 
+% ============================================================
+% Cell size resolution helpers (for border-shape commands)
+% Priority: content cell-width/cell-height param > font size (1em)
+% ============================================================
+\cs_new:Nn \__luatexcn_textbox_resolve_cell_gw:N
+  {
+    \tl_if_empty:NTF \l__luatexcn_content_cell_width_tl
+      { \dim_set:Nn #1 { 1em } }
+      { \dim_set:Nn #1 { \l__luatexcn_content_cell_width_tl } }
+  }
+\cs_new:Nn \__luatexcn_textbox_resolve_cell_gh:N
+  {
+    \tl_if_empty:NTF \l__luatexcn_content_cell_height_tl
+      { \dim_set:Nn #1 { 1em } }
+      { \dim_set:Nn #1 { \l__luatexcn_content_cell_height_tl } }
+  }
+
+% ============================================================
+% Border shape shortcuts (using cell-based sizing)
+% ============================================================
+\NewDocumentCommand{\反白}{ m }
+  {
+    \__luatexcn_textbox_resolve_cell_gw:N \l_tmpa_dim
+    \__luatexcn_textbox_resolve_cell_gh:N \l_tmpb_dim
+    \TextBox[
+      background-color={0.2~0.2~0.2},
+      font-color=white,
+      grid-width=\l_tmpa_dim,
+      grid-height=\l_tmpb_dim
+    ]{#1}
+  }
+\NewDocumentCommand{\八角框}{ m }
+  {
+    \__luatexcn_textbox_resolve_cell_gw:N \l_tmpa_dim
+    \__luatexcn_textbox_resolve_cell_gh:N \l_tmpb_dim
+    \TextBox[
+      border-shape=octagon,
+      grid-width=\l_tmpa_dim,
+      grid-height=\l_tmpb_dim
+    ]{#1}
+  }
+\NewDocumentCommand{\带圈}{ m }
+  {
+    \__luatexcn_textbox_resolve_cell_gw:N \l_tmpa_dim
+    \__luatexcn_textbox_resolve_cell_gh:N \l_tmpb_dim
+    \TextBox[
+      border-shape=circle,
+      grid-width=\l_tmpa_dim,
+      grid-height=\l_tmpb_dim
+    ]{#1}
+  }
+\NewDocumentCommand{\反白八角框}{ m }
+  {
+    \__luatexcn_textbox_resolve_cell_gw:N \l_tmpa_dim
+    \__luatexcn_textbox_resolve_cell_gh:N \l_tmpb_dim
+    \TextBox[
+      background-color={0.2~0.2~0.2},
+      font-color=white,
+      border-shape=octagon,
+      border-color=white,
+      grid-width=\l_tmpa_dim,
+      grid-height=\l_tmpb_dim
+    ]{#1}
+  }
+\NewDocumentCommand{\墨围}{ m }
+  {
+    \__luatexcn_textbox_resolve_cell_gw:N \l_tmpa_dim
+    \__luatexcn_textbox_resolve_cell_gh:N \l_tmpb_dim
+    \dim_set:Nn \l_tmpb_dim { \l_tmpa_dim * 12 / 10 }
+    \TextBox[
+      border-shape=rect,
+      grid-width=\l_tmpa_dim,
+      grid-height=\l_tmpb_dim,
+      border-margin-x=0.05em,
+      border-margin-y=0.1em,
+      outer-margin=0.15em
+    ]{#1}
+  }
+
 \ExplSyntaxOff%
 
 % ============================================================
 % Chinese aliases / 中文别名
 % ============================================================
-% Border shape shortcuts
-\NewDocumentCommand{\反白}{ m }{\TextBox[background-color={0.2 0.2 0.2}, font-color=white]{#1}}
-\NewDocumentCommand{\八角框}{ m }{\TextBox[border-shape=octagon]{#1}}
-\NewDocumentCommand{\带圈}{ m }{\TextBox[border-shape=circle]{#1}}
-\NewDocumentCommand{\反白八角框}{ m }{\TextBox[background-color={0.2 0.2 0.2}, font-color=white, border-shape=octagon, border-color=white]{#1}}
-\NewDocumentCommand{\墨围}{ m }{\TextBox[border-shape=rect, grid-width=1em, grid-height=1.2em, border-margin-x=0.05em, border-margin-y=0.1em, outer-margin=0.15em]{#1}}
 % Simplified Chinese / 简体
 \NewCommandCopy{\文本框}{\TextBox}
 \NewCommandCopy{\填充文本框}{\FillTextBox}

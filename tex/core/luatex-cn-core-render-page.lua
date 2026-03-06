@@ -449,6 +449,8 @@ local function render_single_page(p_head, p_max_col, p, layout_map, params, ctx,
     ctx_node.page_col_spacing_bottom_sp = (ctx.col_geom and ctx.col_geom.col_spacing_bottom_sp and ctx.col_geom.col_spacing_bottom_sp[p]) or nil
     -- Apply the computed right-alignment shift_x
     ctx_node.shift_x = shift_x
+    -- Pass is_textbox flag so process_page_nodes can skip outer col_widths fallback
+    ctx_node.is_textbox = page.is_textbox
 
     p_head = process_page_nodes(p_head, layout_map, params, ctx_node)
 

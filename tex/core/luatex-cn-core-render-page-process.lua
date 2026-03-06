@@ -205,15 +205,19 @@ local function handle_block_node(curr, p_head, pos, ctx)
     local final_x = text_position.get_column_x(rtl_col_left, ctx.col_geom)
         + ctx.half_thickness + ctx.shift_x
 
-    -- Center TextBox content within outer column.
-    -- TextBox grid_width may differ from outer column width; offset to center.
+    -- Center TextBox grid area within outer column.
     local tb_w_attr = D.get_attribute(curr, constants.ATTR_TEXTBOX_WIDTH)
     if tb_w_attr and tb_w_attr > 0 then
         local col_width = text_position.get_column_width(pos.col, ctx.col_geom)
         local tb_content_width = (pos.width or 1) * col_width
-        if w < tb_content_width then
-            -- TextBox narrower than column: center it
-            final_x = final_x + math.floor((tb_content_width - w) / 2)
+        local tb_grid_w = D.get_attribute(curr, constants.ATTR_TEXTBOX_GRID_WIDTH)
+        if tb_grid_w and tb_grid_w > 0 and tb_grid_w < col_width then
+            local inner_grid_total = tb_w_attr * tb_grid_w
+            local centering = math.floor((tb_content_width - inner_grid_total) / 2)
+            final_x = final_x + centering
+        elseif w < tb_content_width then
+            local centering = math.floor((tb_content_width - w) / 2)
+            final_x = final_x + centering
         end
     end
 
@@ -305,7 +309,14 @@ local function process_page_nodes(p_head, layout_map, params, ctx)
     glyph_params.col_geom = ctx.col_geom
     glyph_params.body_font_size = ctx.body_font_size
     -- Phase 2.4: Prefer Free Mode col_widths_sp[page], fall back to TitlePage col_widths
-    glyph_params.col_widths = ctx.page_col_widths_sp or (_G.content and _G.content.col_widths)
+    -- TextBox has its own grid_width; never use outer content's col_widths
+    -- NOTE: Cannot use `ctx.is_textbox and nil or X` because nil is falsy in Lua,
+    -- causing the or-branch to always execute. Use explicit if/else instead.
+    if ctx.is_textbox then
+        glyph_params.col_widths = nil
+    else
+        glyph_params.col_widths = ctx.page_col_widths_sp or (_G.content and _G.content.col_widths)
+    end
     -- Column spacing for glyph offset within columns that have spacing
     glyph_params.col_spacing_top = ctx.page_col_spacing_top_sp
     glyph_params.col_spacing_bottom = ctx.page_col_spacing_bottom_sp

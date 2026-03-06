@@ -663,6 +663,7 @@ local function handle_penalty_breaks(p_val, ctx, flush_buffer_fn, p_cols, interv
         local start_page = ctx.table_start_page or ctx.cur_page
         local end_page = ctx.cur_page
         for pg = start_page, end_page do
+            local tparams = _G.content and _G.content.table_params or {}
             ctx.page_table_bands[pg] = {
                 n_bands = ctx.n_bands,
                 band_heights_sp = ctx.band_heights_sp,
@@ -670,6 +671,8 @@ local function handle_penalty_breaks(p_val, ctx, flush_buffer_fn, p_cols, interv
                 band_gap_sp = ctx.band_gap_sp or 0,
                 table_start_col = ctx.table_start_col or 0,
                 actual_band_cols = actual_band_cols,
+                column_border = tparams.column_border,
+                band_border = tparams.band_border,
             }
         end
 

@@ -148,6 +148,20 @@ function style_registry.get_border(id)
     return style_registry.get_attr(id, "border")
 end
 
+--- Get column_border setting from style
+-- @param id (number) Style ID
+-- @return (boolean|nil) Column border setting, or nil if not found
+function style_registry.get_column_border(id)
+    return style_registry.get_attr(id, "column_border")
+end
+
+--- Get band_border setting from style
+-- @param id (number) Style ID
+-- @return (boolean|nil) Band border setting, or nil if not found
+function style_registry.get_band_border(id)
+    return style_registry.get_attr(id, "band_border")
+end
+
 --- Get border width from style
 -- @param id (number) Style ID
 -- @return (string|nil) Border width (e.g., "0.4pt"), or nil if not found

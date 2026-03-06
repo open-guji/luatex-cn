@@ -315,6 +315,8 @@ local function render_single_page(p_head, p_max_col, p, layout_map, params, ctx,
     local plugins = params.plugins
 
     local draw_border = engine.draw_border
+    local draw_column_border = engine.draw_column_border
+    local draw_band_border = engine.draw_band_border
     local draw_outer_border = page.is_outer_border
     local shift_x = ctx.shift_x
     local outer_shift = ctx.outer_shift
@@ -402,6 +404,8 @@ local function render_single_page(p_head, p_max_col, p, layout_map, params, ctx,
         ob_sep_val = ctx.ob_sep_val,
         -- Flags
         draw_border = draw_border,
+        draw_column_border = draw_column_border,
+        draw_band_border = draw_band_border,
         draw_outer_border_flag = draw_outer_border,
         is_textbox = page.is_textbox,
         reserved_cols = reserved_cols,

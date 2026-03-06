@@ -33,6 +33,8 @@
 \tl_new:N \l__luatexcn_table_n_cols_tl
 \int_new:N \l__luatexcn_table_header_rows_int
 \int_new:N \l__luatexcn_cell_col_width_int
+\tl_new:N \l__luatexcn_table_column_border_tl
+\tl_new:N \l__luatexcn_table_band_border_tl
 
 \keys_define:nn { luatexcn / table }
   {
@@ -46,6 +48,10 @@
     n-columns .initial:n = {},
     header-rows .int_set:N = \l__luatexcn_table_header_rows_int,
     header-rows .initial:n = 0,
+    column-border .tl_set:N = \l__luatexcn_table_column_border_tl,
+    column-border .initial:n = {},
+    band-border .tl_set:N = \l__luatexcn_table_band_border_tl,
+    band-border .initial:n = {},
   }
 
 \keys_define:nn { luatexcn / cell }
@@ -105,6 +111,8 @@
         band_gap_sp~=~\dim_to_decimal_in_sp:n { \l__luatexcn_table_band_gap_tl },
         band_heights~=~\l__luatexcn_table_band_heights_lua_tl,
         n_columns~=~\l__luatexcn_table_n_cols_lua_tl,
+        column_border~=~\tl_if_empty:NTF \l__luatexcn_table_column_border_tl {nil} {\l__luatexcn_table_column_border_tl},
+        band_border~=~\tl_if_empty:NTF \l__luatexcn_table_band_border_tl {nil} {\l__luatexcn_table_band_border_tl},
       })
     }
   }
@@ -143,11 +151,15 @@
     栏高度 .tl_set:N = \l__luatexcn_table_band_heights_tl,
     列数 .tl_set:N = \l__luatexcn_table_n_cols_tl,
     表头栏数 .int_set:N = \l__luatexcn_table_header_rows_int,
+    列边框 .tl_set:N = \l__luatexcn_table_column_border_tl,
+    栏边框 .tl_set:N = \l__luatexcn_table_band_border_tl,
     分欄 .int_set:N = \l__luatexcn_table_n_bands_int,
     欄間距 .tl_set:N = \l__luatexcn_table_band_gap_tl,
     欄高度 .tl_set:N = \l__luatexcn_table_band_heights_tl,
     列數 .tl_set:N = \l__luatexcn_table_n_cols_tl,
     表頭欄數 .int_set:N = \l__luatexcn_table_header_rows_int,
+    列邊框 .tl_set:N = \l__luatexcn_table_column_border_tl,
+    欄邊框 .tl_set:N = \l__luatexcn_table_band_border_tl,
   }
 
 \keys_define:nn { luatexcn / cell }

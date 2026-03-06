@@ -125,6 +125,11 @@ _G.content.border_thickness = _G.content.border_thickness or 26214 -- 0.4pt
 _G.content.border_color = _G.content.border_color or "0 0 0"
 _G.content.border_padding_top = _G.content.border_padding_top or 0
 _G.content.border_padding_bottom = _G.content.border_padding_bottom or 0
+-- Granular border control (nil = inherit from border_on)
+-- column_border: column-to-column vertical lines
+-- band_border: horizontal band divider lines
+_G.content.column_border = _G.content.column_border
+_G.content.band_border = _G.content.band_border
 
 -- ========== Content Area (Text Layout Area, excluding borders) ==========
 _G.content.content_width = _G.content.content_width or 0
@@ -163,6 +168,8 @@ _G.content.cell_gap = _G.content.cell_gap or nil
 -- @param params (table) Parameters from TeX keyvals
 local function parse_border_params(params)
     if params.border_on ~= nil then _G.content.border_on = params.border_on end
+    if params.column_border ~= nil then _G.content.column_border = params.column_border end
+    if params.band_border ~= nil then _G.content.band_border = params.band_border end
     if params.outer_border_on ~= nil then _G.content.outer_border_on = params.outer_border_on end
     if params.border_thickness then _G.content.border_thickness = constants.to_dimen(params.border_thickness) end
     if params.outer_border_thickness then _G.content.outer_border_thickness = constants.to_dimen(params.outer_border_thickness) end
@@ -258,6 +265,9 @@ local function push_content_base_style()
         first_indent = -1,  -- -1 means inherit from indent
         -- Border parameters (boolean flags and style values)
         border = _G.content.border_on or false,
+        -- column_border/band_border: only include if explicitly set (nil = inherit from border)
+        column_border = _G.content.column_border,  -- nil when not explicitly set
+        band_border = _G.content.band_border,      -- nil when not explicitly set
         border_width = sp_to_pt_str(_G.content.border_thickness),
         border_color = _G.content.border_color or "0 0 0",
         outer_border = _G.content.outer_border_on or false,

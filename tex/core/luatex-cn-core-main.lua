@@ -220,6 +220,10 @@ local function init_engine_context(box_num, params)
     local style_registry = package.loaded['util.luatex-cn-style-registry']
     local current_style = style_registry and style_registry.current() or {}
     local is_border = current_style.border or false
+    local draw_column_border = is_border
+    if current_style.column_border ~= nil then draw_column_border = current_style.column_border end
+    local draw_band_border = is_border
+    if current_style.band_border ~= nil then draw_band_border = current_style.band_border end
     local is_outer_border = current_style.outer_border or false
     local border_color = current_style.border_color or "0 0 0"
     -- Convert border_width from pt string to sp (style stack stores "0.4pt" format)
@@ -304,6 +308,8 @@ local function init_engine_context(box_num, params)
         user_height_sp = user_height_sp,
         -- Border rendering
         draw_border = is_border,
+        draw_column_border = draw_column_border,
+        draw_band_border = draw_band_border,
         border_thickness = b_thickness,
         half_thickness = (is_textbox and not is_border) and 0 or math.floor(b_thickness / 2),
         outer_shift = is_outer_border and (ob_thickness + ob_sep) or 0,

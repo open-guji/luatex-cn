@@ -67,6 +67,10 @@
 \tl_new:N \l__luatexcn_content_band_heights_tl
 \tl_new:N \l__luatexcn_content_band_columns_tl
 
+% Granular border control (empty = inherit from border)
+\tl_new:N \l__luatexcn_content_column_border_tl
+\tl_new:N \l__luatexcn_content_band_border_tl
+
 % Content-level indent defaults (pushed to style stack in BodyText)
 \tl_new:N \l__luatexcn_content_indent_tl
 \tl_new:N \l__luatexcn_content_first_indent_tl
@@ -97,6 +101,12 @@
 
     border-color .tl_set:N = \l__luatexcn_content_border_color_tl,
     border-color .initial:n = {black},
+
+    column-border .tl_set:N = \l__luatexcn_content_column_border_tl,
+    column-border .initial:n = {},
+
+    band-border .tl_set:N = \l__luatexcn_content_band_border_tl,
+    band-border .initial:n = {},
 
     % Number of characters per column (used for auto-calculating grid-height)
     n-char-per-col .int_set:N = \l__luatexcn_content_n_char_per_col_int,
@@ -223,6 +233,8 @@
     \lua_now:e {
       require('core.luatex-cn-core-content').sync_params({
         border_on~=~\bool_if:NTF~\l__luatexcn_content_border_bool~{true}~{false},
+        column_border~=~\tl_if_empty:NTF~\l__luatexcn_content_column_border_tl~{nil}~{\l__luatexcn_content_column_border_tl},
+        band_border~=~\tl_if_empty:NTF~\l__luatexcn_content_band_border_tl~{nil}~{\l__luatexcn_content_band_border_tl},
         outer_border_on~=~\bool_if:NTF~\l__luatexcn_content_outer_border_bool~{true}~{false},
         border_thickness~=~[=[\luaescapestring{\l__luatexcn_content_border_thickness_tl}]=],
         outer_border_thickness~=~[=[\luaescapestring{\l__luatexcn_content_outer_border_thickness_tl}]=],
@@ -543,6 +555,8 @@
     外框粗细 .tl_set:N = \l__luatexcn_content_outer_border_thickness_tl,
     外框间距 .tl_set:N = \l__luatexcn_content_outer_border_sep_tl,
     边框色 .tl_set:N = \l__luatexcn_content_border_color_tl,
+    列边框 .tl_set:N = \l__luatexcn_content_column_border_tl,
+    栏边框 .tl_set:N = \l__luatexcn_content_band_border_tl,
     每行字数 .int_set:N = \l__luatexcn_content_n_char_per_col_int,
     格宽 .tl_set:N = \l__luatexcn_content_grid_width_tl,
     格高 .tl_set:N = \l__luatexcn_content_grid_height_tl,
@@ -581,6 +595,8 @@
     外框粗細 .tl_set:N = \l__luatexcn_content_outer_border_thickness_tl,
     外框間距 .tl_set:N = \l__luatexcn_content_outer_border_sep_tl,
     邊框色 .tl_set:N = \l__luatexcn_content_border_color_tl,
+    列邊框 .tl_set:N = \l__luatexcn_content_column_border_tl,
+    欄邊框 .tl_set:N = \l__luatexcn_content_band_border_tl,
     每行字數 .int_set:N = \l__luatexcn_content_n_char_per_col_int,
     格寬 .tl_set:N = \l__luatexcn_content_grid_width_tl,
     縱對齊 .tl_set:N = \l__luatexcn_content_valign_tl,

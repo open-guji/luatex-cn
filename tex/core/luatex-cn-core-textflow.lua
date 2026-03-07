@@ -503,7 +503,7 @@ local function place_textflow_segment(ctx, nodes, layout_map, params, callbacks,
 
     -- Check if textflow has a segment-level grid_height override (from \夹注[grid-height=X])
     -- This is distinct from per-node overrides (from \样式[grid-height=Y] inside textflow)
-    local textflow_gh = textflow.get_grid_height() or gh
+    local textflow_gh = textflow.get_grid_height()
 
     local available_in_first = params.effective_limit - ctx.cur_row
     local capacity_per_subsequent = params.line_limit - orig_base_indent - params.r_indent
@@ -515,9 +515,14 @@ local function place_textflow_segment(ctx, nodes, layout_map, params, callbacks,
     if ctx.auto_column_wrap == false then
         available_height_sp = 0x7FFFFFFF  -- max int: no overflow splitting
         column_height_sp = 0x7FFFFFFF
+    elseif textflow_gh then
+        -- When textflow has its own grid-height, use actual sp heights from ctx
+        -- instead of row-count × textflow_gh (row counts are based on global gh)
+        available_height_sp = ctx.col_height_sp - ctx.cur_y_sp
+        column_height_sp = (capacity_per_subsequent * gh)
     else
-        available_height_sp = available_in_first * textflow_gh
-        column_height_sp = capacity_per_subsequent * textflow_gh
+        available_height_sp = available_in_first * gh
+        column_height_sp = capacity_per_subsequent * gh
     end
 
     -- Check if first node has forced indent (e.g., from \相对抬头)

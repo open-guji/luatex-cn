@@ -41,25 +41,46 @@ local helpers = package.loaded['core.luatex-cn-layout-grid-helpers'] or
 
 local textflow = {}
 
+-- Stack for textflow-level grid_height override (from \夹注[grid-height=X])
+-- Separate from per-node style overrides (from \样式[grid-height=Y] inside textflow)
+local textflow_grid_height_stack = {}
+
 --- Push textflow style to style stack
 -- @param font_color (string|nil) Font color string (e.g., "red" or "1 0 0")
 -- @param font_size (string|nil) Font size string (e.g., "14pt")
 -- @param font (string|nil) Font family name
 -- @param textflow_align (string|nil) TextFlow alignment (outward, inward, center, left, right)
 -- @param auto_balance (boolean|nil) Whether to auto-balance last column (default true)
+-- @param grid_height_sp (number|nil) Grid height in sp for capacity calculation
 -- @return (number) Style ID
-function textflow.push_style(font_color, font_size, font, textflow_align, auto_balance)
+function textflow.push_style(font_color, font_size, font, textflow_align, auto_balance, grid_height_sp)
     local extra = {}
     if textflow_align and textflow_align ~= "" then
         extra.textflow_align = textflow_align
     end
     extra.auto_balance = (auto_balance ~= false)
+    local gh_val = grid_height_sp and tonumber(grid_height_sp) or nil
+    if gh_val then
+        extra.grid_height = gh_val
+    end
+    table.insert(textflow_grid_height_stack, gh_val)
     return style_registry.push_content_style(font_color, font_size, font, extra)
 end
 
 --- Pop textflow style from style stack
 function textflow.pop_style()
+    if #textflow_grid_height_stack > 0 then
+        table.remove(textflow_grid_height_stack)
+    end
     return style_registry.pop()
+end
+
+--- Get current textflow-level grid_height override (nil if not set)
+function textflow.get_grid_height()
+    if #textflow_grid_height_stack > 0 then
+        return textflow_grid_height_stack[#textflow_grid_height_stack]
+    end
+    return nil
 end
 
 --- Calculate sub-column X offset for textflow
@@ -479,6 +500,11 @@ local function place_textflow_segment(ctx, nodes, layout_map, params, callbacks,
 
     -- Process textflow sequence into chunks (sp-based)
     local gh = params.grid_height or 655360
+
+    -- Check if textflow has a segment-level grid_height override (from \夹注[grid-height=X])
+    -- This is distinct from per-node overrides (from \样式[grid-height=Y] inside textflow)
+    local textflow_gh = textflow.get_grid_height() or gh
+
     local available_in_first = params.effective_limit - ctx.cur_row
     local capacity_per_subsequent = params.line_limit - orig_base_indent - params.r_indent
 
@@ -490,8 +516,8 @@ local function place_textflow_segment(ctx, nodes, layout_map, params, callbacks,
         available_height_sp = 0x7FFFFFFF  -- max int: no overflow splitting
         column_height_sp = 0x7FFFFFFF
     else
-        available_height_sp = available_in_first * gh
-        column_height_sp = capacity_per_subsequent * gh
+        available_height_sp = available_in_first * textflow_gh
+        column_height_sp = capacity_per_subsequent * textflow_gh
     end
 
     -- Check if first node has forced indent (e.g., from \相对抬头)

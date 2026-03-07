@@ -952,6 +952,9 @@ local function handle_spacing_node(t, ctx, grid_height, effective_col_height_sp,
                                     indent, interval, p_cols, flush_fn)
     local net_width, lookahead = accumulate_spacing(t)
 
+    -- In table mode, don't auto-wrap on spacing overflow
+    local in_table = ctx.table_start_col ~= nil
+
     -- Unified guard: skip spacing at column start (before any content)
     if net_width > 0 and ctx.cur_y_sp > 0 then
         if ctx.default_cell_height then
@@ -968,7 +971,7 @@ local function handle_spacing_node(t, ctx, grid_height, effective_col_height_sp,
                 for i = 1, num_cells do
                     ctx.cur_y_sp = ctx.cur_y_sp + cell_h
                     ctx.cur_row = math.floor(ctx.cur_y_sp / grid_height + 0.5)
-                    if ctx.cur_y_sp >= effective_col_height_sp then
+                    if not in_table and ctx.cur_y_sp >= effective_col_height_sp then
                         flush_fn()
                         wrap_to_next_column(ctx, p_cols, interval, grid_height, indent, false, false)
                     else
@@ -980,7 +983,7 @@ local function handle_spacing_node(t, ctx, grid_height, effective_col_height_sp,
             -- Natural mode: accumulate sp directly, no quantization
             ctx.cur_y_sp = ctx.cur_y_sp + net_width
             ctx.cur_row = math.floor(ctx.cur_y_sp / grid_height + 0.5)
-            if ctx.cur_y_sp > effective_col_height_sp then
+            if not in_table and ctx.cur_y_sp > effective_col_height_sp then
                 flush_fn()
                 wrap_to_next_column(ctx, p_cols, interval, grid_height, indent, false, false)
             end
@@ -1179,8 +1182,10 @@ local function handle_glyph_node(t, ctx, col_buffer, layout_map, grid_height,
         -- Column overflow check (sp-based)
         -- Natural mode: use actual accumulated height from buffer instead of cur_y_sp
         -- Grid mode: use cur_y_sp (which is synchronized with cur_row * grid_height)
+        -- In table mode, column transitions are controlled by CELL_BREAK/BAND_BREAK only
         local should_wrap = false
-        if not distribute and ctx.auto_column_wrap and ctx.cur_y_sp > 0 then
+        if not distribute and ctx.auto_column_wrap and ctx.cur_y_sp > 0
+                and ctx.table_start_col == nil then
             if ctx.default_cell_height then
                 -- Grid mode: use cur_y_sp (synchronized with grid)
                 should_wrap = (ctx.cur_y_sp + cell_h > ctx.col_height_sp)
@@ -1672,8 +1677,10 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
             end
         end
         -- Pre-node column wrap check: use actual buffer height in natural mode
+        -- In table mode, column transitions are controlled by CELL_BREAK/BAND_BREAK only
+        local in_table = ctx.table_start_col ~= nil
         local should_wrap_before_node = false
-        if ctx.auto_column_wrap and not distribute and not is_textflow_node and not next_is_textflow then
+        if ctx.auto_column_wrap and not distribute and not is_textflow_node and not next_is_textflow and not in_table then
             if ctx.default_cell_height then
                 -- Grid mode: use cur_y_sp
                 should_wrap_before_node = (ctx.cur_y_sp >= effective_col_height_sp)

@@ -48,6 +48,7 @@
         font .tl_set:N = \l__luatexcn_textflow_local_font_tl,
         font-color .tl_set:N = \l__luatexcn_textflow_local_color_tl,
         align .tl_set:N = \l__luatexcn_textflow_local_align_tl,
+        grid-height .tl_set:N = \l__luatexcn_textflow_local_grid_height_tl,
       }
 
     \NewDocumentCommand{\TextFlow}{ O{} +m }
@@ -61,6 +62,7 @@
         \tl_set:Nn \l__luatexcn_textflow_local_font_tl {}
         \tl_set:Nn \l__luatexcn_textflow_local_color_tl {}
         \tl_set:Nn \l__luatexcn_textflow_local_align_tl {}
+        \tl_set:Nn \l__luatexcn_textflow_local_grid_height_tl {}
 
         \keys_set:nn { luatexcn / textflow } { #1 }
 
@@ -109,7 +111,8 @@
             [=[\luaescapestring{\tl_use:N \l_tmpc_tl}]=],
             \tl_if_empty:NTF \l_tmpb_tl { nil } { [=[\luaescapestring{\tl_use:N \l_tmpb_tl}]=] },
             \tl_if_empty:NTF \l__luatexcn_textflow_resolved_align_tl { nil } { [=[\luaescapestring{\tl_use:N \l__luatexcn_textflow_resolved_align_tl}]=] },
-            \bool_if:NTF \l__luatexcn_textflow_auto_balance_bool { true } { false }
+            \bool_if:NTF \l__luatexcn_textflow_auto_balance_bool { true } { false },
+            \tl_if_empty:NTF \l__luatexcn_textflow_local_grid_height_tl { nil } { \dim_to_decimal_in_sp:n { \l__luatexcn_textflow_local_grid_height_tl } }
           )
           tex.print(tostring(style_id))
         }}
@@ -151,6 +154,7 @@
         \tl_set:Nn \l__luatexcn_textflow_local_font_tl {}
         \tl_set:Nn \l__luatexcn_textflow_local_color_tl {}
         \tl_set:Nn \l__luatexcn_textflow_local_align_tl {}
+        \tl_set:Nn \l__luatexcn_textflow_local_grid_height_tl {}
 
         \keys_set:nn { luatexcn / textflow } { #1 }
 
@@ -194,7 +198,8 @@
             [=[\luaescapestring{\tl_use:N \l_tmpc_tl}]=],
             \tl_if_empty:NTF \l_tmpb_tl { nil } { [=[\luaescapestring{\tl_use:N \l_tmpb_tl}]=] },
             \tl_if_empty:NTF \l__luatexcn_textflow_resolved_align_tl { nil } { [=[\luaescapestring{\tl_use:N \l__luatexcn_textflow_resolved_align_tl}]=] },
-            \bool_if:NTF \l__luatexcn_textflow_auto_balance_bool { true } { false }
+            \bool_if:NTF \l__luatexcn_textflow_auto_balance_bool { true } { false },
+            \tl_if_empty:NTF \l__luatexcn_textflow_local_grid_height_tl { nil } { \dim_to_decimal_in_sp:n { \l__luatexcn_textflow_local_grid_height_tl } }
           )
           tex.print(tostring(style_id))
         }}
@@ -243,6 +248,8 @@
     字体 .tl_set:N = \l__luatexcn_textflow_local_font_tl,
     字体颜色 .tl_set:N = \l__luatexcn_textflow_local_color_tl,
     对齐 .tl_set:N = \l__luatexcn_textflow_local_align_tl,
+    格高 .tl_set:N = \l__luatexcn_textflow_local_grid_height_tl,
+    字体大小 .tl_set:N = \l__luatexcn_textflow_local_size_tl,
     % 繁体（与简体不同形的）
     單列 .meta:n = { only-column = #1 },
     自動均衡 .bool_set:N = \l__luatexcn_textflow_auto_balance_bool,
@@ -250,6 +257,7 @@
     字體 .tl_set:N = \l__luatexcn_textflow_local_font_tl,
     字體顏色 .tl_set:N = \l__luatexcn_textflow_local_color_tl,
     對齊 .tl_set:N = \l__luatexcn_textflow_local_align_tl,
+    格高 .tl_set:N = \l__luatexcn_textflow_local_grid_height_tl,
   }
 \ExplSyntaxOff
 

@@ -669,8 +669,11 @@ end
 -- @param params (table) { effective_limit, p_cols, interval, grid_height, indent }
 -- @param callbacks (table) { flush, wrap, is_reserved_col, mark_occupied, push_buffer, move_next }
 function textbox.place_textbox_node(ctx, node, tb_w, tb_h, params, callbacks)
+    -- In table mode, don't wrap on overflow — let content overflow within the cell
+    local in_table = ctx.table_start_col ~= nil
+
     -- Handle vertical overflow
-    if ctx.cur_row + tb_h > params.effective_limit then
+    if not in_table and ctx.cur_row + tb_h > params.effective_limit then
         callbacks.flush()
         callbacks.wrap(false, false) -- reset_indent=false, reset_content=false
         ctx.cur_row = params.indent  -- Textbox respects indent at start of new column
@@ -685,7 +688,7 @@ function textbox.place_textbox_node(ctx, node, tb_w, tb_h, params, callbacks)
         end
     end
 
-    if not fits_width then
+    if not in_table and not fits_width then
         callbacks.flush()
         callbacks.wrap(false, false)
     end

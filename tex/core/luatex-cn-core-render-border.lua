@@ -93,6 +93,150 @@ local function draw_column_borders(p_head, params)
         return p_head
     end
 
+    -- Per-band column border control: when band_column_borders is set,
+    -- draw column borders from full height, excluding only the bands with column_border=false.
+    -- Gaps between bands and padding areas retain column borders.
+    local band_column_borders = params.band_column_borders
+    local n_bands = params.n_bands
+    local band_heights_sp = params.band_heights_sp
+    local band_y_offsets_sp = params.band_y_offsets_sp
+
+    if band_column_borders and n_bands and n_bands > 1 then
+        -- Build draw segments: start with full height [0, content_dim_h],
+        -- then cut out bands where column_border=false
+        local skips = {}
+        for band = 0, n_bands - 1 do
+            if band_column_borders[band] == false then
+                local by = band_y_offsets_sp[band] or 0
+                local bh = band_heights_sp[band] or 0
+                skips[#skips + 1] = { by, by + bh }
+            end
+        end
+        -- skips are already sorted by band order
+        local segments = {}
+        local cursor = 0
+        for _, skip in ipairs(skips) do
+            if cursor < skip[1] then
+                segments[#segments + 1] = { cursor, skip[1] }
+            end
+            cursor = skip[2]
+        end
+        if cursor < content_dim_h then
+            segments[#segments + 1] = { cursor, content_dim_h }
+        end
+
+        -- Determine table column range so columns outside the table
+        -- are drawn at full height (not affected by band_column_borders).
+        local table_start_col = params.table_start_col
+        local actual_band_cols = params.actual_band_cols
+
+        -- Draw column border rectangles only in the segments where column_border is true
+        for col = 0, total_cols - 1 do
+            if not banxin_cols[col] then
+                local rtl_col = total_cols - 1 - col
+                local tx_bp = (text_position.get_column_x(rtl_col, col_geom) + half_thickness + shift_x) * sp_to_bp
+                local tw_bp = text_position.get_column_width(col, col_geom) * sp_to_bp
+
+                -- Check if this column is inside the table range
+                local in_table = table_start_col and actual_band_cols
+                    and col >= table_start_col and col < table_start_col + actual_band_cols
+
+                if in_table then
+                    -- Table column: use per-band segments (skip column_border=false bands)
+                    for _, seg in ipairs(segments) do
+                        local ty_bp = -(half_thickness + outer_shift + seg[1]) * sp_to_bp
+                        local th_bp = -(seg[2] - seg[1]) * sp_to_bp
+
+                        local literal = utils.create_border_literal(b_thickness_bp, border_rgb_str, tx_bp, ty_bp, tw_bp, th_bp)
+                        p_head = utils.insert_pdf_literal(p_head, literal)
+                    end
+                else
+                    -- Non-table column: draw full-height column border
+                    local ty_bp = -(half_thickness + outer_shift) * sp_to_bp
+                    local th_bp = -content_dim_h * sp_to_bp
+                    local literal = utils.create_border_literal(b_thickness_bp, border_rgb_str, tx_bp, ty_bp, tw_bp, th_bp)
+                    p_head = utils.insert_pdf_literal(p_head, literal)
+                end
+
+                -- Taitou raised border: extend topmost segment upward for negative y_sp columns
+                local has_segments = in_table and #segments > 0
+                local min_y = col_min_y_sp[col]
+                if min_y and min_y < 0 then
+                    local raised_sp = -min_y
+                    local ty_bp = -(half_thickness + outer_shift) * sp_to_bp + raised_sp * sp_to_bp
+                    local th_bp = -raised_sp * sp_to_bp
+                    local literal = utils.create_border_literal(b_thickness_bp, border_rgb_str, tx_bp, ty_bp, tw_bp, th_bp)
+                    p_head = utils.insert_pdf_literal(p_head, literal)
+                end
+            end
+        end
+
+        -- Restore horizontal edges at content area boundaries where column border
+        -- rectangles are absent (skipped bands). Use full-width horizontal lines
+        -- (same style as band dividers) so they are visually consistent.
+        -- Build horizontal line segments that skip banxin columns.
+        local h_segments = {}
+        local interval = col_geom.interval or 0
+        local banxin_width_val = col_geom.banxin_width or 0
+        if interval > 0 and banxin_width_val > 0 and banxin_width_val ~= (col_geom.grid_width or 0) and total_cols > 0 then
+            local seg_start = nil
+            for rtl_col = 0, total_cols - 1 do
+                local col = total_cols - 1 - rtl_col
+                local is_banxin = (col % (interval + 1)) == interval
+                local col_x = text_position.get_column_x(rtl_col, col_geom)
+                local col_w = text_position.get_column_width(col, col_geom)
+                if is_banxin then
+                    if seg_start ~= nil then
+                        h_segments[#h_segments + 1] = { seg_start, col_x }
+                        seg_start = nil
+                    end
+                else
+                    if seg_start == nil then seg_start = col_x end
+                end
+                if rtl_col == total_cols - 1 and seg_start ~= nil then
+                    h_segments[#h_segments + 1] = { seg_start, col_x + col_w }
+                end
+            end
+        else
+            local iw = content_dim_h and params.content_dim_w
+            if not iw then
+                -- Approximate: total_cols * grid_width
+                iw = total_cols * (col_geom.grid_width or 0)
+            end
+            h_segments[1] = { 0, iw }
+        end
+
+        -- Draw full-width horizontal lines at boundaries of skipped bands
+        local need_top_edge = (#skips > 0 and skips[1][1] == 0)
+        local need_bottom_edge = (#skips > 0 and skips[#skips][2] >= content_dim_h)
+
+        if need_top_edge then
+            local ey = -(half_thickness + outer_shift) * sp_to_bp
+            for _, seg in ipairs(h_segments) do
+                local left_x_bp = (half_thickness + shift_x + seg[1]) * sp_to_bp
+                local right_x_bp = (half_thickness + shift_x + seg[2]) * sp_to_bp
+                local literal = string.format("q %.2f w %s RG %.4f %.4f m %.4f %.4f l S Q",
+                    b_thickness_bp, border_rgb_str,
+                    left_x_bp, ey, right_x_bp, ey)
+                p_head = utils.insert_pdf_literal(p_head, literal)
+            end
+        end
+
+        if need_bottom_edge then
+            local ey = -(half_thickness + outer_shift + content_dim_h) * sp_to_bp
+            for _, seg in ipairs(h_segments) do
+                local left_x_bp = (half_thickness + shift_x + seg[1]) * sp_to_bp
+                local right_x_bp = (half_thickness + shift_x + seg[2]) * sp_to_bp
+                local literal = string.format("q %.2f w %s RG %.4f %.4f m %.4f %.4f l S Q",
+                    b_thickness_bp, border_rgb_str,
+                    left_x_bp, ey, right_x_bp, ey)
+                p_head = utils.insert_pdf_literal(p_head, literal)
+            end
+        end
+
+        return p_head
+    end
+
     for col = 0, total_cols - 1 do
         -- Skip banxin columns (they are drawn separately by banxin module)
         if not banxin_cols[col] then
@@ -436,8 +580,11 @@ local function render_borders(p_head, params)
     -- 1. Draw column borders (inner borders between columns)
     -- Note: Table-level column_border only controls future cell dividers,
     -- NOT the Content-level grid lines (those are always drawn when draw_col_border is true).
+    -- Per-band column border: when inline table has band_column_borders overrides,
+    -- draw column borders as per-band segments instead of full-height lines.
+    local ptb = params.page_table_bands
     if draw_col_border and p_total_cols > 0 then
-        p_head = draw_column_borders(p_head, {
+        local col_border_params = {
             total_cols = p_total_cols,
             grid_width = grid_width,
             col_geom = col_geom,
@@ -448,7 +595,17 @@ local function render_borders(p_head, params)
             border_rgb_str = params.b_rgb_str,
             banxin_cols = params.reserved_cols,
             col_min_y_sp = params.col_min_y_sp,
-        })
+        }
+        -- Pass per-band column border info from inline table
+        if ptb and ptb.band_column_borders then
+            col_border_params.band_column_borders = ptb.band_column_borders
+            col_border_params.n_bands = ptb.n_bands
+            col_border_params.band_heights_sp = ptb.band_heights_sp
+            col_border_params.band_y_offsets_sp = ptb.band_y_offsets_sp
+            col_border_params.table_start_col = ptb.table_start_col
+            col_border_params.actual_band_cols = ptb.actual_band_cols
+        end
+        p_head = draw_column_borders(p_head, col_border_params)
     end
 
     -- 1b. Band divider lines (horizontal lines between bands)
@@ -469,7 +626,7 @@ local function render_borders(p_head, params)
     end
 
     -- 1c. Inline table band divider lines (per-page table band info)
-    local ptb = params.page_table_bands
+    -- (ptb was defined above for per-band column border support)
     -- Table-level overrides: ptb.band_border > content-level draw_bnd_border
     local table_band_border = draw_bnd_border
     if ptb and ptb.band_border ~= nil then table_band_border = ptb.band_border end

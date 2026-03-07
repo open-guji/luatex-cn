@@ -41,10 +41,6 @@ local helpers = package.loaded['core.luatex-cn-layout-grid-helpers'] or
 
 local textflow = {}
 
--- Stack for textflow-level grid_height override (from \夹注[grid-height=X])
--- Separate from per-node style overrides (from \样式[grid-height=Y] inside textflow)
-local textflow_grid_height_stack = {}
-
 --- Push textflow style to style stack
 -- @param font_color (string|nil) Font color string (e.g., "red" or "1 0 0")
 -- @param font_size (string|nil) Font size string (e.g., "14pt")
@@ -62,25 +58,14 @@ function textflow.push_style(font_color, font_size, font, textflow_align, auto_b
     local gh_val = grid_height_sp and tonumber(grid_height_sp) or nil
     if gh_val then
         extra.grid_height = gh_val
+        extra.textflow_grid_height = gh_val  -- mark as textflow-level (not inner \Style)
     end
-    table.insert(textflow_grid_height_stack, gh_val)
     return style_registry.push_content_style(font_color, font_size, font, extra)
 end
 
 --- Pop textflow style from style stack
 function textflow.pop_style()
-    if #textflow_grid_height_stack > 0 then
-        table.remove(textflow_grid_height_stack)
-    end
     return style_registry.pop()
-end
-
---- Get current textflow-level grid_height override (nil if not set)
-function textflow.get_grid_height()
-    if #textflow_grid_height_stack > 0 then
-        return textflow_grid_height_stack[#textflow_grid_height_stack]
-    end
-    return nil
 end
 
 --- Calculate sub-column X offset for textflow
@@ -502,8 +487,13 @@ local function place_textflow_segment(ctx, nodes, layout_map, params, callbacks,
     local gh = params.grid_height or 655360
 
     -- Check if textflow has a segment-level grid_height override (from \夹注[grid-height=X])
-    -- This is distinct from per-node overrides (from \样式[grid-height=Y] inside textflow)
-    local textflow_gh = textflow.get_grid_height()
+    -- Read from style registry (textflow_grid_height key), not from per-node grid_height
+    -- which may come from inner \样式[grid-height=Y]
+    local textflow_gh = nil
+    local first_sid = D.get_attribute(nodes[1], constants.ATTR_STYLE_REG_ID)
+    if first_sid and first_sid > 0 then
+        textflow_gh = style_registry.get_textflow_grid_height(first_sid)
+    end
 
     local available_in_first = params.effective_limit - ctx.cur_row
     local capacity_per_subsequent = params.line_limit - orig_base_indent - params.r_indent

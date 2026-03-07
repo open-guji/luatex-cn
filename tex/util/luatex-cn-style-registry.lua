@@ -225,6 +225,13 @@ function style_registry.get_grid_height(id)
     return style_registry.get_attr(id, "grid_height")
 end
 
+--- Get textflow-level grid height override (set by \夹注[grid-height=X], not inner \样式)
+-- @param id (number) Style ID
+-- @return (number|nil) Textflow grid height in sp (nil = not set at textflow level)
+function style_registry.get_textflow_grid_height(id)
+    return style_registry.get_attr(id, "textflow_grid_height")
+end
+
 --- Get cell width from style
 -- @param id (number) Style ID
 -- @return (number|nil) Cell width in sp (nil = use grid_width)

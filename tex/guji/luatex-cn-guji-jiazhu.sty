@@ -57,9 +57,20 @@
 
 % \jiazhuShortcut[opts]{open}{close}
 % Register a bracket pair as jiazhu shortcut.
-% e.g. \jiazhuShortcut{【}{】}  →  【...】 becomes \夹注{...}
+% e.g. \jiazhuShortcut                          →  默认 【...】 becomes \夹注{...}
+% e.g. \jiazhuShortcut{（}{）}                  →  （...） becomes \夹注{...}
 % e.g. \jiazhuShortcut[font-color=red]{（}{）}  →  （...） becomes \夹注[font-color=red]{...}
-\NewDocumentCommand{\jiazhuShortcut}{ O{} m m }
+\NewDocumentCommand{\jiazhuShortcut}{ O{} g g }
+  {
+    \IfNoValueTF { #2 }
+      { \__luatexcn_jiazhu_shortcut_register:nnn { #1 } { 【 } { 】 } }
+      {
+        \IfNoValueTF { #3 }
+          { \__luatexcn_jiazhu_shortcut_register:nnn { #1 } { #2 } { 】 } }
+          { \__luatexcn_jiazhu_shortcut_register:nnn { #1 } { #2 } { #3 } }
+      }
+  }
+\cs_new_protected:Nn \__luatexcn_jiazhu_shortcut_register:nnn
   {
     \lua_now:e
       {

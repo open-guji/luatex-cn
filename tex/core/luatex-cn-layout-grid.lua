@@ -474,12 +474,22 @@ local function apply_cell_valign(ctx, layout_map)
         return
     end
 
-    -- Find content bottom: max(y_sp + cell_height) across all nodes
+    -- Find content bottom: max(y_sp + effective_height) across all nodes.
+    -- For textbox blocks, use ATTR_TEXTBOX_HEIGHT_SP (precise sp height) when available,
+    -- because cell_height (= tb_rows * outer_grid_height) is rounded up and may exceed
+    -- the band height, preventing centering.
     local max_y = 0
     for _, n in ipairs(nodes) do
         local entry = layout_map[n]
         if entry then
-            local bottom = entry.y_sp + (entry.cell_height or 0)
+            local h = entry.cell_height or 0
+            if entry.is_block then
+                local precise_h = D.get_attribute(n, constants.ATTR_TEXTBOX_HEIGHT_SP)
+                if precise_h and precise_h > 0 then
+                    h = precise_h
+                end
+            end
+            local bottom = entry.y_sp + h
             if bottom > max_y then max_y = bottom end
         end
     end
@@ -506,6 +516,8 @@ local function apply_cell_valign(ctx, layout_map)
     ctx.cell_valign_nodes = nil
     ctx.cell_cur_valign = nil
 end
+
+_internal.apply_cell_valign = apply_cell_valign
 
 --- Handle penalty node for column/page breaks
 -- @param p_val (number) Penalty value

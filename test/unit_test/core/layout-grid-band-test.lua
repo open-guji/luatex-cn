@@ -315,4 +315,116 @@ test_utils.run_test("band: cur_y_sp resets to 0 on band wrap", function()
     test_utils.assert_eq(ctx.cur_band, 1)
 end)
 
+-- ============================================================================
+-- apply_cell_valign: cell vertical alignment
+-- ============================================================================
+
+test_utils.run_test("valign: center shifts glyph nodes to middle of band", function()
+    local ctx = make_band_ctx()
+    local grid_height = 65536 * 20  -- 20pt
+    -- Band height = col_height / 3 bands
+    local band_height = ctx.band_heights_sp[0]
+
+    -- Create two glyph nodes at y_sp=0 and y_sp=grid_height
+    local n1 = D.new(constants.GLYPH)
+    local n2 = D.new(constants.GLYPH)
+    local layout_map = {}
+    layout_map[n1] = { y_sp = 0, cell_height = grid_height }
+    layout_map[n2] = { y_sp = grid_height, cell_height = grid_height }
+
+    -- Content bottom = grid_height + grid_height = 2 * grid_height
+    local content_height = 2 * grid_height
+    local expected_offset = math.floor((band_height - content_height) / 2)
+
+    ctx.cell_valign_nodes = { n1, n2 }
+    ctx.cell_cur_valign = "center"
+    ctx.col_height_sp = band_height
+
+    layout_grid._internal.apply_cell_valign(ctx, layout_map)
+
+    test_utils.assert_eq(layout_map[n1].y_sp, expected_offset, "node 1 y_sp should be offset")
+    test_utils.assert_eq(layout_map[n2].y_sp, grid_height + expected_offset, "node 2 y_sp should be offset")
+    test_utils.assert_eq(ctx.cell_valign_nodes, nil, "should clear valign nodes")
+    test_utils.assert_eq(ctx.cell_cur_valign, nil, "should clear valign mode")
+end)
+
+test_utils.run_test("valign: no shift when valign is not center", function()
+    local ctx = make_band_ctx()
+    local grid_height = 65536 * 20
+    local n1 = D.new(constants.GLYPH)
+    local layout_map = {}
+    layout_map[n1] = { y_sp = 0, cell_height = grid_height }
+
+    ctx.cell_valign_nodes = { n1 }
+    ctx.cell_cur_valign = "top"
+    ctx.col_height_sp = ctx.band_heights_sp[0]
+
+    layout_grid._internal.apply_cell_valign(ctx, layout_map)
+
+    test_utils.assert_eq(layout_map[n1].y_sp, 0, "top align should not shift")
+end)
+
+test_utils.run_test("valign: no shift when no valign nodes", function()
+    local ctx = make_band_ctx()
+    ctx.cell_valign_nodes = nil
+    ctx.cell_cur_valign = "center"
+
+    -- Should not crash
+    layout_grid._internal.apply_cell_valign(ctx, {})
+end)
+
+test_utils.run_test("valign: textbox block uses ATTR_TEXTBOX_HEIGHT_SP for centering", function()
+    local ctx = make_band_ctx()
+    local grid_height = 65536 * 20  -- 20pt
+    local band_height = ctx.band_heights_sp[0]
+
+    -- Create a textbox block node (HLIST)
+    local tb = D.new(constants.HLIST)
+    -- cell_height is rounded up: 4 * grid_height (larger than band_height in some cases)
+    local cell_height_rounded = 4 * grid_height
+    -- Precise height is smaller (fits in band)
+    local precise_height = math.floor(band_height * 0.6)
+    D.set_attribute(tb, constants.ATTR_TEXTBOX_HEIGHT_SP, precise_height)
+
+    local layout_map = {}
+    layout_map[tb] = { y_sp = 0, cell_height = cell_height_rounded, is_block = true }
+
+    ctx.cell_valign_nodes = { tb }
+    ctx.cell_cur_valign = "center"
+    ctx.col_height_sp = band_height
+
+    layout_grid._internal.apply_cell_valign(ctx, layout_map)
+
+    -- Should use precise_height, not cell_height_rounded
+    local expected_offset = math.floor((band_height - precise_height) / 2)
+    test_utils.assert_eq(layout_map[tb].y_sp, expected_offset,
+        "textbox should center using precise sp height, not rounded cell_height")
+    test_utils.assert_true(expected_offset > 0,
+        "offset should be positive (content fits in band)")
+end)
+
+test_utils.run_test("valign: textbox without HEIGHT_SP falls back to cell_height", function()
+    local ctx = make_band_ctx()
+    local grid_height = 65536 * 20
+    local band_height = ctx.band_heights_sp[0]
+
+    -- Textbox block without ATTR_TEXTBOX_HEIGHT_SP
+    local tb = D.new(constants.HLIST)
+    -- cell_height smaller than band → should center
+    local cell_height = math.floor(band_height * 0.5)
+
+    local layout_map = {}
+    layout_map[tb] = { y_sp = 0, cell_height = cell_height, is_block = true }
+
+    ctx.cell_valign_nodes = { tb }
+    ctx.cell_cur_valign = "center"
+    ctx.col_height_sp = band_height
+
+    layout_grid._internal.apply_cell_valign(ctx, layout_map)
+
+    local expected_offset = math.floor((band_height - cell_height) / 2)
+    test_utils.assert_eq(layout_map[tb].y_sp, expected_offset,
+        "without HEIGHT_SP, should use cell_height for centering")
+end)
+
 print("\nAll core/layout-grid-band-test tests passed!")

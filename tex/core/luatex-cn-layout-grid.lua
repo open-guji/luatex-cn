@@ -169,7 +169,11 @@ local function create_grid_context(params, line_limit, p_cols)
         local offset = 0
         for i = 0, n_bands - 1 do
             local h
-            if band_heights and band_heights[i + 1] then
+            if i == n_bands - 1 then
+                -- Last band always fills remaining space
+                h = col_height_sp - offset
+                if h < 0 then h = 0 end
+            elseif band_heights and band_heights[i + 1] then
                 h = band_heights[i + 1]
             else
                 h = math.floor(available_height / n_bands)
@@ -433,6 +437,59 @@ local function flush_textflow_pending(ctx, grid_height)
     end
 end
 
+--- Apply cell vertical-align post-processing
+-- After a cell's content has been laid out, shift all its glyph y_sp
+-- positions to center the content within the band height.
+-- @param ctx (table) Grid context (reads cell_valign_nodes, cell_cur_valign, col_height_sp)
+-- @param layout_map (table) The layout map (node -> map_entry)
+local function apply_cell_valign(ctx, layout_map)
+    local nodes = ctx.cell_valign_nodes
+    if not nodes or #nodes == 0 then
+        ctx.cell_valign_nodes = nil
+        ctx.cell_cur_valign = nil
+        return
+    end
+
+    local valign = ctx.cell_cur_valign
+    if not valign or valign ~= "center" then
+        ctx.cell_valign_nodes = nil
+        ctx.cell_cur_valign = nil
+        return
+    end
+
+    -- Find content bottom: max(y_sp + cell_height) across all nodes
+    local max_y = 0
+    for _, n in ipairs(nodes) do
+        local entry = layout_map[n]
+        if entry then
+            local bottom = entry.y_sp + (entry.cell_height or 0)
+            if bottom > max_y then max_y = bottom end
+        end
+    end
+
+    -- Band height for this cell
+    local band_height = ctx.col_height_sp or 0
+    if band_height <= 0 or max_y <= 0 then
+        ctx.cell_valign_nodes = nil
+        ctx.cell_cur_valign = nil
+        return
+    end
+
+    -- Offset to center content
+    local offset = math.floor((band_height - max_y) / 2)
+    if offset > 0 then
+        for _, n in ipairs(nodes) do
+            local entry = layout_map[n]
+            if entry then
+                entry.y_sp = entry.y_sp + offset
+            end
+        end
+    end
+
+    ctx.cell_valign_nodes = nil
+    ctx.cell_cur_valign = nil
+end
+
 --- Handle penalty node for column/page breaks
 -- @param p_val (number) Penalty value
 -- @param ctx (table) Grid context
@@ -515,6 +572,7 @@ local function handle_penalty_breaks(p_val, ctx, flush_buffer_fn, p_cols, interv
         -- Skip to the next horizontal band (or next page if on last band)
         if ctx.n_bands > 1 then
             flush_buffer_fn()
+            apply_cell_valign(ctx, ctx.layout_map)
             ctx.cur_col = ctx.table_start_col or 0
             ctx.cur_row = 0
             ctx.cur_y_sp = 0
@@ -535,6 +593,14 @@ local function handle_penalty_breaks(p_val, ctx, flush_buffer_fn, p_cols, interv
             end
             ctx.line_limit = ctx.band_line_limits[ctx.cur_band]
             ctx.col_height_sp = ctx.band_heights_sp[ctx.cur_band]
+
+            -- Initialize valign tracking for the first cell of the new band
+            local cell_valigns = _G.content and _G.content.table_cell_valigns or {}
+            if cell_valigns[1] then
+                ctx.cell_valign_nodes = {}
+                ctx.cell_cur_valign = cell_valigns[1]
+            end
+
             move_to_next_valid_position(ctx, interval, grid_height, indent)
         end
         return true
@@ -544,6 +610,8 @@ local function handle_penalty_breaks(p_val, ctx, flush_buffer_fn, p_cols, interv
         -- which is already cleared by cleanup() before layout runs)
         if ctx.table_start_col ~= nil then
             flush_buffer_fn()
+            apply_cell_valign(ctx, ctx.layout_map)
+
             local col_groups = (_G.content and _G.content.table_col_groups) or {}
             local cell_idx = ctx.table_render_cell_idx or 0
             local cell_width = col_groups[cell_idx + 1] or 0
@@ -562,6 +630,15 @@ local function handle_penalty_breaks(p_val, ctx, flush_buffer_fn, p_cols, interv
             ctx.cur_y_sp = 0
             ctx.cur_column_indent = 0
             ctx.table_render_cell_idx = cell_idx + 1
+
+            -- Initialize valign tracking for the next cell
+            local cell_valigns = _G.content and _G.content.table_cell_valigns or {}
+            local next_valign = cell_valigns[cell_idx + 2]
+            if next_valign then
+                ctx.cell_valign_nodes = {}
+                ctx.cell_cur_valign = next_valign
+            end
+
             move_to_next_valid_position(ctx, interval, grid_height, indent)
         end
         return true
@@ -607,7 +684,11 @@ local function handle_penalty_breaks(p_val, ctx, flush_buffer_fn, p_cols, interv
         local offset = 0
         for i = 0, n_bands - 1 do
             local h
-            if band_heights and band_heights[i + 1] then
+            if i == n_bands - 1 then
+                -- Last band always fills remaining space
+                h = col_height_sp - offset
+                if h < 0 then h = 0 end
+            elseif band_heights and band_heights[i + 1] then
                 h = band_heights[i + 1]
             else
                 h = math.floor(available_height / n_bands)
@@ -635,11 +716,19 @@ local function handle_penalty_breaks(p_val, ctx, flush_buffer_fn, p_cols, interv
         ctx.table_start_page = ctx.cur_page
         ctx.table_render_cell_idx = 0
 
+        -- Initialize valign tracking for the first cell
+        local cell_valigns = _G.content and _G.content.table_cell_valigns or {}
+        if cell_valigns[1] then
+            ctx.cell_valign_nodes = {}
+            ctx.cell_cur_valign = cell_valigns[1]
+        end
+
         move_to_next_valid_position(ctx, interval, grid_height, indent)
         return true
     elseif p_val == constants.PENALTY_TABLE_END then
         -- End inline table section: restore pre-table band state
         flush_buffer_fn()
+        apply_cell_valign(ctx, ctx.layout_map)
 
         -- Record table end info for border rendering
         ctx.table_end_col = ctx.cur_col
@@ -664,6 +753,19 @@ local function handle_penalty_breaks(p_val, ctx, flush_buffer_fn, p_cols, interv
         local end_page = ctx.cur_page
         for pg = start_page, end_page do
             local tparams = _G.content and _G.content.table_params or {}
+            -- Build per-band column_border map from band_formats
+            local band_formats = _G.content and _G.content.table_band_formats
+            local band_column_borders = nil
+            if band_formats and next(band_formats) then
+                band_column_borders = {}
+                for band_idx, fmt in pairs(band_formats) do
+                    if fmt.column_border ~= nil then
+                        band_column_borders[band_idx] = fmt.column_border
+                    end
+                end
+                if not next(band_column_borders) then band_column_borders = nil end
+            end
+
             ctx.page_table_bands[pg] = {
                 n_bands = ctx.n_bands,
                 band_heights_sp = ctx.band_heights_sp,
@@ -673,6 +775,7 @@ local function handle_penalty_breaks(p_val, ctx, flush_buffer_fn, p_cols, interv
                 actual_band_cols = actual_band_cols,
                 column_border = tparams.column_border,
                 band_border = tparams.band_border,
+                band_column_borders = band_column_borders,
             }
         end
 
@@ -706,6 +809,9 @@ local function handle_penalty_breaks(p_val, ctx, flush_buffer_fn, p_cols, interv
         if _G.content then
             _G.content.table_col_groups = nil
             _G.content.table_params = nil
+            _G.content.table_band_formats = nil
+            _G.content.table_cur_band = nil
+            _G.content.table_cell_valigns = nil
         end
 
         move_to_next_valid_position(ctx, interval, grid_height, indent)
@@ -1525,6 +1631,11 @@ local function flush_buffer(col_buffer, ctx, grid_height, distribute, layout_map
         end
 
         layout_map[entry.node] = map_entry
+
+        -- Track nodes for cell vertical-align post-processing
+        if ctx.cell_valign_nodes then
+            ctx.cell_valign_nodes[#ctx.cell_valign_nodes + 1] = entry.node
+        end
     end
     -- Clear buffer in-place to preserve reference for external hooks (kinsoku)
     for i = #col_buffer, 1, -1 do
@@ -1582,6 +1693,7 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
     end
 
     local layout_map = {}
+    ctx.layout_map = layout_map
 
     -- Buffer for distribution mode
     local col_buffer = {}

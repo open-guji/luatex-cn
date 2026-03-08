@@ -33,6 +33,7 @@
 \tl_new:N \l__luatexcn_table_n_cols_tl
 \int_new:N \l__luatexcn_table_header_rows_int
 \int_new:N \l__luatexcn_cell_col_width_int
+\tl_new:N \l__luatexcn_cell_valign_tl
 \tl_new:N \l__luatexcn_table_column_border_tl
 \tl_new:N \l__luatexcn_table_band_border_tl
 
@@ -58,6 +59,8 @@
   {
     col-width .int_set:N = \l__luatexcn_cell_col_width_int,
     col-width .initial:n = 0,
+    vertical-align .tl_set:N = \l__luatexcn_cell_valign_tl,
+    vertical-align .initial:n = {},
   }
 
 % ============================================================================
@@ -127,14 +130,41 @@
 \NewDocumentCommand{\Cell}{ O{} +m }
   {
     \int_zero:N \l__luatexcn_cell_col_width_int
+    \tl_clear:N \l__luatexcn_cell_valign_tl
     \keys_set:nn { luatexcn / cell } { #1 }
     \lua_now:e {
       require('core.luatex-cn-core-table').begin_cell(
-        \int_use:N \l__luatexcn_cell_col_width_int
+        \int_use:N \l__luatexcn_cell_col_width_int,
+        \tl_if_empty:NTF \l__luatexcn_cell_valign_tl {nil} {"\l__luatexcn_cell_valign_tl"}
       )
     }
     \luatexcnRestoreTempIndent
     #2
+  }
+
+% ============================================================================
+% Band Format Command
+% ============================================================================
+% \BandFormat / \栏格式 sets per-band formatting options.
+% Must be used at the beginning of a band (before any \Cell).
+
+\tl_new:N \l__luatexcn_bandformat_column_border_tl
+
+\keys_define:nn { luatexcn / band-format }
+  {
+    column-border .tl_set:N = \l__luatexcn_bandformat_column_border_tl,
+    column-border .initial:n = {},
+  }
+
+\NewDocumentCommand{\BandFormat}{ O{} }
+  {
+    \tl_clear:N \l__luatexcn_bandformat_column_border_tl
+    \keys_set:nn { luatexcn / band-format } { #1 }
+    \lua_now:e {
+      require('core.luatex-cn-core-table').set_band_format({
+        column_border~=~\tl_if_empty:NTF \l__luatexcn_bandformat_column_border_tl {nil} {\l__luatexcn_bandformat_column_border_tl},
+      })
+    }
   }
 
 % ============================================================================
@@ -144,6 +174,8 @@
 \NewEnvironmentCopy{表格}{Table}
 \NewCommandCopy{\单元格}{\Cell}
 \NewCommandCopy{\單元格}{\Cell}
+\NewCommandCopy{\栏格式}{\BandFormat}
+\NewCommandCopy{\欄格式}{\BandFormat}
 
 \keys_define:nn { luatexcn / table }
   {
@@ -167,6 +199,14 @@
   {
     列宽 .int_set:N = \l__luatexcn_cell_col_width_int,
     列寬 .int_set:N = \l__luatexcn_cell_col_width_int,
+    纵对齐 .tl_set:N = \l__luatexcn_cell_valign_tl,
+    縱對齊 .tl_set:N = \l__luatexcn_cell_valign_tl,
+  }
+
+\keys_define:nn { luatexcn / band-format }
+  {
+    列边框 .tl_set:N = \l__luatexcn_bandformat_column_border_tl,
+    列邊框 .tl_set:N = \l__luatexcn_bandformat_column_border_tl,
   }
 
 \ExplSyntaxOff

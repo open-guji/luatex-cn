@@ -50,6 +50,28 @@
     \tl_set_eq:NN \l__luatexcn_textflow_default_align_tl \l__luatexcn_jiazhu_align_tl
   }
 
+% ============================================================================
+% Jiazhu Shortcut (夹注捷径) - process_input_buffer based replacement
+% ============================================================================
+\lua_now:e { require("guji.luatex-cn-guji-jiazhu-shortcut") }
+
+% \jiazhuShortcut[opts]{open}{close}
+% Register a bracket pair as jiazhu shortcut.
+% e.g. \jiazhuShortcut{【}{】}  →  【...】 becomes \夹注{...}
+% e.g. \jiazhuShortcut[font-color=red]{（}{）}  →  （...） becomes \夹注[font-color=red]{...}
+\NewDocumentCommand{\jiazhuShortcut}{ O{} m m }
+  {
+    \lua_now:e
+      {
+        require("guji.luatex-cn-guji-jiazhu-shortcut").register(
+          [[#2]],
+          [[#3]],
+          [[\c_backslash_str 夹注]],
+          [[#1]]
+        )
+      }
+  }
+
 % Jiazhu Command (双行小注/夹注)
 % We define \jiazhu as the primary command name here, delegating to \TextFlow
 \NewDocumentCommand{\JiaZhu}{ O{} +m }
@@ -76,10 +98,12 @@
 \NewCommandCopy{\夹注}{\JiaZhu}
 \NewCommandCopy{\夹注设置}{\jiazhuSetup}
 \NewCommandCopy{\单行夹注}{\DanHangJiaZhu}
+\NewCommandCopy{\夹注捷径}{\jiazhuShortcut}
 \NewEnvironmentCopy{夹注环境}{JiaZhuEnv}
 % Traditional Chinese / 繁体
 \NewCommandCopy{\夾注}{\JiaZhu}
 \NewCommandCopy{\夾注設置}{\jiazhuSetup}
+\NewCommandCopy{\夾注捷徑}{\jiazhuShortcut}
 \NewEnvironmentCopy{夾注環境}{JiaZhuEnv}
 \NewCommandCopy{\單行夾注}{\DanHangJiaZhu}
 

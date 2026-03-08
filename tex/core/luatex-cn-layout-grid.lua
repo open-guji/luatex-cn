@@ -166,17 +166,34 @@ local function create_grid_context(params, line_limit, p_cols)
         local available_height = col_height_sp - total_gap
         local band_heights = params.band_heights  -- user-specified per-band heights
 
+        -- Pre-compute default height: unspecified bands share remaining space equally.
+        -- The last unspecified band absorbs any sp rounding remainder.
+        local specified_total = 0
+        local unspecified_count = 0
+        local last_unspecified = -1
+        for i = 0, n_bands - 1 do
+            if band_heights and band_heights[i + 1] then
+                specified_total = specified_total + band_heights[i + 1]
+            else
+                unspecified_count = unspecified_count + 1
+                last_unspecified = i
+            end
+        end
+        local default_h = unspecified_count > 0
+            and math.floor((available_height - specified_total) / unspecified_count)
+            or 0
+
         local offset = 0
         for i = 0, n_bands - 1 do
             local h
-            if i == n_bands - 1 then
-                -- Last band always fills remaining space
+            if band_heights and band_heights[i + 1] then
+                h = band_heights[i + 1]
+            elseif i == last_unspecified then
+                -- Last unspecified band absorbs rounding remainder
                 h = col_height_sp - offset
                 if h < 0 then h = 0 end
-            elseif band_heights and band_heights[i + 1] then
-                h = band_heights[i + 1]
             else
-                h = math.floor(available_height / n_bands)
+                h = default_h
             end
             ctx.band_heights_sp[i] = h
             ctx.band_y_offsets_sp[i] = offset
@@ -681,17 +698,35 @@ local function handle_penalty_breaks(p_val, ctx, flush_buffer_fn, p_cols, interv
         local band_y_offsets_sp = {}
         local band_line_limits = {}
         local band_heights = tp.band_heights
+
+        -- Pre-compute default height: unspecified bands share remaining space equally.
+        -- The last unspecified band absorbs any sp rounding remainder.
+        local specified_total = 0
+        local unspecified_count = 0
+        local last_unspecified = -1
+        for i = 0, n_bands - 1 do
+            if band_heights and band_heights[i + 1] then
+                specified_total = specified_total + band_heights[i + 1]
+            else
+                unspecified_count = unspecified_count + 1
+                last_unspecified = i
+            end
+        end
+        local default_h = unspecified_count > 0
+            and math.floor((available_height - specified_total) / unspecified_count)
+            or 0
+
         local offset = 0
         for i = 0, n_bands - 1 do
             local h
-            if i == n_bands - 1 then
-                -- Last band always fills remaining space
+            if band_heights and band_heights[i + 1] then
+                h = band_heights[i + 1]
+            elseif i == last_unspecified then
+                -- Last unspecified band absorbs rounding remainder
                 h = col_height_sp - offset
                 if h < 0 then h = 0 end
-            elseif band_heights and band_heights[i + 1] then
-                h = band_heights[i + 1]
             else
-                h = math.floor(available_height / n_bands)
+                h = default_h
             end
             band_heights_sp[i] = h
             band_y_offsets_sp[i] = offset

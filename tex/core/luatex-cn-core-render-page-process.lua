@@ -85,16 +85,6 @@ local function handle_glyph_node(curr, p_head, pos, params, ctx)
     end
 
     -- Fill per-glyph fields into reusable templates (page-constant fields set in process_page_nodes)
-    -- Footnote marker visual centering: override h/d with font_size/2 so that
-    -- center-align uses the em-box center instead of the (asymmetric) metric center.
-    -- This ensures ︻ and ︼ (which have very different h/d ratios) align identically.
-    if pos.fn_marker_vcenter then
-        local fid = D.getfield(curr, "font")
-        local fi = fid and font.getfont(fid)
-        local fs = fi and fi.size or (h + d)
-        h = math.floor(fs / 2)
-        d = math.floor(fs / 2)
-    end
     glyph_dims.width = w
     glyph_dims.height = h * v_scale
     glyph_dims.depth = d * v_scale

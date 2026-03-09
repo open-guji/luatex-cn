@@ -103,9 +103,9 @@
   }
 
 % ============================================================================
-% Internal: Write Footnote Marker (【一】 or ①)
+% Internal: Write Footnote Marker Text (【一】 or ①)
 % ============================================================================
-\cs_new:Nn \__luatexcn_footnote_write_marker:n
+\cs_new:Nn \__luatexcn_footnote_write_marker_text:n
   {
     \str_case:VnF \l__luatexcn_footnote_number_style_tl
       {
@@ -113,6 +113,34 @@
         {circled} { \lua_now:e{ tex.print(vertical_utils.to_circled_numeral(#1)) } }
       }
       { 【\lua_now:e{ tex.print(vertical_utils.to_chinese_numeral(#1)) }】 }
+  }
+
+% ============================================================================
+% Internal: Render Footnote Marker (unified for inline and flush)
+% #1 = footnote number, #2 = halign (3=right for inline, 0=center for flush)
+% Sets font size, ATTR_FOOTNOTE_MARKER, ATTR_HALIGN, outputs marker text,
+% then clears attributes. Marker chars have no inter-char gap and are not
+% stretched/compressed by the layout engine.
+% ============================================================================
+\cs_new_protected:Nn \__luatexcn_footnote_render_marker:nn
+  {
+    \group_begin:
+      \tl_if_empty:NF \l__luatexcn_footnote_font_size_tl
+        { \__luatexcn_footnote_apply_font_size: }
+      \lua_now:e {
+        local~c~=~require('core.luatex-cn-constants')
+        local~fn_h~=~\dim_to_decimal_in_sp:n { \l__luatexcn_footnote_resolved_size_dim }
+        local~total_sp~=~math.floor(\int_use:N \l__luatexcn_footnote_marker_height_int ~*~fn_h)
+        tex.setattribute(c.ATTR_FOOTNOTE_MARKER,~total_sp)
+        local~ha~=~#2
+        if~ha~>~0~then~tex.setattribute(c.ATTR_HALIGN,~ha)~end
+      }
+      \__luatexcn_footnote_write_marker_text:n { #1 }
+      \lua_now:e {
+        local~c~=~require('core.luatex-cn-constants')
+        tex.setattribute(c.ATTR_FOOTNOTE_MARKER,~-2147483647)
+      }
+    \group_end:
   }
 
 % ============================================================================
@@ -153,17 +181,9 @@
           % Mode 1: Store in sequence for paragraph-end output
           \seq_gput_right:Nn \g__luatexcn_footnote_content_seq { #2 }
         }
-      % Write inline marker with smaller font + right-align
-      \group_begin:
-        \tl_if_empty:NF \l__luatexcn_footnote_font_size_tl
-          { \__luatexcn_footnote_apply_font_size: }
-        \lua_now:e {
-          local~constants~=~require('core.luatex-cn-constants')
-          tex.setattribute(constants.ATTR_HALIGN,~3)
-        }
-        \__luatexcn_footnote_write_marker:n
-          { \int_use:N \g__luatexcn_footnote_counter_int }
-      \group_end:
+      % Write inline marker (right-aligned, same rendering as flush marker)
+      \__luatexcn_footnote_render_marker:nn
+        { \int_use:N \g__luatexcn_footnote_counter_int } { 3 }
     \group_end:
   }
 
@@ -212,18 +232,8 @@
                 \setluatexattribute\cnverticalblockid
                   { \int_use:N \g_luatexcn_paragraph_block_id_int }
                 \penalty -10002\relax
-                % Mark marker glyphs: value = target total height in sp
-                \lua_now:e {
-                  local~c~=~require('core.luatex-cn-constants')
-                  local~fn_h~=~\dim_to_decimal_in_sp:n { \l__luatexcn_footnote_resolved_size_dim }
-                  local~total_sp~=~math.floor(\int_use:N \l__luatexcn_footnote_marker_height_int ~*~fn_h)
-                  tex.setattribute(c.ATTR_FOOTNOTE_MARKER,~total_sp)
-                }
-                \__luatexcn_footnote_write_marker:n { ##1 }
-                \lua_now:e {
-                  local~c~=~require('core.luatex-cn-constants')
-                  tex.setattribute(c.ATTR_FOOTNOTE_MARKER,~-2147483647)
-                }
+                % Render marker (center-aligned, unified with inline marker)
+                \__luatexcn_footnote_render_marker:nn { ##1 } { 0 }
                 \seq_item:Nn \g__luatexcn_footnote_content_seq { ##1 }
                 \lua_now:e {
                   local~sr~=~require('util.luatex-cn-style-registry')

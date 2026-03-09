@@ -1627,30 +1627,14 @@ local function flush_buffer(col_buffer, ctx, grid_height, distribute, layout_map
                 local glen = ge - gs + 1
                 if glen >= 3 then
                     local total_h = mv  -- already in sp
-                    -- Fixed bracket height: ~0.25 of the per-character slot
-                    -- (total_h / glen gives the ideal per-char slot)
-                    local fn_size = total_h / 2  -- marker_height=2 → fn_size = total_h/2
-                    local bracket_h = math.floor(fn_size * 0.25)
-                    local mid_count = glen - 2
-                    local mid_total = total_h - 2 * bracket_h
-                    local mid_slot = mid_total / mid_count
+                    -- Equal distribution: each character gets total_h / glen
+                    local slot = math.floor(total_h / glen)
 
                     local sy = col_buffer[gs].y_sp
-                    -- Open bracket
-                    col_buffer[gs].y_sp = sy
-                    col_buffer[gs].cell_height = bracket_h
-                    col_buffer[gs].fn_marker_vcenter = true
-                    -- Middle characters
-                    local mid_start = sy + bracket_h
-                    for j = gs + 1, ge - 1 do
-                        col_buffer[j].y_sp = mid_start + (j - gs - 1) * mid_slot
-                        col_buffer[j].cell_height = math.floor(mid_slot)
-                        col_buffer[j].fn_marker_vcenter = true
+                    for j = gs, ge do
+                        col_buffer[j].y_sp = sy + (j - gs) * slot
+                        col_buffer[j].cell_height = slot
                     end
-                    -- Close bracket
-                    col_buffer[ge].y_sp = sy + total_h - bracket_h
-                    col_buffer[ge].cell_height = bracket_h
-                    col_buffer[ge].fn_marker_vcenter = true
                 end
                 i = ge + 1
             else
@@ -1675,7 +1659,6 @@ local function flush_buffer(col_buffer, ctx, grid_height, distribute, layout_map
             v_scale = v_scale,
             cell_height = entry.cell_height,
             cell_width = entry.cell_width,
-            fn_marker_vcenter = entry.fn_marker_vcenter,
         }
         apply_style_attrs(map_entry, entry.node)
 

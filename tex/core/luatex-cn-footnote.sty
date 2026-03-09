@@ -58,6 +58,7 @@
     spacing .initial:n = {0.5em},
     marker-height .int_set:N = \l__luatexcn_footnote_marker_height_int,
     marker-height .initial:n = {2},
+    counter-start .code:n = { \int_gset:Nn \g__luatexcn_footnote_counter_int { #1 } },
   }
 
 % ============================================================================
@@ -330,6 +331,7 @@
     缩进 .int_set:N = \l__luatexcn_footnote_indent_int,
     间距 .dim_set:N = \l__luatexcn_footnote_spacing_dim,
     序号高度 .int_set:N = \l__luatexcn_footnote_marker_height_int,
+    起始编号 .code:n = { \int_gset:Nn \g__luatexcn_footnote_counter_int { #1 } },
     % 繁体（与简体不同形的）
     編號樣式 .tl_set:N = \l__luatexcn_footnote_number_style_tl,
     字體 .tl_set:N = \l__luatexcn_footnote_font_tl,
@@ -338,6 +340,7 @@
     縮進 .int_set:N = \l__luatexcn_footnote_indent_int,
     間距 .dim_set:N = \l__luatexcn_footnote_spacing_dim,
     序號高度 .int_set:N = \l__luatexcn_footnote_marker_height_int,
+    起始編號 .code:n = { \int_gset:Nn \g__luatexcn_footnote_counter_int { #1 } },
   }
 \ExplSyntaxOff
 

@@ -1627,14 +1627,28 @@ local function flush_buffer(col_buffer, ctx, grid_height, distribute, layout_map
                 local glen = ge - gs + 1
                 if glen >= 3 then
                     local total_h = mv  -- already in sp
-                    -- Equal distribution: each character gets total_h / glen
-                    local slot = math.floor(total_h / glen)
+                    -- Bracket/middle distribution: brackets 0.125 * total, middle chars share rest
+                    -- For glen=3 (【一】): bracket=0.25em, middle=1.5em, bracket=0.25em (total=2em)
+                    local bracket_h = math.floor(total_h * 0.125)
+                    local middle_total = total_h - 2 * bracket_h
+                    local n_middle = glen - 2
+                    local middle_h = math.floor(middle_total / n_middle)
 
                     local sy = col_buffer[gs].y_sp
-                    for j = gs, ge do
-                        col_buffer[j].y_sp = sy + (j - gs) * slot
-                        col_buffer[j].cell_height = slot
+                    -- All marker chars center-aligned in their cells.
+                    -- Brackets have small cells (0.125*total) so they overflow,
+                    -- but center alignment ensures symmetric positioning
+                    -- regardless of font metrics asymmetry between open/close brackets.
+                    col_buffer[gs].y_sp = sy
+                    col_buffer[gs].cell_height = bracket_h
+                    local y = sy + bracket_h
+                    for j = gs + 1, ge - 1 do
+                        col_buffer[j].y_sp = y
+                        col_buffer[j].cell_height = middle_h
+                        y = y + middle_h
                     end
+                    col_buffer[ge].y_sp = y
+                    col_buffer[ge].cell_height = bracket_h
                 end
                 i = ge + 1
             else

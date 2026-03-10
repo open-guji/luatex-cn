@@ -1501,6 +1501,39 @@ local function flush_buffer(col_buffer, ctx, grid_height, distribute, layout_map
     --      so total height = col_height_sp (bottom-aligned with full columns)
     --   Stretchable gaps: only between regular text glyphs (not marker groups, not blocks)
     if not ctx.default_cell_height and N > 0 and not distribute then
+        -- Pre-pass: set marker group cell_heights so gap calculation uses correct sizes.
+        -- Without this, each marker char counts as grid_height in total_cells,
+        -- but the actual marker group height is much smaller (marker_height * fn_size).
+        do
+            local i = 1
+            while i <= N do
+                local mv = D.get_attribute(col_buffer[i].node, constants.ATTR_FOOTNOTE_MARKER)
+                if mv and mv > 0 then
+                    local gs, ge = i, i
+                    while ge + 1 <= N do
+                        local nv = D.get_attribute(col_buffer[ge + 1].node, constants.ATTR_FOOTNOTE_MARKER)
+                        if nv == mv then ge = ge + 1 else break end
+                    end
+                    local glen = ge - gs + 1
+                    if glen >= 3 then
+                        local total_h = mv
+                        local bracket_h = math.floor(total_h * 0.125)
+                        local middle_total = total_h - 2 * bracket_h
+                        local n_middle = glen - 2
+                        local middle_h = math.floor(middle_total / n_middle)
+                        col_buffer[gs].cell_height = bracket_h
+                        for j = gs + 1, ge - 1 do
+                            col_buffer[j].cell_height = middle_h
+                        end
+                        col_buffer[ge].cell_height = bracket_h
+                    end
+                    i = ge + 1
+                else
+                    i = i + 1
+                end
+            end
+        end
+
         -- Classify each gap: stretchable, fixed, or none
         -- gap_fixed[i] = fixed gap size in sp (0 for markers, 0.1em for blocks)
         -- is_stretchable[i] = true only for text-text gaps
@@ -1525,15 +1558,17 @@ local function flush_buffer(col_buffer, ctx, grid_height, distribute, layout_map
                     gap_fixed[i] = 0
                 elseif (cur_is_marker and cur_is_marker > 0)
                     and not (nxt_is_marker and nxt_is_marker > 0) then
-                    -- Marker end → next element: fixed 0.2em gap (based on grid_height)
-                    local fg = math.floor(grid_height * 0.2)
+                    -- Marker end → next element: fixed small gap
+                    local fg = math.floor(grid_height * GAP_RATIO)
                     is_stretchable[i] = false
                     gap_fixed[i] = fg
                     total_fixed_gaps = total_fixed_gaps + fg
                 elseif (nxt_is_marker and nxt_is_marker > 0) then
-                    -- Before marker group start: no gap
+                    -- Before marker group start: same fixed small gap
+                    local fg = math.floor(grid_height * GAP_RATIO)
                     is_stretchable[i] = false
-                    gap_fixed[i] = 0
+                    gap_fixed[i] = fg
+                    total_fixed_gaps = total_fixed_gaps + fg
                 elseif cur_is_block then
                     -- Block (墨围 etc.): fixed 0.1em gap, not stretchable
                     local fg = math.floor(ch * GAP_RATIO)
@@ -1610,10 +1645,10 @@ local function flush_buffer(col_buffer, ctx, grid_height, distribute, layout_map
         end
     end
 
-    -- Redistribute footnote marker groups (︻一︼ etc.) to fixed height.
-    -- Attribute value = total target height in sp (e.g., 2 * 12pt = 24pt).
-    -- Layout: open bracket 0.25*fn_size at top, middle chars 1.5*fn_size centered,
-    --         close bracket 0.25*fn_size at bottom.
+    -- Redistribute footnote marker y_sp and v_scale.
+    -- cell_height was already set in the pre-pass above; here we only fix y_sp
+    -- (which was computed using the correct cell_heights) and set v_scale for
+    -- multi-char middle glyphs that need to be squeezed.
     do
         local i = 1
         while i <= N do
@@ -1626,29 +1661,22 @@ local function flush_buffer(col_buffer, ctx, grid_height, distribute, layout_map
                 end
                 local glen = ge - gs + 1
                 if glen >= 3 then
-                    local total_h = mv  -- already in sp
-                    -- Bracket/middle distribution: brackets 0.125 * total, middle chars share rest
-                    -- For glen=3 (【一】): bracket=0.25em, middle=1.5em, bracket=0.25em (total=2em)
-                    local bracket_h = math.floor(total_h * 0.125)
-                    local middle_total = total_h - 2 * bracket_h
                     local n_middle = glen - 2
-                    local middle_h = math.floor(middle_total / n_middle)
-
-                    local sy = col_buffer[gs].y_sp
-                    -- All marker chars center-aligned in their cells.
-                    -- Brackets have small cells (0.125*total) so they overflow,
-                    -- but center alignment ensures symmetric positioning
-                    -- regardless of font metrics asymmetry between open/close brackets.
-                    col_buffer[gs].y_sp = sy
-                    col_buffer[gs].cell_height = bracket_h
-                    local y = sy + bracket_h
-                    for j = gs + 1, ge - 1 do
-                        col_buffer[j].y_sp = y
-                        col_buffer[j].cell_height = middle_h
-                        y = y + middle_h
+                    local middle_h = col_buffer[gs + 1].cell_height
+                    -- Scale middle chars when multi-char
+                    if n_middle > 1 and middle_h < grid_height then
+                        local mid_v_scale = middle_h / grid_height
+                        for j = gs + 1, ge - 1 do
+                            col_buffer[j].v_scale = mid_v_scale
+                        end
                     end
-                    col_buffer[ge].y_sp = y
-                    col_buffer[ge].cell_height = bracket_h
+                    -- Fix y_sp: redistribute within group using pre-set cell_heights
+                    local sy = col_buffer[gs].y_sp
+                    local y = sy
+                    for j = gs, ge do
+                        col_buffer[j].y_sp = y
+                        y = y + col_buffer[j].cell_height
+                    end
                 end
                 i = ge + 1
             else
@@ -1659,7 +1687,7 @@ local function flush_buffer(col_buffer, ctx, grid_height, distribute, layout_map
 
     for i, entry in ipairs(col_buffer) do
         local y_sp = distribute_y_sp[i] or entry.y_sp
-        local v_scale = (distribute and N > 1) and v_scale_all or 1.0
+        local v_scale = entry.v_scale or ((distribute and N > 1) and v_scale_all or 1.0)
 
         local map_entry = {
             page = entry.page,

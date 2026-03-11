@@ -647,6 +647,14 @@ local function place_textflow_segment(ctx, nodes, layout_map, params, callbacks,
 
             layout_map[node_info.node] = entry
 
+            -- Track node for cell vertical-align (textflow bypasses col_buffer/flush_buffer)
+            if ctx.cell_valign_nodes then
+                ctx.cell_valign_nodes[#ctx.cell_valign_nodes + 1] = node_info.node
+            end
+            if ctx.pending_cell_valign_nodes then
+                ctx.pending_cell_valign_nodes[#ctx.pending_cell_valign_nodes + 1] = node_info.node
+            end
+
             -- Place associated decorate markers (e.g., judou marks) at the
             -- same position as their anchor glyph. They are zero-width overlays
             -- and do not occupy any grid space.

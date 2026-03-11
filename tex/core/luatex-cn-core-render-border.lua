@@ -292,6 +292,7 @@ local function draw_band_borders(p_head, params)
     local border_rgb_str = params.border_rgb_str
     local shift_x = params.shift_x or 0
     local outer_shift = params.outer_shift or 0
+    local b_padding_top = params.b_padding_top or 0
 
     local b_thickness_bp = border_thickness * sp_to_bp
     local half_thickness = math.floor(border_thickness / 2)
@@ -344,7 +345,8 @@ local function draw_band_borders(p_head, params)
         local band_y = band_y_offsets_sp[band] or 0
         local band_h = band_heights_sp[band] or 0
         local divider_y = band_y + band_h
-        local horz_y_bp = -(half_thickness + outer_shift + divider_y) * sp_to_bp
+        -- Content starts at outer_shift + border_thickness + b_padding_top from page box origin
+        local horz_y_bp = -(outer_shift + border_thickness + b_padding_top + divider_y) * sp_to_bp
 
         for _, seg in ipairs(segments) do
             local left_x_bp = (half_thickness + shift_x + seg[1]) * sp_to_bp
@@ -633,6 +635,7 @@ local function render_borders(p_head, params)
             border_rgb_str = params.b_rgb_str,
             shift_x = params.shift_x,
             outer_shift = params.outer_shift,
+            b_padding_top = params.b_padding_top,
             band_gap_sp = params.band_gap_sp,
             col_geom = col_geom,
             total_cols = p_total_cols,
@@ -680,6 +683,7 @@ local function render_borders(p_head, params)
             border_rgb_str = params.b_rgb_str,
             shift_x = params.shift_x,
             outer_shift = params.outer_shift,
+            b_padding_top = params.b_padding_top,
             band_gap_sp = ptb.band_gap_sp,
             col_geom = col_geom,
             total_cols = p_total_cols,

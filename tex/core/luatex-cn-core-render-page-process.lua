@@ -93,25 +93,29 @@ local function handle_glyph_node(curr, p_head, pos, params, ctx)
     glyph_dims.char = D.getfield(curr, "char")
     glyph_dims.font = D.getfield(curr, "font")
 
+    -- P1: read style fields from style_registry, not layout_map
+    local glyph_style_id = D.get_attribute(curr, constants.ATTR_STYLE_REG_ID)
+    local glyph_style = glyph_style_id and style_registry.get(glyph_style_id)
+
     glyph_params.v_align = vertical_align
     glyph_params.h_align = h_align
     glyph_params.sub_col = pos.sub_col
-    glyph_params.textflow_align = pos.textflow_align or ctx.textflow_align
+    glyph_params.textflow_align = (glyph_style and glyph_style.textflow_align) or ctx.textflow_align
     glyph_params.cell_height = pos.cell_height
     glyph_params.cell_width = pos.cell_width
     glyph_params.y_sp = pos.y_sp
     glyph_params.band_y_offset_sp = pos.band_y_offset_sp or 0
 
     local final_x, final_y = text_position.calc_grid_position(pos.col, glyph_dims, glyph_params)
-
-    -- Apply style xshift/yshift offsets
-    if pos.xshift then
-        local xs = constants.resolve_dimen(pos.xshift, ctx.body_font_size or 655360)
-        if xs then final_x = final_x - xs end
-    end
-    if pos.yshift then
-        local ys = constants.resolve_dimen(pos.yshift, ctx.body_font_size or 655360)
-        if ys then final_y = final_y - ys end
+    if glyph_style then
+        if glyph_style.xshift then
+            local xs = constants.resolve_dimen(glyph_style.xshift, ctx.body_font_size or 655360)
+            if xs then final_x = final_x - xs end
+        end
+        if glyph_style.yshift then
+            local ys = constants.resolve_dimen(glyph_style.yshift, ctx.body_font_size or 655360)
+            if ys then final_y = final_y - ys end
+        end
     end
 
     -- Check if glyph needs vertical rotation (font lacks vertical form)
@@ -170,10 +174,11 @@ local function handle_glyph_node(curr, p_head, pos, params, ctx)
     D.setfield(k, "kern", -w)
     D.insert_after(p_head, curr, k)
 
-    -- Apply font_color if stored in layout_map (Phase 2: General style preservation)
+    -- Apply font_color from style_registry (P1: read style directly, not from layout_map)
     -- Skip wrapping when font_color matches the page-level default (avoids redundant
     -- q/Q pairs that introduce ET/cm/BT coordinate transforms and float precision loss)
-    local font_color = pos.font_color
+    local style_id = D.get_attribute(curr, constants.ATTR_STYLE_REG_ID)
+    local font_color = style_id and style_registry.get_font_color(style_id)
     if font_color and font_color ~= "" then
         local rgb_str = utils.normalize_rgb(font_color)
         -- Only wrap if color differs from page default (both must be non-nil and different)
@@ -347,13 +352,16 @@ local function process_page_nodes(p_head, layout_map, params, ctx)
                                     local gx = D.getfield(curr, "xoffset") or 0
                                     x_center = gx + gw / 2
                                 end
+                                -- P1: read font_size from style_registry, not layout_map
+                                local lm_style_id = D.get_attribute(curr, constants.ATTR_STYLE_REG_ID)
+                                local lm_font_size = lm_style_id and style_registry.get_font_size(lm_style_id)
                                 ctx.line_mark_entries[#ctx.line_mark_entries + 1] =
                                     helpers.create_linemark_entry({
                                         group_id = pos.line_mark_id,
                                         col = pos.col,
                                         y_sp = pos.y_sp,
                                         cell_height = pos.cell_height,
-                                        font_size = pos.font_size,
+                                        font_size = lm_font_size,
                                         sub_col = pos.sub_col,
                                         x_center_sp = x_center,
                                     })

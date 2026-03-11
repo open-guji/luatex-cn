@@ -260,6 +260,20 @@ function style_registry.get_spacing_bottom(id)
     return style_registry.get_attr(id, "spacing_bottom")
 end
 
+--- Get padding-top (column top padding) from style
+-- @param id (number) Style ID
+-- @return (number|nil) Padding-top in sp, or nil if not found
+function style_registry.get_padding_top(id)
+    return style_registry.get_attr(id, "padding_top")
+end
+
+--- Get padding-bottom (column bottom padding) from style
+-- @param id (number) Style ID
+-- @return (number|nil) Padding-bottom in sp, or nil if not found
+function style_registry.get_padding_bottom(id)
+    return style_registry.get_attr(id, "padding_bottom")
+end
+
 --- Get column width from style
 -- @param id (number) Style ID
 -- @return (number|nil) Column width in sp, or nil if not found
@@ -415,7 +429,7 @@ function style_registry.push_content_style(font_color, font_size, font, extra)
 end
 
 --- Build an extra table from optional grid_height, spacing_top, spacing_bottom, xshift, yshift,
---- indent, first_indent, grid_width strings.
+--- indent, first_indent, grid_width, padding_top, padding_bottom strings.
 --- Convenience helper for TeX→Lua calls where table construction in expl3 is awkward.
 -- @param grid_height (string|nil) e.g., "1.5em"
 -- @param spacing_top (string|nil) e.g., "5pt"
@@ -425,8 +439,10 @@ end
 -- @param indent (number|string|nil) e.g., 2 or "2"
 -- @param first_indent (number|string|nil) e.g., 0 or "0", nil means inherit from indent
 -- @param grid_width (string|nil) e.g., "1cm" — stored as cell_width in style
+-- @param padding_top (string|nil) e.g., "5pt" — column top padding override
+-- @param padding_bottom (string|nil) e.g., "5pt" — column bottom padding override
 -- @return (table|nil) Extra table for push_content_style, or nil if all params are nil
-function style_registry.make_extra(grid_height, spacing_top, spacing_bottom, xshift, yshift, indent, first_indent, grid_width)
+function style_registry.make_extra(grid_height, spacing_top, spacing_bottom, xshift, yshift, indent, first_indent, grid_width, padding_top, padding_bottom)
     local constants_mod = package.loaded['core.luatex-cn-constants'] or
         require('core.luatex-cn-constants')
     local extra = {}
@@ -468,6 +484,14 @@ function style_registry.make_extra(grid_height, spacing_top, spacing_bottom, xsh
             extra.first_indent = v
             has_any = true
         end
+    end
+    if padding_top and padding_top ~= "" then
+        extra.padding_top = constants_mod.to_dimen(padding_top)
+        has_any = true
+    end
+    if padding_bottom and padding_bottom ~= "" then
+        extra.padding_bottom = constants_mod.to_dimen(padding_bottom)
+        has_any = true
     end
     return has_any and extra or nil
 end

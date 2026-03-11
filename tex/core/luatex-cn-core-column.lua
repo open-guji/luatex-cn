@@ -99,10 +99,12 @@ end
 -- @param column_width (string|nil) Column width string
 -- @param auto_width (boolean|nil) Auto-width setting
 -- @param width_scale (string|nil) Width scale factor string
+-- @param padding_top (string|nil) Column top padding override
+-- @param padding_bottom (string|nil) Column bottom padding override
 -- @return (number) Style ID (always returns a valid number)
 function column.push_style(font_color, font_size, font, grid_height,
                           spacing_top, spacing_bottom, column_width,
-                          auto_width, width_scale)
+                          auto_width, width_scale, padding_top, padding_bottom)
     local extra = {}
     if grid_height and grid_height ~= "" then
         extra.grid_height = constants.to_dimen(grid_height)
@@ -121,6 +123,12 @@ function column.push_style(font_color, font_size, font, grid_height,
     end
     if width_scale and width_scale ~= "" then
         extra.width_scale = tonumber(width_scale)
+    end
+    if padding_top and padding_top ~= "" then
+        extra.padding_top = constants.to_dimen(padding_top)
+    end
+    if padding_bottom and padding_bottom ~= "" then
+        extra.padding_bottom = constants.to_dimen(padding_bottom)
     end
     return style_registry.push_content_style(font_color, font_size, font, extra)
 end

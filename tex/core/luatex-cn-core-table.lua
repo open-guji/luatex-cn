@@ -68,6 +68,7 @@ end
 --- Register a cell and emit cell break penalty if needed
 -- @param col_width (number) Number of columns this cell spans (0 = unlimited)
 -- @param vertical_align (string|nil) Vertical alignment: "center", "top", "bottom"
+local valign_alias = { ["居中"] = "center", ["居下"] = "bottom", ["居上"] = "top" }
 function table_mod.begin_cell(col_width, vertical_align)
     _G.content = _G.content or {}
     local cell_idx = _G.content.table_cell_idx or 0
@@ -79,6 +80,7 @@ function table_mod.begin_cell(col_width, vertical_align)
     _G.content.table_col_groups[cur_band][cell_idx + 1] = col_width
     _G.content.table_cell_idx = cell_idx + 1
 
+    vertical_align = valign_alias[vertical_align] or vertical_align
     if vertical_align then
         _G.content.table_cell_valigns = _G.content.table_cell_valigns or {}
         _G.content.table_cell_valigns[cur_band] = _G.content.table_cell_valigns[cur_band] or {}

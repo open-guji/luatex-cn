@@ -36,6 +36,10 @@
         spacing-bottom .tl_set:N = \l__luatexcn_style_spacing_bottom_tl,
         spacing .meta:n = { spacing-top = #1, spacing-bottom = #1 },
 
+        padding-top .tl_set:N = \l__luatexcn_style_padding_top_tl,
+        padding-bottom .tl_set:N = \l__luatexcn_style_padding_bottom_tl,
+        padding .meta:n = { padding-top = #1, padding-bottom = #1 },
+
         xshift .tl_set:N = \l__luatexcn_style_xshift_tl,
         yshift .tl_set:N = \l__luatexcn_style_yshift_tl,
 
@@ -64,7 +68,9 @@
               \tl_if_empty:NTF \l__luatexcn_style_yshift_tl { nil } { [=[\luaescapestring{\l__luatexcn_style_yshift_tl}]=] },
               \tl_if_empty:NTF \l__luatexcn_style_indent_tl { nil } { \l__luatexcn_style_indent_tl },
               \tl_if_empty:NTF \l__luatexcn_style_first_indent_tl { nil } { \l__luatexcn_style_first_indent_tl },
-              \tl_if_empty:NTF \l__luatexcn_style_grid_width_tl { nil } { [=[\luaescapestring{\l__luatexcn_style_grid_width_tl}]=] }
+              \tl_if_empty:NTF \l__luatexcn_style_grid_width_tl { nil } { [=[\luaescapestring{\l__luatexcn_style_grid_width_tl}]=] },
+              \tl_if_empty:NTF \l__luatexcn_style_padding_top_tl { nil } { [=[\luaescapestring{\l__luatexcn_style_padding_top_tl}]=] },
+              \tl_if_empty:NTF \l__luatexcn_style_padding_bottom_tl { nil } { [=[\luaescapestring{\l__luatexcn_style_padding_bottom_tl}]=] }
             )
           )
           tex.print(tostring(style_id))
@@ -199,6 +205,9 @@
     间距 .meta:n = { spacing-top = #1, spacing-bottom = #1 },
     横移 .tl_set:N = \l__luatexcn_style_xshift_tl,
     纵移 .tl_set:N = \l__luatexcn_style_yshift_tl,
+    上填充 .tl_set:N = \l__luatexcn_style_padding_top_tl,
+    下填充 .tl_set:N = \l__luatexcn_style_padding_bottom_tl,
+    填充 .meta:n = { padding-top = #1, padding-bottom = #1 },
     缩进 .tl_set:N = \l__luatexcn_style_indent_tl,
     首行缩进 .tl_set:N = \l__luatexcn_style_first_indent_tl,
     末行缩进 .tl_set:N = \l__luatexcn_style_bottom_indent_tl,

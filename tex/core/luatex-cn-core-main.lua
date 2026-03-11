@@ -472,6 +472,8 @@ local function compute_grid_layout(list, params, engine_ctx, plugin_contexts, p_
         band_mode = _G.content.band_mode or "auto",
         band_heights = _G.content.band_heights,
         band_columns = _G.content.band_columns or 0,
+        -- Global border-padding-top (used as default for per-column padding override)
+        b_padding_top = engine_ctx.b_padding_top,
     }
 
     -- Banxin: textbox uses center-gap logic; non-textbox uses global banxin_on

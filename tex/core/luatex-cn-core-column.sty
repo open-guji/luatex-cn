@@ -77,6 +77,14 @@
 
         spacing .meta:n = { spacing-top = #1, spacing-bottom = #1 },
 
+        padding-top .tl_set:N = \l__luatexcn_column_padding_top_tl,
+        padding-top .initial:n = {},
+
+        padding-bottom .tl_set:N = \l__luatexcn_column_padding_bottom_tl,
+        padding-bottom .initial:n = {},
+
+        padding .meta:n = { padding-top = #1, padding-bottom = #1 },
+
         grid-height .tl_set:N = \l__luatexcn_column_grid_height_tl,
         grid-height .initial:n = {},
       }
@@ -99,6 +107,8 @@
         \tl_set:Nn \l__luatexcn_column_width_scale_tl {1.2}
         \tl_set:Nn \l__luatexcn_column_spacing_top_tl {}
         \tl_set:Nn \l__luatexcn_column_spacing_bottom_tl {}
+        \tl_set:Nn \l__luatexcn_column_padding_top_tl {}
+        \tl_set:Nn \l__luatexcn_column_padding_bottom_tl {}
 
         \keys_set:nn { luatexcn / column } { #1 }
 
@@ -168,7 +178,9 @@
             \tl_if_empty:NTF \l__luatexcn_column_spacing_bottom_tl { nil } { [=[\luaescapestring{\tl_use:N \l__luatexcn_column_spacing_bottom_tl}]=] },
             \tl_if_empty:NTF \l__luatexcn_column_width_tl { nil } { [=[\luaescapestring{\tl_use:N \l__luatexcn_column_width_tl}]=] },
             \bool_if:NTF \l__luatexcn_column_auto_width_bool { true } { false },
-            \tl_if_empty:NTF \l__luatexcn_column_width_scale_tl { nil } { [=[\luaescapestring{\tl_use:N \l__luatexcn_column_width_scale_tl}]=] }
+            \tl_if_empty:NTF \l__luatexcn_column_width_scale_tl { nil } { [=[\luaescapestring{\tl_use:N \l__luatexcn_column_width_scale_tl}]=] },
+            \tl_if_empty:NTF \l__luatexcn_column_padding_top_tl { nil } { [=[\luaescapestring{\tl_use:N \l__luatexcn_column_padding_top_tl}]=] },
+            \tl_if_empty:NTF \l__luatexcn_column_padding_bottom_tl { nil } { [=[\luaescapestring{\tl_use:N \l__luatexcn_column_padding_bottom_tl}]=] }
           )
           tex.print(tostring(style_id))
         }}
@@ -234,6 +246,9 @@
     上间距 .tl_set:N = \l__luatexcn_column_spacing_top_tl,
     下间距 .tl_set:N = \l__luatexcn_column_spacing_bottom_tl,
     间距 .meta:n = { spacing-top = #1, spacing-bottom = #1 },
+    上填充 .tl_set:N = \l__luatexcn_column_padding_top_tl,
+    下填充 .tl_set:N = \l__luatexcn_column_padding_bottom_tl,
+    填充 .meta:n = { padding-top = #1, padding-bottom = #1 },
     格高 .tl_set:N = \l__luatexcn_column_grid_height_tl,
     % 繁体（与简体不同形的）
     對齊 .meta:n = { align = #1 },
@@ -248,6 +263,7 @@
     下間距 .tl_set:N = \l__luatexcn_column_spacing_bottom_tl,
     間距 .meta:n = { spacing-top = #1, spacing-bottom = #1 },
   }
+
 \ExplSyntaxOff
 
 \endinput%

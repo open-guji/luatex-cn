@@ -126,6 +126,10 @@ local function create_grid_context(params, line_limit, p_cols)
         p_cols = p_cols,
         cur_column_indent = 0,
         page_has_content = false,
+        -- Global border-padding-top (for per-column padding delta calculation)
+        b_padding_top = params.b_padding_top or 0,
+        -- Flag: whether padding has been applied for the current column
+        col_padding_applied = true,
         chapter_title = initial_chapter,
         page_chapter_titles = {}, -- To store chapter title for each page
         page_resets = {}, -- page_resets[page] = true when a \chapter marker resets page number
@@ -321,6 +325,30 @@ _internal.move_to_next_valid_position = move_to_next_valid_position
 
 --- Wrap cursor to next column (and page if needed)
 -- @param ctx (table) Grid context
+--- Apply band format padding at column/band start.
+-- Called eagerly when cur_y_sp is reset to 0, so all content types (glyphs,
+-- textflow, textbox) benefit from per-band padding without lazy glyph check.
+-- @param ctx (table) Grid context
+local function apply_band_padding(ctx)
+    ctx.col_padding_applied = false
+    ctx.col_band_padding_applied = false
+    ctx.col_band_padding_value = nil
+    if ctx.table_band_formats then
+        local bf = ctx.table_band_formats[ctx.cur_band]
+        if bf and bf.padding_top then
+            local pt = constants.to_dimen(bf.padding_top)
+            if pt then
+                local delta = pt - ctx.b_padding_top
+                if delta ~= 0 then
+                    ctx.cur_y_sp = ctx.cur_y_sp + delta
+                end
+                ctx.col_band_padding_applied = true
+                ctx.col_band_padding_value = pt
+            end
+        end
+    end
+end
+
 -- @param p_cols (number) Total columns per page
 -- @param interval (number) Banxin interval
 -- @param grid_height (number) Grid height in sp
@@ -336,6 +364,7 @@ local function wrap_to_next_column(ctx, p_cols, interval, grid_height, indent, r
     ctx.just_wrapped_column = true -- Flag for issue #54 fix
     -- Always reset Y accumulator on column wrap (unified layout)
     ctx.cur_y_sp = 0
+    apply_band_padding(ctx)
     -- Clear textflow pending state: when a column break occurs, any pending
     -- "right sub-column waiting for left" state is no longer valid. Without
     -- this, flush_textflow_pending() would incorrectly advance cur_row in the
@@ -370,6 +399,7 @@ local function wrap_to_next_column(ctx, p_cols, interval, grid_height, indent, r
                 ctx.line_limit = ctx.band_line_limits[ctx.cur_band]
                 ctx.col_height_sp = ctx.band_heights_sp[ctx.cur_band]
                 ctx.cur_y_sp = 0
+                apply_band_padding(ctx)
             end
         elseif ctx.is_free_mode and ctx.content_width > 0 then
             -- Free mode: check if accumulated width exceeds available width
@@ -459,20 +489,9 @@ end
 -- positions to center the content within the band height.
 -- @param ctx (table) Grid context (reads cell_valign_nodes, cell_cur_valign, col_height_sp)
 -- @param layout_map (table) The layout map (node -> map_entry)
-local function apply_cell_valign(ctx, layout_map)
-    local nodes = ctx.cell_valign_nodes
-    if not nodes or #nodes == 0 then
-        ctx.cell_valign_nodes = nil
-        ctx.cell_cur_valign = nil
-        return
-    end
-
-    local valign = ctx.cell_cur_valign
-    if not valign or valign ~= "center" then
-        ctx.cell_valign_nodes = nil
-        ctx.cell_cur_valign = nil
-        return
-    end
+local function apply_cell_valign_impl(valign, nodes, band_height, layout_map)
+    if not nodes or #nodes == 0 then return false end
+    if not valign or (valign ~= "center" and valign ~= "bottom") then return false end
 
     -- Find content bottom: max(y_sp + effective_height) across all nodes.
     -- For textbox blocks, use ATTR_TEXTBOX_HEIGHT_SP (precise sp height) when available,
@@ -494,16 +513,16 @@ local function apply_cell_valign(ctx, layout_map)
         end
     end
 
-    -- Band height for this cell
-    local band_height = ctx.col_height_sp or 0
-    if band_height <= 0 or max_y <= 0 then
-        ctx.cell_valign_nodes = nil
-        ctx.cell_cur_valign = nil
-        return
-    end
+    if band_height <= 0 or max_y <= 0 then return false end
 
-    -- Offset to center content
-    local offset = math.floor((band_height - max_y) / 2)
+    -- Offset: center = half gap, bottom = full gap
+    local gap = band_height - max_y
+    local offset = 0
+    if valign == "center" then
+        offset = math.floor(gap / 2)
+    elseif valign == "bottom" then
+        offset = gap
+    end
     if offset > 0 then
         for _, n in ipairs(nodes) do
             local entry = layout_map[n]
@@ -512,6 +531,27 @@ local function apply_cell_valign(ctx, layout_map)
             end
         end
     end
+    return true
+end
+
+local function apply_cell_valign(ctx, layout_map)
+    local nodes = ctx.cell_valign_nodes
+    local valign = ctx.cell_cur_valign
+
+    if not nodes or #nodes == 0 then
+        -- Nodes not yet available (textbox may appear after BAND_BREAK in node stream).
+        -- Save pending valign so flush_buffer can apply it when nodes arrive.
+        if valign and (valign == "center" or valign == "bottom") and nodes then
+            ctx.pending_cell_valign = valign
+            ctx.pending_cell_valign_band_height = ctx.col_height_sp or 0
+            ctx.pending_cell_valign_nodes = {}
+        end
+        ctx.cell_valign_nodes = nil
+        ctx.cell_cur_valign = nil
+        return
+    end
+
+    apply_cell_valign_impl(valign, nodes, ctx.col_height_sp or 0, layout_map)
 
     ctx.cell_valign_nodes = nil
     ctx.cell_cur_valign = nil
@@ -622,6 +662,7 @@ local function handle_penalty_breaks(p_val, ctx, flush_buffer_fn, p_cols, interv
             end
             ctx.line_limit = ctx.band_line_limits[ctx.cur_band]
             ctx.col_height_sp = ctx.band_heights_sp[ctx.cur_band]
+            apply_band_padding(ctx)
 
             -- Initialize valign tracking for the first cell of the new band
             local all_cell_valigns = _G.content and _G.content.table_cell_valigns or {}
@@ -659,6 +700,7 @@ local function handle_penalty_breaks(p_val, ctx, flush_buffer_fn, p_cols, interv
 
             ctx.cur_row = 0
             ctx.cur_y_sp = 0
+            apply_band_padding(ctx)
             ctx.cur_column_indent = 0
             ctx.table_render_cell_idx = cell_idx + 1
 
@@ -765,6 +807,10 @@ local function handle_penalty_breaks(p_val, ctx, flush_buffer_fn, p_cols, interv
         ctx.table_start_col = ctx.cur_col
         ctx.table_start_page = ctx.cur_page
         ctx.table_render_cell_idx = 0
+        -- Save band formats for per-band padding lookup
+        ctx.table_band_formats = _G.content and _G.content.table_band_formats or nil
+        -- Apply band 0 padding
+        apply_band_padding(ctx)
 
         -- Initialize valign tracking for the first cell (band 0)
         local all_cell_valigns = _G.content and _G.content.table_cell_valigns or {}
@@ -1406,6 +1452,33 @@ local function handle_glyph_node(t, ctx, col_buffer, layout_map, grid_height,
             apply_indentation(ctx, base_indent or indent)
         end
 
+        -- Apply per-column style padding override on first glyph of a new column.
+        -- Band format padding is applied eagerly at column/band start (see apply_band_padding).
+        -- Style-level padding overrides band padding when set on the first glyph.
+        if not ctx.col_padding_applied then
+            ctx.col_padding_applied = true
+            local style_id = D.get_attribute(t, constants.ATTR_STYLE_REG_ID)
+            local style_pt = style_id and style_registry.get_padding_top(style_id)
+            if style_pt then
+                -- Undo any band padding already applied and use style padding instead
+                local base = ctx.col_band_padding_applied and 0 or ctx.b_padding_top
+                local delta = style_pt - ctx.b_padding_top
+                if ctx.col_band_padding_applied then
+                    -- Band padding was already applied; replace with style padding
+                    local band_delta = (ctx.col_band_padding_value or ctx.b_padding_top) - ctx.b_padding_top
+                    local style_delta = style_pt - ctx.b_padding_top
+                    local adjust = style_delta - band_delta
+                    if adjust ~= 0 then
+                        ctx.cur_y_sp = ctx.cur_y_sp + adjust
+                    end
+                else
+                    if delta ~= 0 then
+                        ctx.cur_y_sp = ctx.cur_y_sp + delta
+                    end
+                end
+            end
+        end
+
         table.insert(col_buffer, {
             node = t,
             page = ctx.cur_page,
@@ -1724,7 +1797,24 @@ local function flush_buffer(col_buffer, ctx, grid_height, distribute, layout_map
         if ctx.cell_valign_nodes then
             ctx.cell_valign_nodes[#ctx.cell_valign_nodes + 1] = entry.node
         end
+        -- Track nodes for deferred (pending) cell valign
+        if ctx.pending_cell_valign_nodes then
+            ctx.pending_cell_valign_nodes[#ctx.pending_cell_valign_nodes + 1] = entry.node
+        end
     end
+
+    -- Apply deferred cell valign if pending nodes were collected
+    if ctx.pending_cell_valign and ctx.pending_cell_valign_nodes and #ctx.pending_cell_valign_nodes > 0 then
+        apply_cell_valign_impl(
+            ctx.pending_cell_valign,
+            ctx.pending_cell_valign_nodes,
+            ctx.pending_cell_valign_band_height,
+            layout_map)
+        ctx.pending_cell_valign = nil
+        ctx.pending_cell_valign_nodes = nil
+        ctx.pending_cell_valign_band_height = nil
+    end
+
     -- Clear buffer in-place to preserve reference for external hooks (kinsoku)
     for i = #col_buffer, 1, -1 do
         col_buffer[i] = nil

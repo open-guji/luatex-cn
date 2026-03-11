@@ -149,20 +149,31 @@
 % Must be used at the beginning of a band (before any \Cell).
 
 \tl_new:N \l__luatexcn_bandformat_column_border_tl
+\tl_new:N \l__luatexcn_bandformat_padding_top_tl
+\tl_new:N \l__luatexcn_bandformat_padding_bottom_tl
 
 \keys_define:nn { luatexcn / band-format }
   {
     column-border .tl_set:N = \l__luatexcn_bandformat_column_border_tl,
     column-border .initial:n = {},
+    padding-top .tl_set:N = \l__luatexcn_bandformat_padding_top_tl,
+    padding-top .initial:n = {},
+    padding-bottom .tl_set:N = \l__luatexcn_bandformat_padding_bottom_tl,
+    padding-bottom .initial:n = {},
+    padding .meta:n = { padding-top = #1, padding-bottom = #1 },
   }
 
 \NewDocumentCommand{\BandFormat}{ O{} }
   {
     \tl_clear:N \l__luatexcn_bandformat_column_border_tl
+    \tl_clear:N \l__luatexcn_bandformat_padding_top_tl
+    \tl_clear:N \l__luatexcn_bandformat_padding_bottom_tl
     \keys_set:nn { luatexcn / band-format } { #1 }
     \lua_now:e {
       require('core.luatex-cn-core-table').set_band_format({
         column_border~=~\tl_if_empty:NTF \l__luatexcn_bandformat_column_border_tl {nil} {\l__luatexcn_bandformat_column_border_tl},
+        padding_top~=~\tl_if_empty:NTF \l__luatexcn_bandformat_padding_top_tl {nil} {[=[\luaescapestring{\l__luatexcn_bandformat_padding_top_tl}]=]},
+        padding_bottom~=~\tl_if_empty:NTF \l__luatexcn_bandformat_padding_bottom_tl {nil} {[=[\luaescapestring{\l__luatexcn_bandformat_padding_bottom_tl}]=]},
       })
     }
   }
@@ -176,6 +187,15 @@
 \NewCommandCopy{\單元格}{\Cell}
 \NewCommandCopy{\栏格式}{\BandFormat}
 \NewCommandCopy{\欄格式}{\BandFormat}
+
+\keys_define:nn { luatexcn / band-format }
+  {
+    列边框 .tl_set:N = \l__luatexcn_bandformat_column_border_tl,
+    列邊框 .tl_set:N = \l__luatexcn_bandformat_column_border_tl,
+    上填充 .tl_set:N = \l__luatexcn_bandformat_padding_top_tl,
+    下填充 .tl_set:N = \l__luatexcn_bandformat_padding_bottom_tl,
+    填充 .meta:n = { padding-top = #1, padding-bottom = #1 },
+  }
 
 \keys_define:nn { luatexcn / table }
   {

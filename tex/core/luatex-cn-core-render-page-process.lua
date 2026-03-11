@@ -40,6 +40,8 @@ local debug = package.loaded['debug.luatex-cn-debug'] or
     require('debug.luatex-cn-debug')
 local helpers = package.loaded['core.luatex-cn-layout-grid-helpers'] or
     require('core.luatex-cn-layout-grid-helpers')
+local style_registry = package.loaded['util.luatex-cn-style-registry'] or
+    require('util.luatex-cn-style-registry')
 
 local dbg = debug.get_debugger('render')
 
@@ -236,20 +238,14 @@ local function handle_block_node(curr, p_head, pos, ctx)
 end
 
 -- 辅助函数：绘制调试网格/框
+-- 通过样式属性 debug=true 或全局调试模块 render 来控制
 local function handle_debug_drawing(curr, p_head, pos, ctx)
-    local show_me = false
-    local color_str = "0 0 1 RG"
+    -- Check style debug property or global debug module
+    local style_id = D.get_attribute(curr, constants.ATTR_STYLE_REG_ID)
+    local style_debug = style_id and style_registry.get_debug(style_id)
+    local show_me = style_debug or dbg.is_enabled()
 
-    if pos.is_block then
-        if dbg.is_enabled() then
-            show_me = true
-            color_str = "1 0 0 RG"
-        end
-    else
-        if dbg.is_enabled() then
-            show_me = true
-        end
-    end
+    local color_str = pos.is_block and "1 0 0 RG" or "0 0 1 RG"
 
     if show_me then
         local col_widths = glyph_params.col_widths
@@ -343,9 +339,7 @@ local function process_page_nodes(p_head, layout_map, params, ctx)
                             -- Track the font from regular glyphs for decoration fallback
                             ctx.last_font_id = D.getfield(curr, "font")
                             p_head = handle_glyph_node(curr, p_head, pos, params, ctx)
-                            if dbg.is_enabled() then
-                                p_head = handle_debug_drawing(curr, p_head, pos, ctx)
-                            end
+                            p_head = handle_debug_drawing(curr, p_head, pos, ctx)
                             -- Collect line mark entries for batch rendering
                             if pos.line_mark_id then
                                 local x_center
@@ -368,9 +362,7 @@ local function process_page_nodes(p_head, layout_map, params, ctx)
                         end
                     else
                         p_head = handle_block_node(curr, p_head, pos, ctx)
-                        if dbg.is_enabled() then
-                            p_head = handle_debug_drawing(curr, p_head, pos, ctx)
-                        end
+                        p_head = handle_debug_drawing(curr, p_head, pos, ctx)
                     end
                 end
             elseif dbg.is_enabled() then

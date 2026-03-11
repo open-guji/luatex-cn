@@ -124,6 +124,34 @@ test_utils.run_test("getter: nil for missing attribute", function()
     test_utils.assert_nil(style_registry.get_font_size(id))
 end)
 
+test_utils.run_test("get_debug: returns debug flag", function()
+    reset()
+    local id1 = style_registry.register({ debug = true })
+    test_utils.assert_eq(style_registry.get_debug(id1), true)
+    local id2 = style_registry.register({ debug = false })
+    test_utils.assert_eq(style_registry.get_debug(id2), false)
+    local id3 = style_registry.register({ font_color = "0 0 0" })
+    test_utils.assert_nil(style_registry.get_debug(id3))
+end)
+
+test_utils.run_test("push: debug inherits from parent", function()
+    reset()
+    style_registry.push({ debug = true, font_color = "1 0 0" })
+    style_registry.push({ font_size = 200 })
+    local cur = style_registry.current()
+    test_utils.assert_eq(cur.debug, true, "debug should inherit from parent")
+end)
+
+test_utils.run_test("make_extra: debug_flag param", function()
+    reset()
+    local extra = style_registry.make_extra(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, "true")
+    test_utils.assert_eq(extra.debug, true, "debug should be true")
+    local extra2 = style_registry.make_extra(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, "false")
+    test_utils.assert_eq(extra2.debug, false, "debug should be false")
+    local extra3 = style_registry.make_extra(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+    test_utils.assert_nil(extra3, "nil debug_flag should not create extra table")
+end)
+
 -- ============================================================================
 -- Stack: push / pop / current
 -- ============================================================================

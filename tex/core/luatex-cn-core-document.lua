@@ -48,6 +48,12 @@ function M.init_document_style()
         doc_style.background_color = _G.document.background_color
     end
 
+    -- When global debug mode is enabled, set debug=true in the document style
+    -- so all subsequent styles inherit it
+    if _G.luatex_cn_debug and _G.luatex_cn_debug.global_enabled then
+        doc_style.debug = true
+    end
+
     -- Push document-level style as the base of the stack
     -- This will be inherited by all subsequent styles
     if next(doc_style) ~= nil then

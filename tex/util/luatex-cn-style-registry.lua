@@ -232,6 +232,13 @@ function style_registry.get_textflow_grid_height(id)
     return style_registry.get_attr(id, "textflow_grid_height")
 end
 
+--- Get cell height from style
+-- @param id (number) Style ID
+-- @return (number|nil) Cell height in sp, or nil
+function style_registry.get_cell_height(id)
+    return style_registry.get_attr(id, "cell_height")
+end
+
 --- Get cell width from style
 -- @param id (number) Style ID
 -- @return (number|nil) Cell width in sp (nil = use grid_width)
@@ -307,6 +314,13 @@ end
 -- @return (number|nil) Width scale factor, or nil if not found
 function style_registry.get_width_scale(id)
     return style_registry.get_attr(id, "width_scale")
+end
+
+--- Get debug flag from style
+-- @param id (number) Style ID
+-- @return (boolean|nil) Debug flag, or nil if not found
+function style_registry.get_debug(id)
+    return style_registry.get_attr(id, "debug")
 end
 
 -- ============================================================================
@@ -442,7 +456,7 @@ end
 -- @param padding_top (string|nil) e.g., "5pt" — column top padding override
 -- @param padding_bottom (string|nil) e.g., "5pt" — column bottom padding override
 -- @return (table|nil) Extra table for push_content_style, or nil if all params are nil
-function style_registry.make_extra(grid_height, spacing_top, spacing_bottom, xshift, yshift, indent, first_indent, grid_width, padding_top, padding_bottom)
+function style_registry.make_extra(grid_height, spacing_top, spacing_bottom, xshift, yshift, indent, first_indent, grid_width, padding_top, padding_bottom, debug_flag)
     local constants_mod = package.loaded['core.luatex-cn-constants'] or
         require('core.luatex-cn-constants')
     local extra = {}
@@ -491,6 +505,10 @@ function style_registry.make_extra(grid_height, spacing_top, spacing_bottom, xsh
     end
     if padding_bottom and padding_bottom ~= "" then
         extra.padding_bottom = constants_mod.to_dimen(padding_bottom)
+        has_any = true
+    end
+    if debug_flag and debug_flag ~= "" then
+        extra.debug = (debug_flag == "true")
         has_any = true
     end
     return has_any and extra or nil

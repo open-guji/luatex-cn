@@ -877,6 +877,9 @@ local function handle_penalty_breaks(p_val, ctx, flush_buffer_fn, p_cols, interv
                 column_border = tparams.column_border,
                 band_border = tparams.band_border,
                 band_column_borders = band_column_borders,
+                -- Debug: save cell column groups for cell coordinate debug
+                col_groups = all_col_groups,
+                n_columns = ctx.band_cols_per_band,
             }
         end
 

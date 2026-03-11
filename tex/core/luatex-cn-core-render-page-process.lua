@@ -238,12 +238,11 @@ local function handle_block_node(curr, p_head, pos, ctx)
 end
 
 -- 辅助函数：绘制调试网格/框
--- 通过样式属性 debug=true 或全局调试模块 render 来控制
+-- 仅通过样式属性 debug=true 控制（全局调试模块只控制日志输出）
 local function handle_debug_drawing(curr, p_head, pos, ctx)
-    -- Check style debug property or global debug module
+    -- Check style debug property only (not global debug module)
     local style_id = D.get_attribute(curr, constants.ATTR_STYLE_REG_ID)
-    local style_debug = style_id and style_registry.get_debug(style_id)
-    local show_me = style_debug or dbg.is_enabled()
+    local show_me = style_id and style_registry.get_debug(style_id)
 
     local color_str = pos.is_block and "1 0 0 RG" or "0 0 1 RG"
 
@@ -365,12 +364,16 @@ local function process_page_nodes(p_head, layout_map, params, ctx)
                         p_head = handle_debug_drawing(curr, p_head, pos, ctx)
                     end
                 end
-            elseif dbg.is_enabled() then
+            else
                 -- CRITICAL DEBUG: If it has Jiazhu attribute but no pos, it's a bug!
-                local has_jiazhu = (D.get_attribute(curr, constants.ATTR_JIAZHU) == 1)
-                if has_jiazhu then
-                    dbg.log(string.format("  [render] DISCARDED JIAZHU NODE=%s (not in layout_map!) char=%s",
-                        tostring(curr), (id == constants.GLYPH and tostring(D.getfield(curr, "char")) or "N/A")))
+                local style_id = D.get_attribute(curr, constants.ATTR_STYLE_REG_ID)
+                local style_debug = style_id and style_registry.get_debug(style_id)
+                if style_debug then
+                    local has_jiazhu = (D.get_attribute(curr, constants.ATTR_JIAZHU) == 1)
+                    if has_jiazhu then
+                        dbg.log(string.format("  [render] DISCARDED JIAZHU NODE=%s (not in layout_map!) char=%s",
+                            tostring(curr), (id == constants.GLYPH and tostring(D.getfield(curr, "char")) or "N/A")))
+                    end
                 end
             end
         elseif id == constants.GLUE then

@@ -35,11 +35,13 @@
 \NewDocumentCommand{\LtcDebugOn}{ }
   {
     \lua_now:n { luatex_cn_debug.set_global_status(true) }
+    \lua_now:n { require('util.luatex-cn-style-registry').set_current_debug(true) }
   }
 
 \NewDocumentCommand{\LtcDebugOff}{ }
   {
     \lua_now:n { luatex_cn_debug.set_global_status(false) }
+    \lua_now:n { require('util.luatex-cn-style-registry').set_current_debug(false) }
   }
 
 \NewDocumentCommand{\LtcDebugModuleOn}{ m }

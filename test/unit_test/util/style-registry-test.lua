@@ -152,6 +152,48 @@ test_utils.run_test("make_extra: debug_flag param", function()
     test_utils.assert_nil(extra3, "nil debug_flag should not create extra table")
 end)
 
+test_utils.run_test("set_current_debug: modifies stack top in-place", function()
+    reset()
+    style_registry.push({ font_color = "1 0 0" })
+    style_registry.push({ font_size = 200 })
+    -- Enable debug on current stack top
+    style_registry.set_current_debug(true)
+    local cur = style_registry.current()
+    test_utils.assert_eq(cur.debug, true, "debug should be enabled on top")
+    test_utils.assert_eq(cur.font_size, 200, "font_size should be preserved")
+    test_utils.assert_eq(cur.font_color, "1 0 0", "inherited font_color should be preserved")
+    -- Pop should work correctly (no extra push was added)
+    style_registry.pop()
+    local parent = style_registry.current()
+    test_utils.assert_nil(parent.debug, "parent should NOT have debug")
+    test_utils.assert_eq(parent.font_color, "1 0 0")
+end)
+
+test_utils.run_test("set_current_debug: no-op on empty stack", function()
+    reset()
+    -- Should not error on empty stack
+    style_registry.set_current_debug(true)
+    test_utils.assert_nil(style_registry.current(), "stack should remain empty")
+end)
+
+test_utils.run_test("set_current_debug: child inherits debug", function()
+    reset()
+    style_registry.push({ font_color = "1 0 0" })
+    style_registry.set_current_debug(true)
+    -- Child push should inherit debug=true
+    style_registry.push({ font_size = 300 })
+    local child = style_registry.current()
+    test_utils.assert_eq(child.debug, true, "child should inherit debug")
+    test_utils.assert_eq(child.font_size, 300)
+    -- Pop child, then disable debug
+    style_registry.pop()
+    style_registry.set_current_debug(false)
+    -- New child should NOT inherit debug
+    style_registry.push({ font_size = 400 })
+    local child2 = style_registry.current()
+    test_utils.assert_eq(child2.debug, false, "child should inherit debug=false")
+end)
+
 -- ============================================================================
 -- Stack: push / pop / current
 -- ============================================================================

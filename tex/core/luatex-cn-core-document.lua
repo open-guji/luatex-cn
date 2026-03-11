@@ -49,15 +49,22 @@ function M.init_document_style()
     end
 
     -- When global debug mode is enabled, set debug=true in the document style
-    -- so all subsequent styles inherit it
+    -- so all subsequent styles inherit it.
+    -- Also set document_debug flag for page-level components (banxin).
     if _G.luatex_cn_debug and _G.luatex_cn_debug.global_enabled then
         doc_style.debug = true
+        style_registry.set_document_debug(true)
     end
 
     -- Push document-level style as the base of the stack
-    -- This will be inherited by all subsequent styles
+    -- (only when there are meaningful fields to push)
     if next(doc_style) ~= nil then
-        style_registry.push(doc_style)
+        local doc_id = style_registry.push(doc_style)
+        -- Set TeX attribute so all subsequent characters carry the document style ID
+        local constants_mod = package.loaded['core.luatex-cn-constants']
+        if doc_id and constants_mod and constants_mod.ATTR_STYLE_REG_ID then
+            tex.setattribute(constants_mod.ATTR_STYLE_REG_ID, doc_id)
+        end
     end
 end
 

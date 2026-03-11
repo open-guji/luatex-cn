@@ -175,9 +175,7 @@ function sidenote.render(head, layout_map, params, context, engine_ctx, page_idx
             end
         end
 
-        if dbg.is_enabled() then
-            sn_head = render_page._internal.handle_debug_drawing(curr, sn_head, pos, engine_ctx)
-        end
+        sn_head = render_page._internal.handle_debug_drawing(curr, sn_head, pos, engine_ctx)
     end
 
     -- Render linemark lines for sidenote characters (专名号/书名号)

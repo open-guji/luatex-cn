@@ -472,6 +472,18 @@ local function render_single_page(p_head, p_max_col, p, layout_map, params, ctx,
         end
     end
 
+    -- Debug: draw table cell coordinates if debug is enabled
+    local ptb = _G.content and _G.content.page_table_bands and _G.content.page_table_bands[p]
+    if ptb and debug.is_enabled("table") then
+        p_head = debug.draw_table_cells_debug(p_head, ptb, {
+            total_cols = p_total_cols,
+            shift_x = shift_x,
+            shift_y = ctx.shift_y,
+            half_thickness = ctx.half_thickness,
+            col_geom = ctx.col_geom,
+        })
+    end
+
     -- For TextBox: return actual content dimensions, not expanded page dimensions
     -- This ensures TextBox output box has correct dimensions in main document flow
     local return_cols = page.is_textbox and actual_cols or p_total_cols

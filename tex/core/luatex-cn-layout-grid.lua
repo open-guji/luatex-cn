@@ -1357,12 +1357,16 @@ local function handle_glyph_node(t, ctx, col_buffer, layout_map, grid_height,
             dec_band = ctx.last_char_band or ctx.cur_band
         end
 
+        local dec_band_y_off = ctx.band_y_offsets_sp[dec_band] or 0
         local map_entry = {
             page = dec_page,
             col = dec_col,
             band = dec_band,
             y_sp = dec_y_sp,
-            band_y_offset_sp = ctx.band_y_offsets_sp[dec_band] or 0,
+            band_y_offset_sp = dec_band_y_off,
+            -- P2: absolute coordinates
+            x = h.compute_x(dec_col, dec_page, ctx),
+            y = h.compute_y(dec_y_sp, dec_band_y_off, ctx),
         }
 
         apply_style_attrs(map_entry, t)
@@ -1777,18 +1781,23 @@ local function flush_buffer(col_buffer, ctx, grid_height, distribute, layout_map
         local y_sp = distribute_y_sp[i] or entry.y_sp
         local v_scale = entry.v_scale or ((distribute and N > 1) and v_scale_all or 1.0)
 
+        local fl_band = entry.band or 0
+        local fl_band_y_off = ctx.band_y_offsets_sp[fl_band] or 0
         local map_entry = {
             page = entry.page,
             col = entry.col,
-            band = entry.band or 0,
+            band = fl_band,
             y_sp = y_sp,
-            band_y_offset_sp = ctx.band_y_offsets_sp[entry.band or 0] or 0,
+            band_y_offset_sp = fl_band_y_off,
             is_block = entry.is_block,
             width = entry.width,
             height = entry.height,
             v_scale = v_scale,
             cell_height = entry.cell_height,
             cell_width = entry.cell_width,
+            -- P2: absolute coordinates
+            x = h.compute_x(entry.col, entry.page, ctx),
+            y = h.compute_y(y_sp, fl_band_y_off, ctx),
         }
         apply_style_attrs(map_entry, entry.node)
 
@@ -1915,12 +1924,16 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
 
         if id == constants.WHATSIT then
             -- Position transparently at current cursor
+            local wh_band_y_off = ctx.band_y_offsets_sp[ctx.cur_band] or 0
             local map_entry = {
                 page = ctx.cur_page,
                 col = ctx.cur_col,
                 band = ctx.cur_band,
                 y_sp = ctx.cur_y_sp,
-                band_y_offset_sp = ctx.band_y_offsets_sp[ctx.cur_band] or 0,
+                band_y_offset_sp = wh_band_y_off,
+                -- P2: absolute coordinates
+                x = h.compute_x(ctx.cur_col, ctx.cur_page, ctx),
+                y = h.compute_y(ctx.cur_y_sp, wh_band_y_off, ctx),
             }
             apply_style_attrs(map_entry, t)
 

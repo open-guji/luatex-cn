@@ -373,15 +373,20 @@ function column.place_nodes(ctx, start_node, layout_map, params, callbacks)
     local cur_row = start_row
     for _, item in ipairs(items) do
         if item.type == "glyph" then
+            local g_y_sp = cur_row * grid_height
+            local g_band_y_off = ctx.band_y_offsets_sp and ctx.band_y_offsets_sp[ctx.cur_band] or 0
             local entry = {
                 page = ctx.cur_page,
                 col = ctx.cur_col,
                 band = ctx.cur_band,
-                y_sp = cur_row * grid_height,
-                band_y_offset_sp = ctx.band_y_offsets_sp and ctx.band_y_offsets_sp[ctx.cur_band] or 0,
+                y_sp = g_y_sp,
+                band_y_offset_sp = g_band_y_off,
                 v_scale = v_scale,
                 cell_height = helpers.resolve_cell_height(item.node, grid_height, nil, ctx.punct_config),
                 cell_width = helpers.resolve_cell_width(item.node, nil),
+                -- P2: absolute coordinates
+                x = helpers.compute_x(ctx.cur_col, ctx.cur_page, ctx),
+                y = helpers.compute_y(g_y_sp, g_band_y_off, ctx),
             }
             helpers.apply_style_attrs(entry, item.node)
             layout_map[item.node] = entry
@@ -397,17 +402,23 @@ function column.place_nodes(ctx, start_node, layout_map, params, callbacks)
                 nil, nil, nil, grid_height, nil)
             local chunk = chunks[1]
             if chunk then
+                local jz_band_y_off = ctx.band_y_offsets_sp and ctx.band_y_offsets_sp[ctx.cur_band] or 0
+                local jz_col_x = helpers.compute_x(ctx.cur_col, ctx.cur_page, ctx)
                 for _, a in ipairs(chunk.nodes) do
                     -- a.relative_row is now y_offset_sp (cumulative offset in sp)
+                    local jz_y_sp = cur_row * grid_height + a.relative_row * v_scale
                     local entry = {
                         page = ctx.cur_page,
                         col = ctx.cur_col,
                         band = ctx.cur_band,
-                        y_sp = cur_row * grid_height + a.relative_row * v_scale,
-                        band_y_offset_sp = ctx.band_y_offsets_sp and ctx.band_y_offsets_sp[ctx.cur_band] or 0,
+                        y_sp = jz_y_sp,
+                        band_y_offset_sp = jz_band_y_off,
                         sub_col = a.sub_col,
                         v_scale = v_scale,
                         cell_height = grid_height,
+                        -- P2: absolute coordinates
+                        x = jz_col_x,
+                        y = helpers.compute_y(jz_y_sp, jz_band_y_off, ctx),
                     }
                     helpers.apply_style_attrs(entry, a.node)
                     layout_map[a.node] = entry
@@ -416,15 +427,20 @@ function column.place_nodes(ctx, start_node, layout_map, params, callbacks)
             cur_row = cur_row + item.rows * v_scale + gap
 
         elseif item.type == "textbox" then
+            local tb_y_sp = cur_row * grid_height
+            local tb_band_y_off = ctx.band_y_offsets_sp and ctx.band_y_offsets_sp[ctx.cur_band] or 0
             local entry = {
                 page = ctx.cur_page,
                 col = ctx.cur_col,
                 band = ctx.cur_band,
-                y_sp = cur_row * grid_height,
-                band_y_offset_sp = ctx.band_y_offsets_sp and ctx.band_y_offsets_sp[ctx.cur_band] or 0,
+                y_sp = tb_y_sp,
+                band_y_offset_sp = tb_band_y_off,
                 is_block = true,
                 height = item.height,
-                v_scale = v_scale
+                v_scale = v_scale,
+                -- P2: absolute coordinates
+                x = helpers.compute_x(ctx.cur_col, ctx.cur_page, ctx),
+                y = helpers.compute_y(tb_y_sp, tb_band_y_off, ctx),
             }
             helpers.apply_style_attrs(entry, item.node)
             layout_map[item.node] = entry

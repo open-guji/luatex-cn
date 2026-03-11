@@ -625,14 +625,19 @@ local function place_textflow_segment(ctx, nodes, layout_map, params, callbacks,
             else
                 base_y_sp = ctx.cur_row * gh
             end
+            local tf_y_sp = base_y_sp + node_info.relative_row  -- relative_row is y_offset_sp
+            local tf_band_y_off = ctx.band_y_offsets_sp and ctx.band_y_offsets_sp[ctx.cur_band] or 0
             local entry = {
                 page = ctx.cur_page,
                 col = ctx.cur_col,
                 band = ctx.cur_band,
-                y_sp = base_y_sp + node_info.relative_row,  -- relative_row is y_offset_sp
-                band_y_offset_sp = ctx.band_y_offsets_sp and ctx.band_y_offsets_sp[ctx.cur_band] or 0,
+                y_sp = tf_y_sp,
+                band_y_offset_sp = tf_band_y_off,
                 sub_col = node_info.sub_col,
                 cell_height = node_cell_h,
+                -- P2: absolute coordinates
+                x = helpers.compute_x(ctx.cur_col, ctx.cur_page, ctx),
+                y = helpers.compute_y(tf_y_sp, tf_band_y_off, ctx),
             }
             if not node_info.sub_col then
                 entry.cell_width = helpers.resolve_cell_width(node_info.node, nil)
@@ -662,13 +667,17 @@ local function place_textflow_segment(ctx, nodes, layout_map, params, callbacks,
                 local dec_nodes = decorate_map[node_info.node]
                 if dec_nodes then
                     for _, dec_node in ipairs(dec_nodes) do
+                        local dec_y_sp = entry.y_sp + node_cell_h
                         local dec_entry = {
                             page = entry.page,
                             col = entry.col,
                             band = entry.band,
-                            y_sp = entry.y_sp + node_cell_h,
+                            y_sp = dec_y_sp,
                             band_y_offset_sp = entry.band_y_offset_sp,
                             sub_col = entry.sub_col,
+                            -- P2: absolute coordinates (inherit x from anchor, y shifted down)
+                            x = entry.x,
+                            y = helpers.compute_y(dec_y_sp, entry.band_y_offset_sp, ctx),
                         }
                         helpers.apply_style_attrs(dec_entry, dec_node)
                         layout_map[dec_node] = dec_entry

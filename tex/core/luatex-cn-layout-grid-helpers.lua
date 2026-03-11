@@ -99,6 +99,70 @@ local function apply_style_attrs(map_entry, node_ptr)
 end
 
 -- =============================================================================
+-- P2: Absolute coordinate computation
+-- Mirrors render-position.lua's get_column_x / calculate_rtl_position logic,
+-- but callable from the layout stage (Stage 2) without requiring Stage 3 modules.
+-- =============================================================================
+
+--- Compute the grid X offset for a given rtl_col in uniform-column mode.
+-- Mirrors render-position.lua:get_column_x.
+local function get_column_x_uniform(rtl_col, params)
+    local grid_width = get_grid_width(params, params.grid_height or 0)
+    local banxin_width = params.banxin_width or 0
+    local interval = params.n_column or 0
+    if interval <= 0 or banxin_width <= 0 or banxin_width == grid_width then
+        return rtl_col * grid_width
+    end
+    local group_size = interval + 1
+    local full_groups = math.floor(rtl_col / group_size)
+    local remainder = rtl_col % group_size
+    local x = full_groups * (interval * grid_width + banxin_width)
+    if remainder < interval then
+        x = x + remainder * grid_width
+    else
+        x = x + interval * grid_width
+    end
+    return x
+end
+
+--- Compute the absolute X coordinate (sp) for a layout_map entry.
+-- Origin: page top-right corner. Positive direction: right-to-left.
+-- Includes shift_x and half_thickness (page geometry offsets).
+-- @param col (number) Logical column index (0-indexed, 0 = rightmost)
+-- @param page (number) Page index (0-indexed)
+-- @param ctx (table) Layout context (has p_cols, params, col_widths_sp, shift_x, half_thickness)
+-- @return (number) X coordinate (sp)
+local function compute_x(col, page, ctx)
+    local total_cols = ctx.p_cols
+    local rtl_col = total_cols - 1 - col
+    local col_widths = ctx.col_widths_sp and ctx.col_widths_sp[page]
+    local grid_x
+    if col_widths and next(col_widths) then
+        -- Variable-width column mode (Free Mode)
+        grid_x = 0
+        for i = 0, rtl_col - 1 do
+            local lc = total_cols - 1 - i
+            grid_x = grid_x + (col_widths[lc + 1] or 0)
+        end
+    else
+        -- Uniform-width column mode
+        grid_x = get_column_x_uniform(rtl_col, ctx.params)
+    end
+    return grid_x + (ctx.half_thickness or 0) + (ctx.shift_x or 0)
+end
+
+--- Compute the absolute Y coordinate (sp) for a layout_map entry.
+-- Origin: page top-right corner. Positive direction: top-to-bottom.
+-- Includes shift_y (page geometry offset).
+-- @param y_sp (number) Row Y position (sp, from grid top)
+-- @param band_y_offset_sp (number) Band Y offset (sp)
+-- @param ctx (table) Layout context (has shift_y)
+-- @return (number) Y coordinate (sp)
+local function compute_y(y_sp, band_y_offset_sp, ctx)
+    return (y_sp or 0) + (band_y_offset_sp or 0) + (ctx.shift_y or 0)
+end
+
+-- =============================================================================
 -- Column validation functions
 -- =============================================================================
 
@@ -281,6 +345,8 @@ helpers.get_node_font_color = get_node_font_color
 helpers.get_node_font_size = get_node_font_size
 helpers.get_node_font = get_node_font
 helpers.apply_style_attrs = apply_style_attrs
+helpers.compute_x = compute_x
+helpers.compute_y = compute_y
 
 helpers.is_reserved_col = is_reserved_col
 helpers.is_center_gap_col = is_center_gap_col

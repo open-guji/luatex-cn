@@ -432,4 +432,72 @@ test_utils.run_test("create_linemark_entry: partial fields", function()
     test_utils.assert_nil(entry.cell_height)
 end)
 
+-- ============================================================================
+-- compute_x / compute_y  (P2: absolute coordinate computation)
+-- ============================================================================
+
+-- Helper: build a minimal ctx for compute_x/compute_y
+local function make_ctx(opts)
+    return {
+        p_cols       = opts.p_cols or 1,
+        params       = opts.params or {},
+        col_widths_sp = opts.col_widths_sp,
+        shift_x      = opts.shift_x or 0,
+        shift_y      = opts.shift_y or 0,
+        half_thickness = opts.half_thickness or 0,
+    }
+end
+
+test_utils.run_test("compute_x: col 0 in single-column, no offset", function()
+    local ctx = make_ctx({ p_cols = 1, params = { grid_width = 655360 } })
+    -- rtl_col = 1-1-0 = 0 → grid_x = 0 * 655360 = 0
+    test_utils.assert_eq(helpers.compute_x(0, 0, ctx), 0)
+end)
+
+test_utils.run_test("compute_x: col 0 in 3-column uniform, no offset", function()
+    local ctx = make_ctx({ p_cols = 3, params = { grid_width = 655360 } })
+    -- col 0 = rightmost → rtl_col = 2 → grid_x = 2 * 655360
+    test_utils.assert_eq(helpers.compute_x(0, 0, ctx), 2 * 655360)
+end)
+
+test_utils.run_test("compute_x: col 2 in 3-column uniform, no offset", function()
+    local ctx = make_ctx({ p_cols = 3, params = { grid_width = 655360 } })
+    -- col 2 = leftmost → rtl_col = 0 → grid_x = 0
+    test_utils.assert_eq(helpers.compute_x(2, 0, ctx), 0)
+end)
+
+test_utils.run_test("compute_x: includes half_thickness and shift_x", function()
+    local ctx = make_ctx({
+        p_cols = 3, params = { grid_width = 655360 },
+        half_thickness = 13107, shift_x = 26214,
+    })
+    -- col 2 → rtl_col=0 → grid_x=0; total = 0 + 13107 + 26214
+    test_utils.assert_eq(helpers.compute_x(2, 0, ctx), 13107 + 26214)
+end)
+
+test_utils.run_test("compute_x: variable-width columns", function()
+    -- 3 cols, col_widths_sp[page=0] = {[3]=A, [2]=B, [1]=C}  (1-indexed, logical col order)
+    -- col 0 (rightmost) → rtl_col=2 → sum col_widths for i=0..1:
+    --   i=0: lc=2, col_widths[3]=C   (logical col 2)
+    --   i=1: lc=1, col_widths[2]=B   (logical col 1)
+    -- grid_x = C + B
+    local A, B, C = 655360, 720000, 800000
+    local ctx = make_ctx({
+        p_cols = 3,
+        params = {},
+        col_widths_sp = { [0] = { [3] = A, [2] = B, [1] = C } },
+    })
+    test_utils.assert_eq(helpers.compute_x(0, 0, ctx), C + B)
+end)
+
+test_utils.run_test("compute_y: y_sp + band_offset + shift_y", function()
+    local ctx = make_ctx({ shift_y = 52429 })
+    test_utils.assert_eq(helpers.compute_y(655360, 32768, ctx), 655360 + 32768 + 52429)
+end)
+
+test_utils.run_test("compute_y: all zeros", function()
+    local ctx = make_ctx({})
+    test_utils.assert_eq(helpers.compute_y(0, 0, ctx), 0)
+end)
+
 print("\nAll core/layout-grid-helpers-test tests passed!")

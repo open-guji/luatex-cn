@@ -128,6 +128,10 @@ local function create_grid_context(params, line_limit, p_cols)
         page_has_content = false,
         -- Global border-padding-top (for per-column padding delta calculation)
         b_padding_top = params.b_padding_top or 0,
+        -- P2: page geometry offsets for computing absolute coordinates
+        shift_x = params.shift_x or 0,
+        shift_y = params.shift_y or 0,
+        half_thickness = params.half_thickness or 0,
         -- Flag: whether padding has been applied for the current column
         col_padding_applied = true,
         chapter_title = initial_chapter,

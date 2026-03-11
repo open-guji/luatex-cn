@@ -276,6 +276,8 @@ function export.collect(list, layout_results, engine_ctx, plugin_contexts, p_inf
     local D = constants.D
     local text_position = package.loaded['core.luatex-cn-render-position'] or
         require('core.luatex-cn-render-position')
+    local style_registry = package.loaded['util.luatex-cn-style-registry'] or
+        require('util.luatex-cn-style-registry')
     local layout_map = layout_results.layout_map
     local total_pages = layout_results.total_pages
 
@@ -402,15 +404,18 @@ function export.collect(list, layout_results, engine_ctx, plugin_contexts, p_inf
                         char_entry.type = "normal"
                     end
 
-                    -- Style: font size and color (only if different from default)
+                    -- Style: font size and color (P1: read from style_registry, not layout_map)
                     local has_style = false
                     local style = {}
-                    if pos.font_size then
-                        style.font_size_pt = pos.font_size * SP_TO_PT
+                    local exp_style_id = D.get_attribute(t, constants.ATTR_STYLE_REG_ID)
+                    local exp_font_size = exp_style_id and style_registry.get_font_size(exp_style_id)
+                    local exp_font_color = exp_style_id and style_registry.get_font_color(exp_style_id)
+                    if exp_font_size then
+                        style.font_size_pt = exp_font_size * SP_TO_PT
                         has_style = true
                     end
-                    if pos.font_color then
-                        style.font_color = pos.font_color
+                    if exp_font_color then
+                        style.font_color = exp_font_color
                         has_style = true
                     end
                     if has_style then

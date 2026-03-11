@@ -90,17 +90,12 @@ local function get_node_font(node)
     return nil
 end
 
+-- P1: style fields (font_color, font_size, font, textflow_align, xshift, yshift)
+-- are no longer copied into layout_map entries. Renderers read directly from
+-- style_registry via ATTR_STYLE_REG_ID. This function is kept as a no-op for
+-- backward compatibility with existing call sites.
 local function apply_style_attrs(map_entry, node_ptr)
-    local style_id = D.get_attribute(node_ptr, constants.ATTR_STYLE_REG_ID)
-    if not style_id or style_id <= 0 then return end
-    local style = style_registry.get(style_id)
-    if not style then return end
-    if style.font_color then map_entry.font_color = style.font_color end
-    if style.font_size then map_entry.font_size = style.font_size end
-    if style.font then map_entry.font = style.font end
-    if style.textflow_align then map_entry.textflow_align = style.textflow_align end
-    if style.xshift then map_entry.xshift = style.xshift end
-    if style.yshift then map_entry.yshift = style.yshift end
+    -- no-op: style fields now read directly from style_registry at render time
 end
 
 -- =============================================================================

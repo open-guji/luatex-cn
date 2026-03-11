@@ -142,7 +142,10 @@ end)
 -- apply_style_attrs
 -- ============================================================================
 
-test_utils.run_test("apply_style_attrs: copies style fields to map_entry", function()
+-- P1: apply_style_attrs is now a no-op — style fields are read directly from
+-- style_registry at render time, not copied into layout_map entries.
+
+test_utils.run_test("apply_style_attrs: no-op does not copy style fields", function()
     style_registry.clear()
     local id = style_registry.register({
         font_color = "1 0 0",
@@ -154,12 +157,12 @@ test_utils.run_test("apply_style_attrs: copies style fields to map_entry", funct
 
     local entry = {}
     helpers.apply_style_attrs(entry, n)
-    test_utils.assert_eq(entry.font_color, "1 0 0")
-    test_utils.assert_eq(entry.font_size, 655360)
-    test_utils.assert_eq(entry.font, "SimSun")
+    test_utils.assert_nil(entry.font_color)
+    test_utils.assert_nil(entry.font_size)
+    test_utils.assert_nil(entry.font)
 end)
 
-test_utils.run_test("apply_style_attrs: copies xshift/yshift to map_entry", function()
+test_utils.run_test("apply_style_attrs: no-op does not copy xshift/yshift", function()
     style_registry.clear()
     local id = style_registry.register({
         xshift = { value = -0.3, unit = "em" },
@@ -170,9 +173,8 @@ test_utils.run_test("apply_style_attrs: copies xshift/yshift to map_entry", func
 
     local entry = {}
     helpers.apply_style_attrs(entry, n)
-    test_utils.assert_eq(entry.xshift.value, -0.3)
-    test_utils.assert_eq(entry.xshift.unit, "em")
-    test_utils.assert_eq(entry.yshift, 32768)
+    test_utils.assert_nil(entry.xshift)
+    test_utils.assert_nil(entry.yshift)
 end)
 
 test_utils.run_test("apply_style_attrs: no style_id does nothing", function()

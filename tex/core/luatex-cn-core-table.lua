@@ -71,14 +71,18 @@ end
 function table_mod.begin_cell(col_width, vertical_align)
     _G.content = _G.content or {}
     local cell_idx = _G.content.table_cell_idx or 0
+    local cur_band = _G.content.table_cur_band or 0
 
+    -- Store per-band col_groups to avoid cross-band overwrites
     _G.content.table_col_groups = _G.content.table_col_groups or {}
-    _G.content.table_col_groups[cell_idx + 1] = col_width
+    _G.content.table_col_groups[cur_band] = _G.content.table_col_groups[cur_band] or {}
+    _G.content.table_col_groups[cur_band][cell_idx + 1] = col_width
     _G.content.table_cell_idx = cell_idx + 1
 
     if vertical_align then
         _G.content.table_cell_valigns = _G.content.table_cell_valigns or {}
-        _G.content.table_cell_valigns[cell_idx + 1] = vertical_align
+        _G.content.table_cell_valigns[cur_band] = _G.content.table_cell_valigns[cur_band] or {}
+        _G.content.table_cell_valigns[cur_band][cell_idx + 1] = vertical_align
     end
 
     if cell_idx > 0 then

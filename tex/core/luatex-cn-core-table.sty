@@ -32,7 +32,7 @@
 \tl_new:N \l__luatexcn_table_band_heights_tl
 \tl_new:N \l__luatexcn_table_n_cols_tl
 \int_new:N \l__luatexcn_table_header_rows_int
-\int_new:N \l__luatexcn_cell_col_width_int
+\tl_new:N \l__luatexcn_cell_col_width_tl
 \tl_new:N \l__luatexcn_cell_valign_tl
 \tl_new:N \l__luatexcn_table_column_border_tl
 \tl_new:N \l__luatexcn_table_band_border_tl
@@ -57,8 +57,8 @@
 
 \keys_define:nn { luatexcn / cell }
   {
-    col-width .int_set:N = \l__luatexcn_cell_col_width_int,
-    col-width .initial:n = 0,
+    col-width .tl_set:N = \l__luatexcn_cell_col_width_tl,
+    col-width .initial:n = {1},
     vertical-align .tl_set:N = \l__luatexcn_cell_valign_tl,
     vertical-align .initial:n = {},
   }
@@ -127,19 +127,19 @@
 % Cell Command
 % ============================================================================
 
-\NewDocumentCommand{\Cell}{ O{} +m }
+\NewDocumentCommand{\Cell}{ O{} +g }
   {
-    \int_zero:N \l__luatexcn_cell_col_width_int
+    \tl_set:Nn \l__luatexcn_cell_col_width_tl {1}
     \tl_clear:N \l__luatexcn_cell_valign_tl
     \keys_set:nn { luatexcn / cell } { #1 }
     \lua_now:e {
       require('core.luatex-cn-core-table').begin_cell(
-        \int_use:N \l__luatexcn_cell_col_width_int,
+        \str_if_eq:VnTF \l__luatexcn_cell_col_width_tl {nil} {0} {\l__luatexcn_cell_col_width_tl},
         \tl_if_empty:NTF \l__luatexcn_cell_valign_tl {nil} {"\l__luatexcn_cell_valign_tl"}
       )
     }
     \luatexcnRestoreTempIndent
-    #2
+    \IfValueT{#2}{#2}
   }
 
 % ============================================================================
@@ -197,8 +197,8 @@
 
 \keys_define:nn { luatexcn / cell }
   {
-    列宽 .int_set:N = \l__luatexcn_cell_col_width_int,
-    列寬 .int_set:N = \l__luatexcn_cell_col_width_int,
+    列宽 .tl_set:N = \l__luatexcn_cell_col_width_tl,
+    列寬 .tl_set:N = \l__luatexcn_cell_col_width_tl,
     纵对齐 .tl_set:N = \l__luatexcn_cell_valign_tl,
     縱對齊 .tl_set:N = \l__luatexcn_cell_valign_tl,
   }

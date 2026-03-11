@@ -624,7 +624,8 @@ local function handle_penalty_breaks(p_val, ctx, flush_buffer_fn, p_cols, interv
             ctx.col_height_sp = ctx.band_heights_sp[ctx.cur_band]
 
             -- Initialize valign tracking for the first cell of the new band
-            local cell_valigns = _G.content and _G.content.table_cell_valigns or {}
+            local all_cell_valigns = _G.content and _G.content.table_cell_valigns or {}
+            local cell_valigns = all_cell_valigns[ctx.cur_band] or {}
             if cell_valigns[1] then
                 ctx.cell_valign_nodes = {}
                 ctx.cell_cur_valign = cell_valigns[1]
@@ -641,7 +642,8 @@ local function handle_penalty_breaks(p_val, ctx, flush_buffer_fn, p_cols, interv
             flush_buffer_fn()
             apply_cell_valign(ctx, ctx.layout_map)
 
-            local col_groups = (_G.content and _G.content.table_col_groups) or {}
+            local all_col_groups = (_G.content and _G.content.table_col_groups) or {}
+            local col_groups = all_col_groups[ctx.cur_band] or {}
             local cell_idx = ctx.table_render_cell_idx or 0
             local cell_width = col_groups[cell_idx + 1] or 0
 
@@ -661,7 +663,8 @@ local function handle_penalty_breaks(p_val, ctx, flush_buffer_fn, p_cols, interv
             ctx.table_render_cell_idx = cell_idx + 1
 
             -- Initialize valign tracking for the next cell
-            local cell_valigns = _G.content and _G.content.table_cell_valigns or {}
+            local all_cell_valigns = _G.content and _G.content.table_cell_valigns or {}
+            local cell_valigns = all_cell_valigns[ctx.cur_band] or {}
             local next_valign = cell_valigns[cell_idx + 2]
             if next_valign then
                 ctx.cell_valign_nodes = {}
@@ -763,8 +766,9 @@ local function handle_penalty_breaks(p_val, ctx, flush_buffer_fn, p_cols, interv
         ctx.table_start_page = ctx.cur_page
         ctx.table_render_cell_idx = 0
 
-        -- Initialize valign tracking for the first cell
-        local cell_valigns = _G.content and _G.content.table_cell_valigns or {}
+        -- Initialize valign tracking for the first cell (band 0)
+        local all_cell_valigns = _G.content and _G.content.table_cell_valigns or {}
+        local cell_valigns = all_cell_valigns[0] or {}
         if cell_valigns[1] then
             ctx.cell_valign_nodes = {}
             ctx.cell_cur_valign = cell_valigns[1]
@@ -781,14 +785,18 @@ local function handle_penalty_breaks(p_val, ctx, flush_buffer_fn, p_cols, interv
         ctx.table_end_col = ctx.cur_col
         ctx.table_end_page = ctx.cur_page
 
-        -- Calculate actual table width from col_groups
-        -- Due to reset_band_cells(), col_groups only contains the LAST band's cells
-        -- (earlier bands overwrite same indices). So all entries = one band's cells.
-        local col_groups = (_G.content and _G.content.table_col_groups) or {}
+        -- Calculate actual table width from col_groups (max across all bands)
+        local all_col_groups = (_G.content and _G.content.table_col_groups) or {}
         local actual_band_cols = 0
-        for i = 1, #col_groups do
-            local w = col_groups[i] or 0
-            actual_band_cols = actual_band_cols + (w > 0 and w or 1)
+        for _, band_groups in pairs(all_col_groups) do
+            local band_cols = 0
+            for i = 1, #band_groups do
+                local w = band_groups[i] or 0
+                band_cols = band_cols + (w > 0 and w or 1)
+            end
+            if band_cols > actual_band_cols then
+                actual_band_cols = band_cols
+            end
         end
         if actual_band_cols == 0 then
             actual_band_cols = ctx.band_cols_per_band

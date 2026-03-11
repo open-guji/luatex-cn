@@ -125,13 +125,15 @@ local function get_column_x_uniform(rtl_col, params)
     return x
 end
 
---- Compute the absolute X coordinate (sp) for a layout_map entry.
--- Origin: page top-right corner. Positive direction: right-to-left.
--- Includes shift_x and half_thickness (page geometry offsets).
+--- Compute the grid-relative X coordinate (sp) for a layout_map entry.
+-- This is the column's base X position including half_thickness, but WITHOUT shift_x.
+-- shift_x is excluded because the render stage may adjust it (e.g. right-align correction).
+-- The render stage adds its own shift_x when consuming pos.x.
+-- Origin: grid area right edge (including half_thickness offset).
 -- @param col (number) Logical column index (0-indexed, 0 = rightmost)
 -- @param page (number) Page index (0-indexed)
--- @param ctx (table) Layout context (has p_cols, params, col_widths_sp, shift_x, half_thickness)
--- @return (number) X coordinate (sp)
+-- @param ctx (table) Layout context (has p_cols, params, col_widths_sp, half_thickness)
+-- @return (number) Grid-relative X coordinate (sp)
 local function compute_x(col, page, ctx)
     local total_cols = ctx.p_cols
     local rtl_col = total_cols - 1 - col
@@ -148,7 +150,8 @@ local function compute_x(col, page, ctx)
         -- Uniform-width column mode
         grid_x = get_column_x_uniform(rtl_col, ctx.params)
     end
-    return grid_x + (ctx.half_thickness or 0) + (ctx.shift_x or 0)
+    -- half_thickness is stable (not affected by render-stage right-align correction)
+    return grid_x + (ctx.half_thickness or 0)
 end
 
 --- Compute the absolute Y coordinate (sp) for a layout_map entry.

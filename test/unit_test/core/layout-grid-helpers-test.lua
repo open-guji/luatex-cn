@@ -466,13 +466,13 @@ test_utils.run_test("compute_x: col 2 in 3-column uniform, no offset", function(
     test_utils.assert_eq(helpers.compute_x(2, 0, ctx), 0)
 end)
 
-test_utils.run_test("compute_x: includes half_thickness and shift_x", function()
+test_utils.run_test("compute_x: includes half_thickness but NOT shift_x", function()
     local ctx = make_ctx({
         p_cols = 3, params = { grid_width = 655360 },
         half_thickness = 13107, shift_x = 26214,
     })
-    -- col 2 → rtl_col=0 → grid_x=0; total = 0 + 13107 + 26214
-    test_utils.assert_eq(helpers.compute_x(2, 0, ctx), 13107 + 26214)
+    -- col 2 → rtl_col=0 → grid_x=0; total = 0 + 13107 (shift_x excluded)
+    test_utils.assert_eq(helpers.compute_x(2, 0, ctx), 13107)
 end)
 
 test_utils.run_test("compute_x: variable-width columns", function()

@@ -578,10 +578,8 @@ local function render_borders(p_head, params)
     if draw_bnd_border == nil then draw_bnd_border = params.draw_border end
 
     -- 1. Draw column borders (inner borders between columns)
-    -- Note: Table-level column_border only controls future cell dividers,
-    -- NOT the Content-level grid lines (those are always drawn when draw_col_border is true).
-    -- Per-band column border: when inline table has band_column_borders overrides,
-    -- draw column borders as per-band segments instead of full-height lines.
+    -- Table-level column_border applies to all bands as default;
+    -- per-band column_border (via \栏格式) overrides the table default.
     local ptb = params.page_table_bands
     if draw_col_border and p_total_cols > 0 then
         local col_border_params = {
@@ -596,14 +594,30 @@ local function render_borders(p_head, params)
             banxin_cols = params.reserved_cols,
             col_min_y_sp = params.col_min_y_sp,
         }
-        -- Pass per-band column border info from inline table
-        if ptb and ptb.band_column_borders then
-            col_border_params.band_column_borders = ptb.band_column_borders
-            col_border_params.n_bands = ptb.n_bands
-            col_border_params.band_heights_sp = ptb.band_heights_sp
-            col_border_params.band_y_offsets_sp = ptb.band_y_offsets_sp
-            col_border_params.table_start_col = ptb.table_start_col
-            col_border_params.actual_band_cols = ptb.actual_band_cols
+        -- Apply table-level column_border as default for all bands,
+        -- then per-band overrides take precedence.
+        if ptb and ptb.n_bands and ptb.n_bands > 1 then
+            local effective_borders = {}
+            -- Start with table-level default
+            if ptb.column_border ~= nil then
+                for band = 0, ptb.n_bands - 1 do
+                    effective_borders[band] = ptb.column_border
+                end
+            end
+            -- Per-band overrides
+            if ptb.band_column_borders then
+                for band_idx, val in pairs(ptb.band_column_borders) do
+                    effective_borders[band_idx] = val
+                end
+            end
+            if next(effective_borders) then
+                col_border_params.band_column_borders = effective_borders
+                col_border_params.n_bands = ptb.n_bands
+                col_border_params.band_heights_sp = ptb.band_heights_sp
+                col_border_params.band_y_offsets_sp = ptb.band_y_offsets_sp
+                col_border_params.table_start_col = ptb.table_start_col
+                col_border_params.actual_band_cols = ptb.actual_band_cols
+            end
         end
         p_head = draw_column_borders(p_head, col_border_params)
     end

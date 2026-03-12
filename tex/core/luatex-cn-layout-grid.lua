@@ -2146,37 +2146,44 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
 
             if not t then break end
 
-            -- Phase 2.3: Record column width in Free Mode
-            if ctx.is_free_mode then
-                local cols_used = ctx.cur_col - col_start_col
-                if cols_used > 0 then
-                    -- Get style attributes from Column's first node
-                    local style_reg = require('util.luatex-cn-style-registry')
-                    local style_id = D.get_attribute(col_start_node, constants.ATTR_STYLE_REG_ID)
-                    local col_width_str = style_id and style_reg.get_attr(style_id, "column_width")
-                    local col_width_sp = col_width_str and tex.sp(col_width_str) or nil
+            -- Record column width in col_widths_sp for compute_x.
+            -- Free Mode: always record (explicit width or estimated from grid).
+            -- Non-Free Mode: only record when explicit column_width is set (\行[width=...]).
+            do
+                local style_reg = require('util.luatex-cn-style-registry')
+                local style_id = D.get_attribute(col_start_node, constants.ATTR_STYLE_REG_ID)
+                local col_width_val = style_id and style_reg.get_attr(style_id, "column_width")
+                local col_width_sp = (type(col_width_val) == "number" and col_width_val > 0) and col_width_val or nil
 
-                    -- Record column width (use explicit width if set, else estimate from grid)
+                -- cols_used may be negative when place_nodes triggers page wrap
+                -- (last column fills the page, advancing cur_col to 0 on next page).
+                -- For explicit column_width, always record regardless of cols_used.
+                local cols_used = ctx.cur_col - col_start_col
+                if cols_used <= 0 and ctx.cur_page > col_start_page then
+                    -- Column placed on col_start_page, but cursor wrapped to next page.
+                    -- The column was valid (1 column used on start page).
+                    cols_used = 1
+                end
+
+                if cols_used > 0 and (ctx.is_free_mode or col_width_sp) then
                     local g_width = get_grid_width(params, 0)
                     local actual_width_sp = col_width_sp or (cols_used * g_width)
 
-                    -- Add spacing to column width (spacing-top = right margin, spacing-bottom = left margin)
                     local sp_top = style_id and style_reg.get_spacing_top(style_id) or 0
                     local sp_bot = style_id and style_reg.get_spacing_bottom(style_id) or 0
                     local total_width_sp = actual_width_sp + (sp_top or 0) + (sp_bot or 0)
 
-                    -- Initialize page array if needed
                     ctx.col_widths_sp[col_start_page] = ctx.col_widths_sp[col_start_page] or {}
-                    ctx.col_widths_sp[col_start_page][col_start_col + 1] = total_width_sp  -- 1-indexed for render-position
+                    ctx.col_widths_sp[col_start_page][col_start_col + 1] = total_width_sp
 
-                    -- Record spacing separately for render-position offset calculation
                     ctx.col_spacing_top_sp[col_start_page] = ctx.col_spacing_top_sp[col_start_page] or {}
                     ctx.col_spacing_top_sp[col_start_page][col_start_col + 1] = sp_top or 0
                     ctx.col_spacing_bottom_sp[col_start_page] = ctx.col_spacing_bottom_sp[col_start_page] or {}
                     ctx.col_spacing_bottom_sp[col_start_page][col_start_col + 1] = sp_bot or 0
 
-                    -- Accumulate for page wrap decision
-                    ctx.accumulated_width_sp = ctx.accumulated_width_sp + total_width_sp
+                    if ctx.is_free_mode then
+                        ctx.accumulated_width_sp = ctx.accumulated_width_sp + total_width_sp
+                    end
                 end
             end
             goto start_of_loop
@@ -2269,13 +2276,68 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
 
     export_free_mode_data(ctx, layout_map, params)
 
-    -- Free mode: re-compute pos.x for all layout_map entries now that col_widths_sp is complete.
+    -- Re-compute pos.x for all layout_map entries now that col_widths_sp is complete.
     -- During layout, compute_x() may see incomplete col_widths_sp (missing entries for columns
     -- that were broken via penalty rather than natural overflow).
-    if ctx.is_free_mode then
-        for _, pos in pairs(layout_map) do
-            if pos.page ~= nil and pos.col ~= nil then
-                pos.x = h.compute_x(pos.col, pos.page, ctx)
+    -- Also applies to non-Free Mode pages with \行[width=...] (e.g. TitlePage).
+    do
+        local has_widths = ctx.is_free_mode
+        if not has_widths then
+            for _ in pairs(ctx.col_widths_sp) do has_widths = true; break end
+        end
+        if has_widths then
+            -- Pre-compute per-page content_width (sum of col_widths_sp)
+            -- and count how many columns each page has in col_widths_sp
+            local page_cw_sum = {}
+            local page_cw_count = {}
+            for pg, cols in pairs(ctx.col_widths_sp) do
+                local sum_w = 0
+                local count = 0
+                for _, w in pairs(cols) do sum_w = sum_w + w; count = count + 1 end
+                page_cw_sum[pg] = sum_w
+                page_cw_count[pg] = count
+            end
+            -- Count actual columns per page from layout_map (max col + 1)
+            local page_max_col = {}
+            for _, pos in pairs(layout_map) do
+                if pos.page ~= nil and pos.col ~= nil then
+                    local prev = page_max_col[pos.page]
+                    if not prev or pos.col > prev then
+                        page_max_col[pos.page] = pos.col
+                    end
+                end
+            end
+            -- Determine which pages have ALL columns covered by col_widths_sp
+            -- (e.g. TitlePage). Pages with only partial coverage use uniform grid_width.
+            local page_all_covered = {}
+            if not ctx.is_free_mode then
+                for pg, count in pairs(page_cw_count) do
+                    local max_col = page_max_col[pg] or 0
+                    if count >= max_col + 1 then
+                        page_all_covered[pg] = true
+                    end
+                end
+            end
+            for _, pos in pairs(layout_map) do
+                if pos.page ~= nil and pos.col ~= nil then
+                    -- Re-compute pos.x / col_width / content_width only for:
+                    -- 1) Free Mode pages (all cols computed from content width)
+                    -- 2) Pages where ALL columns have col_widths_sp entries (TitlePage)
+                    -- Skip pages with only partial col_widths_sp (e.g. \行[column-width=50pt])
+                    -- — those use uniform grid_width and don't need pos.x re-computation.
+                    if ctx.is_free_mode or page_all_covered[pos.page] then
+                        pos.x = h.compute_x(pos.col, pos.page, ctx)
+                        local cws = ctx.col_widths_sp[pos.page]
+                        local cw = cws and cws[pos.col + 1]
+                        if cw and cw > 0 then
+                            pos.col_width = cw
+                        end
+                        -- Store page content_width for non-Free Mode (TitlePage)
+                        if not ctx.is_free_mode and page_cw_sum[pos.page] then
+                            pos.content_width = page_cw_sum[pos.page]
+                        end
+                    end
+                end
             end
         end
     end

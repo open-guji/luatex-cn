@@ -107,6 +107,12 @@ local function handle_glyph_node(curr, p_head, pos, params, ctx)
     glyph_params.band_y_offset_sp = pos.band_y_offset_sp or 0
     -- RTL pos.x from layout_map (nil triggers legacy fallback in calc_grid_position)
     glyph_params.pos_x = pos.x
+    -- Per-entry col_width from layout_map (set for variable-width columns: Free Mode, TitlePage)
+    glyph_params.pos_col_width = pos.col_width
+    -- Per-entry content_width override (sum of col_widths for variable-width pages)
+    if pos.content_width then
+        glyph_params.content_width = pos.content_width
+    end
 
     local final_x, final_y = text_position.calc_grid_position(pos.col, glyph_dims, glyph_params)
     if glyph_style then
@@ -337,27 +343,17 @@ local function process_page_nodes(p_head, layout_map, params, ctx)
     glyph_params.half_thickness = ctx.half_thickness
     glyph_params.col_geom = ctx.col_geom
     glyph_params.body_font_size = ctx.body_font_size
-    -- Phase 2.4: Prefer Free Mode col_widths_sp[page], fall back to TitlePage col_widths
+    -- P2: col_widths from col_widths_sp (Free Mode / TitlePage \行[width=...])
     -- TextBox has its own grid_width; never use outer content's col_widths
-    -- NOTE: Cannot use `ctx.is_textbox and nil or X` because nil is falsy in Lua,
-    -- causing the or-branch to always execute. Use explicit if/else instead.
     if ctx.is_textbox then
         glyph_params.col_widths = nil
     else
-        glyph_params.col_widths = ctx.page_col_widths_sp or (_G.content and _G.content.col_widths)
+        glyph_params.col_widths = ctx.page_col_widths_sp
     end
     -- RTL pos.x support: content_width and shift_x_base for coordinate conversion.
-    -- Disable pos.x path only for legacy TitlePage col_widths (not from Free Mode).
-    -- Legacy col_widths have variable widths that don't match pos_x's uniform computation.
-    local has_free_mode_widths = ctx.page_col_widths_sp and next(ctx.page_col_widths_sp)
-    local has_legacy_col_widths = not has_free_mode_widths and glyph_params.col_widths
-    if has_legacy_col_widths then
-        glyph_params.content_width = nil
-        glyph_params.shift_x_base = nil
-    else
-        glyph_params.content_width = ctx.content_width
-        glyph_params.shift_x_base = ctx.shift_x_base
-    end
+    -- All pages (uniform, Free Mode, TitlePage) use pos_x path.
+    glyph_params.content_width = ctx.content_width
+    glyph_params.shift_x_base = ctx.shift_x_base
     -- Column spacing for glyph offset within columns that have spacing
     glyph_params.col_spacing_top = ctx.page_col_spacing_top_sp
     glyph_params.col_spacing_bottom = ctx.page_col_spacing_bottom_sp
@@ -448,7 +444,8 @@ local function process_page_nodes(p_head, layout_map, params, ctx)
                     y_sp = pos.y_sp,
                     band_y_offset_sp = pos.band_y_offset_sp or 0,
                     pos_x = pos.x,
-                    content_width = glyph_params.content_width,
+                    pos_col_width = pos.col_width,
+                    content_width = pos.content_width or glyph_params.content_width,
                     shift_x_base = glyph_params.shift_x_base,
                     col_widths = glyph_params.col_widths,
                 }

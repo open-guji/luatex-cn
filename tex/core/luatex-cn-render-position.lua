@@ -297,20 +297,25 @@ local function calc_grid_position(col, glyph_dims, params)
         -- RTL coordinate path: pos_x from right edge, convert to LTR.
         local content_width = params.content_width
         local shift_x_base = params.shift_x_base or shift_x
-        if col_widths and #col_widths > 0 then
-            col_width = get_column_width_var(col, col_widths)
+        -- Prefer per-entry col_width from layout_map, then col_widths_sp, then uniform col_geom
+        local pcw = params.pos_col_width
+        if pcw and pcw > 0 then
+            col_width = pcw
         else
-            col_width = get_column_width(col, col_geom)
+            local cw = col_widths and col_widths[col + 1]
+            if cw and cw > 0 then
+                col_width = cw
+            else
+                col_width = get_column_width(col, col_geom)
+            end
         end
         base_x = shift_x_base + content_width - params.pos_x - col_width + half_thickness
-        -- Column spacing adjustment for Free Mode
-        if col_widths and #col_widths > 0 then
-            local sp_bottom = params.col_spacing_bottom and params.col_spacing_bottom[col + 1] or 0
-            local sp_top = params.col_spacing_top and params.col_spacing_top[col + 1] or 0
-            if sp_bottom > 0 or sp_top > 0 then
-                base_x = base_x + sp_bottom
-                col_width = col_width - sp_bottom - sp_top
-            end
+        -- Column spacing adjustment
+        local sp_bottom = params.col_spacing_bottom and params.col_spacing_bottom[col + 1] or 0
+        local sp_top = params.col_spacing_top and params.col_spacing_top[col + 1] or 0
+        if sp_bottom > 0 or sp_top > 0 then
+            base_x = base_x + sp_bottom
+            col_width = col_width - sp_bottom - sp_top
         end
     elseif col_widths and #col_widths > 0 then
         -- Legacy variable-width columns mode

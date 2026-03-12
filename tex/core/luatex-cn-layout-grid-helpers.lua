@@ -135,24 +135,33 @@ end
 -- @param ctx (table) Layout context (has params, col_widths_sp, col_interval, col_banxin_width)
 -- @return (number) X coordinate from right edge (sp)
 local function compute_x(col, page, ctx)
-    -- Only use variable-width col_widths_sp in Free Mode.
-    -- Non-free-mode \行[width=...] columns also write to col_widths_sp,
-    -- but only for specific columns — using var mode with incomplete data
-    -- produces wrong results. Non-free-mode always uses uniform calculation.
-    if ctx.is_free_mode then
-        local col_widths = ctx.col_widths_sp and ctx.col_widths_sp[page]
-        if col_widths and next(col_widths) then
-            local x = 0
-            for c = 0, col - 1 do
-                x = x + (col_widths[c + 1] or 0)
-            end
-            return x
-        end
-    end
-    -- Uniform-width column mode with banxin support
+    local col_widths = ctx.col_widths_sp and ctx.col_widths_sp[page]
     local grid_width = get_grid_width(ctx.params, ctx.params.grid_height or 0)
     local interval = ctx.col_interval or 0
     local banxin_width = ctx.col_banxin_width or 0
+    -- Accumulate widths for col 0..col-1.
+    -- Each column uses col_widths_sp if available, else uniform grid_width (with banxin).
+    if col_widths and next(col_widths) then
+        local x = 0
+        for c = 0, col - 1 do
+            local cw = col_widths[c + 1]
+            if cw then
+                x = x + cw
+            elseif interval <= 0 or banxin_width <= 0 or banxin_width == grid_width then
+                x = x + grid_width
+            else
+                -- Banxin: check if column c is a reserved (banxin) column
+                local group_size = interval + 1
+                if (c % group_size) == interval then
+                    x = x + banxin_width
+                else
+                    x = x + grid_width
+                end
+            end
+        end
+        return x
+    end
+    -- Pure uniform-width column mode with banxin support
     if interval <= 0 or banxin_width <= 0 or banxin_width == grid_width then
         return col * grid_width
     end

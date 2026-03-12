@@ -331,16 +331,18 @@ local function render_single_page(p_head, p_max_col, p, layout_map, params, ctx,
     local reserved_cols = grid.get_reserved_cols and grid.get_reserved_cols(p, p_total_cols) or {}
 
     -- Right-align columns within content area BEFORE drawing borders
-    -- Skip TitlePage (has col_widths but NOT page_col_widths_sp)
-    -- Skip TextBox (has its own coordinate system, no right-align needed)
+    -- Skip TextBox (content_width = total_cols * grid_width, no gap to right-align)
     local page_col_widths_sp = (ctx.col_geom and ctx.col_geom.col_widths_sp and ctx.col_geom.col_widths_sp[p]) or nil
-    local has_legacy_col_widths = (_G.content and _G.content.col_widths and next(_G.content.col_widths))
-    local has_free_mode_widths = (page_col_widths_sp and next(page_col_widths_sp))
-    local is_titlepage = has_legacy_col_widths and not has_free_mode_widths
 
-    if not is_titlepage and not page.is_textbox then
+    -- Detect TitlePage: has legacy col_widths (from \行[width=...] in 书名页)
+    -- but NOT from Free Mode (which exports to col_widths_sp instead)
+    local has_free_mode_widths = page_col_widths_sp and next(page_col_widths_sp)
+    local legacy_col_widths = not has_free_mode_widths and _G.content and _G.content.col_widths
+    local is_titlepage = legacy_col_widths and #legacy_col_widths > 0
+
+    if not page.is_textbox and not is_titlepage then
         local total_cols_width_sp
-        if page_col_widths_sp and next(page_col_widths_sp) then
+        if has_free_mode_widths then
             -- Free Mode: sum variable column widths
             total_cols_width_sp = 0
             for _, w in pairs(page_col_widths_sp) do
@@ -458,8 +460,10 @@ local function render_single_page(p_head, p_max_col, p, layout_map, params, ctx,
     -- Original shift_x (without right-align correction) for RTL pos.x conversion
     ctx_node.shift_x_base = ctx.shift_x
     -- Per-page content_width for RTL→LTR coordinate conversion.
-    -- TextBox: total_cols * grid_width (no right-align correction, shift_x = shift_x_base)
+    -- TextBox: total_cols * grid_width
     -- Main content: grid.content_width from page geometry
+    -- Note: pages with variable-width columns (TitlePage, Free Mode) get content_width
+    -- from pos.content_width in layout_map (set during layout re-compute step).
     if page.is_textbox then
         ctx_node.content_width = p_total_cols * grid_width
     else

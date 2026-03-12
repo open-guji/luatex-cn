@@ -73,11 +73,36 @@ jobs:
           zip -r ../../luatex-cn-tex-${{ github.ref_name }}.zip tex/
           cd ../..
 
+      - name: Extract changelog for this version
+        id: changelog
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          # Extract the section for this version from CHANGELOG.md
+          # Match from "## [VERSION]" to the next "## [" or end of file
+          BODY=$(awk -v ver="$VERSION" '
+            /^## \[/ {
+              if (found) exit
+              if (index($0, "[" ver "]")) { found=1; next }
+            }
+            found { print }
+          ' CHANGELOG.md)
+          # Extract the date from the heading
+          DATE=$(grep -oP "^## \[$VERSION\] - \K.*" CHANGELOG.md || echo "")
+          TITLE="${GITHUB_REF_NAME} - ${DATE}"
+          # Write to outputs using delimiter
+          {
+            echo "title=${TITLE}"
+            echo "body<<CHANGELOG_EOF"
+            echo "${BODY}"
+            echo "CHANGELOG_EOF"
+          } >> "$GITHUB_OUTPUT"
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
+          name: ${{ steps.changelog.outputs.title }}
+          body: ${{ steps.changelog.outputs.body }}
           files: luatex-cn-tex-${{ github.ref_name }}.zip
-          generate_release_notes: true
           draft: true
           prerelease: false
         env:

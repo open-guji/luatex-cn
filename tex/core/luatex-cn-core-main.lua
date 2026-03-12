@@ -516,16 +516,13 @@ local function compute_grid_layout(list, params, engine_ctx, plugin_contexts, p_
         engine_ctx.page_columns = max_col + 1
     end
 
-    -- 2.2 Get floating map from textbox plugin context
-    local floating_map = plugin_contexts["textbox"] and plugin_contexts["textbox"].floating_map or {}
-    dbg.log("Stage 2: Calculated floating positions.")
+    dbg.log("Stage 2: Calculated floating positions (written into layout_map).")
 
     return {
         layout_map = layout_map,
         total_pages = total_pages,
         page_chapter_titles = page_chapter_titles,
         banxin_registry = banxin_registry,
-        floating_map = floating_map,
     }
 end
 
@@ -533,7 +530,6 @@ end
 local function generate_physical_pages(list, params, engine_ctx, plugin_contexts, layout_results, p_info)
     local layout_map = layout_results.layout_map
     local total_pages = layout_results.total_pages
-    local floating_map = layout_results.floating_map
 
     local start_page = engine_ctx.start_page_number
 
@@ -601,7 +597,6 @@ local function generate_physical_pages(list, params, engine_ctx, plugin_contexts
         visual = visual_ctx, -- For textbox: explicit params; for non-textbox: minimal (globals used)
 
         plugins = {
-            floating_map = floating_map,
             plugin_contexts = plugin_contexts,
         },
 

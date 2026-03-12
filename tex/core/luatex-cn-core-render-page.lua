@@ -245,7 +245,7 @@ local function group_nodes_by_page(d_head, layout_map, total_pages)
         local pos = layout_map[t]
         D.setnext(t, nil)
 
-        if pos then
+        if pos and pos.mode ~= "floating" then
             local p = pos.page or 0
             if page_nodes[p] then
                 if not page_nodes[p].head then
@@ -463,12 +463,10 @@ local function render_single_page(p_head, p_max_col, p, layout_map, params, ctx,
         p_head = linemark_mod.render_line_marks(p_head, ctx_node.line_mark_entries, ctx_node)
     end
 
-    -- Render Floating TextBoxes
-    if plugins.floating_map then
-        for _, item in ipairs(plugins.floating_map) do
-            if item.page == p then
-                p_head = textbox_mod.render_floating_box(p_head, item, params)
-            end
+    -- Render Floating TextBoxes (mode="floating" entries in layout_map)
+    for _, pos in pairs(layout_map) do
+        if pos.mode == "floating" and pos.page == p then
+            p_head = textbox_mod.render_floating_box(p_head, pos, params)
         end
     end
 

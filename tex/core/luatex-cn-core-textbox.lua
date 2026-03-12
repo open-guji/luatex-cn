@@ -426,17 +426,16 @@ local function create_floating_anchor(id)
     return n
 end
 
---- 遍历节点列表查找浮动盒子
+--- 遍历节点列表查找浮动盒子，将结果直接写入 layout_map
 -- 眉批等浮动盒子应该跟随其后面的文本，所以使用 anchor 后面第一个有布局信息的节点的页面
 -- @param list (node) 节点列表头
--- @param layout_map (table) 布局映射表
+-- @param layout_map (table) 布局映射表（直接写入，mode="floating" 条目）
 -- @param registry (table) 浮动盒子注册表
--- @return (table) 浮动盒子位置数组
 local function find_floating_boxes(list, layout_map, registry)
-    local floating_map = {}
-    if not list then return floating_map end
+    if not list then return end
 
     -- 收集待处理的 anchors，它们将在遇到下一个有布局信息的节点时被处理
+    -- 每项：{ fid, anchor_ptr }
     local pending_anchors = {}
 
     local t = D.todirect(list)
@@ -453,13 +452,14 @@ local function find_floating_boxes(list, layout_map, registry)
             for _, anchor in ipairs(pending_anchors) do
                 local item = registry[anchor.fid]
                 if item then
-                    table.insert(floating_map, {
-                        box = item.box,
+                    layout_map[anchor.anchor_ptr] = {
+                        mode = "floating",
                         page = current_page,
                         x = item.x,
                         y = item.y,
+                        box = item.box,
                         ob_extension = item.ob_extension,
-                    })
+                    }
                     dbg.log(string.format("Placed floating box %d on page %d", anchor.fid, current_page))
                 end
             end
@@ -471,7 +471,7 @@ local function find_floating_boxes(list, layout_map, registry)
             local uid = D.getfield(t, "user_id")
             if uid == constants.FLOATING_TEXTBOX_USER_ID then
                 local fid = D.getfield(t, "value")
-                table.insert(pending_anchors, { fid = fid })
+                table.insert(pending_anchors, { fid = fid, anchor_ptr = t })
             end
         end
 
@@ -482,18 +482,17 @@ local function find_floating_boxes(list, layout_map, registry)
     for _, anchor in ipairs(pending_anchors) do
         local item = registry[anchor.fid]
         if item then
-            table.insert(floating_map, {
-                box = item.box,
+            layout_map[anchor.anchor_ptr] = {
+                mode = "floating",
                 page = current_page,
                 x = item.x,
                 y = item.y,
+                box = item.box,
                 ob_extension = item.ob_extension,
-            })
+            }
             dbg.log(string.format("Placed floating box %d on page %d (end of document)", anchor.fid, current_page))
         end
     end
-
-    return floating_map
 end
 
 -- ============================================================================
@@ -567,9 +566,8 @@ end
 -- @param engine_ctx (table) Engine context
 -- @param ctx (table) Plugin context
 function textbox.layout(list, layout_map, engine_ctx, ctx)
-    if not ctx then return end
-    -- Calculate floating positions and store in context
-    ctx.floating_map = find_floating_boxes(list, layout_map, textbox.floating_registry)
+    -- Write floating box entries directly into layout_map (mode="floating")
+    find_floating_boxes(list, layout_map, textbox.floating_registry)
 end
 
 --- Render hook for Textbox (currently unused - floating boxes rendered in render-page)
@@ -653,12 +651,11 @@ function textbox.register_floating_box(box_num, params)
     node.write(create_floating_anchor(id))
 end
 
---- Calculate positions for floating boxes
--- @param layout_map (table) Main layout map
+--- Write floating box positions into layout_map (mode="floating" entries)
+-- @param layout_map (table) Main layout map (written in place)
 -- @param params (table) { list = head_node }
--- @return (table) Array of floating box positions
 function textbox.calculate_floating_positions(layout_map, params)
-    return find_floating_boxes(params.list, layout_map, textbox.floating_registry)
+    find_floating_boxes(params.list, layout_map, textbox.floating_registry)
 end
 
 --- Place a textbox node into the grid

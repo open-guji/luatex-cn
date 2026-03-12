@@ -803,7 +803,8 @@ local function handle_penalty_breaks(p_val, ctx, flush_buffer_fn, p_cols, interv
         ctx.band_heights_sp = band_heights_sp
         ctx.band_y_offsets_sp = band_y_offsets_sp
         ctx.band_line_limits = band_line_limits
-        if tp.column_fill == "page" then
+        local cf = tp.column_fill
+        if cf == "page" then
             ctx.band_cols_per_band = p_cols - ctx.cur_col
         elseif tp.n_columns and tp.n_columns > 0 then
             ctx.band_cols_per_band = tp.n_columns
@@ -844,17 +845,27 @@ local function handle_penalty_breaks(p_val, ctx, flush_buffer_fn, p_cols, interv
         ctx.table_end_col = ctx.cur_col
         ctx.table_end_page = ctx.cur_page
 
+        -- Read column_fill early (needed for both border width and page break)
+        local tparams_cf = (_G.content and _G.content.table_params)
+            and _G.content.table_params.column_fill or nil
+        local is_fill_page = (tparams_cf == "page")
+
         -- Calculate actual table width from col_groups (max across all bands)
         local all_col_groups = (_G.content and _G.content.table_col_groups) or {}
         local actual_band_cols = 0
-        for _, band_groups in pairs(all_col_groups) do
-            local band_cols = 0
-            for i = 1, #band_groups do
-                local w = band_groups[i] or 0
-                band_cols = band_cols + (w > 0 and w or 1)
-            end
-            if band_cols > actual_band_cols then
-                actual_band_cols = band_cols
+        if is_fill_page then
+            -- column_fill=page: table spans all remaining columns
+            actual_band_cols = ctx.band_cols_per_band
+        else
+            for _, band_groups in pairs(all_col_groups) do
+                local band_cols = 0
+                for i = 1, #band_groups do
+                    local w = band_groups[i] or 0
+                    band_cols = band_cols + (w > 0 and w or 1)
+                end
+                if band_cols > actual_band_cols then
+                    actual_band_cols = band_cols
+                end
             end
         end
         if actual_band_cols == 0 then
@@ -901,6 +912,13 @@ local function handle_penalty_breaks(p_val, ctx, flush_buffer_fn, p_cols, interv
         ctx.cur_row = 0
         ctx.cur_y_sp = 0
         ctx.cur_column_indent = 0
+
+        -- column_fill=page: force page break after table
+        if is_fill_page then
+            ctx.cur_col = 0
+            ctx.cur_page = ctx.cur_page + 1
+            ctx.page_has_content = false
+        end
 
         -- Restore saved band state
         if ctx.saved_band_state then

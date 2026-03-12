@@ -38,6 +38,17 @@
 \tl_new:N \l__luatexcn_table_band_border_tl
 \tl_new:N \l__luatexcn_table_column_fill_tl
 
+% Map Chinese column-fill values to English
+\cs_new_protected:Nn \__luatexcn_table_set_column_fill:n
+  {
+    \str_case:nnF {#1}
+      {
+        {页}   { \tl_set:Nn \l__luatexcn_table_column_fill_tl { page } }
+        {頁}   { \tl_set:Nn \l__luatexcn_table_column_fill_tl { page } }
+      }
+      { \tl_set:Nn \l__luatexcn_table_column_fill_tl {#1} }
+  }
+
 \keys_define:nn { luatexcn / table }
   {
     n-bands .int_set:N = \l__luatexcn_table_n_bands_int,
@@ -54,7 +65,7 @@
     column-border .initial:n = {},
     band-border .tl_set:N = \l__luatexcn_table_band_border_tl,
     band-border .initial:n = {},
-    column-fill .tl_set:N = \l__luatexcn_table_column_fill_tl,
+    column-fill .code:n = { \__luatexcn_table_set_column_fill:n {#1} },
     column-fill .initial:n = {},
   }
 
@@ -217,8 +228,8 @@
     表頭欄數 .int_set:N = \l__luatexcn_table_header_rows_int,
     列邊框 .tl_set:N = \l__luatexcn_table_column_border_tl,
     欄邊框 .tl_set:N = \l__luatexcn_table_band_border_tl,
-    列填充 .tl_set:N = \l__luatexcn_table_column_fill_tl,
-    列填滿 .tl_set:N = \l__luatexcn_table_column_fill_tl,
+    列填充 .code:n = { \__luatexcn_table_set_column_fill:n {#1} },
+    列填滿 .code:n = { \__luatexcn_table_set_column_fill:n {#1} },
   }
 
 \keys_define:nn { luatexcn / cell }

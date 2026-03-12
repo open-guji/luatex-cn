@@ -327,6 +327,18 @@ end
 
 _internal.move_to_next_valid_position = move_to_next_valid_position
 
+--- Reset per-column/cell transient state.
+-- Must be called whenever the cursor moves to a new column, cell, or band
+-- to prevent stale state from leaking across boundaries.
+-- @param ctx (table) Grid context
+local function reset_column_transient_state(ctx)
+    ctx.cur_row = 0
+    ctx.cur_y_sp = 0
+    ctx.cur_column_indent = 0
+    ctx.textflow_pending_sub_col = nil
+    ctx.textflow_pending_row_used = nil
+end
+
 --- Wrap cursor to next column (and page if needed)
 -- @param ctx (table) Grid context
 --- Apply band format padding at column/band start.
@@ -364,17 +376,9 @@ local function wrap_to_next_column(ctx, p_cols, interval, grid_height, indent, r
     style_registry.pop_temporary()
 
     ctx.cur_col = ctx.cur_col + 1
-    ctx.cur_row = 0
     ctx.just_wrapped_column = true -- Flag for issue #54 fix
-    -- Always reset Y accumulator on column wrap (unified layout)
-    ctx.cur_y_sp = 0
+    reset_column_transient_state(ctx)
     apply_band_padding(ctx)
-    -- Clear textflow pending state: when a column break occurs, any pending
-    -- "right sub-column waiting for left" state is no longer valid. Without
-    -- this, flush_textflow_pending() would incorrectly advance cur_row in the
-    -- new column (e.g., empty \左小列{} followed by ^^M newline in digital mode).
-    ctx.textflow_pending_sub_col = nil
-    ctx.textflow_pending_row_used = nil
 
     local should_wrap_page = false
 
@@ -555,7 +559,8 @@ local function apply_cell_valign(ctx, layout_map)
         return
     end
 
-    apply_cell_valign_impl(valign, nodes, ctx.col_height_sp or 0, layout_map)
+    local bh = ctx.col_height_sp or 0
+    apply_cell_valign_impl(valign, nodes, bh, layout_map)
 
     ctx.cell_valign_nodes = nil
     ctx.cell_cur_valign = nil
@@ -650,9 +655,7 @@ local function handle_penalty_breaks(p_val, ctx, flush_buffer_fn, p_cols, interv
             flush_buffer_fn()
             apply_cell_valign(ctx, ctx.layout_map)
             ctx.cur_col = ctx.table_start_col or 0
-            ctx.cur_row = 0
-            ctx.cur_y_sp = 0
-            ctx.cur_column_indent = 0
+            reset_column_transient_state(ctx)
             -- Reset table cell index for new band (row)
             if ctx.table_start_col ~= nil then
                 ctx.table_render_cell_idx = 0
@@ -705,10 +708,8 @@ local function handle_penalty_breaks(p_val, ctx, flush_buffer_fn, p_cols, interv
                 ctx.cur_col = band_start + cum
             end
 
-            ctx.cur_row = 0
-            ctx.cur_y_sp = 0
+            reset_column_transient_state(ctx)
             apply_band_padding(ctx)
-            ctx.cur_column_indent = 0
             ctx.table_render_cell_idx = cell_idx + 1
 
             -- Initialize valign tracking for the next cell
@@ -909,9 +910,7 @@ local function handle_penalty_breaks(p_val, ctx, flush_buffer_fn, p_cols, interv
 
         -- Move to next column after the table
         ctx.cur_col = ctx.cur_col + (ctx.cur_row > 0 and 1 or 0)
-        ctx.cur_row = 0
-        ctx.cur_y_sp = 0
-        ctx.cur_column_indent = 0
+        reset_column_transient_state(ctx)
 
         -- column_fill=page: force page break after table
         if is_fill_page then

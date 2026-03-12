@@ -395,17 +395,9 @@ local function process_page_nodes(p_head, layout_map, params, ctx)
                 D.setfield(curr, "shrink", 0)
 
                 -- Calculate grid position (same logic as glyph but simpler - no centering needed)
-                local final_x
-                local cw = _G.content and _G.content.col_widths
-                if cw and #cw > 0 then
-                    local rtl_col = ctx.p_total_cols - 1 - pos.col
-                    final_x = text_position.get_column_x_var(rtl_col, cw, ctx.p_total_cols)
-                        + (ctx.half_thickness or 0) + (ctx.shift_x or 0)
-                else
-                    _, final_x = text_position.calculate_rtl_position(pos.col, ctx.p_total_cols, ctx.col_geom,
-                        ctx.half_thickness, ctx.shift_x)
-                end
-                local final_y = -pos.y_sp - (pos.band_y_offset_sp or 0) - (ctx.shift_y or 0)
+                -- P2: pos.x = grid_x + half_thickness (no shift_x); pos.y already includes shift_y
+                local final_x = pos.x + (ctx.shift_x or 0)
+                local final_y = -(pos.y)
 
                 -- Insert kern to move to correct position, then kern back
                 local k_pre = D.new(constants.KERN)

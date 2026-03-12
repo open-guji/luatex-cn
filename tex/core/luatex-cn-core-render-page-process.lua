@@ -256,8 +256,26 @@ local function handle_debug_drawing(curr, p_head, pos, ctx)
     if show_me then
         local col_widths = glyph_params.col_widths
         local tx_sp, tw_sp
-        -- X: use p_total_cols (render-time dynamic) for correct RTL position in debug rect
-        if col_widths and #col_widths > 0 then
+        -- X: compute column left edge (LTR) and width
+        if glyph_params.content_width and glyph_params.content_width > 0 and pos.x then
+            -- RTL pos.x path: convert to LTR
+            local shift_x_base = glyph_params.shift_x_base or ctx.shift_x
+            if col_widths and #col_widths > 0 then
+                tw_sp = text_position.get_column_width_var(pos.col, col_widths)
+            else
+                tw_sp = text_position.get_column_width(pos.col, ctx.col_geom)
+            end
+            tx_sp = shift_x_base + glyph_params.content_width - pos.x - tw_sp + (ctx.half_thickness or 0)
+            if col_widths and #col_widths > 0 then
+                local sp_bottom = glyph_params.col_spacing_bottom and glyph_params.col_spacing_bottom[pos.col + 1] or 0
+                local sp_top = glyph_params.col_spacing_top and glyph_params.col_spacing_top[pos.col + 1] or 0
+                if sp_bottom > 0 or sp_top > 0 then
+                    tx_sp = tx_sp + sp_bottom
+                    tw_sp = tw_sp - sp_bottom - sp_top
+                end
+            end
+        elseif col_widths and #col_widths > 0 then
+            -- Legacy variable-width columns
             local total_cols = ctx.p_total_cols
             local rtl_col = total_cols - 1 - pos.col
             tx_sp = text_position.get_column_x_var(rtl_col, col_widths, total_cols)
@@ -270,6 +288,7 @@ local function handle_debug_drawing(curr, p_head, pos, ctx)
                 tw_sp = tw_sp - sp_bottom - sp_top
             end
         else
+            -- Legacy uniform-width columns
             _, tx_sp = text_position.calculate_rtl_position(pos.col, ctx.p_total_cols, ctx.col_geom,
                 ctx.half_thickness, ctx.shift_x)
             tw_sp = text_position.get_column_width(pos.col, ctx.col_geom)
@@ -408,10 +427,24 @@ local function process_page_nodes(p_head, layout_map, params, ctx)
                 D.setfield(curr, "stretch", 0)
                 D.setfield(curr, "shrink", 0)
 
-                -- Calculate grid position (same logic as glyph but simpler - no centering needed)
-                -- P2: pos.x = grid_x + half_thickness (no shift_x); pos.y already includes shift_y
-                local final_x = pos.x + (ctx.shift_x or 0)
-                local final_y = -(pos.y)
+                -- Calculate grid position via calc_grid_position (same RTL→LTR as glyph)
+                local glue_dims = { width = glue_width, height = 0, depth = 0 }
+                local glue_p = {
+                    total_cols = ctx.p_total_cols,
+                    shift_x = ctx.shift_x,
+                    shift_y = ctx.shift_y,
+                    half_thickness = ctx.half_thickness,
+                    col_geom = ctx.col_geom,
+                    h_align = "left",
+                    v_align = "top",
+                    y_sp = pos.y_sp,
+                    band_y_offset_sp = pos.band_y_offset_sp or 0,
+                    pos_x = pos.x,
+                    content_width = glyph_params.content_width,
+                    shift_x_base = glyph_params.shift_x_base,
+                    col_widths = glyph_params.col_widths,
+                }
+                local final_x, final_y = text_position.calc_grid_position(pos.col, glue_dims, glue_p)
 
                 -- Insert kern to move to correct position, then kern back
                 local k_pre = D.new(constants.KERN)

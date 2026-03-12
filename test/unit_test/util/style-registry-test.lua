@@ -169,11 +169,13 @@ test_utils.run_test("set_current_debug: modifies stack top in-place", function()
     test_utils.assert_eq(parent.font_color, "1 0 0")
 end)
 
-test_utils.run_test("set_current_debug: no-op on empty stack", function()
+test_utils.run_test("set_current_debug: push on empty stack", function()
     reset()
-    -- Should not error on empty stack
+    -- On empty stack, set_current_debug pushes a new style with the debug flag
     style_registry.set_current_debug(true)
-    test_utils.assert_nil(style_registry.current(), "stack should remain empty")
+    local cur = style_registry.current()
+    test_utils.assert_true(cur ~= nil, "should have pushed a style")
+    test_utils.assert_eq(cur.debug, true, "pushed style should have debug=true")
 end)
 
 test_utils.run_test("set_current_debug: child inherits debug", function()

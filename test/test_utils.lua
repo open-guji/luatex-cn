@@ -303,6 +303,20 @@ function test_utils.assert_true(value, message)
     end
 end
 
+function test_utils.assert_false(value, message)
+    if value then
+        error(string.format("Assertion failed: expected falsy, got '%s'. %s",
+            tostring(value), message or ""), 2)
+    end
+end
+
+function test_utils.assert_not_nil(value, message)
+    if value == nil then
+        error(string.format("Assertion failed: expected non-nil. %s",
+            message or ""), 2)
+    end
+end
+
 function test_utils.assert_nil(value, message)
     if value ~= nil then
         error(string.format("Assertion failed: expected nil, got '%s'. %s",

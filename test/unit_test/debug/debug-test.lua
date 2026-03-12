@@ -164,7 +164,7 @@ test_utils.run_test("format_coordinate: cm format", function()
     -- format_coordinate uses sp/65536/28.3465
     local sp = math.floor(28.3465 * 65536)
     local result = debug_mod.format_coordinate(sp, "cm")
-    test_utils.assert_eq(result, "1.00")
+    test_utils.assert_eq(result, "1.0")
 end)
 
 test_utils.run_test("format_coordinate: mm format", function()

@@ -37,6 +37,7 @@ local function make_penalty_ctx(overrides)
         col_widths_sp = {},
         banxin_registry = {},
         p_cols = 10,
+        n_bands = 1,
         params = { banxin_on = false },
     }
     if overrides then

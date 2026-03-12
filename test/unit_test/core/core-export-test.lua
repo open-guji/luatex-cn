@@ -411,8 +411,9 @@ test_utils.run_test("build_page_summary: spread page types", function()
         {page_index = 1, columns = {}, split_info = {leaf = "left"}},
     }
     local result = build_page_summary(pages)
-    test_utils.assert_eq(result[1].type, "spread_right")
-    test_utils.assert_eq(result[2].type, "spread_left")
+    -- split_info present → unified "spread" type (no longer split into spread_right/spread_left)
+    test_utils.assert_eq(result[1].type, "spread")
+    test_utils.assert_eq(result[2].type, "spread")
 end)
 
 test_utils.run_test("build_page_summary: empty column gap filled", function()

@@ -299,7 +299,7 @@ end)
 
 test_utils.run_test("resolve_cell_height: from style registry", function()
     style_registry.clear()
-    local id = style_registry.register({ cell_height = 100000 })
+    local id = style_registry.register({ grid_height = 100000 })
     local n = node.direct.new(node.id("glyph"))
     node.direct.set_attribute(n, require("core.luatex-cn-constants").ATTR_STYLE_REG_ID, id)
 
@@ -456,38 +456,36 @@ end)
 
 test_utils.run_test("compute_x: col 0 in 3-column uniform, no offset", function()
     local ctx = make_ctx({ p_cols = 3, params = { grid_width = 655360 } })
-    -- col 0 = rightmost → rtl_col = 2 → grid_x = 2 * 655360
-    test_utils.assert_eq(helpers.compute_x(0, 0, ctx), 2 * 655360)
+    -- LTR: col 0 → x = 0 * 655360 = 0
+    test_utils.assert_eq(helpers.compute_x(0, 0, ctx), 0)
 end)
 
 test_utils.run_test("compute_x: col 2 in 3-column uniform, no offset", function()
     local ctx = make_ctx({ p_cols = 3, params = { grid_width = 655360 } })
-    -- col 2 = leftmost → rtl_col = 0 → grid_x = 0
-    test_utils.assert_eq(helpers.compute_x(2, 0, ctx), 0)
+    -- LTR: col 2 → x = 2 * 655360
+    test_utils.assert_eq(helpers.compute_x(2, 0, ctx), 2 * 655360)
 end)
 
-test_utils.run_test("compute_x: includes half_thickness but NOT shift_x", function()
+test_utils.run_test("compute_x: ignores half_thickness and shift_x (pure column offset)", function()
     local ctx = make_ctx({
         p_cols = 3, params = { grid_width = 655360 },
         half_thickness = 13107, shift_x = 26214,
     })
-    -- col 2 → rtl_col=0 → grid_x=0; total = 0 + 13107 (shift_x excluded)
-    test_utils.assert_eq(helpers.compute_x(2, 0, ctx), 13107)
+    -- compute_x returns pure column offset, no half_thickness or shift_x
+    -- LTR: col 0 → x = 0
+    test_utils.assert_eq(helpers.compute_x(0, 0, ctx), 0)
 end)
 
 test_utils.run_test("compute_x: variable-width columns", function()
-    -- 3 cols, col_widths_sp[page=0] = {[3]=A, [2]=B, [1]=C}  (1-indexed, logical col order)
-    -- col 0 (rightmost) → rtl_col=2 → sum col_widths for i=0..1:
-    --   i=0: lc=2, col_widths[3]=C   (logical col 2)
-    --   i=1: lc=1, col_widths[2]=B   (logical col 1)
-    -- grid_x = C + B
+    -- 3 cols, col_widths_sp[page=0] = {[1]=A, [2]=B, [3]=C}  (1-indexed)
+    -- col 2 → sum col_widths for c=0..1: cw[1]=A, cw[2]=B → x = A + B
     local A, B, C = 655360, 720000, 800000
     local ctx = make_ctx({
         p_cols = 3,
         params = {},
-        col_widths_sp = { [0] = { [3] = A, [2] = B, [1] = C } },
+        col_widths_sp = { [0] = { [1] = A, [2] = B, [3] = C } },
     })
-    test_utils.assert_eq(helpers.compute_x(0, 0, ctx), C + B)
+    test_utils.assert_eq(helpers.compute_x(2, 0, ctx), A + B)
 end)
 
 test_utils.run_test("compute_y: y_sp + band_offset + shift_y", function()

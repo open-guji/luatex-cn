@@ -458,10 +458,10 @@ local function render_single_page(p_head, p_max_col, p, layout_map, params, ctx,
     -- Original shift_x (without right-align correction) for RTL pos.x conversion
     ctx_node.shift_x_base = ctx.shift_x
     -- Per-page content_width for RTL→LTR coordinate conversion.
-    -- TextBox has its own coordinate system (total_cols-based), so content_width = 0
-    -- forces calc_grid_position to use legacy fallback.
+    -- TextBox: total_cols * grid_width (no right-align correction, shift_x = shift_x_base)
+    -- Main content: grid.content_width from page geometry
     if page.is_textbox then
-        ctx_node.content_width = 0
+        ctx_node.content_width = p_total_cols * grid_width
     else
         ctx_node.content_width = grid.content_width or ctx.content_width or 0
     end

@@ -210,15 +210,24 @@ local function handle_block_node(curr, p_head, pos, ctx)
     local h = D.getfield(curr, "height") or 0
     local w = D.getfield(curr, "width") or 0
 
-    local rtl_col_left = ctx.p_total_cols - (pos.col + (pos.width or 1))
-    local final_x = text_position.get_column_x(rtl_col_left, ctx.col_geom)
-        + ctx.half_thickness + ctx.shift_x
+    local col_width = text_position.get_column_width(pos.col, ctx.col_geom)
+    local block_width_sp = (pos.width or 1) * col_width
+    local final_x
+    if pos.x and (glyph_params.content_width or 0) > 0 then
+        -- RTL pos.x path: pos.x is right edge of block, block extends left by block_width_sp
+        local shift_x_base = glyph_params.shift_x_base or ctx.shift_x
+        final_x = shift_x_base + glyph_params.content_width - pos.x - block_width_sp + ctx.half_thickness
+    else
+        -- Legacy RTL path
+        local rtl_col_left = ctx.p_total_cols - (pos.col + (pos.width or 1))
+        final_x = text_position.get_column_x(rtl_col_left, ctx.col_geom)
+            + ctx.half_thickness + ctx.shift_x
+    end
 
     -- Center TextBox grid area within outer column.
     local tb_w_attr = D.get_attribute(curr, constants.ATTR_TEXTBOX_WIDTH)
     if tb_w_attr and tb_w_attr > 0 then
-        local col_width = text_position.get_column_width(pos.col, ctx.col_geom)
-        local tb_content_width = (pos.width or 1) * col_width
+        local tb_content_width = block_width_sp
         local tb_grid_w = D.get_attribute(curr, constants.ATTR_TEXTBOX_GRID_WIDTH)
         if tb_grid_w and tb_grid_w > 0 and tb_grid_w < col_width then
             local inner_grid_total = tb_w_attr * tb_grid_w

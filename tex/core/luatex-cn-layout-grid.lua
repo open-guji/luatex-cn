@@ -598,8 +598,11 @@ local function handle_penalty_breaks(p_val, ctx, flush_buffer_fn, p_cols, interv
     elseif p_val == constants.PENALTY_FORCE_COLUMN or p_val == constants.PENALTY_TAITOU then
         -- Forced column break (\换行 command) or taitou column break (\抬头 command)
         flush_buffer_fn()
-        local effective_indent = math.max(ctx.cur_column_indent, 0)
-        if ctx.cur_row > effective_indent then
+        -- Use actual cur_column_indent (not clamped to 0) so that columns with
+        -- taitou (negative indent) are correctly detected as non-empty.
+        -- E.g., \抬头[2]壹贰\\ → cur_column_indent=-2, cur_row=0 → 0 > -2 → wrap.
+        -- Without this, cur_row(0) > max(-2,0)=0 is false → wrap skipped (bug #78).
+        if ctx.cur_row > ctx.cur_column_indent then
             -- Free mode: accumulate column width for page wrap
             if ctx.is_free_mode then
                 local g_w = get_grid_width(ctx.params, grid_height)

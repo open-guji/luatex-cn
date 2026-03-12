@@ -803,7 +803,13 @@ local function handle_penalty_breaks(p_val, ctx, flush_buffer_fn, p_cols, interv
         ctx.band_heights_sp = band_heights_sp
         ctx.band_y_offsets_sp = band_y_offsets_sp
         ctx.band_line_limits = band_line_limits
-        ctx.band_cols_per_band = (tp.n_columns and tp.n_columns > 0) and tp.n_columns or p_cols
+        if tp.column_fill == "page" then
+            ctx.band_cols_per_band = p_cols - ctx.cur_col
+        elseif tp.n_columns and tp.n_columns > 0 then
+            ctx.band_cols_per_band = tp.n_columns
+        else
+            ctx.band_cols_per_band = p_cols
+        end
         ctx.band_mode = "auto"
         ctx.band_gap_sp = band_gap_sp
         ctx.cur_band = 0

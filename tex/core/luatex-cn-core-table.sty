@@ -36,6 +36,7 @@
 \tl_new:N \l__luatexcn_cell_valign_tl
 \tl_new:N \l__luatexcn_table_column_border_tl
 \tl_new:N \l__luatexcn_table_band_border_tl
+\tl_new:N \l__luatexcn_table_column_fill_tl
 
 \keys_define:nn { luatexcn / table }
   {
@@ -53,6 +54,8 @@
     column-border .initial:n = {},
     band-border .tl_set:N = \l__luatexcn_table_band_border_tl,
     band-border .initial:n = {},
+    column-fill .tl_set:N = \l__luatexcn_table_column_fill_tl,
+    column-fill .initial:n = {},
   }
 
 \keys_define:nn { luatexcn / cell }
@@ -116,6 +119,7 @@
         n_columns~=~\l__luatexcn_table_n_cols_lua_tl,
         column_border~=~\tl_if_empty:NTF \l__luatexcn_table_column_border_tl {nil} {\l__luatexcn_table_column_border_tl},
         band_border~=~\tl_if_empty:NTF \l__luatexcn_table_band_border_tl {nil} {\l__luatexcn_table_band_border_tl},
+        column_fill~=~\tl_if_empty:NTF \l__luatexcn_table_column_fill_tl {nil} {"\l__luatexcn_table_column_fill_tl"},
       })
     }
   }
@@ -213,6 +217,8 @@
     表頭欄數 .int_set:N = \l__luatexcn_table_header_rows_int,
     列邊框 .tl_set:N = \l__luatexcn_table_column_border_tl,
     欄邊框 .tl_set:N = \l__luatexcn_table_band_border_tl,
+    列填充 .tl_set:N = \l__luatexcn_table_column_fill_tl,
+    列填滿 .tl_set:N = \l__luatexcn_table_column_fill_tl,
   }
 
 \keys_define:nn { luatexcn / cell }

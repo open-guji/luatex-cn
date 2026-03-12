@@ -2100,13 +2100,17 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
 
             -- For LastColumn, jump to the last column of current half-page
             if is_last_column then
-                -- Calculate last column before banxin (or page end)
-                local last_col = column_mod.find_last_column_in_half_page(
-                    ctx.cur_col, p_cols, interval, get_banxin_on(params))
-                if last_col > ctx.cur_col then
-                    ctx.cur_col = last_col
-                    ctx.cur_row = 0
-                    ctx.cur_y_sp = 0
+                if ctx.is_free_mode then
+                    texio.write_nl("luatex-cn warning: \\末行 (LastColumn) is not supported in Free Mode (n-column=0). Ignored.")
+                else
+                    -- Calculate last column before banxin (or page end)
+                    local last_col = column_mod.find_last_column_in_half_page(
+                        ctx.cur_col, p_cols, interval, get_banxin_on(params))
+                    if last_col > ctx.cur_col then
+                        ctx.cur_col = last_col
+                        ctx.cur_row = 0
+                        ctx.cur_y_sp = 0
+                    end
                 end
             end
 

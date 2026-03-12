@@ -338,12 +338,11 @@ local function process_page_nodes(p_head, layout_map, params, ctx)
         glyph_params.col_widths = ctx.page_col_widths_sp or (_G.content and _G.content.col_widths)
     end
     -- RTL pos.x support: content_width and shift_x_base for coordinate conversion.
-    -- Disable pos.x path when col_widths is present (both legacy TitlePage and Free Mode).
-    -- Free Mode uses virtual column numbers (e.g., \末行 → col=9999) that produce
-    -- pos_x values vastly larger than content_width, breaking the RTL→LTR formula.
-    -- Legacy col_widths also have variable widths that don't match pos_x's uniform computation.
-    -- Only enable pos.x path for uniform-width columns (no col_widths).
-    if glyph_params.col_widths then
+    -- Disable pos.x path only for legacy TitlePage col_widths (not from Free Mode).
+    -- Legacy col_widths have variable widths that don't match pos_x's uniform computation.
+    local has_free_mode_widths = ctx.page_col_widths_sp and next(ctx.page_col_widths_sp)
+    local has_legacy_col_widths = not has_free_mode_widths and glyph_params.col_widths
+    if has_legacy_col_widths then
         glyph_params.content_width = nil
         glyph_params.shift_x_base = nil
     else

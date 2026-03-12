@@ -290,12 +290,31 @@ local function calc_grid_position(col, glyph_dims, params)
     }
     local col_widths = params.col_widths
 
-    -- Calculate RTL column position and base X
-    local rtl_col, base_x
+    -- Calculate base X and column width
+    local base_x
     local col_width
-    if col_widths and #col_widths > 0 then
-        -- Variable-width columns mode
-        rtl_col = total_cols - 1 - col
+    if params.pos_x and (params.content_width or 0) > 0 then
+        -- RTL coordinate path: pos_x from right edge, convert to LTR.
+        local content_width = params.content_width
+        local shift_x_base = params.shift_x_base or shift_x
+        if col_widths and #col_widths > 0 then
+            col_width = get_column_width_var(col, col_widths)
+        else
+            col_width = get_column_width(col, col_geom)
+        end
+        base_x = shift_x_base + content_width - params.pos_x - col_width + half_thickness
+        -- Column spacing adjustment for Free Mode
+        if col_widths and #col_widths > 0 then
+            local sp_bottom = params.col_spacing_bottom and params.col_spacing_bottom[col + 1] or 0
+            local sp_top = params.col_spacing_top and params.col_spacing_top[col + 1] or 0
+            if sp_bottom > 0 or sp_top > 0 then
+                base_x = base_x + sp_bottom
+                col_width = col_width - sp_bottom - sp_top
+            end
+        end
+    elseif col_widths and #col_widths > 0 then
+        -- Legacy variable-width columns mode
+        local rtl_col = total_cols - 1 - col
         base_x = get_column_x_var(rtl_col, col_widths, total_cols)
             + (half_thickness or 0) + (shift_x or 0)
         col_width = get_column_width_var(col, col_widths)
@@ -308,7 +327,8 @@ local function calc_grid_position(col, glyph_dims, params)
             col_width = col_width - sp_bottom - sp_top
         end
     else
-        -- Uniform-width columns mode
+        -- Legacy uniform-width columns mode
+        local rtl_col
         rtl_col, base_x = calculate_rtl_position(col, total_cols, col_geom, half_thickness, shift_x)
         col_width = get_column_width(col, col_geom)
     end

@@ -1877,6 +1877,9 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
     local ctx = create_grid_context(params, line_limit, p_cols)
     ctx.banxin_registry = {} -- Track Banxin columns per page
     ctx.is_free_mode = is_free_mode
+    -- P2: Store column geometry in ctx for compute_x (RTL coordinate calculation)
+    ctx.col_interval = interval
+    ctx.col_banxin_width = _G.content and _G.content.banxin_width or (params.grid_width or 0)
 
     -- In free mode, use content_width from three-layer architecture for page wrap
     if is_free_mode then
@@ -2261,6 +2264,17 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
         ctx.cur_page + 1))
 
     export_free_mode_data(ctx, layout_map, params)
+
+    -- Free mode: re-compute pos.x for all layout_map entries now that col_widths_sp is complete.
+    -- During layout, compute_x() may see incomplete col_widths_sp (missing entries for columns
+    -- that were broken via penalty rather than natural overflow).
+    if ctx.is_free_mode then
+        for _, pos in pairs(layout_map) do
+            if pos.page ~= nil and pos.col ~= nil then
+                pos.x = h.compute_x(pos.col, pos.page, ctx)
+            end
+        end
+    end
 
     -- Export band layout info for render layer (border drawing)
     if ctx.n_bands > 1 and _G.content then

@@ -227,6 +227,8 @@ local function calculate_render_context(ctx)
         band_gap_sp = grid.band_gap_sp or 0,
         band_heights_sp = grid.band_heights_sp,
         band_y_offsets_sp = grid.band_y_offsets_sp,
+        -- Content area width for RTL→LTR coordinate conversion
+        content_width = grid.content_width or 0,
     }
 end
 
@@ -451,8 +453,18 @@ local function render_single_page(p_head, p_max_col, p, layout_map, params, ctx,
     -- Pass page-specific column spacing for glyph offset within column
     ctx_node.page_col_spacing_top_sp = (ctx.col_geom and ctx.col_geom.col_spacing_top_sp and ctx.col_geom.col_spacing_top_sp[p]) or nil
     ctx_node.page_col_spacing_bottom_sp = (ctx.col_geom and ctx.col_geom.col_spacing_bottom_sp and ctx.col_geom.col_spacing_bottom_sp[p]) or nil
-    -- Apply the computed right-alignment shift_x
+    -- Apply the computed right-alignment shift_x (for legacy calc_grid_position)
     ctx_node.shift_x = shift_x
+    -- Original shift_x (without right-align correction) for RTL pos.x conversion
+    ctx_node.shift_x_base = ctx.shift_x
+    -- Per-page content_width for RTL→LTR coordinate conversion.
+    -- TextBox has its own coordinate system (total_cols-based), so content_width = 0
+    -- forces calc_grid_position to use legacy fallback.
+    if page.is_textbox then
+        ctx_node.content_width = 0
+    else
+        ctx_node.content_width = grid.content_width or ctx.content_width or 0
+    end
     -- Pass is_textbox flag so process_page_nodes can skip outer col_widths fallback
     ctx_node.is_textbox = page.is_textbox
 

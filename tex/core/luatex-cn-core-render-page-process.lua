@@ -105,6 +105,8 @@ local function handle_glyph_node(curr, p_head, pos, params, ctx)
     glyph_params.cell_width = pos.cell_width
     glyph_params.y_sp = pos.y_sp
     glyph_params.band_y_offset_sp = pos.band_y_offset_sp or 0
+    -- RTL pos.x from layout_map (nil triggers legacy fallback in calc_grid_position)
+    glyph_params.pos_x = pos.x
 
     local final_x, final_y = text_position.calc_grid_position(pos.col, glyph_dims, glyph_params)
     if glyph_style then
@@ -315,6 +317,19 @@ local function process_page_nodes(p_head, layout_map, params, ctx)
         glyph_params.col_widths = nil
     else
         glyph_params.col_widths = ctx.page_col_widths_sp or (_G.content and _G.content.col_widths)
+    end
+    -- RTL pos.x support: content_width and shift_x_base for coordinate conversion.
+    -- Disable pos.x path when col_widths is present (both legacy TitlePage and Free Mode).
+    -- Free Mode uses virtual column numbers (e.g., \末行 → col=9999) that produce
+    -- pos_x values vastly larger than content_width, breaking the RTL→LTR formula.
+    -- Legacy col_widths also have variable widths that don't match pos_x's uniform computation.
+    -- Only enable pos.x path for uniform-width columns (no col_widths).
+    if glyph_params.col_widths then
+        glyph_params.content_width = nil
+        glyph_params.shift_x_base = nil
+    else
+        glyph_params.content_width = ctx.content_width
+        glyph_params.shift_x_base = ctx.shift_x_base
     end
     -- Column spacing for glyph offset within columns that have spacing
     glyph_params.col_spacing_top = ctx.page_col_spacing_top_sp

@@ -125,33 +125,47 @@ local function get_column_x_uniform(rtl_col, params)
     return x
 end
 
---- Compute the grid-relative X coordinate (sp) for a layout_map entry.
--- This is the column's base X position including half_thickness, but WITHOUT shift_x.
--- shift_x is excluded because the render stage may adjust it (e.g. right-align correction).
--- The render stage adds its own shift_x when consuming pos.x.
--- Origin: grid area right edge (including half_thickness offset).
+--- Compute the X coordinate (sp) for a layout_map entry.
+-- Coordinate system: origin at content area right edge, X increases from right to left.
+-- col=0 (rightmost) → x=0, col=1 → x=grid_width, etc.
+-- Does NOT depend on total_cols — each node only needs its own col.
+-- Pure grid coordinate: no half_thickness, no shift_x.
 -- @param col (number) Logical column index (0-indexed, 0 = rightmost)
 -- @param page (number) Page index (0-indexed)
--- @param ctx (table) Layout context (has p_cols, params, col_widths_sp, half_thickness)
--- @return (number) Grid-relative X coordinate (sp)
+-- @param ctx (table) Layout context (has params, col_widths_sp, col_interval, col_banxin_width)
+-- @return (number) X coordinate from right edge (sp)
 local function compute_x(col, page, ctx)
-    local total_cols = ctx.p_cols
-    local rtl_col = total_cols - 1 - col
-    local col_widths = ctx.col_widths_sp and ctx.col_widths_sp[page]
-    local grid_x
-    if col_widths and next(col_widths) then
-        -- Variable-width column mode (Free Mode)
-        grid_x = 0
-        for i = 0, rtl_col - 1 do
-            local lc = total_cols - 1 - i
-            grid_x = grid_x + (col_widths[lc + 1] or 0)
+    -- Only use variable-width col_widths_sp in Free Mode.
+    -- Non-free-mode \行[width=...] columns also write to col_widths_sp,
+    -- but only for specific columns — using var mode with incomplete data
+    -- produces wrong results. Non-free-mode always uses uniform calculation.
+    if ctx.is_free_mode then
+        local col_widths = ctx.col_widths_sp and ctx.col_widths_sp[page]
+        if col_widths and next(col_widths) then
+            local x = 0
+            for c = 0, col - 1 do
+                x = x + (col_widths[c + 1] or 0)
+            end
+            return x
         end
-    else
-        -- Uniform-width column mode
-        grid_x = get_column_x_uniform(rtl_col, ctx.params)
     end
-    -- half_thickness is stable (not affected by render-stage right-align correction)
-    return grid_x + (ctx.half_thickness or 0)
+    -- Uniform-width column mode with banxin support
+    local grid_width = get_grid_width(ctx.params, ctx.params.grid_height or 0)
+    local interval = ctx.col_interval or 0
+    local banxin_width = ctx.col_banxin_width or 0
+    if interval <= 0 or banxin_width <= 0 or banxin_width == grid_width then
+        return col * grid_width
+    end
+    local group_size = interval + 1
+    local full_groups = math.floor(col / group_size)
+    local remainder = col % group_size
+    local x = full_groups * (interval * grid_width + banxin_width)
+    if remainder < interval then
+        x = x + remainder * grid_width
+    else
+        x = x + interval * grid_width
+    end
+    return x
 end
 
 --- Compute the absolute Y coordinate (sp) for a layout_map entry.

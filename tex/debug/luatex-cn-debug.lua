@@ -882,4 +882,146 @@ function debug.draw_table_cells_debug(p_head, ptb, params)
     return p_head
 end
 
+-- ============================================================================
+-- Layout Debug Drawing (unified debug for TextBox blocks, floating boxes, sidenotes)
+-- ============================================================================
+
+--- Draw debug overlay for layout_map entries on a specific page.
+-- Only draws TextBox blocks (is_block), floating TextBoxes (mode="floating"),
+-- and sidenotes. Regular text glyphs are skipped to avoid clutter.
+-- Uses layout_map's pre-computed x/y values directly.
+-- @param p_head (direct node) Page node list head
+-- @param layout_map (table) Node pointer → position mapping
+-- @param page_idx (number) 0-indexed page number
+-- @param params (table) Render context:
+--   - content_width: Total content width in sp (for RTL→LTR conversion)
+--   - shift_x: X base offset in sp (margin etc.)
+--   - shift_y: Y offset in sp
+--   - half_thickness: Border half-thickness in sp
+--   - grid_width: Grid cell width in sp
+--   - grid_height: Grid cell height in sp
+--   - col_geom: Column geometry { grid_width, banxin_width, interval }
+--   - sidenote_map: (optional) sidenote plugin context.map
+--   - p_total_cols: Total columns on page (for sidenote RTL conversion)
+-- @return (direct node) Updated head
+function debug.draw_layout_debug(p_head, layout_map, page_idx, params)
+    local D = node.direct
+    local sp_to_bp = SP_TO_BP
+    local measure = debug.grid_measure or "pt"
+    local label_scale = 0.75
+    local cmds = {}
+    table.insert(cmds, "q")  -- save graphics state
+
+    local content_width = params.content_width or 0
+    local shift_x_base = params.shift_x or 0
+    local half_thickness = params.half_thickness or 0
+    local grid_width = params.grid_width or 0
+    local grid_height = params.grid_height or 0
+
+    -- Helper: draw a labeled rectangle with corner coordinates
+    local function draw_rect_with_label(x_sp, y_sp, w_sp, h_sp, color_cmd, x_label, y_label)
+        local xl = x_sp * sp_to_bp
+        local yt = (-y_sp) * sp_to_bp  -- y_sp positive down → PDF positive up
+        local wb = w_sp * sp_to_bp
+        local hb = h_sp * sp_to_bp  -- h_sp positive → height going down (negative in PDF)
+
+        -- Rectangle outline
+        table.insert(cmds, color_cmd)
+        table.insert(cmds, string.format("%.4f %.4f %.4f %.4f re S", xl, yt, wb, -hb))
+
+        -- Corner cross markers
+        local cross = 3
+        table.insert(cmds, string.format("%.4f %.4f m %.4f %.4f l S", xl - cross, yt, xl + cross, yt))
+        table.insert(cmds, string.format("%.4f %.4f m %.4f %.4f l S", xl, yt - cross, xl, yt + cross))
+
+        -- Coordinate label at top-left (inside)
+        local lo = 3
+        local cx = debug.format_coordinate(x_label, measure)
+        local cy = debug.format_coordinate(y_label, measure)
+        local pair_cmds, _, _ = draw_coordinate_pair(cx, cy, xl + lo, yt - lo, label_scale)
+        if pair_cmds ~= "" then table.insert(cmds, pair_cmds) end
+
+        -- Width label at top center (orange)
+        local cw = debug.format_coordinate(w_sp, measure)
+        local _, w_w = draw_number(cw, 0, 0, label_scale)
+        local w_cmds = draw_number(cw, xl + (wb - w_w) / 2, yt + 2, label_scale)
+        if w_cmds ~= "" then
+            table.insert(cmds, "0.8 0.4 0 RG 0.4 w")  -- orange for dimensions
+            table.insert(cmds, w_cmds)
+        end
+    end
+
+    -- 1. TextBox blocks (is_block = true) — red
+    for _, pos in pairs(layout_map) do
+        if pos.is_block and pos.page == page_idx and pos.x then
+            local cell_w = (pos.width or 1) * grid_width
+            local cell_h = (pos.height or 1) * grid_height
+            local cw = pos.content_width or content_width
+            local ltr_x = shift_x_base + cw - pos.x - cell_w + half_thickness
+            draw_rect_with_label(ltr_x, pos.y, cell_w, cell_h,
+                "1 0 0 RG 0.6 w", pos.x, pos.y)
+        end
+    end
+
+    -- 2. Floating TextBoxes (mode = "floating") — blue cross + coordinates
+    for _, pos in pairs(layout_map) do
+        if pos.mode == "floating" and pos.page == page_idx and pos.x then
+            local cx = debug.format_coordinate(pos.x, measure)
+            local cy = debug.format_coordinate(pos.y, measure)
+
+            local fx = pos.x * sp_to_bp
+            local fy = (-pos.y) * sp_to_bp
+            local cross = 4
+            table.insert(cmds, "0 0 1 RG 0.8 w")
+            table.insert(cmds, string.format("%.4f %.4f m %.4f %.4f l S", fx - cross, fy, fx + cross, fy))
+            table.insert(cmds, string.format("%.4f %.4f m %.4f %.4f l S", fx, fy - cross, fx, fy + cross))
+
+            table.insert(cmds, "0 0 1 RG 0.4 w")
+            local pair_cmds, _, _ = draw_coordinate_pair(cx, cy, fx + cross + 2, fy + 2, label_scale)
+            if pair_cmds ~= "" then table.insert(cmds, pair_cmds) end
+        end
+    end
+
+    -- 3. Sidenotes (from plugin context) — purple
+    local sidenote_map = params.sidenote_map
+    if sidenote_map then
+        local p_total_cols = params.p_total_cols or 0
+        for _, sn_list in pairs(sidenote_map) do
+            for _, node_info in ipairs(sn_list) do
+                if node_info.page == page_idx then
+                    local cell_h = node_info.cell_height or grid_height
+                    local col_geom = params.col_geom
+                    if col_geom then
+                        local text_position = package.loaded['core.luatex-cn-render-position'] or
+                            require('core.luatex-cn-render-position')
+                        local rtl_col = p_total_cols - 1 - node_info.col
+                        local sn_x = text_position.get_column_x(rtl_col, col_geom)
+                            + half_thickness + shift_x_base
+                        local sn_y = node_info.y_sp + (params.shift_y or 0)
+                        local sn_w = col_geom.grid_width
+
+                        draw_rect_with_label(sn_x, sn_y, sn_w, cell_h,
+                            "0.6 0 0.8 RG 0.6 w", node_info.y_sp, node_info.col)
+                    end
+                end
+            end
+        end
+    end
+
+    table.insert(cmds, "Q")  -- restore graphics state
+
+    -- Only insert if we have actual drawing commands (more than just q/Q)
+    if #cmds > 2 then
+        local literal = table.concat(cmds, " ")
+        local whatsit_id_val = node.id("whatsit")
+        local pdf_literal_id_val = node.subtype("pdf_literal")
+        local nn = D.new(whatsit_id_val, pdf_literal_id_val)
+        D.setfield(nn, "data", literal)
+        D.setfield(nn, "mode", 0)
+        p_head = D.insert_before(p_head, p_head, nn)
+    end
+
+    return p_head
+end
+
 return debug

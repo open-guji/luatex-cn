@@ -498,6 +498,24 @@ local function render_single_page(p_head, p_max_col, p, layout_map, params, ctx,
         })
     end
 
+    -- Debug: draw layout debug overlay (TextBox blocks, floating boxes, sidenotes)
+    if debug.is_enabled("layout") then
+        local plugin_ctxs = params.plugins and params.plugins.plugin_contexts
+        local sidenote_map = plugin_ctxs and plugin_ctxs["sidenote"]
+            and plugin_ctxs["sidenote"].map or nil
+        p_head = debug.draw_layout_debug(p_head, layout_map, p, {
+            content_width = ctx_node.content_width,
+            shift_x = ctx.shift_x,
+            shift_y = ctx.shift_y,
+            half_thickness = ctx.half_thickness,
+            grid_width = grid_width,
+            grid_height = grid_height,
+            col_geom = ctx.col_geom,
+            sidenote_map = sidenote_map,
+            p_total_cols = p_total_cols,
+        })
+    end
+
     -- For TextBox: return actual content dimensions, not expanded page dimensions
     -- This ensures TextBox output box has correct dimensions in main document flow
     local return_cols = page.is_textbox and actual_cols or p_total_cols

@@ -4,6 +4,30 @@ English | [中文版](Changelog)
 
 All notable changes to this project will be documented here.
 
+## [0.3.4] - 2026-03-12
+
+New table and genealogy typesetting (experimental).
+
+- ✨ **Table Environment**: Table environment with cell grouping, multi-band layout, band height/column parameters, fine-grained border control
+- ✨ **Band (Horizontal Section)**: Band feature for horizontal sectioning in vertical pages with border rendering
+- ✨ **Ouyang-style Genealogy**: Initial implementation of Ouyang Xiu-style genealogy typesetting, see examples
+- ✨ **Jiazhu Shortcut**: New `\夹注捷径{open}{close}` for custom bracket auto-replacement to `\夹注{}` (fix #76)
+- 🐛 **Taitou Line Break**: Fixed line break failure after taitou when character count ≤ taitou count (fix #78)
+- 🐛 **Jiazhu Key Forwarding**: Fixed jiazhu key system forwarding unknown keys to textflow (fix #81)
+- 🐛 **Footnote Marker**: Fixed inconsistent centering of footnote markers like【一】【二】(fix #77)
+- 🐛 **Table Fixes**: Fixed table cell vertical alignment, band separator position, column border inheritance, multi-table parameter override
+- 🐛 **Layout Fixes**: Fixed extra row in page break/jiazhu/taitou, fixed textflow pending state leak
+- ♻️ **Coordinate System Refactor**: pos.x/pos.y use absolute coordinates, render stage applies unified RTL→LTR conversion
+
+## [0.3.3] - 2026-03-04
+
+Multiple typesetting bug fixes.
+
+- 🐛 **Proper Name Underline**: Fixed proper name mark breaking at every character in natural mode (fix #74)
+- 🐛 **Decoration Symbol Offset**: Fixed horizontal offset for Noto CJK fonts, compatible with different rawdata.descriptions key formats (fix #73)
+- 🐛 **Correction Command**: Fixed `\改` command adding extra spacing and comma position offset in jiazhu (fix #72)
+- 🐛 **Punctuation Detection**: Fixed certain font punctuation marks not being recognized (fix #71)
+
 ## [0.3.2] - 2026-03-02
 
 Full implementation of modern vertical typesetting (Zhonghua Shuju style).

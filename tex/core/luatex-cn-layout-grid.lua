@@ -758,8 +758,17 @@ local function handle_penalty_breaks(p_val, ctx, flush_buffer_fn, p_cols, interv
             col_height_sp = ctx.col_height_sp,
         }
 
-        -- Read table params from _G.content.table_params
-        local tp = (_G.content and _G.content.table_params) or {}
+        -- Dequeue table instance from the FIFO queue
+        local table_mod = require('core.luatex-cn-core-table')
+        local table_instance = table_mod.dequeue_instance()
+        local tp = (table_instance and table_instance.params) or {}
+        -- Install instance data so TABLE_END handler can read col_groups etc.
+        if _G.content and table_instance then
+            _G.content.table_params = table_instance.params
+            _G.content.table_col_groups = table_instance.col_groups
+            _G.content.table_band_formats = table_instance.band_formats
+            _G.content.table_cell_valigns = table_instance.cell_valigns
+        end
         local n_bands = tp.n_bands or 2
         local band_gap_sp = tp.band_gap_sp or 0
         local col_height_sp = ctx.saved_band_state.col_height_sp

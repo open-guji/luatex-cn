@@ -22,6 +22,7 @@
 * [[改字与装饰 | Correction]]
 * [[抬头 | Taitou]]
 * [[文本框 | Textbox]]
+* [[表格 | Table]] <sup>new</sup>
 * [[印章 | Seal]]
 
 ### 参考
@@ -53,6 +54,7 @@
     * [[Judou | EN:Judou]]
     * [[Fonts | EN:Fonts]]
     * [[Textbox | EN:Textbox]]
+    * [[Table | EN:Table]] <sup>new</sup>
     * [[Correction & Decoration | EN:Correction]]
     * [[Elevation | EN:Taitou]]
 * [[Debug Mode | EN:Debug]]

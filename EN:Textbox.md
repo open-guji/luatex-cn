@@ -29,12 +29,28 @@ The `\TextBox` (or `\文本框`) command creates an independent vertical text ar
 - **Compression (Flat Text)**: If `height` is fixed and content is too long, text is vertically compressed (v0.1.5).
 - **Independent Indentation** (v0.2.2+): Textbox content no longer inherits paragraph indentation from main text, ensuring layout independence (fix #37).
 
-## Bordered Text / Moquan (v0.3.2+)
+## Border Shortcut Commands (v0.3.2+, extended in v0.3.4)
 
-`\墨围` (`\bordered`) is a shortcut for a thin rectangular border, used to highlight labels like "索隱" (Commentary), "集解" (Collected Explanations), etc.
+Quick commands for adding borders and/or inverted (white-on-black) effects to inline labels. Size is automatically calculated based on content.
+
+### Command Overview
+
+| Command | English | Traditional | Effect |
+|---------|---------|-------------|--------|
+| `\墨围{text}` | `\bordered` | `\墨圍` | Rectangular black border |
+| `\反白{text}` | `\inverted` | — | White text on black (no border) |
+| `\墨围反白{text}` | `\borderedInverted` | `\墨圍反白` | Rectangular border + inverted |
+| `\八角墨围{text}` | `\octagonBordered` | `\八角墨圍` | Octagonal border |
+| `\八角墨围反白{text}` | `\octagonBorderedInverted` | `\八角墨圍反白` | Octagonal border + inverted |
+| `\带圈{text}` | `\circled` | `\帶圈` | Circular border |
+
+### Usage
 
 ```latex
 \墨围{集解}裴駰曰……
+\反白{正義}張守節曰……
+\八角墨围{校勘}此字疑誤……
+\带圈{一}
 ```
 
 ### Border Padding Control

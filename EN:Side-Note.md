@@ -81,6 +81,48 @@ v0.2.1 introduced the style registry mechanism. Side note color settings now per
 
 ---
 
+## Jiazhu Shortcut <sup>v0.3.4+</sup>
+
+The `\jiazhuShortcut` command registers a bracket pair so that matching brackets in source code are automatically replaced with `\夹注{...}`, simplifying input when there are many interlinear notes.
+
+### Usage
+
+```latex
+% Default: 【...】 becomes \夹注{...}
+\jiazhuShortcut
+
+% Custom bracket pair
+\jiazhuShortcut{（}{）}
+
+% With style parameters: all shortcuts use the specified style
+\jiazhuShortcut[font-color=red, font-size=9pt]{（}{）}
+```
+
+### Effect
+
+After registration, this source code:
+```latex
+Main text【annotation content】continued text
+```
+is equivalent to:
+```latex
+Main text\夹注{annotation content}continued text
+```
+
+### Aliases
+
+| English | Simplified | Traditional |
+|---------|------------|-------------|
+| `\jiazhuShortcut` | `\夹注捷径` | `\夾注捷徑` |
+
+### Notes
+
+- Based on `process_input_buffer` preprocessing (text replacement before TeX parsing)
+- Multiple bracket pairs can be registered simultaneously
+- Optional parameters support all jiazhu parameters (font-size, font, color, align, etc.)
+
+---
+
 ## Technical Implementation (For Developers)
 - **Interlinear Notes**: Uses LuaTeX attributes to mark nodes. During layout, the system detects these attributes, pauses normal typesetting, and calls `core_textflow.lua` for column splitting and re-mapping to the grid. Migrated to style stack architecture since v0.2.1.
 - **Side Notes**: Managed by `core_sidenote.lua`. It captures the content as an independent box and calculates the offset based on the current reference character's coordinates. Supports Phase 2 style registry for color preservation since v0.2.1.

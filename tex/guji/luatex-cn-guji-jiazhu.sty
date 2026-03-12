@@ -23,6 +23,9 @@
 \RequirePackage{core/luatex-cn-core-textflow}
 
 % Global Jiazhu Parameters (moved from vertical.sty)
+% Jiazhu-specific keys set default values for textflow.
+% Keys not defined here are forwarded to luatexcn/textflow via .unknown handler,
+% so jiazhu automatically supports all textflow keys without manual sync.
 \tl_new:N \l__luatexcn_jiazhu_size_tl
 \tl_new:N \l__luatexcn_jiazhu_font_tl
 \tl_new:N \l__luatexcn_jiazhu_font_color_tl
@@ -38,12 +41,18 @@
     font-color .initial:n = {},
     align .tl_set:N = \l__luatexcn_jiazhu_align_tl,
     align .initial:n = {outward},
+    % Forward unknown keys to textflow (auto-balance, grid-height, etc.)
+    unknown .code:n =
+      {
+        \keys_set:nx { luatexcn / textflow }
+          { \l_keys_key_str = { \exp_not:n {#1} } }
+      },
   }
 
 \NewDocumentCommand{\jiazhuSetup}{ m }
   {
     \keys_set:nn { luatexcn / jiazhu } { #1 }
-    % Set core layer defaults (proper dependency direction: guji -> core)
+    % Sync jiazhu-specific defaults to textflow core layer
     \tl_set_eq:NN \l__luatexcn_textflow_default_size_tl \l__luatexcn_jiazhu_size_tl
     \tl_set_eq:NN \l__luatexcn_textflow_default_font_tl \l__luatexcn_jiazhu_font_tl
     \tl_set_eq:NN \l__luatexcn_textflow_default_color_tl \l__luatexcn_jiazhu_font_color_tl

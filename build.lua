@@ -68,6 +68,9 @@ local translation_map = {
   ["四库全书简明目录"] = "siku-jianming-mulu",
   ["目录.tex"] = "mulu.tex",
   ["目录.pdf"] = "mulu.pdf",
+  ["欧式族谱"] = "ouyang-zupu",
+  ["族谱.tex"] = "zupu.tex",
+  ["族谱.pdf"] = "zupu.pdf",
 }
 
 -- Check if string contains Chinese characters

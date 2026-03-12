@@ -19,7 +19,7 @@
 \RequirePackage{expl3}
 \RequirePackage{l3keys2e}
 \RequirePackage{core/luatex-cn-core-template}
-\ProvidesExplClass {ltc-guji-digital} {2026/03/04} {0.3.3}
+\ProvidesExplClass {ltc-guji-digital} {2026/03/12} {0.3.4}
   {Ancient Chinese Book Digitization Class}
 
 % ============================================================================

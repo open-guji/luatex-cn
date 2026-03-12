@@ -334,7 +334,9 @@ _internal.move_to_next_valid_position = move_to_next_valid_position
 local function reset_column_transient_state(ctx)
     ctx.cur_row = 0
     ctx.cur_y_sp = 0
-    ctx.cur_column_indent = 0
+    -- NOTE: cur_column_indent is NOT reset here because wrap_to_next_column
+    -- has its own conditional logic (reset_indent / negative-indent check).
+    -- Callers that need indent reset should do ctx.cur_column_indent = 0 explicitly.
     ctx.textflow_pending_sub_col = nil
     ctx.textflow_pending_row_used = nil
 end
@@ -656,6 +658,7 @@ local function handle_penalty_breaks(p_val, ctx, flush_buffer_fn, p_cols, interv
             apply_cell_valign(ctx, ctx.layout_map)
             ctx.cur_col = ctx.table_start_col or 0
             reset_column_transient_state(ctx)
+            ctx.cur_column_indent = 0
             -- Reset table cell index for new band (row)
             if ctx.table_start_col ~= nil then
                 ctx.table_render_cell_idx = 0
@@ -715,6 +718,7 @@ local function handle_penalty_breaks(p_val, ctx, flush_buffer_fn, p_cols, interv
             end
 
             reset_column_transient_state(ctx)
+            ctx.cur_column_indent = 0
             apply_band_padding(ctx)
             ctx.table_render_cell_idx = cell_idx + 1
 
@@ -917,6 +921,7 @@ local function handle_penalty_breaks(p_val, ctx, flush_buffer_fn, p_cols, interv
         -- Move to next column after the table
         ctx.cur_col = ctx.cur_col + (ctx.cur_row > 0 and 1 or 0)
         reset_column_transient_state(ctx)
+        ctx.cur_column_indent = 0
 
         -- column_fill=page: force page break after table
         if is_fill_page then

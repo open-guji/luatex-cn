@@ -171,6 +171,53 @@ local function draw_column_borders(p_head, params)
             end
         end
 
+        -- Restore vertical edges at table boundaries where column border
+        -- rectangles are absent (all bands skipped). The boundary between
+        -- table columns (column_border=false) and non-table columns (with borders)
+        -- or page edges needs vertical lines so the frame remains closed.
+        if #segments == 0 and table_start_col and actual_band_cols then
+            local table_end_col = table_start_col + actual_band_cols  -- exclusive
+            local ty_bp = -(half_thickness + outer_shift) * sp_to_bp
+            local th_sp = content_dim_h
+
+            -- Left edge of table region (high col = leftmost in RTL layout)
+            -- Draw if table extends to page left boundary (col == total_cols - 1)
+            -- or if the column to the left is non-table or banxin
+            local left_col = table_end_col - 1  -- highest col in table
+            if left_col >= 0 then
+                local need_left = (left_col == total_cols - 1) or
+                    (left_col + 1 < total_cols and (not (left_col + 1 >= table_start_col and left_col + 1 < table_end_col) or banxin_cols[left_col + 1]))
+                if need_left then
+                    local rtl_col = total_cols - 1 - left_col
+                    local lx = text_position.get_column_x(rtl_col, col_geom)
+                    local line_x_bp = (lx + half_thickness + shift_x) * sp_to_bp
+                    local literal = string.format("q %.2f w %s RG %.4f %.4f m %.4f %.4f l S Q",
+                        b_thickness_bp, border_rgb_str,
+                        line_x_bp, ty_bp, line_x_bp, ty_bp - th_sp * sp_to_bp)
+                    p_head = utils.insert_pdf_literal(p_head, literal)
+                end
+            end
+
+            -- Right edge of table region (low col = rightmost in RTL layout)
+            -- Draw if table extends to page right boundary (col == 0)
+            -- or if the column to the right is non-table or banxin
+            local right_col = table_start_col  -- lowest col in table
+            if right_col >= 0 then
+                local need_right = (right_col == 0) or
+                    (right_col - 1 >= 0 and (not (right_col - 1 >= table_start_col and right_col - 1 < table_end_col) or banxin_cols[right_col - 1]))
+                if need_right then
+                    local rtl_col = total_cols - 1 - right_col
+                    local rx = text_position.get_column_x(rtl_col, col_geom)
+                    local rw = text_position.get_column_width(right_col, col_geom)
+                    local line_x_bp = (rx + rw + half_thickness + shift_x) * sp_to_bp
+                    local literal = string.format("q %.2f w %s RG %.4f %.4f m %.4f %.4f l S Q",
+                        b_thickness_bp, border_rgb_str,
+                        line_x_bp, ty_bp, line_x_bp, ty_bp - th_sp * sp_to_bp)
+                    p_head = utils.insert_pdf_literal(p_head, literal)
+                end
+            end
+        end
+
         -- Restore horizontal edges at content area boundaries where column border
         -- rectangles are absent (skipped bands). Use full-width horizontal lines
         -- (same style as band dividers) so they are visually consistent.

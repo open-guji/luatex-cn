@@ -205,8 +205,8 @@
 
 \keys_define:nn { luatexcn / band-format }
   {
-    列边框 .tl_set:N = \l__luatexcn_bandformat_column_border_tl,
-    列邊框 .tl_set:N = \l__luatexcn_bandformat_column_border_tl,
+    行边框 .tl_set:N = \l__luatexcn_bandformat_column_border_tl,
+    行邊框 .tl_set:N = \l__luatexcn_bandformat_column_border_tl,
     上填充 .tl_set:N = \l__luatexcn_bandformat_padding_top_tl,
     下填充 .tl_set:N = \l__luatexcn_bandformat_padding_bottom_tl,
     填充 .meta:n = { padding-top = #1, padding-bottom = #1 },
@@ -217,33 +217,27 @@
     分栏 .int_set:N = \l__luatexcn_table_n_bands_int,
     栏间距 .tl_set:N = \l__luatexcn_table_band_gap_tl,
     栏高度 .tl_set:N = \l__luatexcn_table_band_heights_tl,
-    列数 .tl_set:N = \l__luatexcn_table_n_cols_tl,
+    行数 .tl_set:N = \l__luatexcn_table_n_cols_tl,
     表头栏数 .int_set:N = \l__luatexcn_table_header_rows_int,
-    列边框 .tl_set:N = \l__luatexcn_table_column_border_tl,
+    行边框 .tl_set:N = \l__luatexcn_table_column_border_tl,
     栏边框 .tl_set:N = \l__luatexcn_table_band_border_tl,
     分欄 .int_set:N = \l__luatexcn_table_n_bands_int,
     欄間距 .tl_set:N = \l__luatexcn_table_band_gap_tl,
     欄高度 .tl_set:N = \l__luatexcn_table_band_heights_tl,
-    列數 .tl_set:N = \l__luatexcn_table_n_cols_tl,
+    行數 .tl_set:N = \l__luatexcn_table_n_cols_tl,
     表頭欄數 .int_set:N = \l__luatexcn_table_header_rows_int,
-    列邊框 .tl_set:N = \l__luatexcn_table_column_border_tl,
+    行邊框 .tl_set:N = \l__luatexcn_table_column_border_tl,
     欄邊框 .tl_set:N = \l__luatexcn_table_band_border_tl,
-    列填充 .code:n = { \__luatexcn_table_set_column_fill:n {#1} },
-    列填滿 .code:n = { \__luatexcn_table_set_column_fill:n {#1} },
+    行填充 .code:n = { \__luatexcn_table_set_column_fill:n {#1} },
+    行填滿 .code:n = { \__luatexcn_table_set_column_fill:n {#1} },
   }
 
 \keys_define:nn { luatexcn / cell }
   {
-    列宽 .tl_set:N = \l__luatexcn_cell_col_width_tl,
-    列寬 .tl_set:N = \l__luatexcn_cell_col_width_tl,
+    行宽 .tl_set:N = \l__luatexcn_cell_col_width_tl,
+    行寬 .tl_set:N = \l__luatexcn_cell_col_width_tl,
     纵对齐 .tl_set:N = \l__luatexcn_cell_valign_tl,
     縱對齊 .tl_set:N = \l__luatexcn_cell_valign_tl,
-  }
-
-\keys_define:nn { luatexcn / band-format }
-  {
-    列边框 .tl_set:N = \l__luatexcn_bandformat_column_border_tl,
-    列邊框 .tl_set:N = \l__luatexcn_bandformat_column_border_tl,
   }
 
 \ExplSyntaxOff

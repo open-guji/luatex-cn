@@ -12,15 +12,15 @@
 % See the License for the specific language governing permissions and
 % limitations under the License.
 % luatex-cn-core-sidenote.sty
-% SideNode (侧批) support for vertical typesetting
+% Sidenote (侧批) support for vertical typesetting
 % This is a subpackage of luatex_cn
 %
 \RequirePackage{core/luatex-cn-core-base}
 \RequirePackage{expl3}
 \RequirePackage{xparse}
-\ProvidesExplPackage {core/luatex-cn-core-sidenote} {2026/03/12} {0.3.4} {SideNode Support for Vertical Typesetting}
+\ProvidesExplPackage {core/luatex-cn-core-sidenote} {2026/03/12} {0.3.4} {Sidenote Support for Vertical Typesetting}
 
-% Define keys for SideNode
+% Define keys for Sidenote
 \tl_new:N \l__luatexcn_sidenote_yshift_tl
 \tl_new:N \l__luatexcn_sidenote_grid_height_tl
 \tl_new:N \l__luatexcn_sidenote_font_size_tl
@@ -28,7 +28,7 @@
 \tl_new:N \l__luatexcn_sidenote_padding_top_tl
 \tl_new:N \l__luatexcn_sidenote_padding_bottom_tl
 
-\keys_define:nn { luatexcn / sidenode }
+\keys_define:nn { luatexcn / sidenote }
   {
     yshift .tl_set:N = \l__luatexcn_sidenote_yshift_tl,
     yshift .initial:n = 0pt,
@@ -43,12 +43,12 @@
     border-padding-bottom .initial:n = 0pt,
   }
 
-\NewDocumentCommand{\sidenodeSetup}{ m }
+\NewDocumentCommand{\sidenoteSetup}{ m }
   {
-    \keys_set:nn { luatexcn / sidenode } { #1 }
+    \keys_set:nn { luatexcn / sidenote } { #1 }
   }
 
-\NewDocumentCommand{\SideNode}{ O{} +m }{%
+\NewDocumentCommand{\Sidenote}{ O{} +m }{%
   \group_begin:
     % Process optional argument: handle positional parameter (plain number → em)
     \tl_if_empty:nTF { #1 }
@@ -61,18 +61,18 @@
           {
             % Plain number: convert to em
             \tl_set:Nn \l_tmpa_tl { yshift = #1 em }
-            \keys_set:nn { luatexcn / sidenode } { yshift = #1 em }
+            \keys_set:nn { luatexcn / sidenote } { yshift = #1 em }
           }
           {
             % Not a plain number: check if it has '='
             \regex_match:nnTF { = } { #1 }
               {
                 % Contains '=': use as-is (named parameter like color=red)
-                \keys_set:nn { luatexcn / sidenode } { #1 }
+                \keys_set:nn { luatexcn / sidenote } { #1 }
               }
               {
                 % No '=': treat as positional yshift with units
-                \keys_set:nn { luatexcn / sidenode } { yshift = #1 }
+                \keys_set:nn { luatexcn / sidenote } { yshift = #1 }
               }
           }
       }
@@ -110,18 +110,18 @@
 % Chinese aliases / 中文别名
 % ============================================================
 % Simplified Chinese / 简体
-\NewCommandCopy{\侧批}{\SideNode}
-\NewCommandCopy{\CePi}{\SideNode}
-\NewCommandCopy{\侧批设置}{\sidenodeSetup}
+\NewCommandCopy{\侧批}{\Sidenote}
+\NewCommandCopy{\CePi}{\Sidenote}
+\NewCommandCopy{\侧批设置}{\sidenoteSetup}
 % Traditional Chinese / 繁体
-\NewCommandCopy{\側批}{\SideNode}
-\NewCommandCopy{\側批設置}{\sidenodeSetup}
+\NewCommandCopy{\側批}{\Sidenote}
+\NewCommandCopy{\側批設置}{\sidenoteSetup}
 
 % ============================================================
 % Chinese key aliases / 中文 Key 别名
 % ============================================================
 \ExplSyntaxOn
-\keys_define:nn { luatexcn / sidenode }
+\keys_define:nn { luatexcn / sidenote }
   {
     % 简体
     纵移 .tl_set:N = \l__luatexcn_sidenote_yshift_tl,

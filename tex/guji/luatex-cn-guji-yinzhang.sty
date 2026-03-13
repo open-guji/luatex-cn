@@ -25,14 +25,15 @@
 % YinZhang (印章) Command - Add seal/stamp overlay on specified page
 % ============================================================================
 
-% Declare global variables for YinZhang
-\int_new:N \g_luatexcn_yinzhang_target_page_int
-\tl_new:N \g_luatexcn_yinzhang_image_path_tl
-\tl_new:N \g_luatexcn_yinzhang_opacity_tl
-\tl_new:N \g_luatexcn_yinzhang_xshift_tl
-\tl_new:N \g_luatexcn_yinzhang_yshift_tl
-\tl_new:N \g_luatexcn_yinzhang_width_tl
-\tl_new:N \g_luatexcn_yinzhang_color_tl
+% Local variables for YinZhang key parsing
+\int_new:N \l_luatexcn_yinzhang_page_int
+\tl_new:N \l_luatexcn_yinzhang_opacity_tl
+\tl_new:N \l_luatexcn_yinzhang_xshift_tl
+\tl_new:N \l_luatexcn_yinzhang_yshift_tl
+\tl_new:N \l_luatexcn_yinzhang_width_tl
+\tl_new:N \l_luatexcn_yinzhang_color_tl
+% Temporary tl for computed target page
+\tl_new:N \l__luatexcn_yinzhang_target_page_tl
 
 \keys_define:nn { luatexcn / yinzhang }
   {
@@ -68,11 +69,11 @@
     % Parse options
     \keys_set:nn { luatexcn / yinzhang } { #1 }
 
-    % Store parameters globally for hook access
+    % Compute target TeX page number
     % In split mode: map big page to TeX page (right half-page only)
     %   big_page N -> TeX page 2*N-1 (right_first) or 2*N (left_first)
     % In normal mode: target_page = user's page value directly
-    \int_gset:Nn \g_luatexcn_yinzhang_target_page_int {
+    \tl_set:Nx \l__luatexcn_yinzhang_target_page_tl {
       \lua_now:e {
         local~big_page~=~\int_use:N \l_luatexcn_yinzhang_page_int ;~
         if~_G.page~and~_G.page.split~and~_G.page.split.enabled~then~
@@ -86,30 +87,30 @@
         end
       }
     }
-    \tl_gset:Nn \g_luatexcn_yinzhang_image_path_tl { #2 }
-    \tl_gset_eq:NN \g_luatexcn_yinzhang_opacity_tl \l_luatexcn_yinzhang_opacity_tl
-    \tl_gset_eq:NN \g_luatexcn_yinzhang_xshift_tl \l_luatexcn_yinzhang_xshift_tl
-    \tl_gset_eq:NN \g_luatexcn_yinzhang_yshift_tl \l_luatexcn_yinzhang_yshift_tl
-    \tl_gset_eq:NN \g_luatexcn_yinzhang_width_tl \l_luatexcn_yinzhang_width_tl
-    \tl_gset_eq:NN \g_luatexcn_yinzhang_color_tl \l_luatexcn_yinzhang_color_tl
 
-    \AddToHook{shipout/background}{
-      % In split mode: map TeX page to big page and only render on right half-page
-      % In normal mode: TeX page matches target_page directly
-      \int_compare:nNnT { \value{page} } = { \g_luatexcn_yinzhang_target_page_int }
-        {
-          \begin{tikzpicture}[overlay]
-            \node[
-              anchor=north~east,
-              opacity=\g_luatexcn_yinzhang_opacity_tl,
-              inner~sep=0pt,
-              xshift=-\g_luatexcn_yinzhang_xshift_tl,
-              yshift=-\g_luatexcn_yinzhang_yshift_tl
-            ]~at~(\paperwidth,~0)~{
-              \includegraphics[width=\g_luatexcn_yinzhang_width_tl]{\g_luatexcn_yinzhang_image_path_tl}
-            };
-          \end{tikzpicture}
-        }
+    % Add hook with all parameters expanded inline as literal values.
+    % Each \印章 call captures its own snapshot, so multiple seals don't
+    % overwrite each other's parameters (fix #80).
+    \use:x {
+      \exp_not:N \AddToHook{shipout/background}{
+        \exp_not:N \int_compare:nNnT
+          { \exp_not:N \value{page} } = { \l__luatexcn_yinzhang_target_page_tl }
+          {
+            \exp_not:N \begin{tikzpicture}[overlay]
+              \exp_not:N \node[
+                anchor=north~east,
+                opacity=\l_luatexcn_yinzhang_opacity_tl,
+                inner~sep=0pt,
+                xshift=-\l_luatexcn_yinzhang_xshift_tl,
+                yshift=-\l_luatexcn_yinzhang_yshift_tl
+              ]~at~( \exp_not:N \paperwidth,~0)~{
+                \exp_not:N \includegraphics
+                  [width=\l_luatexcn_yinzhang_width_tl]
+                  {#2}
+              };
+            \exp_not:N \end{tikzpicture}
+          }
+      }
     }
   }
 

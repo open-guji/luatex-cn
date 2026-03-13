@@ -178,7 +178,7 @@ local function draw_column_borders(p_head, params)
         local h_segments = {}
         local interval = col_geom.interval or 0
         local banxin_width_val = col_geom.banxin_width or 0
-        if interval > 0 and banxin_width_val > 0 and banxin_width_val ~= (col_geom.grid_width or 0) and total_cols > 0 then
+        if interval > 0 and banxin_width_val > 0 and total_cols > 0 then
             local seg_start = nil
             for rtl_col = 0, total_cols - 1 do
                 local col = total_cols - 1 - rtl_col
@@ -310,7 +310,7 @@ local function draw_band_borders(p_head, params)
     -- Build list of horizontal line segments, skipping banxin columns.
     -- Segments are pairs of {left_x_sp, right_x_sp} in page coordinates.
     local segments = {}
-    if interval > 0 and banxin_width > 0 and banxin_width ~= grid_width and total_cols > 0 then
+    if interval > 0 and banxin_width > 0 and total_cols > 0 then
         -- There are banxin columns: split the line at each banxin column
         local seg_start = nil
         for rtl_col = range_start, range_end do
@@ -679,6 +679,7 @@ local function render_borders(p_head, params)
             n_bands = ptb.n_bands,
             band_heights_sp = ptb.band_heights_sp,
             band_y_offsets_sp = ptb.band_y_offsets_sp,
+            inner_width = inner_width,
             border_thickness = border_thickness,
             border_rgb_str = params.b_rgb_str,
             shift_x = params.shift_x,

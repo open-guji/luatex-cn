@@ -18,7 +18,12 @@
 %
 \NeedsTeXFormat{LaTeX2e}
 \RequirePackage{expl3}
+
 \ProvidesExplPackage {luatex-cn-core} {2026/03/12} {0.3.4} {Core features for luatex-cn}
+
+% Version info — derived from \ProvidesExplPackage above (single source of truth)
+\tl_const:Nn \c_luatexcn_core_version_tl {0.3.4}
+\tl_const:Nn \c_luatexcn_core_date_tl {2026/03/12}
 
 % Check if LuaTeX is being used
 \sys_if_engine_luatex:TF
@@ -62,9 +67,6 @@
 
 
 
-% Version info (synchronized with \ProvidesExplPackage above)
-\tl_const:Nn \c_luatexcn_core_version_tl {0.3.3}
-\tl_const:Nn \c_luatexcn_core_date_tl {2026/03/04}
 \cs_new:Npn \luatexcncoreversion { \c_luatexcn_core_version_tl }
 
 % Print banner to terminal for easy debugging

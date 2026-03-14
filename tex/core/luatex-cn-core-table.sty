@@ -68,6 +68,17 @@
     band-border .initial:n = {},
     column-fill .code:n = { \__luatexcn_table_set_column_fill:n {#1} },
     column-fill .initial:n = {},
+    % Forward unknown keys: try settings first, then style
+    unknown .code:n =
+      {
+        \keys_if_exist:nnTF { luatexcn / settings } { \l_keys_key_str }
+          { \keys_set:nx { luatexcn / settings } { \l_keys_key_str = { \exp_not:n {#1} } } }
+          {
+            \keys_if_exist:nnTF { luatexcn / style } { \l_keys_key_str }
+              { \keys_set:nx { luatexcn / style } { \l_keys_key_str = { \exp_not:n {#1} } } }
+              { }
+          }
+      },
   }
 
 \keys_define:nn { luatexcn / cell }
@@ -78,6 +89,17 @@
     vertical-align .initial:n = {},
     column-border .tl_set:N = \l__luatexcn_cell_column_border_tl,
     column-border .initial:n = {},
+    % Forward unknown keys: try settings first, then style
+    unknown .code:n =
+      {
+        \keys_if_exist:nnTF { luatexcn / settings } { \l_keys_key_str }
+          { \keys_set:nx { luatexcn / settings } { \l_keys_key_str = { \exp_not:n {#1} } } }
+          {
+            \keys_if_exist:nnTF { luatexcn / style } { \l_keys_key_str }
+              { \keys_set:nx { luatexcn / style } { \l_keys_key_str = { \exp_not:n {#1} } } }
+              { }
+          }
+      },
   }
 
 % ============================================================================
@@ -181,6 +203,17 @@
     padding-bottom .tl_set:N = \l__luatexcn_bandformat_padding_bottom_tl,
     padding-bottom .initial:n = {},
     padding .meta:n = { padding-top = #1, padding-bottom = #1 },
+    % Forward unknown keys: try settings first, then style
+    unknown .code:n =
+      {
+        \keys_if_exist:nnTF { luatexcn / settings } { \l_keys_key_str }
+          { \keys_set:nx { luatexcn / settings } { \l_keys_key_str = { \exp_not:n {#1} } } }
+          {
+            \keys_if_exist:nnTF { luatexcn / style } { \l_keys_key_str }
+              { \keys_set:nx { luatexcn / style } { \l_keys_key_str = { \exp_not:n {#1} } } }
+              { }
+          }
+      },
   }
 
 \NewDocumentCommand{\BandFormat}{ O{} }

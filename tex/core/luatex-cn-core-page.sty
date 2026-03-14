@@ -377,9 +377,13 @@
   {
     \RenewDocumentCommand{\newpage}{}{\penalty-10003 }
     \RenewDocumentCommand{\clearpage}{}{\penalty-10003 }
-    \cs_set:Npn \chapter ##1 {
-      \directlua { core.insert_chapter_marker( "\luaescapestring{ \tl_to_str:n { ##1 } }" ) }
-      \box0\relax
+    % Override \chapter inside BodyText: insert marker node + optional text output
+    % \chapter{text}  → marker + styled text (via section.sty handler)
+    % \chapter*{text} → marker only
+    \cs_set:Npn \chapter {
+      \@ifstar
+        { \__luatexcn_chapter_bodytext_star:n }
+        { \__luatexcn_chapter_bodytext_nostar:n }
     }
   }
 

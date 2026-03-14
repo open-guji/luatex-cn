@@ -76,6 +76,9 @@
 \tl_new:N \l__luatexcn_content_first_indent_tl
 \bool_new:N \l__luatexcn_content_has_indent_bool
 
+% Flag: currently inside BodyText environment (used by \chapter to decide text output)
+\bool_new:N \g__luatexcn_in_bodytext_bool
+
 \keys_define:nn { luatexcn / content }
   {
     border .bool_set:N = \l__luatexcn_content_border_bool,
@@ -330,6 +333,8 @@
     \nointerlineskip
     \par\noindent
     \group_begin:
+    % Mark that we are inside BodyText (used by \chapter for text output)
+    \bool_gset_true:N \g__luatexcn_in_bodytext_bool
     \keys_set:nn { luatexcn / content } { #1 }
     % Apply page geometry
     \luatexcn_apply_geometry:
@@ -414,6 +419,8 @@
     % Pop content-level indent from style stack (if pushed in begin)
     \bool_if:NT \l__luatexcn_content_has_indent_bool
       { \__luatexcn_style_pop_with_indent_reset: }
+    % Mark that we left BodyText
+    \bool_gset_false:N \g__luatexcn_in_bodytext_bool
     \group_end:
   }
 

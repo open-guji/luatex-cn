@@ -249,25 +249,23 @@
   }
 
 % 2. Chapter Title Synchronization
+% The original \chapter (from section.sty) already handles star variant {s m}
+% and sets banxin chapter-title key. We wrap it to also sync the local tl.
 \cs_if_exist:NTF \chapter
   {
     \NewCommandCopy \__luatexcn_banxin_orig_chapter \chapter
-    \RenewDocumentCommand \chapter { s o m }
+    \RenewDocumentCommand \chapter { s m }
       {
         \IfBooleanTF {#1}
-          { \__luatexcn_banxin_orig_chapter* {#3} }
-          {
-            \IfNoValueTF {#2}
-              { \__luatexcn_banxin_orig_chapter {#3} }
-              { \__luatexcn_banxin_orig_chapter [#2] {#3} }
-          }
-        \tl_set:Nn \l__luatexcn_banxin_chapter_title_tl { #3 }
+          { \__luatexcn_banxin_orig_chapter* {#2} }
+          { \__luatexcn_banxin_orig_chapter {#2} }
+        \tl_set:Nn \l__luatexcn_banxin_chapter_title_tl { #2 }
       }
   }
   {
-    \NewDocumentCommand \chapter { m }
+    \DeclareDocumentCommand \chapter { s m }
       {
-        \tl_set:Nn \l__luatexcn_banxin_chapter_title_tl { #1 }
+        \tl_set:Nn \l__luatexcn_banxin_chapter_title_tl { #2 }
       }
   }
 

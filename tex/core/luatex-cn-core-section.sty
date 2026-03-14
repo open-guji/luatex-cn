@@ -1,0 +1,287 @@
+% Copyright 2026 Open-Guji (https://github.com/open-guji)
+%
+% Licensed under the Apache License, Version 2.0 (the "License");
+% you may not use this file except in compliance with the License.
+% You may obtain a copy of the License at
+%
+%     http://www.apache.org/licenses/LICENSE-2.0
+%
+% Unless required by applicable law or agreed to in writing, software
+% distributed under the License is distributed on an "AS IS" BASIS,
+% WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+% See the License for the specific language governing permissions and
+% limitations under the License.
+% ============================================================================
+% luatex-cn-core-section.sty - Multi-level Section Commands
+% ============================================================================
+% Provides \chapter, \section, \subsection with text output support.
+%
+% Design:
+%   \chapter{text}     — update banxin + reset page + output text (inside BodyText)
+%   \chapter*{text}    — update banxin + reset page only (metadata mode)
+%   \section{text}     — output styled heading text
+%   \section*{text}    — set section metadata only (no output)
+%   \subsection{text}  — output styled heading text
+%   \subsection*{text} — set subsection metadata only (no output)
+%
+% Configuration via \sectionSetup{key=val}:
+%   chapter-indent, section-indent, subsection-indent
+%   chapter-font-size, section-font-size, subsection-font-size
+%   chapter-font-color, section-font-color, subsection-font-color
+%   chapter-font, section-font, subsection-font
+%   chapter-spacing-top, section-spacing-top, subsection-spacing-top
+%
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{core/luatex-cn-core-section}[2026/03/14 LuaTeX-CN Section Commands]
+
+\RequirePackage{core/luatex-cn-core-base}
+\ExplSyntaxOn
+
+% ============================================================================
+% Section Configuration Variables
+% ============================================================================
+
+% Chapter heading style
+\tl_new:N \l__luatexcn_section_chapter_indent_tl
+\tl_new:N \l__luatexcn_section_chapter_font_size_tl
+\tl_new:N \l__luatexcn_section_chapter_font_color_tl
+\tl_new:N \l__luatexcn_section_chapter_font_tl
+\tl_new:N \l__luatexcn_section_chapter_spacing_top_tl
+
+% Section heading style
+\tl_new:N \l__luatexcn_section_section_indent_tl
+\tl_new:N \l__luatexcn_section_section_font_size_tl
+\tl_new:N \l__luatexcn_section_section_font_color_tl
+\tl_new:N \l__luatexcn_section_section_font_tl
+\tl_new:N \l__luatexcn_section_section_spacing_top_tl
+
+% Subsection heading style
+\tl_new:N \l__luatexcn_section_subsection_indent_tl
+\tl_new:N \l__luatexcn_section_subsection_font_size_tl
+\tl_new:N \l__luatexcn_section_subsection_font_color_tl
+\tl_new:N \l__luatexcn_section_subsection_font_tl
+\tl_new:N \l__luatexcn_section_subsection_spacing_top_tl
+
+% Section metadata (for future banxin integration)
+\tl_new:N \g__luatexcn_section_title_tl
+\tl_new:N \g__luatexcn_subsection_title_tl
+
+% ============================================================================
+% Key-Value Interface
+% ============================================================================
+
+\keys_define:nn { luatexcn / section }
+  {
+    % Chapter config
+    chapter-indent .tl_set:N = \l__luatexcn_section_chapter_indent_tl,
+    chapter-indent .initial:n = {0},
+    chapter-font-size .tl_set:N = \l__luatexcn_section_chapter_font_size_tl,
+    chapter-font-size .initial:n = {},
+    chapter-font-color .tl_set:N = \l__luatexcn_section_chapter_font_color_tl,
+    chapter-font-color .initial:n = {},
+    chapter-font .tl_set:N = \l__luatexcn_section_chapter_font_tl,
+    chapter-font .initial:n = {},
+    chapter-spacing-top .tl_set:N = \l__luatexcn_section_chapter_spacing_top_tl,
+    chapter-spacing-top .initial:n = {},
+
+    % Section config
+    section-indent .tl_set:N = \l__luatexcn_section_section_indent_tl,
+    section-indent .initial:n = {1},
+    section-font-size .tl_set:N = \l__luatexcn_section_section_font_size_tl,
+    section-font-size .initial:n = {},
+    section-font-color .tl_set:N = \l__luatexcn_section_section_font_color_tl,
+    section-font-color .initial:n = {},
+    section-font .tl_set:N = \l__luatexcn_section_section_font_tl,
+    section-font .initial:n = {},
+    section-spacing-top .tl_set:N = \l__luatexcn_section_section_spacing_top_tl,
+    section-spacing-top .initial:n = {},
+
+    % Subsection config
+    subsection-indent .tl_set:N = \l__luatexcn_section_subsection_indent_tl,
+    subsection-indent .initial:n = {2},
+    subsection-font-size .tl_set:N = \l__luatexcn_section_subsection_font_size_tl,
+    subsection-font-size .initial:n = {},
+    subsection-font-color .tl_set:N = \l__luatexcn_section_subsection_font_color_tl,
+    subsection-font-color .initial:n = {},
+    subsection-font .tl_set:N = \l__luatexcn_section_subsection_font_tl,
+    subsection-font .initial:n = {},
+    subsection-spacing-top .tl_set:N = \l__luatexcn_section_subsection_spacing_top_tl,
+    subsection-spacing-top .initial:n = {},
+  }
+
+\NewDocumentCommand{\sectionSetup}{ m }
+  { \keys_set:nn { luatexcn / section } { #1 } }
+
+% ============================================================================
+% Internal: Output styled section heading
+% ============================================================================
+% Uses the same style stack mechanism as \Style and \Paragraph.
+% #1 = indent tl, #2 = font-size tl, #3 = font-color tl,
+% #4 = font tl, #5 = spacing-top tl, #6 = text content
+\cs_new_protected:Nn \__luatexcn_section_output:NNNNNn
+  {
+    \par
+    \group_begin:
+    \__luatexcn_style_init_and_parse:n {}
+    % Set indent
+    \tl_set_eq:NN \l__luatexcn_style_indent_tl #1
+    % Set font-size (only if configured, otherwise inherit from parent)
+    \tl_if_empty:NF #2
+      { \tl_set_eq:NN \l__luatexcn_style_size_tl #2 }
+    % Set font-color (only if configured)
+    \tl_if_empty:NF #3
+      { \tl_set_eq:NN \l__luatexcn_style_color_tl #3 }
+    % Set font (only if configured)
+    \tl_if_empty:NF #4
+      { \tl_set_eq:NN \l__luatexcn_style_font_tl #4 }
+    % Set spacing-top (only if configured)
+    \tl_if_empty:NF #5
+      { \tl_set_eq:NN \l__luatexcn_style_spacing_top_tl #5 }
+    \__luatexcn_style_apply_font:
+    \__luatexcn_style_push_and_set:
+    #6
+    \__luatexcn_style_pop_with_indent_reset:
+    \group_end:
+    \par
+    \penalty \c__luatexcn_penalty_smart_break_int \scan_stop:
+  }
+
+% ============================================================================
+% Chapter Command (enhanced with text output)
+% ============================================================================
+% \chapter{text}  — metadata + page reset + text output (inside BodyText only)
+% \chapter*{text} — metadata + page reset (no text output)
+\RenewDocumentCommand{\chapter}{ s m }
+  {
+    % Always set metadata (banxin + global state)
+    \keys_set:nn { luatexcn / banxin } { chapter-title = {#2} }
+    \metadataSetup{ chapter-title = {#2} }
+    \ResetPageNumber
+    % Clear section/subsection state on new chapter
+    \tl_gclear:N \g__luatexcn_section_title_tl
+    \tl_gclear:N \g__luatexcn_subsection_title_tl
+    % Output text: non-star AND inside BodyText
+    \IfBooleanF {#1}
+      {
+        \bool_if:NT \g__luatexcn_in_bodytext_bool
+          {
+            \__luatexcn_section_output:NNNNNn
+              \l__luatexcn_section_chapter_indent_tl
+              \l__luatexcn_section_chapter_font_size_tl
+              \l__luatexcn_section_chapter_font_color_tl
+              \l__luatexcn_section_chapter_font_tl
+              \l__luatexcn_section_chapter_spacing_top_tl
+              {#2}
+          }
+      }
+  }
+
+% ============================================================================
+% Section Command
+% ============================================================================
+% \section{text}  — output styled heading + set section metadata
+% \section*{text} — set section metadata only (no output)
+\RenewDocumentCommand{\section}{ s m }
+  {
+    \tl_gset:Nn \g__luatexcn_section_title_tl { #2 }
+    \tl_gclear:N \g__luatexcn_subsection_title_tl
+    \IfBooleanF {#1}
+      {
+        \__luatexcn_section_output:NNNNNn
+          \l__luatexcn_section_section_indent_tl
+          \l__luatexcn_section_section_font_size_tl
+          \l__luatexcn_section_section_font_color_tl
+          \l__luatexcn_section_section_font_tl
+          \l__luatexcn_section_section_spacing_top_tl
+          {#2}
+      }
+  }
+
+% ============================================================================
+% Subsection Command
+% ============================================================================
+% \subsection{text}  — output styled heading + set subsection metadata
+% \subsection*{text} — set subsection metadata only (no output)
+\RenewDocumentCommand{\subsection}{ s m }
+  {
+    \tl_gset:Nn \g__luatexcn_subsection_title_tl { #2 }
+    \IfBooleanF {#1}
+      {
+        \__luatexcn_section_output:NNNNNn
+          \l__luatexcn_section_subsection_indent_tl
+          \l__luatexcn_section_subsection_font_size_tl
+          \l__luatexcn_section_subsection_font_color_tl
+          \l__luatexcn_section_subsection_font_tl
+          \l__luatexcn_section_subsection_spacing_top_tl
+          {#2}
+      }
+  }
+
+% ============================================================================
+% CJK Key Aliases (中文键值别名)
+% ============================================================================
+\keys_define:nn { luatexcn / section }
+  {
+    % 简体
+    章节缩进 .tl_set:N = \l__luatexcn_section_chapter_indent_tl,
+    章节字号 .tl_set:N = \l__luatexcn_section_chapter_font_size_tl,
+    章节字体颜色 .tl_set:N = \l__luatexcn_section_chapter_font_color_tl,
+    章节字体 .tl_set:N = \l__luatexcn_section_chapter_font_tl,
+    篇缩进 .tl_set:N = \l__luatexcn_section_section_indent_tl,
+    篇字号 .tl_set:N = \l__luatexcn_section_section_font_size_tl,
+    篇字体颜色 .tl_set:N = \l__luatexcn_section_section_font_color_tl,
+    篇字体 .tl_set:N = \l__luatexcn_section_section_font_tl,
+    节缩进 .tl_set:N = \l__luatexcn_section_subsection_indent_tl,
+    节字号 .tl_set:N = \l__luatexcn_section_subsection_font_size_tl,
+    节字体颜色 .tl_set:N = \l__luatexcn_section_subsection_font_color_tl,
+    节字体 .tl_set:N = \l__luatexcn_section_subsection_font_tl,
+    % 繁体
+    章節縮進 .tl_set:N = \l__luatexcn_section_chapter_indent_tl,
+    章節字號 .tl_set:N = \l__luatexcn_section_chapter_font_size_tl,
+    章節字體顏色 .tl_set:N = \l__luatexcn_section_chapter_font_color_tl,
+    章節字體 .tl_set:N = \l__luatexcn_section_chapter_font_tl,
+    節縮進 .tl_set:N = \l__luatexcn_section_subsection_indent_tl,
+    節字號 .tl_set:N = \l__luatexcn_section_subsection_font_size_tl,
+    節字體顏色 .tl_set:N = \l__luatexcn_section_subsection_font_color_tl,
+    節字體 .tl_set:N = \l__luatexcn_section_subsection_font_tl,
+  }
+
+% ============================================================================
+% BodyText chapter handler (used by page.sty override inside \begin{正文})
+% ============================================================================
+% Inside BodyText, \chapter is overridden to insert marker nodes for the
+% layout engine. These helpers add star variant support for text output.
+
+% \chapter*{text} inside BodyText — marker only (no text output)
+\cs_new_protected:Nn \__luatexcn_chapter_bodytext_star:n
+  {
+    \lua_now:e { core.insert_chapter_marker([=[\luaescapestring{\tl_to_str:n{#1}}]=]) }
+    \box_use:N \c_zero_int
+  }
+
+% \chapter{text} inside BodyText — marker + styled text output
+\cs_new_protected:Nn \__luatexcn_chapter_bodytext_nostar:n
+  {
+    \lua_now:e { core.insert_chapter_marker([=[\luaescapestring{\tl_to_str:n{#1}}]=]) }
+    \box_use:N \c_zero_int
+    \__luatexcn_section_output:NNNNNn
+      \l__luatexcn_section_chapter_indent_tl
+      \l__luatexcn_section_chapter_font_size_tl
+      \l__luatexcn_section_chapter_font_color_tl
+      \l__luatexcn_section_chapter_font_tl
+      \l__luatexcn_section_chapter_spacing_top_tl
+      {#1}
+  }
+
+\ExplSyntaxOff
+
+% ============================================================================
+% Chinese Command Aliases / 中文别名
+% ============================================================================
+% Simplified Chinese / 简体
+\NewCommandCopy{\标题设置}{\sectionSetup}
+\NewCommandCopy{\卷}{\chapter}
+% Traditional Chinese / 繁体
+\NewCommandCopy{\標題設置}{\sectionSetup}
+
+\endinput

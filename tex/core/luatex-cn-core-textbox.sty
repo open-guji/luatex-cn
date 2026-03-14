@@ -127,6 +127,11 @@
       },
   }
 
+\NewDocumentCommand{\textboxSetup}{ m }
+  {
+    \keys_set:nn { luatexcn / textbox } { #1 }
+  }
+
 \NewDocumentCommand{\TextBox}{ O{} +m }
   {
     \group_begin:
@@ -419,6 +424,7 @@
 % ============================================================
 % Simplified Chinese / 简体
 \NewCommandCopy{\文本框}{\TextBox}
+\NewCommandCopy{\文本框设置}{\textboxSetup}
 \NewCommandCopy{\填充文本框}{\FillTextBox}
 % English
 \NewCommandCopy{\inverted}{\反白}
@@ -428,6 +434,7 @@
 \NewCommandCopy{\octagonBorderedInverted}{\八角墨围反白}
 \NewCommandCopy{\circled}{\带圈}
 % Traditional Chinese / 繁体
+\NewCommandCopy{\文本框設置}{\textboxSetup}
 \NewCommandCopy{\帶圈}{\带圈}
 \NewCommandCopy{\墨圍}{\墨围}
 \NewCommandCopy{\墨圍反白}{\墨围反白}

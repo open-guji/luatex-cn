@@ -38,16 +38,16 @@
 \keys_define:nn { luatexcn / yinzhang }
   {
     opacity .tl_set:N = \l_luatexcn_yinzhang_opacity_tl,
-    opacity .initial:n = {0.7},
+    opacity .initial:n = {1},
 
     xshift .tl_set:N = \l_luatexcn_yinzhang_xshift_tl,
-    xshift .initial:n = {-5.3cm},
+    xshift .initial:n = {0cm},
 
     yshift .tl_set:N = \l_luatexcn_yinzhang_yshift_tl,
-    yshift .initial:n = {-6.4cm},
+    yshift .initial:n = {0cm},
 
     width .tl_set:N = \l_luatexcn_yinzhang_width_tl,
-    width .initial:n = {12.9cm},
+    width .initial:n = {10cm},
 
     page .int_set:N = \l_luatexcn_yinzhang_page_int,
     page .initial:n = {1},
@@ -67,17 +67,15 @@
       },
   }
 
+\NewDocumentCommand{\yinzhangSetup}{ m }
+  {
+    \keys_set:nn { luatexcn / yinzhang } { #1 }
+  }
+
 \NewDocumentCommand{\YinZhang}{ O{} m }
   {
-    % Set default values for each call (avoid parameter leakage)
-    \int_set:Nn \l_luatexcn_yinzhang_page_int { 1 }
-    \tl_set:Nn \l_luatexcn_yinzhang_opacity_tl { 1 }
-    \tl_set:Nn \l_luatexcn_yinzhang_xshift_tl { 0cm }
-    \tl_set:Nn \l_luatexcn_yinzhang_yshift_tl { 0cm }
-    \tl_set:Nn \l_luatexcn_yinzhang_width_tl { 10cm }
-    \tl_set:Nn \l_luatexcn_yinzhang_color_tl { }
-
-    % Parse options
+    \group_begin:
+    % Parse options (overrides Setup defaults within this group)
     \keys_set:nn { luatexcn / yinzhang } { #1 }
 
     % Compute target TeX page number
@@ -123,6 +121,7 @@
           }
       }
     }
+    \group_end:
   }
 
 % ============================================================================
@@ -148,6 +147,8 @@
 % ============================================================================
 % Simplified Chinese / 简体
 \NewCommandCopy{\印章}{\YinZhang}
+\NewCommandCopy{\印章设置}{\yinzhangSetup}
 % Traditional Chinese / 繁体 (印章简繁同形)
+\NewCommandCopy{\印章設置}{\yinzhangSetup}
 
 \endinput

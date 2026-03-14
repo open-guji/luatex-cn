@@ -7,6 +7,7 @@ local function reset()
     setting_stack.clear()
     _G.judou = nil
     _G.punct = nil
+    _G.luatex_cn_debug = nil
 end
 
 -- ============================================================================
@@ -18,6 +19,7 @@ test_utils.run_test("current: returns defaults when stack empty", function()
     local s = setting_stack.current()
     test_utils.assert_eq(s.punct_mode, "normal")
     test_utils.assert_eq(s.punct_style, "mainland")
+    test_utils.assert_eq(s.debug, false)
 end)
 
 test_utils.run_test("current: picks up _G.judou global override", function()
@@ -118,4 +120,41 @@ test_utils.run_test("clear: resets stack", function()
     test_utils.assert_nil(setting_stack.pop())
 end)
 
+-- ============================================================================
+-- debug setting
+-- ============================================================================
 
+test_utils.run_test("debug: defaults to false", function()
+    reset()
+    test_utils.assert_eq(setting_stack.get("debug"), false)
+end)
+
+test_utils.run_test("debug: picks up _G.luatex_cn_debug global", function()
+    reset()
+    _G.luatex_cn_debug = { global_enabled = true }
+    test_utils.assert_eq(setting_stack.get("debug"), true)
+end)
+
+test_utils.run_test("debug: push overrides global", function()
+    reset()
+    _G.luatex_cn_debug = { global_enabled = true }
+    setting_stack.push({ debug = false })
+    test_utils.assert_eq(setting_stack.get("debug"), false)
+    setting_stack.pop()
+    test_utils.assert_eq(setting_stack.get("debug"), true)
+end)
+
+test_utils.run_test("debug: push true inherits to child", function()
+    reset()
+    setting_stack.push({ debug = true })
+    setting_stack.push({ punct_mode = "judou" })
+    test_utils.assert_eq(setting_stack.get("debug"), true, "child should inherit debug")
+    test_utils.assert_eq(setting_stack.get("punct_mode"), "judou")
+end)
+
+test_utils.run_test("debug: push false inherits correctly (not clobbered by or)", function()
+    reset()
+    setting_stack.push({ debug = true })
+    setting_stack.push({ debug = false })
+    test_utils.assert_eq(setting_stack.get("debug"), false, "explicit false should override parent true")
+end)

@@ -37,6 +37,7 @@ end
 local DEFAULTS = {
     punct_mode  = "normal",   -- "normal" / "judou" / "none"
     punct_style = "mainland", -- "mainland" / "taiwan"
+    debug       = false,      -- true / false
 }
 
 --- Push overrides onto the stack.
@@ -52,7 +53,9 @@ function setting_stack.push(overrides)
         if overrides[k] ~= nil and overrides[k] ~= "" then
             new_entry[k] = overrides[k]
         else
-            new_entry[k] = parent[k] or default_v
+            -- Use explicit nil check (not `or`) to handle false values correctly
+            local pv = parent[k]
+            new_entry[k] = (pv ~= nil) and pv or default_v
         end
     end
 
@@ -84,6 +87,10 @@ function setting_stack.current()
     end
     if _G.punct and _G.punct.style and _G.punct.style ~= "" then
         result.punct_style = _G.punct.style
+    end
+    -- Check global debug state
+    if _G.luatex_cn_debug and _G.luatex_cn_debug.global_enabled then
+        result.debug = true
     end
     return result
 end

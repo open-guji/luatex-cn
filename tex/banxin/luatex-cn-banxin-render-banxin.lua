@@ -47,6 +47,8 @@ local yuwei = package.loaded['banxin.luatex-cn-banxin-render-yuwei'] or require(
 local banxin_layout = package.loaded['banxin.luatex-cn-banxin-layout'] or require('banxin.luatex-cn-banxin-layout')
 local style_registry = package.loaded['util.luatex-cn-style-registry'] or
     require('util.luatex-cn-style-registry')
+local setting_stack = package.loaded['util.luatex-cn-setting-stack'] or
+    require('util.luatex-cn-setting-stack')
 
 -- Register banxin module if debug module is available
 local debug = package.loaded['debug.luatex-cn-debug'] or
@@ -373,7 +375,7 @@ create_vertical_text = function(text, params)
         end
 
         -- Debug rects (only when document-level debug is enabled)
-        if style_registry.is_document_debug() then
+        if setting_stack.get("debug") then
             if utils and utils.draw_debug_rect then
                 head = utils.draw_debug_rect(head, glyph_direct, x, cell_y, width, -cell_height, "0 0 1 RG")
             end
@@ -421,7 +423,7 @@ local parse_chapter_title = banxin_layout.parse_chapter_title
 -- @param x, y, width, height (number) 矩形位置和尺寸 (sp)
 -- @return (node) 新的链表头
 local function render_debug_rects(p_head, x, y, width, height)
-    if not style_registry.is_document_debug() then
+    if not setting_stack.get("debug") then
         return p_head
     end
 

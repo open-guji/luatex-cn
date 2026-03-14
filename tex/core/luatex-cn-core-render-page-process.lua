@@ -42,6 +42,8 @@ local helpers = package.loaded['core.luatex-cn-layout-grid-helpers'] or
     require('core.luatex-cn-layout-grid-helpers')
 local style_registry = package.loaded['util.luatex-cn-style-registry'] or
     require('util.luatex-cn-style-registry')
+local setting_stack = package.loaded['util.luatex-cn-setting-stack'] or
+    require('util.luatex-cn-setting-stack')
 
 local dbg = debug.get_debugger('render')
 
@@ -260,11 +262,9 @@ local function handle_block_node(curr, p_head, pos, ctx)
 end
 
 -- 辅助函数：绘制调试网格/框
--- 仅通过样式属性 debug=true 控制（全局调试模块只控制日志输出）
+-- 通过 setting_stack 中的 debug 标志控制
 local function handle_debug_drawing(curr, p_head, pos, ctx)
-    -- Check style debug property only (not global debug module)
-    local style_id = D.get_attribute(curr, constants.ATTR_STYLE_REG_ID)
-    local show_me = style_id and style_registry.get_debug(style_id)
+    local show_me = setting_stack.get("debug")
 
     local color_str = pos.is_block and "1 0 0 RG" or "0 0 1 RG"
 
@@ -411,9 +411,7 @@ local function process_page_nodes(p_head, layout_map, params, ctx)
                 end
             else
                 -- CRITICAL DEBUG: If it has Jiazhu attribute but no pos, it's a bug!
-                local style_id = D.get_attribute(curr, constants.ATTR_STYLE_REG_ID)
-                local style_debug = style_id and style_registry.get_debug(style_id)
-                if style_debug then
+                if setting_stack.get("debug") then
                     local has_jiazhu = (D.get_attribute(curr, constants.ATTR_JIAZHU) == 1)
                     if has_jiazhu then
                         dbg.log(string.format("  [render] DISCARDED JIAZHU NODE=%s (not in layout_map!) char=%s",

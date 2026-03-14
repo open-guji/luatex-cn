@@ -46,8 +46,6 @@
         indent .tl_set:N = \l__luatexcn_style_indent_tl,
         first-indent .tl_set:N = \l__luatexcn_style_first_indent_tl,
         bottom-indent .tl_set:N = \l__luatexcn_style_bottom_indent_tl,
-
-        debug .tl_set:N = \l__luatexcn_style_debug_tl,
       }
 
     % Internal: push style and print ID
@@ -72,8 +70,7 @@
               \tl_if_empty:NTF \l__luatexcn_style_first_indent_tl { nil } { \l__luatexcn_style_first_indent_tl },
               \tl_if_empty:NTF \l__luatexcn_style_grid_width_tl { nil } { [=[\luaescapestring{\l__luatexcn_style_grid_width_tl}]=] },
               \tl_if_empty:NTF \l__luatexcn_style_padding_top_tl { nil } { [=[\luaescapestring{\l__luatexcn_style_padding_top_tl}]=] },
-              \tl_if_empty:NTF \l__luatexcn_style_padding_bottom_tl { nil } { [=[\luaescapestring{\l__luatexcn_style_padding_bottom_tl}]=] },
-              \tl_if_empty:NTF \l__luatexcn_style_debug_tl { nil } { [=[\luaescapestring{\l__luatexcn_style_debug_tl}]=] }
+              \tl_if_empty:NTF \l__luatexcn_style_padding_bottom_tl { nil } { [=[\luaescapestring{\l__luatexcn_style_padding_bottom_tl}]=] }
             )
           )
           tex.print(tostring(style_id))
@@ -134,7 +131,6 @@
         \tl_set:Nn \l__luatexcn_style_indent_tl {}
         \tl_set:Nn \l__luatexcn_style_first_indent_tl {}
         \tl_set:Nn \l__luatexcn_style_bottom_indent_tl {}
-        \tl_set:Nn \l__luatexcn_style_debug_tl {}
         \keys_set:nn { luatexcn / style } { #1 }
       }
 
@@ -215,7 +211,6 @@
     缩进 .tl_set:N = \l__luatexcn_style_indent_tl,
     首行缩进 .tl_set:N = \l__luatexcn_style_first_indent_tl,
     末行缩进 .tl_set:N = \l__luatexcn_style_bottom_indent_tl,
-    调试 .tl_set:N = \l__luatexcn_style_debug_tl,
     % 繁体（与简体不同形的）
     字號 .tl_set:N = \l__luatexcn_style_size_tl,
     字體 .tl_set:N = \l__luatexcn_style_font_tl,
@@ -229,7 +224,6 @@
     縮進 .tl_set:N = \l__luatexcn_style_indent_tl,
     首行縮進 .tl_set:N = \l__luatexcn_style_first_indent_tl,
     末行縮進 .tl_set:N = \l__luatexcn_style_bottom_indent_tl,
-    調試 .tl_set:N = \l__luatexcn_style_debug_tl,
   }
 \ExplSyntaxOff
 

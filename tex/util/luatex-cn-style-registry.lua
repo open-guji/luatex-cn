@@ -316,29 +316,8 @@ function style_registry.get_width_scale(id)
     return style_registry.get_attr(id, "width_scale")
 end
 
---- Get debug flag from style
--- @param id (number) Style ID
--- @return (boolean|nil) Debug flag, or nil if not found
-function style_registry.get_debug(id)
-    return style_registry.get_attr(id, "debug")
-end
-
---- Check if debug is enabled at the document level.
---- Used by page-level components like banxin that should only show debug
---- when debug was explicitly set in the document base style (via \documentSetup
---- or \开启调试 at document level before \begin{正文}).
---- Inline \开启调试 inside a table band does NOT set this flag.
--- @return (boolean) true if document-level debug is enabled
-function style_registry.is_document_debug()
-    return _G.style_registry.document_debug == true
-end
-
---- Set document-level debug flag (separate from style stack).
---- Called by init_document_style() when global debug is already on.
--- @param enabled (boolean)
-function style_registry.set_document_debug(enabled)
-    _G.style_registry.document_debug = enabled
-end
+-- Debug functions have been moved to setting_stack (util/luatex-cn-setting-stack.lua).
+-- Use setting_stack.get("debug") instead of style_registry.get_debug().
 
 -- ============================================================================
 -- Style Stack Functions (Phase 3: Style Inheritance)
@@ -473,7 +452,7 @@ end
 -- @param padding_top (string|nil) e.g., "5pt" — column top padding override
 -- @param padding_bottom (string|nil) e.g., "5pt" — column bottom padding override
 -- @return (table|nil) Extra table for push_content_style, or nil if all params are nil
-function style_registry.make_extra(grid_height, spacing_top, spacing_bottom, xshift, yshift, indent, first_indent, grid_width, padding_top, padding_bottom, debug_flag)
+function style_registry.make_extra(grid_height, spacing_top, spacing_bottom, xshift, yshift, indent, first_indent, grid_width, padding_top, padding_bottom)
     local constants_mod = package.loaded['core.luatex-cn-constants'] or
         require('core.luatex-cn-constants')
     local extra = {}
@@ -524,50 +503,7 @@ function style_registry.make_extra(grid_height, spacing_top, spacing_bottom, xsh
         extra.padding_bottom = constants_mod.to_dimen(padding_bottom)
         has_any = true
     end
-    if debug_flag and debug_flag ~= "" then
-        extra.debug = (debug_flag == "true")
-        has_any = true
-    end
     return has_any and extra or nil
-end
-
---- Set debug flag on the current stack top (replace, not push)
---- This modifies the current style in-place, so it doesn't break push/pop pairing.
---- When the enclosing environment pops, the modified entry is removed correctly.
--- @param enabled (boolean) Whether to enable debug
-function style_registry.set_current_debug(enabled)
-    local stack = _G.style_registry.stack
-    if #stack == 0 then
-        -- Stack is empty: push a new style with just the debug flag
-        local new_id = style_registry.push({ debug = enabled })
-        local constants_mod = package.loaded['core.luatex-cn-constants']
-        if constants_mod and constants_mod.ATTR_STYLE_REG_ID
-            and tex and tex.setattribute then
-            tex.setattribute(constants_mod.ATTR_STYLE_REG_ID, new_id)
-        end
-        return
-    end
-
-    local current_id = stack[#stack]
-    local current = style_registry.get(current_id) or {}
-
-    -- Create new style with debug flag (immutable: don't modify shared style)
-    local new_style = {}
-    for k, v in pairs(current) do
-        new_style[k] = v
-    end
-    new_style.debug = enabled
-
-    -- Register (dedup) and replace stack top
-    local new_id = style_registry.register(new_style)
-    stack[#stack] = new_id
-
-    -- Update TeX attribute so subsequent characters pick up the new style
-    local constants_mod = package.loaded['core.luatex-cn-constants']
-    if constants_mod and constants_mod.ATTR_STYLE_REG_ID
-        and tex and tex.setattribute then
-        tex.setattribute(constants_mod.ATTR_STYLE_REG_ID, new_id)
-    end
 end
 
 --- Clear the registry (useful for testing or document end)
@@ -577,7 +513,6 @@ function style_registry.clear()
         styles = {},
         style_to_id = {},
         stack = {},
-        document_debug = false,
     }
 end
 

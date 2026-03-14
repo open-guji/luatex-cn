@@ -45,6 +45,13 @@
     spacing .initial:n = {10pt},
     gap .tl_set:N = \l__luatexcn_meipi_gap_tl,
     gap .initial:n = {0pt},
+    % Forward unknown keys to settings namespace (punct-mode, etc.)
+    unknown .code:n =
+      {
+        \keys_if_exist:nnTF { luatexcn / settings } { \l_keys_key_str }
+          { \keys_set:nx { luatexcn / settings } { \l_keys_key_str = { \exp_not:n {#1} } } }
+          { }
+      },
   }
 
 \NewDocumentCommand{\meipiSetup}{ m }
@@ -97,6 +104,10 @@
     % 1. Create TextBox with floating=false but pass x for center gap detection during layout
     % We use \use:x to expand variables before passing to TextBox
     % This ensures that \regex_match_... inside TextBox sees actual values (digits) not macro names
+    % Build extra settings params before \use:x (conditionals cannot run inside x-expansion)
+    \tl_clear:N \l_tmpb_tl
+    \tl_if_empty:NF \l__luatexcn_settings_punct_mode_tl
+      { \tl_set:Nx \l_tmpb_tl { ,punct-mode=\l__luatexcn_settings_punct_mode_tl } }
     \hbox_set:Nn \l__luatexcn_meipi_temp_box {
        \use:x {
          \exp_not:N \TextBox [
@@ -107,6 +118,7 @@
             grid-height = \l__luatexcn_meipi_grid_height_tl,
             floating = false,
             x = \l__luatexcn_meipi_x_tl
+            \l_tmpb_tl
          ] { \exp_not:n { #2 } }
        }
     }

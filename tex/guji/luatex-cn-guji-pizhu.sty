@@ -43,6 +43,13 @@
     grid-width .initial:n = {20pt},
     grid-height .tl_set:N = \l__luatexcn_pizhu_grid_height_tl,
     grid-height .initial:n = {19pt},
+    % Forward unknown keys to settings namespace (punct-mode, etc.)
+    unknown .code:n =
+      {
+        \keys_if_exist:nnTF { luatexcn / settings } { \l_keys_key_str }
+          { \keys_set:nx { luatexcn / settings } { \l_keys_key_str = { \exp_not:n {#1} } } }
+          { }
+      },
   }
 
 \NewDocumentCommand{\pizhuSetup}{ m }
@@ -67,6 +74,9 @@
       grid-height=\l__luatexcn_pizhu_grid_height_tl,
       border=false
     }
+    % Pass settings overrides to TextBox (punct-mode etc.)
+    \tl_if_empty:NF \l__luatexcn_settings_punct_mode_tl
+      { \tl_put_right:Nx \l_tmpa_tl { ,punct-mode=\l__luatexcn_settings_punct_mode_tl } }
     % Use \use:x to properly expand the keyval list for xparse optional argument
     \use:x { \exp_not:N \TextBox [\l_tmpa_tl]{\exp_not:n{#2}} }
   \group_end:

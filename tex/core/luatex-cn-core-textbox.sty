@@ -114,6 +114,13 @@
     outer-border-thickness .initial:n = {1pt},
     outer-border-sep .tl_set:N = \l__luatexcn_textbox_outer_border_sep_tl,
     outer-border-sep .initial:n = {2pt},
+    % Forward unknown keys to settings namespace (punct-mode, etc.)
+    unknown .code:n =
+      {
+        \keys_if_exist:nnTF { luatexcn / settings } { \l_keys_key_str }
+          { \keys_set:nx { luatexcn / settings } { \l_keys_key_str = { \exp_not:n {#1} } } }
+          { }
+      },
   }
 
 \NewDocumentCommand{\TextBox}{ O{} +m }
@@ -122,6 +129,9 @@
     % Inherit debug setting from global environment
     % No local override anymore
     \keys_set:nn { luatexcn / textbox } { #1 }
+    % Apply settings overrides (punct-mode etc.) via judouSetup within this group
+    \tl_if_empty:NF \l__luatexcn_settings_punct_mode_tl
+      { \judouSetup { punct-mode = \l__luatexcn_settings_punct_mode_tl } }
     % Width is always 1 for outer layout (textbox occupies 1 column externally)
     \setluatexattribute\cnverticaltextboxwidth{1}
 

@@ -308,11 +308,18 @@ function textflow.process_sequence(textflow_nodes, available_height_sp, column_h
             -- For uniform heights this matches the old row-based ceil(N/2).
             -- For variable heights, we fill right first, switching to left once
             -- right has accumulated more than half the total.
+            -- Each sub-column must not exceed its height limit (h_first_sub_sp / h_sp).
             local target_right_h = total_h / 2
             local accumulated = 0
             local filling_right = true
-            for _, ni in ipairs(all_indices) do
+            for ki, ni in ipairs(all_indices) do
                 local nh = get_node_h(node_heights, ni, global_gh)
+                if filling_right then
+                    -- Check per-column overflow: right must not exceed h_first_sub_sp
+                    if accumulated + nh > h_first_sub_sp and #right_nodes_info > 0 then
+                        filling_right = false
+                    end
+                end
                 if filling_right then
                     table.insert(right_nodes_info, {idx = ni, y_offset_sp = accumulated})
                     accumulated = accumulated + nh
@@ -322,6 +329,13 @@ function textflow.process_sequence(textflow_nodes, available_height_sp, column_h
                         filling_right = false
                     end
                 else
+                    -- Check per-column overflow: left must not exceed h_sp
+                    if left_h + nh > h_sp and #left_nodes_info > 0 then
+                        -- Left column full, push remaining nodes back
+                        idx = ni
+                        is_full = true
+                        break
+                    end
                     table.insert(left_nodes_info, {idx = ni, y_offset_sp = left_h})
                     left_h = left_h + nh
                 end

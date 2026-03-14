@@ -40,5 +40,16 @@
 % Style 与侧批组合测试
 \Style[font-color=red]{红色文字\侧批{侧批在样式内}继续红色}正常文字
 
+% xshift 横移测试 (fix #86)
+一二三\侧批[xshift=10pt]{右移侧批}四五
+
+一二三\侧批[xshift=-10pt]{左移侧批}四五
+
+% sidenoteSetup 全局设置测试 (fix #86)
+\侧批设置{xshift=5pt}
+一二三\侧批{全局右移}四五
+
+\侧批设置{xshift=0pt}
+
 \end{正文}
 \end{document}

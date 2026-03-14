@@ -3,6 +3,15 @@
 % \无标点模式
 \setmainfont{simhei}
 
+% 定义带伪粗体/伪斜体的 TW-Kai 字体族
+\newfontfamily\twkaifont{TW-Kai}[
+    RawFeature={+vert,+vrt2},
+    BoldFont={TW-Kai},
+    BoldFeatures={FakeBold=3},
+    ItalicFont={TW-Kai},
+    ItalicFeatures={FakeSlant=0.2},
+]
+
 % 命令设置
 \NewDocumentCommand{\大名}{ +m }{\单元格[格高=36pt, 字号=36pt, 字体=TW-Kai]{#1}}
 \NewDocumentCommand{\小名}{ +m }{\空格[3] #1}
@@ -14,7 +23,7 @@
 
 \begin{document}
 \begin{正文}
-\样式[格高=28pt, 字号=28pt, 字体=TW-Kai]{\空格 \textbf{陽氏宗譜卷之一}}
+\样式[格高=28pt, 字号=28pt]{{\twkaifont\空格 \textbf{陽氏宗譜卷之一}}}
 
 \begin{表格}[分栏=6, 栏高度={35pt}, 行边框=false, 行填充=页]
 \栏格式[行边框=false, 上填充=0pt]

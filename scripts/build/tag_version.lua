@@ -62,12 +62,19 @@ local function update_file(filepath)
     new_content, countB = new_content:gsub(patternB, replacementB)
     if countB > 0 then changed = true end
 
-    -- Pattern C: \tl_const:Nn \c_luatexcn_version_tl {X.X.X}
-    local patternC = "(\\tl_const:Nn%s+\\c_luatexcn_version_tl%s*){.-}"
+    -- Pattern C: \tl_const:Nn \c_luatexcn_*version_tl {X.X.X}
+    local patternC = "(\\tl_const:Nn%s+\\c_luatexcn_[%w_]*version_tl%s*){.-}"
     local replacementC = "%1{" .. clean_version .. "}"
     local countC
     new_content, countC = new_content:gsub(patternC, replacementC)
     if countC > 0 then changed = true end
+
+    -- Pattern D: \tl_const:Nn \c_luatexcn_*date_tl {YYYY/MM/DD}
+    local patternD = "(\\tl_const:Nn%s+\\c_luatexcn_[%w_]*date_tl%s*){.-}"
+    local replacementD = "%1{" .. date .. "}"
+    local countD
+    new_content, countD = new_content:gsub(patternD, replacementD)
+    if countD > 0 then changed = true end
 
     if changed then
         -- Use binary mode to preserve LF line endings

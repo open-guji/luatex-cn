@@ -18,7 +18,7 @@
 \RequirePackage{expl3}
 \RequirePackage{l3keys2e}
 \RequirePackage{core/luatex-cn-core-template}
-\ProvidesExplClass {ltc-tw-vbook} {2026/03/12} {0.3.4} {Chinese Vertical Book Class (Taiwan)}
+\ProvidesExplClass {ltc-tw-vbook} {2026/03/14} {0.3.5} {Chinese Vertical Book Class (Taiwan)}
 
 % ============================================================================
 % Variables

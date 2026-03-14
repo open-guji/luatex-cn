@@ -71,6 +71,7 @@ local translation_map = {
   ["欧式族谱"] = "ouyang-zupu",
   ["族谱.tex"] = "zupu.tex",
   ["族谱.pdf"] = "zupu.pdf",
+  ["自定义族谱.cfg"] = "custom-zupu.cfg",
 }
 
 -- Check if string contains Chinese characters
@@ -289,13 +290,27 @@ end
 
 -- Update references in .tex files when renaming
 local function update_tex_references(build_dir, old_name, new_name)
+  -- Also replace without extension (e.g. \documentclass[自定义族谱]{ltc-guji})
+  local old_base = old_name:match("^(.+)%.[^.]+$")
+  local new_base = new_name:match("^(.+)%.[^.]+$")
   walk_dir(build_dir, function(filepath, filename)
     if filename:match("%.tex$") then
       local content = read_file(filepath)
-      if content and content:find(old_name, 1, true) then
-        print("  Updating reference in " .. filepath .. ": " .. old_name .. " -> " .. new_name)
-        local new_content = content:gsub(old_name:gsub("([%.%-%+])", "%%%1"), new_name)
-        write_file(filepath, new_content)
+      if content then
+        local changed = false
+        if content:find(old_name, 1, true) then
+          print("  Updating reference in " .. filepath .. ": " .. old_name .. " -> " .. new_name)
+          content = content:gsub(old_name:gsub("([%.%-%+])", "%%%1"), new_name)
+          changed = true
+        end
+        if old_base and content:find(old_base, 1, true) then
+          print("  Updating reference in " .. filepath .. ": " .. old_base .. " -> " .. new_base)
+          content = content:gsub(old_base:gsub("([%.%-%+])", "%%%1"), new_base)
+          changed = true
+        end
+        if changed then
+          write_file(filepath, content)
+        end
       end
     end
   end)

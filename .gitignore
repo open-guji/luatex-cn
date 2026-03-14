@@ -16,11 +16,14 @@ temp_verify/
 .antigravity
 .claudeignore
 .clauderules
-.claude/
 .agent/
+todo.md
+backlog.md
 .cursorrules
-CLAUDE.md
 ai_must_read/ONGOING.md
+settings.json
+mcp.json
+last_conversation.md
 
 # Miscellaneous
 *.class

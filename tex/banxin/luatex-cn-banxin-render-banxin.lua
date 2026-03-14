@@ -477,6 +477,7 @@ local function render_chapter_title_from_layout(p_head, element, chapter_title)
             h_align = col_h_align,
             font_size = element.font_size,
             font_scale = element.font_scale,
+            font_id = element.font_id,
         })
     end
 
@@ -518,6 +519,7 @@ local function render_page_number_from_layout(p_head, element, page_number, expl
         v_align = element.v_align,
         h_align = element.h_align,
         font_size = element.font_size,
+        font_id = element.font_id,
     })
 
     return p_head
@@ -534,6 +536,10 @@ local function draw_from_layout(p_head, layout, runtime)
     local col = layout.column
     local decorations = layout.decorations
     local regions = layout.regions
+
+    -- Resolve font_id from style_registry (banxin_style may specify a font name)
+    local style_font_name = style_registry.get_font(style_registry.current_id())
+    local base_font_id = (style_font_name and font.id(style_font_name)) or font.current()
 
     -- 1. Draw border
     if col.draw_border then
@@ -579,12 +585,16 @@ local function draw_from_layout(p_head, layout, runtime)
     -- 4. Render text elements
     for _, element in ipairs(layout.elements) do
         if element.type == "book_name" then
+            element.font_id = element.font_id or base_font_id
             p_head = render_text_section(p_head, element)
         elseif element.type == "chapter_title" then
+            element.font_id = element.font_id or base_font_id
             p_head = render_chapter_title_from_layout(p_head, element, runtime.chapter_title)
         elseif element.type == "page_number" then
+            element.font_id = element.font_id or base_font_id
             p_head = render_page_number_from_layout(p_head, element, runtime.page_number, runtime.explicit_page_number)
         elseif element.type == "publisher" then
+            element.font_id = element.font_id or base_font_id
             p_head = render_text_section(p_head, element)
         end
     end

@@ -41,6 +41,13 @@
     border-padding-top .initial:n = 0pt,
     border-padding-bottom .tl_set:N = \l__luatexcn_sidenote_padding_bottom_tl,
     border-padding-bottom .initial:n = 0pt,
+    % Forward unknown keys to settings namespace (punct-mode, etc.)
+    unknown .code:n =
+      {
+        \keys_if_exist:nnTF { luatexcn / settings } { \l_keys_key_str }
+          { \keys_set:nx { luatexcn / settings } { \l_keys_key_str = { \exp_not:n {#1} } } }
+          { }
+      },
   }
 
 \NewDocumentCommand{\sidenoteSetup}{ m }
@@ -99,7 +106,9 @@
       padding_top = vertical_constants.to_dimen([=[\luaescapestring{\tl_use:N \l__luatexcn_sidenote_padding_top_tl}]=]) ~ or ~ 0,
       padding_bottom = vertical_constants.to_dimen([=[\luaescapestring{\tl_use:N \l__luatexcn_sidenote_padding_bottom_tl}]=]) ~ or ~ 0,
       font_color = [=[\luaescapestring{\tl_use:N \l__luatexcn_sidenote_color_tl}]=],
-      font_size = [=[\luaescapestring{\dim_use:N \l_tmpa_dim}]=]
+      font_size = [=[\luaescapestring{\dim_use:N \l_tmpa_dim}]=],
+      punct_mode = [=[\luaescapestring{\tl_use:N \l__luatexcn_settings_punct_mode_tl}]=],
+      punct_style = [=[\luaescapestring{\tl_use:N \l__luatexcn_settings_punct_style_tl}]=]
     })}%
   \group_end:
 }

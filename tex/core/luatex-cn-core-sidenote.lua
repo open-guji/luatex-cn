@@ -25,6 +25,8 @@ local style_registry = package.loaded['util.luatex-cn-style-registry'] or
     require('util.luatex-cn-style-registry')
 local judou = package.loaded['guji.luatex-cn-guji-judou'] or
     require('guji.luatex-cn-guji-judou')
+local setting_stack = package.loaded['util.luatex-cn-setting-stack'] or
+    require('util.luatex-cn-setting-stack')
 local text_position = package.loaded['core.luatex-cn-render-position'] or
     require('core.luatex-cn-render-position')
 local helpers = package.loaded['core.luatex-cn-layout-grid-helpers'] or
@@ -478,11 +480,34 @@ function sidenote.register_sidenote(box_num, metadata)
 
     local content_head = node.copy_list(box.list)
 
-    -- Apply judou processing if enabled
-    local judou_ctx = judou.initialize({}, {})
-    if judou_ctx then
+    -- Build setting overrides from metadata (passed from TeX via \Sidenote[punct-mode=...])
+    local setting_overrides = {}
+    if metadata and metadata.punct_mode and metadata.punct_mode ~= "" then
+        setting_overrides.punct_mode = metadata.punct_mode
+    end
+    if metadata and metadata.punct_style and metadata.punct_style ~= "" then
+        setting_overrides.punct_style = metadata.punct_style
+    end
+
+    -- Push component-level settings (inherits global if no override)
+    setting_stack.push(setting_overrides)
+    local settings = setting_stack.current()
+
+    -- Apply judou processing based on setting stack (not global _G.judou directly)
+    local effective_mode = settings.punct_mode or "normal"
+    if effective_mode ~= "normal" then
+        local judou_ctx = {
+            mode = effective_mode,
+            punct_mode = effective_mode,
+            pos = (_G.judou and _G.judou.pos) or "right-bottom",
+            size = (_G.judou and _G.judou.size) or "1em",
+            color = (_G.judou and _G.judou.color) or "red",
+        }
         content_head = judou.flatten(content_head, {}, judou_ctx)
     end
+
+    -- Pop setting stack (restore previous settings)
+    setting_stack.pop()
 
     -- Register style and set attribute on all nodes (Phase 2: Style registry)
     local font_color_str = metadata and metadata.font_color

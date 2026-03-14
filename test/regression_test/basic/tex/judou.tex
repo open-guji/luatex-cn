@@ -33,6 +33,14 @@
 
 波浪符号：表示范围～如此这般。
 
+% Test: sidenote with independent punct-mode (#84)
+% 全局是句读模式，但侧批单独使用正常标点
+正文句读\侧批[标点模式=normal]{侧批正常标点，测试。}继续句读
+
+% Test: sidenoteSetup persistent override
+\侧批设置{标点模式=normal}
+设置后\侧批{持久正常标点，验证。}继续句读模式
+
 
 \end{正文}
 \end{document}

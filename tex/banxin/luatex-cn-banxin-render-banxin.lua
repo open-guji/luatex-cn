@@ -404,6 +404,7 @@ local function render_text_section(p_head, layout)
         h_align = layout.h_align or "center",
         font_size = layout.font_size,
         font_scale = layout.font_scale,
+        font_id = layout.font_id,
     })
     if chain then
         p_head = prepend_chain(p_head, chain)
@@ -538,8 +539,19 @@ local function draw_from_layout(p_head, layout, runtime)
     local regions = layout.regions
 
     -- Resolve font_id from style_registry (banxin_style may specify a font name)
-    local style_font_name = style_registry.get_font(style_registry.current_id())
-    local base_font_id = (style_font_name and font.id(style_font_name)) or font.current()
+    local current_style_id = style_registry.current_id()
+    local style_font_name = style_registry.get_font(current_style_id)
+    local base_font_id = font.current()
+    if style_font_name and style_font_name ~= "" then
+        -- font.fonts name field starts with the font name followed by ":mode=..." etc.
+        local prefix = style_font_name .. ":"
+        for fid, fdata in ipairs(font.fonts) do
+            if type(fdata) == "table" and fdata.name and fdata.name:sub(1, #prefix) == prefix then
+                base_font_id = fid
+                break
+            end
+        end
+    end
 
     -- 1. Draw border
     if col.draw_border then

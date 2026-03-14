@@ -768,6 +768,7 @@ local function handle_penalty_breaks(p_val, ctx, flush_buffer_fn, p_cols, interv
             _G.content.table_col_groups = table_instance.col_groups
             _G.content.table_band_formats = table_instance.band_formats
             _G.content.table_cell_valigns = table_instance.cell_valigns
+            _G.content.table_cell_column_borders = table_instance.cell_column_borders
         end
         local n_bands = tp.n_bands or 2
         local band_gap_sp = tp.band_gap_sp or 0
@@ -911,6 +912,13 @@ local function handle_penalty_breaks(p_val, ctx, flush_buffer_fn, p_cols, interv
                 if not next(band_column_borders) then band_column_borders = nil end
             end
 
+            -- Build per-cell column_border map
+            local cell_column_borders = _G.content and _G.content.table_cell_column_borders or nil
+            local cell_col_borders_map = nil
+            if cell_column_borders and next(cell_column_borders) then
+                cell_col_borders_map = cell_column_borders
+            end
+
             ctx.page_table_bands[pg] = {
                 n_bands = ctx.n_bands,
                 band_heights_sp = ctx.band_heights_sp,
@@ -921,6 +929,7 @@ local function handle_penalty_breaks(p_val, ctx, flush_buffer_fn, p_cols, interv
                 column_border = tparams.column_border,
                 band_border = tparams.band_border,
                 band_column_borders = band_column_borders,
+                cell_column_borders = cell_col_borders_map,
                 column_fill = tparams_cf,
                 -- Debug: save cell column groups for cell coordinate debug
                 col_groups = all_col_groups,
@@ -967,6 +976,7 @@ local function handle_penalty_breaks(p_val, ctx, flush_buffer_fn, p_cols, interv
             _G.content.table_band_formats = nil
             _G.content.table_cur_band = nil
             _G.content.table_cell_valigns = nil
+            _G.content.table_cell_column_borders = nil
         end
 
         move_to_next_valid_position(ctx, interval, grid_height, indent)

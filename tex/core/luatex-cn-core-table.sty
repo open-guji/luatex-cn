@@ -34,6 +34,7 @@
 \int_new:N \l__luatexcn_table_header_rows_int
 \tl_new:N \l__luatexcn_cell_col_width_tl
 \tl_new:N \l__luatexcn_cell_valign_tl
+\tl_new:N \l__luatexcn_cell_column_border_tl
 \tl_new:N \l__luatexcn_table_column_border_tl
 \tl_new:N \l__luatexcn_table_band_border_tl
 \tl_new:N \l__luatexcn_table_column_fill_tl
@@ -75,6 +76,8 @@
     col-width .initial:n = {1},
     vertical-align .tl_set:N = \l__luatexcn_cell_valign_tl,
     vertical-align .initial:n = {},
+    column-border .tl_set:N = \l__luatexcn_cell_column_border_tl,
+    column-border .initial:n = {},
   }
 
 % ============================================================================
@@ -146,11 +149,13 @@
   {
     \tl_set:Nn \l__luatexcn_cell_col_width_tl {1}
     \tl_clear:N \l__luatexcn_cell_valign_tl
+    \tl_clear:N \l__luatexcn_cell_column_border_tl
     \keys_set:nn { luatexcn / cell } { #1 }
     \lua_now:e {
       require('core.luatex-cn-core-table').begin_cell(
         \str_if_eq:VnTF \l__luatexcn_cell_col_width_tl {nil} {0} {\l__luatexcn_cell_col_width_tl},
-        \tl_if_empty:NTF \l__luatexcn_cell_valign_tl {nil} {"\l__luatexcn_cell_valign_tl"}
+        \tl_if_empty:NTF \l__luatexcn_cell_valign_tl {nil} {"\l__luatexcn_cell_valign_tl"},
+        \tl_if_empty:NTF \l__luatexcn_cell_column_border_tl {nil} {\l__luatexcn_cell_column_border_tl}
       )
     }
     \luatexcnRestoreTempIndent
@@ -238,6 +243,8 @@
     行寬 .tl_set:N = \l__luatexcn_cell_col_width_tl,
     纵对齐 .tl_set:N = \l__luatexcn_cell_valign_tl,
     縱對齊 .tl_set:N = \l__luatexcn_cell_valign_tl,
+    行边框 .tl_set:N = \l__luatexcn_cell_column_border_tl,
+    行邊框 .tl_set:N = \l__luatexcn_cell_column_border_tl,
   }
 
 \ExplSyntaxOff

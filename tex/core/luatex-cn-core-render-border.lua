@@ -101,9 +101,44 @@ local function draw_column_borders(p_head, params)
     local band_heights_sp = params.band_heights_sp
     local band_y_offsets_sp = params.band_y_offsets_sp
 
+    -- Per-cell column border support: cell_column_borders[band][cell_idx] overrides band default
+    local cell_column_borders = params.cell_column_borders
+    local col_groups = params.col_groups
+
     if band_column_borders and n_bands and n_bands > 1 then
-        -- Build draw segments: start with full height [0, content_dim_h],
-        -- then cut out bands where column_border=false
+        -- Determine table column range so columns outside the table
+        -- are drawn at full height (not affected by band_column_borders).
+        local table_start_col = params.table_start_col
+        local actual_band_cols = params.actual_band_cols
+
+        -- Build per-column-per-band border map when cell_column_borders are present
+        -- col_border_overrides[band][local_col] = true/false (nil = use band default)
+        local col_border_overrides = nil
+        if cell_column_borders and col_groups then
+            col_border_overrides = {}
+            for band = 0, n_bands - 1 do
+                local cell_borders = cell_column_borders[band]
+                local cells = col_groups[band]
+                if cell_borders and cells then
+                    col_border_overrides[band] = {}
+                    local col_offset = 0
+                    for cell_idx = 1, #cells do
+                        local cw = cells[cell_idx] or 1
+                        if cw == 0 then cw = actual_band_cols - col_offset end
+                        local cb = cell_borders[cell_idx]
+                        if cb ~= nil then
+                            for c = 0, cw - 1 do
+                                col_border_overrides[band][col_offset + c] = cb
+                            end
+                        end
+                        col_offset = col_offset + cw
+                    end
+                end
+            end
+        end
+
+        -- Build band-level skips for horizontal edge restoration
+        -- (cell-level overrides don't affect the overall frame edges)
         local skips = {}
         for band = 0, n_bands - 1 do
             if band_column_borders[band] == false then
@@ -112,25 +147,8 @@ local function draw_column_borders(p_head, params)
                 skips[#skips + 1] = { by, by + bh }
             end
         end
-        -- skips are already sorted by band order
-        local segments = {}
-        local cursor = 0
-        for _, skip in ipairs(skips) do
-            if cursor < skip[1] then
-                segments[#segments + 1] = { cursor, skip[1] }
-            end
-            cursor = skip[2]
-        end
-        if cursor < content_dim_h then
-            segments[#segments + 1] = { cursor, content_dim_h }
-        end
 
-        -- Determine table column range so columns outside the table
-        -- are drawn at full height (not affected by band_column_borders).
-        local table_start_col = params.table_start_col
-        local actual_band_cols = params.actual_band_cols
-
-        -- Draw column border rectangles only in the segments where column_border is true
+        -- Build per-column draw segments
         for col = 0, total_cols - 1 do
             if not banxin_cols[col] then
                 local rtl_col = total_cols - 1 - col
@@ -142,7 +160,38 @@ local function draw_column_borders(p_head, params)
                     and col >= table_start_col and col < table_start_col + actual_band_cols
 
                 if in_table then
-                    -- Table column: use per-band segments (skip column_border=false bands)
+                    -- For this column, determine per-band draw/skip using both
+                    -- band_column_borders and cell-level overrides
+                    local local_col = col - table_start_col
+                    local skips = {}
+                    for band = 0, n_bands - 1 do
+                        -- Cell override > band default
+                        local draw = band_column_borders[band]
+                        if col_border_overrides and col_border_overrides[band]
+                            and col_border_overrides[band][local_col] ~= nil then
+                            draw = col_border_overrides[band][local_col]
+                        end
+                        if draw == false then
+                            local by = band_y_offsets_sp[band] or 0
+                            local bh = band_heights_sp[band] or 0
+                            skips[#skips + 1] = { by, by + bh }
+                        end
+                    end
+
+                    -- Build segments from skips
+                    local segments = {}
+                    local cursor = 0
+                    for _, skip in ipairs(skips) do
+                        if cursor < skip[1] then
+                            segments[#segments + 1] = { cursor, skip[1] }
+                        end
+                        cursor = skip[2]
+                    end
+                    if cursor < content_dim_h then
+                        segments[#segments + 1] = { cursor, content_dim_h }
+                    end
+
+                    -- Draw segments
                     for _, seg in ipairs(segments) do
                         local ty_bp = -(half_thickness + outer_shift + seg[1]) * sp_to_bp
                         local th_bp = -(seg[2] - seg[1]) * sp_to_bp
@@ -159,7 +208,6 @@ local function draw_column_borders(p_head, params)
                 end
 
                 -- Taitou raised border: extend topmost segment upward for negative y_sp columns
-                local has_segments = in_table and #segments > 0
                 local min_y = col_min_y_sp[col]
                 if min_y and min_y < 0 then
                     local raised_sp = -min_y
@@ -175,7 +223,16 @@ local function draw_column_borders(p_head, params)
         -- rectangles are absent (all bands skipped). The boundary between
         -- table columns (column_border=false) and non-table columns (with borders)
         -- or page edges needs vertical lines so the frame remains closed.
-        if #segments == 0 and table_start_col and actual_band_cols then
+        -- Check if ALL bands have column_border=false (no cell overrides apply here
+        -- since boundary lines are about the overall table frame)
+        local all_bands_skipped = true
+        for band = 0, n_bands - 1 do
+            if band_column_borders[band] ~= false then
+                all_bands_skipped = false
+                break
+            end
+        end
+        if all_bands_skipped and table_start_col and actual_band_cols then
             local table_end_col = table_start_col + actual_band_cols  -- exclusive
             local ty_bp = -(half_thickness + outer_shift) * sp_to_bp
             local th_sp = content_dim_h
@@ -666,6 +723,8 @@ local function render_borders(p_head, params)
                 col_border_params.band_y_offsets_sp = ptb.band_y_offsets_sp
                 col_border_params.table_start_col = ptb.table_start_col
                 col_border_params.actual_band_cols = ptb.actual_band_cols
+                col_border_params.cell_column_borders = ptb.cell_column_borders
+                col_border_params.col_groups = ptb.col_groups
             end
         end
         p_head = draw_column_borders(p_head, col_border_params)

@@ -45,6 +45,7 @@ function table_mod.init(params)
         col_groups = {},
         band_formats = {},
         cell_valigns = {},
+        cell_column_borders = {},
         cell_idx = 0,
         cur_band = 0,
     }
@@ -57,6 +58,7 @@ function table_mod.init(params)
     _G.content.table_col_groups = instance.col_groups
     _G.content.table_band_formats = instance.band_formats
     _G.content.table_cell_valigns = instance.cell_valigns
+    _G.content.table_cell_column_borders = instance.cell_column_borders
     _G.content.table_cell_idx = instance.cell_idx
     _G.content.table_cur_band = instance.cur_band
     _G.content.table_render_cell_idx = 0
@@ -77,6 +79,7 @@ function table_mod.cleanup()
             cur.col_groups = _G.content.table_col_groups
             cur.band_formats = _G.content.table_band_formats
             cur.cell_valigns = _G.content.table_cell_valigns
+            cur.cell_column_borders = _G.content.table_cell_column_borders
         end
     end
 
@@ -105,8 +108,9 @@ end
 --- Register a cell and emit cell break penalty if needed
 -- @param col_width (number) Number of columns this cell spans (0 = unlimited)
 -- @param vertical_align (string|nil) Vertical alignment: "center", "top", "bottom"
+-- @param column_border (boolean|nil) Per-cell column border override
 local valign_alias = { ["居中"] = "center", ["居下"] = "bottom", ["居上"] = "top" }
-function table_mod.begin_cell(col_width, vertical_align)
+function table_mod.begin_cell(col_width, vertical_align, column_border)
     _G.content = _G.content or {}
     local cell_idx = _G.content.table_cell_idx or 0
     local cur_band = _G.content.table_cur_band or 0
@@ -122,6 +126,12 @@ function table_mod.begin_cell(col_width, vertical_align)
         _G.content.table_cell_valigns = _G.content.table_cell_valigns or {}
         _G.content.table_cell_valigns[cur_band] = _G.content.table_cell_valigns[cur_band] or {}
         _G.content.table_cell_valigns[cur_band][cell_idx + 1] = vertical_align
+    end
+
+    if column_border ~= nil then
+        _G.content.table_cell_column_borders = _G.content.table_cell_column_borders or {}
+        _G.content.table_cell_column_borders[cur_band] = _G.content.table_cell_column_borders[cur_band] or {}
+        _G.content.table_cell_column_borders[cur_band][cell_idx + 1] = column_border
     end
 
     if cell_idx > 0 then

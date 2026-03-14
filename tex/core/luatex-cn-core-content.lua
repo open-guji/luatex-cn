@@ -643,6 +643,38 @@ local function clear_col_widths()
     end
 end
 
+-- ============================================================================
+-- Suppress newline spaces: process_input_buffer callback
+-- Appends % to non-blank lines so TeX ignores end-of-line spaces.
+-- Blank lines are preserved (they generate \par for paragraph breaks).
+-- ============================================================================
+local suppress_newline_depth = 0
+local callback_name = "luatexcn.suppress_newline_space"
+
+local function suppress_newline_callback(line)
+    if suppress_newline_depth <= 0 then return line end
+    -- Blank line (whitespace only): keep as-is → generates \par
+    if line:match("^%s*$") then return line end
+    -- Non-blank line: append % to suppress end-of-line space
+    return line .. "%"
+end
+
+local function enable_suppress_newline()
+    if suppress_newline_depth == 0 then
+        luatexbase.add_to_callback("process_input_buffer",
+            suppress_newline_callback, callback_name)
+    end
+    suppress_newline_depth = suppress_newline_depth + 1
+end
+
+local function disable_suppress_newline()
+    suppress_newline_depth = suppress_newline_depth - 1
+    if suppress_newline_depth <= 0 then
+        suppress_newline_depth = 0
+        luatexbase.remove_from_callback("process_input_buffer", callback_name)
+    end
+end
+
 -- Create module table
 local content = {
     sync_params = sync_params,
@@ -655,6 +687,8 @@ local content = {
     get_col_widths = get_col_widths,
     sync_page_columns_from_col_widths = sync_page_columns_from_col_widths,
     clear_col_widths = clear_col_widths,
+    enable_suppress_newline = enable_suppress_newline,
+    disable_suppress_newline = disable_suppress_newline,
 }
 
 -- Register module in package.loaded

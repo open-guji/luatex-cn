@@ -385,12 +385,18 @@
       }
 
       % Digital mode: activate obeylines for newline-as-column-break
-      \bool_if:NT \l__luatexcn_content_digital_mode_bool
+      % Semantic mode: suppress newline spaces via Lua callback
+      \bool_if:NTF \l__luatexcn_content_digital_mode_bool
         { \luatexcndigitalobeylines }
+        { \lua_now:n { require('core.luatex-cn-core-content').enable_suppress_newline() } }
   }
   {
     \vbox_set_end:
     \skip_zero:N \topskip
+
+    % Disable newline space suppression (if enabled in begin)
+    \bool_if:NF \l__luatexcn_content_digital_mode_bool
+      { \lua_now:n { require('core.luatex-cn-core-content').disable_suppress_newline() } }
 
     % Final sync (catches any overrides from environment optional args)
     \__luatexcn_content_sync_to_lua:
@@ -519,8 +525,6 @@
 \ExplSyntaxOff
 
 % Digital obeylines helper: make ^^M (newline) produce column breaks.
-% MUST be defined outside ExplSyntax context because the \lowercase trick
-% requires ~ to have catcode 13 (active), not catcode 10 (space).
 \def\luatexcndigitalobeylines{%
   \obeylines
   \begingroup\lccode`\~=`\^^M

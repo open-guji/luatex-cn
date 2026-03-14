@@ -71,10 +71,10 @@
     % Forward unknown keys: try settings first, then style
     unknown .code:n =
       {
-        \keys_if_exist:nnTF { luatexcn / settings } { \l_keys_key_str }
+        \exp_args:Nnx \keys_if_exist:nnTF { luatexcn / settings } { \l_keys_key_str }
           { \keys_set:nx { luatexcn / settings } { \l_keys_key_str = { \exp_not:n {#1} } } }
           {
-            \keys_if_exist:nnTF { luatexcn / style } { \l_keys_key_str }
+            \exp_args:Nnx \keys_if_exist:nnTF { luatexcn / style } { \l_keys_key_str }
               { \keys_set:nx { luatexcn / style } { \l_keys_key_str = { \exp_not:n {#1} } } }
               { }
           }
@@ -92,10 +92,10 @@
     % Forward unknown keys: try settings first, then style
     unknown .code:n =
       {
-        \keys_if_exist:nnTF { luatexcn / settings } { \l_keys_key_str }
+        \exp_args:Nnx \keys_if_exist:nnTF { luatexcn / settings } { \l_keys_key_str }
           { \keys_set:nx { luatexcn / settings } { \l_keys_key_str = { \exp_not:n {#1} } } }
           {
-            \keys_if_exist:nnTF { luatexcn / style } { \l_keys_key_str }
+            \exp_args:Nnx \keys_if_exist:nnTF { luatexcn / style } { \l_keys_key_str }
               { \keys_set:nx { luatexcn / style } { \l_keys_key_str = { \exp_not:n {#1} } } }
               { }
           }
@@ -145,6 +145,8 @@
 
 \NewDocumentEnvironment{Table}{ O{} }
   {
+    % Initialize style variables before key parsing (unknown keys forward to style)
+    \__luatexcn_style_init_and_parse:n {}
     \keys_set:nn { luatexcn / table } { #1 }
     \__luatexcn_table_build_params:
     \lua_now:e {
@@ -158,8 +160,11 @@
         column_fill~=~\tl_if_empty:NTF \l__luatexcn_table_column_fill_tl {nil} {"\l__luatexcn_table_column_fill_tl"},
       })
     }
+    % Apply style if any style keys were forwarded
+    \__luatexcn_style_maybe_apply_and_push:
   }
   {
+    \__luatexcn_style_maybe_pop:
     \lua_now:n { require('core.luatex-cn-core-table').cleanup() }
   }
 
@@ -172,6 +177,8 @@
     \tl_set:Nn \l__luatexcn_cell_col_width_tl {1}
     \tl_clear:N \l__luatexcn_cell_valign_tl
     \tl_clear:N \l__luatexcn_cell_column_border_tl
+    % Initialize style variables before key parsing (unknown keys forward to style)
+    \__luatexcn_style_init_and_parse:n {}
     \keys_set:nn { luatexcn / cell } { #1 }
     \lua_now:e {
       require('core.luatex-cn-core-table').begin_cell(
@@ -181,7 +188,19 @@
       )
     }
     \luatexcnRestoreTempIndent
-    \IfValueT{#2}{#2}
+    % Apply style if any style keys were forwarded, scoped to cell content
+    \IfValueTF{#2}
+      {
+        \group_begin:
+        \__luatexcn_style_maybe_apply_and_push:
+        #2
+        \__luatexcn_style_maybe_pop:
+        \group_end:
+      }
+      {
+        \__luatexcn_style_maybe_apply_and_push:
+        \__luatexcn_style_maybe_pop:
+      }
   }
 
 % ============================================================================
@@ -206,10 +225,10 @@
     % Forward unknown keys: try settings first, then style
     unknown .code:n =
       {
-        \keys_if_exist:nnTF { luatexcn / settings } { \l_keys_key_str }
+        \exp_args:Nnx \keys_if_exist:nnTF { luatexcn / settings } { \l_keys_key_str }
           { \keys_set:nx { luatexcn / settings } { \l_keys_key_str = { \exp_not:n {#1} } } }
           {
-            \keys_if_exist:nnTF { luatexcn / style } { \l_keys_key_str }
+            \exp_args:Nnx \keys_if_exist:nnTF { luatexcn / style } { \l_keys_key_str }
               { \keys_set:nx { luatexcn / style } { \l_keys_key_str = { \exp_not:n {#1} } } }
               { }
           }
@@ -221,6 +240,8 @@
     \tl_clear:N \l__luatexcn_bandformat_column_border_tl
     \tl_clear:N \l__luatexcn_bandformat_padding_top_tl
     \tl_clear:N \l__luatexcn_bandformat_padding_bottom_tl
+    % Initialize style variables before key parsing (unknown keys forward to style)
+    \__luatexcn_style_init_and_parse:n {}
     \keys_set:nn { luatexcn / band-format } { #1 }
     \lua_now:e {
       require('core.luatex-cn-core-table').set_band_format({
@@ -229,6 +250,8 @@
         padding_bottom~=~\tl_if_empty:NTF \l__luatexcn_bandformat_padding_bottom_tl {nil} {[=[\luaescapestring{\l__luatexcn_bandformat_padding_bottom_tl}]=]},
       })
     }
+    % Apply style if any style keys were forwarded
+    \__luatexcn_style_maybe_apply_and_push:
   }
 
 % ============================================================================

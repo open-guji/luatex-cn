@@ -41,12 +41,16 @@
     border-padding-top .initial:n = 0pt,
     border-padding-bottom .tl_set:N = \l__luatexcn_sidenote_padding_bottom_tl,
     border-padding-bottom .initial:n = 0pt,
-    % Forward unknown keys to settings namespace (punct-mode, etc.)
+    % Forward unknown keys: try settings first, then style
     unknown .code:n =
       {
         \keys_if_exist:nnTF { luatexcn / settings } { \l_keys_key_str }
           { \keys_set:nx { luatexcn / settings } { \l_keys_key_str = { \exp_not:n {#1} } } }
-          { }
+          {
+            \keys_if_exist:nnTF { luatexcn / style } { \l_keys_key_str }
+              { \keys_set:nx { luatexcn / style } { \l_keys_key_str = { \exp_not:n {#1} } } }
+              { }
+          }
       },
   }
 

@@ -104,8 +104,10 @@ end
 -- @return (number) Style ID (always returns a valid number)
 function column.push_style(font_color, font_size, font, grid_height,
                           spacing_top, spacing_bottom, column_width,
-                          auto_width, width_scale, padding_top, padding_bottom)
-    local extra = {}
+                          auto_width, width_scale, padding_top, padding_bottom,
+                          style_extra)
+    -- Start with style_extra (from \样式 forwarded keys), then overlay column-specific fields
+    local extra = style_extra or {}
     if grid_height and grid_height ~= "" then
         extra.grid_height = constants.to_dimen(grid_height)
     end

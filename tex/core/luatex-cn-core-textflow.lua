@@ -49,8 +49,9 @@ local textflow = {}
 -- @param auto_balance (boolean|nil) Whether to auto-balance last column (default true)
 -- @param grid_height_sp (number|nil) Grid height in sp for capacity calculation
 -- @return (number) Style ID
-function textflow.push_style(font_color, font_size, font, textflow_align, auto_balance, grid_height_sp)
-    local extra = {}
+function textflow.push_style(font_color, font_size, font, textflow_align, auto_balance, grid_height_sp, style_extra)
+    -- Start with style_extra (from \样式 forwarded keys), then overlay textflow-specific fields
+    local extra = style_extra or {}
     if textflow_align and textflow_align ~= "" then
         extra.textflow_align = textflow_align
     end

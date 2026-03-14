@@ -49,6 +49,17 @@
         font-color .tl_set:N = \l__luatexcn_textflow_local_color_tl,
         align .tl_set:N = \l__luatexcn_textflow_local_align_tl,
         grid-height .tl_set:N = \l__luatexcn_textflow_local_grid_height_tl,
+        % Forward unknown keys: try settings first, then style
+        unknown .code:n =
+          {
+            \keys_if_exist:nnTF { luatexcn / settings } { \l_keys_key_str }
+              { \keys_set:nx { luatexcn / settings } { \l_keys_key_str = { \exp_not:n {#1} } } }
+              {
+                \keys_if_exist:nnTF { luatexcn / style } { \l_keys_key_str }
+                  { \keys_set:nx { luatexcn / style } { \l_keys_key_str = { \exp_not:n {#1} } } }
+                  { }
+              }
+          },
       }
 
     \NewDocumentCommand{\TextFlow}{ O{} +m }
@@ -63,6 +74,8 @@
         \tl_set:Nn \l__luatexcn_textflow_local_color_tl {}
         \tl_set:Nn \l__luatexcn_textflow_local_align_tl {}
         \tl_set:Nn \l__luatexcn_textflow_local_grid_height_tl {}
+        % Initialize style variables (for forwarded style keys)
+        \__luatexcn_style_init_and_parse:n {}
 
         \keys_set:nn { luatexcn / textflow } { #1 }
 
@@ -104,7 +117,9 @@
         % Color is handled entirely in the Lua render layer via PDF literals.
 
         % Push style to stack and get style ID (Phase 3: Style Stack Management)
+        % style_extra from forwarded \样式 keys (xshift, yshift, spacing, indent, etc.)
         \edef\textflow_style_id{\lua_now:e {
+          local ~ sr = require('util.luatex-cn-style-registry')
           local ~ textflow = require('core.luatex-cn-textflow')
           local ~ style_id = textflow.push_style(
             \tl_if_empty:NTF \l_tmpd_tl { nil } { [=[\luaescapestring{\tl_use:N \l_tmpd_tl}]=] },
@@ -112,7 +127,19 @@
             \tl_if_empty:NTF \l_tmpb_tl { nil } { [=[\luaescapestring{\tl_use:N \l_tmpb_tl}]=] },
             \tl_if_empty:NTF \l__luatexcn_textflow_resolved_align_tl { nil } { [=[\luaescapestring{\tl_use:N \l__luatexcn_textflow_resolved_align_tl}]=] },
             \bool_if:NTF \l__luatexcn_textflow_auto_balance_bool { true } { false },
-            \tl_if_empty:NTF \l__luatexcn_textflow_local_grid_height_tl { nil } { \dim_to_decimal_in_sp:n { \l__luatexcn_textflow_local_grid_height_tl } }
+            \tl_if_empty:NTF \l__luatexcn_textflow_local_grid_height_tl { nil } { \dim_to_decimal_in_sp:n { \l__luatexcn_textflow_local_grid_height_tl } },
+            sr.make_extra(
+              \tl_if_empty:NTF \l__luatexcn_style_grid_height_tl { nil } { [=[\luaescapestring{\l__luatexcn_style_grid_height_tl}]=] },
+              \tl_if_empty:NTF \l__luatexcn_style_spacing_top_tl { nil } { [=[\luaescapestring{\l__luatexcn_style_spacing_top_tl}]=] },
+              \tl_if_empty:NTF \l__luatexcn_style_spacing_bottom_tl { nil } { [=[\luaescapestring{\l__luatexcn_style_spacing_bottom_tl}]=] },
+              \tl_if_empty:NTF \l__luatexcn_style_xshift_tl { nil } { [=[\luaescapestring{\l__luatexcn_style_xshift_tl}]=] },
+              \tl_if_empty:NTF \l__luatexcn_style_yshift_tl { nil } { [=[\luaescapestring{\l__luatexcn_style_yshift_tl}]=] },
+              \tl_if_empty:NTF \l__luatexcn_style_indent_tl { nil } { \l__luatexcn_style_indent_tl },
+              \tl_if_empty:NTF \l__luatexcn_style_first_indent_tl { nil } { \l__luatexcn_style_first_indent_tl },
+              \tl_if_empty:NTF \l__luatexcn_style_grid_width_tl { nil } { [=[\luaescapestring{\l__luatexcn_style_grid_width_tl}]=] },
+              \tl_if_empty:NTF \l__luatexcn_style_padding_top_tl { nil } { [=[\luaescapestring{\l__luatexcn_style_padding_top_tl}]=] },
+              \tl_if_empty:NTF \l__luatexcn_style_padding_bottom_tl { nil } { [=[\luaescapestring{\l__luatexcn_style_padding_bottom_tl}]=] }
+            )
           )
           tex.print(tostring(style_id))
         }}
@@ -155,6 +182,8 @@
         \tl_set:Nn \l__luatexcn_textflow_local_color_tl {}
         \tl_set:Nn \l__luatexcn_textflow_local_align_tl {}
         \tl_set:Nn \l__luatexcn_textflow_local_grid_height_tl {}
+        % Initialize style variables (for forwarded style keys)
+        \__luatexcn_style_init_and_parse:n {}
 
         \keys_set:nn { luatexcn / textflow } { #1 }
 
@@ -192,6 +221,7 @@
 
         % Push style to stack and get style ID
         \edef\textflow_style_id{\lua_now:e {
+          local ~ sr = require('util.luatex-cn-style-registry')
           local ~ textflow = require('core.luatex-cn-textflow')
           local ~ style_id = textflow.push_style(
             \tl_if_empty:NTF \l_tmpd_tl { nil } { [=[\luaescapestring{\tl_use:N \l_tmpd_tl}]=] },
@@ -199,7 +229,19 @@
             \tl_if_empty:NTF \l_tmpb_tl { nil } { [=[\luaescapestring{\tl_use:N \l_tmpb_tl}]=] },
             \tl_if_empty:NTF \l__luatexcn_textflow_resolved_align_tl { nil } { [=[\luaescapestring{\tl_use:N \l__luatexcn_textflow_resolved_align_tl}]=] },
             \bool_if:NTF \l__luatexcn_textflow_auto_balance_bool { true } { false },
-            \tl_if_empty:NTF \l__luatexcn_textflow_local_grid_height_tl { nil } { \dim_to_decimal_in_sp:n { \l__luatexcn_textflow_local_grid_height_tl } }
+            \tl_if_empty:NTF \l__luatexcn_textflow_local_grid_height_tl { nil } { \dim_to_decimal_in_sp:n { \l__luatexcn_textflow_local_grid_height_tl } },
+            sr.make_extra(
+              \tl_if_empty:NTF \l__luatexcn_style_grid_height_tl { nil } { [=[\luaescapestring{\l__luatexcn_style_grid_height_tl}]=] },
+              \tl_if_empty:NTF \l__luatexcn_style_spacing_top_tl { nil } { [=[\luaescapestring{\l__luatexcn_style_spacing_top_tl}]=] },
+              \tl_if_empty:NTF \l__luatexcn_style_spacing_bottom_tl { nil } { [=[\luaescapestring{\l__luatexcn_style_spacing_bottom_tl}]=] },
+              \tl_if_empty:NTF \l__luatexcn_style_xshift_tl { nil } { [=[\luaescapestring{\l__luatexcn_style_xshift_tl}]=] },
+              \tl_if_empty:NTF \l__luatexcn_style_yshift_tl { nil } { [=[\luaescapestring{\l__luatexcn_style_yshift_tl}]=] },
+              \tl_if_empty:NTF \l__luatexcn_style_indent_tl { nil } { \l__luatexcn_style_indent_tl },
+              \tl_if_empty:NTF \l__luatexcn_style_first_indent_tl { nil } { \l__luatexcn_style_first_indent_tl },
+              \tl_if_empty:NTF \l__luatexcn_style_grid_width_tl { nil } { [=[\luaescapestring{\l__luatexcn_style_grid_width_tl}]=] },
+              \tl_if_empty:NTF \l__luatexcn_style_padding_top_tl { nil } { [=[\luaescapestring{\l__luatexcn_style_padding_top_tl}]=] },
+              \tl_if_empty:NTF \l__luatexcn_style_padding_bottom_tl { nil } { [=[\luaescapestring{\l__luatexcn_style_padding_bottom_tl}]=] }
+            )
           )
           tex.print(tostring(style_id))
         }}

@@ -46,6 +46,13 @@
         indent .tl_set:N = \l__luatexcn_style_indent_tl,
         first-indent .tl_set:N = \l__luatexcn_style_first_indent_tl,
         bottom-indent .tl_set:N = \l__luatexcn_style_bottom_indent_tl,
+        % Forward unknown keys to settings namespace (debug, punct-mode, etc.)
+        unknown .code:n =
+          {
+            \keys_if_exist:nnTF { luatexcn / settings } { \l_keys_key_str }
+              { \keys_set:nx { luatexcn / settings } { \l_keys_key_str = { \exp_not:n {#1} } } }
+              { }
+          },
       }
 
     % Internal: push style and print ID

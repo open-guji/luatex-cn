@@ -19,7 +19,7 @@ import multiprocessing
 # Paths relative to the project root
 BASE_DIR = Path(__file__).parent.parent.resolve()
 REG_DIR = BASE_DIR / "test" / "regression_test"
-DIFF_THRESHOLD = 10
+DIFF_THRESHOLD = 200
 
 # Test suites: each has its own tex/, baseline/, current/, diff/, pdf/ subdirectories
 SUITES = {

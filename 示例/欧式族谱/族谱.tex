@@ -4,24 +4,22 @@
 \setmainfont{TW-Kai}
 
 % 命令设置
-\NewDocumentCommand{\大名}{ +m }{\单元格{\样式[格高=36pt, 字号=36pt]{#1}}}
+\NewDocumentCommand{\大名}{ +m }{\单元格[格高=36pt, 字号=36pt]{#1}}
 \NewDocumentCommand{\小名}{ +m }{\空格[3] #1}
-\NewDocumentCommand{\注}{ +m }{\单元格[行宽=nil]{\夹注[align=center, 自动平衡=false, 格高=20pt, 字号=20pt]{#1}}}
-\NewDocumentCommand{\世次}{ +m }{\单元格[纵对齐=center, 行边框=true]{\八角墨围反白{#1}}}
+\NewDocumentCommand{\注}{ +m }{\单元格[行宽=nil]{\夹注[align=center, 自动平衡=false, 格高=19pt, 字号=19pt]{#1}}}
+\NewDocumentCommand{\世次}{ +m }{\单元格[纵对齐=center, 行边框=true, 格高=18pt, 字号=18pt, 字体=simhei]{#1}}
 
 \title{陽氏宗譜}
 \chapter{卷一}
 
 \begin{document}
 \begin{正文}
-陽氏宗譜卷之一
+\样式[格高=28pt, 字号=28pt]{\空格 陽氏宗譜卷之一}
 
-\縮進[1] 始祖源流世宗
-
-\begin{表格}[分栏=6, 栏高度={43.2pt}, 行边框=false, 行填充=页]
+\begin{表格}[分栏=6, 栏高度={35pt}, 行边框=false, 行填充=页]
 \栏格式[行边框=false, 上填充=0pt]
 \单元格[行宽=1]{}
-\单元格{\夹注[align=center, 格高=20pt, 字号=20pt]{始遷之祖}}
+\单元格{\夹注[align=center, 格高=14pt, 字号=14pt]{始遷之祖}}
 
 \换栏
 

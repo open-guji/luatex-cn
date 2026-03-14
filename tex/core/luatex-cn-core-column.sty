@@ -90,10 +90,10 @@
         % Forward unknown keys: try settings first, then style
         unknown .code:n =
           {
-            \keys_if_exist:nnTF { luatexcn / settings } { \l_keys_key_str }
+            \exp_args:Nnx \keys_if_exist:nnTF { luatexcn / settings } { \l_keys_key_str }
               { \keys_set:nx { luatexcn / settings } { \l_keys_key_str = { \exp_not:n {#1} } } }
               {
-                \keys_if_exist:nnTF { luatexcn / style } { \l_keys_key_str }
+                \exp_args:Nnx \keys_if_exist:nnTF { luatexcn / style } { \l_keys_key_str }
                   { \keys_set:nx { luatexcn / style } { \l_keys_key_str = { \exp_not:n {#1} } } }
                   { }
               }

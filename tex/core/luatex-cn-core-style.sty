@@ -49,7 +49,7 @@
         % Forward unknown keys to settings namespace (debug, punct-mode, etc.)
         unknown .code:n =
           {
-            \keys_if_exist:nnTF { luatexcn / settings } { \l_keys_key_str }
+            \exp_args:Nnx \keys_if_exist:nnTF { luatexcn / settings } { \l_keys_key_str }
               { \keys_set:nx { luatexcn / settings } { \l_keys_key_str = { \exp_not:n {#1} } } }
               { }
           },
@@ -124,6 +124,7 @@
       }
 
     % Internal: initialize variables and parse keys
+    \bool_new:N \l__luatexcn_style_has_any_bool
     \cs_new_protected:Npn \__luatexcn_style_init_and_parse:n #1
       {
         \tl_set:Nn \l__luatexcn_style_size_tl {}
@@ -138,7 +139,48 @@
         \tl_set:Nn \l__luatexcn_style_indent_tl {}
         \tl_set:Nn \l__luatexcn_style_first_indent_tl {}
         \tl_set:Nn \l__luatexcn_style_bottom_indent_tl {}
+        \tl_set:Nn \l__luatexcn_style_padding_top_tl {}
+        \tl_set:Nn \l__luatexcn_style_padding_bottom_tl {}
+        \bool_set_false:N \l__luatexcn_style_has_any_bool
         \keys_set:nn { luatexcn / style } { #1 }
+      }
+
+    % Internal: check if any style variable was set after key parsing
+    \cs_new_protected:Npn \__luatexcn_style_check_has_any:
+      {
+        \bool_set_false:N \l__luatexcn_style_has_any_bool
+        \tl_if_empty:NF \l__luatexcn_style_size_tl { \bool_set_true:N \l__luatexcn_style_has_any_bool }
+        \tl_if_empty:NF \l__luatexcn_style_font_tl { \bool_set_true:N \l__luatexcn_style_has_any_bool }
+        \tl_if_empty:NF \l__luatexcn_style_color_tl { \bool_set_true:N \l__luatexcn_style_has_any_bool }
+        \tl_if_empty:NF \l__luatexcn_style_grid_height_tl { \bool_set_true:N \l__luatexcn_style_has_any_bool }
+        \tl_if_empty:NF \l__luatexcn_style_grid_width_tl { \bool_set_true:N \l__luatexcn_style_has_any_bool }
+        \tl_if_empty:NF \l__luatexcn_style_spacing_top_tl { \bool_set_true:N \l__luatexcn_style_has_any_bool }
+        \tl_if_empty:NF \l__luatexcn_style_spacing_bottom_tl { \bool_set_true:N \l__luatexcn_style_has_any_bool }
+        \tl_if_empty:NF \l__luatexcn_style_xshift_tl { \bool_set_true:N \l__luatexcn_style_has_any_bool }
+        \tl_if_empty:NF \l__luatexcn_style_yshift_tl { \bool_set_true:N \l__luatexcn_style_has_any_bool }
+        \tl_if_empty:NF \l__luatexcn_style_indent_tl { \bool_set_true:N \l__luatexcn_style_has_any_bool }
+        \tl_if_empty:NF \l__luatexcn_style_first_indent_tl { \bool_set_true:N \l__luatexcn_style_has_any_bool }
+        \tl_if_empty:NF \l__luatexcn_style_bottom_indent_tl { \bool_set_true:N \l__luatexcn_style_has_any_bool }
+        \tl_if_empty:NF \l__luatexcn_style_padding_top_tl { \bool_set_true:N \l__luatexcn_style_has_any_bool }
+        \tl_if_empty:NF \l__luatexcn_style_padding_bottom_tl { \bool_set_true:N \l__luatexcn_style_has_any_bool }
+      }
+
+    % Internal: conditionally apply font and push style (only if style keys were set)
+    \cs_new_protected:Npn \__luatexcn_style_maybe_apply_and_push:
+      {
+        \__luatexcn_style_check_has_any:
+        \bool_if:NT \l__luatexcn_style_has_any_bool
+          {
+            \__luatexcn_style_apply_font:
+            \__luatexcn_style_push_and_set:
+          }
+      }
+
+    % Internal: conditionally pop style (only if push was done)
+    \cs_new_protected:Npn \__luatexcn_style_maybe_pop:
+      {
+        \bool_if:NT \l__luatexcn_style_has_any_bool
+          { \__luatexcn_style_pop_with_indent_reset: }
       }
 
     % Internal: apply font if specified

@@ -114,6 +114,13 @@ local function read_banxin_params()
         publisher_grid_height = parse_dim(get_tl("l__luatexcn_banxin_publisher_grid_height_tl")),
         publisher_bottom_margin = parse_dim(get_tl("l__luatexcn_banxin_publisher_bottom_margin_tl")),
         publisher_align = get_tl("l__luatexcn_banxin_publisher_align_tl") or "right",
+
+        -- Banxin-level style overrides
+        style_font_size = get_tl("l__luatexcn_banxin_style_font_size_tl") or "",
+        style_font_color = get_tl("l__luatexcn_banxin_style_font_color_tl") or "",
+        style_font = get_tl("l__luatexcn_banxin_style_font_tl") or "",
+        style_grid_height = get_tl("l__luatexcn_banxin_style_grid_height_tl") or "",
+        style_grid_width = get_tl("l__luatexcn_banxin_style_grid_width_tl") or "",
     }
 end
 
@@ -144,10 +151,29 @@ function banxin_main.initialize(params, engine_ctx)
 
     dbg.log(string.format("Initialized. Active=true, book_name='%s'", bp.book_name or ""))
 
+    -- Build banxin style overrides for push/pop in layout/render
+    local banxin_style = {}
+    if bp.style_font_size ~= "" then
+        banxin_style.font_size = constants.to_dimen(bp.style_font_size)
+    end
+    if bp.style_font_color ~= "" then
+        banxin_style.font_color = bp.style_font_color
+    end
+    if bp.style_font ~= "" then
+        banxin_style.font = bp.style_font
+    end
+    if bp.style_grid_height ~= "" then
+        banxin_style.grid_height = constants.to_dimen(bp.style_grid_height)
+    end
+    if bp.style_grid_width ~= "" then
+        banxin_style.grid_width = constants.to_dimen(bp.style_grid_width)
+    end
+
     return {
         active = true,
         params = bp,           -- Store captured parameters
         layout_cache = {},     -- Will store per-page layout data
+        banxin_style = next(banxin_style) and banxin_style or nil,
     }
 end
 
@@ -168,6 +194,11 @@ function banxin_main.layout(list, layout_map, engine_ctx, context)
     local bp = context.params
 
     dbg.log(string.format("Layout hook: calculating for %d pages, %d cols/page", total_pages, p_cols))
+
+    -- Push banxin style overrides onto style stack (temporary layer for layout)
+    if context.banxin_style then
+        style_registry.push(context.banxin_style)
+    end
 
     -- Calculate layout for each page's reserved columns
     for page_idx = 0, total_pages - 1 do
@@ -226,6 +257,11 @@ function banxin_main.layout(list, layout_map, engine_ctx, context)
                 dbg.log(string.format("  Page %d, col %d: layout calculated", page_idx, col))
             end
         end
+    end
+
+    -- Pop banxin style layer (restore style stack)
+    if context.banxin_style then
+        style_registry.pop()
     end
 
     dbg.log(string.format("Layout hook completed: cached %d pages", total_pages))
@@ -288,12 +324,22 @@ function banxin_main.render(head, layout_map, params, context, engine_ctx, page_
 
     local p_head = D.todirect(head)
 
+    -- Push banxin style layer for render stage
+    if context.banxin_style then
+        style_registry.push(context.banxin_style)
+    end
+
     for _, col_layout in pairs(page_layout) do
         p_head = render_banxin.draw_from_layout(p_head, col_layout, {
             chapter_title = chapter_title,
             page_number = page_number,
             explicit_page_number = explicit_page_number,
         })
+    end
+
+    -- Pop banxin style layer
+    if context.banxin_style then
+        style_registry.pop()
     end
 
     return D.tonode(p_head)

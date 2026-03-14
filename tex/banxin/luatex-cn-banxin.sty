@@ -70,6 +70,13 @@
 \tl_new:N \l__luatexcn_banxin_publisher_bottom_margin_tl
 \tl_new:N \l__luatexcn_banxin_publisher_align_tl
 
+% Banxin-level style overrides (forwarded from unknown handler)
+\tl_new:N \l__luatexcn_banxin_style_font_size_tl
+\tl_new:N \l__luatexcn_banxin_style_font_color_tl
+\tl_new:N \l__luatexcn_banxin_style_font_tl
+\tl_new:N \l__luatexcn_banxin_style_grid_height_tl
+\tl_new:N \l__luatexcn_banxin_style_grid_width_tl
+
 % =============================================================================
 % Sub-Namespace Definitions
 % =============================================================================
@@ -179,6 +186,17 @@
         { \keys_set:nn { luatexcn / banxin / publisher } { #1 } }
         { \tl_set:Nn \l__luatexcn_banxin_publisher_tl { #1 } }
     },
+    % Forward unknown keys: try settings first, then style
+    unknown .code:n =
+      {
+        \exp_args:Nnx \keys_if_exist:nnTF { luatexcn / settings } { \l_keys_key_str }
+          { \keys_set:nx { luatexcn / settings } { \l_keys_key_str = { \exp_not:n {#1} } } }
+          {
+            \exp_args:Nnx \keys_if_exist:nnTF { luatexcn / style } { \l_keys_key_str }
+              { \keys_set:nx { luatexcn / style } { \l_keys_key_str = { \exp_not:n {#1} } } }
+              { }
+          }
+      },
   }
 
 % =============================================================================
@@ -186,7 +204,20 @@
 % =============================================================================
 \NewDocumentCommand{\banxinSetup}{ m }
   {
+    % Clear style scratch variables before parsing (unknown keys forward to style)
+    \__luatexcn_style_init_and_parse:n {}
     \keys_set:nn { luatexcn / banxin } { #1 }
+    % Save any style overrides into banxin-specific variables
+    \tl_if_empty:NF \l__luatexcn_style_size_tl
+      { \tl_set_eq:NN \l__luatexcn_banxin_style_font_size_tl \l__luatexcn_style_size_tl }
+    \tl_if_empty:NF \l__luatexcn_style_color_tl
+      { \tl_set_eq:NN \l__luatexcn_banxin_style_font_color_tl \l__luatexcn_style_color_tl }
+    \tl_if_empty:NF \l__luatexcn_style_font_tl
+      { \tl_set_eq:NN \l__luatexcn_banxin_style_font_tl \l__luatexcn_style_font_tl }
+    \tl_if_empty:NF \l__luatexcn_style_grid_height_tl
+      { \tl_set_eq:NN \l__luatexcn_banxin_style_grid_height_tl \l__luatexcn_style_grid_height_tl }
+    \tl_if_empty:NF \l__luatexcn_style_grid_width_tl
+      { \tl_set_eq:NN \l__luatexcn_banxin_style_grid_width_tl \l__luatexcn_style_grid_width_tl }
     % Update _G.banxin.enabled for early access by content.setup
     \lua_now:e {
       _G.banxin.setup({

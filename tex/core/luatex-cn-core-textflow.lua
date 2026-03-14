@@ -420,7 +420,6 @@ function textflow.process_sequence(textflow_nodes, available_height_sp, column_h
             rows_used = rows_used,
             end_row_used = end_height_used_sp and math.ceil(end_height_used_sp / global_gh) or nil,
         })
-
         current_idx = idx
         first_chunk = false
         continue_on_left = false
@@ -508,9 +507,12 @@ local function place_textflow_segment(ctx, nodes, layout_map, params, callbacks,
         column_height_sp = 0x7FFFFFFF
     elseif textflow_gh then
         -- When textflow has its own grid-height, use actual sp heights from ctx
-        -- instead of row-count × textflow_gh (row counts are based on global gh)
+        -- instead of row-count × textflow_gh (row counts are based on global gh).
+        -- For both first and subsequent columns, use ctx.col_height_sp (band height)
+        -- as the constraint, not capacity_per_subsequent * gh which uses the global
+        -- line_limit and may be far larger than the actual band height.
         available_height_sp = ctx.col_height_sp - ctx.cur_y_sp
-        column_height_sp = (capacity_per_subsequent * gh)
+        column_height_sp = ctx.col_height_sp
     else
         available_height_sp = available_in_first * gh
         column_height_sp = capacity_per_subsequent * gh

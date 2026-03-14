@@ -8,6 +8,7 @@ local tests = {
     "test/unit_test/util/text-utils-test.lua",
     "test/unit_test/util/style-registry-test.lua",
     "test/unit_test/util/drawing-test.lua",
+    "test/unit_test/util/setting-stack-test.lua",
 
     -- Constants & Debug
     "test/unit_test/core/constants-test.lua",

@@ -247,6 +247,11 @@ local function handle_block_node(curr, p_head, pos, ctx)
         end
     end
 
+    -- Apply xshift from sidenote metadata (positive = rightward in page coordinates)
+    if pos.xshift and pos.xshift ~= 0 then
+        final_x = final_x + pos.xshift
+    end
+
     local final_y_top = -pos.y_sp - (pos.band_y_offset_sp or 0) - ctx.shift_y
     D.setfield(curr, "shift", -final_y_top + h)
 

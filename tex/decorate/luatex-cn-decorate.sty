@@ -64,6 +64,11 @@
   \box0\scan_stop:
 }
 
+\NewDocumentCommand{\decorateSetup}{ m }
+  {
+    \keys_set:nn { luatexcn / decorate } { #1 }
+  }
+
 \NewDocumentCommand{\decorate}{ O{} m }{%
   \group_begin:
     \keys_set:nn { luatexcn / decorate } { #1 }
@@ -116,10 +121,19 @@
   }
 
 % ============================================================================
+% EmphasisMark Global Setup
+% ============================================================================
+\NewDocumentCommand{\emphasisMarkSetup}{ m }
+  {
+    \keys_set:nn { luatexcn / emphasis } { #1 }
+  }
+
+% ============================================================================
 % CJK Aliases (中文别名)
 % ============================================================================
 % Simplified Chinese / 简体
 \NewCommandCopy{\装饰}{\decorate}
+\NewCommandCopy{\装饰设置}{\decorateSetup}
 
 \NewDocumentCommand{\EmphasisMark}{ O{} m }{%
   \group_begin:
@@ -129,6 +143,8 @@
 }
 
 \NewCommandCopy{\着重号}{\EmphasisMark}
+\NewCommandCopy{\着重号设置}{\emphasisMarkSetup}
+\NewCommandCopy{\圈点设置}{\emphasisMarkSetup}
 
 % ============================================================================
 % 改 (Fix/Correction) Command - Mark a character as corrected
@@ -173,7 +189,9 @@
 \NewCommandCopy{\改}{\fix}
 % Traditional Chinese / 繁体
 \NewCommandCopy{\裝飾}{\decorate}
+\NewCommandCopy{\裝飾設置}{\decorateSetup}
 \NewCommandCopy{\著重號}{\EmphasisMark}
+\NewCommandCopy{\著重號設置}{\emphasisMarkSetup}
 
 % ============================================================================
 % Underline / WavyUnderline - Now provided by luatex-cn-linemark.sty

@@ -35,6 +35,15 @@ local D = node.direct
 
 local dbg = debug.get_debugger('sidenote')
 
+-- Safely resolve dimension value that may be a table (em unit) or number
+-- Forward-declared here so render() can use it (defined before Internal Helpers section)
+local function safe_resolve(val, font_size_sp)
+    if type(val) == "table" and val.unit == "em" then
+        return math.floor((val.value or 0) * (font_size_sp or 655360) + 0.5)
+    end
+    return tonumber(val) or 0
+end
+
 local sidenote = {}
 
 -- Registry to hold sidenote content
@@ -121,10 +130,12 @@ function sidenote.render(head, layout_map, params, context, engine_ctx, page_idx
             sn_head = D.insert_before(sn_head, sn_head, curr)
         end
 
+        local meta_xshift = safe_resolve(item.metadata and item.metadata.xshift, engine_ctx.g_height)
         local pos = {
             col = item.col,
             y_sp = item.y_sp,
             sidenote_offset = sidenote_x_offset,
+            xshift = meta_xshift,
         }
 
         local id = D.getid(curr)
@@ -136,7 +147,7 @@ function sidenote.render(head, layout_map, params, context, engine_ctx, page_idx
             local rtl_col = p_total_cols - 1 - pos.col
             local boundary_x = text_position.get_column_x(rtl_col + 1, engine_ctx.col_geom)
                 + engine_ctx.half_thickness + engine_ctx.shift_x
-            local final_x = boundary_x - (w / 2)
+            local final_x = boundary_x - (w / 2) + (pos.xshift or 0)
 
             local char_total_height = h + d
             local cell_h = item.cell_height or engine_ctx.g_height
@@ -309,14 +320,6 @@ local function extract_registry_content(registry_item)
         content = registry_item
     end
     return content, metadata
-end
-
--- Safely resolve dimension value that may be a table (em unit) or number
-local function safe_resolve(val, font_size_sp)
-    if type(val) == "table" and val.unit == "em" then
-        return math.floor((val.value or 0) * (font_size_sp or 655360) + 0.5)
-    end
-    return tonumber(val) or 0
 end
 
 local function calculate_start_position(anchor_y_sp, metadata, main_grid_height)

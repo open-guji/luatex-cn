@@ -22,6 +22,7 @@
 
 % Define keys for Sidenote
 \tl_new:N \l__luatexcn_sidenote_yshift_tl
+\tl_new:N \l__luatexcn_sidenote_xshift_tl
 \tl_new:N \l__luatexcn_sidenote_grid_height_tl
 \tl_new:N \l__luatexcn_sidenote_font_size_tl
 \tl_new:N \l__luatexcn_sidenote_color_tl
@@ -32,6 +33,8 @@
   {
     yshift .tl_set:N = \l__luatexcn_sidenote_yshift_tl,
     yshift .initial:n = 0pt,
+    xshift .tl_set:N = \l__luatexcn_sidenote_xshift_tl,
+    xshift .initial:n = 0pt,
     grid-height .tl_set:N = \l__luatexcn_sidenote_grid_height_tl,
     font-size .tl_set:N = \l__luatexcn_sidenote_font_size_tl,
     font-size .initial:n = 10pt,
@@ -106,6 +109,7 @@
     % Pass style attributes to Lua (style registration handled in Lua layer)
     \lua_now:e { vertical_sidenote.register_sidenote(\int_value:w \l_tmpa_box, {
       yshift = vertical_constants.to_dimen([=[\luaescapestring{\tl_use:N \l__luatexcn_sidenote_yshift_tl}]=]) ~ or ~ 0,
+      xshift = vertical_constants.to_dimen([=[\luaescapestring{\tl_use:N \l__luatexcn_sidenote_xshift_tl}]=]) ~ or ~ 0,
       grid_height = \int_value:w \l_tmpb_dim,
       padding_top = vertical_constants.to_dimen([=[\luaescapestring{\tl_use:N \l__luatexcn_sidenote_padding_top_tl}]=]) ~ or ~ 0,
       padding_bottom = vertical_constants.to_dimen([=[\luaescapestring{\tl_use:N \l__luatexcn_sidenote_padding_bottom_tl}]=]) ~ or ~ 0,
@@ -138,6 +142,7 @@
   {
     % 简体
     纵移 .tl_set:N = \l__luatexcn_sidenote_yshift_tl,
+    横移 .tl_set:N = \l__luatexcn_sidenote_xshift_tl,
     格高 .tl_set:N = \l__luatexcn_sidenote_grid_height_tl,
     字号 .tl_set:N = \l__luatexcn_sidenote_font_size_tl,
     颜色 .tl_set:N = \l__luatexcn_sidenote_color_tl,
@@ -145,6 +150,7 @@
     边框下填充 .tl_set:N = \l__luatexcn_sidenote_padding_bottom_tl,
     % 繁体（与简体不同形的）
     縱移 .tl_set:N = \l__luatexcn_sidenote_yshift_tl,
+    橫移 .tl_set:N = \l__luatexcn_sidenote_xshift_tl,
     字號 .tl_set:N = \l__luatexcn_sidenote_font_size_tl,
     顏色 .tl_set:N = \l__luatexcn_sidenote_color_tl,
   }

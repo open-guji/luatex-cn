@@ -9,7 +9,7 @@
     "split_page": {
       "enabled": false
     },
-    "total_pages": 7
+    "total_pages": 8
   },
   "generator": "luatex-cn",
   "page_summary": [
@@ -73,6 +73,15 @@
         "字"
       ],
       "page": 6,
+      "type": "single"
+    },
+    {
+      "cols": [
+        "正文中的標題",
+        "此页版心显示版心專用標題但正文中显示正文中",
+        "的標題"
+      ],
+      "page": 7,
       "type": "single"
     }
   ],
@@ -2343,9 +2352,433 @@
       },
       "page_index": 6,
       "sidenotes": []
+    },
+    {
+      "columns": [
+        {
+          "characters": [
+            {
+              "char": "正",
+              "confidence": 1,
+              "position": {
+                "x": 811.19,
+                "y_bottom": 40.40,
+                "y_top": 12.40
+              },
+              "row_index": 0,
+              "style": {
+                "font_color": "0 0 0",
+                "font_size_pt": 28
+              },
+              "type": "normal",
+              "unicode": 27491
+            },
+            {
+              "char": "文",
+              "confidence": 1,
+              "position": {
+                "x": 811.19,
+                "y_bottom": 68.41,
+                "y_top": 40.40
+              },
+              "row_index": 1,
+              "style": {
+                "font_color": "0 0 0",
+                "font_size_pt": 28
+              },
+              "type": "normal",
+              "unicode": 25991
+            },
+            {
+              "char": "中",
+              "confidence": 1,
+              "position": {
+                "x": 811.19,
+                "y_bottom": 96.41,
+                "y_top": 68.41
+              },
+              "row_index": 2,
+              "style": {
+                "font_color": "0 0 0",
+                "font_size_pt": 28
+              },
+              "type": "normal",
+              "unicode": 20013
+            },
+            {
+              "char": "的",
+              "confidence": 1,
+              "position": {
+                "x": 811.19,
+                "y_bottom": 124.42,
+                "y_top": 96.41
+              },
+              "row_index": 3,
+              "style": {
+                "font_color": "0 0 0",
+                "font_size_pt": 28
+              },
+              "type": "normal",
+              "unicode": 30340
+            },
+            {
+              "char": "標",
+              "confidence": 1,
+              "position": {
+                "x": 811.19,
+                "y_bottom": 152.42,
+                "y_top": 124.42
+              },
+              "row_index": 4,
+              "style": {
+                "font_color": "0 0 0",
+                "font_size_pt": 28
+              },
+              "type": "normal",
+              "unicode": 27161
+            },
+            {
+              "char": "題",
+              "confidence": 1,
+              "position": {
+                "x": 811.19,
+                "y_bottom": 180.43,
+                "y_top": 152.42
+              },
+              "row_index": 5,
+              "style": {
+                "font_color": "0 0 0",
+                "font_size_pt": 28
+              },
+              "type": "normal",
+              "unicode": 38988
+            }
+          ],
+          "col_index": 0,
+          "position": {
+            "left_x": 811.19,
+            "right_x": 811.19
+          }
+        },
+        {
+          "characters": [
+            {
+              "char": "此",
+              "confidence": 1,
+              "position": {
+                "x": 759.98,
+                "y_bottom": 40.40,
+                "y_top": 12.40
+              },
+              "row_index": 0,
+              "type": "normal",
+              "unicode": 27492
+            },
+            {
+              "char": "页",
+              "confidence": 1,
+              "position": {
+                "x": 759.98,
+                "y_bottom": 68.41,
+                "y_top": 40.40
+              },
+              "row_index": 1,
+              "type": "normal",
+              "unicode": 39029
+            },
+            {
+              "char": "版",
+              "confidence": 1,
+              "position": {
+                "x": 759.98,
+                "y_bottom": 96.41,
+                "y_top": 68.41
+              },
+              "row_index": 2,
+              "type": "normal",
+              "unicode": 29256
+            },
+            {
+              "char": "心",
+              "confidence": 1,
+              "position": {
+                "x": 759.98,
+                "y_bottom": 124.42,
+                "y_top": 96.41
+              },
+              "row_index": 3,
+              "type": "normal",
+              "unicode": 24515
+            },
+            {
+              "char": "显",
+              "confidence": 1,
+              "position": {
+                "x": 759.98,
+                "y_bottom": 152.42,
+                "y_top": 124.42
+              },
+              "row_index": 4,
+              "type": "normal",
+              "unicode": 26174
+            },
+            {
+              "char": "示",
+              "confidence": 1,
+              "position": {
+                "x": 759.98,
+                "y_bottom": 180.43,
+                "y_top": 152.42
+              },
+              "row_index": 5,
+              "type": "normal",
+              "unicode": 31034
+            },
+            {
+              "char": "版",
+              "confidence": 1,
+              "position": {
+                "x": 759.98,
+                "y_bottom": 208.43,
+                "y_top": 180.43
+              },
+              "row_index": 6,
+              "type": "normal",
+              "unicode": 29256
+            },
+            {
+              "char": "心",
+              "confidence": 1,
+              "position": {
+                "x": 759.98,
+                "y_bottom": 236.44,
+                "y_top": 208.43
+              },
+              "row_index": 7,
+              "type": "normal",
+              "unicode": 24515
+            },
+            {
+              "char": "專",
+              "confidence": 1,
+              "position": {
+                "x": 759.98,
+                "y_bottom": 264.44,
+                "y_top": 236.44
+              },
+              "row_index": 8,
+              "type": "normal",
+              "unicode": 23560
+            },
+            {
+              "char": "用",
+              "confidence": 1,
+              "position": {
+                "x": 759.98,
+                "y_bottom": 292.45,
+                "y_top": 264.44
+              },
+              "row_index": 9,
+              "type": "normal",
+              "unicode": 29992
+            },
+            {
+              "char": "標",
+              "confidence": 1,
+              "position": {
+                "x": 759.98,
+                "y_bottom": 320.45,
+                "y_top": 292.45
+              },
+              "row_index": 10,
+              "type": "normal",
+              "unicode": 27161
+            },
+            {
+              "char": "題",
+              "confidence": 1,
+              "position": {
+                "x": 759.98,
+                "y_bottom": 348.46,
+                "y_top": 320.45
+              },
+              "row_index": 11,
+              "type": "normal",
+              "unicode": 38988
+            },
+            {
+              "char": "但",
+              "confidence": 1,
+              "position": {
+                "x": 759.98,
+                "y_bottom": 376.46,
+                "y_top": 348.46
+              },
+              "row_index": 12,
+              "type": "normal",
+              "unicode": 20294
+            },
+            {
+              "char": "正",
+              "confidence": 1,
+              "position": {
+                "x": 759.98,
+                "y_bottom": 404.47,
+                "y_top": 376.46
+              },
+              "row_index": 13,
+              "type": "normal",
+              "unicode": 27491
+            },
+            {
+              "char": "文",
+              "confidence": 1,
+              "position": {
+                "x": 759.98,
+                "y_bottom": 432.47,
+                "y_top": 404.47
+              },
+              "row_index": 14,
+              "type": "normal",
+              "unicode": 25991
+            },
+            {
+              "char": "中",
+              "confidence": 1,
+              "position": {
+                "x": 759.98,
+                "y_bottom": 460.48,
+                "y_top": 432.47
+              },
+              "row_index": 15,
+              "type": "normal",
+              "unicode": 20013
+            },
+            {
+              "char": "显",
+              "confidence": 1,
+              "position": {
+                "x": 759.98,
+                "y_bottom": 488.48,
+                "y_top": 460.48
+              },
+              "row_index": 16,
+              "type": "normal",
+              "unicode": 26174
+            },
+            {
+              "char": "示",
+              "confidence": 1,
+              "position": {
+                "x": 759.98,
+                "y_bottom": 516.49,
+                "y_top": 488.48
+              },
+              "row_index": 17,
+              "type": "normal",
+              "unicode": 31034
+            },
+            {
+              "char": "正",
+              "confidence": 1,
+              "position": {
+                "x": 759.98,
+                "y_bottom": 544.49,
+                "y_top": 516.49
+              },
+              "row_index": 18,
+              "type": "normal",
+              "unicode": 27491
+            },
+            {
+              "char": "文",
+              "confidence": 1,
+              "position": {
+                "x": 759.98,
+                "y_bottom": 572.50,
+                "y_top": 544.49
+              },
+              "row_index": 19,
+              "type": "normal",
+              "unicode": 25991
+            },
+            {
+              "char": "中",
+              "confidence": 1,
+              "position": {
+                "x": 759.98,
+                "y_bottom": 600.50,
+                "y_top": 572.50
+              },
+              "row_index": 20,
+              "type": "normal",
+              "unicode": 20013
+            }
+          ],
+          "col_index": 1,
+          "position": {
+            "left_x": 759.98,
+            "right_x": 759.98
+          }
+        },
+        {
+          "characters": [
+            {
+              "char": "的",
+              "confidence": 1,
+              "position": {
+                "x": 708.77,
+                "y_bottom": 40.40,
+                "y_top": 12.40
+              },
+              "row_index": 0,
+              "type": "normal",
+              "unicode": 30340
+            },
+            {
+              "char": "標",
+              "confidence": 1,
+              "position": {
+                "x": 708.77,
+                "y_bottom": 68.41,
+                "y_top": 40.40
+              },
+              "row_index": 1,
+              "type": "normal",
+              "unicode": 27161
+            },
+            {
+              "char": "題",
+              "confidence": 1,
+              "position": {
+                "x": 708.77,
+                "y_bottom": 96.41,
+                "y_top": 68.41
+              },
+              "row_index": 2,
+              "type": "normal",
+              "unicode": 38988
+            }
+          ],
+          "col_index": 2,
+          "position": {
+            "left_x": 708.77,
+            "right_x": 708.77
+          }
+        }
+      ],
+      "columns_count": 17,
+      "margins": {
+        "bottom_pt": 91.60,
+        "left_pt": 133.20,
+        "right_pt": 133.20,
+        "top_pt": 190.50
+      },
+      "page_index": 7,
+      "sidenotes": []
     }
   ],
   "source_file": "guji.tex",
-  "source_mtime": 1773525673,
+  "source_mtime": 1773527870,
   "version": "1.0"
 }

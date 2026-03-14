@@ -249,23 +249,35 @@
   }
 
 % 2. Chapter Title Synchronization
-% The original \chapter (from section.sty) already handles star variant {s m}
-% and sets banxin chapter-title key. We wrap it to also sync the local tl.
+% The original \chapter (from section.sty) handles {s o m} and sets banxin
+% chapter-title key. We wrap it to also sync the local tl.
 \cs_if_exist:NTF \chapter
   {
     \NewCommandCopy \__luatexcn_banxin_orig_chapter \chapter
-    \RenewDocumentCommand \chapter { s m }
+    \RenewDocumentCommand \chapter { s o m }
       {
         \IfBooleanTF {#1}
-          { \__luatexcn_banxin_orig_chapter* {#2} }
-          { \__luatexcn_banxin_orig_chapter {#2} }
-        \tl_set:Nn \l__luatexcn_banxin_chapter_title_tl { #2 }
+          {
+            \IfValueTF {#2}
+              { \__luatexcn_banxin_orig_chapter* [#2] {#3} }
+              { \__luatexcn_banxin_orig_chapter* {#3} }
+          }
+          {
+            \IfValueTF {#2}
+              { \__luatexcn_banxin_orig_chapter [#2] {#3} }
+              { \__luatexcn_banxin_orig_chapter {#3} }
+          }
+        \IfValueTF {#2}
+          { \tl_set:Nn \l__luatexcn_banxin_chapter_title_tl { #2 } }
+          { \tl_set:Nn \l__luatexcn_banxin_chapter_title_tl { #3 } }
       }
   }
   {
-    \DeclareDocumentCommand \chapter { s m }
+    \DeclareDocumentCommand \chapter { s o m }
       {
-        \tl_set:Nn \l__luatexcn_banxin_chapter_title_tl { #2 }
+        \IfValueTF {#2}
+          { \tl_set:Nn \l__luatexcn_banxin_chapter_title_tl { #2 } }
+          { \tl_set:Nn \l__luatexcn_banxin_chapter_title_tl { #3 } }
       }
   }
 

@@ -378,13 +378,24 @@
     \RenewDocumentCommand{\newpage}{}{\penalty-10003 }
     \RenewDocumentCommand{\clearpage}{}{\penalty-10003 }
     % Override \chapter inside BodyText: insert marker node + optional text output
-    % \chapter{text}  → marker + styled text (via section.sty handler)
-    % \chapter*{text} → marker only
-    \cs_set:Npn \chapter {
-      \@ifstar
-        { \__luatexcn_chapter_bodytext_star:n }
-        { \__luatexcn_chapter_bodytext_nostar:n }
-    }
+    % \chapter{text}          → marker + styled text
+    % \chapter[banxin]{text}  → marker (banxin title) + styled text (body text)
+    % \chapter*{text}         → marker only
+    % \chapter*[banxin]{text} → marker only (banxin title)
+    \RenewDocumentCommand \chapter { s o m }
+      {
+        \IfBooleanTF {##1}
+          {
+            \IfValueTF {##2}
+              { \__luatexcn_chapter_bodytext_star:n {##2} }
+              { \__luatexcn_chapter_bodytext_star:n {##3} }
+          }
+          {
+            \IfValueTF {##2}
+              { \__luatexcn_chapter_bodytext_nostar:nn {##2} {##3} }
+              { \__luatexcn_chapter_bodytext_nostar:nn {##3} {##3} }
+          }
+      }
   }
 
 % ============================================================

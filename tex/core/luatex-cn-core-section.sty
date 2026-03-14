@@ -17,12 +17,14 @@
 % Provides \chapter, \section, \subsection with text output support.
 %
 % Design:
-%   \chapter{text}     — update banxin + reset page + output text (inside BodyText)
-%   \chapter*{text}    — update banxin + reset page only (metadata mode)
-%   \section{text}     — output styled heading text
-%   \section*{text}    — set section metadata only (no output)
-%   \subsection{text}  — output styled heading text
-%   \subsection*{text} — set subsection metadata only (no output)
+%   \chapter{text}            — update banxin + reset page + output text (inside BodyText)
+%   \chapter[banxin]{text}    — different banxin title and body text
+%   \chapter*{text}           — update banxin + reset page only (metadata mode)
+%   \chapter*[banxin]{text}   — update banxin (with banxin arg) + reset page only
+%   \section{text}            — output styled heading text
+%   \section*{text}           — set section metadata only (no output)
+%   \subsection{text}         — output styled heading text
+%   \subsection*{text}        — set subsection metadata only (no output)
 %
 % Configuration via \sectionSetup{key=val}:
 %   chapter-indent, section-indent, subsection-indent
@@ -149,18 +151,27 @@
 % ============================================================================
 % Chapter Command (enhanced with text output)
 % ============================================================================
-% \chapter{text}  — metadata + page reset + text output (inside BodyText only)
-% \chapter*{text} — metadata + page reset (no text output)
-\RenewDocumentCommand{\chapter}{ s m }
+% \chapter{text}          — metadata + page reset + text output (inside BodyText only)
+% \chapter[banxin]{text}  — different banxin title and body text
+% \chapter*{text}         — metadata + page reset (no text output)
+% \chapter*[banxin]{text} — update banxin (with banxin arg) + reset page only
+\RenewDocumentCommand{\chapter}{ s o m }
   {
-    % Always set metadata (banxin + global state)
-    \keys_set:nn { luatexcn / banxin } { chapter-title = {#2} }
-    \metadataSetup{ chapter-title = {#2} }
+    % Determine banxin title: optional if given, else mandatory
+    \IfValueTF {#2}
+      {
+        \keys_set:nn { luatexcn / banxin } { chapter-title = {#2} }
+        \metadataSetup{ chapter-title = {#2} }
+      }
+      {
+        \keys_set:nn { luatexcn / banxin } { chapter-title = {#3} }
+        \metadataSetup{ chapter-title = {#3} }
+      }
     \ResetPageNumber
     % Clear section/subsection state on new chapter
     \tl_gclear:N \g__luatexcn_section_title_tl
     \tl_gclear:N \g__luatexcn_subsection_title_tl
-    % Output text: non-star AND inside BodyText
+    % Output text: non-star AND inside BodyText (always use #3 for body)
     \IfBooleanF {#1}
       {
         \bool_if:NT \g__luatexcn_in_bodytext_bool
@@ -171,7 +182,7 @@
               \l__luatexcn_section_chapter_font_color_tl
               \l__luatexcn_section_chapter_font_tl
               \l__luatexcn_section_chapter_spacing_top_tl
-              {#2}
+              {#3}
           }
       }
   }
@@ -259,8 +270,9 @@
     \box_use:N \c_zero_int
   }
 
-% \chapter{text} inside BodyText — marker + styled text output
-\cs_new_protected:Nn \__luatexcn_chapter_bodytext_nostar:n
+% \chapter{text} or \chapter[banxin]{text} inside BodyText — marker + styled text output
+% #1 = banxin title (for marker), #2 = body text (for output)
+\cs_new_protected:Nn \__luatexcn_chapter_bodytext_nostar:nn
   {
     \lua_now:e { core.insert_chapter_marker([=[\luaescapestring{\tl_to_str:n{#1}}]=]) }
     \box_use:N \c_zero_int
@@ -270,7 +282,7 @@
       \l__luatexcn_section_chapter_font_color_tl
       \l__luatexcn_section_chapter_font_tl
       \l__luatexcn_section_chapter_spacing_top_tl
-      {#1}
+      {#2}
   }
 
 \ExplSyntaxOff

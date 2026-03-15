@@ -8,8 +8,8 @@ description: 发布新版本的工作流 (Workflow for releasing a new version)
 
 ## 1. 质量保证 (Quality Assurance)
 // turbo
-- **运行回归测试**：确保视觉表现没有退化。
-  `python3 test/regression_test.py check test/regression_test/tex/*.tex`
+- **运行回归测试**：确保视觉表现没有退化。必须使用 `--all` 参数运行所有 suite。
+  `python3 test/regression_test.py check --all`
 // turbo
 - **运行核心测试**：运行所有单元测试和集成测试。
   `l3build check`

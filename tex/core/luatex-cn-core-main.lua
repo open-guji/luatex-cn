@@ -473,8 +473,9 @@ local function compute_grid_layout(list, params, engine_ctx, plugin_contexts, p_
         band_mode = _G.content.band_mode or "auto",
         band_heights = _G.content.band_heights,
         band_columns = _G.content.band_columns or 0,
-        -- Global column-padding-top (used as default for per-column padding override)
+        -- Global column-padding (used as default for per-column padding override)
         c_padding_top = engine_ctx.c_padding_top,
+        c_padding_bottom = engine_ctx.c_padding_bottom,
         -- P2: page geometry offsets for computing absolute coordinates in layout stage
         shift_x = engine_ctx.shift_x or 0,
         shift_y = engine_ctx.shift_y or 0,

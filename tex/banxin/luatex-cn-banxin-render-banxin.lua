@@ -501,6 +501,53 @@ local function render_with_font_color(p_head, element, render_fn)
 end
 
 -- ============================================================================
+-- Pre-Rendered Box Placement (预排版 Box 放置)
+-- ============================================================================
+
+--- Place a pre-rendered box at the position specified by the layout element.
+--- Uses kern+shift positioning (same pattern as render_floating_box).
+--- The box is copied so it can be reused across multiple banxin columns/pages.
+-- @param p_head (node) Current node list head
+-- @param element (table) Layout element with x, y_top, width, height
+-- @param box (node) Pre-rendered box node (will be copied, not consumed)
+-- @return (node) Updated node list head
+local function render_pre_rendered_box(p_head, element, box)
+    local copied = node.copy_list(box)
+    local curr = D.todirect(copied)
+
+    local box_h = D.getfield(curr, "height") or 0
+    local box_w = D.getfield(curr, "width") or 0
+
+    -- Position: element.x is left edge, element.y_top is top edge (PDF coords)
+    -- kern moves horizontally from current position (0) to element.x
+    -- shift moves the box vertically; shift = y_top means the box top aligns with y_top
+    -- In TeX, shift on an hbox/vbox moves downward positively, and the box
+    -- reference point is at the top-left corner offset by height.
+    -- yoffset = y_top positions the box top at y_top (PDF y axis: up is positive)
+    D.setfield(curr, "shift", -(element.y_top - box_h))
+
+    local k_pre = D.new(constants.KERN)
+    D.setfield(k_pre, "subtype", 1)
+    D.setfield(k_pre, "kern", element.x)
+
+    local k_post = D.new(constants.KERN)
+    D.setfield(k_post, "subtype", 1)
+    D.setfield(k_post, "kern", -(element.x + box_w))
+
+    -- Insert: q (save) → kern → box → kern → Q (restore)
+    local q_push = create_literal_node("q")
+    local q_pop = create_literal_node("Q")
+
+    p_head = D.insert_before(p_head, p_head, q_push)
+    D.insert_after(p_head, q_push, k_pre)
+    D.insert_after(p_head, k_pre, curr)
+    D.insert_after(p_head, curr, k_post)
+    D.insert_after(p_head, k_post, q_pop)
+
+    return p_head
+end
+
+-- ============================================================================
 -- Layout-Based Rendering Functions (布局驱动渲染)
 -- ============================================================================
 
@@ -668,9 +715,14 @@ local function draw_from_layout(p_head, layout, runtime)
         p_head = render_section_background(p_head, element)
 
         if element.type == "upper_section" then
-            p_head = render_with_font_color(p_head, element, function(h)
-                return render_text_section(h, element)
-            end)
+            local pre_box = _G.banxin and _G.banxin.upper_section_box
+            if pre_box then
+                p_head = render_pre_rendered_box(p_head, element, pre_box)
+            else
+                p_head = render_with_font_color(p_head, element, function(h)
+                    return render_text_section(h, element)
+                end)
+            end
         elseif element.type == "middle_section" then
             p_head = render_with_font_color(p_head, element, function(h)
                 return render_middle_section_from_layout(h, element, runtime.middle_section_text)
@@ -706,6 +758,7 @@ local banxin = {
         create_fill_rect_literal = create_fill_rect_literal,
         create_divider_literal = create_divider_literal,
         parse_section_text = parse_section_text,
+        render_pre_rendered_box = render_pre_rendered_box,
     },
 }
 

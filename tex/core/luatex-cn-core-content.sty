@@ -409,6 +409,10 @@
     % Initialize content style (once per content block)
     \lua_now:n { require('core.luatex-cn-core-content').init_style() }
 
+    % Pre-render banxin sections into boxes (before main pipeline)
+    \cs_if_exist:NT \__luatexcn_banxin_typeset_sections:
+      { \__luatexcn_banxin_typeset_sections: }
+
     % Process content through three-stage pipeline
     \lua_now:e {
       core.process( \int_value:w \l_tmpa_box , {

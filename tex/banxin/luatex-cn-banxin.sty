@@ -28,6 +28,9 @@
 % Variable Declarations
 % =============================================================================
 
+% Pre-rendered upper section box (global, survives groups)
+\box_new:N \g__luatexcn_banxin_upper_box
+
 % Banxin on/off
 \bool_new:N \l__luatexcn_banxin_on_bool
 
@@ -362,6 +365,19 @@
     下部 .meta:n = { lower-section = {#1} },
     页码 .meta:n = { page-number = {#1} },
     頁碼 .meta:n = { page-number = {#1} },
+  }
+
+% ============================================================================
+% Pre-render upper section as box (called from \end{BodyText})
+% ============================================================================
+% Typesets upper-section content into a global box for use in banxin render.
+% Must be called after content sync (fonts loaded, _G.content available).
+\cs_new_protected:Nn \__luatexcn_banxin_typeset_sections:
+  {
+    % TODO: Enable when TextBox-based vertical typesetting is implemented.
+    % Currently disabled to avoid rendering横排 box content in vertical banxin.
+    % The infrastructure (box register, store function, render_pre_rendered_box)
+    % is in place; needs TextBox排版管道 integration in Step 4.
   }
 
 % ============================================================================

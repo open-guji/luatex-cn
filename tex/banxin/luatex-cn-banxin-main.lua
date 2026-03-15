@@ -49,6 +49,18 @@ end
 -- Export setup function for early access
 _G.banxin.setup = banxin_setup
 
+--- Store pre-rendered upper section box from TeX
+-- Called by \__luatexcn_banxin_typeset_sections: in banxin.sty
+-- @param box_num (number) TeX box register number
+local function store_upper_section_box(box_num)
+    local box = tex.box[box_num]
+    if box then
+        _G.banxin.upper_section_box = node.copy_list(box)
+    else
+        _G.banxin.upper_section_box = nil
+    end
+end
+
 local utils = package.loaded['util.luatex-cn-utils'] or
     require('util.luatex-cn-utils')
 local debug = package.loaded['debug.luatex-cn-debug'] or
@@ -363,6 +375,7 @@ local banxin_plugin = {
     layout = banxin_main.layout,
     render = banxin_main.render,
     setup = banxin_setup,
+    store_upper_section_box = store_upper_section_box,
 }
 
 -- Registry as plugin if core engine is present

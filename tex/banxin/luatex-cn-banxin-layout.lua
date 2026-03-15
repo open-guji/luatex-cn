@@ -69,15 +69,15 @@ local function calculate_yuwei_total_height(yuwei_dims)
     return yuwei_dims.gap + yuwei_dims.edge_height + yuwei_dims.notch_height
 end
 
---- Parse chapter title into parts (supports \\\\ line breaks)
--- @param chapter_title (string) Chapter title
--- @return (table) Array of title parts
-local function parse_chapter_title(chapter_title)
-    if not chapter_title then return {} end
+--- Parse middle section text into parts (supports \\\\ line breaks)
+-- @param text (string) Section text
+-- @return (table) Array of text parts
+local function parse_section_text(text)
+    if not text then return {} end
     -- Handle both \\ and \\\\ (TeX vs Lua literal escaping)
-    local raw_title = chapter_title:gsub("\\\\+", "\n")
+    local raw_text = text:gsub("\\\\+", "\n")
     local parts = {}
-    for s in raw_title:gmatch("[^\n]+") do
+    for s in raw_text:gmatch("[^\n]+") do
         table.insert(parts, s)
     end
     return parts
@@ -138,25 +138,25 @@ end
 -- Text Element Layout Calculations
 -- ============================================================================
 
---- Calculate book name layout
+--- Calculate upper section layout
 -- @param params (table) Layout params
 -- @param regions (table) Region data
--- @return (table|nil) Book name layout element
-local function calculate_book_name_layout(params, regions)
-    local book_name = params.book_name or ""
-    if book_name == "" then return nil end
+-- @return (table|nil) Upper section layout element
+local function calculate_upper_section_layout(params, regions)
+    local text = params.upper_section_text or ""
+    if text == "" then return nil end
 
     local upper_height = regions.upper.height
     local base_f_size = constants.resolve_dimen(params.font_size, 655360)
-    -- Use book_name_font_size if specified, otherwise fall back to base font size
-    local f_size = constants.resolve_dimen(params.book_name_font_size, base_f_size) or base_f_size
+    -- Use section-specific font_size if specified, otherwise fall back to base font size
+    local f_size = constants.resolve_dimen(params.upper_section_font_size, base_f_size) or base_f_size
     local c_padding_top = constants.resolve_dimen(params.c_padding_top, base_f_size)
     local c_padding_bottom = constants.resolve_dimen(params.c_padding_bottom, base_f_size)
     local effective_b = params.draw_border and constants.resolve_dimen(params.border_thickness, base_f_size) or 0
     local adj_height = upper_height - effective_b - c_padding_top - c_padding_bottom
-    local num_chars = count_utf8_chars(book_name)
+    local num_chars = count_utf8_chars(text)
 
-    local grid_h = constants.resolve_dimen(constants.to_dimen(params.book_name_grid_height), f_size)
+    local grid_h = constants.resolve_dimen(constants.to_dimen(params.upper_section_grid_height), f_size)
     local total_text_height
     if grid_h and grid_h > 0 then
         total_text_height = grid_h * num_chars
@@ -169,16 +169,16 @@ local function calculate_book_name_layout(params, regions)
 
     local block_y_top = params.y - effective_b - c_padding_top
     local y_start
-    if params.book_name_align == "top" then
+    if params.upper_section_align == "top" then
         y_start = block_y_top
     else
         y_start = block_y_top - (adj_height - total_text_height) / 2
     end
 
     return {
-        type = "book_name",
+        type = "upper_section",
         is_runtime = false,
-        text = book_name,
+        text = text,
         x = params.x,
         y_top = y_start,
         width = params.width,
@@ -187,18 +187,20 @@ local function calculate_book_name_layout(params, regions)
         v_align = "center",
         h_align = "center",
         font_size = f_size,
+        bg_color = params.upper_section_bg_color,
+        font_color = params.upper_section_font_color,
     }
 end
 
---- Calculate chapter title layout
+--- Calculate middle section layout
 -- @param params (table) Layout params
 -- @param regions (table) Region data
 -- @param decorations (table) Decoration data
--- @return (table|nil) Chapter title layout (marked as runtime)
-local function calculate_chapter_title_layout(params, regions, decorations)
-    -- Chapter title is runtime content (changes per page)
+-- @return (table|nil) Middle section layout (marked as runtime)
+local function calculate_middle_section_layout(params, regions, decorations)
+    -- Middle section is runtime content (changes per page)
     -- We calculate the position/dimensions but mark text as runtime
-    local chapter_title = params.chapter_title or ""
+    local text = params.middle_section_text or ""
 
     local yuwei_dims = decorations.yuwei_dims
     local upper_yuwei_total = decorations.upper_yuwei and calculate_yuwei_total_height(yuwei_dims) or 0
@@ -206,39 +208,41 @@ local function calculate_chapter_title_layout(params, regions, decorations)
 
     local middle_y_top = params.y - regions.upper.height
     local base_f_size = constants.resolve_dimen(params.font_size, 655360)
-    local title_top_margin = constants.resolve_dimen(params.chapter_title_top_margin, base_f_size) or 0
+    local title_top_margin = constants.resolve_dimen(params.middle_section_top_margin, base_f_size) or 0
 
-    local chapter_y_top = middle_y_top - upper_yuwei_total - title_top_margin
+    local section_y_top = middle_y_top - upper_yuwei_total - title_top_margin
     local available_height = regions.middle.height - upper_yuwei_total - lower_yuwei_total - title_top_margin
     if available_height <= 0 then
         available_height = regions.middle.height * 0.3 -- Fallback
     end
 
-    local title_font_size = constants.resolve_dimen(params.chapter_title_font_size, base_f_size)
+    local section_font_size = constants.resolve_dimen(params.middle_section_font_size, base_f_size)
     local font_scale = nil
-    if not title_font_size then
+    if not section_font_size then
         font_scale = 0.5 -- Default scale for banxin titles if not specified
-        title_font_size = base_f_size * font_scale
+        section_font_size = base_f_size * font_scale
     end
 
-    local desired_grid_h = constants.resolve_dimen(params.chapter_title_grid_height, title_font_size)
+    local desired_grid_h = constants.resolve_dimen(params.middle_section_grid_height, section_font_size)
     if not desired_grid_h or desired_grid_h <= 0 then
-        desired_grid_h = title_font_size * 1.1
+        desired_grid_h = section_font_size * 1.1
     end
 
     return {
-        type = "chapter_title",
+        type = "middle_section",
         is_runtime = true,  -- Content resolved at render time
         text = nil,         -- Will be filled at render time
         x = params.x,
-        y_top = chapter_y_top,
+        y_top = section_y_top,
         width = params.width,
         available_height = available_height,
-        font_size = title_font_size,
+        font_size = section_font_size,
         font_scale = font_scale,
         grid_height = desired_grid_h,
-        n_cols = params.chapter_title_cols or 1,
-        h_align = params.chapter_title_align or "center",
+        n_cols = params.middle_section_cols or 1,
+        h_align = params.middle_section_align or "center",
+        bg_color = params.middle_section_bg_color,
+        font_color = params.middle_section_font_color,
     }
 end
 
@@ -303,43 +307,45 @@ local function calculate_page_number_layout(params, regions, decorations)
     }
 end
 
---- Calculate publisher layout
+--- Calculate lower section layout
 -- @param params (table) Layout params
 -- @param regions (table) Region data
--- @return (table|nil) Publisher layout element
-local function calculate_publisher_layout(params, regions)
-    local publisher = params.publisher or ""
-    if publisher == "" then return nil end
+-- @return (table|nil) Lower section layout element
+local function calculate_lower_section_layout(params, regions)
+    local text = params.lower_section_text or ""
+    if text == "" then return nil end
 
     local base_f_size = constants.resolve_dimen(params.font_size, 655360) or 655360
-    local f_size = constants.resolve_dimen(params.publisher_font_size, base_f_size)
+    local f_size = constants.resolve_dimen(params.lower_section_font_size, base_f_size)
     if not f_size or f_size <= 0 then
         f_size = 65536 * 10 -- Default 10pt
     end
 
-    local grid_h = constants.resolve_dimen(params.publisher_grid_height, f_size)
+    local grid_h = constants.resolve_dimen(params.lower_section_grid_height, f_size)
     if not grid_h or grid_h <= 0 then
         grid_h = math.floor(f_size * 1.2 + 0.5) -- Default 1.2 line height
     end
 
-    local num_chars = count_utf8_chars(publisher)
+    local num_chars = count_utf8_chars(text)
     local container_height = grid_h * num_chars
-    local bottom_margin = constants.resolve_dimen(params.publisher_bottom_margin, f_size) or (65536 * 5)
+    local bottom_margin = constants.resolve_dimen(params.lower_section_bottom_margin, f_size) or (65536 * 5)
 
     local banxin_bottom_y = params.y - params.height
     local y_top = banxin_bottom_y + bottom_margin + container_height
 
     return {
-        type = "publisher",
+        type = "lower_section",
         is_runtime = false,
-        text = publisher,
+        text = text,
         x = params.x,
         y_top = y_top,
         width = params.width,
         height = container_height,
         v_align = "bottom",
-        h_align = params.publisher_align == "center" and "center" or "right",
+        h_align = params.lower_section_align == "center" and "center" or "right",
         font_size = f_size,
+        bg_color = params.lower_section_bg_color,
+        font_color = params.lower_section_font_color,
     }
 end
 
@@ -360,14 +366,14 @@ function banxin_layout.calculate_column_layout(params)
     -- Calculate text elements
     local elements = {}
 
-    local book_name_elem = calculate_book_name_layout(params, regions)
-    if book_name_elem then
-        table.insert(elements, book_name_elem)
+    local upper_elem = calculate_upper_section_layout(params, regions)
+    if upper_elem then
+        table.insert(elements, upper_elem)
     end
 
-    local chapter_elem = calculate_chapter_title_layout(params, regions, decorations)
-    if chapter_elem then
-        table.insert(elements, chapter_elem)
+    local middle_elem = calculate_middle_section_layout(params, regions, decorations)
+    if middle_elem then
+        table.insert(elements, middle_elem)
     end
 
     local page_num_elem = calculate_page_number_layout(params, regions, decorations)
@@ -375,9 +381,9 @@ function banxin_layout.calculate_column_layout(params)
         table.insert(elements, page_num_elem)
     end
 
-    local publisher_elem = calculate_publisher_layout(params, regions)
-    if publisher_elem then
-        table.insert(elements, publisher_elem)
+    local lower_elem = calculate_lower_section_layout(params, regions)
+    if lower_elem then
+        table.insert(elements, lower_elem)
     end
 
     return {
@@ -409,7 +415,7 @@ end
 banxin_layout.count_utf8_chars = count_utf8_chars
 banxin_layout.calculate_yuwei_dimensions = calculate_yuwei_dimensions
 banxin_layout.calculate_yuwei_total_height = calculate_yuwei_total_height
-banxin_layout.parse_chapter_title = parse_chapter_title
+banxin_layout.parse_section_text = parse_section_text
 banxin_layout.calculate_regions = calculate_regions
 
 -- Register in package.loaded

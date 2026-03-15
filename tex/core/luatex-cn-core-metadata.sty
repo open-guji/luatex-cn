@@ -64,8 +64,8 @@
   {
     \tl_set:Nn \l__luatexcn_metadata_book_name_tl { #1 }
     % Forward to banxin if available
-    \cs_if_exist:NT \l__luatexcn_banxin_book_name_tl
-      { \keys_set:nn { luatexcn / banxin } { book-name = {#1} } }
+    \cs_if_exist:NT \l__luatexcn_banxin_upper_section_text_tl
+      { \keys_set:nn { luatexcn / banxin } { upper-section = {#1} } }
     % Set LaTeX's @title for compatibility
     \gdef\@title{#1}
   }
@@ -75,8 +75,8 @@
   {
     \tl_set:Nn \l__luatexcn_metadata_publisher_tl { #1 }
     % Forward to banxin if available
-    \cs_if_exist:NT \l__luatexcn_banxin_publisher_tl
-      { \keys_set:nn { luatexcn / banxin } { publisher = {#1} } }
+    \cs_if_exist:NT \l__luatexcn_banxin_lower_section_text_tl
+      { \keys_set:nn { luatexcn / banxin } { lower-section = {#1} } }
   }
 
 % ============================================================================
@@ -95,7 +95,7 @@
 % Sets chapter title in banxin and metadata, then resets page number
 \DeclareDocumentCommand{\chapter}{ m }
   {
-    \keys_set:nn { luatexcn / banxin } { chapter-title = {#1} }
+    \keys_set:nn { luatexcn / banxin } { middle-section-text = {#1} }
     % Also set global metadata for layout phase (fixes issue #45 - chapter not showing on first page)
     \metadataSetup{ chapter-title = {#1} }
     \ResetPageNumber

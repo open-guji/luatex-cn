@@ -160,11 +160,11 @@
     % Determine banxin title: optional if given, else mandatory
     \IfValueTF {#2}
       {
-        \keys_set:nn { luatexcn / banxin } { chapter-title = {#2} }
+        \keys_set:nn { luatexcn / banxin } { middle-section-text = {#2} }
         \metadataSetup{ chapter-title = {#2} }
       }
       {
-        \keys_set:nn { luatexcn / banxin } { chapter-title = {#3} }
+        \keys_set:nn { luatexcn / banxin } { middle-section-text = {#3} }
         \metadataSetup{ chapter-title = {#3} }
       }
     \ResetPageNumber

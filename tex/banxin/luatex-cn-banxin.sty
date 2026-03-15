@@ -42,20 +42,24 @@
 \bool_new:N \l__luatexcn_banxin_upper_yuwei_bool
 \bool_new:N \l__luatexcn_banxin_lower_yuwei_bool
 
-% Book name variables
-\tl_new:N \l__luatexcn_banxin_book_name_tl
-\tl_new:N \l__luatexcn_banxin_book_name_font_size_tl
-\tl_new:N \l__luatexcn_banxin_book_name_grid_height_tl
-\tl_new:N \l__luatexcn_banxin_book_name_align_tl
-\tl_new:N \l__luatexcn_banxin_book_name_top_padding_tl
+% Upper section variables (版心上部)
+\tl_new:N \l__luatexcn_banxin_upper_section_text_tl
+\tl_new:N \l__luatexcn_banxin_upper_section_font_size_tl
+\tl_new:N \l__luatexcn_banxin_upper_section_grid_height_tl
+\tl_new:N \l__luatexcn_banxin_upper_section_align_tl
+\tl_new:N \l__luatexcn_banxin_upper_section_top_padding_tl
+\tl_new:N \l__luatexcn_banxin_upper_section_bg_color_tl
+\tl_new:N \l__luatexcn_banxin_upper_section_font_color_tl
 
-% Chapter title variables
-\tl_new:N \l__luatexcn_banxin_chapter_title_tl
-\tl_new:N \l__luatexcn_banxin_chapter_title_font_size_tl
-\tl_new:N \l__luatexcn_banxin_chapter_title_grid_height_tl
-\tl_new:N \l__luatexcn_banxin_chapter_title_top_margin_tl
-\int_new:N \l__luatexcn_banxin_chapter_title_cols_int
-\tl_new:N \l__luatexcn_banxin_chapter_title_align_tl
+% Middle section variables (版心中部)
+\tl_new:N \l__luatexcn_banxin_middle_section_text_tl
+\tl_new:N \l__luatexcn_banxin_middle_section_font_size_tl
+\tl_new:N \l__luatexcn_banxin_middle_section_grid_height_tl
+\tl_new:N \l__luatexcn_banxin_middle_section_top_margin_tl
+\int_new:N \l__luatexcn_banxin_middle_section_cols_int
+\tl_new:N \l__luatexcn_banxin_middle_section_align_tl
+\tl_new:N \l__luatexcn_banxin_middle_section_bg_color_tl
+\tl_new:N \l__luatexcn_banxin_middle_section_font_color_tl
 
 % Page number variables
 \tl_new:N \l__luatexcn_banxin_page_number_font_size_tl
@@ -63,12 +67,14 @@
 \tl_new:N \l__luatexcn_banxin_page_number_align_tl
 \tl_new:N \l__luatexcn_banxin_page_number_bottom_padding_tl
 
-% Publisher variables
-\tl_new:N \l__luatexcn_banxin_publisher_tl
-\tl_new:N \l__luatexcn_banxin_publisher_font_size_tl
-\tl_new:N \l__luatexcn_banxin_publisher_grid_height_tl
-\tl_new:N \l__luatexcn_banxin_publisher_bottom_margin_tl
-\tl_new:N \l__luatexcn_banxin_publisher_align_tl
+% Lower section variables (版心下部)
+\tl_new:N \l__luatexcn_banxin_lower_section_text_tl
+\tl_new:N \l__luatexcn_banxin_lower_section_font_size_tl
+\tl_new:N \l__luatexcn_banxin_lower_section_grid_height_tl
+\tl_new:N \l__luatexcn_banxin_lower_section_bottom_margin_tl
+\tl_new:N \l__luatexcn_banxin_lower_section_align_tl
+\tl_new:N \l__luatexcn_banxin_lower_section_bg_color_tl
+\tl_new:N \l__luatexcn_banxin_lower_section_font_color_tl
 
 % Banxin-level style overrides (forwarded from unknown handler)
 \tl_new:N \l__luatexcn_banxin_style_font_size_tl
@@ -81,32 +87,40 @@
 % Sub-Namespace Definitions
 % =============================================================================
 
-% book-name sub-namespace
-\keys_define:nn { luatexcn / banxin / book-name }
+% upper-section sub-namespace (版心上部)
+\keys_define:nn { luatexcn / banxin / upper-section }
   {
-    font-size .tl_set:N = \l__luatexcn_banxin_book_name_font_size_tl,
+    font-size .tl_set:N = \l__luatexcn_banxin_upper_section_font_size_tl,
     font-size .initial:n = {},
-    grid-height .tl_set:N = \l__luatexcn_banxin_book_name_grid_height_tl,
+    grid-height .tl_set:N = \l__luatexcn_banxin_upper_section_grid_height_tl,
     grid-height .initial:n = {},
-    align .tl_set:N = \l__luatexcn_banxin_book_name_align_tl,
+    align .tl_set:N = \l__luatexcn_banxin_upper_section_align_tl,
     align .initial:n = {center},
-    top-padding .tl_set:N = \l__luatexcn_banxin_book_name_top_padding_tl,
+    top-padding .tl_set:N = \l__luatexcn_banxin_upper_section_top_padding_tl,
     top-padding .initial:n = {2pt},
+    background-color .tl_set:N = \l__luatexcn_banxin_upper_section_bg_color_tl,
+    background-color .initial:n = {},
+    font-color .tl_set:N = \l__luatexcn_banxin_upper_section_font_color_tl,
+    font-color .initial:n = {},
   }
 
-% chapter sub-namespace
-\keys_define:nn { luatexcn / banxin / chapter }
+% middle-section sub-namespace (版心中部)
+\keys_define:nn { luatexcn / banxin / middle-section }
   {
-    font-size .tl_set:N = \l__luatexcn_banxin_chapter_title_font_size_tl,
+    font-size .tl_set:N = \l__luatexcn_banxin_middle_section_font_size_tl,
     font-size .initial:n = {},
-    grid-height .tl_set:N = \l__luatexcn_banxin_chapter_title_grid_height_tl,
+    grid-height .tl_set:N = \l__luatexcn_banxin_middle_section_grid_height_tl,
     grid-height .initial:n = {},
-    top-margin .tl_set:N = \l__luatexcn_banxin_chapter_title_top_margin_tl,
+    top-margin .tl_set:N = \l__luatexcn_banxin_middle_section_top_margin_tl,
     top-margin .initial:n = {20pt},
-    cols .int_set:N = \l__luatexcn_banxin_chapter_title_cols_int,
+    cols .int_set:N = \l__luatexcn_banxin_middle_section_cols_int,
     cols .initial:n = 1,
-    align .tl_set:N = \l__luatexcn_banxin_chapter_title_align_tl,
+    align .tl_set:N = \l__luatexcn_banxin_middle_section_align_tl,
     align .initial:n = {center},
+    background-color .tl_set:N = \l__luatexcn_banxin_middle_section_bg_color_tl,
+    background-color .initial:n = {},
+    font-color .tl_set:N = \l__luatexcn_banxin_middle_section_font_color_tl,
+    font-color .initial:n = {},
   }
 
 % page-number sub-namespace
@@ -122,17 +136,21 @@
     bottom-padding .initial:n = {10pt},
   }
 
-% publisher sub-namespace
-\keys_define:nn { luatexcn / banxin / publisher }
+% lower-section sub-namespace (版心下部)
+\keys_define:nn { luatexcn / banxin / lower-section }
   {
-    font-size .tl_set:N = \l__luatexcn_banxin_publisher_font_size_tl,
+    font-size .tl_set:N = \l__luatexcn_banxin_lower_section_font_size_tl,
     font-size .initial:n = {10pt},
-    grid-height .tl_set:N = \l__luatexcn_banxin_publisher_grid_height_tl,
+    grid-height .tl_set:N = \l__luatexcn_banxin_lower_section_grid_height_tl,
     grid-height .initial:n = {},
-    align .tl_set:N = \l__luatexcn_banxin_publisher_align_tl,
+    align .tl_set:N = \l__luatexcn_banxin_lower_section_align_tl,
     align .initial:n = {right},
-    bottom-margin .tl_set:N = \l__luatexcn_banxin_publisher_bottom_margin_tl,
+    bottom-margin .tl_set:N = \l__luatexcn_banxin_lower_section_bottom_margin_tl,
     bottom-margin .initial:n = {5pt},
+    background-color .tl_set:N = \l__luatexcn_banxin_lower_section_bg_color_tl,
+    background-color .initial:n = {},
+    font-color .tl_set:N = \l__luatexcn_banxin_lower_section_font_color_tl,
+    font-color .initial:n = {},
   }
 
 % =============================================================================
@@ -162,29 +180,29 @@
     lower-yuwei .bool_set:N = \l__luatexcn_banxin_lower_yuwei_bool,
     lower-yuwei .initial:n = true,
 
-    % Chapter title text content (used by \chapter command)
-    chapter-title .tl_set:N = \l__luatexcn_banxin_chapter_title_tl,
-    chapter-title .initial:n = {},
+    % Middle section text content (used by \chapter command)
+    middle-section-text .tl_set:N = \l__luatexcn_banxin_middle_section_text_tl,
+    middle-section-text .initial:n = {},
 
     % Nested key handlers - detect text vs key-value pairs
-    book-name .code:n = {
+    upper-section .code:n = {
       \tl_if_in:nnTF { #1 } { = }
-        { \keys_set:nn { luatexcn / banxin / book-name } { #1 } }
-        { \tl_set:Nn \l__luatexcn_banxin_book_name_tl { #1 } }
+        { \keys_set:nn { luatexcn / banxin / upper-section } { #1 } }
+        { \tl_set:Nn \l__luatexcn_banxin_upper_section_text_tl { #1 } }
     },
 
-    chapter .code:n = {
-      \keys_set:nn { luatexcn / banxin / chapter } { #1 }
+    middle-section .code:n = {
+      \keys_set:nn { luatexcn / banxin / middle-section } { #1 }
     },
 
     page-number .code:n = {
       \keys_set:nn { luatexcn / banxin / page-number } { #1 }
     },
 
-    publisher .code:n = {
+    lower-section .code:n = {
       \tl_if_in:nnTF { #1 } { = }
-        { \keys_set:nn { luatexcn / banxin / publisher } { #1 } }
-        { \tl_set:Nn \l__luatexcn_banxin_publisher_tl { #1 } }
+        { \keys_set:nn { luatexcn / banxin / lower-section } { #1 } }
+        { \tl_set:Nn \l__luatexcn_banxin_lower_section_text_tl { #1 } }
     },
     % Forward unknown keys: try settings first, then style
     unknown .code:n =
@@ -227,30 +245,28 @@
   }
 
 % =============================================================================
-% Compatibility Mode Logic
+% Title / Chapter Synchronization
 % =============================================================================
 
-% 1. Book Name / Title Synchronization
+% 1. Title → upper section text
 \cs_if_exist:NTF \title
   {
     \NewCommandCopy \__luatexcn_banxin_orig_title \title
     \RenewDocumentCommand \title { m }
       {
         \__luatexcn_banxin_orig_title { #1 }
-        \tl_set:Nn \l__luatexcn_banxin_book_name_tl { #1 }
+        \tl_set:Nn \l__luatexcn_banxin_upper_section_text_tl { #1 }
       }
   }
   {
     \NewDocumentCommand \title { m }
       {
         \gdef\@title{#1}
-        \tl_set:Nn \l__luatexcn_banxin_book_name_tl { #1 }
+        \tl_set:Nn \l__luatexcn_banxin_upper_section_text_tl { #1 }
       }
   }
 
-% 2. Chapter Title Synchronization
-% The original \chapter (from section.sty) handles {s o m} and sets banxin
-% chapter-title key. We wrap it to also sync the local tl.
+% 2. Chapter → middle section text
 \cs_if_exist:NTF \chapter
   {
     \NewCommandCopy \__luatexcn_banxin_orig_chapter \chapter
@@ -268,16 +284,16 @@
               { \__luatexcn_banxin_orig_chapter {#3} }
           }
         \IfValueTF {#2}
-          { \tl_set:Nn \l__luatexcn_banxin_chapter_title_tl { #2 } }
-          { \tl_set:Nn \l__luatexcn_banxin_chapter_title_tl { #3 } }
+          { \tl_set:Nn \l__luatexcn_banxin_middle_section_text_tl { #2 } }
+          { \tl_set:Nn \l__luatexcn_banxin_middle_section_text_tl { #3 } }
       }
   }
   {
     \DeclareDocumentCommand \chapter { s o m }
       {
         \IfValueTF {#2}
-          { \tl_set:Nn \l__luatexcn_banxin_chapter_title_tl { #2 } }
-          { \tl_set:Nn \l__luatexcn_banxin_chapter_title_tl { #3 } }
+          { \tl_set:Nn \l__luatexcn_banxin_middle_section_text_tl { #2 } }
+          { \tl_set:Nn \l__luatexcn_banxin_middle_section_text_tl { #3 } }
       }
   }
 
@@ -285,24 +301,28 @@
 % CJK Key Aliases (中文键值别名)
 % ============================================================================
 
-% --- book-name sub-namespace ---
-\keys_define:nn { luatexcn / banxin / book-name }
+% --- upper-section sub-namespace ---
+\keys_define:nn { luatexcn / banxin / upper-section }
   {
-    字号 .tl_set:N = \l__luatexcn_banxin_book_name_font_size_tl,
-    格高 .tl_set:N = \l__luatexcn_banxin_book_name_grid_height_tl,
-    对齐 .tl_set:N = \l__luatexcn_banxin_book_name_align_tl,
+    字号 .tl_set:N = \l__luatexcn_banxin_upper_section_font_size_tl,
+    格高 .tl_set:N = \l__luatexcn_banxin_upper_section_grid_height_tl,
+    对齐 .tl_set:N = \l__luatexcn_banxin_upper_section_align_tl,
+    底色 .tl_set:N = \l__luatexcn_banxin_upper_section_bg_color_tl,
+    字体颜色 .tl_set:N = \l__luatexcn_banxin_upper_section_font_color_tl,
   }
 
-% --- chapter sub-namespace ---
-\keys_define:nn { luatexcn / banxin / chapter }
+% --- middle-section sub-namespace ---
+\keys_define:nn { luatexcn / banxin / middle-section }
   {
-    字号 .tl_set:N = \l__luatexcn_banxin_chapter_title_font_size_tl,
-    格高 .tl_set:N = \l__luatexcn_banxin_chapter_title_grid_height_tl,
-    上留白 .tl_set:N = \l__luatexcn_banxin_chapter_title_top_margin_tl,
-    列数 .int_set:N = \l__luatexcn_banxin_chapter_title_cols_int,
-    列數 .int_set:N = \l__luatexcn_banxin_chapter_title_cols_int,
-    对齐 .tl_set:N = \l__luatexcn_banxin_chapter_title_align_tl,
-    對齊 .tl_set:N = \l__luatexcn_banxin_chapter_title_align_tl,
+    字号 .tl_set:N = \l__luatexcn_banxin_middle_section_font_size_tl,
+    格高 .tl_set:N = \l__luatexcn_banxin_middle_section_grid_height_tl,
+    上留白 .tl_set:N = \l__luatexcn_banxin_middle_section_top_margin_tl,
+    列数 .int_set:N = \l__luatexcn_banxin_middle_section_cols_int,
+    列數 .int_set:N = \l__luatexcn_banxin_middle_section_cols_int,
+    对齐 .tl_set:N = \l__luatexcn_banxin_middle_section_align_tl,
+    對齊 .tl_set:N = \l__luatexcn_banxin_middle_section_align_tl,
+    底色 .tl_set:N = \l__luatexcn_banxin_middle_section_bg_color_tl,
+    字体颜色 .tl_set:N = \l__luatexcn_banxin_middle_section_font_color_tl,
   }
 
 % --- page-number sub-namespace ---
@@ -313,13 +333,15 @@
     对齐 .tl_set:N = \l__luatexcn_banxin_page_number_align_tl,
   }
 
-% --- publisher sub-namespace ---
-\keys_define:nn { luatexcn / banxin / publisher }
+% --- lower-section sub-namespace ---
+\keys_define:nn { luatexcn / banxin / lower-section }
   {
-    字号 .tl_set:N = \l__luatexcn_banxin_publisher_font_size_tl,
-    格高 .tl_set:N = \l__luatexcn_banxin_publisher_grid_height_tl,
-    对齐 .tl_set:N = \l__luatexcn_banxin_publisher_align_tl,
-    下留白 .tl_set:N = \l__luatexcn_banxin_publisher_bottom_margin_tl,
+    字号 .tl_set:N = \l__luatexcn_banxin_lower_section_font_size_tl,
+    格高 .tl_set:N = \l__luatexcn_banxin_lower_section_grid_height_tl,
+    对齐 .tl_set:N = \l__luatexcn_banxin_lower_section_align_tl,
+    下留白 .tl_set:N = \l__luatexcn_banxin_lower_section_bottom_margin_tl,
+    底色 .tl_set:N = \l__luatexcn_banxin_lower_section_bg_color_tl,
+    字体颜色 .tl_set:N = \l__luatexcn_banxin_lower_section_font_color_tl,
   }
 
 % --- main banxin namespace ---
@@ -334,15 +356,12 @@
     上魚尾 .bool_set:N = \l__luatexcn_banxin_upper_yuwei_bool,
     下鱼尾 .bool_set:N = \l__luatexcn_banxin_lower_yuwei_bool,
     下魚尾 .bool_set:N = \l__luatexcn_banxin_lower_yuwei_bool,
-    章节标题 .tl_set:N = \l__luatexcn_banxin_chapter_title_tl,
-    章節標題 .tl_set:N = \l__luatexcn_banxin_chapter_title_tl,
-    书名 .meta:n = { book-name = {#1} },
-    書名 .meta:n = { book-name = {#1} },
-    章节 .meta:n = { chapter = {#1} },
-    章節 .meta:n = { chapter = {#1} },
+    中部文字 .tl_set:N = \l__luatexcn_banxin_middle_section_text_tl,
+    上部 .meta:n = { upper-section = {#1} },
+    中部 .meta:n = { middle-section = {#1} },
+    下部 .meta:n = { lower-section = {#1} },
     页码 .meta:n = { page-number = {#1} },
     頁碼 .meta:n = { page-number = {#1} },
-    出版商 .meta:n = { publisher = {#1} },
   }
 
 % ============================================================================

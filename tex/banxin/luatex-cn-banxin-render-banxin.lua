@@ -20,17 +20,19 @@
 -- 本模块负责绘制古籍排版中的"版心"（中间的分隔列），包括：
 --   1. 绘制版心列的边框（与普通列边框样式相同）
 --   2. 在版心内绘制两条水平分隔线，将版心分为三个区域
---   3. 在版心第一区域绘制竖排文字（鱼尾文字，如书名、卷号等）
+--   3. 在版心各区域绘制竖排文字
 --   4. 支持自定义三个区域的高度比例（默认 0.28:0.56:0.16）
+--   5. 支持各区域的背景色和字体颜色
 --
 -- 【整体架构】
---   draw_banxin_column(p_head, params)
+--   draw_from_layout(p_head, layout, runtime)
 --      ├─ render_border() - 绘制边框
---      ├─ draw_banxin() - 绘制分隔线和鱼尾
---      ├─ render_book_name() - 绘制书名文字
---      ├─ render_chapter_title() - 绘制章节标题
---      ├─ render_page_number() - 绘制页码
---      ├─ render_publisher() - 绘制出版社/刊号
+--      ├─ draw_dividers() - 绘制分隔线
+--      ├─ draw_yuwei() - 绘制鱼尾
+--      ├─ render_section_background() - 绘制区域背景色
+--      ├─ render_text_section() - 绘制文字
+--      ├─ render_middle_section_from_layout() - 绘制中部文字
+--      ├─ render_page_number_from_layout() - 绘制页码
 --      └─ render_debug_rects() - 调试矩形
 --
 -- ============================================================================
@@ -104,6 +106,25 @@ local function create_border_literal(x, y, width, height, thickness, color_str)
     return string.format(
         "q %.2f w %s RG %.4f %.4f %.4f %.4f re S Q",
         thickness_bp, color_str, x_bp, y_bp, width_bp, height_bp
+    )
+end
+
+--- 生成填充矩形的 PDF literal (用于背景色)
+-- @param x (number) X 坐标 (sp)
+-- @param y (number) Y 坐标 (sp)
+-- @param width (number) 宽度 (sp)
+-- @param height (number) 高度 (sp, 正值，向下)
+-- @param color_str (string) RGB 颜色字符串 (空格分隔，0-1范围)
+-- @return (string) PDF literal 字符串
+local function create_fill_rect_literal(x, y, width, height, color_str)
+    local x_bp = x * sp_to_bp
+    local y_bp = y * sp_to_bp
+    local width_bp = width * sp_to_bp
+    local height_bp = -height * sp_to_bp
+
+    return string.format(
+        "q %s rg %.4f %.4f %.4f %.4f re f Q",
+        color_str, x_bp, y_bp, width_bp, height_bp
     )
 end
 
@@ -386,7 +407,7 @@ create_vertical_text = function(text, params)
 end
 
 --- Generic function to render a text section
--- Consolidates the common pattern used by book_name, chapter, page_number, publisher
+-- Consolidates the common pattern used by upper, middle, lower sections
 -- @param p_head (node) Current list head
 -- @param layout (table|nil) Layout params with: text, x, y_top, width, height, v_align, h_align, font_size
 -- @return (node) Updated list head
@@ -412,8 +433,8 @@ local function render_text_section(p_head, layout)
     return p_head
 end
 
--- Reuse parse_chapter_title from banxin-layout module
-local parse_chapter_title = banxin_layout.parse_chapter_title
+-- Reuse parse_section_text from banxin-layout module
+local parse_section_text = banxin_layout.parse_section_text
 
 -- ============================================================================
 -- Debug Functions (调试功能)
@@ -435,18 +456,63 @@ local function render_debug_rects(p_head, x, y, width, height)
 end
 
 -- ============================================================================
+-- Background & Font Color Rendering (背景色与字体颜色)
+-- ============================================================================
+
+--- 渲染区域背景色
+-- @param p_head (node) Node list head
+-- @param element (table) Layout element with bg_color, x, y_top, width, height
+-- @return (node) Updated node list head
+local function render_section_background(p_head, element)
+    if not element.bg_color or element.bg_color == "" then
+        return p_head
+    end
+    local height = element.height or 0
+    if height <= 0 then return p_head end
+
+    local lit = create_fill_rect_literal(
+        element.x, element.y_top, element.width, height, element.bg_color
+    )
+    p_head = D.insert_before(p_head, p_head, create_literal_node(lit))
+    return p_head
+end
+
+--- 包裹字体颜色：在 glyph chain 前后插入颜色 push/pop
+-- @param p_head (node) Node list head
+-- @param element (table) Layout element with font_color
+-- @param render_fn (function) Function that renders text and returns updated p_head
+-- @return (node) Updated node list head
+local function render_with_font_color(p_head, element, render_fn)
+    if not element.font_color or element.font_color == "" then
+        return render_fn(p_head)
+    end
+
+    -- Push color state before text
+    local color_push = string.format("q %s rg %s RG", element.font_color, element.font_color)
+    p_head = D.insert_before(p_head, p_head, create_literal_node(color_push))
+
+    -- Render text
+    p_head = render_fn(p_head)
+
+    -- Pop color state after text
+    p_head = D.insert_before(p_head, p_head, create_literal_node("Q"))
+
+    return p_head
+end
+
+-- ============================================================================
 -- Layout-Based Rendering Functions (布局驱动渲染)
 -- ============================================================================
 
---- Render chapter title from layout data with runtime content
+--- Render middle section from layout data with runtime content
 -- @param p_head (node) Node list head
--- @param element (table) Chapter title layout element
--- @param chapter_title (string) Runtime chapter title content
+-- @param element (table) Middle section layout element
+-- @param middle_section_text (string) Runtime middle section content
 -- @return (node) Updated node list head
-local function render_chapter_title_from_layout(p_head, element, chapter_title)
-    if not chapter_title or chapter_title == "" then return p_head end
+local function render_middle_section_from_layout(p_head, element, middle_section_text)
+    if not middle_section_text or middle_section_text == "" then return p_head end
 
-    local parts = parse_chapter_title(chapter_title)
+    local parts = parse_section_text(middle_section_text)
     if #parts == 0 then return p_head end
 
     local n_cols = math.max(#parts, element.n_cols or 1)
@@ -528,10 +594,10 @@ end
 
 --- Draw banxin column from pre-calculated layout
 -- This function uses layout data calculated in the layout stage
--- and resolves runtime content (page number, chapter title) at render time.
+-- and resolves runtime content (page number, middle section text) at render time.
 -- @param p_head (node) Node list head
 -- @param layout (table) Pre-calculated layout from banxin-layout module
--- @param runtime (table) Runtime content { chapter_title, page_number }
+-- @param runtime (table) Runtime content { middle_section_text, page_number }
 -- @return (node) Updated node list head
 local function draw_from_layout(p_head, layout, runtime)
     local col = layout.column
@@ -596,18 +662,25 @@ local function draw_from_layout(p_head, layout, runtime)
 
     -- 4. Render text elements
     for _, element in ipairs(layout.elements) do
-        if element.type == "book_name" then
-            element.font_id = element.font_id or base_font_id
-            p_head = render_text_section(p_head, element)
-        elseif element.type == "chapter_title" then
-            element.font_id = element.font_id or base_font_id
-            p_head = render_chapter_title_from_layout(p_head, element, runtime.chapter_title)
+        element.font_id = element.font_id or base_font_id
+
+        -- Render background color if specified
+        p_head = render_section_background(p_head, element)
+
+        if element.type == "upper_section" then
+            p_head = render_with_font_color(p_head, element, function(h)
+                return render_text_section(h, element)
+            end)
+        elseif element.type == "middle_section" then
+            p_head = render_with_font_color(p_head, element, function(h)
+                return render_middle_section_from_layout(h, element, runtime.middle_section_text)
+            end)
         elseif element.type == "page_number" then
-            element.font_id = element.font_id or base_font_id
             p_head = render_page_number_from_layout(p_head, element, runtime.page_number, runtime.explicit_page_number)
-        elseif element.type == "publisher" then
-            element.font_id = element.font_id or base_font_id
-            p_head = render_text_section(p_head, element)
+        elseif element.type == "lower_section" then
+            p_head = render_with_font_color(p_head, element, function(h)
+                return render_text_section(h, element)
+            end)
         end
     end
 
@@ -630,8 +703,9 @@ local banxin = {
         calculate_yuwei_dimensions = calculate_yuwei_dimensions,
         calculate_yuwei_total_height = calculate_yuwei_total_height,
         create_border_literal = create_border_literal,
+        create_fill_rect_literal = create_fill_rect_literal,
         create_divider_literal = create_divider_literal,
-        parse_chapter_title = parse_chapter_title,
+        parse_section_text = parse_section_text,
     },
 }
 

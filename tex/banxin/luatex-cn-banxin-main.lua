@@ -78,26 +78,30 @@ local function read_banxin_params()
         upper_ratio = tonumber(get_tl("l__luatexcn_banxin_upper_ratio_tl")) or 0.28,
         middle_ratio = tonumber(get_tl("l__luatexcn_banxin_middle_ratio_tl")) or 0.56,
 
-        -- Padding (from book-name and page-number sub-namespaces)
-        padding_top = parse_dim(get_tl("l__luatexcn_banxin_book_name_top_padding_tl")),
+        -- Padding (from upper-section and page-number sub-namespaces)
+        padding_top = parse_dim(get_tl("l__luatexcn_banxin_upper_section_top_padding_tl")),
         padding_bottom = parse_dim(get_tl("l__luatexcn_banxin_page_number_bottom_padding_tl")),
 
         -- Divider
         divider = get_bool("l__luatexcn_banxin_divider_bool"),
 
-        -- Book name
-        book_name = get_tl("l__luatexcn_banxin_book_name_tl") or "",
-        book_name_font_size = parse_dim(get_tl("l__luatexcn_banxin_book_name_font_size_tl")),
-        book_name_grid_height = parse_dim(get_tl("l__luatexcn_banxin_book_name_grid_height_tl")),
-        book_name_align = get_tl("l__luatexcn_banxin_book_name_align_tl") or "center",
+        -- Upper section
+        upper_section_text = get_tl("l__luatexcn_banxin_upper_section_text_tl") or "",
+        upper_section_font_size = parse_dim(get_tl("l__luatexcn_banxin_upper_section_font_size_tl")),
+        upper_section_grid_height = parse_dim(get_tl("l__luatexcn_banxin_upper_section_grid_height_tl")),
+        upper_section_align = get_tl("l__luatexcn_banxin_upper_section_align_tl") or "center",
+        upper_section_bg_color = get_tl("l__luatexcn_banxin_upper_section_bg_color_tl") or "",
+        upper_section_font_color = get_tl("l__luatexcn_banxin_upper_section_font_color_tl") or "",
 
-        -- Chapter title
-        chapter_title = get_tl("l__luatexcn_banxin_chapter_title_tl") or "",
-        chapter_title_top_margin = parse_dim(get_tl("l__luatexcn_banxin_chapter_title_top_margin_tl")),
-        chapter_title_cols = get_int("l__luatexcn_banxin_chapter_title_cols_int"),
-        chapter_title_font_size = parse_dim(get_tl("l__luatexcn_banxin_chapter_title_font_size_tl")),
-        chapter_title_grid_height = parse_dim(get_tl("l__luatexcn_banxin_chapter_title_grid_height_tl")),
-        chapter_title_align = get_tl("l__luatexcn_banxin_chapter_title_align_tl") or "center",
+        -- Middle section
+        middle_section_text = get_tl("l__luatexcn_banxin_middle_section_text_tl") or "",
+        middle_section_top_margin = parse_dim(get_tl("l__luatexcn_banxin_middle_section_top_margin_tl")),
+        middle_section_cols = get_int("l__luatexcn_banxin_middle_section_cols_int"),
+        middle_section_font_size = parse_dim(get_tl("l__luatexcn_banxin_middle_section_font_size_tl")),
+        middle_section_grid_height = parse_dim(get_tl("l__luatexcn_banxin_middle_section_grid_height_tl")),
+        middle_section_align = get_tl("l__luatexcn_banxin_middle_section_align_tl") or "center",
+        middle_section_bg_color = get_tl("l__luatexcn_banxin_middle_section_bg_color_tl") or "",
+        middle_section_font_color = get_tl("l__luatexcn_banxin_middle_section_font_color_tl") or "",
 
         -- Yuwei
         upper_yuwei = get_bool("l__luatexcn_banxin_upper_yuwei_bool"),
@@ -108,12 +112,14 @@ local function read_banxin_params()
         page_number_font_size = parse_dim(get_tl("l__luatexcn_banxin_page_number_font_size_tl")),
         page_number_grid_height = parse_dim(get_tl("l__luatexcn_banxin_page_number_grid_height_tl")),
 
-        -- Publisher
-        publisher = get_tl("l__luatexcn_banxin_publisher_tl") or "",
-        publisher_font_size = parse_dim(get_tl("l__luatexcn_banxin_publisher_font_size_tl")),
-        publisher_grid_height = parse_dim(get_tl("l__luatexcn_banxin_publisher_grid_height_tl")),
-        publisher_bottom_margin = parse_dim(get_tl("l__luatexcn_banxin_publisher_bottom_margin_tl")),
-        publisher_align = get_tl("l__luatexcn_banxin_publisher_align_tl") or "right",
+        -- Lower section
+        lower_section_text = get_tl("l__luatexcn_banxin_lower_section_text_tl") or "",
+        lower_section_font_size = parse_dim(get_tl("l__luatexcn_banxin_lower_section_font_size_tl")),
+        lower_section_grid_height = parse_dim(get_tl("l__luatexcn_banxin_lower_section_grid_height_tl")),
+        lower_section_bottom_margin = parse_dim(get_tl("l__luatexcn_banxin_lower_section_bottom_margin_tl")),
+        lower_section_align = get_tl("l__luatexcn_banxin_lower_section_align_tl") or "right",
+        lower_section_bg_color = get_tl("l__luatexcn_banxin_lower_section_bg_color_tl") or "",
+        lower_section_font_color = get_tl("l__luatexcn_banxin_lower_section_font_color_tl") or "",
 
         -- Banxin-level style overrides
         style_font_size = get_tl("l__luatexcn_banxin_style_font_size_tl") or "",
@@ -149,7 +155,7 @@ function banxin_main.initialize(params, engine_ctx)
     -- Capture banxin parameters early (moved from render stage)
     local bp = read_banxin_params()
 
-    dbg.log(string.format("Initialized. Active=true, book_name='%s'", bp.book_name or ""))
+    dbg.log(string.format("Initialized. Active=true, upper_section='%s'", bp.upper_section_text or ""))
 
     -- Build banxin style overrides for push/pop in layout/render
     local banxin_style = {}
@@ -224,28 +230,34 @@ function banxin_main.layout(list, layout_map, engine_ctx, context)
                     draw_border = engine_ctx.draw_border,
                     upper_ratio = bp.upper_ratio,
                     middle_ratio = bp.middle_ratio,
-                    book_name = bp.book_name,
-                    book_name_font_size = bp.book_name_font_size > 0 and bp.book_name_font_size or nil,
-                    book_name_grid_height = bp.book_name_grid_height > 0 and bp.book_name_grid_height or nil,
-                    book_name_align = bp.book_name_align,
+                    upper_section_text = bp.upper_section_text,
+                    upper_section_font_size = bp.upper_section_font_size > 0 and bp.upper_section_font_size or nil,
+                    upper_section_grid_height = bp.upper_section_grid_height > 0 and bp.upper_section_grid_height or nil,
+                    upper_section_align = bp.upper_section_align,
+                    upper_section_bg_color = bp.upper_section_bg_color,
+                    upper_section_font_color = bp.upper_section_font_color,
                     c_padding_top = c_padding_top,
                     c_padding_bottom = c_padding_bottom,
                     upper_yuwei = bp.upper_yuwei,
                     lower_yuwei = bp.lower_yuwei,
                     banxin_divider = bp.divider,
-                    chapter_title = bp.chapter_title,
-                    chapter_title_top_margin = bp.chapter_title_top_margin > 0 and bp.chapter_title_top_margin or (65536 * 20),
-                    chapter_title_cols = bp.chapter_title_cols > 0 and bp.chapter_title_cols or 1,
-                    chapter_title_font_size = bp.chapter_title_font_size > 0 and bp.chapter_title_font_size or nil,
-                    chapter_title_grid_height = bp.chapter_title_grid_height > 0 and bp.chapter_title_grid_height or nil,
-                    chapter_title_align = bp.chapter_title_align,
+                    middle_section_text = bp.middle_section_text,
+                    middle_section_top_margin = bp.middle_section_top_margin > 0 and bp.middle_section_top_margin or (65536 * 20),
+                    middle_section_cols = bp.middle_section_cols > 0 and bp.middle_section_cols or 1,
+                    middle_section_font_size = bp.middle_section_font_size > 0 and bp.middle_section_font_size or nil,
+                    middle_section_grid_height = bp.middle_section_grid_height > 0 and bp.middle_section_grid_height or nil,
+                    middle_section_align = bp.middle_section_align,
+                    middle_section_bg_color = bp.middle_section_bg_color,
+                    middle_section_font_color = bp.middle_section_font_color,
                     page_number_align = bp.page_number_align,
                     page_number_font_size = bp.page_number_font_size > 0 and bp.page_number_font_size or nil,
-                    publisher = bp.publisher,
-                    publisher_font_size = bp.publisher_font_size > 0 and bp.publisher_font_size or nil,
-                    publisher_grid_height = bp.publisher_grid_height > 0 and bp.publisher_grid_height or nil,
-                    publisher_bottom_margin = bp.publisher_bottom_margin > 0 and bp.publisher_bottom_margin or nil,
-                    publisher_align = bp.publisher_align,
+                    lower_section_text = bp.lower_section_text,
+                    lower_section_font_size = bp.lower_section_font_size > 0 and bp.lower_section_font_size or nil,
+                    lower_section_grid_height = bp.lower_section_grid_height > 0 and bp.lower_section_grid_height or nil,
+                    lower_section_bottom_margin = bp.lower_section_bottom_margin > 0 and bp.lower_section_bottom_margin or nil,
+                    lower_section_align = bp.lower_section_align,
+                    lower_section_bg_color = bp.lower_section_bg_color,
+                    lower_section_font_color = bp.lower_section_font_color,
                     -- Get font_size from style stack (falls back to default if not set)
                     font_size = style_registry.get_font_size(style_registry.current_id()) or 655360,
                 }
@@ -284,16 +296,16 @@ function banxin_main.render(head, layout_map, params, context, engine_ctx, page_
 
     local bp = context.params
 
-    -- Resolve runtime content: chapter title (may vary per page)
+    -- Resolve runtime content: middle section text (may vary per page)
     -- Only update when \chapter markers exist; walk back to find most recent marker.
-    local chapter_title = bp.chapter_title
+    local middle_section_text = bp.middle_section_text
     local page_resets = engine_ctx.page_resets
     if page_resets and next(page_resets) and engine_ctx.page_chapter_titles then
         for p = page_idx, 0, -1 do
             if page_resets[p] then
                 local t = engine_ctx.page_chapter_titles[p]
                 if t and t ~= "" then
-                    chapter_title = t
+                    middle_section_text = t
                 end
                 break
             end
@@ -331,7 +343,7 @@ function banxin_main.render(head, layout_map, params, context, engine_ctx, page_
 
     for _, col_layout in pairs(page_layout) do
         p_head = render_banxin.draw_from_layout(p_head, col_layout, {
-            chapter_title = chapter_title,
+            middle_section_text = middle_section_text,
             page_number = page_number,
             explicit_page_number = explicit_page_number,
         })

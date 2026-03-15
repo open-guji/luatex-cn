@@ -321,7 +321,7 @@
 % ============================================================
 
 % -- 反白：黑底白字，无边框 --
-\NewDocumentCommand{\反白}{ m }
+\NewDocumentCommand{\反白}{ O{} m }
   {
     \__luatexcn_textbox_resolve_cell_gw:N \l_tmpa_dim
     \__luatexcn_textbox_resolve_cell_gh:N \l_tmpb_dim
@@ -329,12 +329,13 @@
       background-color={0.2~0.2~0.2},
       font-color=white,
       grid-width=\l_tmpa_dim,
-      grid-height=\l_tmpb_dim
-    ]{#1}
+      grid-height=\l_tmpb_dim,
+      #1
+    ]{#2}
   }
 
 % -- 墨围：矩形黑色边框 --
-\NewDocumentCommand{\墨围}{ m }
+\NewDocumentCommand{\墨围}{ O{} m }
   {
     \__luatexcn_textbox_resolve_cell_gw:N \l_tmpa_dim
     \__luatexcn_textbox_resolve_cell_gh:N \l_tmpb_dim
@@ -345,13 +346,14 @@
       grid-height=\l_tmpb_dim,
       border-margin-x=0.05em,
       border-margin-y=0.1em,
-      outer-margin=0.15em
-    ]{#1}
+      outer-margin=0.15em,
+      #1
+    ]{#2}
   }
 
 % -- 墨围反白：矩形黑色边框 + 黑底白字 --
 % border-offset 使黑色边框线画在背景之外（白色区域上可见）
-\NewDocumentCommand{\墨围反白}{ m }
+\NewDocumentCommand{\墨围反白}{ O{} m }
   {
     \__luatexcn_textbox_resolve_cell_gw:N \l_tmpa_dim
     \__luatexcn_textbox_resolve_cell_gh:N \l_tmpb_dim
@@ -365,12 +367,13 @@
       border-margin-x=0.05em,
       border-margin-y=0.1em,
       border-offset=0.1em,
-      outer-margin=0.15em
-    ]{#1}
+      outer-margin=0.15em,
+      #1
+    ]{#2}
   }
 
 % -- 八角墨围：八角形黑色边框 --
-\NewDocumentCommand{\八角墨围}{ m }
+\NewDocumentCommand{\八角墨围}{ O{} m }
   {
     \__luatexcn_textbox_resolve_cell_gw:N \l_tmpa_dim
     \__luatexcn_textbox_resolve_cell_gh:N \l_tmpb_dim
@@ -381,13 +384,14 @@
       grid-height=\l_tmpb_dim,
       border-margin-x=0.05em,
       border-margin-y=0.1em,
-      outer-margin=0.15em
-    ]{#1}
+      outer-margin=0.15em,
+      #1
+    ]{#2}
   }
 
 % -- 八角墨围反白：八角形黑色边框 + 黑底白字 --
 % border-offset 使黑色边框线画在背景之外（白色区域上可见）
-\NewDocumentCommand{\八角墨围反白}{ m }
+\NewDocumentCommand{\八角墨围反白}{ O{} m }
   {
     \__luatexcn_textbox_resolve_cell_gw:N \l_tmpa_dim
     \__luatexcn_textbox_resolve_cell_gh:N \l_tmpb_dim
@@ -401,20 +405,22 @@
       border-margin-x=0.05em,
       border-margin-y=0.1em,
       border-offset=0.1em,
-      outer-margin=0.15em
-    ]{#1}
+      outer-margin=0.15em,
+      #1
+    ]{#2}
   }
 
 % -- 带圈：圆形边框 --
-\NewDocumentCommand{\带圈}{ m }
+\NewDocumentCommand{\带圈}{ O{} m }
   {
     \__luatexcn_textbox_resolve_cell_gw:N \l_tmpa_dim
     \__luatexcn_textbox_resolve_cell_gh:N \l_tmpb_dim
     \TextBox[
       border-shape=circle,
       grid-width=\l_tmpa_dim,
-      grid-height=\l_tmpb_dim
-    ]{#1}
+      grid-height=\l_tmpb_dim,
+      #1
+    ]{#2}
   }
 
 \ExplSyntaxOff%

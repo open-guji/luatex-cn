@@ -115,7 +115,9 @@ local function create_grid_context(params, line_limit, p_cols)
     -- Natural mode: default_cell_height = nil (font-size-based), default_cell_gap > 0
     local default_cell_height = params.default_cell_height  -- nil = natural mode
     local default_cell_gap = params.default_cell_gap       -- 0 set at layout_params definition
-    local col_height_sp = params.col_height_sp             -- 0 set at layout_params definition
+    local col_height_sp = params.col_height_sp             -- text area height (padding deducted)
+    -- Full content height for band allocation (no padding deduction)
+    local band_alloc_height = params.content_height_sp or col_height_sp
     local ctx = {
         cur_page = 0,
         cur_col = 0,
@@ -144,6 +146,7 @@ local function create_grid_context(params, line_limit, p_cols)
         default_cell_gap = default_cell_gap,
         cur_y_sp = 0,
         col_height_sp = col_height_sp,
+        band_alloc_height = band_alloc_height,
         -- Explicit punct config (nil = no squeeze; set at layout_params definition)
         punct_config = params.punct_config,
         -- Free mode tracking
@@ -172,7 +175,8 @@ local function create_grid_context(params, line_limit, p_cols)
     if n_bands > 1 then
         local band_gap_sp = params.band_gap_sp or 0
         local total_gap = band_gap_sp * (n_bands - 1)
-        local available_height = col_height_sp - total_gap
+        -- Band allocation uses full content height (no padding deduction)
+        local available_height = band_alloc_height - total_gap
         local band_heights = params.band_heights  -- user-specified per-band heights
 
         -- Pre-compute default height: unspecified bands share remaining space equally.
@@ -199,7 +203,7 @@ local function create_grid_context(params, line_limit, p_cols)
                 h = band_heights[i + 1]
             elseif i == last_unspecified then
                 -- Last unspecified band absorbs rounding remainder
-                h = col_height_sp - offset
+                h = band_alloc_height - offset
                 if h < 0 then h = 0 end
             else
                 h = default_h
@@ -228,7 +232,7 @@ local function create_grid_context(params, line_limit, p_cols)
         ctx.line_limit = ctx.band_line_limits[0]
         ctx.col_height_sp = ctx.band_heights_sp[0]
     else
-        ctx.band_heights_sp[0] = col_height_sp
+        ctx.band_heights_sp[0] = band_alloc_height
         ctx.band_y_offsets_sp[0] = 0
         ctx.band_line_limits[0] = line_limit
     end
@@ -356,11 +360,9 @@ local function apply_band_padding(ctx)
         local bf = ctx.table_band_formats[ctx.cur_band]
         if bf and bf.padding_top then
             local pt = constants.to_dimen(bf.padding_top)
-            if pt then
-                local delta = pt - ctx.c_padding_top
-                if delta ~= 0 then
-                    ctx.cur_y_sp = ctx.cur_y_sp + delta
-                end
+            if pt and pt ~= 0 then
+                -- Band padding is an absolute offset from band top, not relative to column_padding
+                ctx.cur_y_sp = ctx.cur_y_sp + pt
                 ctx.col_band_padding_applied = true
                 ctx.col_band_padding_value = pt
             end
@@ -773,13 +775,14 @@ local function handle_penalty_breaks(p_val, ctx, flush_buffer_fn, p_cols, interv
         end
         local n_bands = tp.n_bands or 2
         local band_gap_sp = tp.band_gap_sp or 0
-        local col_height_sp = ctx.saved_band_state.col_height_sp
+        -- Use full content height for band allocation (no padding deduction)
+        local alloc_height = ctx.band_alloc_height or ctx.saved_band_state.col_height_sp
         local default_cell_height = ctx.default_cell_height
         local orig_line_limit = ctx.saved_band_state.line_limit
 
         -- Calculate band layout
         local total_gap = band_gap_sp * (n_bands - 1)
-        local available_height = col_height_sp - total_gap
+        local available_height = alloc_height - total_gap
         local band_heights_sp = {}
         local band_y_offsets_sp = {}
         local band_line_limits = {}
@@ -809,7 +812,7 @@ local function handle_penalty_breaks(p_val, ctx, flush_buffer_fn, p_cols, interv
                 h = band_heights[i + 1]
             elseif i == last_unspecified then
                 -- Last unspecified band absorbs rounding remainder
-                h = col_height_sp - offset
+                h = alloc_height - offset
                 if h < 0 then h = 0 end
             else
                 h = default_h
@@ -1524,25 +1527,23 @@ local function handle_glyph_node(t, ctx, col_buffer, layout_map, grid_height,
         -- Apply per-column style padding override on first glyph of a new column.
         -- Band format padding is applied eagerly at column/band start (see apply_band_padding).
         -- Style-level padding overrides band padding when set on the first glyph.
+        -- Both band padding and style padding are absolute offsets from column/band top.
         if not ctx.col_padding_applied then
             ctx.col_padding_applied = true
             local style_id = D.get_attribute(t, constants.ATTR_STYLE_REG_ID)
             local style_pt = style_id and style_registry.get_padding_top(style_id)
             if style_pt then
-                -- Undo any band padding already applied and use style padding instead
-                local base = ctx.col_band_padding_applied and 0 or ctx.c_padding_top
-                local delta = style_pt - ctx.c_padding_top
                 if ctx.col_band_padding_applied then
                     -- Band padding was already applied; replace with style padding
-                    local band_delta = (ctx.col_band_padding_value or ctx.c_padding_top) - ctx.c_padding_top
-                    local style_delta = style_pt - ctx.c_padding_top
-                    local adjust = style_delta - band_delta
+                    local band_val = ctx.col_band_padding_value or 0
+                    local adjust = style_pt - band_val
                     if adjust ~= 0 then
                         ctx.cur_y_sp = ctx.cur_y_sp + adjust
                     end
                 else
-                    if delta ~= 0 then
-                        ctx.cur_y_sp = ctx.cur_y_sp + delta
+                    -- No band padding; apply style padding directly
+                    if style_pt ~= 0 then
+                        ctx.cur_y_sp = ctx.cur_y_sp + style_pt
                     end
                 end
             end

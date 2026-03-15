@@ -106,12 +106,12 @@ local function draw_column_borders(p_head, params)
     local col_groups = params.col_groups
 
     if band_column_borders and n_bands and n_bands > 1 then
-        -- Offset to convert band y-coordinates (text area origin) to column border
+        -- Offset to convert band y-coordinates (content area origin) to column border
         -- y-coordinates (inner border origin). Band dividers are drawn at
-        -- outer_shift + border_thickness + c_padding_top + band_y, while column border
+        -- outer_shift + border_thickness + band_y, while column border
         -- segments start at half_thickness + outer_shift + seg_y.
-        local c_padding_top = params.c_padding_top or 0
-        local band_y_to_seg = (border_thickness - half_thickness) + c_padding_top
+        -- column_padding only affects text Y-offset, not band/border positions.
+        local band_y_to_seg = (border_thickness - half_thickness)
 
         -- Determine table column range so columns outside the table
         -- are drawn at full height (not affected by band_column_borders).
@@ -403,7 +403,6 @@ local function draw_band_borders(p_head, params)
     local border_rgb_str = params.border_rgb_str
     local shift_x = params.shift_x or 0
     local outer_shift = params.outer_shift or 0
-    local c_padding_top = params.c_padding_top or 0
 
     local b_thickness_bp = border_thickness * sp_to_bp
     local half_thickness = math.floor(border_thickness / 2)
@@ -452,12 +451,13 @@ local function draw_band_borders(p_head, params)
 
     -- Draw horizontal divider lines between bands (not top/bottom/left/right outer edges).
     -- The outer frame is drawn by draw_column_borders + draw_outer_border.
+    -- column_padding only affects text Y-offset, not band divider positions.
     for band = 0, n_bands - 2 do
         local band_y = band_y_offsets_sp[band] or 0
         local band_h = band_heights_sp[band] or 0
         local divider_y = band_y + band_h
-        -- Content starts at outer_shift + border_thickness + c_padding_top from page box origin
-        local horz_y_bp = -(outer_shift + border_thickness + c_padding_top + divider_y) * sp_to_bp
+        -- Content starts at outer_shift + border_thickness from page box origin
+        local horz_y_bp = -(outer_shift + border_thickness + divider_y) * sp_to_bp
 
         for _, seg in ipairs(segments) do
             local left_x_bp = (half_thickness + shift_x + seg[1]) * sp_to_bp

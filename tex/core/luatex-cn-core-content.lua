@@ -463,6 +463,7 @@ local function calc_auto_layout()
     end
 
     -- Auto-calculate grid_height from text area (column interior minus padding)
+    -- Padding reduces the space available for text, so grid_height must account for it.
     local n_char = _G.content.n_char_per_col or 0
     local grid_h = _G.content.grid_height or 0
     local text_area_height = content_height - c_padding_top - c_padding_bottom
@@ -550,13 +551,13 @@ local function guji_auto_layout(params)
     local banxin_width = math.floor(grid_width * banxin_ratio)
 
     -- II. Height Logic: Calculate available height
-    -- Column interior = available minus border overhead (padding NOT subtracted)
+    -- Column interior = available minus border overhead
+    -- Padding reduces the space available for text, so grid_height must account for it.
+    -- But content_height does NOT include padding (padding only affects text Y-offset).
     local border_overhead_height = calc_border_overhead_height(border_on, outer_border_on, b_thickness, ob_thickness, ob_sep)
     local column_interior = p_height - m_top - m_bottom - border_overhead_height
-    -- Grid dimensions calculated from text area (column interior minus padding)
     local text_area_height = column_interior - c_padding_top - c_padding_bottom
     local grid_height, text_content_height = calc_grid_dimensions(text_area_height, n_char_per_col, existing_grid_height)
-    -- content_height includes padding (full column interior, grid-aligned text + padding)
     local content_height = text_content_height + c_padding_top + c_padding_bottom
 
     -- Calculate adjusted margin-top (bottom-aligned content)

@@ -458,6 +458,8 @@ local function compute_grid_layout(list, params, engine_ctx, plugin_contexts, p_
         default_cell_width = engine_ctx.default_cell_width,   -- nil = use grid_width
         default_cell_gap = engine_ctx.default_cell_gap or 0,
         col_height_sp = engine_ctx.col_height_sp or 0,
+        -- Full content height (without padding deduction) for band height allocation
+        content_height_sp = engine_ctx.content_height_sp or 0,
         grid_height = engine_ctx.g_height,
         -- All modes: explicit values (helpers do NOT fall back to _G)
         grid_width = engine_ctx.g_width,

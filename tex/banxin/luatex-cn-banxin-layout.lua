@@ -150,10 +150,10 @@ local function calculate_book_name_layout(params, regions)
     local base_f_size = constants.resolve_dimen(params.font_size, 655360)
     -- Use book_name_font_size if specified, otherwise fall back to base font size
     local f_size = constants.resolve_dimen(params.book_name_font_size, base_f_size) or base_f_size
-    local b_padding_top = constants.resolve_dimen(params.b_padding_top, base_f_size)
-    local b_padding_bottom = constants.resolve_dimen(params.b_padding_bottom, base_f_size)
+    local c_padding_top = constants.resolve_dimen(params.c_padding_top, base_f_size)
+    local c_padding_bottom = constants.resolve_dimen(params.c_padding_bottom, base_f_size)
     local effective_b = params.draw_border and constants.resolve_dimen(params.border_thickness, base_f_size) or 0
-    local adj_height = upper_height - effective_b - b_padding_top - b_padding_bottom
+    local adj_height = upper_height - effective_b - c_padding_top - c_padding_bottom
     local num_chars = count_utf8_chars(book_name)
 
     local grid_h = constants.resolve_dimen(constants.to_dimen(params.book_name_grid_height), f_size)
@@ -167,7 +167,7 @@ local function calculate_book_name_layout(params, regions)
         total_text_height = num_chars * f_size
     end
 
-    local block_y_top = params.y - effective_b - b_padding_top
+    local block_y_top = params.y - effective_b - c_padding_top
     local y_start
     if params.book_name_align == "top" then
         y_start = block_y_top
@@ -255,7 +255,7 @@ local function calculate_page_number_layout(params, regions, decorations)
 
     local middle_y_bottom = params.y - regions.upper.height - regions.middle.height
     local page_right_margin = 65536 * 2
-    local page_bottom_margin = params.b_padding_bottom or (65536 * 15)
+    local page_bottom_margin = params.c_padding_bottom or (65536 * 15)
 
     local base_f_size = constants.resolve_dimen(params.font_size, 655360)
     local f_size = constants.resolve_dimen(params.page_number_font_size, base_f_size) or (65536 * 10)

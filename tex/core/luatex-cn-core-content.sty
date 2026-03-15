@@ -18,8 +18,8 @@
 % Centralized variables for content border settings
 \bool_new:N \l__luatexcn_content_border_bool
 \tl_new:N \l__luatexcn_content_border_thickness_tl
-\tl_new:N \l__luatexcn_content_border_padding_top_tl
-\tl_new:N \l__luatexcn_content_border_padding_bottom_tl
+\tl_new:N \l__luatexcn_content_column_padding_top_tl
+\tl_new:N \l__luatexcn_content_column_padding_bottom_tl
 
 \bool_new:N \l__luatexcn_content_outer_border_bool
 \tl_new:N \l__luatexcn_content_outer_border_thickness_tl
@@ -87,11 +87,11 @@
     border-thickness .tl_set:N = \l__luatexcn_content_border_thickness_tl,
     border-thickness .initial:n = {0.4pt},
 
-    border-padding-top .tl_set:N = \l__luatexcn_content_border_padding_top_tl,
-    border-padding-top .initial:n = {0pt},
+    column-padding-top .tl_set:N = \l__luatexcn_content_column_padding_top_tl,
+    column-padding-top .initial:n = {0pt},
 
-    border-padding-bottom .tl_set:N = \l__luatexcn_content_border_padding_bottom_tl,
-    border-padding-bottom .initial:n = {0pt},
+    column-padding-bottom .tl_set:N = \l__luatexcn_content_column_padding_bottom_tl,
+    column-padding-bottom .initial:n = {0pt},
 
     outer-border .bool_set:N = \l__luatexcn_content_outer_border_bool,
     outer-border .initial:n = false,
@@ -242,8 +242,8 @@
         border_thickness~=~[=[\luaescapestring{\l__luatexcn_content_border_thickness_tl}]=],
         outer_border_thickness~=~[=[\luaescapestring{\l__luatexcn_content_outer_border_thickness_tl}]=],
         outer_border_sep~=~[=[\luaescapestring{\l__luatexcn_content_outer_border_sep_tl}]=],
-        border_padding_top~=~[=[\luaescapestring{\l__luatexcn_content_border_padding_top_tl}]=],
-        border_padding_bottom~=~[=[\luaescapestring{\l__luatexcn_content_border_padding_bottom_tl}]=],
+        column_padding_top~=~[=[\luaescapestring{\l__luatexcn_content_column_padding_top_tl}]=],
+        column_padding_bottom~=~[=[\luaescapestring{\l__luatexcn_content_column_padding_bottom_tl}]=],
         n_column~=~\int_use:N~\l__luatexcn_content_n_column_int,
         grid_width~=~[=[\luaescapestring{\l__luatexcn_content_grid_width_tl}]=],
         grid_height~=~[=[\luaescapestring{\l__luatexcn_content_grid_height_tl}]=],
@@ -518,8 +518,8 @@
             border_thickness~=~"\l__luatexcn_content_border_thickness_tl",
             outer_border_thickness~=~"\l__luatexcn_content_outer_border_thickness_tl",
             outer_border_sep~=~"\l__luatexcn_content_outer_border_sep_tl",
-            border_padding_top~=~"\l__luatexcn_content_border_padding_top_tl",
-            border_padding_bottom~=~"\l__luatexcn_content_border_padding_bottom_tl",
+            column_padding_top~=~"\l__luatexcn_content_column_padding_top_tl",
+            column_padding_bottom~=~"\l__luatexcn_content_column_padding_bottom_tl",
             n_column~=~\int_use:N~\l__luatexcn_content_n_column_int,
             n_char_per_col~=~\int_use:N~\l__luatexcn_content_n_char_per_col_int,
             grid_height~=~"\l__luatexcn_content_grid_height_tl",
@@ -560,8 +560,8 @@
     % 简体
     边框 .bool_set:N = \l__luatexcn_content_border_bool,
     边框粗细 .tl_set:N = \l__luatexcn_content_border_thickness_tl,
-    边框上填充 .tl_set:N = \l__luatexcn_content_border_padding_top_tl,
-    边框下填充 .tl_set:N = \l__luatexcn_content_border_padding_bottom_tl,
+    栏上填充 .tl_set:N = \l__luatexcn_content_column_padding_top_tl,
+    栏下填充 .tl_set:N = \l__luatexcn_content_column_padding_bottom_tl,
     外框 .bool_set:N = \l__luatexcn_content_outer_border_bool,
     外框粗细 .tl_set:N = \l__luatexcn_content_outer_border_thickness_tl,
     外框间距 .tl_set:N = \l__luatexcn_content_outer_border_sep_tl,

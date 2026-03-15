@@ -234,8 +234,9 @@ local function init_engine_context(box_num, params)
     -- Outer border params (now from style stack)
     local ob_thickness = current_style.outer_border_thickness or (65536 * 2)
     local ob_sep = current_style.outer_border_sep or (65536 * 2)
-    local b_padding_top = _G.content.border_padding_top or 0
-    local b_padding_bottom = _G.content.border_padding_bottom or 0
+    -- Column padding only applies when borders are on
+    local c_padding_top = is_border and (_G.content.column_padding_top or 0) or 0
+    local c_padding_bottom = is_border and (_G.content.column_padding_bottom or 0) or 0
 
     -- 0.4 Visual Flags & Features (use global _G.banxin set by banxin.setup)
     local banxin_on = _G.banxin and _G.banxin.enabled or false
@@ -315,10 +316,10 @@ local function init_engine_context(box_num, params)
         outer_shift = is_outer_border and (ob_thickness + ob_sep) or 0,
         shift_x = (is_outer_border and (ob_thickness + ob_sep) or 0),
         shift_y = (is_outer_border and (ob_thickness + ob_sep) or 0) +
-            (is_border and (b_thickness + b_padding_top) or 0),
+            (is_border and (b_thickness + c_padding_top) or 0),
         border_rgb_str = utils.normalize_rgb(border_color) or "0 0 0",
-        b_padding_top = b_padding_top,
-        b_padding_bottom = b_padding_bottom,
+        c_padding_top = c_padding_top,
+        c_padding_bottom = c_padding_bottom,
         -- Body font size (for footnote marker alignment)
         body_font_size = current_fs,
         -- Unified layout: default_cell_height (nil=natural, >0=grid) and default_cell_gap
@@ -330,7 +331,7 @@ local function init_engine_context(box_num, params)
         default_cell_width = nil,  -- reserved for future per-character width override
         default_cell_gap = ((_G.content.layout_mode or "grid") ~= "grid")
             and (_G.content.inter_cell_gap or 0) or 0,
-        col_height_sp = content_height_sp,
+        col_height_sp = content_height_sp - c_padding_top - c_padding_bottom,
         -- Column geometry bundle for position functions
         col_geom = { grid_width = g_width, banxin_width = banxin_w, interval = b_interval },
         -- Visual defaults (read from _G once, passed through ctx)
@@ -351,7 +352,7 @@ local function init_engine_context(box_num, params)
             x = col_x + effective_half + engine_ctx.shift_x,
             y = -(effective_half + engine_ctx.outer_shift),
             width = engine_ctx.banxin_width,
-            height = engine_ctx.content_height_sp + engine_ctx.b_padding_top + engine_ctx.b_padding_bottom,
+            height = engine_ctx.content_height_sp,
         }
     end
 
@@ -472,8 +473,8 @@ local function compute_grid_layout(list, params, engine_ctx, plugin_contexts, p_
         band_mode = _G.content.band_mode or "auto",
         band_heights = _G.content.band_heights,
         band_columns = _G.content.band_columns or 0,
-        -- Global border-padding-top (used as default for per-column padding override)
-        b_padding_top = engine_ctx.b_padding_top,
+        -- Global column-padding-top (used as default for per-column padding override)
+        c_padding_top = engine_ctx.c_padding_top,
         -- P2: page geometry offsets for computing absolute coordinates in layout stage
         shift_x = engine_ctx.shift_x or 0,
         shift_y = engine_ctx.shift_y or 0,
@@ -627,7 +628,7 @@ local function generate_physical_pages(list, params, engine_ctx, plugin_contexts
     _G.vertical_pending_pages = {}
     local outer_shift = engine_ctx.outer_shift
     local char_grid_height = engine_ctx.content_height_sp
-    local total_v_depth = char_grid_height + engine_ctx.b_padding_top + engine_ctx.b_padding_bottom +
+    local total_v_depth = char_grid_height +
         engine_ctx.border_thickness + outer_shift * 2
 
     for i, page_info in ipairs(pages) do

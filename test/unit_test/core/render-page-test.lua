@@ -83,8 +83,8 @@ test_utils.run_test("calculate_render_context: returns table with expected field
         engine = {
             border_thickness = bt,
             half_thickness = math.floor(bt / 2),
-            b_padding_top = 0,
-            b_padding_bottom = 0,
+            c_padding_top = 0,
+            c_padding_bottom = 0,
             outer_shift = 0,
             shift_x = 0,
             shift_y = 0,

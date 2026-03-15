@@ -94,8 +94,8 @@ end
 -- @return (number) Y coordinate in sp (from top edge of paper)
 function meipi.calculate_y(height)
     local margin_top = _G.page and _G.page.margin_top or (20 * 65536)
-    -- border_padding_top is page-level config, still from _G.content
-    local border_padding_top = _G.content and _G.content.border_padding_top or 0
+    -- column_padding_top is page-level config, still from _G.content
+    local column_padding_top = _G.content and _G.content.column_padding_top or 0
 
     -- Get outer border settings from style stack
     local current_id = style_registry.current_id()
@@ -108,7 +108,7 @@ function meipi.calculate_y(height)
     if outer_border then
         text_top = text_top + ob_thickness + ob_sep
     end
-    text_top = text_top + border_padding_top
+    text_top = text_top + column_padding_top
 
     -- Position the annotation so its bottom is at (text_top - gap)
     -- Y coordinate is usually measured from top-left in PDF, but TeX/TextBox might expect

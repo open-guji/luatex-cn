@@ -113,8 +113,8 @@ local function calculate_render_context(ctx)
     local half_thickness = engine.half_thickness
     local ob_thickness_val = page.ob_thickness
     local ob_sep_val = page.ob_sep
-    local b_padding_top = engine.b_padding_top
-    local b_padding_bottom = engine.b_padding_bottom
+    local c_padding_top = engine.c_padding_top
+    local c_padding_bottom = engine.c_padding_bottom
     local grid_width = grid.width
     local grid_height = grid.height
     local banxin_width = grid.banxin_width or 0
@@ -192,8 +192,8 @@ local function calculate_render_context(ctx)
         interval = interval,
         p_cols = p_cols,
         line_limit = line_limit,
-        b_padding_top = b_padding_top,
-        b_padding_bottom = b_padding_bottom,
+        c_padding_top = c_padding_top,
+        c_padding_bottom = c_padding_bottom,
         b_rgb_str = b_rgb_str,
         background_rgb_str = background_rgb_str,
         text_rgb_str = text_rgb_str,
@@ -300,8 +300,8 @@ local function render_single_page(p_head, p_max_col, p, layout_map, params, ctx,
     local grid_height = ctx.grid_height
     local border_thickness = ctx.border_thickness
     local line_limit = ctx.line_limit
-    local b_padding_top = ctx.b_padding_top
-    local b_padding_bottom = ctx.b_padding_bottom
+    local c_padding_top = ctx.c_padding_top
+    local c_padding_bottom = ctx.c_padding_bottom
     local grid = params.grid
     local engine = params.engine
     local page = params.page
@@ -402,8 +402,8 @@ local function render_single_page(p_head, p_max_col, p, layout_map, params, ctx,
         content_height_sp = engine.content_height_sp,
         -- Border params
         border_thickness = border_thickness,
-        b_padding_top = b_padding_top,
-        b_padding_bottom = b_padding_bottom,
+        c_padding_top = c_padding_top,
+        c_padding_bottom = c_padding_bottom,
         shift_x = shift_x,
         outer_shift = outer_shift,
         b_rgb_str = b_rgb_str,

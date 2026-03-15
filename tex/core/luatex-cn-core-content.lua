@@ -62,16 +62,16 @@ end
 -- @param b_thickness (number) Inner border thickness (sp)
 -- @param ob_thickness (number) Outer border thickness (sp)
 -- @param ob_sep (number) Outer border separation (sp)
--- @param b_padding_top (number) Border top padding (sp)
--- @param b_padding_bottom (number) Border bottom padding (sp)
 -- @return (number) Total height overhead from borders (sp)
-local function calc_border_overhead_height(border_on, outer_border_on, b_thickness, ob_thickness, ob_sep, b_padding_top, b_padding_bottom)
+-- Note: column-padding-top/bottom is NOT included here;
+-- it is applied within each column during text layout.
+local function calc_border_overhead_height(border_on, outer_border_on, b_thickness, ob_thickness, ob_sep)
     local overhead = 0
     if outer_border_on then
         overhead = overhead + 2 * (ob_thickness + ob_sep)
     end
     if border_on then
-        overhead = overhead + b_padding_top + b_padding_bottom + b_thickness
+        overhead = overhead + b_thickness
     end
     return overhead
 end
@@ -123,8 +123,8 @@ _G.content.outer_border_color = _G.content.outer_border_color or "0 0 0"  -- New
 _G.content.border_on = _G.content.border_on or false
 _G.content.border_thickness = _G.content.border_thickness or 26214 -- 0.4pt
 _G.content.border_color = _G.content.border_color or "0 0 0"
-_G.content.border_padding_top = _G.content.border_padding_top or 0
-_G.content.border_padding_bottom = _G.content.border_padding_bottom or 0
+_G.content.column_padding_top = _G.content.column_padding_top or 0
+_G.content.column_padding_bottom = _G.content.column_padding_bottom or 0
 -- Granular border control (nil = inherit from border_on)
 -- column_border: column-to-column vertical lines
 -- band_border: horizontal band divider lines
@@ -174,8 +174,8 @@ local function parse_border_params(params)
     if params.border_thickness then _G.content.border_thickness = constants.to_dimen(params.border_thickness) end
     if params.outer_border_thickness then _G.content.outer_border_thickness = constants.to_dimen(params.outer_border_thickness) end
     if params.outer_border_sep then _G.content.outer_border_sep = constants.to_dimen(params.outer_border_sep) end
-    if params.border_padding_top then _G.content.border_padding_top = constants.to_dimen(params.border_padding_top) end
-    if params.border_padding_bottom then _G.content.border_padding_bottom = constants.to_dimen(params.border_padding_bottom) end
+    if params.column_padding_top then _G.content.column_padding_top = constants.to_dimen(params.column_padding_top) end
+    if params.column_padding_bottom then _G.content.column_padding_bottom = constants.to_dimen(params.column_padding_bottom) end
     if params.n_column then _G.content.n_column = tonumber(params.n_column) or 8 end
     if params.n_char_per_col then _G.content.n_char_per_col = tonumber(params.n_char_per_col) or 0 end
     if params.grid_width then _G.content.grid_width = constants.to_dimen(params.grid_width) end
@@ -397,8 +397,9 @@ local function calc_auto_layout()
     local is_outer_border = _G.content.outer_border_on
     local ob_thickness = _G.content.outer_border_thickness or 0
     local ob_sep = _G.content.outer_border_sep or 0
-    local b_padding_top = _G.content.border_padding_top or 0
-    local b_padding_bottom = _G.content.border_padding_bottom or 0
+    -- Column padding only applies when borders are on
+    local c_padding_top = _G.content.border_on and (_G.content.column_padding_top or 0) or 0
+    local c_padding_bottom = _G.content.border_on and (_G.content.column_padding_bottom or 0) or 0
     local banxin_on = _G.banxin and _G.banxin.enabled
 
     local p_width = _G.page and _G.page.paper_width or 0
@@ -439,12 +440,14 @@ local function calc_auto_layout()
         _G.content.border_on, is_outer_border, b_thickness, ob_thickness, ob_sep)
 
     local border_overhead_height = calc_border_overhead_height(
-        _G.content.border_on, is_outer_border, b_thickness, ob_thickness, ob_sep, b_padding_top, b_padding_bottom)
+        _G.content.border_on, is_outer_border, b_thickness, ob_thickness, ob_sep)
 
     -- Store for backward compatibility
     _G.content.border_overhead_height = border_overhead_height
 
     -- ========== Layer 3: Content Area ==========
+    -- content_height is the full column interior height (between borders),
+    -- including the column-padding area. Text layout uses a reduced area.
     local content_width = total_width - border_overhead_width
     local content_height = total_height - border_overhead_height
     _G.content.content_width = content_width
@@ -459,14 +462,13 @@ local function calc_auto_layout()
         _G.content.banxin_width = math.floor(_G.content.grid_width * ratio)
     end
 
-    -- Auto-calculate grid_height from content_height
+    -- Auto-calculate grid_height from text area (column interior minus padding)
     local n_char = _G.content.n_char_per_col or 0
     local grid_h = _G.content.grid_height or 0
-    local new_grid_h, new_content_h = calc_grid_dimensions(content_height, n_char, grid_h)
+    local text_area_height = content_height - c_padding_top - c_padding_bottom
+    local new_grid_h, new_content_h = calc_grid_dimensions(text_area_height, n_char, grid_h)
     if n_char > 0 or grid_h > 0 then
         _G.content.grid_height = new_grid_h
-        -- Note: new_content_h may be grid-aligned, but we keep the raw content_height
-        -- for accurate layout decisions (content_height already set above)
     end
 end
 
@@ -532,8 +534,9 @@ local function guji_auto_layout(params)
     local b_thickness = border_on and constants.to_dimen(params.border_thickness or "0pt") or 0
     local ob_thickness = constants.to_dimen(params.outer_border_thickness or "0pt")
     local ob_sep = constants.to_dimen(params.outer_border_sep or "0pt")
-    local b_padding_top = constants.to_dimen(params.border_padding_top or "0pt")
-    local b_padding_bottom = constants.to_dimen(params.border_padding_bottom or "0pt")
+    -- Column padding only applies when borders are on
+    local c_padding_top = border_on and constants.to_dimen(params.column_padding_top or "0pt") or 0
+    local c_padding_bottom = border_on and constants.to_dimen(params.column_padding_bottom or "0pt") or 0
     -- Use resolve_dimen to handle em units (requires font_size context)
     local grid_height_raw = constants.to_dimen(params.grid_height or "0pt")
     local existing_grid_height = constants.resolve_dimen(grid_height_raw, _G.content.font_size) or 0
@@ -547,9 +550,14 @@ local function guji_auto_layout(params)
     local banxin_width = math.floor(grid_width * banxin_ratio)
 
     -- II. Height Logic: Calculate available height
-    local border_overhead_height = calc_border_overhead_height(border_on, outer_border_on, b_thickness, ob_thickness, ob_sep, b_padding_top, b_padding_bottom)
-    local available_height = p_height - m_top - m_bottom - border_overhead_height
-    local grid_height, content_height = calc_grid_dimensions(available_height, n_char_per_col, existing_grid_height)
+    -- Column interior = available minus border overhead (padding NOT subtracted)
+    local border_overhead_height = calc_border_overhead_height(border_on, outer_border_on, b_thickness, ob_thickness, ob_sep)
+    local column_interior = p_height - m_top - m_bottom - border_overhead_height
+    -- Grid dimensions calculated from text area (column interior minus padding)
+    local text_area_height = column_interior - c_padding_top - c_padding_bottom
+    local grid_height, text_content_height = calc_grid_dimensions(text_area_height, n_char_per_col, existing_grid_height)
+    -- content_height includes padding (full column interior, grid-aligned text + padding)
+    local content_height = text_content_height + c_padding_top + c_padding_bottom
 
     -- Calculate adjusted margin-top (bottom-aligned content)
     local total_box_height = content_height + border_overhead_height + 2 * 65536 -- +2pt
@@ -573,7 +581,7 @@ end
 
 --- Calculate content area dimensions (shared by render-page and render-border)
 -- @param params (table) {is_textbox, actual_cols, actual_height_sp, grid_width, grid_height,
---   content_height_sp, b_padding_top, b_padding_bottom, p_total_cols, border_thickness,
+--   content_height_sp, c_padding_top, c_padding_bottom, p_total_cols, border_thickness,
 --   banxin_width, interval}
 -- @return content_width, content_height, inner_width, inner_height (all in sp)
 local function calculate_content_dimensions(params)
@@ -585,7 +593,7 @@ local function calculate_content_dimensions(params)
     elseif col_widths and #col_widths > 0 then
         content_width = 0
         for _, w in ipairs(col_widths) do content_width = content_width + w end
-        content_height = params.content_height_sp + params.b_padding_top + params.b_padding_bottom
+        content_height = params.content_height_sp
     else
         local bw = params.banxin_width or 0
         local iv = params.interval or 0
@@ -596,7 +604,7 @@ local function calculate_content_dimensions(params)
         else
             content_width = params.p_total_cols * params.grid_width
         end
-        content_height = params.content_height_sp + params.b_padding_top + params.b_padding_bottom
+        content_height = params.content_height_sp
     end
     local inner_width = content_width + params.border_thickness
     local inner_height = content_height + params.border_thickness

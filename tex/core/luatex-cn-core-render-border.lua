@@ -396,7 +396,7 @@ local function draw_band_borders(p_head, params)
     local border_rgb_str = params.border_rgb_str
     local shift_x = params.shift_x or 0
     local outer_shift = params.outer_shift or 0
-    local b_padding_top = params.b_padding_top or 0
+    local c_padding_top = params.c_padding_top or 0
 
     local b_thickness_bp = border_thickness * sp_to_bp
     local half_thickness = math.floor(border_thickness / 2)
@@ -449,8 +449,8 @@ local function draw_band_borders(p_head, params)
         local band_y = band_y_offsets_sp[band] or 0
         local band_h = band_heights_sp[band] or 0
         local divider_y = band_y + band_h
-        -- Content starts at outer_shift + border_thickness + b_padding_top from page box origin
-        local horz_y_bp = -(outer_shift + border_thickness + b_padding_top + divider_y) * sp_to_bp
+        -- Content starts at outer_shift + border_thickness + c_padding_top from page box origin
+        local horz_y_bp = -(outer_shift + border_thickness + c_padding_top + divider_y) * sp_to_bp
 
         for _, seg in ipairs(segments) do
             local left_x_bp = (half_thickness + shift_x + seg[1]) * sp_to_bp
@@ -621,8 +621,8 @@ end
 --   - content_height_sp: 内容区高度 (sp), 从三层架构获取
 --   -- Border params
 --   - border_thickness: 边框厚度 (sp)
---   - b_padding_top: 顶部内边距 (sp)
---   - b_padding_bottom: 底部内边距 (sp)
+--   - c_padding_top: 顶部内边距 (sp)
+--   - c_padding_bottom: 底部内边距 (sp)
 --   - shift_x: 水平偏移 (sp)
 --   - outer_shift: 外边框偏移 (sp)
 --   - b_rgb_str: 边框颜色字符串
@@ -647,8 +647,8 @@ local function render_borders(p_head, params)
     local grid_width = params.grid_width
     local grid_height = params.grid_height
     local border_thickness = params.border_thickness
-    local b_padding_top = params.b_padding_top
-    local b_padding_bottom = params.b_padding_bottom
+    local c_padding_top = params.c_padding_top
+    local c_padding_bottom = params.c_padding_bottom
     local is_textbox = params.is_textbox
 
     local banxin_width = params.banxin_width or 0
@@ -669,8 +669,8 @@ local function render_borders(p_head, params)
         grid_width = grid_width,
         grid_height = grid_height,
         content_height_sp = params.content_height_sp,
-        b_padding_top = b_padding_top,
-        b_padding_bottom = b_padding_bottom,
+        c_padding_top = c_padding_top,
+        c_padding_bottom = c_padding_bottom,
         p_total_cols = p_total_cols,
         border_thickness = border_thickness,
         banxin_width = banxin_width,
@@ -741,7 +741,7 @@ local function render_borders(p_head, params)
             border_rgb_str = params.b_rgb_str,
             shift_x = params.shift_x,
             outer_shift = params.outer_shift,
-            b_padding_top = params.b_padding_top,
+            c_padding_top = params.c_padding_top,
             band_gap_sp = params.band_gap_sp,
             col_geom = col_geom,
             total_cols = p_total_cols,
@@ -790,7 +790,7 @@ local function render_borders(p_head, params)
             border_rgb_str = params.b_rgb_str,
             shift_x = params.shift_x,
             outer_shift = params.outer_shift,
-            b_padding_top = params.b_padding_top,
+            c_padding_top = params.c_padding_top,
             band_gap_sp = ptb.band_gap_sp,
             col_geom = col_geom,
             total_cols = p_total_cols,

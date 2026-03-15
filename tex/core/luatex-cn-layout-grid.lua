@@ -126,8 +126,8 @@ local function create_grid_context(params, line_limit, p_cols)
         p_cols = p_cols,
         cur_column_indent = 0,
         page_has_content = false,
-        -- Global border-padding-top (for per-column padding delta calculation)
-        b_padding_top = params.b_padding_top or 0,
+        -- Global column-padding-top (for per-column padding delta calculation)
+        c_padding_top = params.c_padding_top or 0,
         -- P2: page geometry offsets for computing absolute coordinates
         shift_x = params.shift_x or 0,
         shift_y = params.shift_y or 0,
@@ -356,7 +356,7 @@ local function apply_band_padding(ctx)
         if bf and bf.padding_top then
             local pt = constants.to_dimen(bf.padding_top)
             if pt then
-                local delta = pt - ctx.b_padding_top
+                local delta = pt - ctx.c_padding_top
                 if delta ~= 0 then
                     ctx.cur_y_sp = ctx.cur_y_sp + delta
                 end
@@ -1529,12 +1529,12 @@ local function handle_glyph_node(t, ctx, col_buffer, layout_map, grid_height,
             local style_pt = style_id and style_registry.get_padding_top(style_id)
             if style_pt then
                 -- Undo any band padding already applied and use style padding instead
-                local base = ctx.col_band_padding_applied and 0 or ctx.b_padding_top
-                local delta = style_pt - ctx.b_padding_top
+                local base = ctx.col_band_padding_applied and 0 or ctx.c_padding_top
+                local delta = style_pt - ctx.c_padding_top
                 if ctx.col_band_padding_applied then
                     -- Band padding was already applied; replace with style padding
-                    local band_delta = (ctx.col_band_padding_value or ctx.b_padding_top) - ctx.b_padding_top
-                    local style_delta = style_pt - ctx.b_padding_top
+                    local band_delta = (ctx.col_band_padding_value or ctx.c_padding_top) - ctx.c_padding_top
+                    local style_delta = style_pt - ctx.c_padding_top
                     local adjust = style_delta - band_delta
                     if adjust ~= 0 then
                         ctx.cur_y_sp = ctx.cur_y_sp + adjust

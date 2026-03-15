@@ -211,8 +211,8 @@ function banxin_main.layout(list, layout_map, engine_ctx, context)
                 local coords = engine_ctx.get_reserved_column_coords(col, p_cols)
 
                 -- Prepare layout params from captured context params
-                local b_padding_top = bp.padding_top > 0 and bp.padding_top or engine_ctx.b_padding_top
-                local b_padding_bottom = bp.padding_bottom > 0 and bp.padding_bottom or engine_ctx.b_padding_bottom
+                local c_padding_top = bp.padding_top > 0 and bp.padding_top or engine_ctx.c_padding_top
+                local c_padding_bottom = bp.padding_bottom > 0 and bp.padding_bottom or engine_ctx.c_padding_bottom
 
                 local layout_params = {
                     x = coords.x,
@@ -228,8 +228,8 @@ function banxin_main.layout(list, layout_map, engine_ctx, context)
                     book_name_font_size = bp.book_name_font_size > 0 and bp.book_name_font_size or nil,
                     book_name_grid_height = bp.book_name_grid_height > 0 and bp.book_name_grid_height or nil,
                     book_name_align = bp.book_name_align,
-                    b_padding_top = b_padding_top,
-                    b_padding_bottom = b_padding_bottom,
+                    c_padding_top = c_padding_top,
+                    c_padding_bottom = c_padding_bottom,
                     upper_yuwei = bp.upper_yuwei,
                     lower_yuwei = bp.lower_yuwei,
                     banxin_divider = bp.divider,

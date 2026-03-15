@@ -374,11 +374,67 @@
 % Must be called after content sync (fonts loaded, _G.content available).
 \cs_new_protected:Nn \__luatexcn_banxin_typeset_sections:
   {
-    % TODO: Enable when TextBox-based vertical typesetting is implemented.
-    % Currently disabled to avoid rendering横排 box content in vertical banxin.
-    % The infrastructure (box register, store function, render_pre_rendered_box)
-    % is in place; needs TextBox排版管道 integration in Step 4.
+    \bool_if:NT \l__luatexcn_banxin_on_bool
+      {
+        \tl_if_empty:NTF \l__luatexcn_banxin_upper_section_text_tl
+          {
+            \box_gclear:N \g__luatexcn_banxin_upper_box
+          }
+          {
+            % Calculate banxin dimensions from Lua globals
+            % (available after content sync in \end{BodyText})
+            \tl_set:Ne \l_tmpa_tl
+              {
+                \lua_now:e
+                  {
+                    local~c~=~_G.content~or~{}
+                    local~ratio~=~tonumber(token.get_macro("l__luatexcn_banxin_upper_ratio_tl"))~or~0.28~
+                    local~h~=~(c.content_height~or~0)~*~ratio~
+                    tex.print(tostring(math.floor(h~+~0.5))~..~"sp")
+                  }
+              }
+            \tl_set:Ne \l_tmpb_tl
+              {
+                \lua_now:e
+                  {
+                    local~c~=~_G.content~or~{}
+                    tex.print(tostring(c.banxin_width~or~655360)~..~"sp")
+                  }
+              }
+            % Build TextBox options
+            \tl_set:Nn \l__luatexcn_banxin_tb_opts_tl
+              { height = \l_tmpa_tl , grid-width = \l_tmpb_tl }
+            \tl_if_empty:NF \l__luatexcn_banxin_upper_section_font_size_tl
+              {
+                \tl_put_right:Ne \l__luatexcn_banxin_tb_opts_tl
+                  { ,~ font-size = \l__luatexcn_banxin_upper_section_font_size_tl }
+              }
+            \tl_if_empty:NF \l__luatexcn_banxin_upper_section_grid_height_tl
+              {
+                \tl_put_right:Ne \l__luatexcn_banxin_tb_opts_tl
+                  { ,~ grid-height = \l__luatexcn_banxin_upper_section_grid_height_tl }
+              }
+            % Typeset into global box using TextBox pipeline
+            \vbox_gset:Nn \g__luatexcn_banxin_upper_box
+              {
+                \use:x
+                  {
+                    \exp_not:N \TextBox
+                      [ \l__luatexcn_banxin_tb_opts_tl ]
+                      { \exp_not:V \l__luatexcn_banxin_upper_section_text_tl }
+                  }
+              }
+            % Store box in Lua for render stage
+            \lua_now:e {
+              _G.banxin~=~_G.banxin~or~{}
+              _G.banxin.store_upper_section_box(
+                \int_value:w \g__luatexcn_banxin_upper_box
+              )
+            }
+          }
+      }
   }
+\tl_new:N \l__luatexcn_banxin_tb_opts_tl
 
 % ============================================================================
 % CJK Aliases (中文别名)

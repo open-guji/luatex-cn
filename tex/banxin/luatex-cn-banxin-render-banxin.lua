@@ -511,6 +511,13 @@ end
 -- @param element (table) Layout element with x, y_top, width, height
 -- @param box (node) Pre-rendered box node (will be copied, not consumed)
 -- @return (node) Updated node list head
+--- Place a pre-rendered box at the position specified by the layout element.
+--- Uses kern+shift positioning (same pattern as render_floating_box).
+--- The box is copied so it can be reused across multiple banxin columns/pages.
+-- @param p_head (node) Current node list head
+-- @param element (table) Layout element with x, y_top, width, height
+-- @param box (node) Pre-rendered box node (will be copied, not consumed)
+-- @return (node) Updated node list head
 local function render_pre_rendered_box(p_head, element, box)
     local copied = node.copy_list(box)
     local curr = D.todirect(copied)
@@ -518,13 +525,16 @@ local function render_pre_rendered_box(p_head, element, box)
     local box_h = D.getfield(curr, "height") or 0
     local box_w = D.getfield(curr, "width") or 0
 
-    -- Position: element.x is left edge, element.y_top is top edge (PDF coords)
-    -- kern moves horizontally from current position (0) to element.x
-    -- shift moves the box vertically; shift = y_top means the box top aligns with y_top
-    -- In TeX, shift on an hbox/vbox moves downward positively, and the box
-    -- reference point is at the top-left corner offset by height.
-    -- yoffset = y_top positions the box top at y_top (PDF y axis: up is positive)
-    D.setfield(curr, "shift", -(element.y_top - box_h))
+    -- The pre-rendered box contains TextBox pipeline output.
+    -- Internal glyphs have xoffset/yoffset in TextBox's own coordinate system.
+    -- We position the box so its origin aligns with the banxin element position.
+    --
+    -- element.y_top: top of content area (negative value, y goes downward from 0)
+    -- TeX shift: positive = move box downward
+    -- Box reference point: at (left, baseline) where baseline = top - height
+    -- We want box top at element.y_top => shift = -element.y_top
+    -- (element.y_top is negative, so -element.y_top is positive = shift down)
+    D.setfield(curr, "shift", -element.y_top)
 
     local k_pre = D.new(constants.KERN)
     D.setfield(k_pre, "subtype", 1)

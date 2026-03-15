@@ -4,6 +4,19 @@ English | [中文版](Changelog)
 
 All notable changes to this project will be documented here.
 
+## [0.3.5] - 2026-03-14
+
+Component-level settings system and multi-level heading support.
+
+- ✨ **Setting Stack**: New setting stack module for component-level punctuation mode configuration in side notes, annotations, header notes, and text boxes (fix #84)
+- ✨ **Global Settings Command**: New `\GlobalSettings` / `\全局设置` command for unified management of punct-mode, punct-style, and other global parameters; new xshift parameter for side notes (fix #86)
+- ✨ **Multi-level Headings**: New `\chapter`/`\section`/`\subsection` commands with `\chapter[banxin title]{body title}` optional parameter to distinguish banxin vs body display; new `\sectionSetup` configuration command (fix #64)
+- ✨ **Unified Style Parameters**: All components accept style parameters via .unknown double-forwarding (settings → style)
+- 🐛 **Seal Fix**: Fixed multiple `\YinZhang` commands overwriting each other, showing only the last one (fix #80)
+- 🐛 **Alias Unification**: Unified Chinese aliases: Column→行, SideNode→Sidenote (fix #83)
+- 🐛 **Line Break Spacing**: Fixed source line breaks in BodyText producing extra spaces (fix #86)
+- 🐛 **Layout Fixes**: Fixed auto_balance sub-column overflow, textflow band height constraint, banxin font matching, banxin_ratio=1 horizontal line crossing, and table column border edge line issues
+
 ## [0.3.4] - 2026-03-12
 
 New table and genealogy typesetting (experimental).

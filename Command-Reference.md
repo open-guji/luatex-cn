@@ -450,13 +450,14 @@
 | 参数 | 简体 | 繁体 | 类型 | 默认值 | 说明 |
 |------|------|------|------|--------|------|
 | yshift | 纵移 | 縱移 | 度量 | 0pt | 纵向偏移（支持位置参数） |
+| xshift | 横移 | 橫移 | 度量 | 0pt | 水平偏移 <sup>v0.3.5+</sup> |
 | grid-height | 格高 | 格高 | 度量 | _(空)_ | 侧批格高（默认=字号） |
 | font-size | 字号 | 字號 | 字号 | 10pt | 侧批字号 |
 | color | 颜色 | 顏色 | 颜色 | red | 侧批颜色 |
 | border-padding-top | 边框上填充 | 边框上填充 | 度量 | 0pt | 上方填充 |
 | border-padding-bottom | 边框下填充 | 边框下填充 | 度量 | 0pt | 下方填充 |
 
-### `\sidenodeSetup`  `\侧批设置`  `\側批設置`
+### `\sidenoteSetup`  `\侧批设置`  `\側批設置`
 
 配置侧批默认参数。
 
@@ -531,9 +532,65 @@
 
 插入章节标记，后续页面的版心章节标题自动更新。
 
-### `\chapter`
+### `\chapter`  `\卷`
 
-设置章节标题并重置页码。
+设置章节标题并重置页码。<sup>v0.3.5+</sup> 支持可选参数区分版心与正文标题。
+
+语法：
+- `\chapter{标题}` — 设置章节标题并输出正文
+- `\chapter*{标题}` — 仅设置元数据，不输出
+- `\chapter[版心标题]{正文标题}` — 版心显示"版心标题"，正文输出"正文标题"
+- `\chapter*[版心标题]{正文标题}` — 设置版心但不输出正文
+
+### `\section`  <sup>v0.3.5+</sup>
+
+小节标题（篇级）。语法：`\section{标题}` / `\section*{标题}`（带星号仅设置元数据）。
+
+### `\subsection`  <sup>v0.3.5+</sup>
+
+子节标题（节级）。语法：`\subsection{标题}` / `\subsection*{标题}`（带星号仅设置元数据）。
+
+### `\sectionSetup`  `\标题设置`  `\標題設置`  <sup>v0.3.5+</sup>
+
+配置多级标题参数。
+
+| 参数 | 简体 | 繁体 | 类型 | 默认值 | 说明 |
+|------|------|------|------|--------|------|
+| chapter-indent | 章节缩进 | 章節縮進 | 整数 | 0 | 章节标题缩进（格数） |
+| chapter-font-size | 章节字号 | 章節字號 | 字号 | _(空)_ | 章节标题字号 |
+| chapter-font-color | 章节字体颜色 | 章節字體顏色 | 颜色 | _(空)_ | 章节标题颜色 |
+| chapter-font | 章节字体 | 章節字體 | 字符串 | _(空)_ | 章节标题字体 |
+| chapter-spacing-top | 章节上间距 | 章節上間距 | 度量 | _(空)_ | 章节前附加间距 |
+| section-indent | 篇缩进 | 篇縮進 | 整数 | 1 | 小节标题缩进 |
+| section-font-size | 篇字号 | 篇字號 | 字号 | _(空)_ | 小节字号 |
+| section-font-color | 篇字体颜色 | 篇字體顏色 | 颜色 | _(空)_ | 小节颜色 |
+| section-font | 篇字体 | 篇字體 | 字符串 | _(空)_ | 小节字体 |
+| section-spacing-top | 篇上间距 | 篇上間距 | 度量 | _(空)_ | 小节前附加间距 |
+| subsection-indent | 节缩进 | 節縮進 | 整数 | 2 | 子节标题缩进 |
+| subsection-font-size | 节字号 | 節字號 | 字号 | _(空)_ | 子节字号 |
+| subsection-font-color | 节字体颜色 | 節字體顏色 | 颜色 | _(空)_ | 子节颜色 |
+| subsection-font | 节字体 | 節字體 | 字符串 | _(空)_ | 子节字体 |
+| subsection-spacing-top | 节上间距 | 節上間距 | 度量 | _(空)_ | 子节前附加间距 |
+
+---
+
+## 全局设置 (GlobalSettings) <sup>v0.3.5+</sup>
+
+**文件**: `core/luatex-cn-core-settings.sty`
+
+### `\GlobalSettings`  `\全局设置`  `\全局設置`
+
+配置全局语义设置。这些设置通过 setting stack 管理，独立于视觉样式系统。
+
+语法：`\GlobalSettings{punct-mode=judou, punct-style=taiwan}`
+
+| 参数 | 简体 | 繁体 | 类型 | 默认值 | 说明 |
+|------|------|------|------|--------|------|
+| punct-mode | 标点模式 | 標點模式 | 选项 | _(空)_ | 标点模式：`normal` `judou` `none` |
+| punct-style | 标点标准 | 標點標準 | 选项 | _(空)_ | 标点风格：`mainland` `taiwan` |
+| debug | 调试 | 調試 | 是/否 | false | 启用调试输出 |
+
+侧批、批注、眉批、TextBox 等组件可通过各自参数独立覆盖全局设置。
 
 ---
 

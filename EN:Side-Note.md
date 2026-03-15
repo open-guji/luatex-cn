@@ -54,6 +54,7 @@ Main text\\侧批[yshift=10pt, color=red]{Both color and position}continued text
 
 ### Parameters
 - `yshift`: Vertical offset with positional parameter support. Pure numbers auto-convert to em units (e.g., `0.5` → `0.5em`).
+- `xshift` <sup>v0.3.5+</sup>: Horizontal offset (default: 0pt).
 - `color`: Annotation color (default: red).
 - `font-size`: Font size for the note (default: 10pt).
 - `grid-height`: Custom grid height for the note block (default: equals font size).
@@ -66,15 +67,28 @@ Main text\\侧批[yshift=10pt, color=red]{Both color and position}continued text
   color = red,
   font-size = 19pt,
   grid-height = 20pt,
+  xshift = 0pt,   % Horizontal offset (v0.3.5+)
   yshift = 0em,
   border-padding-top = 0.5em,
   border-padding-bottom = 0.5em
 }
 ```
 
+### Component-Level Punctuation Mode <sup>v0.3.5+</sup>
+
+Side notes can use a different punctuation mode independent of the global setting:
+```latex
+% Side note uses judou mode (while global may be normal)
+\Sidenote[punct-mode=judou]{note content}
+
+% Or configure globally
+\GlobalSettings{punct-mode=judou}
+```
+
 ### Aliases
-- Setup command: `\sidenodeSetup` / `\CePiSetup` / `\侧批设置` (Simplified) / `\側批設置` (Traditional)
+- Setup command: `\sidenoteSetup` / `\CePiSetup` / `\侧批设置` (Simplified) / `\側批設置` (Traditional)
 - Vertical shift parameter: `yshift` / `纵移` (Simplified) / `縱移` (Traditional)
+- Horizontal shift parameter: `xshift` / `横移` (Simplified) / `橫移` (Traditional)
 
 ### Cross-Page Color Preservation (v0.2.1+)
 v0.2.1 introduced the style registry mechanism. Side note color settings now persist correctly across pages. Even when side note content spans multiple pages, colors remain consistent.

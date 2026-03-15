@@ -172,10 +172,7 @@ local function create_grid_context(params, line_limit, p_cols)
     if n_bands > 1 then
         local band_gap_sp = params.band_gap_sp or 0
         local total_gap = band_gap_sp * (n_bands - 1)
-        -- Band heights use full content height (before padding deduction),
-        -- so column-padding-top/bottom does not reduce the available space for bands.
-        local full_col_height = col_height_sp + (params.c_padding_top or 0) + (params.c_padding_bottom or 0)
-        local available_height = full_col_height - total_gap
+        local available_height = col_height_sp - total_gap
         local band_heights = params.band_heights  -- user-specified per-band heights
 
         -- Pre-compute default height: unspecified bands share remaining space equally.
@@ -202,7 +199,7 @@ local function create_grid_context(params, line_limit, p_cols)
                 h = band_heights[i + 1]
             elseif i == last_unspecified then
                 -- Last unspecified band absorbs rounding remainder
-                h = full_col_height - offset
+                h = col_height_sp - offset
                 if h < 0 then h = 0 end
             else
                 h = default_h
@@ -781,11 +778,8 @@ local function handle_penalty_breaks(p_val, ctx, flush_buffer_fn, p_cols, interv
         local orig_line_limit = ctx.saved_band_state.line_limit
 
         -- Calculate band layout
-        -- Band heights use full content height (before padding deduction),
-        -- so column-padding-top/bottom does not reduce the available space for bands.
-        local full_col_height = col_height_sp + (ctx.c_padding_top or 0) + (ctx.c_padding_bottom or 0)
         local total_gap = band_gap_sp * (n_bands - 1)
-        local available_height = full_col_height - total_gap
+        local available_height = col_height_sp - total_gap
         local band_heights_sp = {}
         local band_y_offsets_sp = {}
         local band_line_limits = {}
@@ -815,7 +809,7 @@ local function handle_penalty_breaks(p_val, ctx, flush_buffer_fn, p_cols, interv
                 h = band_heights[i + 1]
             elseif i == last_unspecified then
                 -- Last unspecified band absorbs rounding remainder
-                h = full_col_height - offset
+                h = col_height_sp - offset
                 if h < 0 then h = 0 end
             else
                 h = default_h

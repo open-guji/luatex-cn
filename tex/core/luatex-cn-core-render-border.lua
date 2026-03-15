@@ -106,6 +106,13 @@ local function draw_column_borders(p_head, params)
     local col_groups = params.col_groups
 
     if band_column_borders and n_bands and n_bands > 1 then
+        -- Offset to convert band y-coordinates (text area origin) to column border
+        -- y-coordinates (inner border origin). Band dividers are drawn at
+        -- outer_shift + border_thickness + c_padding_top + band_y, while column border
+        -- segments start at half_thickness + outer_shift + seg_y.
+        local c_padding_top = params.c_padding_top or 0
+        local band_y_to_seg = (border_thickness - half_thickness) + c_padding_top
+
         -- Determine table column range so columns outside the table
         -- are drawn at full height (not affected by band_column_borders).
         local table_start_col = params.table_start_col
@@ -142,7 +149,7 @@ local function draw_column_borders(p_head, params)
         local skips = {}
         for band = 0, n_bands - 1 do
             if band_column_borders[band] == false then
-                local by = band_y_offsets_sp[band] or 0
+                local by = (band_y_offsets_sp[band] or 0) + band_y_to_seg
                 local bh = band_heights_sp[band] or 0
                 skips[#skips + 1] = { by, by + bh }
             end
@@ -172,7 +179,7 @@ local function draw_column_borders(p_head, params)
                             draw = col_border_overrides[band][local_col]
                         end
                         if draw == false then
-                            local by = band_y_offsets_sp[band] or 0
+                            local by = (band_y_offsets_sp[band] or 0) + band_y_to_seg
                             local bh = band_heights_sp[band] or 0
                             skips[#skips + 1] = { by, by + bh }
                         end
@@ -699,6 +706,7 @@ local function render_borders(p_head, params)
             border_rgb_str = params.b_rgb_str,
             banxin_cols = params.reserved_cols,
             col_min_y_sp = params.col_min_y_sp,
+            c_padding_top = params.c_padding_top,
         }
         -- Apply table-level column_border as default for all bands,
         -- then per-band overrides take precedence.

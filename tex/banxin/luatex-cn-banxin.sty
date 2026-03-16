@@ -28,7 +28,7 @@
 % Variable Declarations
 % =============================================================================
 
-% Pre-rendered upper section box (global, survives groups)
+% Pre-rendered section boxes (global, survives groups)
 \box_new:N \g__luatexcn_banxin_upper_box
 
 % Banxin on/off
@@ -448,6 +448,7 @@
               )
             }
           }
+        % Middle section is rendered at runtime (per-page chapter titles)
       }
   }
 \tl_new:N \l__luatexcn_banxin_tb_opts_tl

@@ -416,6 +416,21 @@ end
 -- Exported Helper Functions (for testing and render module)
 -- ============================================================================
 
+--- Calculate middle section available height for TextBox pre-rendering
+-- @param params (table) { content_height, middle_ratio, banxin_width, upper_yuwei, lower_yuwei, top_margin }
+-- @return (number) Available height in sp
+function banxin_layout.calc_middle_available_height(params)
+    local middle_h = (params.content_height or 0) * (params.middle_ratio or 0.56)
+    local bw = params.banxin_width or 655360
+    local yuwei_dims = calculate_yuwei_dimensions(bw)
+    local upper_yw = params.upper_yuwei and calculate_yuwei_total_height(yuwei_dims) or 0
+    local lower_yw = params.lower_yuwei and calculate_yuwei_total_height(yuwei_dims) or 0
+    local top_margin = params.top_margin or 0
+    local h = middle_h - upper_yw - lower_yw - top_margin
+    if h < 0 then h = middle_h * 0.3 end
+    return math.floor(h + 0.5)
+end
+
 banxin_layout.count_utf8_chars = count_utf8_chars
 banxin_layout.calculate_yuwei_dimensions = calculate_yuwei_dimensions
 banxin_layout.calculate_yuwei_total_height = calculate_yuwei_total_height

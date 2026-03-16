@@ -61,6 +61,7 @@ local function store_upper_section_box(box_num)
     end
 end
 
+
 local utils = package.loaded['util.luatex-cn-utils'] or
     require('util.luatex-cn-utils')
 local debug = package.loaded['debug.luatex-cn-debug'] or

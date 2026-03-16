@@ -527,14 +527,14 @@ local function render_pre_rendered_box(p_head, element, box)
 
     -- The pre-rendered box contains TextBox pipeline output.
     -- Internal glyphs have xoffset/yoffset in TextBox's own coordinate system.
-    -- We position the box so its origin aligns with the banxin element position.
+    -- We position the box at block_y_top (top of content area after border + padding).
+    -- TextBox already has padding deducted from its height, so we use block_y_top
+    -- (not y_top which is the centered text position for the legacy path).
     --
-    -- element.y_top: top of content area (negative value, y goes downward from 0)
     -- TeX shift: positive = move box downward
     -- Box reference point: at (left, baseline) where baseline = top - height
-    -- We want box top at element.y_top => shift = -element.y_top
-    -- (element.y_top is negative, so -element.y_top is positive = shift down)
-    D.setfield(curr, "shift", -element.y_top)
+    local target_y = element.block_y_top or element.y_top
+    D.setfield(curr, "shift", -target_y)
 
     local k_pre = D.new(constants.KERN)
     D.setfield(k_pre, "subtype", 1)

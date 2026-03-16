@@ -1599,8 +1599,20 @@ local function flush_buffer(col_buffer, ctx, grid_height, distribute, layout_map
 
     -- If absolute height is provided and we are in distribution mode,
     -- use the actual dimension to calculate distribution.
+    -- Deduct fill_padding_top/bottom (whole-box margins, not per-cell padding).
+    local fill_pad_top = 0
+    local fill_pad_bottom = 0
     if distribute and ctx.params.absolute_height and ctx.params.absolute_height > 0 then
-        H = ctx.params.absolute_height / grid_height
+        local constants_mod = package.loaded['core.luatex-cn-constants'] or
+            require('core.luatex-cn-constants')
+        if ctx.params.fill_padding_top then
+            fill_pad_top = constants_mod.to_dimen(ctx.params.fill_padding_top) or 0
+        end
+        if ctx.params.fill_padding_bottom then
+            fill_pad_bottom = constants_mod.to_dimen(ctx.params.fill_padding_bottom) or 0
+        end
+        local dist_height = ctx.params.absolute_height - fill_pad_top - fill_pad_bottom
+        H = dist_height / grid_height
     end
 
     local v_scale_all = 1.0
@@ -1615,11 +1627,13 @@ local function flush_buffer(col_buffer, ctx, grid_height, distribute, layout_map
         end
 
         local H_sp = H * grid_height
-        local available_sp = H_sp - col_start_y
+        -- Start distributing from fill_pad_top
+        local dist_start_y = math.max(col_start_y, fill_pad_top)
+        local available_sp = H_sp - (dist_start_y - fill_pad_top)
         if total_char_height > available_sp then
             -- Squeeze mode
             v_scale_all = available_sp / total_char_height
-            local current_y = col_start_y
+            local current_y = dist_start_y
             for i = 1, N do
                 local entry = col_buffer[i]
                 local ch = entry.cell_height or entry.height or grid_height
@@ -1633,7 +1647,7 @@ local function flush_buffer(col_buffer, ctx, grid_height, distribute, layout_map
             -- Distribute mode (No enlargement)
             v_scale_all = 1.0
             local gap = (available_sp - total_char_height) / (N - 1)
-            local current_y = col_start_y
+            local current_y = dist_start_y
             for i = 1, N do
                 local entry = col_buffer[i]
                 local ch = entry.cell_height or entry.height or grid_height

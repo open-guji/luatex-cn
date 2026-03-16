@@ -53,8 +53,10 @@ def pdf_to_pngs(pdf_file: Path, output_dir: Path, dpi: int = 300) -> list:
         print(result.stderr)
         return []
 
+    # Use regex to match exact stem followed by -N.png (not stem-more-stuff-N.png)
     pngs = sorted(
-        list(output_dir.glob(f"{pdf_file.stem}-*.png")),
+        [f for f in output_dir.glob(f"{pdf_file.stem}-*.png")
+         if re.match(rf"^{re.escape(pdf_file.stem)}-\d+\.png$", f.name)],
         key=lambda x: int(re.search(r"-(\d+)\.png$", x.name).group(1)),
     )
     return pngs

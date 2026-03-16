@@ -52,6 +52,10 @@
 \bool_new:N \l__luatexcn_textbox_outer_border_bool
 \tl_new:N \l__luatexcn_textbox_outer_border_thickness_tl
 \tl_new:N \l__luatexcn_textbox_outer_border_sep_tl
+\tl_new:N \l__luatexcn_textbox_col_padding_top_tl
+\tl_new:N \l__luatexcn_textbox_col_padding_bottom_tl
+\tl_new:N \l__luatexcn_textbox_fill_padding_top_tl
+\tl_new:N \l__luatexcn_textbox_fill_padding_bottom_tl
 
 \keys_define:nn { luatexcn / textbox }
   {
@@ -113,6 +117,14 @@
     outer-border-thickness .initial:n = {1pt},
     outer-border-sep .tl_set:N = \l__luatexcn_textbox_outer_border_sep_tl,
     outer-border-sep .initial:n = {2pt},
+    column-padding-top .tl_set:N = \l__luatexcn_textbox_col_padding_top_tl,
+    column-padding-top .initial:n = {},
+    column-padding-bottom .tl_set:N = \l__luatexcn_textbox_col_padding_bottom_tl,
+    column-padding-bottom .initial:n = {},
+    fill-padding-top .tl_set:N = \l__luatexcn_textbox_fill_padding_top_tl,
+    fill-padding-top .initial:n = {},
+    fill-padding-bottom .tl_set:N = \l__luatexcn_textbox_fill_padding_bottom_tl,
+    fill-padding-bottom .initial:n = {},
     % Forward unknown keys: try settings first, then style
     unknown .code:n =
       {
@@ -265,7 +277,11 @@
       outer_margin~=~[=[\luaescapestring{\l__luatexcn_textbox_outer_margin_tl}]=],
       outer_border~=~\bool_if:NTF~\l__luatexcn_textbox_outer_border_bool~{true}{false},
       outer_border_thickness~=~[=[\luaescapestring{\l__luatexcn_textbox_outer_border_thickness_tl}]=],
-      outer_border_sep~=~[=[\luaescapestring{\l__luatexcn_textbox_outer_border_sep_tl}]=]
+      outer_border_sep~=~[=[\luaescapestring{\l__luatexcn_textbox_outer_border_sep_tl}]=],
+      column_padding_top~=~[=[\luaescapestring{\l__luatexcn_textbox_col_padding_top_tl}]=],
+      column_padding_bottom~=~[=[\luaescapestring{\l__luatexcn_textbox_col_padding_bottom_tl}]=],
+      fill_padding_top~=~[=[\luaescapestring{\l__luatexcn_textbox_fill_padding_top_tl}]=],
+      fill_padding_bottom~=~[=[\luaescapestring{\l__luatexcn_textbox_fill_padding_bottom_tl}]=]
     }) }
     \setluatexattribute\cnverticaltextboxwidth{0}
     \setluatexattribute\cnverticaltextboxheight{0}

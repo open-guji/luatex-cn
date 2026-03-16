@@ -151,7 +151,9 @@ local function calculate_upper_section_layout(params, regions)
     -- Use section-specific font_size if specified, otherwise fall back to base font size
     local f_size = constants.resolve_dimen(params.upper_section_font_size, base_f_size) or base_f_size
     local c_padding_top = constants.resolve_dimen(params.c_padding_top, base_f_size)
-    local c_padding_bottom = constants.resolve_dimen(params.c_padding_bottom, base_f_size)
+    -- Use upper-section-specific bottom-padding if set, otherwise fall back to global column padding
+    local c_padding_bottom = params.upper_section_bottom_padding
+        or constants.resolve_dimen(params.c_padding_bottom, base_f_size)
     local effective_b = params.draw_border and constants.resolve_dimen(params.border_thickness, base_f_size) or 0
     local adj_height = upper_height - effective_b - c_padding_top - c_padding_bottom
     local num_chars = count_utf8_chars(text)
@@ -181,8 +183,10 @@ local function calculate_upper_section_layout(params, regions)
         text = text,
         x = params.x,
         y_top = y_start,
+        block_y_top = block_y_top,  -- Top of content area (after border + padding)
         width = params.width,
         height = total_text_height,
+        adj_height = adj_height,    -- Available height (region - border - padding)
         num_cells = num_chars,
         v_align = "center",
         h_align = "center",

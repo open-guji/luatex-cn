@@ -102,6 +102,7 @@ local function read_banxin_params()
         upper_section_font_size = parse_dim(get_tl("l__luatexcn_banxin_upper_section_font_size_tl")),
         upper_section_grid_height = parse_dim(get_tl("l__luatexcn_banxin_upper_section_grid_height_tl")),
         upper_section_align = get_tl("l__luatexcn_banxin_upper_section_align_tl") or "center",
+        upper_section_bottom_padding = parse_dim(get_tl("l__luatexcn_banxin_upper_section_bottom_padding_tl")),
         upper_section_bg_color = get_tl("l__luatexcn_banxin_upper_section_bg_color_tl") or "",
         upper_section_font_color = get_tl("l__luatexcn_banxin_upper_section_font_color_tl") or "",
 
@@ -246,6 +247,7 @@ function banxin_main.layout(list, layout_map, engine_ctx, context)
                     upper_section_font_size = bp.upper_section_font_size > 0 and bp.upper_section_font_size or nil,
                     upper_section_grid_height = bp.upper_section_grid_height > 0 and bp.upper_section_grid_height or nil,
                     upper_section_align = bp.upper_section_align,
+                    upper_section_bottom_padding = bp.upper_section_bottom_padding > 0 and bp.upper_section_bottom_padding or nil,
                     upper_section_bg_color = bp.upper_section_bg_color,
                     upper_section_font_color = bp.upper_section_font_color,
                     c_padding_top = c_padding_top,

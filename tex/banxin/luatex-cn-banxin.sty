@@ -51,6 +51,7 @@
 \tl_new:N \l__luatexcn_banxin_upper_section_grid_height_tl
 \tl_new:N \l__luatexcn_banxin_upper_section_align_tl
 \tl_new:N \l__luatexcn_banxin_upper_section_top_padding_tl
+\tl_new:N \l__luatexcn_banxin_upper_section_bottom_padding_tl
 \tl_new:N \l__luatexcn_banxin_upper_section_bg_color_tl
 \tl_new:N \l__luatexcn_banxin_upper_section_font_color_tl
 
@@ -101,6 +102,8 @@
     align .initial:n = {center},
     top-padding .tl_set:N = \l__luatexcn_banxin_upper_section_top_padding_tl,
     top-padding .initial:n = {2pt},
+    bottom-padding .tl_set:N = \l__luatexcn_banxin_upper_section_bottom_padding_tl,
+    bottom-padding .initial:n = {10pt},
     background-color .tl_set:N = \l__luatexcn_banxin_upper_section_bg_color_tl,
     background-color .initial:n = {},
     font-color .tl_set:N = \l__luatexcn_banxin_upper_section_font_color_tl,
@@ -383,13 +386,17 @@
           {
             % Calculate banxin dimensions from Lua globals
             % (available after content sync in \end{BodyText})
+            % Height = upper_region - border (padding handled inside TextBox)
             \tl_set:Ne \l_tmpa_tl
               {
                 \lua_now:e
                   {
                     local~c~=~_G.content~or~{}
                     local~ratio~=~tonumber(token.get_macro("l__luatexcn_banxin_upper_ratio_tl"))~or~0.28~
-                    local~h~=~(c.content_height~or~0)~*~ratio~
+                    local~region_h~=~(c.content_height~or~0)~*~ratio~
+                    local~border_t~=~c.border_on~and~(c.border_thickness~or~0)~or~0~
+                    local~h~=~region_h~-~border_t~
+                    if~h~<~0~then~h~=~region_h~end~
                     tex.print(tostring(math.floor(h~+~0.5))~..~"sp")
                   }
               }
@@ -401,9 +408,18 @@
                     tex.print(tostring(c.banxin_width~or~655360)~..~"sp")
                   }
               }
-            % Build TextBox options
+            % Build TextBox options (border=false to avoid inheriting global border)
+            % top-padding / bottom-padding are passed as distribute-padding
+            % (affects fill distribution range, NOT per-cell padding)
             \tl_set:Nn \l__luatexcn_banxin_tb_opts_tl
-              { height = \l_tmpa_tl , grid-width = \l_tmpb_tl }
+              {
+                height = \l_tmpa_tl ,
+                grid-width = \l_tmpb_tl ,
+                border = false ,
+                box-align = fill ,
+                fill-padding-top = \l__luatexcn_banxin_upper_section_top_padding_tl ,
+                fill-padding-bottom = \l__luatexcn_banxin_upper_section_bottom_padding_tl
+              }
             \tl_if_empty:NF \l__luatexcn_banxin_upper_section_font_size_tl
               {
                 \tl_put_right:Ne \l__luatexcn_banxin_tb_opts_tl

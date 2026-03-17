@@ -108,9 +108,9 @@
 | border-color | 边框色 | 邊框色 | 颜色 | black | 栏线颜色 |
 | border-padding-top | 边框上填充 | 边框上填充 | 度量 | 0pt | 栏线上方留白 |
 | border-padding-bottom | 边框下填充 | 边框下填充 | 度量 | 0pt | 栏线下方留白 |
-| outer-border | 外框 | 外框 | 是/否 | false | 是否显示外框 |
-| outer-border-thickness | 外框粗细 | 外框粗細 | 度量 | 1pt | 外框线宽 |
-| outer-border-sep | 外框间距 | 外框間距 | 度量 | 2pt | 外框与栏线间距 |
+| outer-border | 外边框 | 外邊框 | 是/否 | false | 是否显示外边框 |
+| outer-border-thickness | 外边框粗细 | 外邊框粗細 | 度量 | 1pt | 外边框线宽 |
+| outer-border-sep | 外边框间距 | 外邊框間距 | 度量 | 2pt | 外边框与栏线间距 |
 | inter-cell-gap | 字间隙 | 字間隙 | 度量 | 0pt | 字格间附加间距 |
 | cell-height | 字格高 | 字格高 | 度量 | _(空)_ | 单字格高度覆盖 |
 | cell-width | 字格宽 | 字格寬 | 度量 | _(空)_ | 单字格宽度覆盖 |
@@ -286,9 +286,9 @@
 | border-margin-x | 边框横距 | 邊框橫距 | 度量 | _(空)_ | 边框横向间距 |
 | border-margin-y | 边框纵距 | 邊框縱距 | 度量 | _(空)_ | 边框纵向间距 |
 | outer-margin | 外间距 | 外間距 | 度量 | 0pt | 文本框外部间距 |
-| outer-border | 外框 | 外框 | 是/否 | false | 显示外框 |
-| outer-border-thickness | 外框粗细 | 外框粗細 | 度量 | 1pt | 外框线宽 |
-| outer-border-sep | 外框间距 | 外框間距 | 度量 | 2pt | 外框与边框间距 |
+| outer-border | 外边框 | 外邊框 | 是/否 | false | 显示外边框 |
+| outer-border-thickness | 外边框粗细 | 外邊框粗細 | 度量 | 1pt | 外边框线宽 |
+| outer-border-sep | 外边框间距 | 外邊框間距 | 度量 | 2pt | 外边框与边框间距 |
 | banxin | 版心 | 版心 | 是/否 | — | 是否显示版心线 |
 | column-align | 列对齐 | 列對齊 | 字符串 | _(空)_ | 内部列对齐 |
 | vertical-align | 纵对齐 | 縱對齊 | 字符串 | _(空)_ | 纵向对齐（别名 box-align） |
@@ -831,7 +831,7 @@
 | 参数 | 简体 | 繁体 | 类型 | 默认值 | 说明 |
 |------|------|------|------|--------|------|
 | border | 边框 | 邊框 | 是/否 | false | 显示边框 |
-| outer-border | 外框 | 外框 | 是/否 | false | 显示外框 |
+| outer-border | 外边框 | 外邊框 | 是/否 | false | 显示外边框 |
 
 ---
 

@@ -16,6 +16,7 @@ tex/
 ├── ltc-ltc-guji.cls              # 古籍文档类（兼容别名）
 ├── ltc-cn-vbook.cls              # 中国大陆竖排书籍
 ├── ltc-tw-vbook.cls              # 台湾竖排书籍
+├── ltc-guji-digital.cls          # 古籍数字化文档类
 ├── luatex-cn.sty             # 顶层宏包（兼容性入口）
 ├── luatex-cn-core.sty        # 核心功能聚合包
 │
@@ -37,7 +38,9 @@ tex/
 │   ├── luatex-cn-core-punct.sty/.lua    # 标点挤压与禁则
 │   ├── luatex-cn-footnote.sty/.lua      # 脚注系统
 │   ├── luatex-cn-constants.lua          # 常量定义
-│   └── luatex-cn-render-position.lua    # 位置计算
+│   ├── luatex-cn-render-position.lua    # 位置计算
+│   └── digital/                  # 数字化专用逻辑
+│       └── luatex-cn-digital.sty        # 数字化命令实现
 │
 ├── guji/                     # 古籍特有功能
 │   ├── luatex-cn-guji.sty               # 古籍功能聚合

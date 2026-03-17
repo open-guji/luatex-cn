@@ -18,6 +18,7 @@
 | **`ltc-guji-digital`** | 古籍数字化录入：一行源码 = 一个竖排列，`\双列{\右小列{…}\左小列{…}}` 手工分栏，精确复刻底本版面 | [源码示例](https://github.com/open-guji/luatex-cn/tree/main/test/digital_test) |
 | **`ltc-cn-vbook`** (v0.2.8+) | 现代中国大陆竖排书籍，简洁设计，内置脚注和标点系统 | [[ltc-book \| ltc-book]] |
 | **`ltc-tw-vbook`** (v0.2.8+) | 现代台湾竖排书籍，居中标点 | [[ltc-book \| ltc-book]] |
+| **`ltc-guji-digital`** (v0.3.0+) | 古典书籍数字化，布局模式，每个换行对应一列 | [[数字化排版 \| Digitalization]] |
 
 > `ltc-guji` 和 `ltc-book` 仍可使用，但推荐使用上述新名称。
 
@@ -91,7 +92,7 @@
 
 ## 8. 封面 (v0.2.8+)
 
-`Cover`（或 `\begin{封面}`）环境用于排版封面页。它会自动关闭边框、外框和版心，并支持设置页面背景色。
+`Cover`（或 `\begin{封面}`）环境用于排版封面页。它会自动关闭边框、外边框和版心，并支持设置页面背景色。
 
 ```latex
 \begin{封面}[底色=200,200,200]
@@ -164,6 +165,7 @@
 - **元数据系统**：集中化书籍元数据管理（`\title`、`\publisher`、`\ChapterMarker`）。
 - **[[调试模式 | Debug]]**：`\LtcDebugOn` 开启后显示页面网格坐标，`\LtcShowGrid` 显示坐标网格。
 - **[[排版坐标导出 | Layout-Export]]**：`\启用排版导出` 将排版结果导出为 JSON 文件，包含每个字符的精确坐标、页面/列/行信息、夹注和侧批数据。
+- **[[数字化排版 | Digitalization]]** (v0.3.0+)：专为古籍数字化设计的“布局模式”，提供 `\缩进`、`\双列` 等显示控制命令，配合 `converter.py` 实现语义稿到数字化稿的转换。
 - **插件架构**：标准化插件 API，模块统一实现 initialize/layout/render 三阶段接口。
 
 ## 13. 模板系统

@@ -920,6 +920,19 @@ local function render_borders(p_head, params)
         local outer_w = shape_width + 2 * (border_m + gap)
         local outer_h = shape_height + 2 * (border_m + gap)
 
+        -- 5a. Fill gap between inner and outer border with background color
+        -- so lower layers don't show through the gap
+        if params.background_rgb_str then
+            p_head = drawing.draw_rect_fill(p_head, {
+                x = outer_x + ob_t / 2,
+                y = outer_y - ob_t / 2,
+                width = outer_w - ob_t,
+                height = outer_h - ob_t,
+                color_str = params.background_rgb_str,
+            })
+        end
+
+        -- 5b. Outer border stroke
         p_head = drawing.draw_rect_frame(p_head, {
             x = outer_x,
             y = outer_y,

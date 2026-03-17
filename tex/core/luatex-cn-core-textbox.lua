@@ -215,7 +215,9 @@ local function build_sub_params(params, col_aligns)
         distribute = (ba == "fill"),
         -- Border parameters (resolved from params or style stack)
         border_color = border_color,
-        border_shape = params.border_shape or "none",
+        border_shape = (params.border_shape and params.border_shape ~= "none")
+            and params.border_shape
+            or ((params.border == "true" or params.border == true) and "rect" or "none"),
         border_width = border_width,
         border_margin = params.border_margin or "1pt",
         border_margin_x = params.border_margin_x,
@@ -801,7 +803,9 @@ function textbox.render_floating_box(p_head, item, params)
     local q_push = utils.create_pdf_literal("q")
     local q_pop = utils.create_pdf_literal("Q")
 
-    p_head = D.insert_before(p_head, p_head, q_push)
+    -- Insert at tail of node list so floating box renders on top of all content
+    local tail = D.tail(p_head)
+    D.insert_after(p_head, tail, q_push)
     D.insert_after(p_head, q_push, k_pre)
     D.insert_after(p_head, k_pre, curr)
     D.insert_after(p_head, curr, k_post)

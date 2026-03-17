@@ -208,9 +208,34 @@ q %s RG %.2f w
     return utils.insert_pdf_literal(p_head, literal)
 end
 
+--- Draw a filled rectangle (background)
+-- @param p_head (node) Node list head
+-- @param params (table) Parameters:
+--   - x, y, width, height (sp)
+--   - color_str: RGB fill color string
+-- @return (node) Updated head
+local function draw_rect_fill(p_head, params)
+    local sp_to_bp = utils.sp_to_bp
+    local x_bp = params.x * sp_to_bp
+    local y_bp = params.y * sp_to_bp
+    local w_bp = params.width * sp_to_bp
+    local h_bp = params.height * sp_to_bp
+    local color_str = params.color_str or "1 1 1"
+
+    local literal = string.format([[
+q %s rg
+%.4f %.4f %.4f %.4f re f Q]],
+        color_str,
+        x_bp, y_bp - h_bp, w_bp, h_bp
+    )
+
+    return utils.insert_pdf_literal(p_head, literal)
+end
+
 -- Module exports
 local drawing = {
     draw_rect_frame = draw_rect_frame,
+    draw_rect_fill = draw_rect_fill,
     draw_octagon_fill = draw_octagon_fill,
     draw_octagon_frame = draw_octagon_frame,
     draw_circle_fill = draw_circle_fill,

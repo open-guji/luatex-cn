@@ -337,12 +337,17 @@ local function calculate_lower_section_layout(params, regions)
     local banxin_bottom_y = params.y - params.height
     local y_top = banxin_bottom_y + bottom_margin + container_height
 
+    -- block_y_top: top of the lower region (for pre-rendered box placement)
+    local effective_b = params.draw_border and constants.resolve_dimen(params.border_thickness, base_f_size) or 0
+    local block_y_top = params.y - regions.upper.height - regions.middle.height - effective_b
+
     return {
         type = "lower_section",
         is_runtime = false,
         text = text,
         x = params.x,
         y_top = y_top,
+        block_y_top = block_y_top,
         width = params.width,
         height = container_height,
         v_align = "bottom",

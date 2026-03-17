@@ -740,9 +740,14 @@ local function draw_from_layout(p_head, layout, runtime)
         elseif element.type == "page_number" then
             p_head = render_page_number_from_layout(p_head, element, runtime.page_number, runtime.explicit_page_number)
         elseif element.type == "lower_section" then
-            p_head = render_with_font_color(p_head, element, function(h)
-                return render_text_section(h, element)
-            end)
+            local lower_box = _G.banxin and _G.banxin.lower_section_box
+            if lower_box then
+                p_head = render_pre_rendered_box(p_head, element, lower_box)
+            else
+                p_head = render_with_font_color(p_head, element, function(h)
+                    return render_text_section(h, element)
+                end)
+            end
         end
     end
 

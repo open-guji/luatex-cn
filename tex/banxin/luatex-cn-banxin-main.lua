@@ -61,6 +61,16 @@ local function store_upper_section_box(box_num)
     end
 end
 
+--- Store pre-rendered lower section box from TeX
+-- @param box_num (number) TeX box register number
+local function store_lower_section_box(box_num)
+    local box = tex.box[box_num]
+    if box then
+        _G.banxin.lower_section_box = node.copy_list(box)
+    else
+        _G.banxin.lower_section_box = nil
+    end
+end
 
 local utils = package.loaded['util.luatex-cn-utils'] or
     require('util.luatex-cn-utils')
@@ -379,6 +389,7 @@ local banxin_plugin = {
     render = banxin_main.render,
     setup = banxin_setup,
     store_upper_section_box = store_upper_section_box,
+    store_lower_section_box = store_lower_section_box,
 }
 
 -- Registry as plugin if core engine is present

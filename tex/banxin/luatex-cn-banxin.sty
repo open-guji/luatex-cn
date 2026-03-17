@@ -30,6 +30,7 @@
 
 % Pre-rendered section boxes (global, survives groups)
 \box_new:N \g__luatexcn_banxin_upper_box
+\box_new:N \g__luatexcn_banxin_middle_box
 \box_new:N \g__luatexcn_banxin_lower_box
 
 % Banxin on/off
@@ -438,14 +439,13 @@
                   { ,~ grid-height = \l__luatexcn_banxin_upper_section_grid_height_tl }
               }
             % Typeset into global box using TextBox pipeline
+            % If user text already contains \TextBox / \文本框, use it directly
             \vbox_gset:Nn \g__luatexcn_banxin_upper_box
               {
-                \use:x
-                  {
-                    \exp_not:N \TextBox
-                      [ \l__luatexcn_banxin_tb_opts_tl ]
-                      { \exp_not:V \l__luatexcn_banxin_upper_section_text_tl }
-                  }
+                \__luatexcn_banxin_typeset_content:NnN
+                  \l__luatexcn_banxin_upper_section_text_tl
+                  { \l__luatexcn_banxin_tb_opts_tl }
+                  \l__luatexcn_banxin_upper_section_text_tl
               }
             % Store box in Lua for render stage
             \lua_now:e {
@@ -455,7 +455,73 @@
               )
             }
           }
-        % Middle section is rendered at runtime (per-page chapter titles)
+        % --- Middle section pre-render ---
+        \tl_if_empty:NTF \l__luatexcn_banxin_middle_section_text_tl
+          {
+            \box_gclear:N \g__luatexcn_banxin_middle_box
+          }
+          {
+            % Height = middle available height (middle region - yuwei - top_margin)
+            \tl_set:Ne \l_tmpa_tl
+              {
+                \lua_now:e
+                  {
+                    local~layout~=~require("banxin.luatex-cn-banxin-layout")
+                    local~c~=~_G.content~or~{}
+                    local~upper_yw~=~token.get_macro("l__luatexcn_banxin_upper_yuwei_bool")
+                    local~lower_yw~=~token.get_macro("l__luatexcn_banxin_lower_yuwei_bool")
+                    local~top_margin_str~=~token.get_macro("l__luatexcn_banxin_middle_section_top_margin_tl")
+                    local~constants~=~require("core.luatex-cn-constants")
+                    local~top_margin~=~constants.resolve_dimen(top_margin_str,~655360)~or~0
+                    local~h~=~layout.calc_middle_available_height({
+                      content_height~=~c.content_height~or~0,
+                      middle_ratio~=~tonumber(token.get_macro("l__luatexcn_banxin_middle_ratio_tl"))~or~0.56,
+                      banxin_width~=~c.banxin_width~or~655360,
+                      upper_yuwei~=~(upper_yw~==~"\\iftrue"),
+                      lower_yuwei~=~(lower_yw~==~"\\iftrue"),
+                      top_margin~=~top_margin,
+                    })
+                    tex.print(tostring(h)~..~"sp")
+                  }
+              }
+            \tl_set:Ne \l_tmpb_tl
+              {
+                \lua_now:e
+                  {
+                    local~c~=~_G.content~or~{}
+                    tex.print(tostring(c.banxin_width~or~655360)~..~"sp")
+                  }
+              }
+            \tl_set:Nn \l__luatexcn_banxin_tb_opts_tl
+              {
+                height = \l_tmpa_tl ,
+                grid-width = \l_tmpb_tl ,
+                border = false
+              }
+            \tl_if_empty:NF \l__luatexcn_banxin_middle_section_font_size_tl
+              {
+                \tl_put_right:Ne \l__luatexcn_banxin_tb_opts_tl
+                  { ,~ font-size = \l__luatexcn_banxin_middle_section_font_size_tl }
+              }
+            \tl_if_empty:NF \l__luatexcn_banxin_middle_section_grid_height_tl
+              {
+                \tl_put_right:Ne \l__luatexcn_banxin_tb_opts_tl
+                  { ,~ grid-height = \l__luatexcn_banxin_middle_section_grid_height_tl }
+              }
+            \vbox_gset:Nn \g__luatexcn_banxin_middle_box
+              {
+                \__luatexcn_banxin_typeset_content:NnN
+                  \l__luatexcn_banxin_middle_section_text_tl
+                  { \l__luatexcn_banxin_tb_opts_tl }
+                  \l__luatexcn_banxin_middle_section_text_tl
+              }
+            \lua_now:e {
+              _G.banxin~=~_G.banxin~or~{}
+              _G.banxin.store_middle_section_box(
+                \int_value:w \g__luatexcn_banxin_middle_box
+              )
+            }
+          }
         % --- Lower section pre-render ---
         \tl_if_empty:NTF \l__luatexcn_banxin_lower_section_text_tl
           {
@@ -507,12 +573,10 @@
               }
             \vbox_gset:Nn \g__luatexcn_banxin_lower_box
               {
-                \use:x
-                  {
-                    \exp_not:N \TextBox
-                      [ \l__luatexcn_banxin_tb_opts_tl ]
-                      { \exp_not:V \l__luatexcn_banxin_lower_section_text_tl }
-                  }
+                \__luatexcn_banxin_typeset_content:NnN
+                  \l__luatexcn_banxin_lower_section_text_tl
+                  { \l__luatexcn_banxin_tb_opts_tl }
+                  \l__luatexcn_banxin_lower_section_text_tl
               }
             \lua_now:e {
               _G.banxin~=~_G.banxin~or~{}
@@ -524,6 +588,23 @@
       }
   }
 \tl_new:N \l__luatexcn_banxin_tb_opts_tl
+
+% Helper: typeset banxin section content
+% Always wraps in \TextBox with the given options.
+% User text may contain \TextBox / \文本框 — these become nested content
+% processed through the TextBox pipeline with correct banxin dimensions.
+% #1 = tl var (unused, kept for API compat)
+% #2 = TextBox options tl
+% #3 = tl var with the text content
+\cs_new_protected:Nn \__luatexcn_banxin_typeset_content:NnN
+  {
+    \use:x
+      {
+        \exp_not:N \TextBox
+          [ #2 ]
+          { \exp_not:V #3 }
+      }
+  }
 
 % ============================================================================
 % CJK Aliases (中文别名)

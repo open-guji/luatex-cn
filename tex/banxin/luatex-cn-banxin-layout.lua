@@ -238,6 +238,7 @@ local function calculate_middle_section_layout(params, regions, decorations)
         text = nil,         -- Will be filled at render time
         x = params.x,
         y_top = section_y_top,
+        block_y_top = section_y_top,
         width = params.width,
         available_height = available_height,
         font_size = section_font_size,

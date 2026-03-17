@@ -734,9 +734,14 @@ local function draw_from_layout(p_head, layout, runtime)
                 end)
             end
         elseif element.type == "middle_section" then
-            p_head = render_with_font_color(p_head, element, function(h)
-                return render_middle_section_from_layout(h, element, runtime.middle_section_text)
-            end)
+            local middle_box = _G.banxin and _G.banxin.middle_section_box
+            if middle_box then
+                p_head = render_pre_rendered_box(p_head, element, middle_box)
+            else
+                p_head = render_with_font_color(p_head, element, function(h)
+                    return render_middle_section_from_layout(h, element, runtime.middle_section_text)
+                end)
+            end
         elseif element.type == "page_number" then
             p_head = render_page_number_from_layout(p_head, element, runtime.page_number, runtime.explicit_page_number)
         elseif element.type == "lower_section" then

@@ -438,16 +438,13 @@ local function create_floating_anchor(id)
 end
 
 --- 遍历节点列表查找浮动盒子，将结果直接写入 layout_map
--- 眉批等浮动盒子应该跟随其后面的文本，所以使用 anchor 后面第一个有布局信息的节点的页面
+-- 浮动盒子使用 anchor 之前最近的已知页面（即 anchor 出现时的 current_page）
+-- 这样 \clearpage 之前的所有内容（包括 anchor）都属于同一页
 -- @param list (node) 节点列表头
 -- @param layout_map (table) 布局映射表（直接写入，mode="floating" 条目）
 -- @param registry (table) 浮动盒子注册表
 local function find_floating_boxes(list, layout_map, registry)
     if not list then return end
-
-    -- 收集待处理的 anchors，它们将在遇到下一个有布局信息的节点时被处理
-    -- 每项：{ fid, anchor_ptr }
-    local pending_anchors = {}
 
     local t = D.todirect(list)
     local current_page = 0
@@ -455,15 +452,20 @@ local function find_floating_boxes(list, layout_map, registry)
     while t do
         local id = D.getid(t)
 
-        -- 首先检查 layout_map 更新当前页面
+        -- 检查 layout_map 更新当前页面
         local pos = layout_map[t]
         if pos then
             current_page = pos.page or 0
-            -- 处理所有待处理的 anchors（它们出现在这个节点之前）
-            for _, anchor in ipairs(pending_anchors) do
-                local item = registry[anchor.fid]
+        end
+
+        -- 检查是否是浮动盒子 anchor — 立即用当前页面处理
+        if id == constants.WHATSIT then
+            local uid = D.getfield(t, "user_id")
+            if uid == constants.FLOATING_TEXTBOX_USER_ID then
+                local fid = D.getfield(t, "value")
+                local item = registry[fid]
                 if item then
-                    layout_map[anchor.anchor_ptr] = {
+                    layout_map[t] = {
                         mode = "floating",
                         page = current_page,
                         x = item.x,
@@ -471,38 +473,12 @@ local function find_floating_boxes(list, layout_map, registry)
                         box = item.box,
                         ob_extension = item.ob_extension,
                     }
-                    dbg.log(string.format("Placed floating box %d on page %d", anchor.fid, current_page))
+                    dbg.log(string.format("Placed floating box %d on page %d", fid, current_page))
                 end
-            end
-            pending_anchors = {}
-        end
-
-        -- 检查是否是浮动盒子 anchor
-        if id == constants.WHATSIT then
-            local uid = D.getfield(t, "user_id")
-            if uid == constants.FLOATING_TEXTBOX_USER_ID then
-                local fid = D.getfield(t, "value")
-                table.insert(pending_anchors, { fid = fid, anchor_ptr = t })
             end
         end
 
         t = D.getnext(t)
-    end
-
-    -- 处理文档末尾剩余的 anchors（使用最后一页）
-    for _, anchor in ipairs(pending_anchors) do
-        local item = registry[anchor.fid]
-        if item then
-            layout_map[anchor.anchor_ptr] = {
-                mode = "floating",
-                page = current_page,
-                x = item.x,
-                y = item.y,
-                box = item.box,
-                ob_extension = item.ob_extension,
-            }
-            dbg.log(string.format("Placed floating box %d on page %d (end of document)", anchor.fid, current_page))
-        end
     end
 end
 

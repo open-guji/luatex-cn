@@ -232,6 +232,8 @@ local function build_sub_params(params, col_aligns)
         -- Fill padding: affects distribute range only, not per-cell padding
         fill_padding_top = (params.fill_padding_top and params.fill_padding_top ~= "") and params.fill_padding_top or nil,
         fill_padding_bottom = (params.fill_padding_bottom and params.fill_padding_bottom ~= "") and params.fill_padding_bottom or nil,
+        -- Transparent mode: when true (default), use transparent background
+        transparent = not (params.transparent == false or params.transparent == "false"),
         -- floating* now in _G.textbox (read via plugin context in main.lua)
         -- judou params read directly from TeX vars by judou plugin
     }
@@ -312,14 +314,17 @@ local function execute_layout_pipeline(box_num, sub_params, current_indent)
     if sub_params.vertical_align and sub_params.vertical_align ~= "" then
         style_overrides.vertical_align = sub_params.vertical_align
     end
-    -- TextBox content: only use background_color if explicitly set via TextBox parameter
-    -- Otherwise default to transparent (no inheritance from parent style stack)
-    -- This prevents inherited background from covering yinzhang and other overlays
+    -- TextBox background color logic:
+    -- 1. Explicit background-color param → use it
+    -- 2. transparent=false → inherit from style stack (don't override)
+    -- 3. transparent=true (default) → set to "" to prevent covering yinzhang/overlays
     if sub_params.background_color and sub_params.background_color ~= "" then
         style_overrides.background_color = sub_params.background_color
-    else
+    elseif sub_params.transparent then
         style_overrides.background_color = ""
     end
+    -- When transparent=false and no explicit background-color: omit from overrides
+    -- so the style stack inheritance takes effect naturally
 
     -- Only include border_shape if explicitly set and not "none"
     if sub_params.border_shape and sub_params.border_shape ~= "" and sub_params.border_shape ~= "none" then

@@ -33,6 +33,7 @@
 \dim_new:N \l__luatexcn_textbox_inner_gw_dim
 \dim_new:N \l__luatexcn_textbox_inner_gh_dim
 \bool_new:N \l__luatexcn_textbox_floating_bool
+\bool_new:N \l__luatexcn_textbox_transparent_bool
 \tl_new:N \l__luatexcn_textbox_x_tl
 \tl_new:N \l__luatexcn_textbox_y_tl
 \tl_new:N \l__luatexcn_textbox_bg_color_tl
@@ -78,6 +79,8 @@
     vertical-align .tl_set:N = \l__luatexcn_textbox_box_align_tl,
     floating .bool_set:N = \l__luatexcn_textbox_floating_bool,
     floating .initial:n = false,
+    transparent .bool_set:N = \l__luatexcn_textbox_transparent_bool,
+    transparent .initial:n = true,
     floating-paper-width .tl_set:N = \l__luatexcn_textbox_floating_paper_width_tl,
     floating-paper-width .initial:n = 0pt,
     x .tl_set:N = \l__luatexcn_textbox_x_tl,
@@ -281,7 +284,8 @@
       column_padding_top~=~[=[\luaescapestring{\l__luatexcn_textbox_col_padding_top_tl}]=],
       column_padding_bottom~=~[=[\luaescapestring{\l__luatexcn_textbox_col_padding_bottom_tl}]=],
       fill_padding_top~=~[=[\luaescapestring{\l__luatexcn_textbox_fill_padding_top_tl}]=],
-      fill_padding_bottom~=~[=[\luaescapestring{\l__luatexcn_textbox_fill_padding_bottom_tl}]=]
+      fill_padding_bottom~=~[=[\luaescapestring{\l__luatexcn_textbox_fill_padding_bottom_tl}]=],
+      transparent~=~\bool_if:NTF~\l__luatexcn_textbox_transparent_bool~{true}{false}
     }) }
     \setluatexattribute\cnverticaltextboxwidth{0}
     \setluatexattribute\cnverticaltextboxheight{0}
@@ -478,6 +482,7 @@
     版心 .bool_set:N = \l__luatexcn_textbox_banxin_bool,
     列对齐 .meta:n = { column-align = #1 },
     纵对齐 .meta:n = { vertical-align = #1 },
+    透明 .bool_set:N = \l__luatexcn_textbox_transparent_bool,
     悬浮 .bool_set:N = \l__luatexcn_textbox_floating_bool,
     悬浮纸宽 .tl_set:N = \l__luatexcn_textbox_floating_paper_width_tl,
     横位 .tl_set:N = \l__luatexcn_textbox_x_tl,
@@ -505,6 +510,7 @@
     邊框 .bool_set:N = \l__luatexcn_textbox_border_bool,
     列對齊 .meta:n = { column-align = #1 },
     縱對齊 .meta:n = { vertical-align = #1 },
+    透明 .bool_set:N = \l__luatexcn_textbox_transparent_bool,
     懸浮 .bool_set:N = \l__luatexcn_textbox_floating_bool,
     懸浮紙寬 .tl_set:N = \l__luatexcn_textbox_floating_paper_width_tl,
     橫位 .tl_set:N = \l__luatexcn_textbox_x_tl,

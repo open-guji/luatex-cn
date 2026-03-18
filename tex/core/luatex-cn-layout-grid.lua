@@ -630,6 +630,35 @@ local function handle_penalty_breaks(p_val, ctx, flush_buffer_fn, p_cols, interv
             ctx.taitou_page = ctx.cur_page
         end
         return true
+    elseif p_val == constants.PENALTY_HALF_PAGE then
+        -- Half-page break (\换半页): skip to next half-page boundary.
+        -- In butterfly-binding mode, each page = left half + banxin + right half.
+        -- interval = n_column = columns per half-page.
+        -- Left half: cols 0..interval-1, banxin: col interval, right half: cols interval+1..2*interval.
+        if interval > 0 then
+            flush_buffer_fn()
+            local target_col
+            if ctx.cur_col <= interval then
+                -- Currently in left half (or at banxin): jump to right half start
+                target_col = interval + 1
+            else
+                -- Currently in right half: jump to next page
+                target_col = 2 * interval + 1
+            end
+            -- Advance to target column
+            ctx.cur_col = target_col
+            ctx.cur_row = 0
+            ctx.cur_y_sp = 0
+            ctx.cur_column_indent = 0
+            -- Check if we've passed page boundary
+            if ctx.cur_col >= p_cols then
+                ctx.cur_col = 0
+                ctx.cur_page = ctx.cur_page + 1
+                ctx.page_has_content = false
+            end
+            move_to_next_valid_position(ctx, interval, grid_height, indent)
+        end
+        return true
     elseif p_val == constants.PENALTY_FORCE_PAGE then
         -- Forced page break (\newpage, \clearpage)
         -- If the current page already has no content (e.g., we just wrapped to a new page

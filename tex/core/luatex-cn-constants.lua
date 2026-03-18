@@ -437,6 +437,13 @@ constants.PENALTY_TABLE_START = -10008
 --- Used by: \end{表格} / \end{Table}
 constants.PENALTY_TABLE_END = -10009
 
+--- Half page break: Skip to next half-page boundary.
+--- In butterfly-binding (筒子页) mode, each page has two halves separated by
+--- the banxin column. This penalty fills the current half-page with empty columns
+--- and advances to the start of the next half-page.
+--- Used by: \换半页 / \NewHalfPage command
+constants.PENALTY_HALF_PAGE = -10010
+
 --- Page fill marker: Allow page break, used in page splitting
 --- Note: This keeps standard TeX value for compatibility
 constants.PENALTY_PAGE_FILL = -10000

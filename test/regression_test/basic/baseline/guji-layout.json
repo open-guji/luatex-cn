@@ -86,14 +86,16 @@
     },
     {
       "cols": [
-        "黃帝者少典之子姓公孫名曰軒轅生而神靈弱而能",
-        "言幼而徇齊長而敦敏成而聰明黃帝者少典之子姓",
-        "公孫名曰軒轅生而神靈弱而能言幼而徇齊長而敦",
-        "敏成而聰明此處無絲欄一二三四五六七八九十一",
-        "二三四五六七八九十一二三四五六七八九十一二",
-        "三四五六七八九十一二三四五六七八九十一二三",
-        "四五六七八九十一二三四五六七八九十一二三四",
-        "五六七八九十"
+        "左半页有丝栏的正常内容",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "右半页無絲欄的插圖內容"
       ],
       "page": 8,
       "type": "single"
@@ -2803,7 +2805,7 @@
         {
           "characters": [
             {
-              "char": "黃",
+              "char": "左",
               "confidence": 1,
               "position": {
                 "x": 811.19,
@@ -2812,10 +2814,10 @@
               },
               "row_index": 0,
               "type": "normal",
-              "unicode": 40643
+              "unicode": 24038
             },
             {
-              "char": "帝",
+              "char": "半",
               "confidence": 1,
               "position": {
                 "x": 811.19,
@@ -2824,10 +2826,10 @@
               },
               "row_index": 1,
               "type": "normal",
-              "unicode": 24093
+              "unicode": 21322
             },
             {
-              "char": "者",
+              "char": "页",
               "confidence": 1,
               "position": {
                 "x": 811.19,
@@ -2836,10 +2838,10 @@
               },
               "row_index": 2,
               "type": "normal",
-              "unicode": 32773
+              "unicode": 39029
             },
             {
-              "char": "少",
+              "char": "有",
               "confidence": 1,
               "position": {
                 "x": 811.19,
@@ -2848,10 +2850,10 @@
               },
               "row_index": 3,
               "type": "normal",
-              "unicode": 23569
+              "unicode": 26377
             },
             {
-              "char": "典",
+              "char": "丝",
               "confidence": 1,
               "position": {
                 "x": 811.19,
@@ -2860,10 +2862,10 @@
               },
               "row_index": 4,
               "type": "normal",
-              "unicode": 20856
+              "unicode": 19997
             },
             {
-              "char": "之",
+              "char": "栏",
               "confidence": 1,
               "position": {
                 "x": 811.19,
@@ -2872,10 +2874,10 @@
               },
               "row_index": 5,
               "type": "normal",
-              "unicode": 20043
+              "unicode": 26639
             },
             {
-              "char": "子",
+              "char": "的",
               "confidence": 1,
               "position": {
                 "x": 811.19,
@@ -2884,10 +2886,10 @@
               },
               "row_index": 6,
               "type": "normal",
-              "unicode": 23376
+              "unicode": 30340
             },
             {
-              "char": "姓",
+              "char": "正",
               "confidence": 1,
               "position": {
                 "x": 811.19,
@@ -2896,10 +2898,10 @@
               },
               "row_index": 7,
               "type": "normal",
-              "unicode": 22995
+              "unicode": 27491
             },
             {
-              "char": "公",
+              "char": "常",
               "confidence": 1,
               "position": {
                 "x": 811.19,
@@ -2908,10 +2910,10 @@
               },
               "row_index": 8,
               "type": "normal",
-              "unicode": 20844
+              "unicode": 24120
             },
             {
-              "char": "孫",
+              "char": "内",
               "confidence": 1,
               "position": {
                 "x": 811.19,
@@ -2920,10 +2922,10 @@
               },
               "row_index": 9,
               "type": "normal",
-              "unicode": 23403
+              "unicode": 20869
             },
             {
-              "char": "名",
+              "char": "容",
               "confidence": 1,
               "position": {
                 "x": 811.19,
@@ -2932,127 +2934,7 @@
               },
               "row_index": 10,
               "type": "normal",
-              "unicode": 21517
-            },
-            {
-              "char": "曰",
-              "confidence": 1,
-              "position": {
-                "x": 811.19,
-                "y_bottom": 348.46,
-                "y_top": 320.45
-              },
-              "row_index": 11,
-              "type": "normal",
-              "unicode": 26352
-            },
-            {
-              "char": "軒",
-              "confidence": 1,
-              "position": {
-                "x": 811.19,
-                "y_bottom": 376.46,
-                "y_top": 348.46
-              },
-              "row_index": 12,
-              "type": "normal",
-              "unicode": 36562
-            },
-            {
-              "char": "轅",
-              "confidence": 1,
-              "position": {
-                "x": 811.19,
-                "y_bottom": 404.47,
-                "y_top": 376.46
-              },
-              "row_index": 13,
-              "type": "normal",
-              "unicode": 36677
-            },
-            {
-              "char": "生",
-              "confidence": 1,
-              "position": {
-                "x": 811.19,
-                "y_bottom": 432.47,
-                "y_top": 404.47
-              },
-              "row_index": 14,
-              "type": "normal",
-              "unicode": 29983
-            },
-            {
-              "char": "而",
-              "confidence": 1,
-              "position": {
-                "x": 811.19,
-                "y_bottom": 460.48,
-                "y_top": 432.47
-              },
-              "row_index": 15,
-              "type": "normal",
-              "unicode": 32780
-            },
-            {
-              "char": "神",
-              "confidence": 1,
-              "position": {
-                "x": 811.19,
-                "y_bottom": 488.48,
-                "y_top": 460.48
-              },
-              "row_index": 16,
-              "type": "normal",
-              "unicode": 31070
-            },
-            {
-              "char": "靈",
-              "confidence": 1,
-              "position": {
-                "x": 811.19,
-                "y_bottom": 516.49,
-                "y_top": 488.48
-              },
-              "row_index": 17,
-              "type": "normal",
-              "unicode": 38728
-            },
-            {
-              "char": "弱",
-              "confidence": 1,
-              "position": {
-                "x": 811.19,
-                "y_bottom": 544.49,
-                "y_top": 516.49
-              },
-              "row_index": 18,
-              "type": "normal",
-              "unicode": 24369
-            },
-            {
-              "char": "而",
-              "confidence": 1,
-              "position": {
-                "x": 811.19,
-                "y_bottom": 572.50,
-                "y_top": 544.49
-              },
-              "row_index": 19,
-              "type": "normal",
-              "unicode": 32780
-            },
-            {
-              "char": "能",
-              "confidence": 1,
-              "position": {
-                "x": 811.19,
-                "y_bottom": 600.50,
-                "y_top": 572.50
-              },
-              "row_index": 20,
-              "type": "normal",
-              "unicode": 33021
+              "unicode": 23481
             }
           ],
           "col_index": 0,
@@ -3062,260 +2944,7 @@
           }
         },
         {
-          "characters": [
-            {
-              "char": "言",
-              "confidence": 1,
-              "position": {
-                "x": 759.98,
-                "y_bottom": 40.40,
-                "y_top": 12.40
-              },
-              "row_index": 0,
-              "type": "normal",
-              "unicode": 35328
-            },
-            {
-              "char": "幼",
-              "confidence": 1,
-              "position": {
-                "x": 759.98,
-                "y_bottom": 68.41,
-                "y_top": 40.40
-              },
-              "row_index": 1,
-              "type": "normal",
-              "unicode": 24188
-            },
-            {
-              "char": "而",
-              "confidence": 1,
-              "position": {
-                "x": 759.98,
-                "y_bottom": 96.41,
-                "y_top": 68.41
-              },
-              "row_index": 2,
-              "type": "normal",
-              "unicode": 32780
-            },
-            {
-              "char": "徇",
-              "confidence": 1,
-              "position": {
-                "x": 759.98,
-                "y_bottom": 124.42,
-                "y_top": 96.41
-              },
-              "row_index": 3,
-              "type": "normal",
-              "unicode": 24455
-            },
-            {
-              "char": "齊",
-              "confidence": 1,
-              "position": {
-                "x": 759.98,
-                "y_bottom": 152.42,
-                "y_top": 124.42
-              },
-              "row_index": 4,
-              "type": "normal",
-              "unicode": 40778
-            },
-            {
-              "char": "長",
-              "confidence": 1,
-              "position": {
-                "x": 759.98,
-                "y_bottom": 180.43,
-                "y_top": 152.42
-              },
-              "row_index": 5,
-              "type": "normal",
-              "unicode": 38263
-            },
-            {
-              "char": "而",
-              "confidence": 1,
-              "position": {
-                "x": 759.98,
-                "y_bottom": 208.43,
-                "y_top": 180.43
-              },
-              "row_index": 6,
-              "type": "normal",
-              "unicode": 32780
-            },
-            {
-              "char": "敦",
-              "confidence": 1,
-              "position": {
-                "x": 759.98,
-                "y_bottom": 236.44,
-                "y_top": 208.43
-              },
-              "row_index": 7,
-              "type": "normal",
-              "unicode": 25958
-            },
-            {
-              "char": "敏",
-              "confidence": 1,
-              "position": {
-                "x": 759.98,
-                "y_bottom": 264.44,
-                "y_top": 236.44
-              },
-              "row_index": 8,
-              "type": "normal",
-              "unicode": 25935
-            },
-            {
-              "char": "成",
-              "confidence": 1,
-              "position": {
-                "x": 759.98,
-                "y_bottom": 292.45,
-                "y_top": 264.44
-              },
-              "row_index": 9,
-              "type": "normal",
-              "unicode": 25104
-            },
-            {
-              "char": "而",
-              "confidence": 1,
-              "position": {
-                "x": 759.98,
-                "y_bottom": 320.45,
-                "y_top": 292.45
-              },
-              "row_index": 10,
-              "type": "normal",
-              "unicode": 32780
-            },
-            {
-              "char": "聰",
-              "confidence": 1,
-              "position": {
-                "x": 759.98,
-                "y_bottom": 348.46,
-                "y_top": 320.45
-              },
-              "row_index": 11,
-              "type": "normal",
-              "unicode": 32880
-            },
-            {
-              "char": "明",
-              "confidence": 1,
-              "position": {
-                "x": 759.98,
-                "y_bottom": 376.46,
-                "y_top": 348.46
-              },
-              "row_index": 12,
-              "type": "normal",
-              "unicode": 26126
-            },
-            {
-              "char": "黃",
-              "confidence": 1,
-              "position": {
-                "x": 759.98,
-                "y_bottom": 404.47,
-                "y_top": 376.46
-              },
-              "row_index": 13,
-              "type": "normal",
-              "unicode": 40643
-            },
-            {
-              "char": "帝",
-              "confidence": 1,
-              "position": {
-                "x": 759.98,
-                "y_bottom": 432.47,
-                "y_top": 404.47
-              },
-              "row_index": 14,
-              "type": "normal",
-              "unicode": 24093
-            },
-            {
-              "char": "者",
-              "confidence": 1,
-              "position": {
-                "x": 759.98,
-                "y_bottom": 460.48,
-                "y_top": 432.47
-              },
-              "row_index": 15,
-              "type": "normal",
-              "unicode": 32773
-            },
-            {
-              "char": "少",
-              "confidence": 1,
-              "position": {
-                "x": 759.98,
-                "y_bottom": 488.48,
-                "y_top": 460.48
-              },
-              "row_index": 16,
-              "type": "normal",
-              "unicode": 23569
-            },
-            {
-              "char": "典",
-              "confidence": 1,
-              "position": {
-                "x": 759.98,
-                "y_bottom": 516.49,
-                "y_top": 488.48
-              },
-              "row_index": 17,
-              "type": "normal",
-              "unicode": 20856
-            },
-            {
-              "char": "之",
-              "confidence": 1,
-              "position": {
-                "x": 759.98,
-                "y_bottom": 544.49,
-                "y_top": 516.49
-              },
-              "row_index": 18,
-              "type": "normal",
-              "unicode": 20043
-            },
-            {
-              "char": "子",
-              "confidence": 1,
-              "position": {
-                "x": 759.98,
-                "y_bottom": 572.50,
-                "y_top": 544.49
-              },
-              "row_index": 19,
-              "type": "normal",
-              "unicode": 23376
-            },
-            {
-              "char": "姓",
-              "confidence": 1,
-              "position": {
-                "x": 759.98,
-                "y_bottom": 600.50,
-                "y_top": 572.50
-              },
-              "row_index": 20,
-              "type": "normal",
-              "unicode": 22995
-            }
-          ],
+          "characters": [],
           "col_index": 1,
           "position": {
             "left_x": 759.98,
@@ -3323,260 +2952,7 @@
           }
         },
         {
-          "characters": [
-            {
-              "char": "公",
-              "confidence": 1,
-              "position": {
-                "x": 708.77,
-                "y_bottom": 40.40,
-                "y_top": 12.40
-              },
-              "row_index": 0,
-              "type": "normal",
-              "unicode": 20844
-            },
-            {
-              "char": "孫",
-              "confidence": 1,
-              "position": {
-                "x": 708.77,
-                "y_bottom": 68.41,
-                "y_top": 40.40
-              },
-              "row_index": 1,
-              "type": "normal",
-              "unicode": 23403
-            },
-            {
-              "char": "名",
-              "confidence": 1,
-              "position": {
-                "x": 708.77,
-                "y_bottom": 96.41,
-                "y_top": 68.41
-              },
-              "row_index": 2,
-              "type": "normal",
-              "unicode": 21517
-            },
-            {
-              "char": "曰",
-              "confidence": 1,
-              "position": {
-                "x": 708.77,
-                "y_bottom": 124.42,
-                "y_top": 96.41
-              },
-              "row_index": 3,
-              "type": "normal",
-              "unicode": 26352
-            },
-            {
-              "char": "軒",
-              "confidence": 1,
-              "position": {
-                "x": 708.77,
-                "y_bottom": 152.42,
-                "y_top": 124.42
-              },
-              "row_index": 4,
-              "type": "normal",
-              "unicode": 36562
-            },
-            {
-              "char": "轅",
-              "confidence": 1,
-              "position": {
-                "x": 708.77,
-                "y_bottom": 180.43,
-                "y_top": 152.42
-              },
-              "row_index": 5,
-              "type": "normal",
-              "unicode": 36677
-            },
-            {
-              "char": "生",
-              "confidence": 1,
-              "position": {
-                "x": 708.77,
-                "y_bottom": 208.43,
-                "y_top": 180.43
-              },
-              "row_index": 6,
-              "type": "normal",
-              "unicode": 29983
-            },
-            {
-              "char": "而",
-              "confidence": 1,
-              "position": {
-                "x": 708.77,
-                "y_bottom": 236.44,
-                "y_top": 208.43
-              },
-              "row_index": 7,
-              "type": "normal",
-              "unicode": 32780
-            },
-            {
-              "char": "神",
-              "confidence": 1,
-              "position": {
-                "x": 708.77,
-                "y_bottom": 264.44,
-                "y_top": 236.44
-              },
-              "row_index": 8,
-              "type": "normal",
-              "unicode": 31070
-            },
-            {
-              "char": "靈",
-              "confidence": 1,
-              "position": {
-                "x": 708.77,
-                "y_bottom": 292.45,
-                "y_top": 264.44
-              },
-              "row_index": 9,
-              "type": "normal",
-              "unicode": 38728
-            },
-            {
-              "char": "弱",
-              "confidence": 1,
-              "position": {
-                "x": 708.77,
-                "y_bottom": 320.45,
-                "y_top": 292.45
-              },
-              "row_index": 10,
-              "type": "normal",
-              "unicode": 24369
-            },
-            {
-              "char": "而",
-              "confidence": 1,
-              "position": {
-                "x": 708.77,
-                "y_bottom": 348.46,
-                "y_top": 320.45
-              },
-              "row_index": 11,
-              "type": "normal",
-              "unicode": 32780
-            },
-            {
-              "char": "能",
-              "confidence": 1,
-              "position": {
-                "x": 708.77,
-                "y_bottom": 376.46,
-                "y_top": 348.46
-              },
-              "row_index": 12,
-              "type": "normal",
-              "unicode": 33021
-            },
-            {
-              "char": "言",
-              "confidence": 1,
-              "position": {
-                "x": 708.77,
-                "y_bottom": 404.47,
-                "y_top": 376.46
-              },
-              "row_index": 13,
-              "type": "normal",
-              "unicode": 35328
-            },
-            {
-              "char": "幼",
-              "confidence": 1,
-              "position": {
-                "x": 708.77,
-                "y_bottom": 432.47,
-                "y_top": 404.47
-              },
-              "row_index": 14,
-              "type": "normal",
-              "unicode": 24188
-            },
-            {
-              "char": "而",
-              "confidence": 1,
-              "position": {
-                "x": 708.77,
-                "y_bottom": 460.48,
-                "y_top": 432.47
-              },
-              "row_index": 15,
-              "type": "normal",
-              "unicode": 32780
-            },
-            {
-              "char": "徇",
-              "confidence": 1,
-              "position": {
-                "x": 708.77,
-                "y_bottom": 488.48,
-                "y_top": 460.48
-              },
-              "row_index": 16,
-              "type": "normal",
-              "unicode": 24455
-            },
-            {
-              "char": "齊",
-              "confidence": 1,
-              "position": {
-                "x": 708.77,
-                "y_bottom": 516.49,
-                "y_top": 488.48
-              },
-              "row_index": 17,
-              "type": "normal",
-              "unicode": 40778
-            },
-            {
-              "char": "長",
-              "confidence": 1,
-              "position": {
-                "x": 708.77,
-                "y_bottom": 544.49,
-                "y_top": 516.49
-              },
-              "row_index": 18,
-              "type": "normal",
-              "unicode": 38263
-            },
-            {
-              "char": "而",
-              "confidence": 1,
-              "position": {
-                "x": 708.77,
-                "y_bottom": 572.50,
-                "y_top": 544.49
-              },
-              "row_index": 19,
-              "type": "normal",
-              "unicode": 32780
-            },
-            {
-              "char": "敦",
-              "confidence": 1,
-              "position": {
-                "x": 708.77,
-                "y_bottom": 600.50,
-                "y_top": 572.50
-              },
-              "row_index": 20,
-              "type": "normal",
-              "unicode": 25958
-            }
-          ],
+          "characters": [],
           "col_index": 2,
           "position": {
             "left_x": 708.77,
@@ -3584,108 +2960,112 @@
           }
         },
         {
+          "characters": [],
+          "col_index": 3,
+          "position": {
+            "left_x": 657.56,
+            "right_x": 657.56
+          }
+        },
+        {
+          "characters": [],
+          "col_index": 4,
+          "position": {
+            "left_x": 606.35,
+            "right_x": 606.35
+          }
+        },
+        {
+          "characters": [],
+          "col_index": 5,
+          "position": {
+            "left_x": 555.14,
+            "right_x": 555.14
+          }
+        },
+        {
+          "characters": [],
+          "col_index": 6,
+          "position": {
+            "left_x": 503.93,
+            "right_x": 503.93
+          }
+        },
+        {
+          "characters": [],
+          "col_index": 7,
+          "position": {
+            "left_x": 452.72,
+            "right_x": 452.72
+          }
+        },
+        {
+          "characters": [],
+          "col_index": 8,
+          "position": {
+            "left_x": 416.88,
+            "right_x": 416.88
+          }
+        },
+        {
           "characters": [
             {
-              "char": "敏",
+              "char": "右",
               "confidence": 1,
               "position": {
-                "x": 657.56,
+                "x": 365.67,
                 "y_bottom": 40.40,
                 "y_top": 12.40
               },
               "row_index": 0,
+              "style": {
+                "font_color": "0 0 0",
+                "font_size_pt": 28
+              },
               "type": "normal",
-              "unicode": 25935
+              "unicode": 21491
             },
             {
-              "char": "成",
+              "char": "半",
               "confidence": 1,
               "position": {
-                "x": 657.56,
+                "x": 365.67,
                 "y_bottom": 68.41,
                 "y_top": 40.40
               },
               "row_index": 1,
+              "style": {
+                "font_color": "0 0 0",
+                "font_size_pt": 28
+              },
               "type": "normal",
-              "unicode": 25104
+              "unicode": 21322
             },
             {
-              "char": "而",
+              "char": "页",
               "confidence": 1,
               "position": {
-                "x": 657.56,
+                "x": 365.67,
                 "y_bottom": 96.41,
                 "y_top": 68.41
               },
               "row_index": 2,
-              "type": "normal",
-              "unicode": 32780
-            },
-            {
-              "char": "聰",
-              "confidence": 1,
-              "position": {
-                "x": 657.56,
-                "y_bottom": 124.42,
-                "y_top": 96.41
-              },
-              "row_index": 3,
-              "type": "normal",
-              "unicode": 32880
-            },
-            {
-              "char": "明",
-              "confidence": 1,
-              "position": {
-                "x": 657.56,
-                "y_bottom": 152.42,
-                "y_top": 124.42
-              },
-              "row_index": 4,
-              "type": "normal",
-              "unicode": 26126
-            },
-            {
-              "char": "此",
-              "confidence": 1,
-              "position": {
-                "x": 657.56,
-                "y_bottom": 180.43,
-                "y_top": 152.42
-              },
-              "row_index": 5,
               "style": {
                 "font_color": "0 0 0",
                 "font_size_pt": 28
               },
               "type": "normal",
-              "unicode": 27492
-            },
-            {
-              "char": "處",
-              "confidence": 1,
-              "position": {
-                "x": 657.56,
-                "y_bottom": 208.43,
-                "y_top": 180.43
-              },
-              "row_index": 6,
-              "style": {
-                "font_color": "0 0 0",
-                "font_size_pt": 28
-              },
-              "type": "normal",
-              "unicode": 34389
+              "unicode": 39029
             },
             {
               "char": "無",
               "confidence": 1,
               "position": {
-                "x": 657.56,
-                "y_bottom": 236.44,
-                "y_top": 208.43
+                "x": 365.67,
+                "y_bottom": 124.42,
+                "y_top": 96.41
               },
-              "row_index": 7,
+              "row_index": 3,
               "style": {
                 "font_color": "0 0 0",
                 "font_size_pt": 28
@@ -3697,11 +3077,11 @@
               "char": "絲",
               "confidence": 1,
               "position": {
-                "x": 657.56,
-                "y_bottom": 264.44,
-                "y_top": 236.44
+                "x": 365.67,
+                "y_bottom": 152.42,
+                "y_top": 124.42
               },
-              "row_index": 8,
+              "row_index": 4,
               "style": {
                 "font_color": "0 0 0",
                 "font_size_pt": 28
@@ -3713,11 +3093,11 @@
               "char": "欄",
               "confidence": 1,
               "position": {
-                "x": 657.56,
-                "y_bottom": 292.45,
-                "y_top": 264.44
+                "x": 365.67,
+                "y_bottom": 180.43,
+                "y_top": 152.42
               },
-              "row_index": 9,
+              "row_index": 5,
               "style": {
                 "font_color": "0 0 0",
                 "font_size_pt": 28
@@ -3726,291 +3106,10 @@
               "unicode": 27396
             },
             {
-              "char": "一",
+              "char": "的",
               "confidence": 1,
               "position": {
-                "x": 657.56,
-                "y_bottom": 320.45,
-                "y_top": 292.45
-              },
-              "row_index": 10,
-              "style": {
-                "font_color": "0 0 0",
-                "font_size_pt": 28
-              },
-              "type": "normal",
-              "unicode": 19968
-            },
-            {
-              "char": "二",
-              "confidence": 1,
-              "position": {
-                "x": 657.56,
-                "y_bottom": 348.46,
-                "y_top": 320.45
-              },
-              "row_index": 11,
-              "style": {
-                "font_color": "0 0 0",
-                "font_size_pt": 28
-              },
-              "type": "normal",
-              "unicode": 20108
-            },
-            {
-              "char": "三",
-              "confidence": 1,
-              "position": {
-                "x": 657.56,
-                "y_bottom": 376.46,
-                "y_top": 348.46
-              },
-              "row_index": 12,
-              "style": {
-                "font_color": "0 0 0",
-                "font_size_pt": 28
-              },
-              "type": "normal",
-              "unicode": 19977
-            },
-            {
-              "char": "四",
-              "confidence": 1,
-              "position": {
-                "x": 657.56,
-                "y_bottom": 404.47,
-                "y_top": 376.46
-              },
-              "row_index": 13,
-              "style": {
-                "font_color": "0 0 0",
-                "font_size_pt": 28
-              },
-              "type": "normal",
-              "unicode": 22235
-            },
-            {
-              "char": "五",
-              "confidence": 1,
-              "position": {
-                "x": 657.56,
-                "y_bottom": 432.47,
-                "y_top": 404.47
-              },
-              "row_index": 14,
-              "style": {
-                "font_color": "0 0 0",
-                "font_size_pt": 28
-              },
-              "type": "normal",
-              "unicode": 20116
-            },
-            {
-              "char": "六",
-              "confidence": 1,
-              "position": {
-                "x": 657.56,
-                "y_bottom": 460.48,
-                "y_top": 432.47
-              },
-              "row_index": 15,
-              "style": {
-                "font_color": "0 0 0",
-                "font_size_pt": 28
-              },
-              "type": "normal",
-              "unicode": 20845
-            },
-            {
-              "char": "七",
-              "confidence": 1,
-              "position": {
-                "x": 657.56,
-                "y_bottom": 488.48,
-                "y_top": 460.48
-              },
-              "row_index": 16,
-              "style": {
-                "font_color": "0 0 0",
-                "font_size_pt": 28
-              },
-              "type": "normal",
-              "unicode": 19971
-            },
-            {
-              "char": "八",
-              "confidence": 1,
-              "position": {
-                "x": 657.56,
-                "y_bottom": 516.49,
-                "y_top": 488.48
-              },
-              "row_index": 17,
-              "style": {
-                "font_color": "0 0 0",
-                "font_size_pt": 28
-              },
-              "type": "normal",
-              "unicode": 20843
-            },
-            {
-              "char": "九",
-              "confidence": 1,
-              "position": {
-                "x": 657.56,
-                "y_bottom": 544.49,
-                "y_top": 516.49
-              },
-              "row_index": 18,
-              "style": {
-                "font_color": "0 0 0",
-                "font_size_pt": 28
-              },
-              "type": "normal",
-              "unicode": 20061
-            },
-            {
-              "char": "十",
-              "confidence": 1,
-              "position": {
-                "x": 657.56,
-                "y_bottom": 572.50,
-                "y_top": 544.49
-              },
-              "row_index": 19,
-              "style": {
-                "font_color": "0 0 0",
-                "font_size_pt": 28
-              },
-              "type": "normal",
-              "unicode": 21313
-            },
-            {
-              "char": "一",
-              "confidence": 1,
-              "position": {
-                "x": 657.56,
-                "y_bottom": 600.50,
-                "y_top": 572.50
-              },
-              "row_index": 20,
-              "style": {
-                "font_color": "0 0 0",
-                "font_size_pt": 28
-              },
-              "type": "normal",
-              "unicode": 19968
-            }
-          ],
-          "col_index": 3,
-          "position": {
-            "left_x": 657.56,
-            "right_x": 657.56
-          }
-        },
-        {
-          "characters": [
-            {
-              "char": "二",
-              "confidence": 1,
-              "position": {
-                "x": 606.35,
-                "y_bottom": 40.40,
-                "y_top": 12.40
-              },
-              "row_index": 0,
-              "style": {
-                "font_color": "0 0 0",
-                "font_size_pt": 28
-              },
-              "type": "normal",
-              "unicode": 20108
-            },
-            {
-              "char": "三",
-              "confidence": 1,
-              "position": {
-                "x": 606.35,
-                "y_bottom": 68.41,
-                "y_top": 40.40
-              },
-              "row_index": 1,
-              "style": {
-                "font_color": "0 0 0",
-                "font_size_pt": 28
-              },
-              "type": "normal",
-              "unicode": 19977
-            },
-            {
-              "char": "四",
-              "confidence": 1,
-              "position": {
-                "x": 606.35,
-                "y_bottom": 96.41,
-                "y_top": 68.41
-              },
-              "row_index": 2,
-              "style": {
-                "font_color": "0 0 0",
-                "font_size_pt": 28
-              },
-              "type": "normal",
-              "unicode": 22235
-            },
-            {
-              "char": "五",
-              "confidence": 1,
-              "position": {
-                "x": 606.35,
-                "y_bottom": 124.42,
-                "y_top": 96.41
-              },
-              "row_index": 3,
-              "style": {
-                "font_color": "0 0 0",
-                "font_size_pt": 28
-              },
-              "type": "normal",
-              "unicode": 20116
-            },
-            {
-              "char": "六",
-              "confidence": 1,
-              "position": {
-                "x": 606.35,
-                "y_bottom": 152.42,
-                "y_top": 124.42
-              },
-              "row_index": 4,
-              "style": {
-                "font_color": "0 0 0",
-                "font_size_pt": 28
-              },
-              "type": "normal",
-              "unicode": 20845
-            },
-            {
-              "char": "七",
-              "confidence": 1,
-              "position": {
-                "x": 606.35,
-                "y_bottom": 180.43,
-                "y_top": 152.42
-              },
-              "row_index": 5,
-              "style": {
-                "font_color": "0 0 0",
-                "font_size_pt": 28
-              },
-              "type": "normal",
-              "unicode": 19971
-            },
-            {
-              "char": "八",
-              "confidence": 1,
-              "position": {
-                "x": 606.35,
+                "x": 365.67,
                 "y_bottom": 208.43,
                 "y_top": 180.43
               },
@@ -4020,13 +3119,13 @@
                 "font_size_pt": 28
               },
               "type": "normal",
-              "unicode": 20843
+              "unicode": 30340
             },
             {
-              "char": "九",
+              "char": "插",
               "confidence": 1,
               "position": {
-                "x": 606.35,
+                "x": 365.67,
                 "y_bottom": 236.44,
                 "y_top": 208.43
               },
@@ -4036,13 +3135,13 @@
                 "font_size_pt": 28
               },
               "type": "normal",
-              "unicode": 20061
+              "unicode": 25554
             },
             {
-              "char": "十",
+              "char": "圖",
               "confidence": 1,
               "position": {
-                "x": 606.35,
+                "x": 365.67,
                 "y_bottom": 264.44,
                 "y_top": 236.44
               },
@@ -4052,13 +3151,13 @@
                 "font_size_pt": 28
               },
               "type": "normal",
-              "unicode": 21313
+              "unicode": 22294
             },
             {
-              "char": "一",
+              "char": "內",
               "confidence": 1,
               "position": {
-                "x": 606.35,
+                "x": 365.67,
                 "y_bottom": 292.45,
                 "y_top": 264.44
               },
@@ -4068,13 +3167,13 @@
                 "font_size_pt": 28
               },
               "type": "normal",
-              "unicode": 19968
+              "unicode": 20839
             },
             {
-              "char": "二",
+              "char": "容",
               "confidence": 1,
               "position": {
-                "x": 606.35,
+                "x": 365.67,
                 "y_bottom": 320.45,
                 "y_top": 292.45
               },
@@ -4084,968 +3183,13 @@
                 "font_size_pt": 28
               },
               "type": "normal",
-              "unicode": 20108
-            },
-            {
-              "char": "三",
-              "confidence": 1,
-              "position": {
-                "x": 606.35,
-                "y_bottom": 348.46,
-                "y_top": 320.45
-              },
-              "row_index": 11,
-              "style": {
-                "font_color": "0 0 0",
-                "font_size_pt": 28
-              },
-              "type": "normal",
-              "unicode": 19977
-            },
-            {
-              "char": "四",
-              "confidence": 1,
-              "position": {
-                "x": 606.35,
-                "y_bottom": 376.46,
-                "y_top": 348.46
-              },
-              "row_index": 12,
-              "style": {
-                "font_color": "0 0 0",
-                "font_size_pt": 28
-              },
-              "type": "normal",
-              "unicode": 22235
-            },
-            {
-              "char": "五",
-              "confidence": 1,
-              "position": {
-                "x": 606.35,
-                "y_bottom": 404.47,
-                "y_top": 376.46
-              },
-              "row_index": 13,
-              "style": {
-                "font_color": "0 0 0",
-                "font_size_pt": 28
-              },
-              "type": "normal",
-              "unicode": 20116
-            },
-            {
-              "char": "六",
-              "confidence": 1,
-              "position": {
-                "x": 606.35,
-                "y_bottom": 432.47,
-                "y_top": 404.47
-              },
-              "row_index": 14,
-              "style": {
-                "font_color": "0 0 0",
-                "font_size_pt": 28
-              },
-              "type": "normal",
-              "unicode": 20845
-            },
-            {
-              "char": "七",
-              "confidence": 1,
-              "position": {
-                "x": 606.35,
-                "y_bottom": 460.48,
-                "y_top": 432.47
-              },
-              "row_index": 15,
-              "style": {
-                "font_color": "0 0 0",
-                "font_size_pt": 28
-              },
-              "type": "normal",
-              "unicode": 19971
-            },
-            {
-              "char": "八",
-              "confidence": 1,
-              "position": {
-                "x": 606.35,
-                "y_bottom": 488.48,
-                "y_top": 460.48
-              },
-              "row_index": 16,
-              "style": {
-                "font_color": "0 0 0",
-                "font_size_pt": 28
-              },
-              "type": "normal",
-              "unicode": 20843
-            },
-            {
-              "char": "九",
-              "confidence": 1,
-              "position": {
-                "x": 606.35,
-                "y_bottom": 516.49,
-                "y_top": 488.48
-              },
-              "row_index": 17,
-              "style": {
-                "font_color": "0 0 0",
-                "font_size_pt": 28
-              },
-              "type": "normal",
-              "unicode": 20061
-            },
-            {
-              "char": "十",
-              "confidence": 1,
-              "position": {
-                "x": 606.35,
-                "y_bottom": 544.49,
-                "y_top": 516.49
-              },
-              "row_index": 18,
-              "style": {
-                "font_color": "0 0 0",
-                "font_size_pt": 28
-              },
-              "type": "normal",
-              "unicode": 21313
-            },
-            {
-              "char": "一",
-              "confidence": 1,
-              "position": {
-                "x": 606.35,
-                "y_bottom": 572.50,
-                "y_top": 544.49
-              },
-              "row_index": 19,
-              "style": {
-                "font_color": "0 0 0",
-                "font_size_pt": 28
-              },
-              "type": "normal",
-              "unicode": 19968
-            },
-            {
-              "char": "二",
-              "confidence": 1,
-              "position": {
-                "x": 606.35,
-                "y_bottom": 600.50,
-                "y_top": 572.50
-              },
-              "row_index": 20,
-              "style": {
-                "font_color": "0 0 0",
-                "font_size_pt": 28
-              },
-              "type": "normal",
-              "unicode": 20108
+              "unicode": 23481
             }
           ],
-          "col_index": 4,
+          "col_index": 9,
           "position": {
-            "left_x": 606.35,
-            "right_x": 606.35
-          }
-        },
-        {
-          "characters": [
-            {
-              "char": "三",
-              "confidence": 1,
-              "position": {
-                "x": 555.14,
-                "y_bottom": 40.40,
-                "y_top": 12.40
-              },
-              "row_index": 0,
-              "style": {
-                "font_color": "0 0 0",
-                "font_size_pt": 28
-              },
-              "type": "normal",
-              "unicode": 19977
-            },
-            {
-              "char": "四",
-              "confidence": 1,
-              "position": {
-                "x": 555.14,
-                "y_bottom": 68.41,
-                "y_top": 40.40
-              },
-              "row_index": 1,
-              "style": {
-                "font_color": "0 0 0",
-                "font_size_pt": 28
-              },
-              "type": "normal",
-              "unicode": 22235
-            },
-            {
-              "char": "五",
-              "confidence": 1,
-              "position": {
-                "x": 555.14,
-                "y_bottom": 96.41,
-                "y_top": 68.41
-              },
-              "row_index": 2,
-              "style": {
-                "font_color": "0 0 0",
-                "font_size_pt": 28
-              },
-              "type": "normal",
-              "unicode": 20116
-            },
-            {
-              "char": "六",
-              "confidence": 1,
-              "position": {
-                "x": 555.14,
-                "y_bottom": 124.42,
-                "y_top": 96.41
-              },
-              "row_index": 3,
-              "style": {
-                "font_color": "0 0 0",
-                "font_size_pt": 28
-              },
-              "type": "normal",
-              "unicode": 20845
-            },
-            {
-              "char": "七",
-              "confidence": 1,
-              "position": {
-                "x": 555.14,
-                "y_bottom": 152.42,
-                "y_top": 124.42
-              },
-              "row_index": 4,
-              "style": {
-                "font_color": "0 0 0",
-                "font_size_pt": 28
-              },
-              "type": "normal",
-              "unicode": 19971
-            },
-            {
-              "char": "八",
-              "confidence": 1,
-              "position": {
-                "x": 555.14,
-                "y_bottom": 180.43,
-                "y_top": 152.42
-              },
-              "row_index": 5,
-              "style": {
-                "font_color": "0 0 0",
-                "font_size_pt": 28
-              },
-              "type": "normal",
-              "unicode": 20843
-            },
-            {
-              "char": "九",
-              "confidence": 1,
-              "position": {
-                "x": 555.14,
-                "y_bottom": 208.43,
-                "y_top": 180.43
-              },
-              "row_index": 6,
-              "style": {
-                "font_color": "0 0 0",
-                "font_size_pt": 28
-              },
-              "type": "normal",
-              "unicode": 20061
-            },
-            {
-              "char": "十",
-              "confidence": 1,
-              "position": {
-                "x": 555.14,
-                "y_bottom": 236.44,
-                "y_top": 208.43
-              },
-              "row_index": 7,
-              "style": {
-                "font_color": "0 0 0",
-                "font_size_pt": 28
-              },
-              "type": "normal",
-              "unicode": 21313
-            },
-            {
-              "char": "一",
-              "confidence": 1,
-              "position": {
-                "x": 555.14,
-                "y_bottom": 264.44,
-                "y_top": 236.44
-              },
-              "row_index": 8,
-              "style": {
-                "font_color": "0 0 0",
-                "font_size_pt": 28
-              },
-              "type": "normal",
-              "unicode": 19968
-            },
-            {
-              "char": "二",
-              "confidence": 1,
-              "position": {
-                "x": 555.14,
-                "y_bottom": 292.45,
-                "y_top": 264.44
-              },
-              "row_index": 9,
-              "style": {
-                "font_color": "0 0 0",
-                "font_size_pt": 28
-              },
-              "type": "normal",
-              "unicode": 20108
-            },
-            {
-              "char": "三",
-              "confidence": 1,
-              "position": {
-                "x": 555.14,
-                "y_bottom": 320.45,
-                "y_top": 292.45
-              },
-              "row_index": 10,
-              "style": {
-                "font_color": "0 0 0",
-                "font_size_pt": 28
-              },
-              "type": "normal",
-              "unicode": 19977
-            },
-            {
-              "char": "四",
-              "confidence": 1,
-              "position": {
-                "x": 555.14,
-                "y_bottom": 348.46,
-                "y_top": 320.45
-              },
-              "row_index": 11,
-              "style": {
-                "font_color": "0 0 0",
-                "font_size_pt": 28
-              },
-              "type": "normal",
-              "unicode": 22235
-            },
-            {
-              "char": "五",
-              "confidence": 1,
-              "position": {
-                "x": 555.14,
-                "y_bottom": 376.46,
-                "y_top": 348.46
-              },
-              "row_index": 12,
-              "style": {
-                "font_color": "0 0 0",
-                "font_size_pt": 28
-              },
-              "type": "normal",
-              "unicode": 20116
-            },
-            {
-              "char": "六",
-              "confidence": 1,
-              "position": {
-                "x": 555.14,
-                "y_bottom": 404.47,
-                "y_top": 376.46
-              },
-              "row_index": 13,
-              "style": {
-                "font_color": "0 0 0",
-                "font_size_pt": 28
-              },
-              "type": "normal",
-              "unicode": 20845
-            },
-            {
-              "char": "七",
-              "confidence": 1,
-              "position": {
-                "x": 555.14,
-                "y_bottom": 432.47,
-                "y_top": 404.47
-              },
-              "row_index": 14,
-              "style": {
-                "font_color": "0 0 0",
-                "font_size_pt": 28
-              },
-              "type": "normal",
-              "unicode": 19971
-            },
-            {
-              "char": "八",
-              "confidence": 1,
-              "position": {
-                "x": 555.14,
-                "y_bottom": 460.48,
-                "y_top": 432.47
-              },
-              "row_index": 15,
-              "style": {
-                "font_color": "0 0 0",
-                "font_size_pt": 28
-              },
-              "type": "normal",
-              "unicode": 20843
-            },
-            {
-              "char": "九",
-              "confidence": 1,
-              "position": {
-                "x": 555.14,
-                "y_bottom": 488.48,
-                "y_top": 460.48
-              },
-              "row_index": 16,
-              "style": {
-                "font_color": "0 0 0",
-                "font_size_pt": 28
-              },
-              "type": "normal",
-              "unicode": 20061
-            },
-            {
-              "char": "十",
-              "confidence": 1,
-              "position": {
-                "x": 555.14,
-                "y_bottom": 516.49,
-                "y_top": 488.48
-              },
-              "row_index": 17,
-              "style": {
-                "font_color": "0 0 0",
-                "font_size_pt": 28
-              },
-              "type": "normal",
-              "unicode": 21313
-            },
-            {
-              "char": "一",
-              "confidence": 1,
-              "position": {
-                "x": 555.14,
-                "y_bottom": 544.49,
-                "y_top": 516.49
-              },
-              "row_index": 18,
-              "style": {
-                "font_color": "0 0 0",
-                "font_size_pt": 28
-              },
-              "type": "normal",
-              "unicode": 19968
-            },
-            {
-              "char": "二",
-              "confidence": 1,
-              "position": {
-                "x": 555.14,
-                "y_bottom": 572.50,
-                "y_top": 544.49
-              },
-              "row_index": 19,
-              "style": {
-                "font_color": "0 0 0",
-                "font_size_pt": 28
-              },
-              "type": "normal",
-              "unicode": 20108
-            },
-            {
-              "char": "三",
-              "confidence": 1,
-              "position": {
-                "x": 555.14,
-                "y_bottom": 600.50,
-                "y_top": 572.50
-              },
-              "row_index": 20,
-              "style": {
-                "font_color": "0 0 0",
-                "font_size_pt": 28
-              },
-              "type": "normal",
-              "unicode": 19977
-            }
-          ],
-          "col_index": 5,
-          "position": {
-            "left_x": 555.14,
-            "right_x": 555.14
-          }
-        },
-        {
-          "characters": [
-            {
-              "char": "四",
-              "confidence": 1,
-              "position": {
-                "x": 503.93,
-                "y_bottom": 40.40,
-                "y_top": 12.40
-              },
-              "row_index": 0,
-              "style": {
-                "font_color": "0 0 0",
-                "font_size_pt": 28
-              },
-              "type": "normal",
-              "unicode": 22235
-            },
-            {
-              "char": "五",
-              "confidence": 1,
-              "position": {
-                "x": 503.93,
-                "y_bottom": 68.41,
-                "y_top": 40.40
-              },
-              "row_index": 1,
-              "style": {
-                "font_color": "0 0 0",
-                "font_size_pt": 28
-              },
-              "type": "normal",
-              "unicode": 20116
-            },
-            {
-              "char": "六",
-              "confidence": 1,
-              "position": {
-                "x": 503.93,
-                "y_bottom": 96.41,
-                "y_top": 68.41
-              },
-              "row_index": 2,
-              "style": {
-                "font_color": "0 0 0",
-                "font_size_pt": 28
-              },
-              "type": "normal",
-              "unicode": 20845
-            },
-            {
-              "char": "七",
-              "confidence": 1,
-              "position": {
-                "x": 503.93,
-                "y_bottom": 124.42,
-                "y_top": 96.41
-              },
-              "row_index": 3,
-              "style": {
-                "font_color": "0 0 0",
-                "font_size_pt": 28
-              },
-              "type": "normal",
-              "unicode": 19971
-            },
-            {
-              "char": "八",
-              "confidence": 1,
-              "position": {
-                "x": 503.93,
-                "y_bottom": 152.42,
-                "y_top": 124.42
-              },
-              "row_index": 4,
-              "style": {
-                "font_color": "0 0 0",
-                "font_size_pt": 28
-              },
-              "type": "normal",
-              "unicode": 20843
-            },
-            {
-              "char": "九",
-              "confidence": 1,
-              "position": {
-                "x": 503.93,
-                "y_bottom": 180.43,
-                "y_top": 152.42
-              },
-              "row_index": 5,
-              "style": {
-                "font_color": "0 0 0",
-                "font_size_pt": 28
-              },
-              "type": "normal",
-              "unicode": 20061
-            },
-            {
-              "char": "十",
-              "confidence": 1,
-              "position": {
-                "x": 503.93,
-                "y_bottom": 208.43,
-                "y_top": 180.43
-              },
-              "row_index": 6,
-              "style": {
-                "font_color": "0 0 0",
-                "font_size_pt": 28
-              },
-              "type": "normal",
-              "unicode": 21313
-            },
-            {
-              "char": "一",
-              "confidence": 1,
-              "position": {
-                "x": 503.93,
-                "y_bottom": 236.44,
-                "y_top": 208.43
-              },
-              "row_index": 7,
-              "style": {
-                "font_color": "0 0 0",
-                "font_size_pt": 28
-              },
-              "type": "normal",
-              "unicode": 19968
-            },
-            {
-              "char": "二",
-              "confidence": 1,
-              "position": {
-                "x": 503.93,
-                "y_bottom": 264.44,
-                "y_top": 236.44
-              },
-              "row_index": 8,
-              "style": {
-                "font_color": "0 0 0",
-                "font_size_pt": 28
-              },
-              "type": "normal",
-              "unicode": 20108
-            },
-            {
-              "char": "三",
-              "confidence": 1,
-              "position": {
-                "x": 503.93,
-                "y_bottom": 292.45,
-                "y_top": 264.44
-              },
-              "row_index": 9,
-              "style": {
-                "font_color": "0 0 0",
-                "font_size_pt": 28
-              },
-              "type": "normal",
-              "unicode": 19977
-            },
-            {
-              "char": "四",
-              "confidence": 1,
-              "position": {
-                "x": 503.93,
-                "y_bottom": 320.45,
-                "y_top": 292.45
-              },
-              "row_index": 10,
-              "style": {
-                "font_color": "0 0 0",
-                "font_size_pt": 28
-              },
-              "type": "normal",
-              "unicode": 22235
-            },
-            {
-              "char": "五",
-              "confidence": 1,
-              "position": {
-                "x": 503.93,
-                "y_bottom": 348.46,
-                "y_top": 320.45
-              },
-              "row_index": 11,
-              "style": {
-                "font_color": "0 0 0",
-                "font_size_pt": 28
-              },
-              "type": "normal",
-              "unicode": 20116
-            },
-            {
-              "char": "六",
-              "confidence": 1,
-              "position": {
-                "x": 503.93,
-                "y_bottom": 376.46,
-                "y_top": 348.46
-              },
-              "row_index": 12,
-              "style": {
-                "font_color": "0 0 0",
-                "font_size_pt": 28
-              },
-              "type": "normal",
-              "unicode": 20845
-            },
-            {
-              "char": "七",
-              "confidence": 1,
-              "position": {
-                "x": 503.93,
-                "y_bottom": 404.47,
-                "y_top": 376.46
-              },
-              "row_index": 13,
-              "style": {
-                "font_color": "0 0 0",
-                "font_size_pt": 28
-              },
-              "type": "normal",
-              "unicode": 19971
-            },
-            {
-              "char": "八",
-              "confidence": 1,
-              "position": {
-                "x": 503.93,
-                "y_bottom": 432.47,
-                "y_top": 404.47
-              },
-              "row_index": 14,
-              "style": {
-                "font_color": "0 0 0",
-                "font_size_pt": 28
-              },
-              "type": "normal",
-              "unicode": 20843
-            },
-            {
-              "char": "九",
-              "confidence": 1,
-              "position": {
-                "x": 503.93,
-                "y_bottom": 460.48,
-                "y_top": 432.47
-              },
-              "row_index": 15,
-              "style": {
-                "font_color": "0 0 0",
-                "font_size_pt": 28
-              },
-              "type": "normal",
-              "unicode": 20061
-            },
-            {
-              "char": "十",
-              "confidence": 1,
-              "position": {
-                "x": 503.93,
-                "y_bottom": 488.48,
-                "y_top": 460.48
-              },
-              "row_index": 16,
-              "style": {
-                "font_color": "0 0 0",
-                "font_size_pt": 28
-              },
-              "type": "normal",
-              "unicode": 21313
-            },
-            {
-              "char": "一",
-              "confidence": 1,
-              "position": {
-                "x": 503.93,
-                "y_bottom": 516.49,
-                "y_top": 488.48
-              },
-              "row_index": 17,
-              "style": {
-                "font_color": "0 0 0",
-                "font_size_pt": 28
-              },
-              "type": "normal",
-              "unicode": 19968
-            },
-            {
-              "char": "二",
-              "confidence": 1,
-              "position": {
-                "x": 503.93,
-                "y_bottom": 544.49,
-                "y_top": 516.49
-              },
-              "row_index": 18,
-              "style": {
-                "font_color": "0 0 0",
-                "font_size_pt": 28
-              },
-              "type": "normal",
-              "unicode": 20108
-            },
-            {
-              "char": "三",
-              "confidence": 1,
-              "position": {
-                "x": 503.93,
-                "y_bottom": 572.50,
-                "y_top": 544.49
-              },
-              "row_index": 19,
-              "style": {
-                "font_color": "0 0 0",
-                "font_size_pt": 28
-              },
-              "type": "normal",
-              "unicode": 19977
-            },
-            {
-              "char": "四",
-              "confidence": 1,
-              "position": {
-                "x": 503.93,
-                "y_bottom": 600.50,
-                "y_top": 572.50
-              },
-              "row_index": 20,
-              "style": {
-                "font_color": "0 0 0",
-                "font_size_pt": 28
-              },
-              "type": "normal",
-              "unicode": 22235
-            }
-          ],
-          "col_index": 6,
-          "position": {
-            "left_x": 503.93,
-            "right_x": 503.93
-          }
-        },
-        {
-          "characters": [
-            {
-              "char": "五",
-              "confidence": 1,
-              "position": {
-                "x": 452.72,
-                "y_bottom": 40.40,
-                "y_top": 12.40
-              },
-              "row_index": 0,
-              "style": {
-                "font_color": "0 0 0",
-                "font_size_pt": 28
-              },
-              "type": "normal",
-              "unicode": 20116
-            },
-            {
-              "char": "六",
-              "confidence": 1,
-              "position": {
-                "x": 452.72,
-                "y_bottom": 68.41,
-                "y_top": 40.40
-              },
-              "row_index": 1,
-              "style": {
-                "font_color": "0 0 0",
-                "font_size_pt": 28
-              },
-              "type": "normal",
-              "unicode": 20845
-            },
-            {
-              "char": "七",
-              "confidence": 1,
-              "position": {
-                "x": 452.72,
-                "y_bottom": 96.41,
-                "y_top": 68.41
-              },
-              "row_index": 2,
-              "style": {
-                "font_color": "0 0 0",
-                "font_size_pt": 28
-              },
-              "type": "normal",
-              "unicode": 19971
-            },
-            {
-              "char": "八",
-              "confidence": 1,
-              "position": {
-                "x": 452.72,
-                "y_bottom": 124.42,
-                "y_top": 96.41
-              },
-              "row_index": 3,
-              "style": {
-                "font_color": "0 0 0",
-                "font_size_pt": 28
-              },
-              "type": "normal",
-              "unicode": 20843
-            },
-            {
-              "char": "九",
-              "confidence": 1,
-              "position": {
-                "x": 452.72,
-                "y_bottom": 152.42,
-                "y_top": 124.42
-              },
-              "row_index": 4,
-              "style": {
-                "font_color": "0 0 0",
-                "font_size_pt": 28
-              },
-              "type": "normal",
-              "unicode": 20061
-            },
-            {
-              "char": "十",
-              "confidence": 1,
-              "position": {
-                "x": 452.72,
-                "y_bottom": 180.43,
-                "y_top": 152.42
-              },
-              "row_index": 5,
-              "style": {
-                "font_color": "0 0 0",
-                "font_size_pt": 28
-              },
-              "type": "normal",
-              "unicode": 21313
-            }
-          ],
-          "col_index": 7,
-          "position": {
-            "left_x": 452.72,
-            "right_x": 452.72
+            "left_x": 365.67,
+            "right_x": 365.67
           }
         }
       ],
@@ -5227,6 +3371,6 @@
     }
   ],
   "source_file": "guji.tex",
-  "source_mtime": 1773855963,
+  "source_mtime": 1773874371,
   "version": "1.0"
 }

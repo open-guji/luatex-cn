@@ -352,17 +352,35 @@ local function render_single_page(p_head, p_max_col, p, layout_map, params, ctx,
                 end
                 scan_t = D.getnext(scan_t)
             end
-            -- Check if any columns need silk suppression
+            -- Expand no-silk columns to cover entire half-pages.
+            -- In butterfly binding, interval = n_column, so:
+            --   left half  = cols 0..interval-1
+            --   banxin     = col interval
+            --   right half = cols interval+1..2*interval
+            -- If any column in a half has column_border=false, the whole half is suppressed.
             if next(col_has_no_silk) then
-                -- Check if ALL content columns have no silk
-                local all_no_silk = true
-                for col = 0, p_total_cols - 1 do
-                    if col_seen[col] and not col_has_no_silk[col] then
-                        all_no_silk = false
-                        break
+                local interval = ctx.interval or 0
+                if interval > 0 then
+                    local left_no_silk = false
+                    local right_no_silk = false
+                    for col in pairs(col_has_no_silk) do
+                        if col < interval then
+                            left_no_silk = true
+                        elseif col > interval then
+                            right_no_silk = true
+                        end
+                    end
+                    -- Rebuild no_silk set with full half-page ranges
+                    col_has_no_silk = {}
+                    if left_no_silk then
+                        for c = 0, interval - 1 do col_has_no_silk[c] = true end
+                    end
+                    if right_no_silk then
+                        for c = interval + 1, 2 * interval do col_has_no_silk[c] = true end
                     end
                 end
-                if all_no_silk then
+                -- Check if ALL non-banxin columns are suppressed
+                if left_no_silk and right_no_silk then
                     draw_column_border = false
                 else
                     no_silk_cols = col_has_no_silk

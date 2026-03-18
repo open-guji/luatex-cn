@@ -324,23 +324,49 @@ local function render_single_page(p_head, p_max_col, p, layout_map, params, ctx,
     local draw_band_border = engine.draw_band_border
     local draw_outer_border = page.is_outer_border
 
-    -- Per-page column border override from style stack (插图页 / IllustrationPage):
-    -- Scan the first node of this page; if its style has column_border=false,
-    -- suppress column borders for this page only.
+    -- Per-column column border override from style stack (插图页 / IllustrationPage):
+    -- Scan all nodes of this page; collect which columns have column_border=false.
+    -- If ALL columns have it, suppress globally; otherwise build no_silk_cols set.
+    local no_silk_cols = nil  -- set of column indices where 丝栏 should be suppressed
     if draw_column_border then
         local style_registry = package.loaded['util.luatex-cn-style-registry']
         if style_registry then
+            local col_has_no_silk = {}
+            local col_seen = {}
             local scan_t = p_head
             while scan_t do
-                local sid = D.get_attribute(scan_t, constants.ATTR_STYLE_REG_ID)
-                if sid then
-                    local style = style_registry.get(sid)
-                    if style and style.column_border == false then
-                        draw_column_border = false
+                local pos = layout_map[scan_t]
+                if pos then
+                    local col = pos.col
+                    if not col_seen[col] then
+                        col_seen[col] = true
+                        local sid = D.get_attribute(scan_t, constants.ATTR_STYLE_REG_ID)
+                        if sid then
+                            local style = style_registry.get(sid)
+                            if style and style.column_border == false then
+                                col_has_no_silk[col] = true
+                            end
+                        end
+                        -- No sid or style without column_border=false → default (has silk)
                     end
-                    break  -- only check first node with a style
                 end
                 scan_t = D.getnext(scan_t)
+            end
+            -- Check if any columns need silk suppression
+            if next(col_has_no_silk) then
+                -- Check if ALL content columns have no silk
+                local all_no_silk = true
+                for col = 0, p_total_cols - 1 do
+                    if col_seen[col] and not col_has_no_silk[col] then
+                        all_no_silk = false
+                        break
+                    end
+                end
+                if all_no_silk then
+                    draw_column_border = false
+                else
+                    no_silk_cols = col_has_no_silk
+                end
             end
         end
     end
@@ -449,6 +475,8 @@ local function render_single_page(p_head, p_max_col, p, layout_map, params, ctx,
         background_rgb_str = ctx.background_rgb_str,
         -- Taitou raised border
         col_min_y_sp = col_min_y_sp,
+        -- Per-column silk suppression (插图页 partial page)
+        no_silk_cols = no_silk_cols,
         -- Textbox outer border (drawn around decorative shape)
         textbox_outer_border = ctx.textbox_outer_border,
         textbox_ob_thickness = ctx.textbox_ob_thickness,

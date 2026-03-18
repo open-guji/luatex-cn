@@ -410,6 +410,9 @@ local function draw_content_frame(p_head, params)
     local b_thickness_bp = border_thickness * sp_to_bp
     local half_thickness = math.floor(border_thickness / 2)
 
+    -- only_cols: if set, only include these columns (for partial silk suppression)
+    local only_cols = params.only_cols
+
     -- Build contiguous segments, splitting at banxin columns
     -- Each segment is a range of adjacent non-banxin columns
     local segments = {}
@@ -417,7 +420,11 @@ local function draw_content_frame(p_head, params)
     local seg_end_rtl = nil
     for rtl_col = 0, total_cols - 1 do
         local col = total_cols - 1 - rtl_col
-        if banxin_cols[col] then
+        local skip = banxin_cols[col]
+        if only_cols then
+            skip = skip or (not only_cols[col])
+        end
+        if skip then
             -- End current segment
             if seg_start_rtl ~= nil then
                 segments[#segments + 1] = { seg_start_rtl, seg_end_rtl }
@@ -820,7 +827,30 @@ local function render_borders(p_head, params)
                 col_border_params.col_groups = ptb.col_groups
             end
         end
+        -- Partial silk suppression: merge no_silk_cols into banxin_cols for skipping
+        local no_silk_cols = params.no_silk_cols
+        if no_silk_cols then
+            local merged_skip = {}
+            for k, v in pairs(params.reserved_cols or {}) do merged_skip[k] = v end
+            for k, v in pairs(no_silk_cols) do merged_skip[k] = v end
+            col_border_params.banxin_cols = merged_skip
+        end
         p_head = draw_column_borders(p_head, col_border_params)
+        -- Draw content frame for the no-silk region
+        if no_silk_cols then
+            p_head = draw_content_frame(p_head, {
+                total_cols = p_total_cols,
+                grid_width = grid_width,
+                col_geom = col_geom,
+                content_dim_h = content_dim_h,
+                border_thickness = border_thickness,
+                shift_x = params.shift_x,
+                outer_shift = params.outer_shift,
+                border_rgb_str = params.b_rgb_str,
+                banxin_cols = params.reserved_cols,
+                only_cols = no_silk_cols,
+            })
+        end
     elseif not draw_col_border and params.draw_border and p_total_cols > 0 then
         -- column_border=false but border=true: draw content frame (内边框) without 丝栏
         p_head = draw_content_frame(p_head, {

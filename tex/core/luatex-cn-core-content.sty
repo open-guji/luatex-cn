@@ -653,4 +653,64 @@
   \penalty -10006\relax
 }
 
+% ============================================================
+% IllustrationPage: suppress column borders (丝栏) for content within this scope.
+% The outer border is not affected.
+% Usage:
+%   \插图页         — command form: applies to all content until next \clearpage
+%   \恢复丝栏       — restore column borders (call after \clearpage)
+% ============================================================
+\ExplSyntaxOn
+
+\bool_new:N \g__luatexcn_illustration_page_bool
+
+\cs_new_protected:Npn \__luatexcn_illustration_page_push:
+  {
+    \lua_now:n {
+      local~sr~=~require('util.luatex-cn-style-registry')
+      sr.push({~column_border~=~false~})
+    }
+    \edef \l__luatexcn_tmpa_tl {
+      \lua_now:n {
+        local~sr~=~require('util.luatex-cn-style-registry')
+        tex.print(tostring(sr.current_id()))
+      }
+    }
+    \setluatexattribute \cnverticalstyle { \l__luatexcn_tmpa_tl }
+    \bool_gset_true:N \g__luatexcn_illustration_page_bool
+  }
+
+\cs_new_protected:Npn \__luatexcn_illustration_page_pop:
+  {
+    \bool_if:NT \g__luatexcn_illustration_page_bool
+      {
+        \edef \l__luatexcn_tmpa_tl {
+          \lua_now:n {
+            local~sr~=~require('util.luatex-cn-style-registry')
+            sr.pop()
+            tex.print(tostring(sr.current_id()~or~0))
+          }
+        }
+        \setluatexattribute \cnverticalstyle { \l__luatexcn_tmpa_tl }
+        \bool_gset_false:N \g__luatexcn_illustration_page_bool
+      }
+  }
+
+\NewDocumentCommand{\IllustrationPage}{}
+  {
+    \__luatexcn_illustration_page_push:
+  }
+
+\NewDocumentCommand{\EndIllustrationPage}{}
+  {
+    \__luatexcn_illustration_page_pop:
+  }
+
+\ExplSyntaxOff
+
+\NewCommandCopy{\插图页}{\IllustrationPage}
+\NewCommandCopy{\插圖頁}{\IllustrationPage}
+\NewCommandCopy{\恢复丝栏}{\EndIllustrationPage}
+\NewCommandCopy{\恢復絲欄}{\EndIllustrationPage}
+
 \endinput

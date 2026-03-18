@@ -323,6 +323,28 @@ local function render_single_page(p_head, p_max_col, p, layout_map, params, ctx,
     local draw_column_border = engine.draw_column_border
     local draw_band_border = engine.draw_band_border
     local draw_outer_border = page.is_outer_border
+
+    -- Per-page column border override from style stack (插图页 / IllustrationPage):
+    -- Scan the first node of this page; if its style has column_border=false,
+    -- suppress column borders for this page only.
+    if draw_column_border then
+        local style_registry = package.loaded['util.luatex-cn-style-registry']
+        if style_registry then
+            local scan_t = p_head
+            while scan_t do
+                local sid = D.get_attribute(scan_t, constants.ATTR_STYLE_REG_ID)
+                if sid then
+                    local style = style_registry.get(sid)
+                    if style and style.column_border == false then
+                        draw_column_border = false
+                    end
+                    break  -- only check first node with a style
+                end
+                scan_t = D.getnext(scan_t)
+            end
+        end
+    end
+
     local shift_x = ctx.shift_x
     local outer_shift = ctx.outer_shift
     local b_rgb_str = ctx.b_rgb_str

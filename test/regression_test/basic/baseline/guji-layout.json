@@ -9,7 +9,7 @@
     "split_page": {
       "enabled": false
     },
-    "total_pages": 8
+    "total_pages": 10
   },
   "generator": "luatex-cn",
   "page_summary": [
@@ -82,6 +82,20 @@
         "的標題"
       ],
       "page": 7,
+      "type": "single"
+    },
+    {
+      "cols": [
+        "此页应该没有丝栏只有外框"
+      ],
+      "page": 8,
+      "type": "single"
+    },
+    {
+      "cols": [
+        "此页丝栏应恢复正常"
+      ],
+      "page": 9,
       "type": "single"
     }
   ],
@@ -2776,9 +2790,389 @@
       },
       "page_index": 7,
       "sidenotes": []
+    },
+    {
+      "columns": [
+        {
+          "characters": [
+            {
+              "char": "此",
+              "confidence": 1,
+              "position": {
+                "x": 811.19,
+                "y_bottom": 40.40,
+                "y_top": 12.40
+              },
+              "row_index": 0,
+              "style": {
+                "font_color": "0 0 0",
+                "font_size_pt": 28
+              },
+              "type": "normal",
+              "unicode": 27492
+            },
+            {
+              "char": "页",
+              "confidence": 1,
+              "position": {
+                "x": 811.19,
+                "y_bottom": 68.41,
+                "y_top": 40.40
+              },
+              "row_index": 1,
+              "style": {
+                "font_color": "0 0 0",
+                "font_size_pt": 28
+              },
+              "type": "normal",
+              "unicode": 39029
+            },
+            {
+              "char": "应",
+              "confidence": 1,
+              "position": {
+                "x": 811.19,
+                "y_bottom": 96.41,
+                "y_top": 68.41
+              },
+              "row_index": 2,
+              "style": {
+                "font_color": "0 0 0",
+                "font_size_pt": 28
+              },
+              "type": "normal",
+              "unicode": 24212
+            },
+            {
+              "char": "该",
+              "confidence": 1,
+              "position": {
+                "x": 811.19,
+                "y_bottom": 124.42,
+                "y_top": 96.41
+              },
+              "row_index": 3,
+              "style": {
+                "font_color": "0 0 0",
+                "font_size_pt": 28
+              },
+              "type": "normal",
+              "unicode": 35813
+            },
+            {
+              "char": "没",
+              "confidence": 1,
+              "position": {
+                "x": 811.19,
+                "y_bottom": 152.42,
+                "y_top": 124.42
+              },
+              "row_index": 4,
+              "style": {
+                "font_color": "0 0 0",
+                "font_size_pt": 28
+              },
+              "type": "normal",
+              "unicode": 27809
+            },
+            {
+              "char": "有",
+              "confidence": 1,
+              "position": {
+                "x": 811.19,
+                "y_bottom": 180.43,
+                "y_top": 152.42
+              },
+              "row_index": 5,
+              "style": {
+                "font_color": "0 0 0",
+                "font_size_pt": 28
+              },
+              "type": "normal",
+              "unicode": 26377
+            },
+            {
+              "char": "丝",
+              "confidence": 1,
+              "position": {
+                "x": 811.19,
+                "y_bottom": 208.43,
+                "y_top": 180.43
+              },
+              "row_index": 6,
+              "style": {
+                "font_color": "0 0 0",
+                "font_size_pt": 28
+              },
+              "type": "normal",
+              "unicode": 19997
+            },
+            {
+              "char": "栏",
+              "confidence": 1,
+              "position": {
+                "x": 811.19,
+                "y_bottom": 236.44,
+                "y_top": 208.43
+              },
+              "row_index": 7,
+              "style": {
+                "font_color": "0 0 0",
+                "font_size_pt": 28
+              },
+              "type": "normal",
+              "unicode": 26639
+            },
+            {
+              "char": "只",
+              "confidence": 1,
+              "position": {
+                "x": 811.19,
+                "y_bottom": 264.44,
+                "y_top": 236.44
+              },
+              "row_index": 8,
+              "style": {
+                "font_color": "0 0 0",
+                "font_size_pt": 28
+              },
+              "type": "normal",
+              "unicode": 21482
+            },
+            {
+              "char": "有",
+              "confidence": 1,
+              "position": {
+                "x": 811.19,
+                "y_bottom": 292.45,
+                "y_top": 264.44
+              },
+              "row_index": 9,
+              "style": {
+                "font_color": "0 0 0",
+                "font_size_pt": 28
+              },
+              "type": "normal",
+              "unicode": 26377
+            },
+            {
+              "char": "外",
+              "confidence": 1,
+              "position": {
+                "x": 811.19,
+                "y_bottom": 320.45,
+                "y_top": 292.45
+              },
+              "row_index": 10,
+              "style": {
+                "font_color": "0 0 0",
+                "font_size_pt": 28
+              },
+              "type": "normal",
+              "unicode": 22806
+            },
+            {
+              "char": "框",
+              "confidence": 1,
+              "position": {
+                "x": 811.19,
+                "y_bottom": 348.46,
+                "y_top": 320.45
+              },
+              "row_index": 11,
+              "style": {
+                "font_color": "0 0 0",
+                "font_size_pt": 28
+              },
+              "type": "normal",
+              "unicode": 26694
+            }
+          ],
+          "col_index": 0,
+          "position": {
+            "left_x": 811.19,
+            "right_x": 811.19
+          }
+        }
+      ],
+      "columns_count": 17,
+      "margins": {
+        "bottom_pt": 91.60,
+        "left_pt": 133.20,
+        "right_pt": 133.20,
+        "top_pt": 190.50
+      },
+      "page_index": 8,
+      "sidenotes": []
+    },
+    {
+      "columns": [
+        {
+          "characters": [
+            {
+              "char": "此",
+              "confidence": 1,
+              "position": {
+                "x": 811.19,
+                "y_bottom": 40.40,
+                "y_top": 12.40
+              },
+              "row_index": 0,
+              "style": {
+                "font_color": "0 0 0",
+                "font_size_pt": 28
+              },
+              "type": "normal",
+              "unicode": 27492
+            },
+            {
+              "char": "页",
+              "confidence": 1,
+              "position": {
+                "x": 811.19,
+                "y_bottom": 68.41,
+                "y_top": 40.40
+              },
+              "row_index": 1,
+              "style": {
+                "font_color": "0 0 0",
+                "font_size_pt": 28
+              },
+              "type": "normal",
+              "unicode": 39029
+            },
+            {
+              "char": "丝",
+              "confidence": 1,
+              "position": {
+                "x": 811.19,
+                "y_bottom": 96.41,
+                "y_top": 68.41
+              },
+              "row_index": 2,
+              "style": {
+                "font_color": "0 0 0",
+                "font_size_pt": 28
+              },
+              "type": "normal",
+              "unicode": 19997
+            },
+            {
+              "char": "栏",
+              "confidence": 1,
+              "position": {
+                "x": 811.19,
+                "y_bottom": 124.42,
+                "y_top": 96.41
+              },
+              "row_index": 3,
+              "style": {
+                "font_color": "0 0 0",
+                "font_size_pt": 28
+              },
+              "type": "normal",
+              "unicode": 26639
+            },
+            {
+              "char": "应",
+              "confidence": 1,
+              "position": {
+                "x": 811.19,
+                "y_bottom": 152.42,
+                "y_top": 124.42
+              },
+              "row_index": 4,
+              "style": {
+                "font_color": "0 0 0",
+                "font_size_pt": 28
+              },
+              "type": "normal",
+              "unicode": 24212
+            },
+            {
+              "char": "恢",
+              "confidence": 1,
+              "position": {
+                "x": 811.19,
+                "y_bottom": 180.43,
+                "y_top": 152.42
+              },
+              "row_index": 5,
+              "style": {
+                "font_color": "0 0 0",
+                "font_size_pt": 28
+              },
+              "type": "normal",
+              "unicode": 24674
+            },
+            {
+              "char": "复",
+              "confidence": 1,
+              "position": {
+                "x": 811.19,
+                "y_bottom": 208.43,
+                "y_top": 180.43
+              },
+              "row_index": 6,
+              "style": {
+                "font_color": "0 0 0",
+                "font_size_pt": 28
+              },
+              "type": "normal",
+              "unicode": 22797
+            },
+            {
+              "char": "正",
+              "confidence": 1,
+              "position": {
+                "x": 811.19,
+                "y_bottom": 236.44,
+                "y_top": 208.43
+              },
+              "row_index": 7,
+              "style": {
+                "font_color": "0 0 0",
+                "font_size_pt": 28
+              },
+              "type": "normal",
+              "unicode": 27491
+            },
+            {
+              "char": "常",
+              "confidence": 1,
+              "position": {
+                "x": 811.19,
+                "y_bottom": 264.44,
+                "y_top": 236.44
+              },
+              "row_index": 8,
+              "style": {
+                "font_color": "0 0 0",
+                "font_size_pt": 28
+              },
+              "type": "normal",
+              "unicode": 24120
+            }
+          ],
+          "col_index": 0,
+          "position": {
+            "left_x": 811.19,
+            "right_x": 811.19
+          }
+        }
+      ],
+      "columns_count": 17,
+      "margins": {
+        "bottom_pt": 91.60,
+        "left_pt": 133.20,
+        "right_pt": 133.20,
+        "top_pt": 190.50
+      },
+      "page_index": 9,
+      "sidenotes": []
     }
   ],
   "source_file": "guji.tex",
-  "source_mtime": 1773784701,
+  "source_mtime": 1773813661,
   "version": "1.0"
 }

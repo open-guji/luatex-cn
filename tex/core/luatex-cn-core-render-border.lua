@@ -375,6 +375,91 @@ local function draw_column_borders(p_head, params)
 end
 
 -- ============================================================================
+-- Content Frame Drawing (正文区域内边框)
+-- ============================================================================
+
+--- 绘制正文区域的内边框（整体矩形框，不含列间分隔线）
+-- 当 column_border=false 但 border=true 时调用，保留正文区域的外框
+-- @param p_head (node) 节点列表头部（直接引用）
+-- @param params (table) 参数表:
+--   - total_cols: 总列数
+--   - grid_width: 每列的宽度 (sp)
+--   - col_geom: 列几何参数
+--   - content_dim_h: 列边框高度 (sp)
+--   - border_thickness: 边框厚度 (sp)
+--   - shift_x: 水平偏移 (sp)
+--   - outer_shift: 外边框偏移 (sp)
+--   - border_rgb_str: RGB 颜色字符串
+--   - banxin_cols: 要跳过的列索引集合（版心列）
+-- @return (node) 更新后的头部
+local function draw_content_frame(p_head, params)
+    local sp_to_bp = utils.sp_to_bp
+    local total_cols = params.total_cols
+    local border_thickness = params.border_thickness
+    local shift_x = params.shift_x
+    local outer_shift = params.outer_shift
+    local border_rgb_str = params.border_rgb_str
+    local banxin_cols = params.banxin_cols or {}
+    local col_geom = params.col_geom or {
+        grid_width = params.grid_width or 0,
+        banxin_width = params.banxin_width or 0,
+        interval = params.interval or 0,
+    }
+    local content_dim_h = params.content_dim_h
+
+    local b_thickness_bp = border_thickness * sp_to_bp
+    local half_thickness = math.floor(border_thickness / 2)
+
+    -- Build contiguous segments, splitting at banxin columns
+    -- Each segment is a range of adjacent non-banxin columns
+    local segments = {}
+    local seg_start_rtl = nil
+    local seg_end_rtl = nil
+    for rtl_col = 0, total_cols - 1 do
+        local col = total_cols - 1 - rtl_col
+        if banxin_cols[col] then
+            -- End current segment
+            if seg_start_rtl ~= nil then
+                segments[#segments + 1] = { seg_start_rtl, seg_end_rtl }
+                seg_start_rtl = nil
+                seg_end_rtl = nil
+            end
+        else
+            if seg_start_rtl == nil then
+                seg_start_rtl = rtl_col
+            end
+            seg_end_rtl = rtl_col
+        end
+    end
+    if seg_start_rtl ~= nil then
+        segments[#segments + 1] = { seg_start_rtl, seg_end_rtl }
+    end
+
+    -- Draw one rectangle for each contiguous segment
+    for _, seg in ipairs(segments) do
+        local start_rtl = seg[1]
+        local end_rtl = seg[2]
+        -- X position: leftmost column's X
+        local x_start = text_position.get_column_x(start_rtl, col_geom)
+        -- Width: from leftmost to rightmost column's right edge
+        local end_col = total_cols - 1 - end_rtl
+        local x_end = text_position.get_column_x(end_rtl, col_geom)
+        local w_end = text_position.get_column_width(end_col, col_geom)
+        local total_width = (x_end + w_end) - x_start
+
+        local tx_bp = (x_start + half_thickness + shift_x) * sp_to_bp
+        local ty_bp = -(half_thickness + outer_shift) * sp_to_bp
+        local tw_bp = total_width * sp_to_bp
+        local th_bp = -content_dim_h * sp_to_bp
+
+        local literal = utils.create_border_literal(b_thickness_bp, border_rgb_str, tx_bp, ty_bp, tw_bp, th_bp)
+        p_head = utils.insert_pdf_literal(p_head, literal)
+    end
+
+    return p_head
+end
+
+-- ============================================================================
 -- Band Border Drawing (分栏边框)
 -- ============================================================================
 
@@ -736,6 +821,19 @@ local function render_borders(p_head, params)
             end
         end
         p_head = draw_column_borders(p_head, col_border_params)
+    elseif not draw_col_border and params.draw_border and p_total_cols > 0 then
+        -- column_border=false but border=true: draw content frame (内边框) without 丝栏
+        p_head = draw_content_frame(p_head, {
+            total_cols = p_total_cols,
+            grid_width = grid_width,
+            col_geom = col_geom,
+            content_dim_h = content_dim_h,
+            border_thickness = border_thickness,
+            shift_x = params.shift_x,
+            outer_shift = params.outer_shift,
+            border_rgb_str = params.b_rgb_str,
+            banxin_cols = params.reserved_cols,
+        })
     end
 
     -- 1b. Band divider lines (horizontal lines between bands)
@@ -952,6 +1050,7 @@ end
 
 local render_border = {
     draw_column_borders = draw_column_borders,
+    draw_content_frame = draw_content_frame,
     draw_band_borders = draw_band_borders,
     draw_outer_border = draw_outer_border,
     render_borders = render_borders,

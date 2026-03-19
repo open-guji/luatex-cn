@@ -741,10 +741,12 @@ local function handle_penalty_breaks(p_val, ctx, flush_buffer_fn, p_cols, interv
                     cum = cum + (col_groups[i] or 0)
                 end
                 local target_col = band_start + cum
-                -- If the previous cell's content overflowed past the target column,
-                -- advance to the next column after current position to avoid overlap.
+                -- If the previous cell's content overflowed past the target column
+                -- (e.g. auto-width cells contributed 0 to cum but consumed real columns),
+                -- use current position + cell_width, ensuring at least 1 column advance.
                 if target_col <= ctx.cur_col then
-                    target_col = ctx.cur_col + (ctx.cur_row > 0 and 1 or 0)
+                    local advance = math.max(cell_width, ctx.cur_row > 0 and 1 or 0)
+                    target_col = ctx.cur_col + advance
                 end
                 ctx.cur_col = target_col
             else

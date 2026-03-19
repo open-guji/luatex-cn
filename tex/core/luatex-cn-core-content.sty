@@ -672,6 +672,7 @@
 
 \cs_new_protected:Npn \__luatexcn_illustration_page_push:
   {
+    \penalty -10010\relax
     \lua_now:n {
       local~sr~=~require('util.luatex-cn-style-registry')
       sr.push({~column_border~=~false~})

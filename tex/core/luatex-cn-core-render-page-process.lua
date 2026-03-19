@@ -388,12 +388,11 @@ local function process_page_nodes(p_head, layout_map, params, ctx)
                             p_head = handle_debug_drawing(curr, p_head, pos, ctx)
                             -- Collect line mark entries for batch rendering
                             if pos.line_mark_id then
-                                local x_center
-                                if pos.sub_col and pos.sub_col > 0 then
-                                    local gw = D.getfield(curr, "width") or 0
-                                    local gx = D.getfield(curr, "xoffset") or 0
-                                    x_center = gx + gw / 2
-                                end
+                                -- Always use glyph's actual positioned center
+                                -- (handles Free Mode, variable-width columns, sub-columns, etc.)
+                                local gw = D.getfield(curr, "width") or 0
+                                local gx = D.getfield(curr, "xoffset") or 0
+                                local x_center = gx + gw / 2
                                 -- P1: read font_size from style_registry, not layout_map
                                 local lm_style_id = D.get_attribute(curr, constants.ATTR_STYLE_REG_ID)
                                 local lm_font_size = lm_style_id and style_registry.get_font_size(lm_style_id)

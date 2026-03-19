@@ -260,13 +260,15 @@ function linemark.render_line_marks(p_head, entries, ctx)
                 local char_center_x
 
                 if first.x_center_sp then
-                    -- Pre-calculated character center (jiazhu sub-column, sidenote, etc.)
-                    -- This already accounts for textflow alignment (outward/inward/left/right)
-                    -- Reduce offset in tight environments (jiazhu/sidenote have smaller margins)
+                    -- Pre-calculated character center from glyph's actual xoffset.
+                    -- This correctly handles Free Mode, variable-width columns, etc.
                     char_center_x = first.x_center_sp
-                    effective_offset = math.floor(seg_offset * 0.8 + 0.5)
+                    -- Reduce offset in tight environments (jiazhu/sidenote have smaller margins)
+                    if sub_col > 0 then
+                        effective_offset = math.floor(seg_offset * 0.8 + 0.5)
+                    end
                 else
-                    -- Normal full-width cell: center of cell
+                    -- Fallback: center of cell (used when x_center_sp is not available)
                     local _, cell_left_x = text_position.calculate_rtl_position(col, ctx.p_total_cols, ctx.col_geom,
                         ctx.half_thickness, ctx.shift_x)
                     local col_w = text_position.get_column_width(col, ctx.col_geom)

@@ -25,6 +25,8 @@ local style_registry = package.loaded['util.luatex-cn-style-registry'] or
     require('util.luatex-cn-style-registry')
 local judou = package.loaded['guji.luatex-cn-guji-judou'] or
     require('guji.luatex-cn-guji-judou')
+local punct_mod = package.loaded['core.luatex-cn-core-punct'] or
+    require('core.luatex-cn-core-punct')
 local setting_stack = package.loaded['util.luatex-cn-setting-stack'] or
     require('util.luatex-cn-setting-stack')
 local text_position = package.loaded['core.luatex-cn-render-position'] or
@@ -496,9 +498,18 @@ function sidenote.register_sidenote(box_num, metadata)
     setting_stack.push(setting_overrides)
     local settings = setting_stack.current()
 
-    -- Apply judou processing based on setting stack (not global _G.judou directly)
+    -- Apply punctuation processing based on setting stack
     local effective_mode = settings.punct_mode or "normal"
-    if effective_mode ~= "normal" then
+    if effective_mode == "normal" then
+        -- Normal mode: apply punct.flatten for vertical form replacement
+        -- (e.g. 《》→︽︾, 「」→﹁﹂, ""→﹁﹂)
+        local punct_ctx = {
+            style   = (_G.punct and _G.punct.style) or "mainland",
+            squeeze = not (_G.punct and _G.punct.squeeze == false),
+            kinsoku = not (_G.punct and _G.punct.kinsoku == false),
+        }
+        content_head = punct_mod.flatten(content_head, {}, punct_ctx)
+    else
         local judou_ctx = {
             mode = effective_mode,
             punct_mode = effective_mode,

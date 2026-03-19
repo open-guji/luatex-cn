@@ -15,6 +15,7 @@
 \lua_now:n { require('guji.luatex-cn-guji-meipi') }
 
 % MeiPi (眉批) - Auto-positioned floating annotation box
+\bool_new:N \l__luatexcn_meipi_on_bool
 \tl_new:N \l__luatexcn_meipi_font_size_tl
 \tl_new:N \l__luatexcn_meipi_color_tl
 \tl_new:N \l__luatexcn_meipi_grid_width_tl
@@ -27,6 +28,9 @@
 
 \keys_define:nn { luatexcn / meipi }
   {
+    meipi .bool_set:N = \l__luatexcn_meipi_on_bool,
+    meipi .initial:n = true,
+    meipi .default:n = true,
     x .tl_set:N = \l__luatexcn_meipi_x_tl,
     x .initial:n = {},
     y .tl_set:N = \l__luatexcn_meipi_y_tl,
@@ -78,10 +82,12 @@
 \tl_new:N \l__luatexcn_meipi_height_sp_tl
 
 \NewDocumentCommand{\MeiPi}{ O{} +m }{%
-  \group_begin:
-    \keys_set:nn { luatexcn / meipi } { #1 }
-    
-    % Ensure grid dimensions are set to defaults if empty (defensive)
+  \bool_if:NT \l__luatexcn_meipi_on_bool
+    {
+      \group_begin:
+        \keys_set:nn { luatexcn / meipi } { #1 }
+
+        % Ensure grid dimensions are set to defaults if empty (defensive)
     \tl_if_empty:NT \l__luatexcn_meipi_grid_width_tl { \tl_set:Nn \l__luatexcn_meipi_grid_width_tl { 20pt } }
     \tl_if_empty:NT \l__luatexcn_meipi_grid_height_tl { \tl_set:Nn \l__luatexcn_meipi_grid_height_tl { 19pt } }
 
@@ -211,17 +217,18 @@
           }
       }
 
-    % 4. Register the captured box as a floating box
-    \lua_now:e {
-        local~vertical_textbox~=~require('core.luatex-cn-core-textbox')
-        local~box_num~=~\int_use:N \l__luatexcn_meipi_temp_box
-        vertical_textbox.register_floating_box(box_num, {
-            x~=~[=[\luaescapestring{\l__luatexcn_meipi_x_tl}]=],
-            y~=~[=[\luaescapestring{\l__luatexcn_meipi_y_tl}]=]
-        })
+        % 4. Register the captured box as a floating box
+        \lua_now:e {
+            local~vertical_textbox~=~require('core.luatex-cn-core-textbox')
+            local~box_num~=~\int_use:N \l__luatexcn_meipi_temp_box
+            vertical_textbox.register_floating_box(box_num, {
+                x~=~[=[\luaescapestring{\l__luatexcn_meipi_x_tl}]=],
+                y~=~[=[\luaescapestring{\l__luatexcn_meipi_y_tl}]=]
+            })
+        }
+
+      \group_end:
     }
-    
-  \group_end:
 }
 
 % Reset MeiPi registry at the start of each document
@@ -247,6 +254,8 @@
 \keys_define:nn { luatexcn / meipi }
   {
     % 简体
+    眉批 .bool_set:N = \l__luatexcn_meipi_on_bool,
+    眉批 .default:n = true,
     横坐标 .tl_set:N = \l__luatexcn_meipi_x_tl,
     纵坐标 .tl_set:N = \l__luatexcn_meipi_y_tl,
     高度 .tl_set:N = \l__luatexcn_meipi_height_tl,

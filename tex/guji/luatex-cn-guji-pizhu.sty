@@ -22,6 +22,7 @@
 \ProvidesExplPackage {guji/luatex-cn-guji-pizhu} {2026/03/14} {0.3.5} {PiZhu Floating Annotation Support}
 
 % PiZhu (批注) - Floating annotation box
+\bool_new:N \l__luatexcn_pizhu_on_bool
 \tl_new:N \l__luatexcn_pizhu_font_size_tl
 \tl_new:N \l__luatexcn_pizhu_color_tl
 \tl_new:N \l__luatexcn_pizhu_grid_width_tl
@@ -32,6 +33,9 @@
 
 \keys_define:nn { luatexcn / pizhu }
   {
+    pizhu .bool_set:N = \l__luatexcn_pizhu_on_bool,
+    pizhu .initial:n = true,
+    pizhu .default:n = true,
     x .tl_set:N = \l__luatexcn_pizhu_x_tl,
     y .tl_set:N = \l__luatexcn_pizhu_y_tl,
     height .tl_set:N = \l__luatexcn_pizhu_height_tl,
@@ -62,28 +66,31 @@
   }
 
 \NewDocumentCommand{\PiZhu}{ O{} +m }{%
-  \group_begin:
-    \keys_set:nn { luatexcn / pizhu } { #1 }
-    % Build keyval list with expansion so token list values are expanded
-    % Note: border=false ensures pizhu never has border (even if parent context has border)
-    \tl_set:Nx \l_tmpa_tl {
-      floating=true,
-      floating-paper-width=\l__luatexcn_page_paper_width_tl,
-      x=\l__luatexcn_pizhu_x_tl,
-      y=\l__luatexcn_pizhu_y_tl,
-      height=\l__luatexcn_pizhu_height_tl,
-      font-color=\exp_not:V \l__luatexcn_pizhu_color_tl,
-      font-size=\l__luatexcn_pizhu_font_size_tl,
-      grid-width=\l__luatexcn_pizhu_grid_width_tl,
-      grid-height=\l__luatexcn_pizhu_grid_height_tl,
-      border=false
+  \bool_if:NT \l__luatexcn_pizhu_on_bool
+    {
+      \group_begin:
+        \keys_set:nn { luatexcn / pizhu } { #1 }
+        % Build keyval list with expansion so token list values are expanded
+        % Note: border=false ensures pizhu never has border (even if parent context has border)
+        \tl_set:Nx \l_tmpa_tl {
+          floating=true,
+          floating-paper-width=\l__luatexcn_page_paper_width_tl,
+          x=\l__luatexcn_pizhu_x_tl,
+          y=\l__luatexcn_pizhu_y_tl,
+          height=\l__luatexcn_pizhu_height_tl,
+          font-color=\exp_not:V \l__luatexcn_pizhu_color_tl,
+          font-size=\l__luatexcn_pizhu_font_size_tl,
+          grid-width=\l__luatexcn_pizhu_grid_width_tl,
+          grid-height=\l__luatexcn_pizhu_grid_height_tl,
+          border=false
+        }
+        % Pass settings overrides to TextBox (punct-mode etc.)
+        \tl_if_empty:NF \l__luatexcn_settings_punct_mode_tl
+          { \tl_put_right:Nx \l_tmpa_tl { ,punct-mode=\l__luatexcn_settings_punct_mode_tl } }
+        % Use \use:x to properly expand the keyval list for xparse optional argument
+        \use:x { \exp_not:N \TextBox [\l_tmpa_tl]{\exp_not:n{#2}} }
+      \group_end:
     }
-    % Pass settings overrides to TextBox (punct-mode etc.)
-    \tl_if_empty:NF \l__luatexcn_settings_punct_mode_tl
-      { \tl_put_right:Nx \l_tmpa_tl { ,punct-mode=\l__luatexcn_settings_punct_mode_tl } }
-    % Use \use:x to properly expand the keyval list for xparse optional argument
-    \use:x { \exp_not:N \TextBox [\l_tmpa_tl]{\exp_not:n{#2}} }
-  \group_end:
 }
 
 \ExplSyntaxOff%
@@ -104,6 +111,8 @@
 \keys_define:nn { luatexcn / pizhu }
   {
     % 简体
+    批注 .bool_set:N = \l__luatexcn_pizhu_on_bool,
+    批注 .default:n = true,
     横坐标 .tl_set:N = \l__luatexcn_pizhu_x_tl,
     纵坐标 .tl_set:N = \l__luatexcn_pizhu_y_tl,
     高度 .tl_set:N = \l__luatexcn_pizhu_height_tl,
@@ -112,6 +121,8 @@
     格宽 .tl_set:N = \l__luatexcn_pizhu_grid_width_tl,
     格高 .tl_set:N = \l__luatexcn_pizhu_grid_height_tl,
     % 繁体（与简体不同形的）
+    批註 .bool_set:N = \l__luatexcn_pizhu_on_bool,
+    批註 .default:n = true,
     橫坐標 .tl_set:N = \l__luatexcn_pizhu_x_tl,
     縱坐標 .tl_set:N = \l__luatexcn_pizhu_y_tl,
     字號 .tl_set:N = \l__luatexcn_pizhu_font_size_tl,

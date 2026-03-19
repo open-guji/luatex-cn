@@ -228,12 +228,9 @@ local function build_sub_params(params, col_aligns)
         outer_border = (params.outer_border == true or params.outer_border == "true"),
         outer_border_thickness = params.outer_border_thickness,
         outer_border_sep = params.outer_border_sep,
-        -- Column padding override (independent of border setting)
-        column_padding_top = (params.column_padding_top and params.column_padding_top ~= "") and params.column_padding_top or nil,
-        column_padding_bottom = (params.column_padding_bottom and params.column_padding_bottom ~= "") and params.column_padding_bottom or nil,
-        -- Fill padding: affects distribute range only, not per-cell padding
-        fill_padding_top = (params.fill_padding_top and params.fill_padding_top ~= "") and params.fill_padding_top or nil,
-        fill_padding_bottom = (params.fill_padding_bottom and params.fill_padding_bottom ~= "") and params.fill_padding_bottom or nil,
+        -- Padding: top/bottom inset (not inherited to children via style stack)
+        padding_top = (params.padding_top and params.padding_top ~= "") and params.padding_top or nil,
+        padding_bottom = (params.padding_bottom and params.padding_bottom ~= "") and params.padding_bottom or nil,
         -- Transparent mode: when true (default), use transparent background
         transparent = not (params.transparent == false or params.transparent == "false"),
         -- floating* now in _G.textbox (read via plugin context in main.lua)

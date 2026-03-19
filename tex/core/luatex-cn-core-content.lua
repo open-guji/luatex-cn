@@ -123,8 +123,8 @@ _G.content.outer_border_color = _G.content.outer_border_color or "0 0 0"  -- New
 _G.content.border_on = _G.content.border_on or false
 _G.content.border_thickness = _G.content.border_thickness or 26214 -- 0.4pt
 _G.content.border_color = _G.content.border_color or "0 0 0"
-_G.content.column_padding_top = _G.content.column_padding_top or 0
-_G.content.column_padding_bottom = _G.content.column_padding_bottom or 0
+_G.content.padding_top = _G.content.padding_top or 0
+_G.content.padding_bottom = _G.content.padding_bottom or 0
 -- Granular border control (nil = inherit from border_on)
 -- column_border: column-to-column vertical lines
 -- band_border: horizontal band divider lines
@@ -174,8 +174,8 @@ local function parse_border_params(params)
     if params.border_thickness then _G.content.border_thickness = constants.to_dimen(params.border_thickness) end
     if params.outer_border_thickness then _G.content.outer_border_thickness = constants.to_dimen(params.outer_border_thickness) end
     if params.outer_border_sep then _G.content.outer_border_sep = constants.to_dimen(params.outer_border_sep) end
-    if params.column_padding_top then _G.content.column_padding_top = constants.to_dimen(params.column_padding_top) end
-    if params.column_padding_bottom then _G.content.column_padding_bottom = constants.to_dimen(params.column_padding_bottom) end
+    if params.padding_top then _G.content.padding_top = constants.to_dimen(params.padding_top) end
+    if params.padding_bottom then _G.content.padding_bottom = constants.to_dimen(params.padding_bottom) end
     if params.n_column then _G.content.n_column = tonumber(params.n_column) or 8 end
     if params.n_char_per_col then _G.content.n_char_per_col = tonumber(params.n_char_per_col) or 0 end
     if params.grid_width then _G.content.grid_width = constants.to_dimen(params.grid_width) end
@@ -397,9 +397,9 @@ local function calc_auto_layout()
     local is_outer_border = _G.content.outer_border_on
     local ob_thickness = _G.content.outer_border_thickness or 0
     local ob_sep = _G.content.outer_border_sep or 0
-    -- Column padding only applies when borders are on
-    local c_padding_top = _G.content.border_on and (_G.content.column_padding_top or 0) or 0
-    local c_padding_bottom = _G.content.border_on and (_G.content.column_padding_bottom or 0) or 0
+    -- Padding only applies when borders are on (for content-level)
+    local c_padding_top = _G.content.border_on and (_G.content.padding_top or 0) or 0
+    local c_padding_bottom = _G.content.border_on and (_G.content.padding_bottom or 0) or 0
     local banxin_on = _G.banxin and _G.banxin.enabled
 
     local p_width = _G.page and _G.page.paper_width or 0
@@ -535,9 +535,9 @@ local function guji_auto_layout(params)
     local b_thickness = border_on and constants.to_dimen(params.border_thickness or "0pt") or 0
     local ob_thickness = constants.to_dimen(params.outer_border_thickness or "0pt")
     local ob_sep = constants.to_dimen(params.outer_border_sep or "0pt")
-    -- Column padding only applies when borders are on
-    local c_padding_top = border_on and constants.to_dimen(params.column_padding_top or "0pt") or 0
-    local c_padding_bottom = border_on and constants.to_dimen(params.column_padding_bottom or "0pt") or 0
+    -- Padding only applies when borders are on (for content-level)
+    local c_padding_top = border_on and constants.to_dimen(params.padding_top or "0pt") or 0
+    local c_padding_bottom = border_on and constants.to_dimen(params.padding_bottom or "0pt") or 0
     -- Use resolve_dimen to handle em units (requires font_size context)
     local grid_height_raw = constants.to_dimen(params.grid_height or "0pt")
     local existing_grid_height = constants.resolve_dimen(grid_height_raw, _G.content.font_size) or 0

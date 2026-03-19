@@ -94,8 +94,8 @@ end
 -- @return (number) Y coordinate in sp (from top edge of paper)
 function meipi.calculate_y(height)
     local margin_top = _G.page and _G.page.margin_top or (20 * 65536)
-    -- column_padding_top is page-level config, still from _G.content
-    local column_padding_top = _G.content and _G.content.column_padding_top or 0
+    -- padding_top is page-level config, from _G.content
+    local column_padding_top = _G.content and _G.content.padding_top or 0
 
     -- Get outer border settings from style stack
     local current_id = style_registry.current_id()

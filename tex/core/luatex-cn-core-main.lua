@@ -234,14 +234,14 @@ local function init_engine_context(box_num, params)
     -- Outer border params (now from style stack)
     local ob_thickness = current_style.outer_border_thickness or (65536 * 2)
     local ob_sep = current_style.outer_border_sep or (65536 * 2)
-    -- Column padding: explicit params override, otherwise only apply when borders are on
-    local c_padding_top = is_border and (_G.content.column_padding_top or 0) or 0
-    local c_padding_bottom = is_border and (_G.content.column_padding_bottom or 0) or 0
-    if params.column_padding_top then
-        c_padding_top = constants.to_dimen(params.column_padding_top) or c_padding_top
+    -- Padding: explicit params override, otherwise use content-level (border-gated for content)
+    local c_padding_top = is_border and (_G.content.padding_top or 0) or 0
+    local c_padding_bottom = is_border and (_G.content.padding_bottom or 0) or 0
+    if params.padding_top then
+        c_padding_top = constants.to_dimen(params.padding_top) or c_padding_top
     end
-    if params.column_padding_bottom then
-        c_padding_bottom = constants.to_dimen(params.column_padding_bottom) or c_padding_bottom
+    if params.padding_bottom then
+        c_padding_bottom = constants.to_dimen(params.padding_bottom) or c_padding_bottom
     end
 
     -- 0.4 Visual Flags & Features (use global _G.banxin set by banxin.setup)
@@ -455,8 +455,8 @@ local function compute_grid_layout(list, params, engine_ctx, plugin_contexts, p_
         floating = is_floating,         -- textbox-specific
         floating_x = floating_x or 0,  -- textbox-specific (default 0)
         absolute_height = p_info.h_dim, -- textbox-specific
-        fill_padding_top = params.fill_padding_top,     -- textbox fill mode padding
-        fill_padding_bottom = params.fill_padding_bottom, -- textbox fill mode padding
+        padding_top = params.padding_top,     -- textbox padding (not inherited)
+        padding_bottom = params.padding_bottom, -- textbox padding (not inherited)
         plugin_contexts = plugin_contexts,
         hooks = hooks,                  -- kinsoku hook for layout-grid
         -- Explicit punct config (nil = no squeeze, callers must not add fallback)

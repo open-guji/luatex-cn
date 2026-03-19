@@ -1632,17 +1632,17 @@ local function flush_buffer(col_buffer, ctx, grid_height, distribute, layout_map
 
     -- If absolute height is provided and we are in distribution mode,
     -- use the actual dimension to calculate distribution.
-    -- Deduct fill_padding_top/bottom (whole-box margins, not per-cell padding).
+    -- Deduct padding_top/bottom (box-level inset, not inherited).
     local fill_pad_top = 0
     local fill_pad_bottom = 0
     if distribute and ctx.params.absolute_height and ctx.params.absolute_height > 0 then
         local constants_mod = package.loaded['core.luatex-cn-constants'] or
             require('core.luatex-cn-constants')
-        if ctx.params.fill_padding_top then
-            fill_pad_top = constants_mod.to_dimen(ctx.params.fill_padding_top) or 0
+        if ctx.params.padding_top then
+            fill_pad_top = constants_mod.to_dimen(ctx.params.padding_top) or 0
         end
-        if ctx.params.fill_padding_bottom then
-            fill_pad_bottom = constants_mod.to_dimen(ctx.params.fill_padding_bottom) or 0
+        if ctx.params.padding_bottom then
+            fill_pad_bottom = constants_mod.to_dimen(ctx.params.padding_bottom) or 0
         end
         local dist_height = ctx.params.absolute_height - fill_pad_top - fill_pad_bottom
         H = dist_height / grid_height

@@ -346,10 +346,18 @@ function style_registry.push(overrides)
     -- Get parent style (from stack top)
     local parent = style_registry.current() or {}
 
+    -- Non-inheritable attributes: only present if explicitly set in overrides
+    local NO_INHERIT = {
+        padding_top = true,
+        padding_bottom = true,
+    }
+
     -- Merge: inherit from parent + override with new values
     local new_style = {}
     for k, v in pairs(parent) do
-        new_style[k] = v
+        if not NO_INHERIT[k] then
+            new_style[k] = v
+        end
     end
     for k, v in pairs(overrides) do
         new_style[k] = v

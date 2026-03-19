@@ -747,6 +747,10 @@ local function handle_penalty_breaks(p_val, ctx, flush_buffer_fn, p_cols, interv
                     target_col = ctx.cur_col + (ctx.cur_row > 0 and 1 or 0)
                 end
                 ctx.cur_col = target_col
+            else
+                -- Auto-width cell (行宽=nil): advance past current content
+                -- Always advance at least 1 column to avoid overlap with next cell
+                ctx.cur_col = ctx.cur_col + 1
             end
 
             reset_column_transient_state(ctx)

@@ -246,9 +246,8 @@ def process_file(tex_file, mode, pdf_dir, baseline_dir, current_dir, diff_dir):
             log_list.append(f"WARNING: {tex_file.name} has minor differences ({total_diff_pixels} pixels), but they are below threshold ({DIFF_THRESHOLD}). Marking as PASSED.")
             for png in current_pngs:
                 png.unlink()
-            for i in range(len(baseline_pngs)):
-                diff_png = diff_dir / f"diff_{pdf_file.stem}-{i+1}.png"
-                if diff_png.exists(): diff_png.unlink()
+            for diff_png in diff_dir.glob(f"diff_{pdf_file.stem}-*.png"):
+                diff_png.unlink()
             if pdf_file.exists():
                 pdf_file.unlink()
             return True, f"{total_diff_pixels} pixels (ignored)", log_list

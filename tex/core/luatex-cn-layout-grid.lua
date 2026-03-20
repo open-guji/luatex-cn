@@ -436,6 +436,16 @@ local function wrap_to_next_column(ctx, p_cols, interval, grid_height, indent, r
         -- (reset_content only controls same-page column wraps)
         ctx.page_has_content = false
         if ctx.n_bands > 1 and ctx.band_mode == "parallel" then
+            -- Parallel mode: track the maximum page any band reached,
+            -- so TABLE_END can resume after all bands.
+            ctx.table_max_page = math.max(ctx.table_max_page or ctx.cur_page, ctx.cur_page)
+            -- Track per-band max page for border rendering
+            if ctx.table_band_max_page then
+                local band = ctx.cur_band
+                ctx.table_band_max_page[band] = math.max(
+                    ctx.table_band_max_page[band] or (ctx.table_start_page or 0),
+                    ctx.cur_page)
+            end
             -- Parallel mode: new page starts at col 0, keep same band.
             -- Update table_start_col since on the new page the table
             -- occupies the full width (no preceding content).
@@ -698,11 +708,19 @@ local function handle_penalty_breaks(p_val, ctx, flush_buffer_fn, p_cols, interv
         return true
     elseif p_val == constants.PENALTY_FORCE_PAGE then
         -- Forced page break (\newpage, \clearpage)
-        -- If the current page already has no content (e.g., we just wrapped to a new page
-        -- due to column overflow), skip the redundant page break to avoid creating empty pages
-        -- in 对开 (split-page) mode.
+        -- Always generate a new page. If the current page has no content,
+        -- place a placeholder so render stage still produces the empty page.
         if not ctx.page_has_content and ctx.cur_col == 0 and ctx.cur_row == 0 then
-            return true
+            -- Current page is empty — place a placeholder so it gets rendered
+            if penalty_node then
+                ctx.layout_map[penalty_node] = {
+                    page = ctx.cur_page,
+                    col = 0,
+                    row = 0,
+                    y_sp = 0,
+                    mode = "placeholder",
+                }
+            end
         end
         flush_buffer_fn()
         ctx.cur_page = ctx.cur_page + 1
@@ -742,6 +760,16 @@ local function handle_penalty_breaks(p_val, ctx, flush_buffer_fn, p_cols, interv
                 ctx.cur_col = 0
                 ctx.table_start_col = 0
                 ctx.band_cols_per_band = p_cols
+            elseif ctx.band_mode == "parallel" and ctx.table_start_page ~= nil then
+                -- Parallel mode: each band starts independently from the
+                -- table's start page/col, so a long band that overflowed to
+                -- later pages does not push subsequent bands forward.
+                ctx.cur_page = ctx.table_start_page
+                local orig_col = ctx.table_orig_start_col or 0
+                ctx.cur_col = orig_col
+                ctx.table_start_col = orig_col
+                ctx.band_cols_per_band = p_cols - orig_col
+                ctx.page_has_content = true
             end
             ctx.line_limit = ctx.band_line_limits[ctx.cur_band]
             ctx.col_height_sp = ctx.band_heights_sp[ctx.cur_band]
@@ -799,6 +827,13 @@ local function handle_penalty_breaks(p_val, ctx, flush_buffer_fn, p_cols, interv
                 local cols_in_band = ctx.band_cols_per_band
                 if ctx.cur_col >= band_start + cols_in_band then
                     ctx.cur_page = ctx.cur_page + 1
+                    ctx.table_max_page = math.max(ctx.table_max_page or ctx.cur_page, ctx.cur_page)
+                    if ctx.table_band_max_page then
+                        local band = ctx.cur_band
+                        ctx.table_band_max_page[band] = math.max(
+                            ctx.table_band_max_page[band] or (ctx.table_start_page or 0),
+                            ctx.cur_page)
+                    end
                     ctx.page_has_content = false
                     ctx.cur_col = 0
                     ctx.table_start_col = 0
@@ -931,6 +966,9 @@ local function handle_penalty_breaks(p_val, ctx, flush_buffer_fn, p_cols, interv
         -- Record table start column and init cell tracking
         ctx.table_start_col = ctx.cur_col
         ctx.table_start_page = ctx.cur_page
+        ctx.table_orig_start_col = ctx.cur_col  -- immutable copy for parallel reset
+        -- Track max page each band reaches (for per-page border rendering)
+        ctx.table_band_max_page = {}
         ctx.table_render_cell_idx = 0
         -- Save band formats for per-band padding lookup
         ctx.table_band_formats = _G.content and _G.content.table_band_formats or nil
@@ -951,6 +989,14 @@ local function handle_penalty_breaks(p_val, ctx, flush_buffer_fn, p_cols, interv
         -- End inline table section: restore pre-table band state
         flush_buffer_fn()
         apply_cell_valign(ctx, ctx.layout_map)
+
+        -- Parallel mode: restore cur_page to the maximum page any band reached,
+        -- so the table end position accounts for all bands' overflow.
+        if ctx.table_max_page and ctx.table_max_page > ctx.cur_page then
+            ctx.cur_page = ctx.table_max_page
+            ctx.cur_col = 0
+            ctx.page_has_content = false
+        end
 
         -- Record table end info for border rendering
         ctx.table_end_col = ctx.cur_col
@@ -987,7 +1033,16 @@ local function handle_penalty_breaks(p_val, ctx, flush_buffer_fn, p_cols, interv
         ctx.page_table_bands = ctx.page_table_bands or {}
         local start_page = ctx.table_start_page or ctx.cur_page
         local end_page = ctx.cur_page
+        local band_max_page = ctx.table_band_max_page or {}
         for pg = start_page, end_page do
+            -- For overflow pages in parallel mode, skip table band info.
+            -- Only the start page gets band structure; overflow pages render
+            -- content as plain columns without band divider lines.
+            if pg > start_page and ctx.band_mode == "parallel" then
+                goto continue_page
+            end
+
+            do
             local tparams = _G.content and _G.content.table_params or {}
             -- Build per-band column_border map from band_formats
             local band_formats = _G.content and _G.content.table_band_formats
@@ -1014,7 +1069,7 @@ local function handle_penalty_breaks(p_val, ctx, flush_buffer_fn, p_cols, interv
                 band_heights_sp = ctx.band_heights_sp,
                 band_y_offsets_sp = ctx.band_y_offsets_sp,
                 band_gap_sp = ctx.band_gap_sp or 0,
-                table_start_col = ctx.table_start_col or 0,
+                table_start_col = (pg == start_page) and (ctx.table_orig_start_col or 0) or 0,
                 actual_band_cols = actual_band_cols,
                 column_border = tparams.column_border,
                 band_border = tparams.band_border,
@@ -1025,6 +1080,8 @@ local function handle_penalty_breaks(p_val, ctx, flush_buffer_fn, p_cols, interv
                 col_groups = all_col_groups,
                 n_columns = ctx.band_cols_per_band,
             }
+            end
+            ::continue_page::
         end
 
         -- Move to next column after the table
@@ -1059,6 +1116,9 @@ local function handle_penalty_breaks(p_val, ctx, flush_buffer_fn, p_cols, interv
         -- Clean up table-specific ctx state
         ctx.table_start_col = nil
         ctx.table_start_page = nil
+        ctx.table_orig_start_col = nil
+        ctx.table_max_page = nil
+        ctx.table_band_max_page = nil
         ctx.table_render_cell_idx = nil
         -- Clean up table data that were preserved for layout
         if _G.content then

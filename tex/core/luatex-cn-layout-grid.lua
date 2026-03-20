@@ -393,19 +393,22 @@ local function wrap_to_next_column(ctx, p_cols, interval, grid_height, indent, r
     -- making errors visible without cascading to subsequent pages.
     if ctx.auto_column_wrap ~= false then
         if ctx.n_bands > 1 then
-            -- Band mode: columns wrap within each band, then to next band
             local band_start = ctx.table_start_col or 0
             local cols_in_band = ctx.band_cols_per_band
             if ctx.cur_col >= band_start + cols_in_band then
-                ctx.cur_col = band_start
-                ctx.cur_band = ctx.cur_band + 1
-                if ctx.cur_band >= ctx.n_bands then
-                    if ctx.band_mode == "auto" then
+                if ctx.band_mode == "parallel" then
+                    -- Parallel mode (table default): column overflow wraps to
+                    -- next page at the same band position, not to the next band.
+                    ctx.cur_col = band_start
+                    should_wrap_page = true
+                else
+                    -- Auto mode: columns fill current band, then next band,
+                    -- then wrap to next page from band 0.
+                    ctx.cur_col = band_start
+                    ctx.cur_band = ctx.cur_band + 1
+                    if ctx.cur_band >= ctx.n_bands then
                         ctx.cur_band = 0
                         should_wrap_page = true
-                    else
-                        -- per-page mode: stay on last band (overflow visible)
-                        ctx.cur_band = ctx.n_bands - 1
                     end
                 end
                 -- Update line_limit and col_height for current band
@@ -427,17 +430,26 @@ local function wrap_to_next_column(ctx, p_cols, interval, grid_height, indent, r
     end
 
     if should_wrap_page then
-        ctx.cur_col = 0
         ctx.cur_page = ctx.cur_page + 1
         -- Always reset page_has_content on page turn:
         -- new page has no content yet regardless of reset_content flag.
         -- (reset_content only controls same-page column wraps)
         ctx.page_has_content = false
-        -- Reset band to 0 on page turn
-        if ctx.n_bands > 1 then
+        if ctx.n_bands > 1 and ctx.band_mode == "parallel" then
+            -- Parallel mode: new page starts at col 0, keep same band.
+            -- Update table_start_col since on the new page the table
+            -- occupies the full width (no preceding content).
+            ctx.cur_col = 0
+            ctx.table_start_col = 0
+            ctx.band_cols_per_band = p_cols
+        elseif ctx.n_bands > 1 then
+            -- Auto mode: reset to column 0, band 0
+            ctx.cur_col = 0
             ctx.cur_band = 0
             ctx.line_limit = ctx.band_line_limits[0]
             ctx.col_height_sp = ctx.band_heights_sp[0]
+        else
+            ctx.cur_col = 0
         end
     end
     -- Always reset negative cur_column_indent on column wrap:
@@ -722,13 +734,14 @@ local function handle_penalty_breaks(p_val, ctx, flush_buffer_fn, p_cols, interv
             end
             ctx.cur_band = ctx.cur_band + 1
             if ctx.cur_band >= ctx.n_bands then
-                if ctx.band_mode == "auto" then
-                    ctx.cur_band = 0
-                    ctx.cur_page = ctx.cur_page + 1
-                    ctx.page_has_content = false
-                else
-                    ctx.cur_band = ctx.n_bands - 1
-                end
+                -- Both auto and parallel: wrap to next page, band 0
+                ctx.cur_band = 0
+                ctx.cur_page = ctx.cur_page + 1
+                ctx.page_has_content = false
+                -- On new page, table starts at col 0 with full page width
+                ctx.cur_col = 0
+                ctx.table_start_col = 0
+                ctx.band_cols_per_band = p_cols
             end
             ctx.line_limit = ctx.band_line_limits[ctx.cur_band]
             ctx.col_height_sp = ctx.band_heights_sp[ctx.cur_band]
@@ -778,6 +791,19 @@ local function handle_penalty_breaks(p_val, ctx, flush_buffer_fn, p_cols, interv
                 -- Auto-width cell (行宽=nil): advance past current content
                 -- Always advance at least 1 column to avoid overlap with next cell
                 ctx.cur_col = ctx.cur_col + 1
+            end
+
+            -- Parallel mode: if cell pushed cur_col past band boundary, wrap to next page
+            if ctx.band_mode == "parallel" and ctx.n_bands > 1 then
+                local band_start = ctx.table_start_col or 0
+                local cols_in_band = ctx.band_cols_per_band
+                if ctx.cur_col >= band_start + cols_in_band then
+                    ctx.cur_page = ctx.cur_page + 1
+                    ctx.page_has_content = false
+                    ctx.cur_col = 0
+                    ctx.table_start_col = 0
+                    ctx.band_cols_per_band = p_cols
+                end
             end
 
             reset_column_transient_state(ctx)
@@ -896,7 +922,7 @@ local function handle_penalty_breaks(p_val, ctx, flush_buffer_fn, p_cols, interv
         else
             ctx.band_cols_per_band = p_cols
         end
-        ctx.band_mode = "auto"
+        ctx.band_mode = "parallel"
         ctx.band_gap_sp = band_gap_sp
         ctx.cur_band = 0
         ctx.line_limit = band_line_limits[0]
@@ -1007,7 +1033,8 @@ local function handle_penalty_breaks(p_val, ctx, flush_buffer_fn, p_cols, interv
         ctx.cur_column_indent = 0
 
         -- column_fill=page: force page break after table
-        if is_fill_page then
+        -- Skip if already at the start of a new page (e.g. parallel mode wrapped here)
+        if is_fill_page and (ctx.cur_col > 0 or ctx.page_has_content) then
             ctx.cur_col = 0
             ctx.cur_page = ctx.cur_page + 1
             ctx.page_has_content = false

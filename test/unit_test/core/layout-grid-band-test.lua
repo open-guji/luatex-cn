@@ -126,12 +126,13 @@ test_utils.run_test("band: auto mode wraps to next page when all bands full", fu
     test_utils.assert_eq(ctx.page_has_content, false, "new page has no content")
 end)
 
-test_utils.run_test("band: per-page mode stays on last band when full", function()
-    local ctx = make_band_ctx({ cur_col = 9, cur_band = 2, band_mode = "per-page" })
+test_utils.run_test("band: parallel mode wraps to next page keeping same band", function()
+    local ctx = make_band_ctx({ cur_col = 9, cur_band = 1, band_mode = "parallel" })
     layout_grid._internal.wrap_to_next_column(ctx, 10, 0, 65536 * 20, 0, false, true)
     test_utils.assert_eq(ctx.cur_col, 0)
-    test_utils.assert_eq(ctx.cur_band, 2, "should stay on last band")
-    test_utils.assert_eq(ctx.cur_page, 0, "should NOT advance page")
+    test_utils.assert_eq(ctx.cur_band, 1, "should stay on same band")
+    test_utils.assert_eq(ctx.cur_page, 1, "should advance to next page")
+    test_utils.assert_eq(ctx.page_has_content, false, "new page has no content")
 end)
 
 test_utils.run_test("band: line_limit updates on band wrap", function()
@@ -213,16 +214,17 @@ test_utils.run_test("band: PENALTY_BAND_BREAK on last band wraps page (auto mode
     test_utils.assert_eq(ctx.page_has_content, false)
 end)
 
-test_utils.run_test("band: PENALTY_BAND_BREAK on last band stays (per-page mode)", function()
-    local ctx = make_band_ctx({ cur_col = 5, cur_band = 2, band_mode = "per-page" })
+test_utils.run_test("band: PENALTY_BAND_BREAK on last band wraps page (parallel mode)", function()
+    local ctx = make_band_ctx({ cur_col = 5, cur_band = 2, band_mode = "parallel" })
     local flushed = false
     local flush = function() flushed = true end
     local penalty_node = D.new(constants.PENALTY)
     D.setfield(penalty_node, "penalty", constants.PENALTY_BAND_BREAK)
     layout_grid._internal.handle_penalty_breaks(
         constants.PENALTY_BAND_BREAK, ctx, flush, 10, 0, 65536 * 20, 0, penalty_node)
-    test_utils.assert_eq(ctx.cur_band, 2, "should stay on last band")
-    test_utils.assert_eq(ctx.cur_page, 0, "should NOT advance page")
+    test_utils.assert_eq(ctx.cur_band, 0, "should reset to band 0")
+    test_utils.assert_eq(ctx.cur_page, 1, "should advance page")
+    test_utils.assert_eq(ctx.page_has_content, false)
 end)
 
 test_utils.run_test("band: PENALTY_BAND_BREAK with n_bands=1 is no-op for band", function()

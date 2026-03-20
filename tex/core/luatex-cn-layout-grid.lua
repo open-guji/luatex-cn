@@ -684,26 +684,52 @@ local function handle_penalty_breaks(p_val, ctx, flush_buffer_fn, p_cols, interv
         -- Left half: cols 0..interval-1, banxin: col interval, right half: cols interval+1..2*interval.
         if interval > 0 then
             flush_buffer_fn()
-            local target_col
-            if ctx.cur_col <= interval then
-                -- Currently in left half (or at banxin): jump to right half start
-                target_col = interval + 1
+            -- When at the start of a half-page with no content yet,
+            -- just record the penalty node in place (don't jump).
+            -- This handles \插图页 at page start: no-silk applies to current half.
+            local at_half_start = (ctx.cur_col == 0 or ctx.cur_col == interval + 1)
+                                  and ctx.cur_row == 0
+            if at_half_start and not ctx.page_has_content then
+                if penalty_node then
+                    ctx.layout_map[penalty_node] = {
+                        page = ctx.cur_page,
+                        col = ctx.cur_col,
+                        row = 0,
+                        y_sp = 0,
+                    }
+                end
             else
-                -- Currently in right half: jump to next page
-                target_col = 2 * interval + 1
+                local target_col
+                if ctx.cur_col <= interval then
+                    -- Currently in left half (or at banxin): jump to right half start
+                    target_col = interval + 1
+                else
+                    -- Currently in right half: jump to next page
+                    target_col = 2 * interval + 1
+                end
+                -- Advance to target column
+                ctx.cur_col = target_col
+                ctx.cur_row = 0
+                ctx.cur_y_sp = 0
+                ctx.cur_column_indent = 0
+                -- Check if we've passed page boundary
+                if ctx.cur_col >= p_cols then
+                    ctx.cur_col = 0
+                    ctx.cur_page = ctx.cur_page + 1
+                    ctx.page_has_content = false
+                end
+                -- Record penalty node in layout_map at final position
+                -- so the no-silk scan covers the correct half-page.
+                if penalty_node then
+                    ctx.layout_map[penalty_node] = {
+                        page = ctx.cur_page,
+                        col = ctx.cur_col,
+                        row = 0,
+                        y_sp = 0,
+                    }
+                end
+                move_to_next_valid_position(ctx, interval, grid_height, indent)
             end
-            -- Advance to target column
-            ctx.cur_col = target_col
-            ctx.cur_row = 0
-            ctx.cur_y_sp = 0
-            ctx.cur_column_indent = 0
-            -- Check if we've passed page boundary
-            if ctx.cur_col >= p_cols then
-                ctx.cur_col = 0
-                ctx.cur_page = ctx.cur_page + 1
-                ctx.page_has_content = false
-            end
-            move_to_next_valid_position(ctx, interval, grid_height, indent)
         end
         return true
     elseif p_val == constants.PENALTY_FORCE_PAGE then

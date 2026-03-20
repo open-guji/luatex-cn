@@ -679,7 +679,8 @@
 
 \cs_new_protected:Npn \__luatexcn_illustration_page_push:
   {
-    \penalty -10010\relax
+    % Push column_border=false style BEFORE the penalty so the penalty
+    % node carries the new style attribute (render-page scans it).
     \lua_now:n {
       local~sr~=~require('util.luatex-cn-style-registry')
       sr.push({~column_border~=~false~})
@@ -691,6 +692,7 @@
       }
     }
     \setluatexattribute \cnverticalstyle { \l__luatexcn_tmpa_tl }
+    \penalty -10010\relax
     \bool_gset_true:N \g__luatexcn_illustration_page_bool
   }
 

@@ -547,6 +547,31 @@ local function apply_cell_valign_impl(valign, nodes, band_height, layout_map)
     return true
 end
 
+-- Get the effective band height for valign, deducting all padding.
+-- Global c_padding_top/bottom shift content start/end within the band;
+-- band-format padding_top/bottom further reduce usable space.
+-- Both must be deducted so centering/bottom-aligning uses only the usable area.
+local function get_valign_band_height(ctx)
+    local bh = ctx.col_height_sp or 0
+    -- Deduct global column padding
+    bh = bh - (ctx.c_padding_top or 0) - (ctx.c_padding_bottom or 0)
+    -- Deduct band-level padding
+    if ctx.table_band_formats then
+        local bf = ctx.table_band_formats[ctx.cur_band]
+        if bf then
+            if bf.padding_top then
+                local pt = constants.to_dimen(bf.padding_top)
+                if pt and pt > 0 then bh = bh - pt end
+            end
+            if bf.padding_bottom then
+                local pb = constants.to_dimen(bf.padding_bottom)
+                if pb and pb > 0 then bh = bh - pb end
+            end
+        end
+    end
+    return bh
+end
+
 local function apply_cell_valign(ctx, layout_map)
     local nodes = ctx.cell_valign_nodes
     local valign = ctx.cell_cur_valign
@@ -556,7 +581,7 @@ local function apply_cell_valign(ctx, layout_map)
         -- Save pending valign so flush_buffer can apply it when nodes arrive.
         if valign and (valign == "center" or valign == "bottom") and nodes then
             ctx.pending_cell_valign = valign
-            ctx.pending_cell_valign_band_height = ctx.col_height_sp or 0
+            ctx.pending_cell_valign_band_height = get_valign_band_height(ctx)
             ctx.pending_cell_valign_nodes = {}
         end
         ctx.cell_valign_nodes = nil
@@ -564,7 +589,7 @@ local function apply_cell_valign(ctx, layout_map)
         return
     end
 
-    local bh = ctx.col_height_sp or 0
+    local bh = get_valign_band_height(ctx)
     apply_cell_valign_impl(valign, nodes, bh, layout_map)
 
     ctx.cell_valign_nodes = nil

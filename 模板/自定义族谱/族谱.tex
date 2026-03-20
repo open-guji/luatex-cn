@@ -11,6 +11,7 @@
 \NewDocumentCommand{\小名}{ +m }{\空格[3] #1}
 \NewDocumentCommand{\注}{ +m }{\单元格[行宽=nil]{\夹注[align=center, 自动平衡=false, 格高=20pt, 字号=20pt]{#1}}}
 \NewDocumentCommand{\世次}{ +m }{\单元格[纵对齐=center, 行边框=true, 格高=28pt, 字号=28pt]{\八角墨围反白[高度=3, 填充, padding-top=5pt, padding-bottom=2pt]{#1}}}
+\NewDocumentCommand{\章节小标题}{ +m }{\夹注[align=center, 格高=14pt, 字号=14pt, 自动均衡=false]{#1}}
 
 \title{陽氏宗譜}
 \chapter{卷一\夹注[align=center, 格高=28pt, 字号=28pt, 自动均衡=false]{始迁公}}
@@ -135,5 +136,7 @@
     公葬栗林崗与王妣同牌\\癸山丁向}
 
 \end{表格}
+\newpage
+\插图页
 \end{正文}
 \end{document}

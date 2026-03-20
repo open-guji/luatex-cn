@@ -220,10 +220,14 @@ local function init_engine_context(box_num, params)
     local style_registry = package.loaded['util.luatex-cn-style-registry']
     local current_style = style_registry and style_registry.current() or {}
     local is_border = current_style.border or false
+    -- Use content-level column_border/band_border (from \contentSetup) for the global
+    -- engine flag.  Per-node overrides like \插图页 are handled by render_page's
+    -- style-attribute scan (no_silk_cols), and must NOT pollute the global flag
+    -- which is read once at typeset time (style stack may already contain transient pushes).
     local draw_column_border = is_border
-    if current_style.column_border ~= nil then draw_column_border = current_style.column_border end
+    if _G.content.column_border ~= nil then draw_column_border = _G.content.column_border end
     local draw_band_border = is_border
-    if current_style.band_border ~= nil then draw_band_border = current_style.band_border end
+    if _G.content.band_border ~= nil then draw_band_border = _G.content.band_border end
     local is_outer_border = current_style.outer_border or false
     local border_color = current_style.border_color or "0 0 0"
     -- Convert border_width from pt string to sp (style stack stores "0.4pt" format)

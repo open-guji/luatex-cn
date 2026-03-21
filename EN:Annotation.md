@@ -20,6 +20,14 @@ The `\批注` command allows placing floating annotation boxes anywhere on the p
 - `grid-width`: Custom grid cell width for the box.
 - `grid-height`: Custom grid cell height for the box.
 
+## Toggle Control <sup>v0.3.6+</sup>
+
+Both PiZhu and MeiPi support `pizhu=false` / `meipi=false` toggles in Setup or per-call to disable rendering:
+```latex
+\pizhuSetup{pizhu=false}  % Globally disable PiZhu
+\meipiSetup{meipi=false}  % Globally disable MeiPi
+```
+
 ## Features
 
 - **Absolute Positioning**: Does not occupy main body space; overlaid directly at specified coordinates.

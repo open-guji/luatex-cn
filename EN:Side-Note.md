@@ -74,6 +74,13 @@ Main text\\侧批[yshift=10pt, color=red]{Both color and position}continued text
 }
 ```
 
+### Side Note Toggle <sup>v0.3.6+</sup>
+
+Use `sidenote=false` to globally disable side note rendering (content is preserved but not drawn), useful for viewing body text layout only:
+```latex
+\sidenoteSetup{sidenote=false}  % Globally disable side notes
+```
+
 ### Component-Level Punctuation Mode <sup>v0.3.5+</sup>
 
 Side notes can use a different punctuation mode independent of the global setting:

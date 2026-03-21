@@ -4,6 +4,25 @@ English | [中文版](Changelog)
 
 All notable changes to this project will be documented here.
 
+## [0.3.6] - 2026-03-20
+
+New illustration page, colophon, annotation toggles, and Banxin TextBox overhaul.
+
+- ✨ **Illustration Page**: New `\IllustrationPage` / `\插图页` command with half-page granularity silk frame suppression, defaults to half-page break first (fix #29)
+- ✨ **Colophon**: New `\colophon` / `\牌记` command — opaque double-border floating text box (fix #58)
+- ✨ **Annotation Toggles**: Side notes/MeiPi/PiZhu support `sidenote=false`/`meipi=false`/`pizhu=false` on/off switches in Setup or per-call (fix #89)
+- ✨ **Half-Page Break**: New `\NewHalfPage` / `\换半页` command
+- ✨ **Banxin TextBox**: Banxin upper/lower/middle sections now rendered through TextBox pipeline, supporting compact layout, jiazhu, and fill-padding
+- ✨ **TextBox Transparency**: New `transparent` boolean parameter (default: true) to control text box background transparency
+- 🐛 **Side Note Punctuation**: Fixed vertical punctuation conversion not applied in normal mode for side notes (fix #89)
+- 🐛 **Table Fixes**: Fixed auto-width cell column overlap, fixed-width empty cell ineffective, vertical alignment not accounting for padding
+- 🐛 **Illustration Page Silk Frame**: Fixed `\IllustrationPage` causing all pages to lose silk frames due to style stack pollution
+- 🐛 **Table Cross-Page**: Fixed parallel mode cross-page table subsequent bands rendering at wrong position
+- 🐛 **Underline Position**: Fixed `\Underline` position offset in Free Mode
+- ♻️ **Parallel Default**: Table banding now defaults to parallel mode (page break when band full, not band switch)
+- ♻️ **Padding Unification**: Unified `padding-top`/`padding-bottom` parameters, replacing multiple naming schemes
+- ♻️ **Parameter Rename**: Banxin parameters renamed from content-oriented to position-oriented, `x`/`y` aliases updated
+
 ## [0.3.5] - 2026-03-14
 
 Component-level settings system and multi-level heading support.

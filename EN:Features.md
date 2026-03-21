@@ -38,12 +38,15 @@ Multiple ways to add comments to the text:
 - **Last Column**: `\末列` (or `\LastColumn`) places content in the last column.
 - **Flexible Widths**: `\行[width=2cm]{...}` (v0.2.7+) for variable-width columns.
 - **Page Breaks**: Supports standard `\newpage` and `\clearpage`.
+- **Half-Page Break** (v0.3.6+): `\NewHalfPage` / `\换半页` jumps to the next half-page in split-page mode.
+- **Illustration Page** (v0.3.6+): `\IllustrationPage` / `\插图页` hides silk frames while keeping borders, for full-page illustrations (fix #29).
 - **Natural Layout** (v0.2.7+): `layout-mode=natural` for non-uniform spacing.
 
 ## 7. Decorations & Utilities
 - **[[Seals | EN:Seal]]**: Add collection or personal seals anywhere with opacity support.
 - **[[Fonts | EN:Fonts]]**: Auto-detection, font families, and fallback chains. Supports simplified/traditional Chinese font names since v0.2.2.
-- **[[Textbox | EN:Textbox]]**: Grid-based layout with auto-compression and filling.
+- **[[Textbox | EN:Textbox]]**: Grid-based layout with auto-compression and filling. Transparency control (v0.3.6+).
+- **Colophon** (v0.3.6+): `\colophon` / `\牌记` — opaque double-border floating text box.
 - **[[Correction & Decoration | EN:Correction]]**: Correction marks and character decoration.
 - **[[Elevation | EN:Taitou]]** (v0.2.6+): Honorific elevation formatting (single/double/triple/flat).
 

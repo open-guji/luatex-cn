@@ -23,6 +23,7 @@ The `\TextBox` (or `\文本框`) command creates an independent vertical text ar
 | `border` | Show border. | `false` |
 | `background-color` | Background color. | None |
 | `floating` | Enable floating mode (needs x, y). | `false` |
+| `transparent` | Whether background is transparent (v0.3.6+). When false, fills with page background color. | `true` |
 
 ### Features
 - **Auto-Extension**: If `height` is 0, the box extends naturally.

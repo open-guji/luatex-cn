@@ -20,6 +20,14 @@
 - `grid-width`: 批注专用网格宽度。
 - `grid-height`: 批注专用网格高度。
 
+## 开关控制 <sup>v0.3.6+</sup>
+
+批注和眉批均支持 `pizhu=false` / `meipi=false` 开关，可在 Setup 或单次调用中关闭输出：
+```latex
+\pizhuSetup{pizhu=false}  % 全局关闭批注
+\meipiSetup{meipi=false}  % 全局关闭眉批
+```
+
 ## 特性
 
 - **绝对定位**：不占据正文空间，直接叠加在页面指定坐标。

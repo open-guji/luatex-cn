@@ -734,18 +734,23 @@ local function handle_penalty_breaks(p_val, ctx, flush_buffer_fn, p_cols, interv
         return true
     elseif p_val == constants.PENALTY_FORCE_PAGE then
         -- Forced page break (\newpage, \clearpage)
-        -- Always generate a new page. If the current page has no content,
-        -- place a placeholder so render stage still produces the empty page.
         if not ctx.page_has_content and ctx.cur_col == 0 and ctx.cur_row == 0 then
-            -- Current page is empty — place a placeholder so it gets rendered
-            if penalty_node then
-                ctx.layout_map[penalty_node] = {
-                    page = ctx.cur_page,
-                    col = 0,
-                    row = 0,
-                    y_sp = 0,
-                    mode = "placeholder",
-                }
+            if ctx.n_bands > 1 then
+                -- Inside a table: place a placeholder so render stage still
+                -- produces the empty page (needed for parallel mode cross-page tables).
+                if penalty_node then
+                    ctx.layout_map[penalty_node] = {
+                        page = ctx.cur_page,
+                        col = 0,
+                        row = 0,
+                        y_sp = 0,
+                        mode = "placeholder",
+                    }
+                end
+            else
+                -- Normal text: skip redundant page break to avoid empty pages
+                -- (e.g., column overflow already wrapped to a new page).
+                return true
             end
         end
         flush_buffer_fn()

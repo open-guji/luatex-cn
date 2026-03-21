@@ -1,0 +1,103 @@
+% Copyright 2026 Open-Guji (https://github.com/open-guji)
+%
+% Licensed under the Apache License, Version 2.0 (the "License");
+% you may not use this file except in compliance with the License.
+% You may obtain a copy of the License at
+%
+%     http://www.apache.org/licenses/LICENSE-2.0
+%
+% Unless required by applicable law or agreed to in writing, software
+% distributed under the License is distributed on an "AS IS" BASIS,
+% WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+% See the License for the specific language governing permissions and
+% limitations under the License.
+
+\ProvidesExplPackage{guji/luatex-cn-guji-danye}{2026/03/21} {0.3.6}{Single page support for traditional Chinese books}
+
+% ============================================================================
+% SinglePage Environment (单页)
+% Creates a single page (half of spread) with split disabled
+% Usage: \begin{SinglePage}[additional options] ... \end{SinglePage}
+% Automatically calculates: paper-width/2, margin-left/2, margin-right/2
+% Height and margin-top/bottom are inherited from current settings
+% ============================================================================
+
+\RequirePackage{environ}
+
+% Storage for calculated single page dimensions
+\tl_new:N \l__luatexcn_danye_paper_width_tl
+\tl_new:N \l__luatexcn_danye_margin_left_tl
+\tl_new:N \l__luatexcn_danye_margin_right_tl
+
+\NewEnviron{SinglePage}[1][]{%
+    \clearpage
+    % Save current settings in Lua (includes split state)
+    \lua_now:n { require('core.luatex-cn-core-page').save() }
+    % Calculate single page dimensions from current spread settings
+    \tl_set:Nx \l__luatexcn_danye_paper_width_tl { \lua_now:n { tex.sprint(require('guji.luatex-cn-guji-danye').get_paper_width_str()) } }
+    \tl_set:Nx \l__luatexcn_danye_margin_left_tl { \lua_now:n { tex.sprint(require('guji.luatex-cn-guji-danye').get_margin_left_str()) } }
+    \tl_set:Nx \l__luatexcn_danye_margin_right_tl { \lua_now:n { tex.sprint(require('guji.luatex-cn-guji-danye').get_margin_right_str()) } }
+    % Apply single page settings
+    \keys_set:nn { luatexcn / page }
+      {
+        paper-width = \l__luatexcn_danye_paper_width_tl,
+        margin-left = \l__luatexcn_danye_margin_left_tl,
+        margin-right = \l__luatexcn_danye_margin_right_tl,
+        page-split-enabled = false,
+        #1
+      }
+    % SinglePage defaults: no banxin (single page has no center column)
+    \keys_set:nn { luatexcn / banxin } { banxin = false }
+    % Sync page dimensions to Lua
+    \lua_now:e {
+      local~page~=~require('core.luatex-cn-core-page');~
+      page.setup({
+        paper_width~=~"\l__luatexcn_page_paper_width_tl",
+        paper_height~=~"\l__luatexcn_page_paper_height_tl",
+        margin_top~=~"\l__luatexcn_page_margin_top_tl",
+        margin_bottom~=~"\l__luatexcn_page_margin_bottom_tl",
+        margin_left~=~"\l__luatexcn_page_margin_left_tl",
+        margin_right~=~"\l__luatexcn_page_margin_right_tl"
+      });~
+    }
+    \luatexcn_apply_geometry:
+    % Disable split page
+    \lua_now:n { require('core.luatex-cn-core-page').split.disable() }
+    \BODY
+    \clearpage
+    % Restore previous settings from Lua (includes split state)
+    \lua_now:n { require('core.luatex-cn-core-page').restore() }
+    % Sync restored Lua state back to TeX token lists
+    \__luatexcn_page_sync_from_lua:
+    % Globally restore paper/page dimensions so they survive \NewEnviron group end
+    \__luatexcn_page_restore_dims_globally:
+}
+
+% ============================================================================
+% EmptySinglePage Environment (空白页)
+% A single page with no borders at all (no column borders, no outer border)
+% Usage: \begin{EmptySinglePage}[additional options] ... \end{EmptySinglePage}
+% ============================================================================
+\tl_new:N \l__luatexcn_empty_danye_body_tl
+\NewEnviron{EmptySinglePage}[1][]{%
+  \tl_set_eq:NN \l__luatexcn_empty_danye_body_tl \BODY
+  \begin{SinglePage}[#1]
+    \keys_set:nn { luatexcn / content } { border = false, outer-border = false }
+    \begin{正文}
+      \char"200B\relax % Zero-width space placeholder to ensure page renders even when empty
+      \l__luatexcn_empty_danye_body_tl
+    \end{正文}
+  \end{SinglePage}
+}
+
+% ============================================================================
+% CJK Aliases (中文别名)
+% ============================================================================
+% Simplified Chinese / 简体
+\NewEnvironmentCopy{单页}{SinglePage}
+\NewEnvironmentCopy{空白页}{EmptySinglePage}
+% Traditional Chinese / 繁体
+\NewEnvironmentCopy{單頁}{SinglePage}
+\NewEnvironmentCopy{空白頁}{EmptySinglePage}
+
+\endinput

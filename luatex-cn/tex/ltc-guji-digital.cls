@@ -1,0 +1,148 @@
+% Copyright 2026 Open-Guji (https://github.com/open-guji)
+%
+% Licensed under the Apache License, Version 2.0 (the "License");
+% you may not use this file except in compliance with the License.
+% You may obtain a copy of the License at
+%
+%     http://www.apache.org/licenses/LICENSE-2.0
+%
+% Unless required by applicable law or agreed to in writing, software
+% distributed under the License is distributed on an "AS IS" BASIS,
+% WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+% See the License for the specific language governing permissions and
+% limitations under the License.
+
+% ltc-guji-digital.cls - A LaTeX document class for digitizing ancient Chinese books.
+% Unlike ltc-guji.cls (semantic), this class focuses on layout-faithful digitization:
+% each TeX newline = one column, explicit page breaks, explicit banxin content.
+
+\RequirePackage{expl3}
+\RequirePackage{l3keys2e}
+\RequirePackage{core/luatex-cn-core-template}
+\ProvidesExplClass {ltc-guji-digital} {2026/03/21} {0.3.6}
+  {Ancient Chinese Book Digitization Class}
+
+% ============================================================================
+% Variables
+% ============================================================================
+
+\tl_new:N \l_luatexcn_digital_initial_template_tl
+\prop_new:N \g_luatexcn_digital_template_map_prop
+
+% Template name mappings (Chinese -> Internal) - same as guji.cls
+\prop_gset_from_keyval:Nn \g_luatexcn_digital_template_map_prop
+  {
+    四库全书彩色 = SiKuQuanShu-colored,
+    四庫全書彩色 = SiKuQuanShu-colored,
+    红楼梦甲戌本 = HongLouMengJiaXuBen,
+    紅樓夢甲戌本 = HongLouMengJiaXuBen,
+    欧式族谱 = oushizupu,
+    歐式族譜 = oushizupu,
+  }
+
+% ============================================================================
+% Class Options
+% ============================================================================
+
+\keys_define:nn { luatexcn / digital / options }
+  {
+    unknown .code:n =
+      {
+        \tl_set_eq:NN \l_tmpa_tl \l_keys_key_tl
+        % Check if it's a Chinese template name, map to internal name
+        \prop_get:NVNT \g_luatexcn_digital_template_map_prop \l_tmpa_tl \l_tmpb_tl
+          { \tl_set_eq:NN \l_tmpa_tl \l_tmpb_tl }
+        % Try template files (use guji config files), if not found pass to article
+        \luatexcn_if_template_exist:VnTF \l_tmpa_tl { luatex-cn-guji- }
+          { \tl_set_eq:NN \l_luatexcn_digital_initial_template_tl \l_tmpa_tl }
+          { \PassOptionsToClass { \l_tmpa_tl } { article } }
+      }
+  }
+
+\ProcessKeysOptions { luatexcn / digital / options }
+\LoadClass{article}
+
+% ============================================================================
+% Dependencies
+% ============================================================================
+
+\RequirePackage{geometry}
+\RequirePackage{xcolor}
+\RequirePackage{fontspec}
+\RequirePackage{environ}
+\RequirePackage{xparse}
+\RequirePackage{tikz}
+\RequirePackage{luatex-cn-core}
+\RequirePackage{debug/luatex-cn-debug}
+\RequirePackage{digital/luatex-cn-digital}
+
+% Guji features - load guji package (which loads all subpackages internally)
+% Same as guji.cls for full compatibility
+\RequirePackage{guji/luatex-cn-guji}           % 古籍功能包（内部加载所有子包）
+
+% Enable banxin by default
+\banxinSetup{ banxin = true }
+
+% Enable digital mode: BodyText/正文 uses obeylines (newline = column break)
+\contentSetup{ digital-mode = true }
+
+% ============================================================================
+% Key-Value Configuration
+% ============================================================================
+
+\keys_define:nn { luatexcn / digital }
+  {
+    template .code:n = {
+      \luatexcn_if_template_exist:nnTF { #1 } { luatex-cn-guji- }
+        { \luatexcn_load_template:nn { #1 } { luatex-cn-guji- } }
+        { \msg_warning:nnn { luatexcn } { template-not-found } { #1 } }
+    },
+  }
+
+\NewDocumentCommand{\digitalSetup}{ +m }
+  {
+    \tl_set:Nn \l_tmpa_tl { #1 }
+    \tl_replace_all:Nnn \l_tmpa_tl { \par } { }
+    \keys_set:nV { luatexcn / digital } \l_tmpa_tl
+  }
+
+% Alias for compatibility with guji.cls config files
+\NewCommandCopy{\gujiSetup}{\digitalSetup}
+
+% ============================================================================
+% Initialization
+% ============================================================================
+
+% Load default config (use guji default config)
+\InputIfFileExists{configs/luatex-cn-guji-default.cfg}{}{
+  \PackageWarning{ltc-guji-digital}{Config~file~configs/luatex-cn-guji-default.cfg~not~found}
+}
+
+% Apply initial template from class options
+\tl_if_empty:NF \l_luatexcn_digital_initial_template_tl
+  {
+    \keys_set:nx { luatexcn / digital } { template = \exp_not:V \l_luatexcn_digital_initial_template_tl }
+  }
+
+% Apply font at end of class loading
+\AtEndOfClass{
+  \tl_if_empty:NTF \l__luatexcn_content_font_name_tl
+    { \ApplyAutoFont }
+    {
+      \tl_if_empty:NTF \l__luatexcn_content_font_features_tl
+        { \exp_args:NV \setmainfont \l__luatexcn_content_font_name_tl [RawFeature={+vert,+vrt2}] }
+        { \exp_args:NV \setmainfont \l__luatexcn_content_font_name_tl [\l__luatexcn_content_font_features_tl] }
+    }
+}
+
+% ============================================================================
+% CJK Aliases
+% ============================================================================
+\NewCommandCopy{\数字化设置}{\digitalSetup}
+\NewCommandCopy{\數字化設置}{\digitalSetup}
+
+% Note: Guji command aliases (like \圈点) are already provided by guji/luatex-cn-guji.sty
+
+\ExplSyntaxOff
+\pagestyle{empty}
+\endinput

@@ -1,0 +1,134 @@
+% Copyright 2026 Open-Guji (https://github.com/open-guji)
+%
+% Licensed under the Apache License, Version 2.0 (the "License");
+% you may not use this file except in compliance with the License.
+% You may obtain a copy of the License at
+%
+%     http://www.apache.org/licenses/LICENSE-2.0
+%
+% Unless required by applicable law or agreed to in writing, software
+% distributed under the License is distributed on an "AS IS" BASIS,
+% WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+% See the License for the specific language governing permissions and
+% limitations under the License.
+% luatex-cn-guji-pizhu.sty
+% PiZhu (批注) floating annotation support for vertical typesetting
+% This is a subpackage of luatex_cn
+%
+% NOTE: This file must be loaded AFTER TextBox is defined
+%
+\RequirePackage{expl3}
+\RequirePackage{xparse}
+\ProvidesExplPackage {guji/luatex-cn-guji-pizhu} {2026/03/21} {0.3.6} {PiZhu Floating Annotation Support}
+
+% PiZhu (批注) - Floating annotation box
+\bool_new:N \l__luatexcn_pizhu_on_bool
+\tl_new:N \l__luatexcn_pizhu_font_size_tl
+\tl_new:N \l__luatexcn_pizhu_color_tl
+\tl_new:N \l__luatexcn_pizhu_grid_width_tl
+\tl_new:N \l__luatexcn_pizhu_grid_height_tl
+\tl_new:N \l__luatexcn_pizhu_x_tl
+\tl_new:N \l__luatexcn_pizhu_y_tl
+\tl_new:N \l__luatexcn_pizhu_height_tl
+
+\keys_define:nn { luatexcn / pizhu }
+  {
+    pizhu .bool_set:N = \l__luatexcn_pizhu_on_bool,
+    pizhu .initial:n = true,
+    pizhu .default:n = true,
+    x .tl_set:N = \l__luatexcn_pizhu_x_tl,
+    y .tl_set:N = \l__luatexcn_pizhu_y_tl,
+    height .tl_set:N = \l__luatexcn_pizhu_height_tl,
+    font-size .tl_set:N = \l__luatexcn_pizhu_font_size_tl,
+    font-size .initial:n = {18pt},
+    color .tl_set:N = \l__luatexcn_pizhu_color_tl,
+    color .initial:n = {1~0~0},
+    grid-width .tl_set:N = \l__luatexcn_pizhu_grid_width_tl,
+    grid-width .initial:n = {20pt},
+    grid-height .tl_set:N = \l__luatexcn_pizhu_grid_height_tl,
+    grid-height .initial:n = {19pt},
+    % Forward unknown keys: try settings first, then style
+    unknown .code:n =
+      {
+        \exp_args:Nnx \keys_if_exist:nnTF { luatexcn / settings } { \l_keys_key_str }
+          { \keys_set:nx { luatexcn / settings } { \l_keys_key_str = { \exp_not:n {#1} } } }
+          {
+            \exp_args:Nnx \keys_if_exist:nnTF { luatexcn / style } { \l_keys_key_str }
+              { \keys_set:nx { luatexcn / style } { \l_keys_key_str = { \exp_not:n {#1} } } }
+              { }
+          }
+      },
+  }
+
+\NewDocumentCommand{\pizhuSetup}{ m }
+  {
+    \keys_set:nn { luatexcn / pizhu } { #1 }
+  }
+
+\NewDocumentCommand{\PiZhu}{ O{} +m }{%
+  \bool_if:NT \l__luatexcn_pizhu_on_bool
+    {
+      \group_begin:
+        \keys_set:nn { luatexcn / pizhu } { #1 }
+        % Build keyval list with expansion so token list values are expanded
+        % Note: border=false ensures pizhu never has border (even if parent context has border)
+        \tl_set:Nx \l_tmpa_tl {
+          floating=true,
+          floating-paper-width=\l__luatexcn_page_paper_width_tl,
+          x=\l__luatexcn_pizhu_x_tl,
+          y=\l__luatexcn_pizhu_y_tl,
+          height=\l__luatexcn_pizhu_height_tl,
+          font-color=\exp_not:V \l__luatexcn_pizhu_color_tl,
+          font-size=\l__luatexcn_pizhu_font_size_tl,
+          grid-width=\l__luatexcn_pizhu_grid_width_tl,
+          grid-height=\l__luatexcn_pizhu_grid_height_tl,
+          border=false
+        }
+        % Pass settings overrides to TextBox (punct-mode etc.)
+        \tl_if_empty:NF \l__luatexcn_settings_punct_mode_tl
+          { \tl_put_right:Nx \l_tmpa_tl { ,punct-mode=\l__luatexcn_settings_punct_mode_tl } }
+        % Use \use:x to properly expand the keyval list for xparse optional argument
+        \use:x { \exp_not:N \TextBox [\l_tmpa_tl]{\exp_not:n{#2}} }
+      \group_end:
+    }
+}
+
+\ExplSyntaxOff%
+
+% ============================================================================
+% CJK Aliases (中文别名)
+% ============================================================================
+% Simplified Chinese / 简体
+\NewCommandCopy{\批注}{\PiZhu}
+\NewCommandCopy{\批注设置}{\pizhuSetup}
+% Traditional Chinese / 繁体
+\NewCommandCopy{\批注設置}{\pizhuSetup}
+
+% ============================================================
+% Chinese key aliases / 中文 Key 别名
+% ============================================================
+\ExplSyntaxOn
+\keys_define:nn { luatexcn / pizhu }
+  {
+    % 简体
+    批注 .bool_set:N = \l__luatexcn_pizhu_on_bool,
+    批注 .default:n = true,
+    横坐标 .tl_set:N = \l__luatexcn_pizhu_x_tl,
+    纵坐标 .tl_set:N = \l__luatexcn_pizhu_y_tl,
+    高度 .tl_set:N = \l__luatexcn_pizhu_height_tl,
+    字号 .tl_set:N = \l__luatexcn_pizhu_font_size_tl,
+    颜色 .tl_set:N = \l__luatexcn_pizhu_color_tl,
+    格宽 .tl_set:N = \l__luatexcn_pizhu_grid_width_tl,
+    格高 .tl_set:N = \l__luatexcn_pizhu_grid_height_tl,
+    % 繁体（与简体不同形的）
+    批註 .bool_set:N = \l__luatexcn_pizhu_on_bool,
+    批註 .default:n = true,
+    橫坐標 .tl_set:N = \l__luatexcn_pizhu_x_tl,
+    縱坐標 .tl_set:N = \l__luatexcn_pizhu_y_tl,
+    字號 .tl_set:N = \l__luatexcn_pizhu_font_size_tl,
+    顏色 .tl_set:N = \l__luatexcn_pizhu_color_tl,
+    格寬 .tl_set:N = \l__luatexcn_pizhu_grid_width_tl,
+  }
+\ExplSyntaxOff
+
+\endinput%

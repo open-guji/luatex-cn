@@ -1,0 +1,90 @@
+% Copyright 2026 Open-Guji (https://github.com/open-guji)
+%
+% Licensed under the Apache License, Version 2.0 (the "License");
+% you may not use this file except in compliance with the License.
+% You may obtain a copy of the License at
+%
+%     http://www.apache.org/licenses/LICENSE-2.0
+%
+% Unless required by applicable law or agreed to in writing, software
+% distributed under the License is distributed on an "AS IS" BASIS,
+% WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+% See the License for the specific language governing permissions and
+% limitations under the License.
+
+% luatex-cn-guji.sty
+% Main package for guji (古籍) typesetting features
+% This package loads all guji-specific subpackages
+%
+\NeedsTeXFormat{LaTeX2e}
+\RequirePackage{expl3}
+\ProvidesExplPackage {guji/luatex-cn-guji} {2026/03/21} {0.3.6} {Guji (古籍) typesetting features}
+
+% ============================================================================
+% Load all guji subpackages
+% ============================================================================
+
+% 句读 (Judou) - Classical Chinese punctuation
+\RequirePackage{guji/luatex-cn-guji-judou}
+
+% 夹注 (Jiazhu) - Interlinear notes
+\RequirePackage{guji/luatex-cn-guji-jiazhu}
+
+% 批注 (Pizhu) - Side annotations
+\RequirePackage{guji/luatex-cn-guji-pizhu}
+
+% 眉批 (Meipi) - Head annotations
+\RequirePackage{guji/luatex-cn-guji-meipi}
+
+% 印章 (Yinzhang) - Seal stamps
+\RequirePackage{guji/luatex-cn-guji-yinzhang}
+
+% 单页 (Danye) - Single page mode
+\RequirePackage{guji/luatex-cn-guji-danye}
+
+% 目录 (Mulu) - Catalog/Index
+\RequirePackage{guji/luatex-cn-guji-mulu}
+
+% 脚注/校勘记 (Footnote) - Footnotes and critical apparatus
+\RequirePackage{core/luatex-cn-footnote}
+
+% 书名页 (TitlePage) - Book title page with multi-column layout
+\RequirePackage{guji/luatex-cn-guji-titlepage}
+
+% 封面 (Cover) - Cover page with background color and floating text boxes
+\RequirePackage{guji/luatex-cn-guji-cover}
+
+% \臣 命令：输出缩小字号且向右偏移的"臣"字（用于奏章臣字缩排）
+\NewDocumentCommand{\臣}{}{\样式[font-size=0.8em, xshift=-0.3em]{臣}}
+
+% ============================================================================
+% 牌记 (Colophon) - 不透明、双层边框的悬浮文本框
+% ============================================================================
+% 预设参数：透明=false, 底色=白色, 边框=true, 外边框=true, 悬浮=true
+% 用户通过可选参数覆盖或补充（高度、坐标、外边框粗细等）
+\NewDocumentCommand{\牌记}{ O{} +m }
+  {
+    \文本框[
+      悬浮,
+      透明=false,
+      background-color={1~1~1},
+      边框=true,
+      外边框=true,
+      外边框粗细=2pt,
+      #1
+    ]{#2}
+  }
+
+\ExplSyntaxOff
+\NewCommandCopy{\colophon}{\牌记}
+\ExplSyntaxOn
+
+% ============================================================================
+% 古籍命令重命名
+% ============================================================================
+
+\NewCommandCopy{\圈点}{\EmphasisMark}
+% \专名号 and \书名号 are now provided by luatex-cn-linemark.sty
+
+\ExplSyntaxOff
+\endinput

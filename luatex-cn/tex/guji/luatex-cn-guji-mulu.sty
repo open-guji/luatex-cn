@@ -1,0 +1,56 @@
+% Copyright 2026 Open-Guji (https://github.com/open-guji)
+%
+% Licensed under the Apache License, Version 2.0 (the "License");
+% you may not use this file except in compliance with the License.
+% You may obtain a copy of the License at
+%
+%     http://www.apache.org/licenses/LICENSE-2.0
+%
+% Unless required by applicable law or agreed to in writing, software
+% distributed under the License is distributed on an "AS IS" BASIS,
+% WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+% See the License for the specific language governing permissions and
+% limitations under the License.
+% luatex-cn-guji-mulu.sty
+% Catalog/Index (目录) support for traditional book typesetting
+% This is a subpackage of luatex_cn
+%
+%
+%   Or with raw commands (level = number of indent spaces, default 0):
+%       \條目{卷一}           % level 0, no indent
+%       \條目[1]{經部一}      % level 1, 1 space indent
+%       \條目[2]{易類}        % level 2, 2 spaces indent
+%
+\RequirePackage{expl3}
+\RequirePackage{xparse}
+\ProvidesExplPackage {guji/luatex-cn-guji-mulu} {2026/03/21} {0.3.6} {Catalog/Index support for traditional books}
+
+% Load the core column engine
+\RequirePackage{core/luatex-cn-core-column}
+
+% ============================================================================
+% User Commands
+% ============================================================================
+
+% \条目[level]{content} - Output a column entry with level-based indent
+% Uses \Indent to set indent via attributes (no space characters inserted).
+\NewDocumentCommand{\条目}{ O{0} +m }
+  {
+    \Column{ \Indent[#1] #2 }
+  }
+
+% ============================================================================
+% Environment (currently just a grouping wrapper)
+% ============================================================================
+
+\ExplSyntaxOff
+
+% ============================================================================
+% CJK Aliases (中文别名)
+% ============================================================================
+% English pinyin alias
+\NewCommandCopy{\TiaoMu}{\条目}
+% Traditional Chinese / 繁体
+\NewCommandCopy{\條目}{\条目}
+
+\endinput

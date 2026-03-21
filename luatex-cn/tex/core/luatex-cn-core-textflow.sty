@@ -1,0 +1,308 @@
+% Copyright 2026 Open-Guji (https://github.com/open-guji)
+%
+% Licensed under the Apache License, Version 2.0 (the "License");
+% you may not use this file except in compliance with the License.
+% You may obtain a copy of the License at
+%
+%     http://www.apache.org/licenses/LICENSE-2.0
+%
+% Unless required by applicable law or agreed to in writing, software
+% distributed under the License is distributed on an "AS IS" BASIS,
+% WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+% See the License for the specific language governing permissions and
+% limitations under the License.
+% luatex-cn-core-textflow.sty
+% TextFlow (双行小注/夹注) support for vertical typesetting
+% This is a subpackage of luatex_cn
+%
+% NOTE: This file must be loaded AFTER vertical keys are defined
+%
+\RequirePackage{core/luatex-cn-core-base}
+\RequirePackage{expl3}
+\RequirePackage{xparse}
+\ProvidesExplPackage {core/luatex-cn-core-textflow} {2026/03/21} {0.3.6} {TextFlow (Jiazhu) Support for Vertical Typesetting}
+
+% Default variables for textflow (can be set by higher layers like guji/jiazhu)
+\tl_new:N \l__luatexcn_textflow_default_size_tl
+\tl_new:N \l__luatexcn_textflow_default_font_tl
+\tl_new:N \l__luatexcn_textflow_default_color_tl
+\tl_new:N \l__luatexcn_textflow_default_align_tl
+\tl_set:Nn \l__luatexcn_textflow_default_align_tl {outward}
+
+% TextFlow Command (双行小注/夹注)
+% Syntax: \TextFlow{content}
+\makeatletter
+
+    \keys_define:nn { luatexcn / textflow }
+      {
+        only-column .choice:,
+        only-column / left .code:n = { \tl_set:Nn \l_tmpa_tl {2} },
+        only-column / right .code:n = { \tl_set:Nn \l_tmpa_tl {1} },
+        only-column / none .code:n = { \tl_set:Nn \l_tmpa_tl {0} },
+        only-column .initial:n = none,
+
+        auto-balance .bool_set:N = \l__luatexcn_textflow_auto_balance_bool,
+        auto-balance .initial:n = true,
+
+        font-size .tl_set:N = \l__luatexcn_textflow_local_size_tl,
+        font .tl_set:N = \l__luatexcn_textflow_local_font_tl,
+        font-color .tl_set:N = \l__luatexcn_textflow_local_color_tl,
+        align .tl_set:N = \l__luatexcn_textflow_local_align_tl,
+        grid-height .tl_set:N = \l__luatexcn_textflow_local_grid_height_tl,
+        % Forward unknown keys: try settings first, then style
+        unknown .code:n =
+          {
+            \exp_args:Nnx \keys_if_exist:nnTF { luatexcn / settings } { \l_keys_key_str }
+              { \keys_set:nx { luatexcn / settings } { \l_keys_key_str = { \exp_not:n {#1} } } }
+              {
+                \exp_args:Nnx \keys_if_exist:nnTF { luatexcn / style } { \l_keys_key_str }
+                  { \keys_set:nx { luatexcn / style } { \l_keys_key_str = { \exp_not:n {#1} } } }
+                  { }
+              }
+          },
+      }
+
+    \NewDocumentCommand{\TextFlow}{ O{} +m }
+      {
+        \group_begin:
+
+        % Initialize temp var for mode (0 = balanced/default)
+        \tl_set:Nn \l_tmpa_tl {0}
+        % Initialize local override variables
+        \tl_set:Nn \l__luatexcn_textflow_local_size_tl {}
+        \tl_set:Nn \l__luatexcn_textflow_local_font_tl {}
+        \tl_set:Nn \l__luatexcn_textflow_local_color_tl {}
+        \tl_set:Nn \l__luatexcn_textflow_local_align_tl {}
+        \tl_set:Nn \l__luatexcn_textflow_local_grid_height_tl {}
+        % Initialize style variables (for forwarded style keys)
+        \__luatexcn_style_init_and_parse:n {}
+
+        \keys_set:nn { luatexcn / textflow } { #1 }
+
+        % Capture attribute values using edef BEFORE selectfont
+        % Note: indent values are now inherited from style stack (no longer saved/restored here)
+        \edef\savedblockid{\the\cnverticalblockid}
+
+        % 1. Determine Font Size (Local > Core Default > Default 0.7)
+        \tl_if_empty:NTF \l__luatexcn_textflow_local_size_tl
+          {
+            \tl_if_empty:NTF \l__luatexcn_textflow_default_size_tl
+              { \tl_set:Nx \l_tmpc_tl { \fp_eval:n { 0.7 * \f@size } pt } }
+              { \tl_set_eq:NN \l_tmpc_tl \l__luatexcn_textflow_default_size_tl }
+          }
+          { \tl_set_eq:NN \l_tmpc_tl \l__luatexcn_textflow_local_size_tl }
+
+        % 2. Determine Font (Local > Core Default)
+        \tl_if_empty:NTF \l__luatexcn_textflow_local_font_tl
+          { \tl_set_eq:NN \l_tmpb_tl \l__luatexcn_textflow_default_font_tl }
+          { \tl_set_eq:NN \l_tmpb_tl \l__luatexcn_textflow_local_font_tl }
+
+        % 3. Determine Color (Local > Core Default)
+        \tl_if_empty:NTF \l__luatexcn_textflow_local_color_tl
+          { \tl_set_eq:NN \l_tmpd_tl \l__luatexcn_textflow_default_color_tl }
+          { \tl_set_eq:NN \l_tmpd_tl \l__luatexcn_textflow_local_color_tl }
+
+        % 4. Determine Align (Local > Core Default)
+        \tl_if_empty:NTF \l__luatexcn_textflow_local_align_tl
+          { \tl_set_eq:NN \l__luatexcn_textflow_resolved_align_tl \l__luatexcn_textflow_default_align_tl }
+          { \tl_set_eq:NN \l__luatexcn_textflow_resolved_align_tl \l__luatexcn_textflow_local_align_tl }
+
+        % Apply Font and Size
+        \tl_if_empty:NTF \l_tmpb_tl
+          { \fontsize{\l_tmpc_tl}{\l_tmpc_tl}\selectfont }
+          { \setmainfont{\l_tmpb_tl}[RawFeature={+vert,+vrt2}] \fontsize{\l_tmpc_tl}{\l_tmpc_tl}\selectfont }
+
+        % DO NOT apply color here via \color - it creates pdf_colorstack nodes
+        % that cause color leakage when textflow spans across page boundaries.
+        % Color is handled entirely in the Lua render layer via PDF literals.
+
+        % Push style to stack and get style ID (Phase 3: Style Stack Management)
+        % style_extra from forwarded \样式 keys (xshift, yshift, spacing, indent, etc.)
+        \edef\textflow_style_id{\lua_now:e {
+          local ~ sr = require('util.luatex-cn-style-registry')
+          local ~ textflow = require('core.luatex-cn-textflow')
+          local ~ style_id = textflow.push_style(
+            \tl_if_empty:NTF \l_tmpd_tl { nil } { [=[\luaescapestring{\tl_use:N \l_tmpd_tl}]=] },
+            [=[\luaescapestring{\tl_use:N \l_tmpc_tl}]=],
+            \tl_if_empty:NTF \l_tmpb_tl { nil } { [=[\luaescapestring{\tl_use:N \l_tmpb_tl}]=] },
+            \tl_if_empty:NTF \l__luatexcn_textflow_resolved_align_tl { nil } { [=[\luaescapestring{\tl_use:N \l__luatexcn_textflow_resolved_align_tl}]=] },
+            \bool_if:NTF \l__luatexcn_textflow_auto_balance_bool { true } { false },
+            \tl_if_empty:NTF \l__luatexcn_textflow_local_grid_height_tl { nil } { \dim_to_decimal_in_sp:n { \l__luatexcn_textflow_local_grid_height_tl } },
+            sr.make_extra(
+              \tl_if_empty:NTF \l__luatexcn_style_grid_height_tl { nil } { [=[\luaescapestring{\l__luatexcn_style_grid_height_tl}]=] },
+              \tl_if_empty:NTF \l__luatexcn_style_spacing_top_tl { nil } { [=[\luaescapestring{\l__luatexcn_style_spacing_top_tl}]=] },
+              \tl_if_empty:NTF \l__luatexcn_style_spacing_bottom_tl { nil } { [=[\luaescapestring{\l__luatexcn_style_spacing_bottom_tl}]=] },
+              \tl_if_empty:NTF \l__luatexcn_style_xshift_tl { nil } { [=[\luaescapestring{\l__luatexcn_style_xshift_tl}]=] },
+              \tl_if_empty:NTF \l__luatexcn_style_yshift_tl { nil } { [=[\luaescapestring{\l__luatexcn_style_yshift_tl}]=] },
+              \tl_if_empty:NTF \l__luatexcn_style_indent_tl { nil } { \l__luatexcn_style_indent_tl },
+              \tl_if_empty:NTF \l__luatexcn_style_first_indent_tl { nil } { \l__luatexcn_style_first_indent_tl },
+              \tl_if_empty:NTF \l__luatexcn_style_grid_width_tl { nil } { [=[\luaescapestring{\l__luatexcn_style_grid_width_tl}]=] },
+              \tl_if_empty:NTF \l__luatexcn_style_padding_top_tl { nil } { [=[\luaescapestring{\l__luatexcn_style_padding_top_tl}]=] },
+              \tl_if_empty:NTF \l__luatexcn_style_padding_bottom_tl { nil } { [=[\luaescapestring{\l__luatexcn_style_padding_bottom_tl}]=] }
+            )
+          )
+          tex.print(tostring(style_id))
+        }}
+
+        % CRITICAL: Set textflow attribute AFTER selectfont
+        \setluatexattribute\cnverticaljiazhu{1}
+        \setluatexattribute\cnverticaljiazhumode{\l_tmpa_tl}
+        \setluatexattribute\cnverticalstyle{\textflow_style_id}
+
+        % Restore block ID only (indent inherited from style stack)
+        \cnverticalblockid = \savedblockid\relax
+
+        #2
+
+        % Pop style from stack
+        \lua_now:n {
+          local ~ textflow = require('core.luatex-cn-textflow')
+          textflow.pop_style()
+        }
+
+        \group_end:
+      }
+
+    \NewDocumentCommand{\DanHangJiaZhu}{ O{right} +m }
+      {
+        \TextFlow[only-column=#1]{#2}
+      }
+
+    % TextFlow Environment - Allows command expansion (e.g., \平抬)
+    % Same functionality as \TextFlow command but content is not captured
+    \NewDocumentEnvironment{TextFlowEnv}{ O{} }
+      {
+        \group_begin:
+
+        % Initialize temp var for mode (0 = balanced/default)
+        \tl_set:Nn \l_tmpa_tl {0}
+        % Initialize local override variables
+        \tl_set:Nn \l__luatexcn_textflow_local_size_tl {}
+        \tl_set:Nn \l__luatexcn_textflow_local_font_tl {}
+        \tl_set:Nn \l__luatexcn_textflow_local_color_tl {}
+        \tl_set:Nn \l__luatexcn_textflow_local_align_tl {}
+        \tl_set:Nn \l__luatexcn_textflow_local_grid_height_tl {}
+        % Initialize style variables (for forwarded style keys)
+        \__luatexcn_style_init_and_parse:n {}
+
+        \keys_set:nn { luatexcn / textflow } { #1 }
+
+        % Capture attribute values using edef BEFORE selectfont
+        \edef\savedblockid{\the\cnverticalblockid}
+
+        % 1. Determine Font Size (Local > Core Default > Default 0.7)
+        \tl_if_empty:NTF \l__luatexcn_textflow_local_size_tl
+          {
+            \tl_if_empty:NTF \l__luatexcn_textflow_default_size_tl
+              { \tl_set:Nx \l_tmpc_tl { \fp_eval:n { 0.7 * \f@size } pt } }
+              { \tl_set_eq:NN \l_tmpc_tl \l__luatexcn_textflow_default_size_tl }
+          }
+          { \tl_set_eq:NN \l_tmpc_tl \l__luatexcn_textflow_local_size_tl }
+
+        % 2. Determine Font (Local > Core Default)
+        \tl_if_empty:NTF \l__luatexcn_textflow_local_font_tl
+          { \tl_set_eq:NN \l_tmpb_tl \l__luatexcn_textflow_default_font_tl }
+          { \tl_set_eq:NN \l_tmpb_tl \l__luatexcn_textflow_local_font_tl }
+
+        % 3. Determine Color (Local > Core Default)
+        \tl_if_empty:NTF \l__luatexcn_textflow_local_color_tl
+          { \tl_set_eq:NN \l_tmpd_tl \l__luatexcn_textflow_default_color_tl }
+          { \tl_set_eq:NN \l_tmpd_tl \l__luatexcn_textflow_local_color_tl }
+
+        % 4. Determine Align (Local > Core Default)
+        \tl_if_empty:NTF \l__luatexcn_textflow_local_align_tl
+          { \tl_set_eq:NN \l__luatexcn_textflow_resolved_align_tl \l__luatexcn_textflow_default_align_tl }
+          { \tl_set_eq:NN \l__luatexcn_textflow_resolved_align_tl \l__luatexcn_textflow_local_align_tl }
+
+        % Apply Font and Size
+        \tl_if_empty:NTF \l_tmpb_tl
+          { \fontsize{\l_tmpc_tl}{\l_tmpc_tl}\selectfont }
+          { \setmainfont{\l_tmpb_tl}[RawFeature={+vert,+vrt2}] \fontsize{\l_tmpc_tl}{\l_tmpc_tl}\selectfont }
+
+        % Push style to stack and get style ID
+        \edef\textflow_style_id{\lua_now:e {
+          local ~ sr = require('util.luatex-cn-style-registry')
+          local ~ textflow = require('core.luatex-cn-textflow')
+          local ~ style_id = textflow.push_style(
+            \tl_if_empty:NTF \l_tmpd_tl { nil } { [=[\luaescapestring{\tl_use:N \l_tmpd_tl}]=] },
+            [=[\luaescapestring{\tl_use:N \l_tmpc_tl}]=],
+            \tl_if_empty:NTF \l_tmpb_tl { nil } { [=[\luaescapestring{\tl_use:N \l_tmpb_tl}]=] },
+            \tl_if_empty:NTF \l__luatexcn_textflow_resolved_align_tl { nil } { [=[\luaescapestring{\tl_use:N \l__luatexcn_textflow_resolved_align_tl}]=] },
+            \bool_if:NTF \l__luatexcn_textflow_auto_balance_bool { true } { false },
+            \tl_if_empty:NTF \l__luatexcn_textflow_local_grid_height_tl { nil } { \dim_to_decimal_in_sp:n { \l__luatexcn_textflow_local_grid_height_tl } },
+            sr.make_extra(
+              \tl_if_empty:NTF \l__luatexcn_style_grid_height_tl { nil } { [=[\luaescapestring{\l__luatexcn_style_grid_height_tl}]=] },
+              \tl_if_empty:NTF \l__luatexcn_style_spacing_top_tl { nil } { [=[\luaescapestring{\l__luatexcn_style_spacing_top_tl}]=] },
+              \tl_if_empty:NTF \l__luatexcn_style_spacing_bottom_tl { nil } { [=[\luaescapestring{\l__luatexcn_style_spacing_bottom_tl}]=] },
+              \tl_if_empty:NTF \l__luatexcn_style_xshift_tl { nil } { [=[\luaescapestring{\l__luatexcn_style_xshift_tl}]=] },
+              \tl_if_empty:NTF \l__luatexcn_style_yshift_tl { nil } { [=[\luaescapestring{\l__luatexcn_style_yshift_tl}]=] },
+              \tl_if_empty:NTF \l__luatexcn_style_indent_tl { nil } { \l__luatexcn_style_indent_tl },
+              \tl_if_empty:NTF \l__luatexcn_style_first_indent_tl { nil } { \l__luatexcn_style_first_indent_tl },
+              \tl_if_empty:NTF \l__luatexcn_style_grid_width_tl { nil } { [=[\luaescapestring{\l__luatexcn_style_grid_width_tl}]=] },
+              \tl_if_empty:NTF \l__luatexcn_style_padding_top_tl { nil } { [=[\luaescapestring{\l__luatexcn_style_padding_top_tl}]=] },
+              \tl_if_empty:NTF \l__luatexcn_style_padding_bottom_tl { nil } { [=[\luaescapestring{\l__luatexcn_style_padding_bottom_tl}]=] }
+            )
+          )
+          tex.print(tostring(style_id))
+        }}
+
+        % Set textflow attributes
+        \setluatexattribute\cnverticaljiazhu{1}
+        \setluatexattribute\cnverticaljiazhumode{\l_tmpa_tl}
+        \setluatexattribute\cnverticalstyle{\textflow_style_id}
+
+        % Restore block ID
+        \cnverticalblockid = \savedblockid\relax
+      }
+      {
+        % Pop style from stack
+        \lua_now:n {
+          local ~ textflow = require('core.luatex-cn-textflow')
+          textflow.pop_style()
+        }
+
+        \group_end:
+      }
+
+\makeatother
+
+\ExplSyntaxOff%
+
+% ============================================================
+% Chinese aliases / 中文别名
+% ============================================================
+% Simplified Chinese / 简体
+\NewCommandCopy{\文本流}{\TextFlow}
+\NewEnvironmentCopy{文本流环境}{TextFlowEnv}
+% Traditional Chinese / 繁体
+\NewEnvironmentCopy{文本流環境}{TextFlowEnv}
+
+% ============================================================
+% Chinese key aliases / 中文 Key 别名
+% ============================================================
+\ExplSyntaxOn
+\keys_define:nn { luatexcn / textflow }
+  {
+    % 简体
+    单列 .meta:n = { only-column = #1 },
+    自动均衡 .bool_set:N = \l__luatexcn_textflow_auto_balance_bool,
+    自动平衡 .bool_set:N = \l__luatexcn_textflow_auto_balance_bool,
+    字号 .tl_set:N = \l__luatexcn_textflow_local_size_tl,
+    字体 .tl_set:N = \l__luatexcn_textflow_local_font_tl,
+    字体颜色 .tl_set:N = \l__luatexcn_textflow_local_color_tl,
+    对齐 .tl_set:N = \l__luatexcn_textflow_local_align_tl,
+    格高 .tl_set:N = \l__luatexcn_textflow_local_grid_height_tl,
+    字体大小 .tl_set:N = \l__luatexcn_textflow_local_size_tl,
+    % 繁体（与简体不同形的）
+    單列 .meta:n = { only-column = #1 },
+    自動均衡 .bool_set:N = \l__luatexcn_textflow_auto_balance_bool,
+    自動平衡 .bool_set:N = \l__luatexcn_textflow_auto_balance_bool,
+    字號 .tl_set:N = \l__luatexcn_textflow_local_size_tl,
+    字體 .tl_set:N = \l__luatexcn_textflow_local_font_tl,
+    字體顏色 .tl_set:N = \l__luatexcn_textflow_local_color_tl,
+    對齊 .tl_set:N = \l__luatexcn_textflow_local_align_tl,
+    格高 .tl_set:N = \l__luatexcn_textflow_local_grid_height_tl,
+  }
+\ExplSyntaxOff
+
+\endinput%

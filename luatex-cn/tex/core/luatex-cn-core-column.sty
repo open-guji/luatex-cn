@@ -1,0 +1,296 @@
+% Copyright 2026 Open-Guji (https://github.com/open-guji)
+%
+% Licensed under the Apache License, Version 2.0 (the "License");
+% you may not use this file except in compliance with the License.
+% You may obtain a copy of the License at
+%
+%     http://www.apache.org/licenses/LICENSE-2.0
+%
+% Unless required by applicable law or agreed to in writing, software
+% distributed under the License is distributed on an "AS IS" BASIS,
+% WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+% See the License for the specific language governing permissions and
+% limitations under the License.
+% luatex-cn-core-column.sty
+% Column (单列排版) support for vertical typesetting
+% This is a subpackage of luatex_cn
+%
+% Usage:
+%   \Column{content}                    % Default: top alignment
+%   \Column[align=center]{content}      % Center alignment
+%   \Column[align=bottom]{content}      % Bottom alignment
+%   \Column[align=stretch]{content}     % Stretch/squeeze to fill column
+%
+\RequirePackage{core/luatex-cn-core-base}
+\RequirePackage{expl3}
+\RequirePackage{xparse}
+\ProvidesExplPackage {core/luatex-cn-core-column} {2026/03/21} {0.3.6} {Column Support for Vertical Typesetting}
+
+% Default variables for column
+\tl_new:N \l__luatexcn_column_default_size_tl
+\tl_new:N \l__luatexcn_column_default_font_tl
+\tl_new:N \l__luatexcn_column_default_color_tl
+
+% Global dim for current column width (read by TextBox for inner-gw auto-calculation)
+% 0pt means not set (use default grid_width)
+\dim_new:N \g__luatexcn_column_current_width_dim
+
+\makeatletter
+
+    % Align mode: 0=top, 1=bottom, 2=center, 3=stretch
+    % When last=true, add 4 to the value (4=last+top, 5=last+bottom, etc.)
+    \bool_new:N \l__luatexcn_column_last_bool
+
+    \keys_define:nn { luatexcn / column }
+      {
+        align .choice:,
+        align / top .code:n = { \int_set:Nn \l_tmpa_int {0} },
+        align / bottom .code:n = { \int_set:Nn \l_tmpa_int {1} },
+        align / center .code:n = { \int_set:Nn \l_tmpa_int {2} },
+        align / stretch .code:n = { \int_set:Nn \l_tmpa_int {3} },
+        align .initial:n = top,
+
+        last .bool_set:N = \l__luatexcn_column_last_bool,
+        last .default:n = true,
+
+        font-size .tl_set:N = \l__luatexcn_column_local_size_tl,
+        font .tl_set:N = \l__luatexcn_column_local_font_tl,
+        font-color .tl_set:N = \l__luatexcn_column_local_color_tl,
+
+        % 行宽参数
+        width .tl_set:N = \l__luatexcn_column_width_tl,
+        width .initial:n = {},
+        column-width .tl_set:N = \l__luatexcn_column_width_tl,  % 别名
+
+        auto-width .bool_set:N = \l__luatexcn_column_auto_width_bool,
+        auto-width .initial:n = true,
+
+        width-scale .tl_set:N = \l__luatexcn_column_width_scale_tl,
+        width-scale .initial:n = {1.2},
+
+        % 行间距参数（竖排方向）
+        spacing-top .tl_set:N = \l__luatexcn_column_spacing_top_tl,
+        spacing-top .initial:n = {},
+
+        spacing-bottom .tl_set:N = \l__luatexcn_column_spacing_bottom_tl,
+        spacing-bottom .initial:n = {},
+
+        spacing .meta:n = { spacing-top = #1, spacing-bottom = #1 },
+
+        padding-top .tl_set:N = \l__luatexcn_column_padding_top_tl,
+        padding-top .initial:n = {},
+
+        padding-bottom .tl_set:N = \l__luatexcn_column_padding_bottom_tl,
+        padding-bottom .initial:n = {},
+
+        padding .meta:n = { padding-top = #1, padding-bottom = #1 },
+
+        grid-height .tl_set:N = \l__luatexcn_column_grid_height_tl,
+        grid-height .initial:n = {},
+        % Forward unknown keys: try settings first, then style
+        unknown .code:n =
+          {
+            \exp_args:Nnx \keys_if_exist:nnTF { luatexcn / settings } { \l_keys_key_str }
+              { \keys_set:nx { luatexcn / settings } { \l_keys_key_str = { \exp_not:n {#1} } } }
+              {
+                \exp_args:Nnx \keys_if_exist:nnTF { luatexcn / style } { \l_keys_key_str }
+                  { \keys_set:nx { luatexcn / style } { \l_keys_key_str = { \exp_not:n {#1} } } }
+                  { }
+              }
+          },
+      }
+
+    \NewDocumentCommand{\Column}{ O{} +m }
+      {
+        \group_begin:
+
+        % Initialize alignment mode (0 = top/default)
+        \int_set:Nn \l_tmpa_int {0}
+        % Initialize last flag
+        \bool_set_false:N \l__luatexcn_column_last_bool
+        % Initialize local override variables
+        \tl_set:Nn \l__luatexcn_column_local_size_tl {}
+        \tl_set:Nn \l__luatexcn_column_local_font_tl {}
+        \tl_set:Nn \l__luatexcn_column_local_color_tl {}
+        \tl_set:Nn \l__luatexcn_column_width_tl {}
+        \tl_set:Nn \l__luatexcn_column_grid_height_tl {}
+        \bool_set_true:N \l__luatexcn_column_auto_width_bool
+        \tl_set:Nn \l__luatexcn_column_width_scale_tl {1.2}
+        \tl_set:Nn \l__luatexcn_column_spacing_top_tl {}
+        \tl_set:Nn \l__luatexcn_column_spacing_bottom_tl {}
+        \tl_set:Nn \l__luatexcn_column_padding_top_tl {}
+        \tl_set:Nn \l__luatexcn_column_padding_bottom_tl {}
+        % Initialize style variables (for forwarded style keys)
+        \__luatexcn_style_init_and_parse:n {}
+
+        \keys_set:nn { luatexcn / column } { #1 }
+
+        % Handle column width: register in Lua and set global dim for TextBox
+        \tl_if_empty:NF \l__luatexcn_column_width_tl
+          {
+            \dim_gset:Nn \g__luatexcn_column_current_width_dim
+              { \l__luatexcn_column_width_tl }
+            \lua_now:e {
+              require('core.luatex-cn-core-content').register_col_width(
+                \dim_to_decimal_in_sp:n { \l__luatexcn_column_width_tl })
+            }
+          }
+
+        % If last=true, add 4 to align mode
+        \bool_if:NT \l__luatexcn_column_last_bool
+          { \int_add:Nn \l_tmpa_int {4} }
+
+        % 1. Determine Font Size (Local > Default)
+        \tl_if_empty:NTF \l__luatexcn_column_local_size_tl
+          { \tl_set_eq:NN \l_tmpc_tl \l__luatexcn_column_default_size_tl }
+          { \tl_set_eq:NN \l_tmpc_tl \l__luatexcn_column_local_size_tl }
+
+        % 2. Determine Font (Local > Default)
+        \tl_if_empty:NTF \l__luatexcn_column_local_font_tl
+          { \tl_set_eq:NN \l_tmpb_tl \l__luatexcn_column_default_font_tl }
+          { \tl_set_eq:NN \l_tmpb_tl \l__luatexcn_column_local_font_tl }
+
+        % 3. Determine Color (Local > Default)
+        \tl_if_empty:NTF \l__luatexcn_column_local_color_tl
+          { \tl_set_eq:NN \l_tmpd_tl \l__luatexcn_column_default_color_tl }
+          { \tl_set_eq:NN \l_tmpd_tl \l__luatexcn_column_local_color_tl }
+
+        % Apply Font and Size if specified
+        \tl_if_empty:NF \l_tmpc_tl
+          {
+            \tl_if_empty:NTF \l_tmpb_tl
+              { \fontsize{\l_tmpc_tl}{\l_tmpc_tl}\selectfont }
+              { \setmainfont{\l_tmpb_tl}[RawFeature={+vert,+vrt2}] \fontsize{\l_tmpc_tl}{\l_tmpc_tl}\selectfont }
+          }
+
+        % Apply Color (visual appearance)
+        \tl_if_empty:NF \l_tmpd_tl
+          {
+            \tl_if_in:NnTF \l_tmpd_tl { , }
+              { \color[rgb]{\l_tmpd_tl} }
+              {
+                \tl_if_in:NnTF \l_tmpd_tl { ~ }
+                  {
+                    \tl_set:Nx \l_tmpe_tl { \l_tmpd_tl }
+                    \tl_replace_all:Nnn \l_tmpe_tl { ~ } { , }
+                    \color[rgb]{\l_tmpe_tl}
+                  }
+                  { \color{\l_tmpd_tl} }
+              }
+          }
+
+        % Push style to stack and get style ID
+        % style_extra from forwarded \样式 keys (xshift, yshift, spacing, indent, etc.)
+        \edef\column_style_id{\lua_now:e {
+          local ~ sr = require('util.luatex-cn-style-registry')
+          local ~ column = require('core.luatex-cn-core-column')
+          local ~ style_id = column.push_style(
+            \tl_if_empty:NTF \l_tmpd_tl { nil } { [=[\luaescapestring{\tl_use:N \l_tmpd_tl}]=] },
+            \tl_if_empty:NTF \l_tmpc_tl { nil } { [=[\luaescapestring{\tl_use:N \l_tmpc_tl}]=] },
+            \tl_if_empty:NTF \l_tmpb_tl { nil } { [=[\luaescapestring{\tl_use:N \l_tmpb_tl}]=] },
+            \tl_if_empty:NTF \l__luatexcn_column_grid_height_tl { nil } { [=[\luaescapestring{\tl_use:N \l__luatexcn_column_grid_height_tl}]=] },
+            \tl_if_empty:NTF \l__luatexcn_column_spacing_top_tl { nil } { [=[\luaescapestring{\tl_use:N \l__luatexcn_column_spacing_top_tl}]=] },
+            \tl_if_empty:NTF \l__luatexcn_column_spacing_bottom_tl { nil } { [=[\luaescapestring{\tl_use:N \l__luatexcn_column_spacing_bottom_tl}]=] },
+            \tl_if_empty:NTF \l__luatexcn_column_width_tl { nil } { [=[\luaescapestring{\tl_use:N \l__luatexcn_column_width_tl}]=] },
+            \bool_if:NTF \l__luatexcn_column_auto_width_bool { true } { false },
+            \tl_if_empty:NTF \l__luatexcn_column_width_scale_tl { nil } { [=[\luaescapestring{\tl_use:N \l__luatexcn_column_width_scale_tl}]=] },
+            \tl_if_empty:NTF \l__luatexcn_column_padding_top_tl { nil } { [=[\luaescapestring{\tl_use:N \l__luatexcn_column_padding_top_tl}]=] },
+            \tl_if_empty:NTF \l__luatexcn_column_padding_bottom_tl { nil } { [=[\luaescapestring{\tl_use:N \l__luatexcn_column_padding_bottom_tl}]=] },
+            sr.make_extra(
+              \tl_if_empty:NTF \l__luatexcn_style_grid_height_tl { nil } { [=[\luaescapestring{\l__luatexcn_style_grid_height_tl}]=] },
+              \tl_if_empty:NTF \l__luatexcn_style_spacing_top_tl { nil } { [=[\luaescapestring{\l__luatexcn_style_spacing_top_tl}]=] },
+              \tl_if_empty:NTF \l__luatexcn_style_spacing_bottom_tl { nil } { [=[\luaescapestring{\l__luatexcn_style_spacing_bottom_tl}]=] },
+              \tl_if_empty:NTF \l__luatexcn_style_xshift_tl { nil } { [=[\luaescapestring{\l__luatexcn_style_xshift_tl}]=] },
+              \tl_if_empty:NTF \l__luatexcn_style_yshift_tl { nil } { [=[\luaescapestring{\l__luatexcn_style_yshift_tl}]=] },
+              \tl_if_empty:NTF \l__luatexcn_style_indent_tl { nil } { \l__luatexcn_style_indent_tl },
+              \tl_if_empty:NTF \l__luatexcn_style_first_indent_tl { nil } { \l__luatexcn_style_first_indent_tl },
+              \tl_if_empty:NTF \l__luatexcn_style_grid_width_tl { nil } { [=[\luaescapestring{\l__luatexcn_style_grid_width_tl}]=] },
+              \tl_if_empty:NTF \l__luatexcn_style_padding_top_tl { nil } { [=[\luaescapestring{\l__luatexcn_style_padding_top_tl}]=] },
+              \tl_if_empty:NTF \l__luatexcn_style_padding_bottom_tl { nil } { [=[\luaescapestring{\l__luatexcn_style_padding_bottom_tl}]=] }
+            )
+          )
+          tex.print(tostring(style_id))
+        }}
+
+        % Set column attributes
+        \setluatexattribute\cnverticalcolumn{1}
+        \setluatexattribute\cnverticalcolumnalign{\int_use:N \l_tmpa_int}
+        \setluatexattribute\cnverticalstyle{\column_style_id}
+
+        #2
+        % Insert column boundary marker (penalty -10001) for Free Mode boundary detection
+        % This specific value marks column boundaries without affecting line breaking
+        \penalty-10001
+
+        % Reset column width after content
+        \dim_gset:Nn \g__luatexcn_column_current_width_dim { 0pt }
+
+        % Pop style from stack
+        \lua_now:n {
+          local ~ column = require('core.luatex-cn-core-column')
+          column.pop_style()
+        }
+
+        \group_end:
+      }
+
+\makeatother
+
+\ExplSyntaxOff%
+
+% LastColumn: place content in the last column of current half-page
+\ExplSyntaxOn
+\NewDocumentCommand{\LastColumn}{ O{} +m }{%
+  \tl_if_empty:nTF {#1}
+    { \Column[last]{#2} }
+    { \Column[last, #1]{#2} }
+}
+\ExplSyntaxOff
+
+% ============================================================
+% Chinese aliases / 中文别名
+% ============================================================
+% Simplified Chinese / 简体
+\NewCommandCopy{\行}{\Column}
+\NewCommandCopy{\末行}{\LastColumn}
+
+% ============================================================
+% Chinese key aliases / 中文 Key 别名
+% ============================================================
+\ExplSyntaxOn
+\keys_define:nn { luatexcn / column }
+  {
+    % 简体
+    对齐 .meta:n = { align = #1 },
+    末行 .bool_set:N = \l__luatexcn_column_last_bool,
+    字号 .tl_set:N = \l__luatexcn_column_local_size_tl,
+    字体 .tl_set:N = \l__luatexcn_column_local_font_tl,
+    字体颜色 .tl_set:N = \l__luatexcn_column_local_color_tl,
+    宽度 .tl_set:N = \l__luatexcn_column_width_tl,
+    行宽 .tl_set:N = \l__luatexcn_column_width_tl,
+    自动宽度 .bool_set:N = \l__luatexcn_column_auto_width_bool,
+    宽度缩放 .tl_set:N = \l__luatexcn_column_width_scale_tl,
+    上间距 .tl_set:N = \l__luatexcn_column_spacing_top_tl,
+    下间距 .tl_set:N = \l__luatexcn_column_spacing_bottom_tl,
+    间距 .meta:n = { spacing-top = #1, spacing-bottom = #1 },
+    上填充 .tl_set:N = \l__luatexcn_column_padding_top_tl,
+    下填充 .tl_set:N = \l__luatexcn_column_padding_bottom_tl,
+    填充 .meta:n = { padding-top = #1, padding-bottom = #1 },
+    格高 .tl_set:N = \l__luatexcn_column_grid_height_tl,
+    % 繁体（与简体不同形的）
+    對齊 .meta:n = { align = #1 },
+    字號 .tl_set:N = \l__luatexcn_column_local_size_tl,
+    字體 .tl_set:N = \l__luatexcn_column_local_font_tl,
+    字體顏色 .tl_set:N = \l__luatexcn_column_local_color_tl,
+    寬度 .tl_set:N = \l__luatexcn_column_width_tl,
+    行寬 .tl_set:N = \l__luatexcn_column_width_tl,
+    自動寬度 .bool_set:N = \l__luatexcn_column_auto_width_bool,
+    寬度縮放 .tl_set:N = \l__luatexcn_column_width_scale_tl,
+    上間距 .tl_set:N = \l__luatexcn_column_spacing_top_tl,
+    下間距 .tl_set:N = \l__luatexcn_column_spacing_bottom_tl,
+    間距 .meta:n = { spacing-top = #1, spacing-bottom = #1 },
+  }
+
+\ExplSyntaxOff
+
+\endinput%

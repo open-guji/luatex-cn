@@ -1,0 +1,98 @@
+% Copyright 2026 Open-Guji (https://github.com/open-guji)
+%
+% Licensed under the Apache License, Version 2.0 (the "License");
+% you may not use this file except in compliance with the License.
+% You may obtain a copy of the License at
+%
+%     http://www.apache.org/licenses/LICENSE-2.0
+%
+% Unless required by applicable law or agreed to in writing, software
+% distributed under the License is distributed on an "AS IS" BASIS,
+% WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+% See the License for the specific language governing permissions and
+% limitations under the License.
+
+% luatex-cn-guji-cover.sty
+% Cover page environment for guji (古籍) typesetting
+% Provides: Cover / 封面 environment
+%
+\NeedsTeXFormat{LaTeX2e}
+\RequirePackage{expl3}
+\ProvidesExplPackage {guji/luatex-cn-guji-cover} {2026/03/21} {0.3.6} {Cover page support}
+
+\RequirePackage{environ}
+\RequirePackage{xcolor}
+
+% ============================================================================
+% Variables
+% ============================================================================
+
+\tl_new:N \l__luatexcn_cover_body_tl
+\tl_new:N \l__luatexcn_cover_bg_color_tl
+\tl_new:N \l__luatexcn_cover_saved_bg_tl
+
+% ============================================================================
+% Key-value Configuration
+% ============================================================================
+
+\keys_define:nn { luatexcn / cover }
+  {
+    background-color .tl_set:N = \l__luatexcn_cover_bg_color_tl,
+    background-color .initial:n = {},
+  }
+
+% CJK key aliases
+\keys_define:nn { luatexcn / cover }
+  {
+    底色 .tl_set:N = \l__luatexcn_cover_bg_color_tl,
+  }
+
+% ============================================================================
+% Cover Environment
+% ============================================================================
+
+\NewEnviron{Cover}[1][]{%
+  % Save BODY before nesting into another \NewEnviron (SinglePage)
+  % to avoid infinite recursion (see MEMORY.md)
+  \tl_set_eq:NN \l__luatexcn_cover_body_tl \BODY
+  \keys_set:nn { luatexcn / cover } { #1 }%
+  % Save the global page background color, then temporarily clear it so that
+  % \begin{正文}'s apply_background does not override the cover's \pagecolor.
+  \tl_set_eq:NN \l__luatexcn_cover_saved_bg_tl \l__luatexcn_page_background_color_tl
+  \tl_clear:N \l__luatexcn_page_background_color_tl
+  \begin{单页}
+    % Apply cover-specific page background color
+    \tl_if_empty:NF \l__luatexcn_cover_bg_color_tl
+      {
+        \tl_if_in:NnTF \l__luatexcn_cover_bg_color_tl { , }
+          { \pagecolor[RGB]{\l__luatexcn_cover_bg_color_tl} }
+          { \pagecolor{\l__luatexcn_cover_bg_color_tl} }
+      }
+    \keys_set:nn { luatexcn / content } { border = false, outer-border = false }
+    \keys_set:nn { luatexcn / banxin } { banxin = false }
+    \begin{正文}
+      \char"200B\relax % Zero-width space placeholder to ensure page renders even when empty
+      \l__luatexcn_cover_body_tl
+    \end{正文}
+  \end{单页}
+  % Restore the global page background color
+  \tl_set_eq:NN \l__luatexcn_page_background_color_tl \l__luatexcn_cover_saved_bg_tl
+  % Re-apply the restored background: if template has a background-color, set it
+  % back via \pagecolor; otherwise clear it.
+  \tl_if_empty:NTF \l__luatexcn_page_background_color_tl
+    { \nopagecolor }
+    {
+      \tl_if_in:NnTF \l__luatexcn_page_background_color_tl { , }
+        { \pagecolor [RGB] { \l__luatexcn_page_background_color_tl } }
+        { \pagecolor { \l__luatexcn_page_background_color_tl } }
+    }
+}
+
+% ============================================================================
+% CJK Aliases (中文别名)
+% ============================================================================
+% Simplified Chinese / 简体 (封面简繁同形)
+\NewEnvironmentCopy{封面}{Cover}
+
+\ExplSyntaxOff
+\endinput

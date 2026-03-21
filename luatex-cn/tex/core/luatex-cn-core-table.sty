@@ -1,0 +1,308 @@
+% Copyright 2026 Open-Guji (https://github.com/open-guji)
+%
+% Licensed under the Apache License, Version 2.0 (the "License");
+% you may not use this file except in compliance with the License.
+% You may obtain a copy of the License at
+%
+%     http://www.apache.org/licenses/LICENSE-2.0
+%
+% Unless required by applicable law or agreed to in writing, software
+% distributed under the License is distributed on an "AS IS" BASIS,
+% WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+% See the License for the specific language governing permissions and
+% limitations under the License.
+
+% luatex-cn-core-table.sty
+% Inline table environment for vertical typesetting.
+% Tables are embedded within \begin{正文}...\end{正文} (BodyText).
+% Provides \begin{Table} / \begin{表格} environment and \Cell / \单元格 command.
+
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesExplPackage{core/luatex-cn-core-table}{2026/03/21} {0.3.6}
+  {Inline table environment for luatex-cn vertical typesetting}
+
+\ExplSyntaxOn
+
+% ============================================================================
+% Table Parameters
+% ============================================================================
+
+\int_new:N \l__luatexcn_table_n_bands_int
+\tl_new:N \l__luatexcn_table_band_gap_tl
+\tl_new:N \l__luatexcn_table_band_heights_tl
+\tl_new:N \l__luatexcn_table_n_cols_tl
+\int_new:N \l__luatexcn_table_header_rows_int
+\tl_new:N \l__luatexcn_cell_col_width_tl
+\tl_new:N \l__luatexcn_cell_valign_tl
+\tl_new:N \l__luatexcn_cell_column_border_tl
+\tl_new:N \l__luatexcn_table_column_border_tl
+\tl_new:N \l__luatexcn_table_band_border_tl
+\tl_new:N \l__luatexcn_table_column_fill_tl
+
+% Map Chinese column-fill values to English
+\cs_new_protected:Nn \__luatexcn_table_set_column_fill:n
+  {
+    \str_case:nnF {#1}
+      {
+        {页}   { \tl_set:Nn \l__luatexcn_table_column_fill_tl { page } }
+        {頁}   { \tl_set:Nn \l__luatexcn_table_column_fill_tl { page } }
+      }
+      { \tl_set:Nn \l__luatexcn_table_column_fill_tl {#1} }
+  }
+
+\keys_define:nn { luatexcn / table }
+  {
+    n-bands .int_set:N = \l__luatexcn_table_n_bands_int,
+    n-bands .initial:n = 2,
+    band-gap .tl_set:N = \l__luatexcn_table_band_gap_tl,
+    band-gap .initial:n = {0pt},
+    band-heights .tl_set:N = \l__luatexcn_table_band_heights_tl,
+    band-heights .initial:n = {},
+    n-columns .tl_set:N = \l__luatexcn_table_n_cols_tl,
+    n-columns .initial:n = {},
+    header-rows .int_set:N = \l__luatexcn_table_header_rows_int,
+    header-rows .initial:n = 0,
+    column-border .tl_set:N = \l__luatexcn_table_column_border_tl,
+    column-border .initial:n = {},
+    band-border .tl_set:N = \l__luatexcn_table_band_border_tl,
+    band-border .initial:n = {},
+    column-fill .code:n = { \__luatexcn_table_set_column_fill:n {#1} },
+    column-fill .initial:n = {},
+    % Forward unknown keys: try settings first, then style
+    unknown .code:n =
+      {
+        \exp_args:Nnx \keys_if_exist:nnTF { luatexcn / settings } { \l_keys_key_str }
+          { \keys_set:nx { luatexcn / settings } { \l_keys_key_str = { \exp_not:n {#1} } } }
+          {
+            \exp_args:Nnx \keys_if_exist:nnTF { luatexcn / style } { \l_keys_key_str }
+              { \keys_set:nx { luatexcn / style } { \l_keys_key_str = { \exp_not:n {#1} } } }
+              { }
+          }
+      },
+  }
+
+\keys_define:nn { luatexcn / cell }
+  {
+    col-width .tl_set:N = \l__luatexcn_cell_col_width_tl,
+    col-width .initial:n = {1},
+    vertical-align .tl_set:N = \l__luatexcn_cell_valign_tl,
+    vertical-align .initial:n = {},
+    column-border .tl_set:N = \l__luatexcn_cell_column_border_tl,
+    column-border .initial:n = {},
+    % Forward unknown keys: try settings first, then style
+    unknown .code:n =
+      {
+        \exp_args:Nnx \keys_if_exist:nnTF { luatexcn / settings } { \l_keys_key_str }
+          { \keys_set:nx { luatexcn / settings } { \l_keys_key_str = { \exp_not:n {#1} } } }
+          {
+            \exp_args:Nnx \keys_if_exist:nnTF { luatexcn / style } { \l_keys_key_str }
+              { \keys_set:nx { luatexcn / style } { \l_keys_key_str = { \exp_not:n {#1} } } }
+              { }
+          }
+      },
+  }
+
+% ============================================================================
+% Internal: build band_heights Lua table from comma-separated dimensions
+% ============================================================================
+
+\tl_new:N \l__luatexcn_table_band_heights_lua_tl
+\tl_new:N \l__luatexcn_table_n_cols_lua_tl
+
+\cs_new_protected:Nn \__luatexcn_table_build_params:
+  {
+    % Convert band-heights comma list to Lua table: {h1_sp, h2_sp, ...}
+    \tl_if_empty:NTF \l__luatexcn_table_band_heights_tl
+      { \tl_set:Nn \l__luatexcn_table_band_heights_lua_tl { nil } }
+      {
+        \tl_set:Nn \l__luatexcn_table_band_heights_lua_tl { \c_left_brace_str }
+        \bool_set_true:N \l_tmpa_bool
+        \exp_args:NV \clist_map_function:nN
+          \l__luatexcn_table_band_heights_tl
+          \__luatexcn_table_heights_item:n
+        \tl_put_right:Nn \l__luatexcn_table_band_heights_lua_tl { \c_right_brace_str }
+      }
+    % Convert n-columns to Lua number or nil
+    \tl_if_empty:NTF \l__luatexcn_table_n_cols_tl
+      { \tl_set:Nn \l__luatexcn_table_n_cols_lua_tl { nil } }
+      { \tl_set_eq:NN \l__luatexcn_table_n_cols_lua_tl \l__luatexcn_table_n_cols_tl }
+  }
+
+\cs_new_protected:Nn \__luatexcn_table_heights_item:n
+  {
+    \bool_if:NTF \l_tmpa_bool
+      { \bool_set_false:N \l_tmpa_bool }
+      { \tl_put_right:Nn \l__luatexcn_table_band_heights_lua_tl { ,~ } }
+    \tl_put_right:Nx \l__luatexcn_table_band_heights_lua_tl
+      { \dim_to_decimal_in_sp:n { #1 } }
+  }
+
+% ============================================================================
+% Table Environment (inline within BodyText)
+% ============================================================================
+% Tables emit PENALTY_TABLE_START at begin and PENALTY_TABLE_END at end.
+% The layout engine dynamically switches to band mode for the table section.
+
+\NewDocumentEnvironment{Table}{ O{} }
+  {
+    % Initialize style variables before key parsing (unknown keys forward to style)
+    \__luatexcn_style_init_and_parse:n {}
+    \keys_set:nn { luatexcn / table } { #1 }
+    \__luatexcn_table_build_params:
+    \lua_now:e {
+      require('core.luatex-cn-core-table').init({
+        n_bands~=~\int_use:N \l__luatexcn_table_n_bands_int,
+        band_gap_sp~=~\dim_to_decimal_in_sp:n { \l__luatexcn_table_band_gap_tl },
+        band_heights~=~\l__luatexcn_table_band_heights_lua_tl,
+        n_columns~=~\l__luatexcn_table_n_cols_lua_tl,
+        column_border~=~\tl_if_empty:NTF \l__luatexcn_table_column_border_tl {nil} {\l__luatexcn_table_column_border_tl},
+        band_border~=~\tl_if_empty:NTF \l__luatexcn_table_band_border_tl {nil} {\l__luatexcn_table_band_border_tl},
+        column_fill~=~\tl_if_empty:NTF \l__luatexcn_table_column_fill_tl {nil} {"\l__luatexcn_table_column_fill_tl"},
+      })
+    }
+    % Apply style if any style keys were forwarded
+    \__luatexcn_style_maybe_apply_and_push:
+  }
+  {
+    \__luatexcn_style_maybe_pop:
+    \lua_now:n { require('core.luatex-cn-core-table').cleanup() }
+  }
+
+% ============================================================================
+% Cell Command
+% ============================================================================
+
+\NewDocumentCommand{\Cell}{ O{} +g }
+  {
+    \tl_set:Nn \l__luatexcn_cell_col_width_tl {1}
+    \tl_clear:N \l__luatexcn_cell_valign_tl
+    \tl_clear:N \l__luatexcn_cell_column_border_tl
+    % Initialize style variables before key parsing (unknown keys forward to style)
+    \__luatexcn_style_init_and_parse:n {}
+    \keys_set:nn { luatexcn / cell } { #1 }
+    \lua_now:e {
+      require('core.luatex-cn-core-table').begin_cell(
+        \str_if_eq:VnTF \l__luatexcn_cell_col_width_tl {nil} {0} {\l__luatexcn_cell_col_width_tl},
+        \tl_if_empty:NTF \l__luatexcn_cell_valign_tl {nil} {"\l__luatexcn_cell_valign_tl"},
+        \tl_if_empty:NTF \l__luatexcn_cell_column_border_tl {nil} {\l__luatexcn_cell_column_border_tl}
+      )
+    }
+    \luatexcnRestoreTempIndent
+    % Apply style if any style keys were forwarded, scoped to cell content
+    \IfValueTF{#2}
+      {
+        \group_begin:
+        \__luatexcn_style_maybe_apply_and_push:
+        #2
+        \__luatexcn_style_maybe_pop:
+        \group_end:
+      }
+      {
+        \__luatexcn_style_maybe_apply_and_push:
+        \__luatexcn_style_maybe_pop:
+      }
+  }
+
+% ============================================================================
+% Band Format Command
+% ============================================================================
+% \BandFormat / \栏格式 sets per-band formatting options.
+% Must be used at the beginning of a band (before any \Cell).
+
+\tl_new:N \l__luatexcn_bandformat_column_border_tl
+\tl_new:N \l__luatexcn_bandformat_padding_top_tl
+\tl_new:N \l__luatexcn_bandformat_padding_bottom_tl
+
+\keys_define:nn { luatexcn / band-format }
+  {
+    column-border .tl_set:N = \l__luatexcn_bandformat_column_border_tl,
+    column-border .initial:n = {},
+    padding-top .tl_set:N = \l__luatexcn_bandformat_padding_top_tl,
+    padding-top .initial:n = {},
+    padding-bottom .tl_set:N = \l__luatexcn_bandformat_padding_bottom_tl,
+    padding-bottom .initial:n = {},
+    padding .meta:n = { padding-top = #1, padding-bottom = #1 },
+    % Forward unknown keys: try settings first, then style
+    unknown .code:n =
+      {
+        \exp_args:Nnx \keys_if_exist:nnTF { luatexcn / settings } { \l_keys_key_str }
+          { \keys_set:nx { luatexcn / settings } { \l_keys_key_str = { \exp_not:n {#1} } } }
+          {
+            \exp_args:Nnx \keys_if_exist:nnTF { luatexcn / style } { \l_keys_key_str }
+              { \keys_set:nx { luatexcn / style } { \l_keys_key_str = { \exp_not:n {#1} } } }
+              { }
+          }
+      },
+  }
+
+\NewDocumentCommand{\BandFormat}{ O{} }
+  {
+    \tl_clear:N \l__luatexcn_bandformat_column_border_tl
+    \tl_clear:N \l__luatexcn_bandformat_padding_top_tl
+    \tl_clear:N \l__luatexcn_bandformat_padding_bottom_tl
+    % Initialize style variables before key parsing (unknown keys forward to style)
+    \__luatexcn_style_init_and_parse:n {}
+    \keys_set:nn { luatexcn / band-format } { #1 }
+    \lua_now:e {
+      require('core.luatex-cn-core-table').set_band_format({
+        column_border~=~\tl_if_empty:NTF \l__luatexcn_bandformat_column_border_tl {nil} {\l__luatexcn_bandformat_column_border_tl},
+        padding_top~=~\tl_if_empty:NTF \l__luatexcn_bandformat_padding_top_tl {nil} {[=[\luaescapestring{\l__luatexcn_bandformat_padding_top_tl}]=]},
+        padding_bottom~=~\tl_if_empty:NTF \l__luatexcn_bandformat_padding_bottom_tl {nil} {[=[\luaescapestring{\l__luatexcn_bandformat_padding_bottom_tl}]=]},
+      })
+    }
+    % Apply style if any style keys were forwarded
+    \__luatexcn_style_maybe_apply_and_push:
+  }
+
+% ============================================================================
+% Chinese Aliases
+% ============================================================================
+
+\NewEnvironmentCopy{表格}{Table}
+\NewCommandCopy{\单元格}{\Cell}
+\NewCommandCopy{\單元格}{\Cell}
+\NewCommandCopy{\栏格式}{\BandFormat}
+\NewCommandCopy{\欄格式}{\BandFormat}
+
+\keys_define:nn { luatexcn / band-format }
+  {
+    行边框 .tl_set:N = \l__luatexcn_bandformat_column_border_tl,
+    行邊框 .tl_set:N = \l__luatexcn_bandformat_column_border_tl,
+    上填充 .tl_set:N = \l__luatexcn_bandformat_padding_top_tl,
+    下填充 .tl_set:N = \l__luatexcn_bandformat_padding_bottom_tl,
+    填充 .meta:n = { padding-top = #1, padding-bottom = #1 },
+  }
+
+\keys_define:nn { luatexcn / table }
+  {
+    分栏 .int_set:N = \l__luatexcn_table_n_bands_int,
+    栏间距 .tl_set:N = \l__luatexcn_table_band_gap_tl,
+    栏高度 .tl_set:N = \l__luatexcn_table_band_heights_tl,
+    行数 .tl_set:N = \l__luatexcn_table_n_cols_tl,
+    表头栏数 .int_set:N = \l__luatexcn_table_header_rows_int,
+    行边框 .tl_set:N = \l__luatexcn_table_column_border_tl,
+    栏边框 .tl_set:N = \l__luatexcn_table_band_border_tl,
+    分欄 .int_set:N = \l__luatexcn_table_n_bands_int,
+    欄間距 .tl_set:N = \l__luatexcn_table_band_gap_tl,
+    欄高度 .tl_set:N = \l__luatexcn_table_band_heights_tl,
+    行數 .tl_set:N = \l__luatexcn_table_n_cols_tl,
+    表頭欄數 .int_set:N = \l__luatexcn_table_header_rows_int,
+    行邊框 .tl_set:N = \l__luatexcn_table_column_border_tl,
+    欄邊框 .tl_set:N = \l__luatexcn_table_band_border_tl,
+    行填充 .code:n = { \__luatexcn_table_set_column_fill:n {#1} },
+    行填滿 .code:n = { \__luatexcn_table_set_column_fill:n {#1} },
+  }
+
+\keys_define:nn { luatexcn / cell }
+  {
+    行宽 .tl_set:N = \l__luatexcn_cell_col_width_tl,
+    行寬 .tl_set:N = \l__luatexcn_cell_col_width_tl,
+    纵对齐 .tl_set:N = \l__luatexcn_cell_valign_tl,
+    縱對齊 .tl_set:N = \l__luatexcn_cell_valign_tl,
+    行边框 .tl_set:N = \l__luatexcn_cell_column_border_tl,
+    行邊框 .tl_set:N = \l__luatexcn_cell_column_border_tl,
+  }
+
+\ExplSyntaxOff
+
+\endinput

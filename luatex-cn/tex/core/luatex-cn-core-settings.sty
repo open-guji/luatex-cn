@@ -1,0 +1,59 @@
+% Copyright 2026 Open-Guji (https://github.com/open-guji)
+%
+% Licensed under the Apache License, Version 2.0 (the "License");
+% you may not use this file except in compliance with the License.
+% You may obtain a copy of the License at
+%
+%     http://www.apache.org/licenses/LICENSE-2.0
+%
+% Unless required by applicable law or agreed to in writing, software
+% distributed under the License is distributed on an "AS IS" BASIS,
+% WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+% See the License for the specific language governing permissions and
+% limitations under the License.
+% luatex-cn-core-settings.sty
+% Global settings namespace for component-level configuration overrides.
+% Defines the `luatexcn / settings` key family used by the setting stack.
+% Components (sidenote, pizhu, textbox, etc.) forward unknown keys here
+% via .unknown handler.
+%
+\RequirePackage{expl3}
+\ProvidesExplPackage {core/luatex-cn-core-settings} {2026/03/21} {0.3.6} {Setting Stack TeX Keys}
+
+% Load Lua module
+\lua_now:n { require('util.luatex-cn-setting-stack') }
+
+% --- Variable Declarations ---
+\tl_new:N \l__luatexcn_settings_punct_mode_tl
+\tl_new:N \l__luatexcn_settings_punct_style_tl
+\tl_new:N \l__luatexcn_settings_debug_tl
+
+% --- Key Definitions ---
+\keys_define:nn { luatexcn / settings }
+  {
+    punct-mode .tl_set:N = \l__luatexcn_settings_punct_mode_tl,
+    punct-mode .initial:n = {},
+    punct-style .tl_set:N = \l__luatexcn_settings_punct_style_tl,
+    punct-style .initial:n = {},
+    debug .tl_set:N = \l__luatexcn_settings_debug_tl,
+    debug .initial:n = {},
+  }
+
+% ============================================================
+% Chinese key aliases / 中文 Key 别名
+% ============================================================
+\keys_define:nn { luatexcn / settings }
+  {
+    % 简体
+    标点模式 .tl_set:N = \l__luatexcn_settings_punct_mode_tl,
+    标点标准 .tl_set:N = \l__luatexcn_settings_punct_style_tl,
+    调试 .tl_set:N = \l__luatexcn_settings_debug_tl,
+    % 繁体
+    標點模式 .tl_set:N = \l__luatexcn_settings_punct_mode_tl,
+    標點標準 .tl_set:N = \l__luatexcn_settings_punct_style_tl,
+    調試 .tl_set:N = \l__luatexcn_settings_debug_tl,
+  }
+
+\ExplSyntaxOff%
+
+\endinput%

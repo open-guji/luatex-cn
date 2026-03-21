@@ -1,0 +1,154 @@
+% Copyright 2026 Open-Guji (https://github.com/open-guji)
+%
+% Licensed under the Apache License, Version 2.0 (the "License");
+% you may not use this file except in compliance with the License.
+% You may obtain a copy of the License at
+%
+%     http://www.apache.org/licenses/LICENSE-2.0
+%
+% Unless required by applicable law or agreed to in writing, software
+% distributed under the License is distributed on an "AS IS" BASIS,
+% WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+% See the License for the specific language governing permissions and
+% limitations under the License.
+
+% luatex-cn-guji-yinzhang.sty
+% YinZhang (印章/Seal Stamp) overlay functionality for ancient Chinese books
+%
+\RequirePackage{expl3}
+\ProvidesExplPackage {guji/luatex-cn-guji-yinzhang} {2026/03/21} {0.3.6} {Seal stamp overlay for Chinese books}
+
+\RequirePackage{tikz}
+\RequirePackage{graphicx}
+
+% ============================================================================
+% YinZhang (印章) Command - Add seal/stamp overlay on specified page
+% ============================================================================
+
+% Local variables for YinZhang key parsing
+\int_new:N \l_luatexcn_yinzhang_page_int
+\tl_new:N \l_luatexcn_yinzhang_opacity_tl
+\tl_new:N \l_luatexcn_yinzhang_xshift_tl
+\tl_new:N \l_luatexcn_yinzhang_yshift_tl
+\tl_new:N \l_luatexcn_yinzhang_width_tl
+\tl_new:N \l_luatexcn_yinzhang_color_tl
+% Temporary tl for computed target page
+\tl_new:N \l__luatexcn_yinzhang_target_page_tl
+
+\keys_define:nn { luatexcn / yinzhang }
+  {
+    opacity .tl_set:N = \l_luatexcn_yinzhang_opacity_tl,
+    opacity .initial:n = {1},
+
+    xshift .tl_set:N = \l_luatexcn_yinzhang_xshift_tl,
+    xshift .initial:n = {0cm},
+
+    yshift .tl_set:N = \l_luatexcn_yinzhang_yshift_tl,
+    yshift .initial:n = {0cm},
+
+    width .tl_set:N = \l_luatexcn_yinzhang_width_tl,
+    width .initial:n = {10cm},
+
+    page .int_set:N = \l_luatexcn_yinzhang_page_int,
+    page .initial:n = {1},
+
+    color .tl_set:N = \l_luatexcn_yinzhang_color_tl,
+    color .initial:n = {},
+    % Forward unknown keys: try settings first, then style
+    unknown .code:n =
+      {
+        \exp_args:Nnx \keys_if_exist:nnTF { luatexcn / settings } { \l_keys_key_str }
+          { \keys_set:nx { luatexcn / settings } { \l_keys_key_str = { \exp_not:n {#1} } } }
+          {
+            \exp_args:Nnx \keys_if_exist:nnTF { luatexcn / style } { \l_keys_key_str }
+              { \keys_set:nx { luatexcn / style } { \l_keys_key_str = { \exp_not:n {#1} } } }
+              { }
+          }
+      },
+  }
+
+\NewDocumentCommand{\yinzhangSetup}{ m }
+  {
+    \keys_set:nn { luatexcn / yinzhang } { #1 }
+  }
+
+\NewDocumentCommand{\YinZhang}{ O{} m }
+  {
+    \group_begin:
+    % Parse options (overrides Setup defaults within this group)
+    \keys_set:nn { luatexcn / yinzhang } { #1 }
+
+    % Compute target TeX page number
+    % In split mode: map big page to TeX page (right half-page only)
+    %   big_page N -> TeX page 2*N-1 (right_first) or 2*N (left_first)
+    % In normal mode: target_page = user's page value directly
+    \tl_set:Nx \l__luatexcn_yinzhang_target_page_tl {
+      \lua_now:e {
+        local~big_page~=~\int_use:N \l_luatexcn_yinzhang_page_int ;~
+        if~_G.page~and~_G.page.split~and~_G.page.split.enabled~then~
+          if~_G.page.split.right_first~then~
+            tex.sprint(2~*~big_page~-~1)~
+          else~
+            tex.sprint(2~*~big_page)~
+          end;~
+        else~
+          tex.sprint(big_page)~
+        end
+      }
+    }
+
+    % Add hook with all parameters expanded inline as literal values.
+    % Each \印章 call captures its own snapshot, so multiple seals don't
+    % overwrite each other's parameters (fix #80).
+    \use:x {
+      \exp_not:N \AddToHook{shipout/background}{
+        \exp_not:N \int_compare:nNnT
+          { \exp_not:N \value{page} } = { \l__luatexcn_yinzhang_target_page_tl }
+          {
+            \exp_not:N \begin{tikzpicture}[overlay]
+              \exp_not:N \node[
+                anchor=north~east,
+                opacity=\l_luatexcn_yinzhang_opacity_tl,
+                inner~sep=0pt,
+                xshift=-\l_luatexcn_yinzhang_xshift_tl,
+                yshift=-\l_luatexcn_yinzhang_yshift_tl
+              ]~at~( \exp_not:N \paperwidth,~0)~{
+                \exp_not:N \includegraphics
+                  [width=\l_luatexcn_yinzhang_width_tl]
+                  {#2}
+              };
+            \exp_not:N \end{tikzpicture}
+          }
+      }
+    }
+    \group_end:
+  }
+
+% ============================================================================
+% CJK Key Aliases (中文键值别名)
+% ============================================================================
+\keys_define:nn { luatexcn / yinzhang }
+  {
+    不透明度 .tl_set:N = \l_luatexcn_yinzhang_opacity_tl,
+    横移 .tl_set:N = \l_luatexcn_yinzhang_xshift_tl,
+    橫移 .tl_set:N = \l_luatexcn_yinzhang_xshift_tl,
+    纵移 .tl_set:N = \l_luatexcn_yinzhang_yshift_tl,
+    縱移 .tl_set:N = \l_luatexcn_yinzhang_yshift_tl,
+    宽度 .tl_set:N = \l_luatexcn_yinzhang_width_tl,
+    寬度 .tl_set:N = \l_luatexcn_yinzhang_width_tl,
+    页 .int_set:N = \l_luatexcn_yinzhang_page_int,
+    頁 .int_set:N = \l_luatexcn_yinzhang_page_int,
+    颜色 .tl_set:N = \l_luatexcn_yinzhang_color_tl,
+    顏色 .tl_set:N = \l_luatexcn_yinzhang_color_tl,
+  }
+
+% ============================================================================
+% CJK Aliases (中文别名)
+% ============================================================================
+% Simplified Chinese / 简体
+\NewCommandCopy{\印章}{\YinZhang}
+\NewCommandCopy{\印章设置}{\yinzhangSetup}
+% Traditional Chinese / 繁体 (印章简繁同形)
+\NewCommandCopy{\印章設置}{\yinzhangSetup}
+
+\endinput

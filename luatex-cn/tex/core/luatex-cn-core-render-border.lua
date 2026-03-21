@@ -1,0 +1,1092 @@
+-- Copyright 2026 Open-Guji (https://github.com/open-guji)
+--
+-- Licensed under the Apache License, Version 2.0 (the "License");
+-- you may not use this file except in compliance with the License.
+-- You may obtain a copy of the License at
+--
+--     http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing, software
+-- distributed under the License is distributed on an "AS IS" BASIS,
+-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-- See the License for the specific language governing permissions and
+-- limitations under the License.
+-- ============================================================================
+-- luatex-cn-core-render-border.lua - 边框渲染模块
+-- ============================================================================
+-- 文件名: luatex-cn-core-render-border.lua
+-- 层级: 第三阶段 - 渲染层 (Stage 3: Render Layer)
+--
+-- 【模块功能 / Module Purpose】
+-- 本模块负责边框和装饰边框的渲染：
+--   1. draw_column_borders: 绘制普通列的边框（跳过版心列）
+--   2. draw_outer_border: 绘制整个内容区域的外围边框
+--   3. render_borders: 高层协调函数，处理所有边框渲染
+--   4. 装饰边框形状（rect/octagon/circle）的渲染
+--
+-- ============================================================================
+
+-- Load dependencies
+local utils = package.loaded['util.luatex-cn-utils'] or
+    require('util.luatex-cn-utils')
+local constants = package.loaded['core.luatex-cn-constants'] or
+    require('core.luatex-cn-constants')
+local drawing = package.loaded['util.luatex-cn-drawing'] or
+    require('util.luatex-cn-drawing')
+local page_mod = package.loaded['core.luatex-cn-core-page'] or
+    require('core.luatex-cn-core-page')
+local text_position = package.loaded['core.luatex-cn-render-position'] or
+    require('core.luatex-cn-render-position')
+
+-- ============================================================================
+-- Column Border Drawing
+-- ============================================================================
+
+--- 绘制列边框（仅限普通列，不含版心列）
+-- 版心列应由 banxin.draw_banxin_column 单独绘制
+-- @param p_head (node) 节点列表头部（直接引用）
+-- @param params (table) 参数表:
+--   - total_cols: 要绘制的总列数
+--   - grid_width: 每列的宽度 (sp)
+--   - content_dim_h: 列边框高度 (sp), 即 line_limit * grid_height + padding
+--   - border_thickness: 边框厚度 (sp)
+--   - shift_x: 水平偏移 (sp)
+--   - outer_shift: 外边框偏移 (sp)
+--   - border_rgb_str: 归一化的 RGB 颜色字符串
+--   - banxin_cols: 可选，要跳过的列索引集合（版心列）
+-- @return (node) 更新后的头部
+local function draw_column_borders(p_head, params)
+    local sp_to_bp = utils.sp_to_bp
+    local total_cols = params.total_cols
+    local grid_width = params.grid_width
+    local border_thickness = params.border_thickness
+    local shift_x = params.shift_x
+    local outer_shift = params.outer_shift
+    local border_rgb_str = params.border_rgb_str
+    local banxin_cols = params.banxin_cols or {} -- Set of column indices to skip
+    local col_min_y_sp = params.col_min_y_sp or {} -- Per-column min y_sp for taitou raised border
+    local col_geom = params.col_geom or {
+        grid_width = grid_width,
+        banxin_width = params.banxin_width or 0,
+        interval = params.interval or 0,
+    }
+    local content_dim_h = params.content_dim_h  -- Pre-computed: line_limit * grid_height + padding
+
+    local b_thickness_bp = border_thickness * sp_to_bp
+    local half_thickness = math.floor(border_thickness / 2)
+
+    -- Variable-width column borders: when col_widths is set,
+    -- each column has its own width in sp.
+    local col_widths = _G.content and _G.content.col_widths
+    if col_widths and #col_widths > 0 then
+        for i = 1, #col_widths do
+            local logical_col = i - 1
+            local rtl_col = total_cols - 1 - logical_col
+            local tx_bp = (text_position.get_column_x_var(rtl_col, col_widths, total_cols) + half_thickness + shift_x) * sp_to_bp
+            local ty_bp = -(half_thickness + outer_shift) * sp_to_bp
+            local tw_bp = col_widths[i] * sp_to_bp
+            local th_bp = -content_dim_h * sp_to_bp
+
+            local literal = utils.create_border_literal(b_thickness_bp, border_rgb_str, tx_bp, ty_bp, tw_bp, th_bp)
+            p_head = utils.insert_pdf_literal(p_head, literal)
+        end
+        return p_head
+    end
+
+    -- Per-band column border control: when band_column_borders is set,
+    -- draw column borders from full height, excluding only the bands with column_border=false.
+    -- Gaps between bands and padding areas retain column borders.
+    local band_column_borders = params.band_column_borders
+    local n_bands = params.n_bands
+    local band_heights_sp = params.band_heights_sp
+    local band_y_offsets_sp = params.band_y_offsets_sp
+
+    -- Per-cell column border support: cell_column_borders[band][cell_idx] overrides band default
+    local cell_column_borders = params.cell_column_borders
+    local col_groups = params.col_groups
+
+    if band_column_borders and n_bands and n_bands > 1 then
+        -- Offset to convert band y-coordinates (content area origin) to column border
+        -- y-coordinates (inner border origin). Band dividers are drawn at
+        -- outer_shift + border_thickness + band_y, while column border
+        -- segments start at half_thickness + outer_shift + seg_y.
+        -- column_padding only affects text Y-offset, not band/border positions.
+        local band_y_to_seg = (border_thickness - half_thickness)
+
+        -- Determine table column range so columns outside the table
+        -- are drawn at full height (not affected by band_column_borders).
+        local table_start_col = params.table_start_col
+        local actual_band_cols = params.actual_band_cols
+
+        -- Build per-column-per-band border map when cell_column_borders are present
+        -- col_border_overrides[band][local_col] = true/false (nil = use band default)
+        local col_border_overrides = nil
+        if cell_column_borders and col_groups then
+            col_border_overrides = {}
+            for band = 0, n_bands - 1 do
+                local cell_borders = cell_column_borders[band]
+                local cells = col_groups[band]
+                if cell_borders and cells then
+                    col_border_overrides[band] = {}
+                    local col_offset = 0
+                    for cell_idx = 1, #cells do
+                        local cw = cells[cell_idx] or 1
+                        if cw == 0 then cw = actual_band_cols - col_offset end
+                        local cb = cell_borders[cell_idx]
+                        if cb ~= nil then
+                            for c = 0, cw - 1 do
+                                col_border_overrides[band][col_offset + c] = cb
+                            end
+                        end
+                        col_offset = col_offset + cw
+                    end
+                end
+            end
+        end
+
+        -- Build band-level skips for horizontal edge restoration
+        -- (cell-level overrides don't affect the overall frame edges)
+        local skips = {}
+        for band = 0, n_bands - 1 do
+            if band_column_borders[band] == false then
+                local by = (band_y_offsets_sp[band] or 0) + band_y_to_seg
+                local bh = band_heights_sp[band] or 0
+                skips[#skips + 1] = { by, by + bh }
+            end
+        end
+
+        -- Build per-column draw segments
+        for col = 0, total_cols - 1 do
+            if not banxin_cols[col] then
+                local rtl_col = total_cols - 1 - col
+                local tx_bp = (text_position.get_column_x(rtl_col, col_geom) + half_thickness + shift_x) * sp_to_bp
+                local tw_bp = text_position.get_column_width(col, col_geom) * sp_to_bp
+
+                -- Check if this column is inside the table range
+                local in_table = table_start_col and actual_band_cols
+                    and col >= table_start_col and col < table_start_col + actual_band_cols
+
+                if in_table then
+                    -- For this column, determine per-band draw/skip using both
+                    -- band_column_borders and cell-level overrides
+                    local local_col = col - table_start_col
+                    local skips = {}
+                    for band = 0, n_bands - 1 do
+                        -- Cell override > band default
+                        local draw = band_column_borders[band]
+                        if col_border_overrides and col_border_overrides[band]
+                            and col_border_overrides[band][local_col] ~= nil then
+                            draw = col_border_overrides[band][local_col]
+                        end
+                        if draw == false then
+                            local by = (band_y_offsets_sp[band] or 0) + band_y_to_seg
+                            local bh = band_heights_sp[band] or 0
+                            skips[#skips + 1] = { by, by + bh }
+                        end
+                    end
+
+                    -- Build segments from skips
+                    local segments = {}
+                    local cursor = 0
+                    for _, skip in ipairs(skips) do
+                        if cursor < skip[1] then
+                            segments[#segments + 1] = { cursor, skip[1] }
+                        end
+                        cursor = skip[2]
+                    end
+                    if cursor < content_dim_h then
+                        segments[#segments + 1] = { cursor, content_dim_h }
+                    end
+
+                    -- Draw segments
+                    for _, seg in ipairs(segments) do
+                        local ty_bp = -(half_thickness + outer_shift + seg[1]) * sp_to_bp
+                        local th_bp = -(seg[2] - seg[1]) * sp_to_bp
+
+                        local literal = utils.create_border_literal(b_thickness_bp, border_rgb_str, tx_bp, ty_bp, tw_bp, th_bp)
+                        p_head = utils.insert_pdf_literal(p_head, literal)
+                    end
+                else
+                    -- Non-table column: draw full-height column border
+                    local ty_bp = -(half_thickness + outer_shift) * sp_to_bp
+                    local th_bp = -content_dim_h * sp_to_bp
+                    local literal = utils.create_border_literal(b_thickness_bp, border_rgb_str, tx_bp, ty_bp, tw_bp, th_bp)
+                    p_head = utils.insert_pdf_literal(p_head, literal)
+                end
+
+                -- Taitou raised border: extend topmost segment upward for negative y_sp columns
+                local min_y = col_min_y_sp[col]
+                if min_y and min_y < 0 then
+                    local raised_sp = -min_y
+                    local ty_bp = -(half_thickness + outer_shift) * sp_to_bp + raised_sp * sp_to_bp
+                    local th_bp = -raised_sp * sp_to_bp
+                    local literal = utils.create_border_literal(b_thickness_bp, border_rgb_str, tx_bp, ty_bp, tw_bp, th_bp)
+                    p_head = utils.insert_pdf_literal(p_head, literal)
+                end
+            end
+        end
+
+        -- Restore vertical edges at table boundaries where column border
+        -- rectangles are absent (all bands skipped). The boundary between
+        -- table columns (column_border=false) and non-table columns (with borders)
+        -- or page edges needs vertical lines so the frame remains closed.
+        -- Check if ALL bands have column_border=false (no cell overrides apply here
+        -- since boundary lines are about the overall table frame)
+        local all_bands_skipped = true
+        for band = 0, n_bands - 1 do
+            if band_column_borders[band] ~= false then
+                all_bands_skipped = false
+                break
+            end
+        end
+        if all_bands_skipped and table_start_col and actual_band_cols then
+            local table_end_col = table_start_col + actual_band_cols  -- exclusive
+            local ty_bp = -(half_thickness + outer_shift) * sp_to_bp
+            local th_sp = content_dim_h
+
+            -- Left edge of table region (high col = leftmost in RTL layout)
+            -- Draw if table extends to page left boundary (col == total_cols - 1)
+            -- or if the column to the left is non-table or banxin
+            local left_col = table_end_col - 1  -- highest col in table
+            if left_col >= 0 then
+                local need_left = (left_col == total_cols - 1) or
+                    (left_col + 1 < total_cols and (not (left_col + 1 >= table_start_col and left_col + 1 < table_end_col) or banxin_cols[left_col + 1]))
+                if need_left then
+                    local rtl_col = total_cols - 1 - left_col
+                    local lx = text_position.get_column_x(rtl_col, col_geom)
+                    local line_x_bp = (lx + half_thickness + shift_x) * sp_to_bp
+                    local literal = string.format("q %.2f w %s RG %.4f %.4f m %.4f %.4f l S Q",
+                        b_thickness_bp, border_rgb_str,
+                        line_x_bp, ty_bp, line_x_bp, ty_bp - th_sp * sp_to_bp)
+                    p_head = utils.insert_pdf_literal(p_head, literal)
+                end
+            end
+
+            -- Right edge of table region (low col = rightmost in RTL layout)
+            -- Draw if table extends to page right boundary (col == 0)
+            -- or if the column to the right is non-table or banxin
+            local right_col = table_start_col  -- lowest col in table
+            if right_col >= 0 then
+                local need_right = (right_col == 0) or
+                    (right_col - 1 >= 0 and (not (right_col - 1 >= table_start_col and right_col - 1 < table_end_col) or banxin_cols[right_col - 1]))
+                if need_right then
+                    local rtl_col = total_cols - 1 - right_col
+                    local rx = text_position.get_column_x(rtl_col, col_geom)
+                    local rw = text_position.get_column_width(right_col, col_geom)
+                    local line_x_bp = (rx + rw + half_thickness + shift_x) * sp_to_bp
+                    local literal = string.format("q %.2f w %s RG %.4f %.4f m %.4f %.4f l S Q",
+                        b_thickness_bp, border_rgb_str,
+                        line_x_bp, ty_bp, line_x_bp, ty_bp - th_sp * sp_to_bp)
+                    p_head = utils.insert_pdf_literal(p_head, literal)
+                end
+            end
+        end
+
+        -- Restore horizontal edges at content area boundaries where column border
+        -- rectangles are absent (skipped bands). Use full-width horizontal lines
+        -- (same style as band dividers) so they are visually consistent.
+        -- Build horizontal line segments that skip banxin columns.
+        local h_segments = {}
+        local interval = col_geom.interval or 0
+        local banxin_width_val = col_geom.banxin_width or 0
+        if interval > 0 and banxin_width_val > 0 and total_cols > 0 then
+            local seg_start = nil
+            for rtl_col = 0, total_cols - 1 do
+                local col = total_cols - 1 - rtl_col
+                local is_banxin = (col % (interval + 1)) == interval
+                local col_x = text_position.get_column_x(rtl_col, col_geom)
+                local col_w = text_position.get_column_width(col, col_geom)
+                if is_banxin then
+                    if seg_start ~= nil then
+                        h_segments[#h_segments + 1] = { seg_start, col_x }
+                        seg_start = nil
+                    end
+                else
+                    if seg_start == nil then seg_start = col_x end
+                end
+                if rtl_col == total_cols - 1 and seg_start ~= nil then
+                    h_segments[#h_segments + 1] = { seg_start, col_x + col_w }
+                end
+            end
+        else
+            local iw = content_dim_h and params.content_dim_w
+            if not iw then
+                -- Approximate: total_cols * grid_width
+                iw = total_cols * (col_geom.grid_width or 0)
+            end
+            h_segments[1] = { 0, iw }
+        end
+
+        -- Draw full-width horizontal lines at boundaries of skipped bands
+        local need_top_edge = (#skips > 0 and skips[1][1] == 0)
+        local need_bottom_edge = (#skips > 0 and skips[#skips][2] >= content_dim_h)
+
+        if need_top_edge then
+            local ey = -(half_thickness + outer_shift) * sp_to_bp
+            for _, seg in ipairs(h_segments) do
+                local left_x_bp = (half_thickness + shift_x + seg[1]) * sp_to_bp
+                local right_x_bp = (half_thickness + shift_x + seg[2]) * sp_to_bp
+                local literal = string.format("q %.2f w %s RG %.4f %.4f m %.4f %.4f l S Q",
+                    b_thickness_bp, border_rgb_str,
+                    left_x_bp, ey, right_x_bp, ey)
+                p_head = utils.insert_pdf_literal(p_head, literal)
+            end
+        end
+
+        if need_bottom_edge then
+            local ey = -(half_thickness + outer_shift + content_dim_h) * sp_to_bp
+            for _, seg in ipairs(h_segments) do
+                local left_x_bp = (half_thickness + shift_x + seg[1]) * sp_to_bp
+                local right_x_bp = (half_thickness + shift_x + seg[2]) * sp_to_bp
+                local literal = string.format("q %.2f w %s RG %.4f %.4f m %.4f %.4f l S Q",
+                    b_thickness_bp, border_rgb_str,
+                    left_x_bp, ey, right_x_bp, ey)
+                p_head = utils.insert_pdf_literal(p_head, literal)
+            end
+        end
+
+        return p_head
+    end
+
+    for col = 0, total_cols - 1 do
+        -- Skip banxin columns (they are drawn separately by banxin module)
+        if not banxin_cols[col] then
+            local rtl_col = total_cols - 1 - col
+            local tx_bp = (text_position.get_column_x(rtl_col, col_geom) + half_thickness + shift_x) * sp_to_bp
+            local ty_bp = -(half_thickness + outer_shift) * sp_to_bp
+            local tw_bp = text_position.get_column_width(col, col_geom) * sp_to_bp
+            local th_bp = -content_dim_h * sp_to_bp
+
+            -- Taitou raised border: extend column upward for negative y_sp columns
+            local min_y = col_min_y_sp[col]
+            if min_y and min_y < 0 then
+                local raised_sp = -min_y
+                ty_bp = ty_bp + raised_sp * sp_to_bp
+                th_bp = th_bp - raised_sp * sp_to_bp
+            end
+
+            -- Draw column border
+            local literal = utils.create_border_literal(b_thickness_bp, border_rgb_str, tx_bp, ty_bp, tw_bp, th_bp)
+            p_head = utils.insert_pdf_literal(p_head, literal)
+        end
+    end
+
+    return p_head
+end
+
+-- ============================================================================
+-- Content Frame Drawing (正文区域内边框)
+-- ============================================================================
+
+--- 绘制正文区域的内边框（整体矩形框，不含列间分隔线）
+-- 当 column_border=false 但 border=true 时调用，保留正文区域的外框
+-- @param p_head (node) 节点列表头部（直接引用）
+-- @param params (table) 参数表:
+--   - total_cols: 总列数
+--   - grid_width: 每列的宽度 (sp)
+--   - col_geom: 列几何参数
+--   - content_dim_h: 列边框高度 (sp)
+--   - border_thickness: 边框厚度 (sp)
+--   - shift_x: 水平偏移 (sp)
+--   - outer_shift: 外边框偏移 (sp)
+--   - border_rgb_str: RGB 颜色字符串
+--   - banxin_cols: 要跳过的列索引集合（版心列）
+-- @return (node) 更新后的头部
+local function draw_content_frame(p_head, params)
+    local sp_to_bp = utils.sp_to_bp
+    local total_cols = params.total_cols
+    local border_thickness = params.border_thickness
+    local shift_x = params.shift_x
+    local outer_shift = params.outer_shift
+    local border_rgb_str = params.border_rgb_str
+    local banxin_cols = params.banxin_cols or {}
+    local col_geom = params.col_geom or {
+        grid_width = params.grid_width or 0,
+        banxin_width = params.banxin_width or 0,
+        interval = params.interval or 0,
+    }
+    local content_dim_h = params.content_dim_h
+
+    local b_thickness_bp = border_thickness * sp_to_bp
+    local half_thickness = math.floor(border_thickness / 2)
+
+    -- only_cols: if set, only include these columns (for partial silk suppression)
+    local only_cols = params.only_cols
+
+    -- Build contiguous segments, splitting at banxin columns
+    -- Each segment is a range of adjacent non-banxin columns
+    local segments = {}
+    local seg_start_rtl = nil
+    local seg_end_rtl = nil
+    for rtl_col = 0, total_cols - 1 do
+        local col = total_cols - 1 - rtl_col
+        local skip = banxin_cols[col]
+        if only_cols then
+            skip = skip or (not only_cols[col])
+        end
+        if skip then
+            -- End current segment
+            if seg_start_rtl ~= nil then
+                segments[#segments + 1] = { seg_start_rtl, seg_end_rtl }
+                seg_start_rtl = nil
+                seg_end_rtl = nil
+            end
+        else
+            if seg_start_rtl == nil then
+                seg_start_rtl = rtl_col
+            end
+            seg_end_rtl = rtl_col
+        end
+    end
+    if seg_start_rtl ~= nil then
+        segments[#segments + 1] = { seg_start_rtl, seg_end_rtl }
+    end
+
+    -- Draw one rectangle for each contiguous segment
+    for _, seg in ipairs(segments) do
+        local start_rtl = seg[1]
+        local end_rtl = seg[2]
+        -- X position: leftmost column's X
+        local x_start = text_position.get_column_x(start_rtl, col_geom)
+        -- Width: from leftmost to rightmost column's right edge
+        local end_col = total_cols - 1 - end_rtl
+        local x_end = text_position.get_column_x(end_rtl, col_geom)
+        local w_end = text_position.get_column_width(end_col, col_geom)
+        local total_width = (x_end + w_end) - x_start
+
+        local tx_bp = (x_start + half_thickness + shift_x) * sp_to_bp
+        local ty_bp = -(half_thickness + outer_shift) * sp_to_bp
+        local tw_bp = total_width * sp_to_bp
+        local th_bp = -content_dim_h * sp_to_bp
+
+        local literal = utils.create_border_literal(b_thickness_bp, border_rgb_str, tx_bp, ty_bp, tw_bp, th_bp)
+        p_head = utils.insert_pdf_literal(p_head, literal)
+    end
+
+    return p_head
+end
+
+-- ============================================================================
+-- Band Border Drawing (分栏边框)
+-- ============================================================================
+
+--- 绘制分栏边框（栏间水平分隔线，在版心列处断开）
+-- @param p_head (node) 节点列表头部（直接引用）
+-- @param params (table) 参数表:
+--   - n_bands: 栏数
+--   - band_heights_sp: band_heights_sp[band_idx] = height_sp
+--   - band_y_offsets_sp: band_y_offsets_sp[band_idx] = y_offset_sp
+--   - inner_width: 内容区域宽度 (sp)
+--   - border_thickness: 边框厚度 (sp)
+--   - border_rgb_str: RGB 颜色字符串
+--   - shift_x: 水平偏移 (sp)
+--   - outer_shift: 外边框偏移 (sp)
+--   - band_gap_sp: 栏间距 (sp)
+--   - col_geom: 列几何参数 { grid_width, banxin_width, interval }
+--   - total_cols: 总列数
+-- @return (node) 更新后的头部
+local function draw_band_borders(p_head, params)
+    local sp_to_bp = utils.sp_to_bp
+    local n_bands = params.n_bands
+    local band_heights_sp = params.band_heights_sp
+    local band_y_offsets_sp = params.band_y_offsets_sp
+    local inner_width = params.inner_width
+    local border_thickness = params.border_thickness
+    local border_rgb_str = params.border_rgb_str
+    local shift_x = params.shift_x or 0
+    local outer_shift = params.outer_shift or 0
+
+    local b_thickness_bp = border_thickness * sp_to_bp
+    local half_thickness = math.floor(border_thickness / 2)
+
+    local col_geom = params.col_geom or {}
+    local interval = col_geom.interval or 0
+    local banxin_width = col_geom.banxin_width or 0
+    local grid_width = col_geom.grid_width or 0
+    local total_cols = params.total_cols or 0
+
+    -- Optional column range for inline table borders
+    local range_start = params.col_range_start or 0
+    local range_end = params.col_range_end or (total_cols - 1)
+
+    -- Build list of horizontal line segments, skipping banxin columns.
+    -- Segments are pairs of {left_x_sp, right_x_sp} in page coordinates.
+    local segments = {}
+    if interval > 0 and banxin_width > 0 and total_cols > 0 then
+        -- There are banxin columns: split the line at each banxin column
+        local seg_start = nil
+        for rtl_col = range_start, range_end do
+            local col = total_cols - 1 - rtl_col
+            local is_banxin = (col % (interval + 1)) == interval
+            local col_x = text_position.get_column_x(rtl_col, col_geom)
+            local col_w = text_position.get_column_width(col, col_geom)
+            if is_banxin then
+                -- End current segment before this banxin column
+                if seg_start ~= nil then
+                    segments[#segments + 1] = { seg_start, col_x }
+                    seg_start = nil
+                end
+            else
+                if seg_start == nil then
+                    seg_start = col_x
+                end
+            end
+            -- If last column in range, close segment
+            if rtl_col == range_end and seg_start ~= nil then
+                segments[#segments + 1] = { seg_start, col_x + col_w }
+            end
+        end
+    else
+        -- No banxin: single segment across full width
+        segments[1] = { 0, inner_width - border_thickness }
+    end
+
+    -- Draw horizontal divider lines between bands (not top/bottom/left/right outer edges).
+    -- The outer frame is drawn by draw_column_borders + draw_outer_border.
+    -- column_padding only affects text Y-offset, not band divider positions.
+    for band = 0, n_bands - 2 do
+        local band_y = band_y_offsets_sp[band] or 0
+        local band_h = band_heights_sp[band] or 0
+        local divider_y = band_y + band_h
+        -- Content starts at outer_shift + border_thickness from page box origin
+        local horz_y_bp = -(outer_shift + border_thickness + divider_y) * sp_to_bp
+
+        for _, seg in ipairs(segments) do
+            local left_x_bp = (half_thickness + shift_x + seg[1]) * sp_to_bp
+            local right_x_bp = (half_thickness + shift_x + seg[2]) * sp_to_bp
+            local line = string.format(
+                "q %.2f w %s RG %.4f %.4f m %.4f %.4f l S Q",
+                b_thickness_bp, border_rgb_str,
+                left_x_bp, horz_y_bp, right_x_bp, horz_y_bp)
+            p_head = utils.insert_pdf_literal(p_head, line)
+        end
+    end
+
+    return p_head
+end
+
+-- ============================================================================
+-- Outer Border Drawing
+-- ============================================================================
+
+--- 在整个内容区域外围绘制外边框
+-- 当有抬头列（负行号）时，绘制阶梯状外边框以包裹突出文字
+-- @param p_head (node) 节点列表头部（直接引用）
+-- @param params (table) 参数表:
+--   - inner_width: 内部内容宽度 (sp)
+--   - inner_height: 内部内容高度 (sp)
+--   - outer_border_thickness: 外边框厚度 (sp)
+--   - outer_border_sep: 内外边框间距 (sp)
+--   - border_rgb_str: 归一化的 RGB 颜色字符串
+--   - col_min_y_sp: (optional) 每列最小行号表
+--   - total_cols: (optional) 总列数
+--   - grid_width: (optional) 格子宽度 (sp)
+--   - grid_height: (optional) 格子高度 (sp)
+--   - half_thickness: (optional) 列边框半厚度 (sp)
+--   - shift_x: (optional) 水平偏移 (sp)
+-- @return (node) 更新后的头部
+local function draw_outer_border(p_head, params)
+    local sp_to_bp = utils.sp_to_bp
+    local inner_width = params.inner_width
+    local inner_height = params.inner_height
+    local ob_thickness_val = params.outer_border_thickness
+    local ob_sep_val = params.outer_border_sep
+    local border_rgb_str = params.border_rgb_str
+    local col_min_y_sp = params.col_min_y_sp or {}
+
+    local ob_thickness_bp = ob_thickness_val * sp_to_bp
+
+    local tx_bp = (ob_thickness_bp / 2)
+    local ty_bp = -(ob_thickness_bp / 2)
+    local tw_bp = (inner_width + ob_sep_val * 2 + ob_thickness_val) * sp_to_bp
+    local th_bp = -(inner_height + ob_sep_val * 2 + ob_thickness_val) * sp_to_bp
+
+    -- Check if any taitou columns exist
+    local has_taitou = false
+    for _, v in pairs(col_min_y_sp) do
+        if v and v < 0 then has_taitou = true; break end
+    end
+
+    if not has_taitou then
+        -- Simple rectangle (no taitou)
+        local literal = utils.create_border_literal(ob_thickness_bp, border_rgb_str, tx_bp, ty_bp, tw_bp, th_bp)
+        p_head = utils.insert_pdf_literal(p_head, literal)
+        return p_head
+    end
+
+    -- Stepped outer border path for taitou columns
+    local total_cols = params.total_cols
+    local grid_width = params.grid_width
+    local grid_height = params.grid_height
+    local half_thickness = params.half_thickness or 0
+    local shift_x = params.shift_x or 0
+    local gh_bp = grid_height * sp_to_bp
+
+    -- Bottom and right edges of outer border
+    local by_bp = ty_bp + th_bp  -- bottom Y
+    local rx_bp = tx_bp + tw_bp  -- right X
+    local ob_sep_bp = ob_sep_val * sp_to_bp
+
+    -- Per-column top Y (visual left to right = rtl_col 0 to n-1)
+    local col_tops = {}
+    for rtl_col = 0, total_cols - 1 do
+        local col = total_cols - 1 - rtl_col
+        local min_y = col_min_y_sp[col]
+        if min_y and min_y < 0 then
+            col_tops[rtl_col] = ty_bp + (-min_y) * sp_to_bp
+        else
+            col_tops[rtl_col] = ty_bp
+        end
+    end
+
+    -- Column boundary X positions (supports mixed column widths)
+    local col_geom = params.col_geom or {
+        grid_width = grid_width,
+        banxin_width = params.banxin_width or 0,
+        interval = params.interval or 0,
+    }
+    local function cb(b)
+        return (text_position.get_column_x(b, col_geom) + half_thickness + shift_x) * sp_to_bp
+    end
+
+    -- Construct path: counter-clockwise from bottom-left
+    local parts = {}
+    -- Start at bottom-left
+    parts[#parts + 1] = string.format("%.4f %.4f m", tx_bp, by_bp)
+    -- Left edge up to leftmost column's top
+    parts[#parts + 1] = string.format("%.4f %.4f l", tx_bp, col_tops[0])
+
+    -- Step offset: ob_sep measured from inner edges of both borders (compensate stroke centering)
+    local half_inner_bp = half_thickness * sp_to_bp
+    local step_offset = ob_sep_bp + ob_thickness_bp / 2 + half_inner_bp
+
+    -- Top edge with steps (left to right)
+    for b = 1, total_cols do
+        local rtl_col = b - 1  -- column to the left of boundary b
+        local cur_top = col_tops[rtl_col]
+
+        if b < total_cols then
+            local next_top = col_tops[b]
+            local has_step = math.abs(next_top - cur_top) > 0.001
+
+            if has_step then
+                -- Shift step vertical to maintain ob_sep gap from inner column border edge
+                local step_x
+                if cur_top > next_top then
+                    -- Step DOWN (left taller): shift RIGHT past inner boundary
+                    step_x = cb(b) + step_offset
+                else
+                    -- Step UP (right taller): shift LEFT before inner boundary
+                    step_x = cb(b) - step_offset
+                end
+                -- Horizontal to step position, then vertical step
+                parts[#parts + 1] = string.format("%.4f %.4f l", step_x, cur_top)
+                parts[#parts + 1] = string.format("%.4f %.4f l", step_x, next_top)
+            else
+                -- No step: horizontal to column boundary
+                parts[#parts + 1] = string.format("%.4f %.4f l", cb(b), cur_top)
+            end
+        else
+            -- Last column: horizontal to right edge
+            parts[#parts + 1] = string.format("%.4f %.4f l", rx_bp, cur_top)
+        end
+    end
+
+    -- Right edge down to bottom-right
+    parts[#parts + 1] = string.format("%.4f %.4f l", rx_bp, by_bp)
+    -- Close and stroke
+    parts[#parts + 1] = "h S"
+
+    local path_str = table.concat(parts, " ")
+    local literal = string.format("q %.2f w %s RG %s Q", ob_thickness_bp, border_rgb_str, path_str)
+    p_head = utils.insert_pdf_literal(p_head, literal)
+
+    return p_head
+end
+
+-- ============================================================================
+-- High-level Border Rendering
+-- ============================================================================
+
+--- 渲染所有边框（列边框、外边框、装饰边框、背景）
+-- @param p_head (node) 节点列表头部
+-- @param params (table) 参数表:
+--   -- Grid and dimensions
+--   - p_total_cols: 页面总列数
+--   - actual_cols: 实际内容列数
+--   - actual_height_sp: 实际内容高度 (sp)
+--   - grid_width: 每列宽度 (sp)
+--   - grid_height: 每行高度 (sp)
+--   - content_height_sp: 内容区高度 (sp), 从三层架构获取
+--   -- Border params
+--   - border_thickness: 边框厚度 (sp)
+--   - c_padding_top: 顶部内边距 (sp)
+--   - c_padding_bottom: 底部内边距 (sp)
+--   - shift_x: 水平偏移 (sp)
+--   - outer_shift: 外边框偏移 (sp)
+--   - b_rgb_str: 边框颜色字符串
+--   - ob_thickness_val: 外边框厚度 (sp)
+--   - ob_sep_val: 外边框间距 (sp)
+--   -- Flags
+--   - draw_border: 是否绘制列边框
+--   - draw_outer_border: 是否绘制外边框
+--   - is_textbox: 是否为文本框模式
+--   - reserved_cols: 要跳过的列索引集合
+--   -- Visual params
+--   - border_shape: 装饰边框形状 ("none", "rect", "octagon", "circle")
+--   - border_color_str: 装饰边框颜色
+--   - border_width: 装饰边框宽度 (sp)
+--   - border_margin: 装饰边框外边距 (sp)
+--   - background_rgb_str: 背景颜色字符串
+--   - text_rgb_str: 文字颜色字符串
+-- @return (node) 更新后的头部
+local function render_borders(p_head, params)
+    local p_total_cols = params.p_total_cols
+    local actual_cols = params.actual_cols
+    local grid_width = params.grid_width
+    local grid_height = params.grid_height
+    local border_thickness = params.border_thickness
+    local c_padding_top = params.c_padding_top
+    local c_padding_bottom = params.c_padding_bottom
+    local is_textbox = params.is_textbox
+
+    local banxin_width = params.banxin_width or 0
+    local interval = params.interval or 0
+    local col_geom = params.col_geom or {
+        grid_width = grid_width,
+        banxin_width = banxin_width,
+        interval = interval,
+    }
+
+    -- Calculate content dimensions (shared logic in content module)
+    local content_mod = package.loaded['core.luatex-cn-core-content'] or
+        require('core.luatex-cn-core-content')
+    local content_dim_w, content_dim_h, inner_width, inner_height = content_mod.calculate_content_dimensions({
+        is_textbox = is_textbox,
+        actual_cols = actual_cols,
+        actual_height_sp = params.actual_height_sp,
+        grid_width = grid_width,
+        grid_height = grid_height,
+        content_height_sp = params.content_height_sp,
+        c_padding_top = c_padding_top,
+        c_padding_bottom = c_padding_bottom,
+        p_total_cols = p_total_cols,
+        border_thickness = border_thickness,
+        banxin_width = banxin_width,
+        interval = interval,
+    })
+
+    -- Granular border control: column_border and band_border override draw_border
+    local draw_col_border = params.draw_column_border
+    if draw_col_border == nil then draw_col_border = params.draw_border end
+    local draw_bnd_border = params.draw_band_border
+    if draw_bnd_border == nil then draw_bnd_border = params.draw_border end
+
+    -- 1. Draw column borders (inner borders between columns)
+    -- Table-level column_border applies to all bands as default;
+    -- per-band column_border (via \栏格式) overrides the table default.
+    local ptb = params.page_table_bands
+    if draw_col_border and p_total_cols > 0 then
+        local col_border_params = {
+            total_cols = p_total_cols,
+            grid_width = grid_width,
+            col_geom = col_geom,
+            content_dim_h = content_dim_h,
+            border_thickness = border_thickness,
+            shift_x = params.shift_x,
+            outer_shift = params.outer_shift,
+            border_rgb_str = params.b_rgb_str,
+            banxin_cols = params.reserved_cols,
+            col_min_y_sp = params.col_min_y_sp,
+            c_padding_top = params.c_padding_top,
+        }
+        -- Apply table-level column_border as default for all bands,
+        -- then per-band overrides take precedence.
+        if ptb and ptb.n_bands and ptb.n_bands > 1 then
+            local effective_borders = {}
+            -- Start with table-level default
+            if ptb.column_border ~= nil then
+                for band = 0, ptb.n_bands - 1 do
+                    effective_borders[band] = ptb.column_border
+                end
+            end
+            -- Per-band overrides
+            if ptb.band_column_borders then
+                for band_idx, val in pairs(ptb.band_column_borders) do
+                    effective_borders[band_idx] = val
+                end
+            end
+            if next(effective_borders) then
+                col_border_params.band_column_borders = effective_borders
+                col_border_params.n_bands = ptb.n_bands
+                col_border_params.band_heights_sp = ptb.band_heights_sp
+                col_border_params.band_y_offsets_sp = ptb.band_y_offsets_sp
+                col_border_params.table_start_col = ptb.table_start_col
+                col_border_params.actual_band_cols = ptb.actual_band_cols
+                col_border_params.cell_column_borders = ptb.cell_column_borders
+                col_border_params.col_groups = ptb.col_groups
+            end
+        end
+        -- Partial silk suppression: merge no_silk_cols into banxin_cols for skipping
+        local no_silk_cols = params.no_silk_cols
+        if no_silk_cols then
+            local merged_skip = {}
+            for k, v in pairs(params.reserved_cols or {}) do merged_skip[k] = v end
+            for k, v in pairs(no_silk_cols) do merged_skip[k] = v end
+            col_border_params.banxin_cols = merged_skip
+        end
+        p_head = draw_column_borders(p_head, col_border_params)
+        -- Draw content frame for the no-silk region
+        if no_silk_cols then
+            p_head = draw_content_frame(p_head, {
+                total_cols = p_total_cols,
+                grid_width = grid_width,
+                col_geom = col_geom,
+                content_dim_h = content_dim_h,
+                border_thickness = border_thickness,
+                shift_x = params.shift_x,
+                outer_shift = params.outer_shift,
+                border_rgb_str = params.b_rgb_str,
+                banxin_cols = params.reserved_cols,
+                only_cols = no_silk_cols,
+            })
+        end
+    elseif not draw_col_border and params.draw_border and p_total_cols > 0 then
+        -- column_border=false but border=true: draw content frame (内边框) without 丝栏
+        p_head = draw_content_frame(p_head, {
+            total_cols = p_total_cols,
+            grid_width = grid_width,
+            col_geom = col_geom,
+            content_dim_h = content_dim_h,
+            border_thickness = border_thickness,
+            shift_x = params.shift_x,
+            outer_shift = params.outer_shift,
+            border_rgb_str = params.b_rgb_str,
+            banxin_cols = params.reserved_cols,
+        })
+    end
+
+    -- 1b. Band divider lines (horizontal lines between bands)
+    if draw_bnd_border and params.n_bands and params.n_bands > 1 then
+        p_head = draw_band_borders(p_head, {
+            n_bands = params.n_bands,
+            band_heights_sp = params.band_heights_sp,
+            band_y_offsets_sp = params.band_y_offsets_sp,
+            inner_width = inner_width,
+            border_thickness = border_thickness,
+            border_rgb_str = params.b_rgb_str,
+            shift_x = params.shift_x,
+            outer_shift = params.outer_shift,
+            c_padding_top = params.c_padding_top,
+            band_gap_sp = params.band_gap_sp,
+            col_geom = col_geom,
+            total_cols = p_total_cols,
+        })
+    end
+
+    -- 1c. Inline table band divider lines (per-page table band info)
+    -- (ptb was defined above for per-band column border support)
+    -- Table-level overrides: ptb.band_border > content-level draw_bnd_border
+    local table_band_border = draw_bnd_border
+    if ptb and ptb.band_border ~= nil then table_band_border = ptb.band_border end
+    if table_band_border and ptb and ptb.n_bands and ptb.n_bands > 1 then
+        -- table_start_col is a logical column index (0 = rightmost).
+        -- draw_band_borders uses RTL column indices (0 = leftmost).
+        -- Convert logical range to RTL range.
+        local table_start_logical = ptb.table_start_col or 0
+        local table_cols = ptb.actual_band_cols or p_total_cols
+
+        -- Find end logical column by stepping through content columns,
+        -- skipping banxin (reserved) columns in between.
+        local end_logical = table_start_logical
+        local placed = 0
+        local iv = col_geom.interval or 0
+        while placed < table_cols do
+            local is_bx = (iv > 0) and ((end_logical % (iv + 1)) == iv)
+            if not is_bx then
+                placed = placed + 1
+            end
+            if placed < table_cols then
+                end_logical = end_logical + 1
+            end
+        end
+
+        -- Convert logical columns to RTL columns
+        local range_start_rtl = p_total_cols - 1 - end_logical
+        local range_end_rtl = p_total_cols - 1 - table_start_logical
+        if range_start_rtl < 0 then range_start_rtl = 0 end
+        if range_end_rtl >= p_total_cols then range_end_rtl = p_total_cols - 1 end
+
+        p_head = draw_band_borders(p_head, {
+            n_bands = ptb.n_bands,
+            band_heights_sp = ptb.band_heights_sp,
+            band_y_offsets_sp = ptb.band_y_offsets_sp,
+            inner_width = inner_width,
+            border_thickness = border_thickness,
+            border_rgb_str = params.b_rgb_str,
+            shift_x = params.shift_x,
+            outer_shift = params.outer_shift,
+            c_padding_top = params.c_padding_top,
+            band_gap_sp = ptb.band_gap_sp,
+            col_geom = col_geom,
+            total_cols = p_total_cols,
+            col_range_start = range_start_rtl,
+            col_range_end = range_end_rtl,
+        })
+    end
+
+    -- 2. Draw outer border
+    if params.draw_outer_border_flag and p_total_cols > 0 then
+        p_head = draw_outer_border(p_head, {
+            inner_width = inner_width,
+            inner_height = inner_height,
+            outer_border_thickness = params.ob_thickness_val,
+            outer_border_sep = params.ob_sep_val,
+            border_rgb_str = params.b_rgb_str,
+            -- Taitou stepped border params
+            col_min_y_sp = params.col_min_y_sp,
+            total_cols = p_total_cols,
+            grid_width = grid_width,
+            grid_height = grid_height,
+            col_geom = col_geom,
+            half_thickness = math.floor(border_thickness / 2),
+            shift_x = params.shift_x,
+        })
+    end
+
+    -- 3. Draw background (shaped or rectangular)
+    local border_shape = params.border_shape
+    local shape_width = actual_cols * grid_width
+    local shape_height = params.actual_height_sp
+
+    if border_shape == "octagon" and params.background_rgb_str then
+        -- Octagon-shaped background
+        local border_m = params.border_margin or 0
+        p_head = drawing.draw_octagon_fill(p_head, {
+            x = -border_m,
+            y = border_m,
+            width = shape_width + 2 * border_m,
+            height = shape_height + 2 * border_m,
+            color_str = params.background_rgb_str,
+        })
+    elseif border_shape == "circle" and params.background_rgb_str then
+        -- Circle-shaped background
+        local border_m = params.border_margin or 0
+        p_head = drawing.draw_circle_fill(p_head, {
+            cx = shape_width / 2,
+            cy = -shape_height / 2,
+            radius = math.max(shape_width, shape_height) / 2 + border_m,
+            color_str = params.background_rgb_str,
+        })
+    else
+        -- Rectangular background (default)
+        p_head = page_mod.draw_background(p_head, {
+            bg_rgb_str = params.background_rgb_str,
+            inner_width = inner_width,
+            inner_height = inner_height,
+            outer_shift = params.outer_shift,
+            is_textbox = is_textbox,
+        })
+    end
+
+    -- 4. Draw border frame decoration
+    -- border_offset: extra outward expansion for frame only (not background fill),
+    -- used when inverted background needs visible gap between fill and stroke.
+    if border_shape and border_shape ~= "none" then
+        local border_color = params.border_color_str or params.b_rgb_str or "0 0 0"
+        local border_w = params.border_width or (65536 * 0.4)
+        local border_m = params.border_margin or 0
+        local border_m_x = params.border_margin_x or border_m
+        local border_m_y = params.border_margin_y or border_m
+        local b_off = params.border_offset or 0
+        local frame_m_x = border_m_x + b_off
+        local frame_m_y = border_m_y + b_off
+
+        if border_shape == "rect" then
+            p_head = drawing.draw_rect_frame(p_head, {
+                x = -frame_m_x,
+                y = frame_m_y,
+                width = shape_width + 2 * frame_m_x,
+                height = shape_height + 2 * frame_m_y,
+                line_width = border_w,
+                color_str = border_color,
+            })
+        elseif border_shape == "octagon" then
+            p_head = drawing.draw_octagon_frame(p_head, {
+                x = -(border_m + b_off),
+                y = border_m + b_off,
+                width = shape_width + 2 * (border_m + b_off),
+                height = shape_height + 2 * (border_m + b_off),
+                line_width = border_w,
+                color_str = border_color,
+            })
+        elseif border_shape == "circle" then
+            p_head = drawing.draw_circle_frame(p_head, {
+                cx = shape_width / 2,
+                cy = -shape_height / 2,
+                radius = math.max(shape_width, shape_height) / 2 + border_m + b_off,
+                line_width = border_w,
+                color_str = border_color,
+            })
+        end
+    end
+
+    -- 5. Textbox outer border (drawn around the decorative shape frame)
+    -- This is separate from body text outer border (section 2) to avoid coordinate conflicts
+    if params.textbox_outer_border and border_shape and border_shape ~= "none" then
+        local border_w = params.border_width or (65536 * 0.4)
+        local border_m = params.border_margin or 0
+        local ob_t = params.textbox_ob_thickness or (65536 * 1)
+        local ob_s = params.textbox_ob_sep or (65536 * 2)
+        local border_color = params.border_color_str or params.b_rgb_str or "0 0 0"
+
+        -- Outer border wraps the decorative shape with ob_sep gap
+        -- Gap measured from outer edge of inner stroke to inner edge of outer stroke
+        local gap = border_w / 2 + ob_s + ob_t / 2
+        local outer_x = -(border_m + gap)
+        local outer_y = border_m + gap
+        local outer_w = shape_width + 2 * (border_m + gap)
+        local outer_h = shape_height + 2 * (border_m + gap)
+
+        -- 5a. Fill gap between inner and outer border with background color
+        -- so lower layers don't show through the gap
+        if params.background_rgb_str then
+            p_head = drawing.draw_rect_fill(p_head, {
+                x = outer_x + ob_t / 2,
+                y = outer_y - ob_t / 2,
+                width = outer_w - ob_t,
+                height = outer_h - ob_t,
+                color_str = params.background_rgb_str,
+            })
+        end
+
+        -- 5b. Outer border stroke
+        p_head = drawing.draw_rect_frame(p_head, {
+            x = outer_x,
+            y = outer_y,
+            width = outer_w,
+            height = outer_h,
+            line_width = ob_t,
+            color_str = border_color,
+        })
+    end
+
+    return p_head
+end
+
+-- ============================================================================
+-- Module Exports
+-- ============================================================================
+
+local render_border = {
+    draw_column_borders = draw_column_borders,
+    draw_content_frame = draw_content_frame,
+    draw_band_borders = draw_band_borders,
+    draw_outer_border = draw_outer_border,
+    render_borders = render_borders,
+}
+
+-- Register module
+package.loaded['core.luatex-cn-core-render-border'] = render_border
+
+return render_border

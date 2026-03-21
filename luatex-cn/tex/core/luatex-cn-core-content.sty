@@ -1,0 +1,732 @@
+% Copyright 2026 Open-Guji (https://github.com/open-guji)
+%
+% Licensed under the Apache License, Version 2.0 (the "License");
+% you may not use this file except in compliance with the License.
+% You may obtain a copy of the License at
+%
+%     http://www.apache.org/licenses/LICENSE-2.0
+%
+% Unless required by applicable law or agreed to in writing, software
+% distributed under the License is distributed on an "AS IS" BASIS,
+% WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+% See the License for the specific language governing permissions and
+% limitations under the License.
+
+\RequirePackage{core/luatex-cn-core-base}
+\ProvidesExplPackage{core/luatex-cn-core-content}{2026/03/21} {0.3.6}{Content layout and border support}
+
+% Centralized variables for content border settings
+\bool_new:N \l__luatexcn_content_border_bool
+\tl_new:N \l__luatexcn_content_border_thickness_tl
+\tl_new:N \l__luatexcn_content_padding_top_tl
+\tl_new:N \l__luatexcn_content_padding_bottom_tl
+
+\bool_new:N \l__luatexcn_content_outer_border_bool
+\tl_new:N \l__luatexcn_content_outer_border_thickness_tl
+\tl_new:N \l__luatexcn_content_outer_border_sep_tl
+\tl_new:N \l__luatexcn_content_border_color_tl
+
+% Grid layout variables
+\int_new:N \l__luatexcn_content_n_char_per_col_int
+\tl_new:N \l__luatexcn_content_grid_width_tl
+\tl_new:N \l__luatexcn_content_grid_height_tl
+\tl_new:N \l__luatexcn_content_valign_tl
+\tl_new:N \l__luatexcn_content_font_size_tl
+\int_new:N \l__luatexcn_content_n_column_int
+\tl_new:N \l__luatexcn_content_page_columns_tl
+\tl_new:N \l__luatexcn_content_height_tl
+\tl_new:N \l__luatexcn_content_col_spacing_tl
+\tl_new:N \l__luatexcn_content_line_spacing_tl
+\tl_new:N \l__luatexcn_content_banxin_ratio_tl
+
+\tl_new:N \l__luatexcn_content_border_rgb_tl
+\tl_new:N \l__luatexcn_content_background_rgb_tl
+\tl_new:N \l__luatexcn_content_font_rgb_tl
+\tl_new:N \l__luatexcn_content_font_color_tl
+\tl_new:N \l__luatexcn_content_font_name_tl
+\tl_new:N \l__luatexcn_content_font_features_tl
+\tl_new:N \l__luatexcn_content_layout_mode_tl
+\tl_new:N \l__luatexcn_content_inter_cell_gap_tl
+\tl_new:N \l__luatexcn_content_cell_height_tl
+\tl_new:N \l__luatexcn_content_cell_width_tl
+\tl_new:N \l__luatexcn_content_cell_gap_tl
+
+% Flexible column width and spacing (Free Mode)
+\bool_new:N \l__luatexcn_content_auto_col_width_bool
+\tl_new:N \l__luatexcn_content_col_spacing_top_tl
+\tl_new:N \l__luatexcn_content_col_spacing_bottom_tl
+\tl_new:N \l__luatexcn_content_para_spacing_tl
+
+% Digital mode: async vbox + obeylines (each newline = column break)
+\bool_new:N \l__luatexcn_content_digital_mode_bool
+
+% Band (分栏) mode: divide page into horizontal bands
+\int_new:N \l__luatexcn_content_n_bands_int
+\tl_new:N \l__luatexcn_content_band_gap_tl
+\tl_new:N \l__luatexcn_content_band_mode_tl
+\tl_new:N \l__luatexcn_content_band_heights_tl
+\tl_new:N \l__luatexcn_content_band_columns_tl
+
+% Granular border control (empty = inherit from border)
+\tl_new:N \l__luatexcn_content_column_border_tl
+\tl_new:N \l__luatexcn_content_band_border_tl
+
+% Content-level indent defaults (pushed to style stack in BodyText)
+\tl_new:N \l__luatexcn_content_indent_tl
+\tl_new:N \l__luatexcn_content_first_indent_tl
+\bool_new:N \l__luatexcn_content_has_indent_bool
+
+% Flag: currently inside BodyText environment (used by \chapter to decide text output)
+\bool_new:N \g__luatexcn_in_bodytext_bool
+
+\keys_define:nn { luatexcn / content }
+  {
+    border .bool_set:N = \l__luatexcn_content_border_bool,
+    border .initial:n = false,
+
+    border-thickness .tl_set:N = \l__luatexcn_content_border_thickness_tl,
+    border-thickness .initial:n = {0.4pt},
+
+    padding-top .tl_set:N = \l__luatexcn_content_padding_top_tl,
+    padding-top .initial:n = {0pt},
+
+    padding-bottom .tl_set:N = \l__luatexcn_content_padding_bottom_tl,
+    padding-bottom .initial:n = {0pt},
+
+    % Legacy aliases
+    column-padding-top .tl_set:N = \l__luatexcn_content_padding_top_tl,
+    column-padding-bottom .tl_set:N = \l__luatexcn_content_padding_bottom_tl,
+
+    outer-border .bool_set:N = \l__luatexcn_content_outer_border_bool,
+    outer-border .initial:n = false,
+
+    outer-border-thickness .tl_set:N = \l__luatexcn_content_outer_border_thickness_tl,
+    outer-border-thickness .initial:n = {1pt},
+
+    outer-border-sep .tl_set:N = \l__luatexcn_content_outer_border_sep_tl,
+    outer-border-sep .initial:n = {2pt},
+
+    border-color .tl_set:N = \l__luatexcn_content_border_color_tl,
+    border-color .initial:n = {black},
+
+    column-border .tl_set:N = \l__luatexcn_content_column_border_tl,
+    column-border .initial:n = {},
+
+    band-border .tl_set:N = \l__luatexcn_content_band_border_tl,
+    band-border .initial:n = {},
+
+    % Number of characters per column (used for auto-calculating grid-height)
+    n-char-per-col .int_set:N = \l__luatexcn_content_n_char_per_col_int,
+    n-char-per-col .initial:n = 0,
+
+    % Grid layout settings
+    grid-width .tl_set:N = \l__luatexcn_content_grid_width_tl,
+    grid-width .initial:n = {1.5em},
+
+    grid-height .tl_set:N = \l__luatexcn_content_grid_height_tl,
+    grid-height .initial:n = {1.2em},
+
+    vertical-align .tl_set:N = \l__luatexcn_content_valign_tl,
+    vertical-align .initial:n = {center},
+
+    font-size .tl_set:N = \l__luatexcn_content_font_size_tl,
+    font-size .initial:n = {12pt},
+
+    font .tl_set:N = \l__luatexcn_content_font_name_tl,
+    font .initial:n = {},
+
+    font-features .tl_set:N = \l__luatexcn_content_font_features_tl,
+    font-features .initial:n = {},
+
+    font-color .tl_set:N = \l__luatexcn_content_font_color_tl,
+    font-color .initial:n = {},
+
+    n-column .int_set:N = \l__luatexcn_content_n_column_int,
+    n-column .initial:n = 8,
+
+    page-columns .tl_set:N = \l__luatexcn_content_page_columns_tl,
+    page-columns .initial:n = {},
+
+    height .tl_set:N = \l__luatexcn_content_height_tl,
+    height .initial:n = ,
+
+    spacing-col .tl_set:N = \l__luatexcn_content_col_spacing_tl,
+    spacing-col .initial:n = {},
+
+    line-spacing .tl_set:N = \l__luatexcn_content_line_spacing_tl,
+    line-spacing .initial:n = { \baselineskip },
+
+    banxin-ratio .tl_set:N = \l__luatexcn_content_banxin_ratio_tl,
+    banxin-ratio .initial:n = {0.7},
+
+    layout-mode .tl_set:N = \l__luatexcn_content_layout_mode_tl,
+    layout-mode .initial:n = {grid},
+
+    inter-cell-gap .tl_set:N = \l__luatexcn_content_inter_cell_gap_tl,
+    inter-cell-gap .initial:n = {0pt},
+
+    cell-height .tl_set:N = \l__luatexcn_content_cell_height_tl,
+    cell-height .initial:n = {},
+
+    cell-width .tl_set:N = \l__luatexcn_content_cell_width_tl,
+    cell-width .initial:n = {},
+
+    cell-gap .tl_set:N = \l__luatexcn_content_cell_gap_tl,
+    cell-gap .initial:n = {},
+
+    % 灵活行宽和间距参数（Free Mode）
+    auto-column-width .bool_set:N = \l__luatexcn_content_auto_col_width_bool,
+    auto-column-width .initial:n = false,
+
+    column-spacing-top .tl_set:N = \l__luatexcn_content_col_spacing_top_tl,
+    column-spacing-top .initial:n = {0pt},
+
+    column-spacing-bottom .tl_set:N = \l__luatexcn_content_col_spacing_bottom_tl,
+    column-spacing-bottom .initial:n = {0pt},
+
+    column-spacing .meta:n = {
+      column-spacing-top = #1,
+      column-spacing-bottom = #1
+    },
+
+    paragraph-spacing .tl_set:N = \l__luatexcn_content_para_spacing_tl,
+    paragraph-spacing .initial:n = {0pt},
+
+    % Digital mode: when true, BodyText uses async vbox + obeylines
+    % (each source newline = one column break in PDF output)
+    digital-mode .bool_set:N = \l__luatexcn_content_digital_mode_bool,
+    digital-mode .initial:n = false,
+
+    % Band (分栏) settings: divide page into horizontal bands
+    % Each band contains vertical columns flowing right-to-left
+    n-bands .int_set:N = \l__luatexcn_content_n_bands_int,
+    n-bands .initial:n = 1,
+
+    band-gap .tl_set:N = \l__luatexcn_content_band_gap_tl,
+    band-gap .initial:n = {0pt},
+
+    % Band mode: "auto" = text flows across pages, "per-page" = each page independent
+    band-mode .tl_set:N = \l__luatexcn_content_band_mode_tl,
+    band-mode .initial:n = {auto},
+
+    % Manual band heights (comma-separated dim list, optional)
+    band-heights .tl_set:N = \l__luatexcn_content_band_heights_tl,
+    band-heights .initial:n = {},
+
+    % Columns per band (optional, defaults to page-columns)
+    band-columns .tl_set:N = \l__luatexcn_content_band_columns_tl,
+    band-columns .initial:n = {},
+
+    % Content-level indent defaults (pushed to style stack in BodyText begin)
+    % first-indent: indent for first column of each paragraph (after \par or blank line)
+    % indent: indent for non-first columns
+    indent .tl_set:N = \l__luatexcn_content_indent_tl,
+    indent .initial:n = {},
+    first-indent .tl_set:N = \l__luatexcn_content_first_indent_tl,
+    first-indent .initial:n = {},
+
+    unknown .code:n = { \keys_set:nx { luatexcn / page } { \l_keys_key_tl = { #1 } } },
+  }
+
+% Internal: Sync content parameters to Lua (idempotent, can be called multiple times)
+\cs_new_protected:Npn \__luatexcn_content_sync_to_lua:
+  {
+    % Convert colors to normalized RGB strings for Lua
+    \__luatexcn_color_to_rgb:NN \l__luatexcn_content_border_color_tl \l__luatexcn_content_border_rgb_tl
+    \__luatexcn_color_to_rgb_or_nil:NN \l__luatexcn_page_background_color_tl \l__luatexcn_content_background_rgb_tl
+    \__luatexcn_color_to_rgb_or_nil:NN \l__luatexcn_content_font_color_tl \l__luatexcn_content_font_rgb_tl
+
+    % Sync params to Lua (idempotent)
+    \lua_now:e {
+      require('core.luatex-cn-core-content').sync_params({
+        border_on~=~\bool_if:NTF~\l__luatexcn_content_border_bool~{true}~{false},
+        column_border~=~\tl_if_empty:NTF~\l__luatexcn_content_column_border_tl~{nil}~{\l__luatexcn_content_column_border_tl},
+        band_border~=~\tl_if_empty:NTF~\l__luatexcn_content_band_border_tl~{nil}~{\l__luatexcn_content_band_border_tl},
+        outer_border_on~=~\bool_if:NTF~\l__luatexcn_content_outer_border_bool~{true}~{false},
+        border_thickness~=~[=[\luaescapestring{\l__luatexcn_content_border_thickness_tl}]=],
+        outer_border_thickness~=~[=[\luaescapestring{\l__luatexcn_content_outer_border_thickness_tl}]=],
+        outer_border_sep~=~[=[\luaescapestring{\l__luatexcn_content_outer_border_sep_tl}]=],
+        padding_top~=~[=[\luaescapestring{\l__luatexcn_content_padding_top_tl}]=],
+        padding_bottom~=~[=[\luaescapestring{\l__luatexcn_content_padding_bottom_tl}]=],
+        n_column~=~\int_use:N~\l__luatexcn_content_n_column_int,
+        grid_width~=~[=[\luaescapestring{\l__luatexcn_content_grid_width_tl}]=],
+        grid_height~=~[=[\luaescapestring{\l__luatexcn_content_grid_height_tl}]=],
+        page_columns~=~[=[\luaescapestring{\l__luatexcn_content_page_columns_tl}]=],
+        vertical_align~=~[=[\luaescapestring{\l__luatexcn_content_valign_tl}]=],
+        border_color~=~[=[\l__luatexcn_content_border_rgb_tl]=],
+        background_color~=~[=[\l__luatexcn_content_background_rgb_tl]=],
+        font_color~=~[=[\l__luatexcn_content_font_rgb_tl]=],
+        font_size~=~[=[\luaescapestring{\l__luatexcn_content_font_size_tl}]=],
+        layout_mode~=~[=[\luaescapestring{\l__luatexcn_content_layout_mode_tl}]=],
+        inter_cell_gap~=~[=[\luaescapestring{\l__luatexcn_content_inter_cell_gap_tl}]=],
+        cell_height~=~[=[\luaescapestring{\l__luatexcn_content_cell_height_tl}]=],
+        cell_width~=~[=[\luaescapestring{\l__luatexcn_content_cell_width_tl}]=],
+        cell_gap~=~[=[\luaescapestring{\l__luatexcn_content_cell_gap_tl}]=],
+        n_bands~=~\int_use:N~\l__luatexcn_content_n_bands_int,
+        band_gap~=~[=[\luaescapestring{\l__luatexcn_content_band_gap_tl}]=],
+        band_mode~=~[=[\luaescapestring{\l__luatexcn_content_band_mode_tl}]=],
+        band_heights~=~[=[\luaescapestring{\l__luatexcn_content_band_heights_tl}]=],
+        band_columns~=~[=[\luaescapestring{\l__luatexcn_content_band_columns_tl}]=]
+      })
+    }
+  }
+
+\NewDocumentCommand{\contentSetup}{ m }
+  {
+    \keys_set:nn { luatexcn / content } { #1 }
+  }
+
+% Internal function to call Lua for Grid Layout
+\cs_new_protected:Npn \__luatexcn_content_process_grid:n #1
+  {
+    % Put content into a vbox to preserve structure (paragraphs)
+    \vbox_set:Nn \l_tmpa_box
+      {
+        \dim_set_eq:NN \hsize \c_max_dim
+        \dim_set_eq:NN \hfuzz \c_max_dim
+        \int_set:Nn \hbadness { 10000 }
+        \dim_zero:N \parindent
+        #1
+      }
+    \skip_zero:N \topskip
+
+    % Final sync (catches any overrides from environment optional args)
+    \__luatexcn_content_sync_to_lua:
+
+    % Initialize content style (once per content block)
+    \lua_now:n { require('core.luatex-cn-core-content').init_style() }
+
+    % Process content
+    \lua_now:e {
+      core.process(\int_value:w \l_tmpa_box, {
+        height~=~[=[\luaescapestring{\l__luatexcn_content_height_tl}]=],
+        col_limit~=~\int_use:N~\l__luatexcn_content_n_char_per_col_int
+      })
+    }
+  }
+
+% Define Main Command with Key-Value interface
+% Syntax: \Content[key=val]{text}
+\NewDocumentCommand{\Content}{ O{} +m }
+  {
+    \nointerlineskip
+    \par\noindent
+    \group_begin:
+    \keys_set:nn { luatexcn / content } { #1 }
+    % Apply page geometry
+    \luatexcn_apply_geometry:
+    % Auto-layout for guji-style (computes grid dimensions if needed)
+    \__luatexcn_content_auto_layout:
+    % Common setup (font, skips, height fallback)
+    \__luatexcn_content_setup_font:
+    \__luatexcn_content_zero_skips:
+    \__luatexcn_content_calc_height:
+    % Apply background color if set
+    \__luatexcn_content_apply_background:
+    % Override \clearpage/\newpage for grid processing (scoped to this group)
+    \__luatexcn_page_override_pagebreak:
+    \__luatexcn_content_process_grid:n { #2 }
+    \group_end:
+  }
+
+% BodyText environment — uses async vbox capture (\vbox_set:Nw) so that
+% digital-mode obeylines can take effect during token reading.
+% When digital-mode is false, behaves identically to the old sync approach.
+\NewDocumentEnvironment{BodyText}{ O{} }
+  {
+    \nointerlineskip
+    \par\noindent
+    \group_begin:
+    % Mark that we are inside BodyText (used by \chapter for text output)
+    \bool_gset_true:N \g__luatexcn_in_bodytext_bool
+    \keys_set:nn { luatexcn / content } { #1 }
+    % Apply page geometry
+    \luatexcn_apply_geometry:
+    % Auto-layout for guji-style (computes grid dimensions if needed)
+    \__luatexcn_content_auto_layout:
+    % Common setup (font, skips, height fallback)
+    \__luatexcn_content_setup_font:
+    \__luatexcn_content_zero_skips:
+    \__luatexcn_content_calc_height:
+    % Apply background color if set
+    \__luatexcn_content_apply_background:
+    % Override \clearpage/\newpage for grid processing (scoped to this group)
+    \__luatexcn_page_override_pagebreak:
+
+    % Content-level indent defaults: push to style stack if configured
+    \bool_set_false:N \l__luatexcn_content_has_indent_bool
+    \bool_lazy_or:nnT
+      { ! \tl_if_empty_p:N \l__luatexcn_content_indent_tl }
+      { ! \tl_if_empty_p:N \l__luatexcn_content_first_indent_tl }
+      {
+        \__luatexcn_style_init_and_parse:n {}
+        \tl_if_empty:NTF \l__luatexcn_content_indent_tl
+          { \tl_set:Nn \l__luatexcn_style_indent_tl { 0 } }
+          { \tl_set_eq:NN \l__luatexcn_style_indent_tl \l__luatexcn_content_indent_tl }
+        \tl_if_empty:NF \l__luatexcn_content_first_indent_tl
+          { \tl_set_eq:NN \l__luatexcn_style_first_indent_tl \l__luatexcn_content_first_indent_tl }
+        \__luatexcn_style_push_and_set:
+        \bool_set_true:N \l__luatexcn_content_has_indent_bool
+      }
+
+    % Begin async vbox capture
+    \vbox_set:Nw \l_tmpa_box
+      \dim_set_eq:NN \hsize \c_max_dim
+      \dim_set_eq:NN \hfuzz \c_max_dim
+      \int_set:Nn \hbadness { 10000 }
+      \dim_zero:N \parindent
+
+      % Global \\ hook: restore temporary indent (\缩进[N]) on line break.
+      % Safe to call unconditionally — \luatexcnRestoreTempIndent is a no-op
+      % when no temporary indent is active (guarded by bool).
+      \cs_set_eq:NN \__luatexcn_original_newline_body: \\
+      \cs_set:Npn \\ {
+        \luatexcnRestoreTempIndent
+        \__luatexcn_original_newline_body:
+      }
+
+      % Paragraph detection: increment block_id at each TeX paragraph start
+      % so layout engine applies first-indent at paragraph boundaries
+      % (\par or blank lines trigger new TeX paragraphs → \everypar fires)
+      \everypar{
+        \int_gincr:N \g_luatexcn_paragraph_block_id_int
+        \setluatexattribute\cnverticalblockid { \int_use:N \g_luatexcn_paragraph_block_id_int }
+      }
+
+      % Digital mode: activate obeylines for newline-as-column-break
+      % Semantic mode: suppress newline spaces via Lua callback
+      \bool_if:NTF \l__luatexcn_content_digital_mode_bool
+        { \luatexcndigitalobeylines }
+        { \lua_now:n { require('core.luatex-cn-core-content').enable_suppress_newline() } }
+  }
+  {
+    \vbox_set_end:
+    \skip_zero:N \topskip
+
+    % Disable newline space suppression (if enabled in begin)
+    \bool_if:NF \l__luatexcn_content_digital_mode_bool
+      { \lua_now:n { require('core.luatex-cn-core-content').disable_suppress_newline() } }
+
+    % Final sync (catches any overrides from environment optional args)
+    \__luatexcn_content_sync_to_lua:
+
+    % Initialize content style (once per content block)
+    \lua_now:n { require('core.luatex-cn-core-content').init_style() }
+
+    % Pre-render banxin sections into boxes (before main pipeline)
+    \cs_if_exist:NT \__luatexcn_banxin_typeset_sections:
+      { \__luatexcn_banxin_typeset_sections: }
+
+    % Process content through three-stage pipeline
+    \lua_now:e {
+      core.process( \int_value:w \l_tmpa_box , {
+        height~=~[=[\luaescapestring{\l__luatexcn_content_height_tl}]=],
+        col_limit~=~\int_use:N~\l__luatexcn_content_n_char_per_col_int
+      })
+    }
+    % Pop content-level indent from style stack (if pushed in begin)
+    \bool_if:NT \l__luatexcn_content_has_indent_bool
+      { \__luatexcn_style_pop_with_indent_reset: }
+    % Mark that we left BodyText
+    \bool_gset_false:N \g__luatexcn_in_bodytext_bool
+    \group_end:
+  }
+
+% Space Command - inserts ideographic space characters (U+3000) for vertical layout
+% Syntax: \Space or \Space[n]  (n = number of grid cells, default 1)
+\NewDocumentCommand{\Space}{ O{1} }
+  {
+    \prg_replicate:nn { #1 } { \char"3000\relax }
+    \ignorespaces
+  }
+
+% MissingChar Command - inserts a white square (U+25A1 □) as placeholder for missing/illegible characters
+% Syntax: \MissingChar or \MissingChar[n]  (n = number of missing characters, default 1)
+\NewDocumentCommand{\MissingChar}{ O{1} }
+  {
+    \prg_replicate:nn { #1 } { \char"25A1\relax }
+    \ignorespaces
+  }
+
+% ============================================================================
+% Shared Helper Functions for Content Environments
+% ============================================================================
+
+% Helper: Setup font if font is specified
+% Uses RawFeature={+vert,+vrt2} as default for CJK vertical typesetting
+\cs_new_protected:Npn \__luatexcn_content_setup_font:
+  {
+    \tl_if_empty:NF \l__luatexcn_content_font_name_tl
+      {
+        \tl_if_empty:NTF \l__luatexcn_content_font_features_tl
+          {
+            \exp_args:NV \setmainfont \l__luatexcn_content_font_name_tl [RawFeature={+vert,+vrt2}]
+          }
+          {
+            \exp_args:NV \setmainfont \l__luatexcn_content_font_name_tl [\l__luatexcn_content_font_features_tl]
+          }
+      }
+    \fontsize{\l__luatexcn_content_font_size_tl}{\l__luatexcn_content_line_spacing_tl}\selectfont
+  }
+
+% Helper: Zero out vertical skips for exact grid layout
+\cs_new_protected:Npn \__luatexcn_content_zero_skips:
+  {
+    \dim_zero:N \topskip
+    \dim_zero:N \parskip
+    \dim_zero:N \partopsep
+    \dim_zero:N \topsep
+    \dim_zero:N \itemsep
+    \dim_zero:N \parsep
+    \dim_zero:N \baselineskip
+    \dim_zero:N \lineskip
+    \dim_zero:N \lineskiplimit
+    \dim_zero:N \parindent
+  }
+
+% Helper: Calculate height from page dimensions if not set
+\cs_new_protected:Npn \__luatexcn_content_calc_height:
+  {
+    \tl_if_empty:NT \l__luatexcn_content_height_tl
+      {
+        \tl_set:Nx \l__luatexcn_content_height_tl
+          {
+            \dim_eval:n
+              {
+                \l__luatexcn_page_paper_height_tl
+                - \l__luatexcn_page_margin_top_tl
+                - \l__luatexcn_page_margin_bottom_tl
+              }
+          }
+      }
+  }
+
+% Helper: Apply background color if specified
+\cs_new_protected:Npn \__luatexcn_content_apply_background:
+  {
+    \tl_if_empty:NF \l__luatexcn_page_background_color_tl
+      {
+        \tl_if_in:NnTF \l__luatexcn_page_background_color_tl { , }
+          { \pagecolor [RGB] { \l__luatexcn_page_background_color_tl } }
+          { \pagecolor { \l__luatexcn_page_background_color_tl } }
+      }
+  }
+
+% Helper: Auto-layout calculation for guji-style content
+% Calls Lua to compute grid dimensions based on page and content parameters
+% Only runs if n-column > 0 (guji-style with banxin)
+\cs_new_protected:Npn \__luatexcn_content_auto_layout:
+  {
+    \int_compare:nNnT { \l__luatexcn_content_n_column_int } > { 0 }
+      {
+        \lua_now:e {
+          require('core.luatex-cn-core-content').guji_auto_layout({
+            border_on~=~\bool_if:NTF~\l__luatexcn_content_border_bool~{true}~{false},
+            outer_border_on~=~\bool_if:NTF~\l__luatexcn_content_outer_border_bool~{true}~{false},
+            border_thickness~=~"\l__luatexcn_content_border_thickness_tl",
+            outer_border_thickness~=~"\l__luatexcn_content_outer_border_thickness_tl",
+            outer_border_sep~=~"\l__luatexcn_content_outer_border_sep_tl",
+            padding_top~=~"\l__luatexcn_content_padding_top_tl",
+            padding_bottom~=~"\l__luatexcn_content_padding_bottom_tl",
+            n_column~=~\int_use:N~\l__luatexcn_content_n_column_int,
+            n_char_per_col~=~\int_use:N~\l__luatexcn_content_n_char_per_col_int,
+            grid_height~=~"\l__luatexcn_content_grid_height_tl",
+            banxin_ratio~=~"\l__luatexcn_content_banxin_ratio_tl",
+          })
+        }
+      }
+  }
+
+\ExplSyntaxOff
+
+% Digital obeylines helper: make ^^M (newline) produce column breaks.
+\def\luatexcndigitalobeylines{%
+  \obeylines
+  \begingroup\lccode`\~=`\^^M
+  \lowercase{\endgroup\def~{\luatexcnRestoreTempIndent\leavevmode\par\penalty-10005\relax}}%
+}
+
+% ============================================================
+% Chinese aliases / 中文别名
+% ============================================================
+% Simplified Chinese / 简体
+\NewCommandCopy{\空格}{\Space}
+\NewCommandCopy{\缺字}{\MissingChar}
+\NewCommandCopy{\内容设置}{\contentSetup}
+\NewCommandCopy{\内容}{\Content}
+\NewEnvironmentCopy{正文}{BodyText}
+% Traditional Chinese / 繁体
+\NewCommandCopy{\內容設置}{\contentSetup}
+\NewCommandCopy{\內容}{\Content}
+
+% ============================================================
+% Chinese key aliases / 中文 Key 别名
+% ============================================================
+\ExplSyntaxOn
+\keys_define:nn { luatexcn / content }
+  {
+    % 简体
+    边框 .bool_set:N = \l__luatexcn_content_border_bool,
+    边框粗细 .tl_set:N = \l__luatexcn_content_border_thickness_tl,
+    上填充 .tl_set:N = \l__luatexcn_content_padding_top_tl,
+    下填充 .tl_set:N = \l__luatexcn_content_padding_bottom_tl,
+    % Legacy aliases
+    栏上填充 .tl_set:N = \l__luatexcn_content_padding_top_tl,
+    栏下填充 .tl_set:N = \l__luatexcn_content_padding_bottom_tl,
+    外边框 .bool_set:N = \l__luatexcn_content_outer_border_bool,
+    外边框粗细 .tl_set:N = \l__luatexcn_content_outer_border_thickness_tl,
+    外边框间距 .tl_set:N = \l__luatexcn_content_outer_border_sep_tl,
+    边框色 .tl_set:N = \l__luatexcn_content_border_color_tl,
+    行边框 .tl_set:N = \l__luatexcn_content_column_border_tl,
+    栏边框 .tl_set:N = \l__luatexcn_content_band_border_tl,
+    每行字数 .int_set:N = \l__luatexcn_content_n_char_per_col_int,
+    格宽 .tl_set:N = \l__luatexcn_content_grid_width_tl,
+    格高 .tl_set:N = \l__luatexcn_content_grid_height_tl,
+    纵对齐 .tl_set:N = \l__luatexcn_content_valign_tl,
+    字号 .tl_set:N = \l__luatexcn_content_font_size_tl,
+    字体 .tl_set:N = \l__luatexcn_content_font_name_tl,
+    字体特性 .tl_set:N = \l__luatexcn_content_font_features_tl,
+    字体颜色 .tl_set:N = \l__luatexcn_content_font_color_tl,
+    行数 .int_set:N = \l__luatexcn_content_n_column_int,
+    版面行数 .tl_set:N = \l__luatexcn_content_page_columns_tl,
+    高度 .tl_set:N = \l__luatexcn_content_height_tl,
+    行间距 .tl_set:N = \l__luatexcn_content_col_spacing_tl,
+    行距 .tl_set:N = \l__luatexcn_content_line_spacing_tl,
+    版心比例 .tl_set:N = \l__luatexcn_content_banxin_ratio_tl,
+    布局模式 .tl_set:N = \l__luatexcn_content_layout_mode_tl,
+    字间隙 .tl_set:N = \l__luatexcn_content_inter_cell_gap_tl,
+    字格高 .tl_set:N = \l__luatexcn_content_cell_height_tl,
+    字格宽 .tl_set:N = \l__luatexcn_content_cell_width_tl,
+    字格间距 .tl_set:N = \l__luatexcn_content_cell_gap_tl,
+    自动行宽 .bool_set:N = \l__luatexcn_content_auto_col_width_bool,
+    行上间距 .tl_set:N = \l__luatexcn_content_col_spacing_top_tl,
+    行下间距 .tl_set:N = \l__luatexcn_content_col_spacing_bottom_tl,
+    行间距 .meta:n = { column-spacing-top = #1, column-spacing-bottom = #1 },
+    段间距 .tl_set:N = \l__luatexcn_content_para_spacing_tl,
+    数字模式 .bool_set:N = \l__luatexcn_content_digital_mode_bool,
+    缩进 .tl_set:N = \l__luatexcn_content_indent_tl,
+    首行缩进 .tl_set:N = \l__luatexcn_content_first_indent_tl,
+    分栏 .int_set:N = \l__luatexcn_content_n_bands_int,
+    栏间距 .tl_set:N = \l__luatexcn_content_band_gap_tl,
+    栏模式 .tl_set:N = \l__luatexcn_content_band_mode_tl,
+    栏高度 .tl_set:N = \l__luatexcn_content_band_heights_tl,
+    栏行数 .tl_set:N = \l__luatexcn_content_band_columns_tl,
+    % 繁体（与简体不同形的）
+    邊框 .bool_set:N = \l__luatexcn_content_border_bool,
+    邊框粗細 .tl_set:N = \l__luatexcn_content_border_thickness_tl,
+    外邊框 .bool_set:N = \l__luatexcn_content_outer_border_bool,
+    外邊框粗細 .tl_set:N = \l__luatexcn_content_outer_border_thickness_tl,
+    外邊框間距 .tl_set:N = \l__luatexcn_content_outer_border_sep_tl,
+    邊框色 .tl_set:N = \l__luatexcn_content_border_color_tl,
+    行邊框 .tl_set:N = \l__luatexcn_content_column_border_tl,
+    欄邊框 .tl_set:N = \l__luatexcn_content_band_border_tl,
+    每行字數 .int_set:N = \l__luatexcn_content_n_char_per_col_int,
+    格寬 .tl_set:N = \l__luatexcn_content_grid_width_tl,
+    縱對齊 .tl_set:N = \l__luatexcn_content_valign_tl,
+    字號 .tl_set:N = \l__luatexcn_content_font_size_tl,
+    字體 .tl_set:N = \l__luatexcn_content_font_name_tl,
+    字體特性 .tl_set:N = \l__luatexcn_content_font_features_tl,
+    字體顏色 .tl_set:N = \l__luatexcn_content_font_color_tl,
+    行數 .int_set:N = \l__luatexcn_content_n_column_int,
+    版面行數 .tl_set:N = \l__luatexcn_content_page_columns_tl,
+    行間距 .tl_set:N = \l__luatexcn_content_col_spacing_tl,
+    佈局模式 .tl_set:N = \l__luatexcn_content_layout_mode_tl,
+    字間隙 .tl_set:N = \l__luatexcn_content_inter_cell_gap_tl,
+    字格寬 .tl_set:N = \l__luatexcn_content_cell_width_tl,
+    字格間距 .tl_set:N = \l__luatexcn_content_cell_gap_tl,
+    自動行寬 .bool_set:N = \l__luatexcn_content_auto_col_width_bool,
+    行上間距 .tl_set:N = \l__luatexcn_content_col_spacing_top_tl,
+    行下間距 .tl_set:N = \l__luatexcn_content_col_spacing_bottom_tl,
+    行間距 .meta:n = { column-spacing-top = #1, column-spacing-bottom = #1 },
+    段間距 .tl_set:N = \l__luatexcn_content_para_spacing_tl,
+    數字模式 .bool_set:N = \l__luatexcn_content_digital_mode_bool,
+    縮進 .tl_set:N = \l__luatexcn_content_indent_tl,
+    首行縮進 .tl_set:N = \l__luatexcn_content_first_indent_tl,
+    分欄 .int_set:N = \l__luatexcn_content_n_bands_int,
+    欄間距 .tl_set:N = \l__luatexcn_content_band_gap_tl,
+    欄模式 .tl_set:N = \l__luatexcn_content_band_mode_tl,
+    欄高度 .tl_set:N = \l__luatexcn_content_band_heights_tl,
+    欄行數 .tl_set:N = \l__luatexcn_content_band_columns_tl,
+  }
+\ExplSyntaxOff
+
+% Band break command / 换栏命令
+\NewDocumentCommand{\换栏}{}{%
+  \directlua{require('core.luatex-cn-core-table').reset_band_cells()}%
+  \penalty -10006\relax
+}
+\NewDocumentCommand{\換欄}{}{%
+  \directlua{require('core.luatex-cn-core-table').reset_band_cells()}%
+  \penalty -10006\relax
+}
+
+% Half-page break command / 换半页命令
+% Fills remaining columns of the current half-page and advances to the next half-page.
+\NewDocumentCommand{\NewHalfPage}{}{\penalty -10010\relax}
+\NewDocumentCommand{\换半页}{}{\penalty -10010\relax}
+\NewDocumentCommand{\換半頁}{}{\penalty -10010\relax}
+
+% ============================================================
+% IllustrationPage: suppress column borders (丝栏) for content within this scope.
+% The outer border is not affected.
+% Usage:
+%   \插图页         — command form: applies to all content until next \clearpage
+%   \恢复丝栏       — restore column borders (call after \clearpage)
+% ============================================================
+\ExplSyntaxOn
+
+\bool_new:N \g__luatexcn_illustration_page_bool
+
+\cs_new_protected:Npn \__luatexcn_illustration_page_push:
+  {
+    % Push column_border=false style BEFORE the penalty so the penalty
+    % node carries the new style attribute (render-page scans it).
+    \lua_now:n {
+      local~sr~=~require('util.luatex-cn-style-registry')
+      sr.push({~column_border~=~false~})
+    }
+    \edef \l__luatexcn_tmpa_tl {
+      \lua_now:n {
+        local~sr~=~require('util.luatex-cn-style-registry')
+        tex.print(tostring(sr.current_id()))
+      }
+    }
+    \setluatexattribute \cnverticalstyle { \l__luatexcn_tmpa_tl }
+    \penalty -10010\relax
+    \bool_gset_true:N \g__luatexcn_illustration_page_bool
+  }
+
+\cs_new_protected:Npn \__luatexcn_illustration_page_pop:
+  {
+    \bool_if:NT \g__luatexcn_illustration_page_bool
+      {
+        \edef \l__luatexcn_tmpa_tl {
+          \lua_now:n {
+            local~sr~=~require('util.luatex-cn-style-registry')
+            sr.pop()
+            tex.print(tostring(sr.current_id()~or~0))
+          }
+        }
+        \setluatexattribute \cnverticalstyle { \l__luatexcn_tmpa_tl }
+        \bool_gset_false:N \g__luatexcn_illustration_page_bool
+      }
+  }
+
+\NewDocumentCommand{\IllustrationPage}{}
+  {
+    \__luatexcn_illustration_page_push:
+  }
+
+\NewDocumentCommand{\EndIllustrationPage}{}
+  {
+    \__luatexcn_illustration_page_pop:
+  }
+
+\ExplSyntaxOff
+
+\NewCommandCopy{\插图页}{\IllustrationPage}
+\NewCommandCopy{\插圖頁}{\IllustrationPage}
+\NewCommandCopy{\恢复丝栏}{\EndIllustrationPage}
+\NewCommandCopy{\恢復絲欄}{\EndIllustrationPage}
+
+\endinput

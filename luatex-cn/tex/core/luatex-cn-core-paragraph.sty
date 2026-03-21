@@ -1,0 +1,266 @@
+% Copyright 2026 Open-Guji (https://github.com/open-guji)
+%
+% Licensed under the Apache License, Version 2.0 (the "License");
+% you may not use this file except in compliance with the License.
+% You may obtain a copy of the License at
+%
+%     http://www.apache.org/licenses/LICENSE-2.0
+%
+% Unless required by applicable law or agreed to in writing, software
+% distributed under the License is distributed on an "AS IS" BASIS,
+% WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+% See the License for the specific language governing permissions and
+% limitations under the License.
+% ============================================================================
+% luatex-cn-core-paragraph.sty - Paragraph Environment
+% ============================================================================
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{core/luatex-cn-core-paragraph}[2026/01/30 LuaTeX-CN Core Paragraph]
+
+\RequirePackage{core/luatex-cn-core-base}
+\ExplSyntaxOn
+
+% ============================================================================
+% Penalty Constants (synchronized with constants.lua)
+% ============================================================================
+\int_const:Nn \c__luatexcn_penalty_smart_break_int { -10001 }
+\int_const:Nn \c__luatexcn_penalty_force_column_int { -10002 }
+\int_const:Nn \c__luatexcn_penalty_force_page_int { -10003 }
+\int_const:Nn \c__luatexcn_penalty_taitou_int { -10004 }
+
+% Paragraph Environment
+% Thin wrapper around StyleEnv: uses style keys + adds SMART_BREAK at end.
+% Supports all style keys (indent, first-indent, bottom-indent, font-size, etc.)
+% Syntax: \begin{Paragraph}[indent=2, first-indent=0, font-color=red]
+
+\int_new:N \g_luatexcn_paragraph_block_id_int
+
+\NewDocumentEnvironment{Paragraph}{ O{} }
+  {
+    \par
+    \group_begin:
+    \__luatexcn_style_init_and_parse:n { #1 }
+    % Default indent to 0 for Paragraph (StyleEnv leaves it empty)
+    \tl_if_empty:NT \l__luatexcn_style_indent_tl
+      { \tl_set:Nn \l__luatexcn_style_indent_tl { 0 } }
+    \__luatexcn_style_apply_font:
+    \__luatexcn_style_push_and_set:
+  }
+  {
+    % Restore any temporary indent (\缩进[N])
+    \__luatexcn_restore_temp_indent:
+    \__luatexcn_style_pop_with_indent_reset:
+    \group_end:
+    \par
+    % Smart column break: wrap to next column unless followed by textflow
+    \penalty \int_use:N \c__luatexcn_penalty_smart_break_int \scan_stop:
+  }
+
+% ============================================================================
+% Indent Commands
+% ============================================================================
+% \Indent[N] / \缩进[N] - Set indent for current line (default 0)
+%
+% Positive values = indent (move text down from column top)
+% Negative values = taitou (extend text above column top into header area)
+%
+% The indent is automatically restored after \\ or at line end.
+%
+% Examples:
+%   \begin{段落}[indent=2]
+%     \缩进[1]第一列缩进一格\\     % Forces indent to 1
+%     第二列缩进两格\\              % Restores to 2 (段落 base)
+%   \end{段落}
+%
+%   \夹注{内容 \缩进[0] 顶格}      % Forces indent to 0 in 夹注
+%
+% Implementation: Uses forced indent encoding (constants.encode_forced_indent)
+% to set a special attribute value that bypasses style stack lookup.
+% Negative values additionally insert PENALTY_TAITOU for layout engine.
+% ============================================================================
+
+\bool_new:N \l__luatexcn_setindent_active_bool
+
+% Internal: forcefully set indent, bypassing style stack inheritance
+\cs_new:Nn \__luatexcn_set_indent:n
+  {
+    % Push temporary indent to style stack for restoration on \\
+    \edef\temp_style_id{\lua_now:e {
+      local ~ sr = require('util.luatex-cn-style-registry')
+      tex.print(sr.push_indent(#1, ~ -1, ~ true)) ~ -- ~ third ~ arg ~ marks ~ as ~ temporary
+    }}
+    \setluatexattribute\cnverticalstyle{\temp_style_id}
+
+    % Use suojin encoding (distinct from taitou) to bypass style stack inheritance.
+    % Suojin indent is NOT affected by taitou scope in resolve_node_indent.
+    \lua_now:n {
+      local ~ constants = require('core.luatex-cn-constants')
+      local ~ forced_value = constants.encode_suojin_indent(#1)
+      tex.setattribute(constants.ATTR_INDENT, ~ forced_value)
+      tex.setattribute(constants.ATTR_FIRST_INDENT, ~ forced_value)
+    }
+
+    % Mark that indent override is active (for \\ to restore)
+    \bool_set_true:N \l__luatexcn_setindent_active_bool
+  }
+
+% Public command: \Indent[N] (default 0)
+\NewDocumentCommand{\Indent}{ O{0} }
+  {
+    \int_compare:nNnTF { #1 } < { 0 }
+      {
+        % Negative indent = taitou behavior:
+        % 1. Push temp style so \\ can restore indent (via \__luatexcn_set_indent:n)
+        % 2. Override encoding to taitou + emit PENALTY_TAITOU for layout scope
+        \__luatexcn_set_indent:n { #1 }
+        \penalty \int_use:N \c__luatexcn_penalty_taitou_int \scan_stop:
+        \lua_now:e {
+          local~constants = require('core.luatex-cn-constants')
+          local~forced_val = constants.encode_taitou_indent(\int_eval:n{#1})
+          tex.setattribute(constants.ATTR_INDENT,~forced_val)
+          tex.setattribute(constants.ATTR_FIRST_INDENT,~forced_val)
+        }
+      }
+      {
+        % Non-negative indent: use suojin encoding (temp style scope until \\)
+        \__luatexcn_set_indent:n { #1 }
+      }
+  }
+
+% Helper to restore indent (called by \\ and paragraph end)
+\cs_new:Nn \__luatexcn_restore_temp_indent:
+  {
+    \bool_if:NT \l__luatexcn_setindent_active_bool
+      {
+        % Pop temporary indent and restore to parent style
+        \edef\parent_style_id{\lua_now:n {
+          local ~ sr = require('util.luatex-cn-style-registry')
+          sr.pop_temporary()
+          local ~ current_id = sr.current_id() ~ or ~ 0
+          tex.print(current_id)
+        }}
+        \setluatexattribute\cnverticalstyle{\parent_style_id}
+
+        % Restore indent attributes from parent style (plain encoding).
+        % Style ID is already updated to the parent, so resolve_node_indent
+        % will correctly inherit from the style stack. Using plain (not forced)
+        % encoding avoids textflow misinterpreting restored indent as an
+        % absolute position override (which is only valid for taitou commands).
+        \lua_now:n {
+          local ~ sr = require('util.luatex-cn-style-registry')
+          local ~ constants = require('core.luatex-cn-constants')
+          local ~ indent = sr.get_indent(sr.current_id()) ~ or ~ 0
+          local ~ first_indent = sr.get_first_indent(sr.current_id()) ~ or ~ -1
+          tex.setattribute(constants.ATTR_INDENT, ~ indent)
+          tex.setattribute(constants.ATTR_FIRST_INDENT, ~ first_indent)
+        }
+
+        \bool_set_false:N \l__luatexcn_setindent_active_bool
+      }
+  }
+
+% Alias for non-expl3 context (used by obeylines handler in core-content.sty)
+\cs_new_eq:NN \luatexcnRestoreTempIndent \__luatexcn_restore_temp_indent:
+
+% ============================================================================
+% 抬头命令体系 (Taitou Command System)
+% ============================================================================
+% 古籍行文中表示尊敬的排版规范，将文字放到行的顶端甚至伸入天头区域。
+%
+% \抬头[N]  - 另起一行，比正常顶端高出N格（N=0为平抬，N>0伸入天头）
+% \平抬     - = \抬头[0]，顶格书写（向后兼容）
+% \单抬     - = \抬头[1]，高出1格
+% \双抬     - = \抬头[2]，高出2格
+% \三抬     - = \抬头[3]，高出3格
+
+\NewDocumentCommand{\抬头}{ O{0} }
+  {
+    \penalty \int_use:N \c__luatexcn_penalty_taitou_int \scan_stop:
+    \lua_now:e {
+      local~constants = require('core.luatex-cn-constants')
+      local~forced_val = constants.encode_taitou_indent(-\int_eval:n{#1})
+      tex.setattribute(constants.ATTR_INDENT,~forced_val)
+      tex.setattribute(constants.ATTR_FIRST_INDENT,~forced_val)
+    }
+  }
+
+\NewDocumentCommand{\平抬}{}{ \抬头[0] }
+\NewDocumentCommand{\单抬}{}{ \抬头[1] }
+\NewDocumentCommand{\双抬}{}{ \抬头[2] }
+\NewDocumentCommand{\三抬}{}{ \抬头[3] }
+
+% ============================================================================
+% 挪抬/空抬 Command (不换行，插入空格)
+% ============================================================================
+% \挪抬[N] - 在当前位置前插入N格空白（默认1格），不换行
+% Uses ideographic space characters (U+3000) for consistent grid layout
+% \空抬    - = \挪抬[1]
+
+\NewDocumentCommand{\挪抬}{ O{1} }
+  {
+    \prg_replicate:nn { #1 } { \char"3000\relax }
+    \ignorespaces
+  }
+
+\NewDocumentCommand{\空抬}{}{ \挪抬[1] }
+
+% ============================================================================
+% 相对抬头 Command (相对当前缩进上移)
+% ============================================================================
+% \相对抬头[N] - 相对当前缩进位置上移N格（默认1格）
+% 例：当前 indent=2 时，\相对抬头[1] → 目标 indent=1
+%     当前 indent=2 时，\相对抬头[3] → 目标 indent=-1（伸入天头1格）
+
+\NewDocumentCommand{\相对抬头}{ O{1} }
+  {
+    \penalty \int_use:N \c__luatexcn_penalty_taitou_int \scan_stop:
+    \lua_now:e {
+      local~constants = require('core.luatex-cn-constants')
+      local~sr = require('util.luatex-cn-style-registry')
+      local~current_indent = sr.get_indent(sr.current_id())~or~0
+      local~target = current_indent - \int_eval:n{#1}
+      local~forced_val = constants.encode_taitou_indent(target)
+      tex.setattribute(constants.ATTR_INDENT,~forced_val)
+      tex.setattribute(constants.ATTR_FIRST_INDENT,~forced_val)
+    }
+  }
+
+% ============================================================================
+% 换行 Command
+% ============================================================================
+% \换行 - Force column break
+% Inserts PENALTY_FORCE_COLUMN to force wrapping to the next column
+% Useful for starting new sections or book entries in a fresh column
+
+\NewDocumentCommand{\换行}{}
+  {
+    \par
+    \penalty \int_use:N \c__luatexcn_penalty_force_column_int \scan_stop:
+  }
+
+\ExplSyntaxOff
+
+% ============================================================
+% Chinese aliases / 中文别名
+% ============================================================
+% Simplified Chinese / 简体
+\NewEnvironmentCopy{段落}{Paragraph}
+\NewCommandCopy{\缩进}{\Indent}
+% English pinyin aliases for Chinese-only commands
+\NewCommandCopy{\TaiTou}{\抬头}
+\NewCommandCopy{\PingTai}{\平抬}
+\NewCommandCopy{\DanTai}{\单抬}
+\NewCommandCopy{\ShuangTai}{\双抬}
+\NewCommandCopy{\SanTai}{\三抬}
+\NewCommandCopy{\NuoTai}{\挪抬}
+\NewCommandCopy{\KongTai}{\空抬}
+\NewCommandCopy{\XiangDuiTaiTou}{\相对抬头}
+\NewCommandCopy{\HuanHang}{\换行}
+% Traditional Chinese / 繁体
+\NewCommandCopy{\縮進}{\Indent}
+\NewCommandCopy{\單抬}{\单抬}
+\NewCommandCopy{\雙抬}{\双抬}
+\NewCommandCopy{\換行}{\换行}
+\NewCommandCopy{\相對抬頭}{\相对抬头}
+
+\endinput

@@ -1,0 +1,347 @@
+% Copyright 2026 Open-Guji (https://github.com/open-guji)
+%
+% Licensed under the Apache License, Version 2.0 (the "License");
+% you may not use this file except in compliance with the License.
+% You may obtain a copy of the License at
+%
+%     http://www.apache.org/licenses/LICENSE-2.0
+%
+% Unless required by applicable law or agreed to in writing, software
+% distributed under the License is distributed on an "AS IS" BASIS,
+% WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+% See the License for the specific language governing permissions and
+% limitations under the License.
+% luatex-cn-footnote.sty
+% Footnote/Jiaokan (脚注/校勘记) support for vertical typesetting
+% Mode 1: Endnotes (段末注) - footnotes output at paragraph end
+% Mode 2: Page footnotes (页下注) - footnotes at page left with separator
+%
+\RequirePackage{expl3}
+\RequirePackage{xparse}
+\ProvidesExplPackage {core/luatex-cn-footnote} {2026/03/21} {0.3.6} {Footnote/Jiaokan support}
+
+% ============================================================================
+% Load Lua module and set global utils
+% ============================================================================
+\lua_now:e {
+  require('core.luatex-cn-footnote')
+  vertical_utils = require('util.luatex-cn-utils')
+}
+
+% ============================================================================
+% Key-value Configuration
+% ============================================================================
+\tl_new:N \l__luatexcn_footnote_mode_tl
+\tl_new:N \l__luatexcn_footnote_number_style_tl
+\tl_new:N \l__luatexcn_footnote_separator_tl
+\tl_new:N \l__luatexcn_footnote_font_tl
+\tl_new:N \l__luatexcn_footnote_font_size_tl
+\tl_new:N \l__luatexcn_footnote_font_color_tl
+
+\keys_define:nn { luatexcn / footnote }
+  {
+    mode .tl_set:N = \l__luatexcn_footnote_mode_tl,
+    mode .initial:n = {endnote},
+    number-style .tl_set:N = \l__luatexcn_footnote_number_style_tl,
+    number-style .initial:n = {lujiao},
+    separator .tl_set:N = \l__luatexcn_footnote_separator_tl,
+    separator .initial:n = {blank},
+    font .tl_set:N = \l__luatexcn_footnote_font_tl,
+    font .initial:n = {},
+    font-size .tl_set:N = \l__luatexcn_footnote_font_size_tl,
+    font-size .initial:n = {0.8em},
+    font-color .tl_set:N = \l__luatexcn_footnote_font_color_tl,
+    font-color .initial:n = {},
+    indent .int_set:N = \l__luatexcn_footnote_indent_int,
+    indent .initial:n = {2},
+    spacing .dim_set:N = \l__luatexcn_footnote_spacing_dim,
+    spacing .initial:n = {0.5em},
+    marker-height .int_set:N = \l__luatexcn_footnote_marker_height_int,
+    marker-height .initial:n = {2},
+    counter-start .code:n = { \int_gset:Nn \g__luatexcn_footnote_counter_int { #1 } },
+  }
+
+% ============================================================================
+% Internal: Apply footnote font size (always from content base font-size)
+% ============================================================================
+\dim_new:N \l__luatexcn_footnote_resolved_size_dim
+\cs_new_protected:Nn \__luatexcn_footnote_apply_font_size:
+  {
+    % First, temporarily set font to base content size so that relative units
+    % (like 0.8em) resolve correctly against the base, not the current font.
+    \fontsize { \l__luatexcn_content_font_size_tl } { \l__luatexcn_content_font_size_tl } \selectfont
+    % Now resolve the footnote font-size (may contain em units)
+    \dim_set:Nn \l__luatexcn_footnote_resolved_size_dim
+      { \l__luatexcn_footnote_font_size_tl }
+    % Apply the resolved absolute size
+    \fontsize
+      { \dim_use:N \l__luatexcn_footnote_resolved_size_dim }
+      { \dim_use:N \l__luatexcn_footnote_resolved_size_dim }
+    \selectfont
+  }
+
+% ============================================================================
+% Global Storage (Mode 1)
+% ============================================================================
+\seq_new:N  \g__luatexcn_footnote_content_seq
+\int_new:N  \g__luatexcn_footnote_counter_int
+\box_new:N  \l__luatexcn_footnote_temp_box
+
+% ============================================================================
+% Setup Command (syncs to Lua _G.footnote)
+% ============================================================================
+\NewDocumentCommand{\footnoteSetup}{ m }
+  {
+    \keys_set:nn { luatexcn / footnote } { #1 }
+    \lua_now:e {
+      _G.footnote = _G.footnote~or~{}
+      _G.footnote.mode = "\l__luatexcn_footnote_mode_tl"
+      _G.footnote.number_style = "\l__luatexcn_footnote_number_style_tl"
+      _G.footnote.font_size = "\l__luatexcn_footnote_font_size_tl"
+      _G.footnote.font_color = "\l__luatexcn_footnote_font_color_tl"
+      _G.footnote.font = "\l__luatexcn_footnote_font_tl"
+    }
+  }
+
+% ============================================================================
+% Internal: Write Footnote Marker Text (【一】 or ①)
+% ============================================================================
+\cs_new:Nn \__luatexcn_footnote_write_marker_text:n
+  {
+    \str_case:VnF \l__luatexcn_footnote_number_style_tl
+      {
+        {lujiao}  { 【\lua_now:e{ tex.print(vertical_utils.to_chinese_numeral(#1)) }】 }
+        {circled} { \lua_now:e{ tex.print(vertical_utils.to_circled_numeral(#1)) } }
+      }
+      { 【\lua_now:e{ tex.print(vertical_utils.to_chinese_numeral(#1)) }】 }
+  }
+
+% ============================================================================
+% Internal: Render Footnote Marker (unified for inline and flush)
+% #1 = footnote number, #2 = halign (3=right for inline, 0=center for flush)
+% Sets font size, ATTR_FOOTNOTE_MARKER, ATTR_HALIGN, outputs marker text,
+% then clears attributes. Marker chars have no inter-char gap and are not
+% stretched/compressed by the layout engine.
+% ============================================================================
+\cs_new_protected:Nn \__luatexcn_footnote_render_marker:nn
+  {
+    \group_begin:
+      \tl_if_empty:NF \l__luatexcn_footnote_font_size_tl
+        { \__luatexcn_footnote_apply_font_size: }
+      \lua_now:e {
+        local~c~=~require('core.luatex-cn-constants')
+        local~fn_h~=~\dim_to_decimal_in_sp:n { \l__luatexcn_footnote_resolved_size_dim }
+        local~total_sp~=~math.floor(\int_use:N \l__luatexcn_footnote_marker_height_int ~*~fn_h)
+        tex.setattribute(c.ATTR_FOOTNOTE_MARKER,~total_sp)
+        local~ha~=~#2
+        if~ha~>~0~then~tex.setattribute(c.ATTR_HALIGN,~ha)~end
+      }
+      \__luatexcn_footnote_write_marker_text:n { #1 }
+      \lua_now:e {
+        local~c~=~require('core.luatex-cn-constants')
+        tex.setattribute(c.ATTR_FOOTNOTE_MARKER,~-2147483647)
+      }
+    \group_end:
+  }
+
+% ============================================================================
+% Internal: Separator (blank space or none)
+% ============================================================================
+\cs_new:Nn \__luatexcn_footnote_separator:
+  {
+    \str_case:VnF \l__luatexcn_footnote_separator_tl
+      {
+        {blank} { \hspace{1em} }
+        {none}  { }
+      }
+      { \hspace{1em} }
+  }
+
+% ============================================================================
+% \Footnote{content} - Store content + write inline marker
+% Mode 1: Store in expl3 sequence
+% Mode 2: Register in Lua and write WHATSIT anchor
+% ============================================================================
+\NewDocumentCommand{\Footnote}{ O{} +m }
+  {
+    \group_begin:
+      \int_gincr:N \g__luatexcn_footnote_counter_int
+      \str_if_eq:VnTF \l__luatexcn_footnote_mode_tl {page}
+        {
+          % Mode 2: Register in Lua for page rendering
+          \hbox_set:Nn \l__luatexcn_footnote_temp_box { #2 }
+          \lua_now:e {
+            local~footnote~=~require('core.luatex-cn-footnote')
+            footnote.register_footnote(
+              \int_use:N \l__luatexcn_footnote_temp_box,
+              \int_use:N \g__luatexcn_footnote_counter_int
+            )
+          }
+        }
+        {
+          % Mode 1: Store in sequence for paragraph-end output
+          \seq_gput_right:Nn \g__luatexcn_footnote_content_seq { #2 }
+        }
+      % Write inline marker (right-aligned, same rendering as flush marker)
+      \__luatexcn_footnote_render_marker:nn
+        { \int_use:N \g__luatexcn_footnote_counter_int } { 3 }
+    \group_end:
+  }
+
+% ============================================================================
+% \FlushFootnote - Output all footnotes and reset (Mode 1 only)
+% ============================================================================
+\NewDocumentCommand{\FlushFootnote}{}
+  {
+    \str_if_eq:VnF \l__luatexcn_footnote_mode_tl {page}
+      {
+        \int_compare:nNnT
+          { \seq_count:N \g__luatexcn_footnote_content_seq } > { 0 }
+          {
+            % No separator before footnotes: the column break (from synthetic penalty
+            % or \penalty -10002) already provides visual separation, and \hspace creates
+            % an unwanted empty column in vertical layout.
+            % Group to contain font-size change (prevent leaking to subsequent text)
+            \group_begin:
+            % Apply footnote font-size (absolute value from content base font-size)
+            \tl_if_empty:NF \l__luatexcn_footnote_font_size_tl
+              {
+                \__luatexcn_footnote_apply_font_size:
+              }
+            \int_step_inline:nn
+              { \seq_count:N \g__luatexcn_footnote_content_seq }
+              {
+                % Hanging indent: all sizes in footnote-grid units (= footnote font size).
+                % indent (int) = leading blank cells, marker-height (int) = marker cells.
+                % Convert to float content-grid-cells for the layout engine.
+                \lua_now:e {
+                  local~constants~=~require('core.luatex-cn-constants')~
+                  local~sr~=~require('util.luatex-cn-style-registry')~
+                  local~fn_grid_h~=~\dim_to_decimal_in_sp:n { \l__luatexcn_footnote_resolved_size_dim }~
+                  local~content_grid_h~=~\dim_to_decimal_in_sp:n { \l__luatexcn_content_grid_height_tl }~
+                  local~indent_fn~=~\int_use:N \l__luatexcn_footnote_indent_int ~
+                  local~marker_fn~=~\int_use:N \l__luatexcn_footnote_marker_height_int ~
+                  local~hang_fn~=~indent_fn~+~marker_fn~+~0.2~
+                  local~first_float~=~indent_fn~*~fn_grid_h~/~content_grid_h~
+                  local~hang_float~=~hang_fn~*~fn_grid_h~/~content_grid_h~
+                  local~sid~=~sr.push_indent(hang_float,~first_float)~
+                  tex.setattribute(constants.ATTR_STYLE_REG_ID,~sid)~
+                  tex.setattribute(constants.ATTR_INDENT,~0)~
+                  tex.setattribute(constants.ATTR_FIRST_INDENT,~-1)
+                }
+                \int_gincr:N \g_luatexcn_paragraph_block_id_int
+                \setluatexattribute\cnverticalblockid
+                  { \int_use:N \g_luatexcn_paragraph_block_id_int }
+                \penalty -10002\relax
+                % Render marker (center-aligned, unified with inline marker)
+                \__luatexcn_footnote_render_marker:nn { ##1 } { 0 }
+                \seq_item:Nn \g__luatexcn_footnote_content_seq { ##1 }
+                \lua_now:e {
+                  local~sr~=~require('util.luatex-cn-style-registry')
+                  sr.pop()
+                }
+              }
+            \group_end:
+            \seq_gclear:N \g__luatexcn_footnote_content_seq
+            \int_gzero:N  \g__luatexcn_footnote_counter_int
+          }
+      }
+  }
+
+% ============================================================================
+% \ResetFootnoteCounter - Reset counter (for Mode 2 per-page reset)
+% ============================================================================
+\NewDocumentCommand{\ResetFootnoteCounter}{}
+  {
+    \int_gzero:N \g__luatexcn_footnote_counter_int
+  }
+
+% ============================================================================
+% \FootnoteParagraph{content} - Unnumbered footnote paragraph
+% Outputs content with footnote font-size and indent, but no marker/number.
+% Used for standalone annotations (e.g., 索隱 notes) not referenced in main text.
+% ============================================================================
+\NewDocumentCommand{\FootnoteParagraph}{ +m }
+  {
+    \group_begin:
+      % Apply footnote font-size
+      \tl_if_empty:NF \l__luatexcn_footnote_font_size_tl
+        { \__luatexcn_footnote_apply_font_size: }
+      % Set indent = indent + marker_height (align with numbered footnotes)
+      \lua_now:e {
+        local~constants~=~require('core.luatex-cn-constants')~
+        local~sr~=~require('util.luatex-cn-style-registry')~
+        local~fn_grid_h~=~\dim_to_decimal_in_sp:n { \l__luatexcn_footnote_resolved_size_dim }~
+        local~content_grid_h~=~\dim_to_decimal_in_sp:n { \l__luatexcn_content_grid_height_tl }~
+        local~indent_fn~=~\int_use:N \l__luatexcn_footnote_indent_int ~
+        local~marker_fn~=~\int_use:N \l__luatexcn_footnote_marker_height_int ~
+        local~total_fn~=~indent_fn~+~marker_fn~+~0.2~
+        local~indent_float~=~total_fn~*~fn_grid_h~/~content_grid_h~
+        local~sid~=~sr.push_indent(indent_float,~indent_float)~
+        tex.setattribute(constants.ATTR_STYLE_REG_ID,~sid)~
+        tex.setattribute(constants.ATTR_INDENT,~0)~
+        tex.setattribute(constants.ATTR_FIRST_INDENT,~-1)
+      }
+      % Block ID + force column break
+      \int_gincr:N \g_luatexcn_paragraph_block_id_int
+      \setluatexattribute\cnverticalblockid
+        { \int_use:N \g_luatexcn_paragraph_block_id_int }
+      \penalty -10002\relax
+      % Output content (no marker)
+      #1
+      % Pop style
+      \lua_now:e {
+        local~sr~=~require('util.luatex-cn-style-registry')
+        sr.pop()
+      }
+    \group_end:
+  }
+
+\ExplSyntaxOff%
+
+% ============================================================
+% Chinese aliases / 中文别名
+% ============================================================
+% Simplified Chinese / 简体
+\NewCommandCopy{\脚注}{\Footnote}
+\NewCommandCopy{\输出脚注}{\FlushFootnote}
+\NewCommandCopy{\脚注设置}{\footnoteSetup}
+\NewCommandCopy{\重置脚注计数}{\ResetFootnoteCounter}
+\NewCommandCopy{\脚注段落}{\FootnoteParagraph}
+% Traditional Chinese / 繁体
+\NewCommandCopy{\腳注}{\Footnote}
+\NewCommandCopy{\輸出腳注}{\FlushFootnote}
+\NewCommandCopy{\腳注設置}{\footnoteSetup}
+\NewCommandCopy{\重置腳注計數}{\ResetFootnoteCounter}
+\NewCommandCopy{\腳注段落}{\FootnoteParagraph}
+
+% ============================================================
+% Chinese key aliases / 中文 Key 别名
+% ============================================================
+\ExplSyntaxOn
+\keys_define:nn { luatexcn / footnote }
+  {
+    % 简体
+    模式 .tl_set:N = \l__luatexcn_footnote_mode_tl,
+    编号样式 .tl_set:N = \l__luatexcn_footnote_number_style_tl,
+    分隔符 .tl_set:N = \l__luatexcn_footnote_separator_tl,
+    字体 .tl_set:N = \l__luatexcn_footnote_font_tl,
+    字号 .tl_set:N = \l__luatexcn_footnote_font_size_tl,
+    字体颜色 .tl_set:N = \l__luatexcn_footnote_font_color_tl,
+    缩进 .int_set:N = \l__luatexcn_footnote_indent_int,
+    间距 .dim_set:N = \l__luatexcn_footnote_spacing_dim,
+    序号高度 .int_set:N = \l__luatexcn_footnote_marker_height_int,
+    起始编号 .code:n = { \int_gset:Nn \g__luatexcn_footnote_counter_int { #1 } },
+    % 繁体（与简体不同形的）
+    編號樣式 .tl_set:N = \l__luatexcn_footnote_number_style_tl,
+    字體 .tl_set:N = \l__luatexcn_footnote_font_tl,
+    字號 .tl_set:N = \l__luatexcn_footnote_font_size_tl,
+    字體顏色 .tl_set:N = \l__luatexcn_footnote_font_color_tl,
+    縮進 .int_set:N = \l__luatexcn_footnote_indent_int,
+    間距 .dim_set:N = \l__luatexcn_footnote_spacing_dim,
+    序號高度 .int_set:N = \l__luatexcn_footnote_marker_height_int,
+    起始編號 .code:n = { \int_gset:Nn \g__luatexcn_footnote_counter_int { #1 } },
+  }
+\ExplSyntaxOff
+
+\endinput%

@@ -1,0 +1,279 @@
+% Copyright 2026 Open-Guji (https://github.com/open-guji)
+%
+% Licensed under the Apache License, Version 2.0 (the "License");
+% you may not use this file except in compliance with the License.
+% You may obtain a copy of the License at
+%
+%     http://www.apache.org/licenses/LICENSE-2.0
+%
+% Unless required by applicable law or agreed to in writing, software
+% distributed under the License is distributed on an "AS IS" BASIS,
+% WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+% See the License for the specific language governing permissions and
+% limitations under the License.
+% luatex-cn-core-style.sty
+% Generic style override command for vertical typesetting
+% Pushes font/color/spacing overrides onto the style stack without
+% changing the layout mode (no jiazhu/column attributes).
+%
+\RequirePackage{core/luatex-cn-core-base}
+\RequirePackage{expl3}
+\RequirePackage{xparse}
+\ProvidesExplPackage {core/luatex-cn-core-style} {2026/03/21} {0.3.6} {Generic Style Override for Vertical Typesetting}
+
+\makeatletter
+
+    \keys_define:nn { luatexcn / style }
+      {
+        font-size .tl_set:N = \l__luatexcn_style_size_tl,
+        font .tl_set:N = \l__luatexcn_style_font_tl,
+        font-color .tl_set:N = \l__luatexcn_style_color_tl,
+
+        grid-height .tl_set:N = \l__luatexcn_style_grid_height_tl,
+        grid-width .tl_set:N = \l__luatexcn_style_grid_width_tl,
+
+        spacing-top .tl_set:N = \l__luatexcn_style_spacing_top_tl,
+        spacing-bottom .tl_set:N = \l__luatexcn_style_spacing_bottom_tl,
+        spacing .meta:n = { spacing-top = #1, spacing-bottom = #1 },
+
+        padding-top .tl_set:N = \l__luatexcn_style_padding_top_tl,
+        padding-bottom .tl_set:N = \l__luatexcn_style_padding_bottom_tl,
+        padding .meta:n = { padding-top = #1, padding-bottom = #1 },
+
+        xshift .tl_set:N = \l__luatexcn_style_xshift_tl,
+        yshift .tl_set:N = \l__luatexcn_style_yshift_tl,
+
+        indent .tl_set:N = \l__luatexcn_style_indent_tl,
+        first-indent .tl_set:N = \l__luatexcn_style_first_indent_tl,
+        bottom-indent .tl_set:N = \l__luatexcn_style_bottom_indent_tl,
+        % Forward unknown keys to settings namespace (debug, punct-mode, etc.)
+        unknown .code:n =
+          {
+            \exp_args:Nnx \keys_if_exist:nnTF { luatexcn / settings } { \l_keys_key_str }
+              { \keys_set:nx { luatexcn / settings } { \l_keys_key_str = { \exp_not:n {#1} } } }
+              { }
+          },
+      }
+
+    % Internal: push style and print ID
+    % Uses the same pattern as Column/TextFlow: pass individual arguments to Lua
+    % Handles indent/first-indent/bottom-indent when specified.
+    \cs_new_protected:Npn \__luatexcn_style_push_and_set:
+      {
+        \edef\style_override_id{\lua_now:e {
+          local ~ sr = require('util.luatex-cn-style-registry')
+          local ~ constants = require('core.luatex-cn-constants')
+          local ~ style_id = sr.push_content_style(
+            \tl_if_empty:NTF \l__luatexcn_style_color_tl { nil } { [=[\luaescapestring{\l__luatexcn_style_color_tl}]=] },
+            \tl_if_empty:NTF \l__luatexcn_style_size_tl { nil } { [=[\luaescapestring{\l__luatexcn_style_size_tl}]=] },
+            \tl_if_empty:NTF \l__luatexcn_style_font_tl { nil } { [=[\luaescapestring{\l__luatexcn_style_font_tl}]=] },
+            sr.make_extra(
+              \tl_if_empty:NTF \l__luatexcn_style_grid_height_tl { nil } { [=[\luaescapestring{\l__luatexcn_style_grid_height_tl}]=] },
+              \tl_if_empty:NTF \l__luatexcn_style_spacing_top_tl { nil } { [=[\luaescapestring{\l__luatexcn_style_spacing_top_tl}]=] },
+              \tl_if_empty:NTF \l__luatexcn_style_spacing_bottom_tl { nil } { [=[\luaescapestring{\l__luatexcn_style_spacing_bottom_tl}]=] },
+              \tl_if_empty:NTF \l__luatexcn_style_xshift_tl { nil } { [=[\luaescapestring{\l__luatexcn_style_xshift_tl}]=] },
+              \tl_if_empty:NTF \l__luatexcn_style_yshift_tl { nil } { [=[\luaescapestring{\l__luatexcn_style_yshift_tl}]=] },
+              \tl_if_empty:NTF \l__luatexcn_style_indent_tl { nil } { \l__luatexcn_style_indent_tl },
+              \tl_if_empty:NTF \l__luatexcn_style_first_indent_tl { nil } { \l__luatexcn_style_first_indent_tl },
+              \tl_if_empty:NTF \l__luatexcn_style_grid_width_tl { nil } { [=[\luaescapestring{\l__luatexcn_style_grid_width_tl}]=] },
+              \tl_if_empty:NTF \l__luatexcn_style_padding_top_tl { nil } { [=[\luaescapestring{\l__luatexcn_style_padding_top_tl}]=] },
+              \tl_if_empty:NTF \l__luatexcn_style_padding_bottom_tl { nil } { [=[\luaescapestring{\l__luatexcn_style_padding_bottom_tl}]=] }
+            )
+          )
+          tex.print(tostring(style_id))
+        }}
+        \setluatexattribute\cnverticalstyle{\style_override_id}
+        % When indent is specified, set block_id and TeX indent attributes
+        \tl_if_empty:NF \l__luatexcn_style_indent_tl
+          {
+            \int_gincr:N \g_luatexcn_paragraph_block_id_int
+            \setluatexattribute\cnverticalblockid { \int_use:N \g_luatexcn_paragraph_block_id_int }
+            \setluatexattribute\cnverticalindent { \l__luatexcn_style_indent_tl }
+            \tl_if_empty:NTF \l__luatexcn_style_first_indent_tl
+              { \setluatexattribute\cnverticalfirstindent { \l__luatexcn_style_indent_tl } }
+              { \setluatexattribute\cnverticalfirstindent { \l__luatexcn_style_first_indent_tl } }
+            \tl_if_empty:NTF \l__luatexcn_style_bottom_indent_tl
+              { \setluatexattribute\cnverticalrightindent { 0 } }
+              { \setluatexattribute\cnverticalrightindent { \l__luatexcn_style_bottom_indent_tl } }
+          }
+      }
+
+    % Internal: pop style
+    \cs_new_protected:Npn \__luatexcn_style_pop:
+      {
+        \lua_now:n {
+          local ~ sr = require('util.luatex-cn-style-registry')
+          sr.pop()
+        }
+      }
+
+    % Internal: pop style and reset indent TeX attributes
+    % Used by environments that may have set indent (StyleEnv, Paragraph)
+    \cs_new_protected:Npn \__luatexcn_style_pop_with_indent_reset:
+      {
+        \edef\parent_style_id{\lua_now:n {
+          local ~ style_registry = require('util.luatex-cn-style-registry')
+          style_registry.pop()
+          local ~ current_id = style_registry.current_id() ~ or ~ 0
+          tex.print(current_id)
+        }}
+        \setluatexattribute\cnverticalstyle{\parent_style_id}
+        \setluatexattribute\cnverticalindent{0}
+        \setluatexattribute\cnverticalfirstindent{-1}
+        \setluatexattribute\cnverticalrightindent{0}
+      }
+
+    % Internal: initialize variables and parse keys
+    \bool_new:N \l__luatexcn_style_has_any_bool
+    \cs_new_protected:Npn \__luatexcn_style_init_and_parse:n #1
+      {
+        \tl_set:Nn \l__luatexcn_style_size_tl {}
+        \tl_set:Nn \l__luatexcn_style_font_tl {}
+        \tl_set:Nn \l__luatexcn_style_color_tl {}
+        \tl_set:Nn \l__luatexcn_style_grid_height_tl {}
+        \tl_set:Nn \l__luatexcn_style_grid_width_tl {}
+        \tl_set:Nn \l__luatexcn_style_spacing_top_tl {}
+        \tl_set:Nn \l__luatexcn_style_spacing_bottom_tl {}
+        \tl_set:Nn \l__luatexcn_style_xshift_tl {}
+        \tl_set:Nn \l__luatexcn_style_yshift_tl {}
+        \tl_set:Nn \l__luatexcn_style_indent_tl {}
+        \tl_set:Nn \l__luatexcn_style_first_indent_tl {}
+        \tl_set:Nn \l__luatexcn_style_bottom_indent_tl {}
+        \tl_set:Nn \l__luatexcn_style_padding_top_tl {}
+        \tl_set:Nn \l__luatexcn_style_padding_bottom_tl {}
+        \bool_set_false:N \l__luatexcn_style_has_any_bool
+        \keys_set:nn { luatexcn / style } { #1 }
+      }
+
+    % Internal: check if any style variable was set after key parsing
+    \cs_new_protected:Npn \__luatexcn_style_check_has_any:
+      {
+        \bool_set_false:N \l__luatexcn_style_has_any_bool
+        \tl_if_empty:NF \l__luatexcn_style_size_tl { \bool_set_true:N \l__luatexcn_style_has_any_bool }
+        \tl_if_empty:NF \l__luatexcn_style_font_tl { \bool_set_true:N \l__luatexcn_style_has_any_bool }
+        \tl_if_empty:NF \l__luatexcn_style_color_tl { \bool_set_true:N \l__luatexcn_style_has_any_bool }
+        \tl_if_empty:NF \l__luatexcn_style_grid_height_tl { \bool_set_true:N \l__luatexcn_style_has_any_bool }
+        \tl_if_empty:NF \l__luatexcn_style_grid_width_tl { \bool_set_true:N \l__luatexcn_style_has_any_bool }
+        \tl_if_empty:NF \l__luatexcn_style_spacing_top_tl { \bool_set_true:N \l__luatexcn_style_has_any_bool }
+        \tl_if_empty:NF \l__luatexcn_style_spacing_bottom_tl { \bool_set_true:N \l__luatexcn_style_has_any_bool }
+        \tl_if_empty:NF \l__luatexcn_style_xshift_tl { \bool_set_true:N \l__luatexcn_style_has_any_bool }
+        \tl_if_empty:NF \l__luatexcn_style_yshift_tl { \bool_set_true:N \l__luatexcn_style_has_any_bool }
+        \tl_if_empty:NF \l__luatexcn_style_indent_tl { \bool_set_true:N \l__luatexcn_style_has_any_bool }
+        \tl_if_empty:NF \l__luatexcn_style_first_indent_tl { \bool_set_true:N \l__luatexcn_style_has_any_bool }
+        \tl_if_empty:NF \l__luatexcn_style_bottom_indent_tl { \bool_set_true:N \l__luatexcn_style_has_any_bool }
+        \tl_if_empty:NF \l__luatexcn_style_padding_top_tl { \bool_set_true:N \l__luatexcn_style_has_any_bool }
+        \tl_if_empty:NF \l__luatexcn_style_padding_bottom_tl { \bool_set_true:N \l__luatexcn_style_has_any_bool }
+      }
+
+    % Internal: conditionally apply font and push style (only if style keys were set)
+    \cs_new_protected:Npn \__luatexcn_style_maybe_apply_and_push:
+      {
+        \__luatexcn_style_check_has_any:
+        \bool_if:NT \l__luatexcn_style_has_any_bool
+          {
+            \__luatexcn_style_apply_font:
+            \__luatexcn_style_push_and_set:
+          }
+      }
+
+    % Internal: conditionally pop style (only if push was done)
+    \cs_new_protected:Npn \__luatexcn_style_maybe_pop:
+      {
+        \bool_if:NT \l__luatexcn_style_has_any_bool
+          { \__luatexcn_style_pop_with_indent_reset: }
+      }
+
+    % Internal: apply font if specified
+    \cs_new_protected:Npn \__luatexcn_style_apply_font:
+      {
+        \tl_if_empty:NF \l__luatexcn_style_size_tl
+          {
+            \tl_if_empty:NTF \l__luatexcn_style_font_tl
+              { \fontsize{\l__luatexcn_style_size_tl}{\l__luatexcn_style_size_tl}\selectfont }
+              { \setmainfont{\l__luatexcn_style_font_tl}[RawFeature={+vert,+vrt2}] \fontsize{\l__luatexcn_style_size_tl}{\l__luatexcn_style_size_tl}\selectfont }
+          }
+      }
+
+    % ====================================================================
+    % \Style[key=val]{content} - Command form
+    % ====================================================================
+    \NewDocumentCommand{\Style}{ O{} +m }
+      {
+        \group_begin:
+        \__luatexcn_style_init_and_parse:n { #1 }
+        \__luatexcn_style_apply_font:
+        \__luatexcn_style_push_and_set:
+        #2
+        \__luatexcn_style_pop_with_indent_reset:
+        \group_end:
+      }
+
+    % ====================================================================
+    % StyleEnv environment - \begin{StyleEnv}[key=val] ... \end{StyleEnv}
+    % ====================================================================
+    \NewDocumentEnvironment{StyleEnv}{ O{} }
+      {
+        \group_begin:
+        \__luatexcn_style_init_and_parse:n { #1 }
+        \__luatexcn_style_apply_font:
+        \__luatexcn_style_push_and_set:
+      }
+      {
+        \__luatexcn_style_pop_with_indent_reset:
+        \group_end:
+      }
+
+\makeatother
+
+\ExplSyntaxOff%
+
+% ============================================================
+% Chinese aliases / 中文别名
+% ============================================================
+% Simplified Chinese / 简体
+\NewCommandCopy{\样式}{\Style}
+\NewEnvironmentCopy{样式设置}{StyleEnv}
+% Traditional Chinese / 繁体
+\NewCommandCopy{\樣式}{\Style}
+\NewEnvironmentCopy{樣式設置}{StyleEnv}
+
+% ============================================================
+% Chinese key aliases / 中文 Key 别名
+% ============================================================
+\ExplSyntaxOn
+\keys_define:nn { luatexcn / style }
+  {
+    % 简体
+    字号 .tl_set:N = \l__luatexcn_style_size_tl,
+    字体 .tl_set:N = \l__luatexcn_style_font_tl,
+    字体颜色 .tl_set:N = \l__luatexcn_style_color_tl,
+    格高 .tl_set:N = \l__luatexcn_style_grid_height_tl,
+    格宽 .tl_set:N = \l__luatexcn_style_grid_width_tl,
+    上间距 .tl_set:N = \l__luatexcn_style_spacing_top_tl,
+    下间距 .tl_set:N = \l__luatexcn_style_spacing_bottom_tl,
+    间距 .meta:n = { spacing-top = #1, spacing-bottom = #1 },
+    横移 .tl_set:N = \l__luatexcn_style_xshift_tl,
+    纵移 .tl_set:N = \l__luatexcn_style_yshift_tl,
+    上填充 .tl_set:N = \l__luatexcn_style_padding_top_tl,
+    下填充 .tl_set:N = \l__luatexcn_style_padding_bottom_tl,
+    填充 .meta:n = { padding-top = #1, padding-bottom = #1 },
+    缩进 .tl_set:N = \l__luatexcn_style_indent_tl,
+    首行缩进 .tl_set:N = \l__luatexcn_style_first_indent_tl,
+    末行缩进 .tl_set:N = \l__luatexcn_style_bottom_indent_tl,
+    % 繁体（与简体不同形的）
+    字號 .tl_set:N = \l__luatexcn_style_size_tl,
+    字體 .tl_set:N = \l__luatexcn_style_font_tl,
+    字體顏色 .tl_set:N = \l__luatexcn_style_color_tl,
+    上間距 .tl_set:N = \l__luatexcn_style_spacing_top_tl,
+    下間距 .tl_set:N = \l__luatexcn_style_spacing_bottom_tl,
+    間距 .meta:n = { spacing-top = #1, spacing-bottom = #1 },
+    橫移 .tl_set:N = \l__luatexcn_style_xshift_tl,
+    縱移 .tl_set:N = \l__luatexcn_style_yshift_tl,
+    格寬 .tl_set:N = \l__luatexcn_style_grid_width_tl,
+    縮進 .tl_set:N = \l__luatexcn_style_indent_tl,
+    首行縮進 .tl_set:N = \l__luatexcn_style_first_indent_tl,
+    末行縮進 .tl_set:N = \l__luatexcn_style_bottom_indent_tl,
+  }
+\ExplSyntaxOff
+
+\endinput%

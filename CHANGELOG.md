@@ -2,6 +2,29 @@
 
 本项目的所有重大更改都将记录在此文件中。
 
+## [0.3.6] - 2026-03-20
+
+新增：
+- 添加 \插图页 / \IllustrationPage 命令，支持半页粒度丝栏抑制，默认先换半页 (fix #29)
+- 添加 \牌记 / \colophon 命令，不透明双层边框悬浮文本框 (fix #58)
+- 添加侧批/眉批/批注开关设置 sidenote/meipi/pizhu=true|false (fix #89)
+- 版心上部/下部/中部全面 TextBox 化，支持紧凑排列、夹注、fill-padding 等 TeX 命令
+- 添加 \换半页 / \NewHalfPage 命令
+- TextBox 支持透明度控制（transparent 参数）
+
+修复：
+- 修复侧批竖版标点转换，normal 模式下正确调用 punct.flatten() (fix #89)
+- 修复表格自动宽度单元格后续列重叠、固定宽度空单元格不生效等布局问题
+- 修复表格纵对齐(center/bottom)未扣除 padding 导致内容偏离居中
+- 修复 \插图页 导致所有页面丝栏消失的样式栈污染问题
+- 修复 parallel 模式跨页表格后续栏排版位置错误
+- 修复 \Underline 下划线在 Free Mode 下位置偏移
+
+重构：
+- 表格分栏默认使用 parallel 模式（栏满换页而非换栏）
+- 统一 padding-top/bottom 参数，取代 column-padding-*/fill-padding-* 等多套命名
+- 版心参数从内容导向重命名为位置导向，横位/纵位 → 横坐标/纵坐标
+
 ## [0.3.5] - 2026-03-14
 
 新增：

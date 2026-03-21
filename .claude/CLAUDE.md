@@ -8,7 +8,7 @@
 
 - **GitHub**: https://github.com/open-guji/luatex-cn
 - **许可证**: Apache 2.0
-- **当前版本**: 0.3.5
+- **当前版本**: 0.3.6
 
 ## 核心指令
 

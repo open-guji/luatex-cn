@@ -29,7 +29,7 @@ local tests = {
     "test/unit_test/core/layout-grid-band-test.lua",
     "test/unit_test/core/render-page-test.lua",
     "test/unit_test/core/core-column-test.lua",
-
+    "test/unit_test/core/core-sidenote-test.lua",
     -- Plugin/Feature layer: guji
     "test/unit_test/guji/judou-test.lua",
     "test/unit_test/guji/danye-test.lua",

@@ -344,13 +344,17 @@ local function calculate_next_node_pos(curr_p, curr_c, curr_r, node_id, config)
     -- Handle overflow
     if next_r + config.padding_bottom_grid >= config.line_limit then
         next_c = curr_c + 1
-        -- Use base_indent directly for column wrap alignment (fix for issue #47)
-        -- padding_top_grid is only for the first column start, not for wrapped columns
-        next_r = config.base_indent
         next_p, next_c = skip_to_valid_column(next_p, next_c, config.p_cols, config.banxin_on, config.interval)
 
+        -- Align with body text's top boundary in the target column (taintou support).
+        -- Only negative min_row values (taitou) affect alignment; positive indent is ignored.
+        next_r = 0
+        if config.col_min_row and config.col_min_row[next_p] then
+            next_r = math.min(0, config.col_min_row[next_p][next_c] or 0)
+        end
+
         local filled = config.tracker.get(next_p, next_c)
-        if next_r <= filled then
+        if next_r <= filled and filled ~= -1 then
             next_r = filled + 0.1
         end
     end
@@ -358,7 +362,35 @@ local function calculate_next_node_pos(curr_p, curr_c, curr_r, node_id, config)
     return next_p, next_c, next_r
 end
 
-local function place_individual_sidenote(sid, registry_item, last_node_pos, params, tracker)
+-- Scan layout_map to find the minimum row for each column on each page.
+-- This captures taitou (negative row) information so wrapped sidenote content
+-- can align with the body text's top boundary in the target column.
+-- Returns: col_min_row[page][col] = min_row (can be negative)
+local function build_col_min_row(layout_map, grid_height)
+    local col_min_y = {}
+    for _, pos in pairs(layout_map) do
+        -- Only consider entries with valid page/col/y_sp, excluding placeholders
+        if pos.page and pos.col and pos.y_sp and pos.mode ~= "placeholder" then
+            local p, c = pos.page, pos.col
+            if not col_min_y[p] then col_min_y[p] = {} end
+            local cur = col_min_y[p][c]
+            if not cur or pos.y_sp < cur then
+                col_min_y[p][c] = pos.y_sp
+            end
+        end
+    end
+    -- Convert SP to row units
+    local col_min_row = {}
+    for p, cols in pairs(col_min_y) do
+        col_min_row[p] = {}
+        for c, y in pairs(cols) do
+            col_min_row[p][c] = math.floor(y / grid_height)
+        end
+    end
+    return col_min_row
+end
+
+local function place_individual_sidenote(sid, registry_item, last_node_pos, params, tracker, col_min_row)
     local content, metadata = extract_registry_content(registry_item)
     if not (content and sid and last_node_pos) then return nil end
 
@@ -381,7 +413,8 @@ local function place_individual_sidenote(sid, registry_item, last_node_pos, para
         padding_bottom_grid = safe_resolve(metadata.padding_bottom, main_grid_height) / main_grid_height,
         step = step,
         tracker = tracker,
-        base_indent = last_node_pos.indent or 0
+        base_indent = last_node_pos.indent or 0,
+        col_min_row = col_min_row,
     }
 
     local curr_p, curr_c = last_node_pos.page, last_node_pos.col
@@ -394,8 +427,52 @@ local function place_individual_sidenote(sid, registry_item, last_node_pos, para
 
     local curr_r = calculate_start_position(anchor_y_sp, metadata, main_grid_height)
     local filled_r = tracker.get(curr_p, curr_c)
-    if curr_r <= filled_r then
+    -- Check gap-fill: push down if the current row is at or below existing
+    -- content. Skip when filled_r is the default (-1), meaning no content yet.
+    -- This handles both positive and negative curr_r (taitou alignment).
+    if curr_r <= filled_r and filled_r ~= -1 then
         curr_r = filled_r + 0.1
+    end
+
+    -- Handle reverse flow: negative curr_r (from yshift) means content should
+    -- start in the previous column and flow into the current one.
+    -- Clamp to page 0 boundary to prevent going negative.
+    while curr_r < 0 do
+        curr_c = curr_c - 1
+        if curr_c < 0 then
+            if curr_p > 0 then
+                curr_p = curr_p - 1
+                curr_c = p_cols - 1
+            else
+                -- At page 0, column 0: clamp to start
+                curr_c = 0
+                curr_r = 0
+                break
+            end
+        end
+        -- Skip reserved columns when moving backwards
+        if is_reserved_column(curr_c, config.banxin_on, config.interval) then
+            -- Continue loop to skip this column
+        else
+            curr_r = config.line_limit + curr_r
+        end
+    end
+
+    -- If the start position is at the very bottom of the column (e.g. anchor
+    -- is on the last character), move to the next column so the first
+    -- sidenote character doesn't overlap the bottom edge.
+    if curr_r + config.padding_bottom_grid >= config.line_limit then
+        curr_c = curr_c + 1
+        curr_p, curr_c = skip_to_valid_column(curr_p, curr_c, p_cols, config.banxin_on, config.interval)
+        -- Align with body text's top boundary in the target column (taintou support)
+        curr_r = 0
+        if col_min_row and col_min_row[curr_p] then
+            curr_r = math.min(0, col_min_row[curr_p][curr_c] or 0)
+        end
+        local filled_r = tracker.get(curr_p, curr_c)
+        if curr_r <= filled_r and filled_r ~= -1 then
+            curr_r = filled_r + 0.1
+        end
     end
 
     local placed_nodes = {}
@@ -464,6 +541,7 @@ sidenote._internal = {
     extract_registry_content = extract_registry_content,
     calculate_start_position = calculate_start_position,
     calculate_next_node_pos = calculate_next_node_pos,
+    build_col_min_row = build_col_min_row,
     place_individual_sidenote = place_individual_sidenote,
     find_sidenote_anchors = find_sidenote_anchors
 }
@@ -565,12 +643,18 @@ function sidenote.calculate_sidenote_positions(layout_map, params)
     local list = params.list
     if not list then return {} end
 
+    -- Build column-min-row map from the main text layout to support
+    -- taitou-aware wrapping: wrapped sidenote content aligns with body text's
+    -- top boundary in the target column.
+    local grid_height = params.grid_height or (65536 * 20)
+    local col_min_row = build_col_min_row(layout_map, grid_height)
+
     local tracker = create_gap_tracker()
     local t = D.todirect(list)
 
     find_sidenote_anchors(t, layout_map, function(sid, last_node_pos)
         local registry_item = sidenote.registry[sid]
-        local placed_nodes = place_individual_sidenote(sid, registry_item, last_node_pos, params, tracker)
+        local placed_nodes = place_individual_sidenote(sid, registry_item, last_node_pos, params, tracker, col_min_row)
         if placed_nodes then
             sidenote_map[sid] = placed_nodes
             dbg.log(string.format("Placed sidenote sid=%d with %d nodes", sid, #placed_nodes))

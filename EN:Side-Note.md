@@ -60,6 +60,7 @@ Main text\\侧批[yshift=10pt, color=red]{Both color and position}continued text
 - `grid-height`: Custom grid height for the note block (default: equals font size).
 - `border-padding-top`: Top border padding (default: 0pt).
 - `border-padding-bottom`: Bottom border padding (default: 0pt).
+- `background-color` <sup>v0.3.8+</sup>: Side note background color, masks the underlying column borders. CN aliases `底色` / `背景色`. Special values `page` / `inherit` / `继承` / `页面` inherit the current page background (falls back to white if not configured). Default empty, preserving legacy behavior (no background drawn).
 
 ### Global Configuration
 ```latex

@@ -4,6 +4,35 @@ English | [中文版](Changelog)
 
 All notable changes to this project will be documented here.
 
+## [0.3.8] - 2026-05-09
+
+New gongche notation commands, tone-mark decorations, side note background color, and multiple sidenote/layout fixes.
+
+- ✨ **Gongche Notation**: New `\音[ban/yan/high/low/kunlow]{note}` main commands, `\拖音` sustain/continuation unit, judou and gongdiao annotations, supporting full traditional Chinese musical notation layout (#90)
+- ✨ **Tone-Mark Circles**: New `\发圈` / `\圈发` commands, adding tonal corner-circle decorations based on level/rising/departing/entering tones (fix #92)
+- ✨ **Side Note Background**: `\侧批` adds `background-color` parameter (CN alias `底色` / `背景色`) to mask underlying column borders; special values `page` / `inherit` / `继承` / `页面` inherit the page background (#93)
+- 🐛 **Side Note Wrapping & Taitou Alignment**: Fixed reverse-flow wrapping, taitou column alignment with body text top, and bottom-anchor auto-wrap (fix #91)
+- 🐛 **Reverse-Flow Boundary**: page 0 / banxin column fallback fixes; extracted `wrap_to_next_column` helper to eliminate duplicated wrap logic (review #97)
+- 🐛 **Floating Textbox Empty Page**: anchor marks `page_has_content`, preventing pages with only floating textboxes from being misidentified as empty (fix #98)
+- 🐛 **Page-Fill Table Inner Border**: Lost left inner border on starting page — fixed by distinguishing `actual_band_cols` per page
+- 🐛 **Illustration Page Full-Page Suppression**: Silk-frame suppression extends to both half-pages when no real text content exists on the entire page
+
+## [0.3.7] - 2026-04-25
+
+Table enhancements, sidenote API redesign, and multiple jiazhu/textbox fixes.
+
+- ✨ **Table Enhancements**: Cross-page tables, customizable column rules; new `row-fill=half-page` mode
+- ✨ **Sidenote API Redesign**: `\旁注{main}{right}{left?}` — supports `\文本框` content, spacing adapts to main character size (fix #94)
+- ✨ **Guji `ignore-spaces` Option**: New option, default ignores source spaces
+- ✨ **Banxin Page Number Toggle**: Added display toggle
+- 🐛 **Textbox in Jiazhu**: Octagon size/alignment/vertical/sub-column x offset issues (fix #96)
+- 🐛 **Parallel Mode Cross-Page Table**: Preserves band structure and horizontal rules, tight cell layout, cell-level column borders don't leak to overflow page
+- 🐛 **Textbox Line Height & Space**: Inner line height uses outer grid height, fixes body `\octagon{}` overflow; trailing space after textbox occupies wrong row count
+- 🐛 **Judou Column Wrap Position**: Marker mislocated to old column when wrapping
+- 🐛 **Style Font Application**: `\样式[字体=X]` without size now applies font to TeX layer
+- 🐛 **Fill Mode Padding**: Double-application of `padding_top`
+- ♻️ **Chapter Manual Newline**: Switched to `\夹注` to adapt to TextBox rendering mode
+
 ## [0.3.6] - 2026-03-20
 
 New illustration page, colophon, annotation toggles, and Banxin TextBox overhaul.

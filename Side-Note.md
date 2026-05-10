@@ -60,6 +60,7 @@
 - `grid-height`: 自定义网格高度（默认等于字号）。
 - `border-padding-top`: 边框上边距（默认 0pt）。
 - `border-padding-bottom`: 边框下边距（默认 0pt）。
+- `background-color` <sup>v0.3.8+</sup>: 侧批底色，遮挡其下方的界行。中文别名 `底色` / `背景色`。特殊值 `page` / `inherit` / `继承` / `页面` 会继承当前页面背景色（未配置时退化为白色）。默认空值，行为同旧版本（不绘制底色）。
 
 ### 全局配置
 ```latex

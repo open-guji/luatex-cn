@@ -81,6 +81,47 @@ Preset commands for marking text according to classical or modern standards.
 \EmphasisMark{Very Important}
 ```
 
+### 3. FaSheng / Tone-Mark Circles <sup>v0.3.8+</sup>
+
+Per Song-dynasty Yue Ke's《九经三传沿革例》: "音有平上去入之分，则随圈发". Places tone-mark circles at the four corners of a character.
+
+| Command | Alias | Description |
+|---------|-------|-------------|
+| `\faSheng` | `\发圈` / `\圈发` / `\發圈` / `\圈發` | Single-character tone mark |
+| `\fashengBatch` | `\发圈批` / `\發圈批` | Parallel batch (tone string + char string) |
+| `\fashengSetup` | `\发圈设置` / `\發圈設置` | Global setup |
+| `\平声` / `\上声` / `\去声` / `\入声` | — | Tone shorthand commands |
+
+**Corner convention**: Ping (level) = bottom-left, Shang (rising) = top-left, Qu (departing) = top-right, Ru (entering) = bottom-right.
+
+**Usage**:
+```latex
+% Bare tone shortcut: tone in brackets
+\faSheng[平]{字}
+\faSheng[上]{字}
+\faSheng[去]{字}
+\faSheng[入]{字}
+
+% Explicit key=value (English keys also work)
+\faSheng[tone=qu, color=red]{字}
+
+% Shorthand commands
+\平声{字}\上声{字}\去声{字}\入声{字}
+
+% Parallel batch: tone string + main char string (1:1 mapping)
+\发圈批{平上去入}{春夏秋冬}
+```
+
+**Parameters**:
+
+| Key | CN Alias | Default | Description |
+|-----|----------|---------|-------------|
+| `tone` | `声` / `聲` | `ping` | Tone, one of `ping` / `shang` / `qu` / `ru`, or `平` / `上` / `去` / `入` |
+| `color` | `颜色` / `顏色` | `black` | Circle color |
+| `char` | `字符` | `○` | Circle character |
+| `scale` | `缩放` / `縮放` | `0.3` | Circle scale |
+| `offset` | `偏移` | `0.45em` | Offset from character center |
+
 ---
 
 ## Generic Decoration

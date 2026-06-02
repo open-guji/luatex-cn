@@ -62,7 +62,7 @@ def pdf_to_pngs(pdf_file: Path, output_dir: Path, dpi: int = 300) -> list:
     return pngs
 
 
-def compare_images(baseline_png: Path, current_png: Path, diff_png: Path) -> int:
+def compare_images(baseline_png: Path, current_png: Path, diff_png: Path) -> tuple[int, int]:
     """Compare two PNG images and generate a composite diff image.
 
     Composite colouring:
@@ -79,7 +79,8 @@ def compare_images(baseline_png: Path, current_png: Path, diff_png: Path) -> int
         diff_png:     Path where the diff image will be saved.
 
     Returns:
-        Number of pixels that differ between the two images.
+        Number of pixels that differ between the two images, and
+        number pixels of image.
     """
     baseline_img = Image.open(baseline_png).convert("RGB")
     current_img = Image.open(current_png).convert("RGB")
@@ -121,4 +122,4 @@ def compare_images(baseline_png: Path, current_png: Path, diff_png: Path) -> int
         diff_img = Image.fromarray(result)
         diff_img.save(str(diff_png))
 
-    return diff_count
+    return diff_count, w * h

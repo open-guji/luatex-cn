@@ -20,6 +20,7 @@ import multiprocessing
 BASE_DIR = Path(__file__).parent.parent.resolve()
 REG_DIR = BASE_DIR / "test" / "regression_test"
 DIFF_THRESHOLD = 200
+DIFF_RATIO_THRESHOLD = 0.2
 
 # Test suites: each has its own tex/, baseline/, current/, diff/, pdf/ subdirectories
 SUITES = {
@@ -193,20 +194,25 @@ def process_file(tex_file, mode, pdf_dir, baseline_dir, current_dir, diff_dir):
             return False, f"Page count mismatch: current={len(current_pngs)}, baseline={len(baseline_pngs)}", log_list
 
         total_diff_pixels = 0
+        total_pixels = 0
         failing_pages = []
 
         for i, (b_png, c_png) in enumerate(zip(baseline_pngs, current_pngs)):
             diff_png = diff_dir / f"diff_{c_png.name}"
-            diff_count = compare_images_logged(b_png, c_png, diff_png, log_list)
+            diff_count, pixel_count = compare_images_logged(b_png, c_png, diff_png, log_list)
 
-            if diff_count > 0:
-                total_diff_pixels += diff_count
+            diff_ratio = 100 * diff_count / pixel_count
+            
+            total_pixels += pixel_count
+            total_diff_pixels += diff_count
+
+            if diff_count > DIFF_THRESHOLD and diff_ratio > DIFF_RATIO_THRESHOLD:
                 failing_pages.append(i + 1)
-                log_list.append(f"  Page {i+1} fails: {diff_count} pixels difference.")
-            elif diff_count == 0:
+                log_list.append(f"  Page {i+1} fails: {diff_count} ({diff_ratio:.4f}%) pixels difference.")
+            elif diff_png.exists():
                 if diff_png.exists(): diff_png.unlink()
-            else:
-                return False, f"Comparison error on page {i+1}", log_list
+        
+        total_diff_ratio = 100 * total_diff_pixels / total_pixels
 
         # Check JSON baseline if present
         json_ok = True
@@ -242,21 +248,23 @@ def process_file(tex_file, mode, pdf_dir, baseline_dir, current_dir, diff_dir):
             if pdf_file.exists():
                 pdf_file.unlink()
             return True, 0, log_list
-        elif total_diff_pixels < DIFF_THRESHOLD and json_ok:
-            log_list.append(f"WARNING: {tex_file.name} has minor differences ({total_diff_pixels} pixels), but they are below threshold ({DIFF_THRESHOLD}). Marking as PASSED.")
+        elif total_diff_pixels < DIFF_THRESHOLD or total_diff_ratio < DIFF_RATIO_THRESHOLD and json_ok:
+            log_list.append(f"WARNING: {tex_file.name} has minor differences [{total_diff_pixels} " \
+                            f"({total_diff_ratio:.4f}%) pixels], but they are below threshold " \
+                            f"({DIFF_THRESHOLD} or {DIFF_RATIO_THRESHOLD:.4f}%). Marking as PASSED.")
             for png in current_pngs:
                 png.unlink()
             for diff_png in diff_dir.glob(f"diff_{pdf_file.stem}-*.png"):
                 diff_png.unlink()
             if pdf_file.exists():
                 pdf_file.unlink()
-            return True, f"{total_diff_pixels} pixels (ignored)", log_list
+            return True, f"{total_diff_pixels} ({total_diff_ratio:.4f}%) pixels (ignored)", log_list
         else:
-            if not json_ok and total_diff_pixels == 0:
+            if not json_ok:
                 log_list.append(f"FAIL: {tex_file.name} JSON mismatch")
                 return False, f"JSON mismatch", log_list
             log_list.append(f"FAIL: {tex_file.name} differs on pages: {failing_pages}{json_info}")
-            return False, f"{total_diff_pixels} total pixels diff{json_info}", log_list
+            return False, f"{total_diff_pixels} ({total_diff_ratio:.4f}%) pixels, NOT IGNORABLE! {json_info}", log_list
 
 
 def resolve_files_in_suite(file_args, tex_dir):

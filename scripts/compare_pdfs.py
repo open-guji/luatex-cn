@@ -126,7 +126,7 @@ def compare_pdfs(
         for i in range(n_pages):
             page_num = i + 1
             diff_tmp = dir_diff / f"diff_{page_num:04d}.png"
-            diff_count = compare_images(pngs_a[i], pngs_b[i], diff_tmp)
+            diff_count, _ = compare_images(pngs_a[i], pngs_b[i], diff_tmp)
 
             if diff_count > threshold:
                 if first_diff_page is None:

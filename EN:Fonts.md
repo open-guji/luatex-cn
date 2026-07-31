@@ -70,6 +70,35 @@ If you only need to set a single font without fallback logic:
 > [!NOTE]
 > For vertical layout, `luatex-cn` generally handles vertical features (`RawFeature={+vert}`) automatically.
 
+## 4. Fonts Without System Installation
+
+Don't want to (or can't) install fonts into the system font library? LuaTeX can load fonts **by file** — as long as the `.ttf`/`.otf` file sits in the document directory, a `./fonts/` subdirectory, or your TEXMFHOME tree, referencing it by filename just works.
+
+The repository ships a download script (requires Python 3) that fetches recommended open-source fonts (TW-Kai series, Jigmo, KingHwa Old Song, Zhuque Fangsong, etc.) according to `scripts/font-manifest.json`, with SHA-256 verification:
+
+```bash
+# Option 1: install into your personal TeX tree (recommended; available everywhere)
+# Goes to TEXMFHOME/fonts/truetype/luatex-cn/ — no admin rights, no system fonts touched
+python3 scripts/download_fonts.py --all --user
+
+# Option 2: download into your document project (self-contained, easy to redistribute)
+python3 scripts/download_fonts.py --all --dest ./fonts
+```
+
+Then reference fonts **by filename** in your document:
+
+```latex
+% Bare filename works when the font is in TEXMFHOME or next to the .tex file
+\setmainfont{TW-Kai-98_1.ttf}
+
+% Use Path for a subdirectory
+\setmainfont{TW-Kai-98_1.ttf}[Path=./fonts/]
+```
+
+> [!NOTE]
+> - After `--user` installation, run `luaotfload-tool --update` once if you want to reference fonts by **font name** instead of filename.
+> - Fonts distributed as npm woff2 slices (e.g. Zhuque Fangsong) are downloaded and merged into a single TTF automatically (vertical features preserved); this requires `pip install fonttools brotli`.
+
 ---
 
 👉 Next: [[Correction | EN:Correction]] or [[Features | EN:Features]].

@@ -63,6 +63,25 @@ test_utils.run_test("classify: nobreak characters", function()
     test_utils.assert_eq(punct.classify(0x2026), "nobreak") -- … ellipsis
 end)
 
+test_utils.run_test("classify: vertical forms of dash/ellipsis keep nobreak", function()
+    -- Regression guard: before the shared-table derivation, VERT_FORM_MAP
+    -- replaced — → ︱ / … → ︙ but the replacement targets were missing from
+    -- the class tables, so the pair lost its type (and the gap-closing pass
+    -- skipped it, leaving a rounding gap between the two dash halves).
+    test_utils.assert_eq(punct.classify(0xFE31), "nobreak") -- ︱ vertical em dash
+    test_utils.assert_eq(punct.classify(0xFE19), "nobreak") -- ︙ vertical ellipsis
+end)
+
+test_utils.run_test("classify: brackets added by the shared clreq table", function()
+    -- New coverage inherited from shared.luatex-cn-punct-table (clreq appendix)
+    test_utils.assert_eq(punct.classify(0x3016), "open")   -- 〖
+    test_utils.assert_eq(punct.classify(0x3017), "close")  -- 〗
+    test_utils.assert_eq(punct.classify(0xFF3B), "open")   -- ［
+    test_utils.assert_eq(punct.classify(0xFF3D), "close")  -- ］
+    test_utils.assert_eq(punct.classify(0xFF5B), "open")   -- ｛
+    test_utils.assert_eq(punct.classify(0xFF5D), "close")  -- ｝
+end)
+
 test_utils.run_test("classify: non-punctuation returns nil", function()
     test_utils.assert_nil(punct.classify(0x4E00))  -- 一 (CJK character)
     test_utils.assert_nil(punct.classify(0x0041))  -- A (Latin)

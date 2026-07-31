@@ -23,6 +23,7 @@ local punct = {}
 local D = node.direct
 local constants = require('core.luatex-cn-constants')
 local debug_mod = require('debug.luatex-cn-debug')
+local shared_punct = require('shared.luatex-cn-punct-table')
 local dbg = debug_mod.get_debugger('punct')
 
 -- ============================================================================
@@ -129,81 +130,14 @@ local function get_ink_center_ratio(fid, charcode)
 end
 
 -- ============================================================================
--- Punctuation Character Classification (CLREQ / JLREQ reference)
+-- Punctuation Character Classification (derived from the shared clreq table)
 -- ============================================================================
-
--- CL_OPEN: Opening brackets / quotes
--- Characterized by: half-width glyph + leading half-width space
-local CL_OPEN = {
-    [0x300C] = true, -- 「 left corner bracket
-    [0x300E] = true, -- 『 left white corner bracket
-    [0xFF08] = true, -- （ fullwidth left parenthesis
-    [0x3008] = true, -- 〈 left angle bracket
-    [0x300A] = true, -- 《 left double angle bracket
-    [0x3010] = true, -- 【 left black lenticular bracket
-    [0x3014] = true, -- 〔 left tortoise shell bracket
-    [0x201C] = true, -- " left double quotation mark
-    [0x2018] = true, -- ' left single quotation mark
-    -- Vertical presentation forms (after replacement)
-    [0xFE41] = true, -- ﹁ vertical left corner bracket
-    [0xFE43] = true, -- ﹃ vertical left white corner bracket
-    [0xFE35] = true, -- ︵ vertical left parenthesis
-    [0xFE39] = true, -- ︹ vertical left tortoise shell bracket
-    [0xFE3B] = true, -- ︻ vertical left black lenticular bracket
-    [0xFE3D] = true, -- ︽ vertical left double angle bracket
-    [0xFE3F] = true, -- ︿ vertical left angle bracket
-}
-
--- CL_CLOSE: Closing brackets / quotes
--- Characterized by: half-width glyph + trailing half-width space
-local CL_CLOSE = {
-    [0x300D] = true, -- 」 right corner bracket
-    [0x300F] = true, -- 』 right white corner bracket
-    [0xFF09] = true, -- ） fullwidth right parenthesis
-    [0x3009] = true, -- 〉 right angle bracket
-    [0x300B] = true, -- 》 right double angle bracket
-    [0x3011] = true, -- 】 right black lenticular bracket
-    [0x3015] = true, -- 〕 right tortoise shell bracket
-    [0x201D] = true, -- " right double quotation mark
-    [0x2019] = true, -- ' right single quotation mark
-    -- Vertical presentation forms
-    [0xFE42] = true, -- ﹂ vertical right corner bracket
-    [0xFE44] = true, -- ﹄ vertical right white corner bracket
-    [0xFE36] = true, -- ︶ vertical right parenthesis
-    [0xFE3A] = true, -- ︺ vertical right tortoise shell bracket
-    [0xFE3C] = true, -- ︼ vertical right black lenticular bracket
-    [0xFE3E] = true, -- ︾ vertical right double angle bracket
-    [0xFE40] = true, -- ﹀ vertical right angle bracket
-}
-
--- CL_FULLSTOP: Full stops (period-like)
--- Characterized by: half-width glyph + trailing half-width space
-local CL_FULLSTOP = {
-    [0x3002] = true, -- 。 ideographic full stop
-    [0xFF0E] = true, -- ． fullwidth full stop
-}
-
--- CL_COMMA: Commas and enumeration comma
--- Characterized by: half-width glyph + trailing half-width space
-local CL_COMMA = {
-    [0xFF0C] = true, -- ， fullwidth comma
-    [0x3001] = true, -- 、 ideographic comma (enumeration)
-}
-
--- CL_MIDDLE: Colon, semicolon, exclamation, question
--- Full-width, centered
-local CL_MIDDLE = {
-    [0xFF1A] = true, -- ： fullwidth colon
-    [0xFF1B] = true, -- ； fullwidth semicolon
-    [0xFF01] = true, -- ！ fullwidth exclamation mark
-    [0xFF1F] = true, -- ？ fullwidth question mark
-}
-
--- CL_NOBREAK: Non-breakable characters (must stay together when consecutive)
-local CL_NOBREAK = {
-    [0x2014] = true, -- — em dash
-    [0x2026] = true, -- … horizontal ellipsis
-}
+-- The six legacy classes (open/close/fullstop/comma/middle/nobreak) are no
+-- longer hand-maintained here: they derive from shared.luatex-cn-punct-table
+-- via legacy_type() — single data source per the clreq shared-core contract
+-- (ai_must_read/clreq-shared-core.md). Vertical presentation forms (the
+-- replacement targets in VERT_FORM_MAP below) inherit the class of their
+-- horizontal source character. The derived map is built after VERT_FORM_MAP.
 
 -- Vertical form replacement map (horizontal → vertical presentation forms)
 -- Replaces CJK brackets/parentheses with their Unicode Vertical Presentation
@@ -240,6 +174,18 @@ local VERT_FORM_MAP = {
     [0x2018] = 0xFE43, -- ' → ﹃ (left single → vertical left white corner bracket)
     [0x2019] = 0xFE44, -- ' → ﹄ (right single → vertical right white corner bracket)
 }
+
+-- Derived legacy classification map: codepoint → "open"|"close"|"fullstop"|
+-- "comma"|"middle"|"nobreak". Built from the shared clreq table, then
+-- extended with the vertical presentation forms, which inherit the class of
+-- their horizontal source (e.g. ﹁ inherits "open" from 「).
+local LEGACY_CLASS = {}
+for char in shared_punct.entries() do
+    LEGACY_CLASS[char] = shared_punct.legacy_type(char)
+end
+for h_char, v_char in pairs(VERT_FORM_MAP) do
+    LEGACY_CLASS[v_char] = shared_punct.legacy_type(h_char)
+end
 
 -- ============================================================================
 -- tounicode-based reverse mapping for GSUB-substituted punctuation
@@ -325,13 +271,7 @@ end
 -- @param char_code (number) Unicode code point
 -- @return (string|nil) "open", "close", "fullstop", "comma", "middle", "nobreak", or nil
 function punct.classify(char_code)
-    if CL_OPEN[char_code] then return "open" end
-    if CL_CLOSE[char_code] then return "close" end
-    if CL_FULLSTOP[char_code] then return "fullstop" end
-    if CL_COMMA[char_code] then return "comma" end
-    if CL_MIDDLE[char_code] then return "middle" end
-    if CL_NOBREAK[char_code] then return "nobreak" end
-    return nil
+    return LEGACY_CLASS[char_code]
 end
 
 --- Check if a punctuation type is forbidden at line start (column top)

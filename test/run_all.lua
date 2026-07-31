@@ -61,9 +61,10 @@ for _, test_file in ipairs(tests) do
     print("------------------------------------------------------------")
     local ok, reason, code = os.execute("texlua " .. test_file)
 
-    -- In Lua 5.3+ (LuaTeX), os.execute returns (success, reason, code)
-    -- success is true/nil
-    if ok then
+    -- LuaTeX 的 os.execute 不遵循 Lua 5.3 约定（true/nil, reason, code），
+    -- 而是返回原始状态数字（0=成功，如 256=exit 1）。数字永远为真值，
+    -- 只判 if ok 会把失败文件统计为通过。两种形态都须兼容。
+    if ok == true or ok == 0 then
         passed = passed + 1
     else
         print("\n[!] FAILURE in " ..

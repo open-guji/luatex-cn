@@ -48,6 +48,24 @@ Chinese Alias:
 \设置字体族{Source Han Serif SC, SimSun, SimHei}
 ```
 
+### Registry Aliases and Font Files (No Installation Needed)
+
+`\setFontFamily` also accepts **registry aliases** and **font filenames/paths**; all three forms can be mixed, and none requires installing fonts into the system:
+
+```latex
+\setFontFamily{Jigmo}                      % alias: expands to a Jigmo + Jigmo2 fallback chain
+\setFontFamily{fonts/MyFont.ttf, TW-Kai}   % file path mixed with a font name
+\setFontFamily{TW-Kai, Jigmo2.ttf}         % bare filenames work too
+```
+
+Each font resolves in three steps:
+
+1. **Installed on the system** → used by name;
+2. **Local file** → searched in `./fonts/`, the document directory, then kpse (covering TEXMFHOME and OSFONTDIR);
+3. **Not found anywhere** → compilation stops with an error that prints the exact download-script commands (see §4), instead of rendering tofu.
+
+System fonts and local files mix per member — e.g. with Jigmo installed but only `Jigmo2.ttf` on disk, the `{Jigmo}` alias still builds the chain correctly. Built-in aliases so far: `Jigmo` (Jigmo + Jigmo2).
+
 To define a named fallback chain for custom usage:
 
 ```latex

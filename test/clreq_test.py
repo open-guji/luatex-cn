@@ -9,8 +9,9 @@
   1. 以未压缩模式（objcompresslevel=0, compresslevel=0）编译测试文档，
      使字体对象与 ToUnicode CMap 可直接用正则解析——零第三方依赖。
   2. 从 /W 数组取每个 CID 的 advance，从 ToUnicode 取 CID→Unicode；
-     按内容流里的 `Tm [...]TJ` 重建每行字形的 x 坐标序列
-     （TJ 数字为千分 em 位移，正数向左——挤压即体现为正数）。
+     用小型解释器跟踪 q/Q 栈、cm 级联与 Tm 矩阵，重建每个字形的
+     设备坐标（TJ 数字为千分 em 位移，正数向左——挤压即体现为正数）；
+     被 cm 缩放的字形（如脚注标号组）也能读到真实位置与有效字号。
   3. 相邻字形的间隙 gap = 下一字 x 起点 − 上一字 x 终点（em）。
 
 用法：
@@ -194,12 +195,31 @@ def parse_pdf(path):
             if int(ref) in fonts:
                 name_to_font[name.decode()] = fonts[int(ref)]
 
-    # 内容流：逐 BT 块解释 Tf / Tm / TJ
+    # 内容流：小型解释器——跟踪 q/Q 栈、cm 级联与完整 Tm 矩阵。
+    # 引擎对缩放字形（如脚注标号组）的输出模式是：
+    #   1 0 0 1 tx ty cm  q  sx 0 0 sy ox oy cm  1 0 0 1 -tx -ty cm
+    #   BT … 1 0 0 1 tx ty Tm [<…>]TJ ET … Q …
+    # 即 Tm 里只有页面原点常量，真实位置全在 cm 里。只认 `1 0 0 1 x y Tm`
+    # 的旧解析会把这类字形读到变换前的原点（页面左上角）。
     lines = {}
     stream_re = re.compile(rb"stream\r?\n(.*?)endstream", re.DOTALL)
-    tf_re = re.compile(rb"/(F\d+)\s+([\d.]+)\s+Tf")
-    tm_tj_re = re.compile(
-        rb"1 0 0 1 (-?[\d.]+) (-?[\d.]+) Tm\s*\[(.*?)\]TJ", re.DOTALL)
+    NUM = rb"(-?[\d.]+)"
+    op_re = re.compile(
+        NUM + rb" " + NUM + rb" " + NUM + rb" " + NUM + rb" " +
+        NUM + rb" " + NUM + rb" (cm|Tm)"
+        rb"|/(F\d+)\s+([\d.]+)\s+Tf"
+        rb"|\[((?:<[0-9A-Fa-f]*>|-?[\d.]+|\s)*)\]TJ"
+        rb"|(?<![\w<])(q|Q)(?![\w>])", re.DOTALL)
+
+    def mat_mul(m1, m2):
+        """行向量约定 p' = p·M 下的矩阵乘 m1×m2（各为 a,b,c,d,e,f）。"""
+        a1, b1, c1, d1, e1, f1 = m1
+        a2, b2, c2, d2, e2, f2 = m2
+        return (a1 * a2 + b1 * c2, a1 * b2 + b1 * d2,
+                c1 * a2 + d1 * c2, c1 * b2 + d1 * d2,
+                e1 * a2 + f1 * c2 + e2, e1 * b2 + f1 * d2 + f2)
+
+    IDENT = (1.0, 0.0, 0.0, 1.0, 0.0, 0.0)
     page_no = 0
     for sm in stream_re.finditer(pdf):
         data = sm.group(1)
@@ -208,34 +228,55 @@ def parse_pdf(path):
         page_no += 1
         cur_font = None
         cur_size = 10.0
-        pos = 0
-        for m in re.finditer(rb"/(F\d+)\s+([\d.]+)\s+Tf|1 0 0 1 (-?[\d.]+) (-?[\d.]+) Tm\s*\[(.*?)\]TJ",
-                             data, re.DOTALL):
-            if m.group(1):
-                cur_font = name_to_font.get(m.group(1).decode())
-                cur_size = float(m.group(2))
+        ctm = IDENT
+        stack = []
+        tm = IDENT
+        x_txt = 0.0          # 文本空间内沿书写方向累计的位移（pt）
+        for m in op_re.finditer(data):
+            if m.group(7):                       # cm / Tm
+                mat = tuple(float(m.group(k)) for k in range(1, 7))
+                if m.group(7) == b"cm":
+                    ctm = mat_mul(mat, ctm)      # CTM' = M × CTM
+                else:
+                    tm = mat
+                    x_txt = 0.0
                 continue
-            if cur_font is None:
+            if m.group(8):                       # Tf
+                cur_font = name_to_font.get(m.group(8).decode())
+                cur_size = float(m.group(9))
+                continue
+            if m.group(11):                      # q / Q
+                if m.group(11) == b"q":
+                    stack.append(ctm)
+                elif stack:
+                    ctm = stack.pop()
+                continue
+            if cur_font is None:                 # TJ
                 continue
             widths, tounicode, dw = cur_font
-            x = float(m.group(3))
-            y = float(m.group(4))
-            key = (page_no, round(y, 2))
+            a, b_, c, d, e, f = mat_mul(tm, ctm)
+            # 设备坐标：p_dev = (x_txt·a + e, x_txt·b + f)。
+            # 本引擎无旋转（b=c=0），em 取纵向有效字号 size·d——
+            # 缩放字形（v_scale）的度量随之正确；未缩放时 d=1 不变。
+            em_eff = cur_size * d
+            y_dev = x_txt * b_ + f
+            key = (page_no, round(y_dev, 2))
             line = lines.get(key)
             if line is None:
-                line = lines[key] = Line(y, page_no)
-            for tok in re.finditer(rb"<([0-9A-Fa-f]+)>|(-?[\d.]+)", m.group(5)):
+                line = lines[key] = Line(y_dev, page_no)
+            for tok in re.finditer(rb"<([0-9A-Fa-f]+)>|(-?[\d.]+)", m.group(10)):
                 if tok.group(2) is not None:
                     # TJ 数字：千分 em，正数向左
-                    x -= float(tok.group(2)) / 1000.0 * cur_size
+                    x_txt -= float(tok.group(2)) / 1000.0 * cur_size
                     continue
                 hexstr = tok.group(1)
                 for i in range(0, len(hexstr), 4):
                     cid = int(hexstr[i:i + 4], 16)
                     adv = widths.get(cid, dw) / 1000.0 * cur_size
                     ch = tounicode.get(cid, "�")
-                    line.glyphs.append(Glyph(ch, x, x + adv, cur_size))
-                    x += adv
+                    x_dev = x_txt * a + e
+                    line.glyphs.append(Glyph(ch, x_dev, x_dev + adv * a, em_eff))
+                    x_txt += adv
 
     # 行内按 x 排序；按页与 y（自上而下）排序输出
     out = []
@@ -299,9 +340,11 @@ def parse_pdf_vertical(path, min_len=4):
         return []
 
     # x 聚类：大陆式点号渲染时向列外侧偏靠（MAINLAND_OFFSETS），x 与同列
-    # 汉字相差约 0.2 字宽，故按容差聚类而不是按精确 x 分组。
-    em0 = placements[0][4]
-    tol = 0.45 * em0
+    # 汉字相差约 0.2 字宽；脚注标号（缩放小字）也偏出约 0.35 字宽。
+    # 容差基准取全文档 em 的中位数——取「第一个字形」会让结果取决于
+    # 恰好谁排在最上面（若是小字号的标号，容差缩水导致同列被拆开）。
+    ems = sorted(p[4] for p in placements)
+    tol = 0.45 * ems[len(ems) // 2]
     out, cur, cur_page = [], None, None
     # 先按页、再按 x（自右向左）；同页同 x 才算一列
     for page, x, y, ch, em in sorted(placements, key=lambda p: (p[0], -p[1])):
@@ -760,6 +803,22 @@ def run_vertical_assertions(cols):
             f"相位扫描扫到列末边界 {len(squeezed)} 次，逗号均被挤进本列"
             f"（列长 {[len(c.glyphs) for c in squeezed]}）",
             len(squeezed) >= 1)
+
+    # ---- ⑥ 解析器：cm 缩放字形的坐标（锁住解析器对 cm 级联的跟踪）
+    #      脚注标号组以 q <sx> 0 0 <sy> <ox> <oy> cm 缩放绘制，Tm 里只有
+    #      页面原点常量。若解析器不跟踪 cm，︻一︼ 会读到左上角、脱离本列，
+    #      下面两条都会失败。
+    col = find_column(cols, "标号位置")
+    r.check("cm 缩放解析",
+            f"标号组按真实坐标落回本列原位：列文本 = {col.text[:12]}…",
+            "丙︻一︼丁" in col.text)
+    j = col.index_of("︻")
+    hanzi_em = col.glyphs[col.index_of("丙")][2]
+    marker_ems = [col.glyphs[k][2] for k in (j, j + 1, j + 2)]
+    r.check("cm 缩放解析",
+            f"标号字形读到缩放后的有效字号：{['%.2f' % e for e in marker_ems]}pt"
+            f"（正文 {hanzi_em:.2f}pt）",
+            all(e < hanzi_em - EPS for e in marker_ems))
     return r
 
 

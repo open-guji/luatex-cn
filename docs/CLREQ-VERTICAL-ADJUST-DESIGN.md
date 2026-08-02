@@ -5,6 +5,8 @@
 > 这是检验 H0 接口的地方：如果 `adjust.solve` 的入参在竖排凑不出来，
 > 说明接口有缺口，应改共享层而不是在后端打补丁（HR5）。
 
+> **状态（2026-08-02）：待评审，未动工。** 第 5 节的五步一步都没开始。
+
 前置状态（本设计文档写作时）：P1 第一步已完成——标点宽度调整改为上下文
 相关，规则在 `tex/shared/luatex-cn-punct-squeeze.lua`，收回量由
 `punct.flatten` 写在 `ATTR_PUNCT_SQUEEZE` 上，layout 阶段据此缩短字幅。
@@ -185,6 +187,10 @@ test/clreq_test.py`（竖排断言用例 `test/clreq_test/vert-punct.tex`，
 - `punct_squeeze.plan` 目前一次只判一个字符，行首/行尾要后端自己传 ctx；
   若第 4 步发现调用点繁琐，可在共享层加一个 `plan_run(chars, opts)`
   对整列一次算完（纯函数，仍不碰 TeX）。
+- **验收工具本身有个洞**：`test/clreq_test.py` 的 PDF 解析器只认单位矩阵
+  `Tm`，遇到被 `cm` 缩放过的字形（脚注标号组就是）会把坐标读成变换前的
+  原点。第 1 步的「只读接线」要靠它对比 solver 与现行策略的差异，
+  **宜在动工前先修**，否则含标号的列读出来的位置是假的。
 - 叹问号叠加（`？！` `！？`）仍未识别为刚性两字幅单元，见
   `ai_must_read/clreq-shared-core.md` 的待补条目——它会直接影响本设计里
   「刚性单元」的判定，宜在第 1 步之前补掉。

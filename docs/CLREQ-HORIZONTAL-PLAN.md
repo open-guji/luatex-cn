@@ -5,7 +5,7 @@
 
 ---
 
-## 0. 进度总览（截至 2026-07-31）
+## 0. 进度总览（截至 2026-08-02）
 
 | 阶段 | 状态 | 遗留 |
 |------|------|------|
@@ -23,9 +23,10 @@
 **叹问号叠加（`？？` `！！` 以及 `？！` `！？` 这类异字组合）尚未作两字宽刚性整体**（见 H8），
 `punct-table` 对 open/close 仅按大陆口径建模（台式居中口径待 H7）。
 
-**测试现状**：unit test 39/39 通过（含 `test/unit_test/shared/` 5 个模块、
-`test/unit_test/hori/` 4 个模块）；`python3 test/clreq_test.py` 67 条度量断言全绿
-（`hori.tex` 主用例 + `stress-unbreakable.tex` 压力用例 + `hori-taiwan.tex` 台式用例）；
+**测试现状**：unit test 41/41 通过（含 `test/unit_test/shared/` 6 个模块、
+`test/unit_test/hori/` 4 个模块）；`python3 test/clreq_test.py` 80 条度量断言全绿
+（横排 67：`hori.tex` 主用例 + `stress-unbreakable.tex` 压力用例 +
+`hori-taiwan.tex` 台式用例；竖排 13：`vert-punct.tex`）；
 回归用例 `basic/hori.tex`、`basic/hori-taiwan.tex`、`basic/hori-para.tex`；
 实战示例 `示例/论辩的魂灵`。
 

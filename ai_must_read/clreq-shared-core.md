@@ -75,19 +75,17 @@ tex/shared/
 | `forbid_line_start(char, level)` | bool | level=`"none"|"basic"|"gb"|"strict"` |
 | `forbid_line_end(char, level)` | bool | 同上 |
 | `is_unbreakable(char)` | bool | 附录「不可分离」列 |
-| `is_unbreakable_pair(a, b)` | bool | ——、……、⋯⋯ 成对判定（a==b 且为 dash/ellipsis） |
-
-> **待补（叹问号叠加）**：clreq 的叹问号叠加同样是「两个字幅的一个整体」，
-> 除 `？？` `！！` 外还包括 **`？！` `！？`** 这类异字组合（以及 `？？？`
-> 之类连排）。现行 `is_unbreakable_pair` 要求 `a == b` 且类别为
-> dash/ellipsis，两者都不满足；表内只有预组合码位 `‼`(U+203C)、
-> `⁇`(U+2047)，序列形式未识别。
-> 后果：断行侧因两符号都属行首禁则而侥幸不拆，但**宽度侧是错的**——
-> 叠加符号的字面空白会被 H2 分配器按 `fullstop_group` 挤压，
-> 而 clreq 要求它作为刚性整体不参与挤压。
-> 修法比照 dash/ellipsis：判定放宽为「两侧同属 question/exclamation」，
-> 并让 `no_break_between` 返回的 reason 落进后端的 RIGID 集合。
+| `is_unbreakable_pair(a, b)` | bool | ——、……、⋯⋯ 成对判定（a==b 且为 dash/ellipsis）；叠用 ？？ ！！ ？！ ！？ 亦放行 |
+| `is_stacked_pair(a, b)` | bool | 叹问号叠加（两侧都是 ！/？）——唯一允许 a≠b 的两字宽单元 |
 | `vert_rotate(char)` | bool | 附录「直排右旋」列 |
+
+> **叹问号叠加（已实现）**：`？？` `！！` `？！` `！？` 是两字宽刚性整体。
+> 三处配合缺一不可：① `is_stacked_pair` 放行异字组合；②
+> `kinsoku.no_break_between` 把两字宽单元判定放在行首禁则**之前**——
+> 两符号本身都是行首禁则字符，否则原因被报成 `forbid_start`，后端的
+> RIGID 集合就不认；③ hori 刚性单元内部除 stretch/class 外连 **shrink**
+> 一并清零——？！是点号、字面自带可挤空白，与本无 shrink 的 —— 不同，
+> 不清零则挤压行仍会把这一对压到 2 字宽以下（压力用例负对照可复现）。
 | `legacy_type(char)` | string \| nil | 兼容旧六类：open/close/fullstop/comma/middle/nobreak（P1 迁移用） |
 
 ### 1.4 mode/style 修正规则（clreq 原文规定，编码在表内）

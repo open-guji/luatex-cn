@@ -120,19 +120,24 @@ end
 function M.no_break_between(prev, next_c, opts)
     local level = (opts and opts.level) or DEFAULT_LEVEL
 
-    -- 1/2. Line start / line end prohibition
+    -- 1. Two-em punctuation unit (——, ……, ⋯⋯, and stacked ？！ forms).
+    -- Checked before the start/end prohibitions: it is the stronger claim —
+    -- not merely "no break here" but "rigid interior" (no stretch/shrink),
+    -- and callers key that off this reason tag. 叠加符号（？！等）本身也是
+    -- 行首禁则字符，若先查禁则会把原因错报成 forbid_start，刚性就丢了。
+    -- For runs longer than one pair, clreq allows breaking between pairs;
+    -- callers with run context use pair_boundary_breakable() to lift this
+    -- rule at pair boundaries.
+    if punct_table.is_unbreakable_pair(prev, next_c) then
+        return true, "unbreakable_pair"
+    end
+
+    -- 2/3. Line start / line end prohibition
     if punct_table.forbid_line_start(next_c, level) then
         return true, "forbid_start"
     end
     if punct_table.forbid_line_end(prev, level) then
         return true, "forbid_end"
-    end
-
-    -- 3. Two-em punctuation unit (——, ……, ⋯⋯). For runs longer than one
-    -- pair, clreq allows breaking between pairs; callers with run context
-    -- use pair_boundary_breakable() to lift this rule at pair boundaries.
-    if punct_table.is_unbreakable_pair(prev, next_c) then
-        return true, "unbreakable_pair"
     end
 
     -- 4. Numeral run (阿拉伯数字应作为一个整体)

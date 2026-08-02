@@ -326,12 +326,32 @@ function M.is_unbreakable(char)
     return (e and e.unbreakable) or false
 end
 
+-- 叹问号叠加的序列形式（clreq 非典型标点：？？ ！！ ？！ ！？）。
+-- 与预组合码位 ‼(U+203C) ⁇(U+2047) 同义，但以两个全角符号连排出现，
+-- 构成一个两字宽的**刚性**整体：内部不挤压、不拆行、不被兜底均分撑开。
+local STACKED_MARKS = {
+    [0xFF01] = true, -- ！
+    [0xFF1F] = true, -- ？
+}
+
+--- Whether two adjacent codepoints form a stacked exclamation/question
+-- sequence (？？ ！！ ？！ ！？) — a rigid two-em unit per the clreq
+-- appendix note on stacked forms (占两个汉字宽度，宽度不可调整).
+-- @param a (number) previous codepoint
+-- @param b (number) next codepoint
+-- @return (boolean)
+function M.is_stacked_pair(a, b)
+    return (STACKED_MARKS[a] and STACKED_MARKS[b]) or false
+end
+
 --- Whether two adjacent codepoints form an unbreakable two-em unit
--- (——, ……, ⋯⋯: identical dash/ellipsis members).
+-- (——, ……, ⋯⋯: identical dash/ellipsis members; ？？ ！！ ？！ ！？:
+-- stacked marks — the only case where the two members may differ).
 -- @param a (number) previous codepoint
 -- @param b (number) next codepoint
 -- @return (boolean)
 function M.is_unbreakable_pair(a, b)
+    if M.is_stacked_pair(a, b) then return true end
     if a ~= b then return false end
     local e = TABLE[a]
     return (e and e.unbreakable and (e.class == "dash" or e.class == "ellipsis"))

@@ -166,4 +166,20 @@ test_utils.run_test("check_wrap: start / end violations", function()
     test_utils.assert_nil(kinsoku.check_wrap(0x4E00, 0x3002, { level = "none" }))
 end)
 
+test_utils.run_test("stacked ？！ reports unbreakable_pair, not forbid_start", function()
+    -- ？！ 两符号都是行首禁则字符；若先查禁则会把原因报成 forbid_start，
+    -- 下游（hori-spacing 的 RIGID_REASONS）就不会把对内间隙做成刚性。
+    for _, pair in ipairs({ { 0xFF1F, 0xFF1F }, { 0xFF01, 0xFF01 },
+                            { 0xFF1F, 0xFF01 }, { 0xFF01, 0xFF1F } }) do
+        local forbidden, reason = nb(pair[1], pair[2], { level = "basic" })
+        test_utils.assert_true(forbidden)
+        test_utils.assert_eq(reason, "unbreakable_pair")
+    end
+    -- 与禁则级别无关（分离禁则独立于四级）
+    test_utils.assert_true(nb(0xFF1F, 0xFF01, { level = "none" }))
+    -- 汉字＋叹问号仍是普通行首禁则
+    local _, reason = nb(0x4E00, 0xFF1F, { level = "basic" })
+    test_utils.assert_eq(reason, "forbid_start")
+end)
+
 print("All kinsoku tests passed.")

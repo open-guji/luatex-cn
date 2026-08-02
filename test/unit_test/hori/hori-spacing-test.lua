@@ -103,6 +103,25 @@ test_utils.run_test("two-em pair interior is rigid; 一。boundary is not", func
     test_utils.assert_not_nil(stop.glue.class)
 end)
 
+test_utils.run_test("stacked ？！ interior is rigid: no break, no stretch, no shrink", function()
+    -- clreq 非典型标点：？？ ！！ ？！ ！？ 是两字宽刚性整体。
+    -- 与 —— 不同，？！ 是点号、字面自带可挤空白——若不清零 shrink，
+    -- TeX 的比例压缩仍会把这一对压到 2 字宽以下。
+    for _, pair in ipairs({ { 0xFF1F, 0xFF01 }, { 0xFF01, 0xFF1F },
+                            { 0xFF1F, 0xFF1F }, { 0xFF01, 0xFF01 } }) do
+        local r = b(pair[1], pair[2])
+        test_utils.assert_eq(r.penalty, 10000)
+        test_utils.assert_eq(r.glue.stretch, 0)
+        test_utils.assert_eq(r.glue.shrink, 0)
+        test_utils.assert_nil(r.glue.class)
+        test_utils.assert_eq(r.glue.width, 0, "对内不得有宽度缩减或间距")
+    end
+    -- 对外边界不受影响：叹问号与后续汉字之间照常（禁排不禁伸不适用——
+    -- ？|汉 无禁则，属普通字间）
+    local outer = b(0xFF01, 0x4E00)
+    test_utils.assert_nil(outer.penalty)
+end)
+
 -- ============================================================================
 -- CJK–Western spacing (clreq: 不多于 1/4 汉字宽，可挤 1/8、拉 1/2)
 -- ============================================================================

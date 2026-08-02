@@ -270,4 +270,22 @@ test_utils.run_test("quote_convert: nesting depth and role preserved (clreq 引�
     test_utils.assert_nil(pt.quote_convert(0x300C, "keep"))
 end)
 
+test_utils.run_test("is_stacked_pair / is_unbreakable_pair: 叹问号叠加（clreq 非典型标点）", function()
+    -- ？？ ！！ ？！ ！？ 四种组合都是两字宽刚性整体
+    test_utils.assert_true(pt.is_stacked_pair(0xFF1F, 0xFF1F))  -- ？？
+    test_utils.assert_true(pt.is_stacked_pair(0xFF01, 0xFF01))  -- ！！
+    test_utils.assert_true(pt.is_stacked_pair(0xFF1F, 0xFF01))  -- ？！（异字组合）
+    test_utils.assert_true(pt.is_stacked_pair(0xFF01, 0xFF1F))  -- ！？
+    -- is_unbreakable_pair 随之放行（此前被 a==b 与 dash/ellipsis 两条挡住）
+    test_utils.assert_true(pt.is_unbreakable_pair(0xFF1F, 0xFF01))
+    test_utils.assert_true(pt.is_unbreakable_pair(0xFF1F, 0xFF1F))
+    -- 非叠加组合不受影响
+    test_utils.assert_false(pt.is_stacked_pair(0xFF1F, 0x3002))  -- ？。
+    test_utils.assert_false(pt.is_stacked_pair(0x3002, 0xFF01))  -- 。！
+    test_utils.assert_false(pt.is_unbreakable_pair(0xFF0C, 0xFF0C))  -- ，，
+    -- 原有 dash/ellipsis 语义不变
+    test_utils.assert_true(pt.is_unbreakable_pair(0x2014, 0x2014))
+    test_utils.assert_false(pt.is_unbreakable_pair(0x2014, 0x2026))
+end)
+
 print("All punct-table tests passed.")

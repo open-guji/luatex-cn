@@ -32,6 +32,7 @@
 - 标点风格预设与横排统一 — \标点设置 新增 style(mainland|taiwan|none)、squeeze-mode、adjacent-punct、line-start-bracket、line-end-punct 五个键，键名与取值同 luatex-cn-hori；style=none 为 clreq「不调整」预设（既不挤压也不偏靠）
 
 维护：
+- 叹问号叠加（？？ ！！ ？！ ！？）识别为两字宽刚性整体 — 共享层 is_unbreakable_pair 放行叠加组合（此前被 a==b 与 dash/ellipsis 两条挡住）；kinsoku 把两字宽单元判定提到行首禁则之前（否则原因被报成 forbid_start，刚性丢失）；hori 刚性单元内部连 shrink 一并清零（？！是点号、字面自带可挤空白，与 —— 不同）。压力用例相位扫描 ？！/！？ 共 23 处，负对照证实修复前挤压行会把对内间隙压负。P2 接线的前置（设计文档 §6）
 - clreq 共享层新增 tex/shared/luatex-cn-punct-squeeze.lua（标点宽度调整的上下文判定），横排 hori-spacing 的连续标点缩减改为调用它，规则不再有第二份拷贝
 - clreq 断言测试新增直排解析与用例 test/clreq_test/vert-punct.tex — 按列解析 PDF、以两侧汉字基线距离度量「标点占几个字幅」，13 条断言覆盖单个标点满幅、直排冒号/分号/问号固定一字幅、连续标点 1.5 字幅、挤压方向（只锁总宽锁不住方向），以及行首禁则（数字串长度递增扫过列末各相位，与列容量无关）
 - 竖排标点分类改为从 tex/shared/ 的共享标点表派生，横竖排规则收敛到单一数据源 (#126)

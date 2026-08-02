@@ -234,8 +234,13 @@ function M.boundary(prev, next_c, opts)
     -- point, but strip its stretch AND its adjustment class — an unclassed
     -- gap is invisible to the H2 solver, so neither TeX's proportional pass
     -- nor the fallback even-distribution can open space inside the unit.
+    -- Shrink is stripped too: dash/ellipsis members carry none anyway, but
+    -- stacked ？！ marks are point marks whose blank-side shrink would
+    -- otherwise let the pair be compressed below its fixed two-em width
+    -- (clreq appendix: stacked forms 宽度不可调整).
     if forbidden and RIGID_REASONS[reason] then
         glue.stretch = 0
+        glue.shrink = 0
         glue.class = nil
     end
 

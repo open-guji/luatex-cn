@@ -36,6 +36,7 @@
 
 ### 开发者
 * [[架构与开发 | Development]]
+* [[开发须知 | Development-Notes]]
 * [[发布流程 | Release]]
 
 ---
@@ -67,3 +68,4 @@
 ### Developer Manual
 * [[Release | EN:Release]]
 * [[Development | EN:Development]]
+* [[Development Notes | EN:Development-Notes]]

@@ -19,16 +19,18 @@
 
 **当前口径**：横排后端上，clreq 的**标点规则已基本完备**，**行与段落规则除标题层
 之外亦已完备**；缺口集中在标题排布、注音符号，以及对外的符合度声明（H6）。
-非典型标点（示亡号、科技文献句点）与儿化小字（U+16FF2/3）未实现；
-**叹问号叠加（`？？` `！！` 以及 `？！` `！？` 这类异字组合）尚未作两字宽刚性整体**（见 H8），
-`punct-table` 对 open/close 仅按大陆口径建模（台式居中口径待 H7）。
+非典型标点中**叹问号叠加已完成**（H8，PR #139：`？？` `！！` `？！` `！？`
+为两字宽刚性整体）；示亡号、科技文献句点与儿化小字（U+16FF2/3）未实现。
+点号/间隔号的字面分布已改为**度量锚定**（H7 核心，PR #138：
+`shared/luatex-cn-punct-anchors.lua`，大陆/台湾 × 横/竖全矩阵）；
+`punct-table` 对 open/close 仍仅按大陆口径建模（台式括号居中口径待 H7 收尾）。
 
 **测试现状**：unit test 41/41 通过（含 `test/unit_test/shared/` 6 个模块、
-`test/unit_test/hori/` 4 个模块）；`python3 test/clreq_test.py` 80 条度量断言全绿
-（横排 67：`hori.tex` 主用例 + `stress-unbreakable.tex` 压力用例 +
-`hori-taiwan.tex` 台式用例；竖排 13：`vert-punct.tex`）；
-回归用例 `basic/hori.tex`、`basic/hori-taiwan.tex`、`basic/hori-para.tex`；
-实战示例 `示例/论辩的魂灵`。
+`test/unit_test/hori/` 4 个模块）；`python3 test/clreq_test.py` 95 条度量断言全绿
+（`hori.tex` 主用例 + `stress-unbreakable.tex` 压力用例含叹问号叠加 +
+`hori-taiwan.tex` 台式用例 + `vert-punct.tex` 竖排用例含大陆式偏靠与
+cm 缩放解析）；回归用例 `basic/hori.tex`、`basic/hori-taiwan.tex`、
+`basic/hori-para.tex`；实战示例 `示例/论辩的魂灵`。
 
 ---
 
@@ -326,7 +328,20 @@ TeX 段落
 
 **工作量：10–14 人日（已消耗约 4）**
 
-### H7 · 标点字面重定位（punct-reposition，候补·未排期）
+### H7 · 标点字面重定位（punct-reposition）🟡 核心已落地
+
+> **进度（2026-08-02，PR #136 审阅图 → PR #138 实现）**：点号/间隔号类的
+> 墨心锚定已交付为 `shared/luatex-cn-punct-anchors.lua`（style × mode
+> 全矩阵锚点，样板字体实测值；接口见 `ai_must_read/clreq-shared-core.md`
+> §1ter）。后端接线：竖排 `punct.render`（大陆式恒开；台式仅
+> `squeeze-mode=context` 挡位，保护 ltc-guji 既有版面）、横排
+> `hori-pipeline.apply_ink_anchor`。实现走的是「绝对锚点」而非下文的
+> 「探测 + 相对偏移」——锚点不能从 Tm 相对坐标量（xoffset 会写进 Tm）。
+> **剩余**：台式括号（open/close）的 `space=both` 居中口径与其重定位，
+> 即下文「适用范围」第 2 条；`punct-reposition = auto` 的字体自动探测未做
+> （现按 style 无条件锚定 + 0.002em 死区）。
+
+**原设计案（供剩余部分参考）**：
 
 **动机**：一款字体的标点字面通常只固化一种习惯——大陆式（墨迹靠侧、
 空白可压缩）或台式（居中占一格，设计进字体）。用户配置的 `style` 与
@@ -371,7 +386,22 @@ TeX 段落
 
 ---
 
-### H8 · 叹问号叠加（未排期·小项）
+### H8 · 叹问号叠加 ✅ 已完成
+
+> **完成记录（2026-08-02，PR #139，作为 P2 前置项交付）**：按下述方案
+> 实施，三处配合缺一不可（详见 `ai_must_read/clreq-shared-core.md` §1.3）：
+> ① `punct-table.is_stacked_pair(a, b)` 放行异字组合（两侧同属
+> question/exclamation），`is_unbreakable_pair` 一并放行；
+> ② `kinsoku.no_break_between` 把两字宽单元判定移到行首禁则**之前**——
+> 两符号本身都是行首禁则字符，否则 reason 被报成 `forbid_start`，
+> 后端 RIGID 集合不认；③ hori 刚性单元内部除 stretch/class 外连
+> **shrink** 一并清零——？！是点号、字面自带可挤空白，与本无 shrink 的
+> —— 不同，不清零则挤压行仍会压到 2 字宽以下。验收：`clreq_test.py`
+> 增 5 条断言（同行相邻、内部零间隙、总占位 ≈2em、挤压行不变形 +
+> 负对照），压力用例 `stress-unbreakable.tex` 扩充；unit test 覆盖
+> punct-table / kinsoku / hori-spacing 三层。竖排宽度侧待 P2 接线后生效。
+
+原设计案（已按此实施）：
 
 clreq 的「叹问号叠加」是把连排的问号/叹号当作**一个两字幅的整体**，
 不只是 `？？` `！！` 这种同字重复——**`？！` `！？` 这类异字组合同样适用**
@@ -479,5 +509,7 @@ H0–H3 的规则内核部分已闭环。
 1. **H6 的符合度矩阵**（`docs/CLREQ-CONFORMANCE.md`）——成本低、对外价值最高，
    做完即可正式声称「横排符合 clreq 标点与行/段落规则」，并把标题排布、注音符号、
    非典型标点等如实标为「未实现」。
-2. **P1/P2 竖排回流**——古籍与 vbook 两类仍在旧引擎上（无条件挤压、禁则级别硬编码、
-   行尾悬挂未实现、均排缺失），是当前项目主战场与 clreq 现状的最大落差。
+2. **P2 竖排接线**——P1 的宽度调整（#132）与字面锚定（#138）已回流，
+   叹问号叠加等 P2 前置（#137/#139）已清；vbook 两类仍缺优先级模型、
+   禁则级别硬编码、行尾悬挂与均排缺失，是当前项目主战场与 clreq 现状的
+   最大落差。接线设计 `docs/CLREQ-VERTICAL-ADJUST-DESIGN.md` 待评审。

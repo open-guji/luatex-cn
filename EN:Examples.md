@@ -16,24 +16,27 @@ This directory contains multiple usage examples for the `luatex-cn` package, dem
 - Complex interlinear note typesetting
 - Traditional black silk frame and indentation
 
-| Black & White | Color Preview |
-| :---: | :---: |
-| ![Shiji B&W](https://raw.githubusercontent.com/open-guji/luatex-cn/main/示例/首页展示/shiji-bw.png) | ![Shiji Color](https://raw.githubusercontent.com/open-guji/luatex-cn/main/示例/首页展示/shiji-color.png) |
+![Shiji B&W](https://raw.githubusercontent.com/open-guji/luatex-cn/main/示例/首页展示/shiji-bw.png)
 
 📂 [View Source](https://github.com/open-guji/luatex-cn/tree/main/示例/史记五帝本纪)
 
 ---
 
-### 2. Records of the Grand Historian - Table of Contents
+### 2. Annotated Catalogue of the Siku Quanshu - Table of Contents
 
-**Features**: Following Qing Dynasty "Siku Quanshu" Northern Pavilion style.
+**Features**: The Wenyuan Pavilion edition, in Qing Dynasty "Siku Quanshu" style.
+
+![Siku Catalogue](https://raw.githubusercontent.com/open-guji/luatex-cn/main/示例/首页展示/mulu-color.png)
 
 **Capabilities**:
-- Standard ancient book table of contents layout
+- Standard ancient book table of contents layout (`\条目[level]{...}`)
 - "Eight lines, twenty-one characters" format restriction
-- Typical white mouth, double borders on all sides, single fishtail format
+- White mouth, double borders on all sides, single fishtail format
+- Double-line small annotations (`\注{...}`) and an overlaid imperial seal (`\印章[page=1, opacity=0.7]{...}`)
 
-📂 [View Source](https://github.com/open-guji/luatex-cn/tree/main/示例/史记目录)
+📂 [View Source](https://github.com/open-guji/luatex-cn/tree/main/示例/四库全书简明目录) ｜ 📄 [View PDF](https://github.com/open-guji/luatex-cn/blob/main/示例/四库全书简明目录/目录.pdf)
+
+> A full multi-volume reproduction lives in [全书复刻/欽定四庫全書簡明目錄](https://github.com/open-guji/luatex-cn/tree/main/全书复刻/欽定四庫全書簡明目錄).
 
 ---
 
@@ -54,17 +57,22 @@ This directory contains multiple usage examples for the `luatex-cn` package, dem
 
 ---
 
-### 4. Modern Vertical Book
+### 4. Records of the Grand Historian, Vol. 16 - Modern Vertical
 
-**Features**: Clean modern vertical layout style.
+**Class**: `ltc-cn-vbook` | **Template**: `中华书局` (Zhonghua Shuju)
 
 **Capabilities**:
-- Demonstrates pure vertical text support without traditional book elements
-- Suitable for modern literature or reports requiring vertical typesetting
+- Modern punctuation squeeze (`\punctSetup{punct-squeeze=true}`)
+- Kinsoku line-breaking rules (`\punctSetup{kinsoku=true}`)
+- Footnotes (`\脚注{...}`) with lujiao numbering
+- Paragraph indentation (`\begin{段落}[indent=2]`)
+- Mainland punctuation style
 
-> 📌 Modern vertical books are not currently the project focus; more features will be added later.
+| Page 1 | Page 2 |
+| :---: | :---: |
+| ![Juan16 P1](https://raw.githubusercontent.com/open-guji/luatex-cn/main/示例/首页展示/juan16-p1.png) | ![Juan16 P2](https://raw.githubusercontent.com/open-guji/luatex-cn/main/示例/首页展示/juan16-p2.png) |
 
-📂 [View Source](https://github.com/open-guji/luatex-cn/tree/main/示例/现代竖排书)
+📂 [View Source](https://github.com/open-guji/luatex-cn/tree/main/示例/史记卷十六·现代) ｜ 📄 [View PDF](https://github.com/open-guji/luatex-cn/blob/main/示例/史记卷十六·现代/卷十六.pdf)
 
 ---
 

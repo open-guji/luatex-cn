@@ -12,9 +12,7 @@
 
 **文档类**: `ltc-guji` | **模板**: `四库全书` / `四库全书彩色`
 
-| 黑白仿真 | 彩色预览 |
-| :---: | :---: |
-| ![史记黑白](https://raw.githubusercontent.com/open-guji/luatex-cn/main/示例/首页展示/shiji-bw.png) | ![史记彩色](https://raw.githubusercontent.com/open-guji/luatex-cn/main/示例/首页展示/shiji-color.png) |
+![史记黑白](https://raw.githubusercontent.com/open-guji/luatex-cn/main/示例/首页展示/shiji-bw.png)
 
 **演示功能**：
 - 版心与单鱼尾（`\banxinSetup`）
@@ -26,16 +24,21 @@
 
 ---
 
-## 2. 史记目录 — 四库全书目录页
+## 2. 钦定四库全书简明目录 — 文渊阁本目录页
 
-**文档类**: `ltc-guji` | **模板**: `四库全书`
+**文档类**: `ltc-guji` | **模板**: `SiKuMuLu`（示例自带 `.cfg`）
+
+![四库全书简明目录](https://raw.githubusercontent.com/open-guji/luatex-cn/main/示例/首页展示/mulu-color.png)
 
 **演示功能**：
-- 标准古籍目录布局（`\条目` 命令）
+- 标准古籍目录布局（`\条目[层级]{...}` 命令）
 - "八行二十一字"的行款限制
 - 白口、四周双边、单鱼尾版式
+- 注文双行小字（`\注{...}`）与文渊阁宝印叠加（`\印章[page=1, opacity=0.7]{...}`）
 
-📂 [查看源码](https://github.com/open-guji/luatex-cn/tree/main/示例/史记目录)
+📂 [查看源码](https://github.com/open-guji/luatex-cn/tree/main/示例/四库全书简明目录) ｜ 📄 [查看 PDF](https://github.com/open-guji/luatex-cn/blob/main/示例/四库全书简明目录/目录.pdf)
+
+> 全书复刻版（多册）见 [全书复刻/欽定四庫全書簡明目錄](https://github.com/open-guji/luatex-cn/tree/main/全书复刻/欽定四庫全書簡明目錄)。
 
 ---
 
@@ -96,13 +99,13 @@
 
 ## 功能对照表
 
-| 功能 | 史记五帝本纪 | 史记目录 | 红楼梦甲戌本 | 现代竖排 |
+| 功能 | 史记五帝本纪 | 四库简明目录 | 红楼梦甲戌本 | 现代竖排 |
 |------|:-----------:|:-------:|:-----------:|:-------:|
 | 版心/鱼尾 | ✅ | ✅ | ✅(无鱼尾) | — |
-| 夹注 | ✅ | — | ✅ | — |
+| 夹注 | ✅ | ✅ | ✅ | — |
 | 侧批 | — | — | ✅ | — |
 | 眉批 | — | — | ✅ | — |
-| 印章 | ✅ | — | — | — |
+| 印章 | ✅ | ✅ | — | — |
 | 句读 | — | — | ✅ | — |
 | 现代标点 | — | — | — | ✅ |
 | 脚注 | — | — | — | ✅ |

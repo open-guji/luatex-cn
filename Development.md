@@ -14,7 +14,7 @@
 tex/
 ├── ltc-guji.cls                  # 古籍文档类（推荐入口）
 ├── ltc-ltc-guji.cls              # 古籍文档类（兼容别名）
-├── ltc-cn-vbook.cls              # 大陆竖排书籍
+├── ltc-cn-vbook.cls              # 中国大陆竖排书籍
 ├── ltc-tw-vbook.cls              # 台湾竖排书籍
 ├── luatex-cn.sty             # 顶层宏包（兼容性入口）
 ├── luatex-cn-core.sty        # 核心功能聚合包
@@ -206,7 +206,7 @@ end
 | 文件 | 用途 | 加载的包 |
 |------|------|----------|
 | `ltc-guji.cls` | 古籍排版 | `luatex-cn-core` + `guji/*.sty` |
-| `ltc-cn-vbook.cls` | 大陆竖排书籍 | `luatex-cn-core` + 标点系统 |
+| `ltc-cn-vbook.cls` | 中国大陆竖排书籍 | `luatex-cn-core` + 标点系统 |
 | `ltc-tw-vbook.cls` | 台湾竖排书籍 | `luatex-cn-core` + 标点系统 |
 
 **ltc-guji.cls 加载顺序**：

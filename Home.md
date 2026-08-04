@@ -24,7 +24,7 @@
 |--------|------|------|
 | **`ltc-guji`** | 传统古籍排版（版心、鱼尾、丝栏） | [[快速入门 \| Quick-Start]] |
 | **`ltc-guji-digital`** | 古籍数字化录入：一行源码 = 一个竖排列，手工指定每列内容以精确复刻底本版面 | [源码示例](https://github.com/open-guji/luatex-cn/tree/main/test/digital_test) |
-| **`ltc-cn-vbook`** | 现代大陆竖排书籍（标点挤压、脚注） | [[ltc-book \| ltc-book]] |
+| **`ltc-cn-vbook`** | 现代中国大陆竖排书籍（标点挤压、脚注） | [[ltc-book \| ltc-book]] |
 | **`ltc-tw-vbook`** | 现代台湾竖排书籍（居中标点） | [[ltc-book \| ltc-book]] |
 
 > `ltc-guji` 和 `ltc-book` 仍可使用，但推荐使用上述新名称。
@@ -44,7 +44,7 @@
 - [[现代横排 | Horizontal]] — `luatex-cn-hori`：clreq 横排管道、选项与命令
 
 ### 标点与句读
-- [[标点系统 | Punctuation]] — 现代标点挤压、禁则处理，大陆/台湾风格
+- [[标点系统 | Punctuation]] — 现代标点挤压、禁则处理，中国大陆/台湾风格
 - [[句读 | Judou]] — 传统句读标记（句/读/白文三种模式）
 
 ### 注释系统

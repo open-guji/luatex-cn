@@ -76,7 +76,7 @@
 - 禁则处理（`\punctSetup{kinsoku=true}`）
 - 脚注系统（`\脚注{...}`）— 鹿角编号
 - 段落缩进（`\begin{段落}[indent=2]`）
-- 大陆标点风格
+- 中国大陆标点风格
 
 📂 [查看源码](https://github.com/open-guji/luatex-cn/tree/main/示例/史记卷十六·现代) ｜ 📄 [查看 PDF](https://github.com/open-guji/luatex-cn/blob/main/示例/史记卷十六·现代/卷十六.pdf)
 

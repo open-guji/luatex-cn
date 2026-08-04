@@ -12,7 +12,7 @@
 | `四库全书彩色` | `ltc-guji` | 经典官修书籍风格（彩色版） |
 | `红楼梦甲戌本` | `ltc-guji` | 手抄本风格，支持侧批与眉批 |
 | `default` | `ltc-cn-vbook` / `ltc-tw-vbook` | 默认现代竖排风格（台湾标点） |
-| `中华书局` | `ltc-cn-vbook` / `ltc-tw-vbook` | 中华书局现代竖排风格（大陆标点） |
+| `中华书局` | `ltc-cn-vbook` / `ltc-tw-vbook` | 中华书局现代竖排风格（中国大陆标点） |
 
 ## 使用模板
 

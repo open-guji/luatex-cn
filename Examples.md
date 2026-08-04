@@ -2,7 +2,7 @@
 
 # 示例
 
-以下示例展示了 `luatex-cn` 从传统古籍到现代竖排的排版能力。每个示例都可以直接下载源码编译。
+以下示例展示了 `luatex-cn` 从传统古籍、现代竖排到现代横排的排版能力。每个示例都可以直接下载源码编译。
 
 > 如果你还没跑通第一个示例，建议先看 [[快速入门 | Quick-Start]]。
 
@@ -73,7 +73,24 @@
 - 段落缩进（`\begin{段落}[indent=2]`）
 - 大陆标点风格
 
-📂 [查看源码](https://github.com/open-guji/luatex-cn/tree/main/示例/史记卷六·现代) ｜ 📄 [查看 PDF](https://github.com/open-guji/luatex-cn/blob/main/示例/史记卷六·现代/卷十六.pdf)
+📂 [查看源码](https://github.com/open-guji/luatex-cn/tree/main/示例/史记卷十六·现代) ｜ 📄 [查看 PDF](https://github.com/open-guji/luatex-cn/blob/main/示例/史记卷十六·现代/卷十六.pdf)
+
+---
+
+## 5. 论辩的魂灵（鲁迅）— 现代横排（clreq）
+
+**文档类**: `article` + `luatex-cn-hori` 宏包（尚未进入发行版，需 main 分支）
+
+同一篇文章的两种排法对照：繁体部分用 `style=taiwan`（标点居中），简体部分用 `style=mainland` + `quote-style=curly`（原文的直角引号自动转为弯引号，嵌套先双后单）。
+
+**演示功能**：
+- 中西间距与四级换行禁则（`kinsoku-level=basic`）
+- 连续标点缩减（2 → 1.5 字宽）、行首行尾标点挤压
+- 段末孤字避免（前行借字）
+- 段末行对齐 `\horiSetup{last-line=right}`（文末落款）
+- 号数字号 `\字号{二号}`
+
+📂 [查看源码](https://github.com/open-guji/luatex-cn/tree/main/示例/论辩的魂灵) ｜ 📄 [查看 PDF](https://github.com/open-guji/luatex-cn/blob/main/示例/论辩的魂灵/论辩的魂灵.pdf) ｜ 📖 [[现代横排 | Horizontal]]
 
 ---
 
@@ -90,6 +107,8 @@
 | 现代标点 | — | — | — | ✅ |
 | 脚注 | — | — | — | ✅ |
 | 目录条目 | — | ✅ | — | — |
+
+> 上表列的是竖排版式功能。横排示例《论辩的魂灵》用的是另一套能力（中西间距、行内挤压／拉伸、引号体例转换等），见 [[现代横排 | Horizontal]]。
 
 ---
 

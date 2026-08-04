@@ -9,6 +9,7 @@
 * [[字体设置 | Fonts]]
 * [[功能详解 | Features]]
 * [[现代竖排 | ltc-book]]
+* [[现代横排 | Horizontal]] <sup>new</sup>
 
 ### 标点与句读
 * [[标点系统 | Punctuation]]
@@ -49,6 +50,7 @@
 * [[Examples | EN:Examples]]
 * [[Features | EN:Features]]
     * [[ltc-book | EN:ltc-book]]
+    * [[Horizontal (clreq) | EN:Horizontal]] <sup>new</sup>
     * [[Punctuation | EN:Punctuation]]
     * [[Side-Note | EN:Side-Note]]
     * [[Annotation | EN:Annotation]]

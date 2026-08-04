@@ -2,7 +2,7 @@ English | [中文版](Examples)
 
 # Examples
 
-This directory contains multiple usage examples for the `luatex-cn` package, demonstrating different features from traditional ancient book typesetting to modern vertical layouts.
+This directory contains multiple usage examples for the `luatex-cn` package, demonstrating everything from traditional ancient book typesetting to modern vertical and horizontal layouts.
 
 ## Example List
 
@@ -65,6 +65,23 @@ This directory contains multiple usage examples for the `luatex-cn` package, dem
 > 📌 Modern vertical books are not currently the project focus; more features will be added later.
 
 📂 [View Source](https://github.com/open-guji/luatex-cn/tree/main/示例/现代竖排书)
+
+---
+
+### 5. 論辯的魂靈 by Lu Xun — Modern Horizontal (clreq)
+
+**Setup**: `article` + the `luatex-cn-hori` package (not yet in a release — main branch).
+
+The same essay set twice for comparison: the traditional-character part uses `style=taiwan` (centered punctuation), the simplified part uses `style=mainland` + `quote-style=curly` (corner quotes converted to curly, double outside and single inside).
+
+**Capabilities**:
+- CJK–Western spacing and basic-level kinsoku
+- Consecutive-punctuation reduction (2 em → 1.5 em) and line-start/line-end compression
+- Orphan-character avoidance at paragraph end
+- `\horiSetup{last-line=right}` for the closing colophon
+- Traditional size numbers via `\字号{二号}`
+
+📂 [View Source](https://github.com/open-guji/luatex-cn/tree/main/示例/论辩的魂灵) ｜ 📄 [View PDF](https://github.com/open-guji/luatex-cn/blob/main/示例/论辩的魂灵/论辩的魂灵.pdf) ｜ 📖 [[Horizontal | EN:Horizontal]]
 
 ---
 

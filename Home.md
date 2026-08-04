@@ -2,7 +2,7 @@
 
 # LuaTeX-CN Wiki
 
-欢迎来到 LuaTeX-CN 的用户手册。本 Wiki 涵盖了从安装到高级排版的完整文档，帮助你用 LuaTeX-CN 排版高质量的中文古籍和现代竖排书籍。
+欢迎来到 LuaTeX-CN 的用户手册。本 Wiki 涵盖了从安装到高级排版的完整文档，帮助你用 LuaTeX-CN 排版高质量的中文古籍、现代竖排书籍与符合 clreq 的现代横排文档。
 
 > **当前版本**: [v0.3.8](https://github.com/open-guji/luatex-cn/releases) | **CTAN**: [v0.3.1](https://ctan.org/pkg/luatex-cn)
 
@@ -16,15 +16,24 @@
 
 ---
 
-## 三个文档类
+## 排版模式
+
+### 竖排：四个文档类
 
 | 文档类 | 用途 | 详情 |
 |--------|------|------|
 | **`ltc-guji`** | 传统古籍排版（版心、鱼尾、丝栏） | [[快速入门 \| Quick-Start]] |
+| **`ltc-guji-digital`** | 古籍数字化录入：一行源码 = 一个竖排列，手工指定每列内容以精确复刻底本版面 | [源码示例](https://github.com/open-guji/luatex-cn/tree/main/test/digital_test) |
 | **`ltc-cn-vbook`** | 现代大陆竖排书籍（标点挤压、脚注） | [[ltc-book \| ltc-book]] |
 | **`ltc-tw-vbook`** | 现代台湾竖排书籍（居中标点） | [[ltc-book \| ltc-book]] |
 
 > `ltc-guji` 和 `ltc-book` 仍可使用，但推荐使用上述新名称。
+
+### 横排：一个宏包
+
+| 宏包 | 用途 | 详情 |
+|------|------|------|
+| **`luatex-cn-hori`** <sup>main 分支</sup> | 按 W3C clreq 排版的现代中文横排：中西间距、四级禁则、行内挤压／拉伸、行间标号与拼音、段落与孤行控制。加载到 `article` 等任意横排文档类之上，非文档类 | [[现代横排 \| Horizontal]] |
 
 ## 核心文档
 
@@ -32,6 +41,7 @@
 - [[版心与鱼尾 | Templates]] — 理解古籍排版的核心"版心"概念，预设模板与自定义
 - [[字体设置 | Fonts]] — 自动探测、手动设置、字体递补链
 - [[布局与功能 | Features]] — 章节标题、目录条目及布局控制
+- [[现代横排 | Horizontal]] — `luatex-cn-hori`：clreq 横排管道、选项与命令
 
 ### 标点与句读
 - [[标点系统 | Punctuation]] — 现代标点挤压、禁则处理，大陆/台湾风格

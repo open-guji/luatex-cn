@@ -2,7 +2,7 @@ English | [中文版](Home)
 
 # LuaTeX-CN Wiki
 
-Welcome to the LuaTeX-CN Wiki. This site provides comprehensive documentation for users and developers to help you create high-quality classic Chinese typesettings using LuaTeX-CN.
+Welcome to the LuaTeX-CN Wiki. This site provides comprehensive documentation for users and developers to help you create high-quality Chinese typesetting with LuaTeX-CN — classical vertical books, modern vertical books, and clreq-conformant horizontal documents.
 
 > **Current Version**: [v0.3.8](https://github.com/open-guji/luatex-cn/releases) | **CTAN**: [v0.3.8](https://ctan.org/pkg/luatex-cn)
 
@@ -19,9 +19,14 @@ Welcome to the LuaTeX-CN Wiki. This site provides comprehensive documentation fo
 - [[Font Setup | EN:Fonts]] - Config Chinese fonts and fallback chains
 - [[Layout Control | EN:Features]] - Chapters, TOC entries, and fine-grained layout control
 
-### 2. Document Classes
+### 2. Writing Modes
+**Vertical — four document classes**
 - [[guji (Ancient Books) | EN:Quick-Start]] - Traditional vertical typesetting (default class)
+- [guji-digital](https://github.com/open-guji/luatex-cn/tree/main/test/digital_test) - Digitization mode: one source line = one vertical column, for reproducing a source edition's page layout exactly
 - [[cn-vbook / tw-vbook (Modern Books) | EN:ltc-book]] - Modern vertical books with punct squeeze and footnotes
+
+**Horizontal — one package**
+- [[luatex-cn-hori | EN:Horizontal]] <sup>main branch</sup> - Modern horizontal Chinese per W3C clreq: CJK–Western spacing, four kinsoku levels, per-line compression/stretch, interlinear marks and ruby, paragraph and widow control. Loads on top of `article` and friends — it is a package, not a class
 
 ### 3. Punctuation & Judou
 - [[Punctuation System | EN:Punctuation]] - Modern punct styles (mainland/Taiwan), squeeze, kinsoku

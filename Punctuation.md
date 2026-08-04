@@ -57,6 +57,24 @@
 | `kinsoku` | 禁则处理 | `true` | `true`, `false` |
 | `punct-hanging` | 标点悬挂 | `false` | `true`, `false` |
 
+### clreq 预设键（与横排同名同值）
+
+> ⚠️ 本节参数尚未进入发行版（最新发行版 v0.3.8），请从 main 分支获取。
+
+除上表的原有参数外，`\punctSetup`（中文别名 `\标点设置`）还提供一组与横排宏包 [[luatex-cn-hori | Horizontal]] **键名与取值完全一致**的 clreq 预设，方便同一份文稿在竖排与横排之间保持体例：
+
+| 参数 | 中文别名 | 说明 | 默认值 | 可选值 |
+|------|---------|------|--------|--------|
+| `style` | `标点风格` / `风格预设` | 整体风格预设；`none` = clreq「不调整」，既不挤压也不偏靠 | 随文档类 | `mainland`, `taiwan`, `none` |
+| `squeeze-mode` | `宽度调整` | 标点宽度调整的判定方式：`legacy` 无条件挤压（`ltc-guji` 默认，版面零变化）；`context` 上下文相关，仅相邻标点／列首列末触发（`ltc-cn-vbook` / `ltc-tw-vbook` 默认） | `legacy` | `legacy`, `context` |
+| `adjacent-punct` | `连续标点` | 连续标点缩减量（字幅） | `1.5` | `1.5`, `1`, `natural` |
+| `line-start-bracket` | — | 列首的开始夹注符号缩减始侧半字 | `trim` | `trim`, `natural` |
+| `line-end-punct` | — | 列末点号缩减末侧半字 | `compress` | `compress`, `natural` |
+
+> **上下文相关的宽度调整**（clreq）：夹在汉字之间的单个标点占满一字幅，只有相邻标点连排时才缩减（夹注符号参与时 2 → 1.5 字幅，`adjacent-punct=1` 可收到 1 字幅）。挤压方向按 clreq「空白在哪一侧就往哪边让」。
+
+> **字面分布**按字形墨迹度量锚定，不依赖字体自身的字面设计：大陆式直排偏靠右上，台湾式横竖一律居中。因此用台湾字体排大陆式、或用大陆字体排台湾式，落点都与规范一致。
+
 ## 标点挤压 (punct-squeeze)
 
 启用后，句号、逗号等标点会被压缩为半个网格单元的高度，使排版更加紧凑美观。

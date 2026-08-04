@@ -57,6 +57,24 @@ Configure punctuation behavior via `\punctSetup`:
 | `kinsoku` | Line-breaking rules | `true` | `true`, `false` |
 | `punct-hanging` | Hanging punctuation | `false` | `true`, `false` |
 
+### clreq preset keys (identical to the horizontal package)
+
+> ⚠️ These parameters are not yet in a release (latest is v0.3.8) — get them from the main branch.
+
+Beyond the original parameters above, `\punctSetup` (CN alias `\标点设置`) offers a set of clreq presets whose **key names and values match [[luatex-cn-hori | EN:Horizontal]] exactly**, so one manuscript can keep the same conventions in vertical and horizontal mode:
+
+| Parameter | Description | Default | Values |
+|-----------|-------------|---------|--------|
+| `style` | Overall style preset; `none` is the clreq "no adjustment" preset (neither squeezed nor hugging) | per document class | `mainland`, `taiwan`, `none` |
+| `squeeze-mode` | How punctuation width adjustment is decided: `legacy` squeezes unconditionally (the `ltc-guji` default, zero layout change); `context` is context-sensitive, triggering only on adjacent marks or column start/end (the `ltc-cn-vbook` / `ltc-tw-vbook` default) | `legacy` | `legacy`, `context` |
+| `adjacent-punct` | Consecutive-punctuation reduction, in character widths | `1.5` | `1.5`, `1`, `natural` |
+| `line-start-bracket` | Trim half a character from the start side of an opening bracket at column start | `trim` | `trim`, `natural` |
+| `line-end-punct` | Trim half a character from the end side of a column-final period-type mark | `compress` | `compress`, `natural` |
+
+> **Context-sensitive width adjustment** (clreq): a single mark between Han characters occupies a full character width; reduction happens only when marks run consecutively (2 → 1.5 widths with bracket marks involved, down to 1 with `adjacent-punct=1`). The direction follows the clreq principle that the side carrying the blank is the side that yields.
+
+> **Glyph placement** is anchored by measured ink extents rather than the font's own design: mainland style hugs the upper right in vertical mode, Taiwan style is centered in both modes. Setting mainland style with a Taiwan font (or vice versa) therefore lands where the specification says it should.
+
 ## Punctuation Squeeze
 
 When enabled, periods, commas and other marks are compressed to half the grid cell height, producing a tighter, more elegant layout.

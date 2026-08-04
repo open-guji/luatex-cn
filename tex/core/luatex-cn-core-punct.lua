@@ -1047,6 +1047,29 @@ function punct.render(head, layout_map, render_ctx, ctx, engine_ctx, page_idx, p
                             count = count + 1
                             metric_done = true
                         end
+                        -- 夹注号：字面归到上/下半格（clreq 图 30，两风格同值）。
+                        -- 位移相对引擎落点算，见 punct_anchors.vert_bracket_dy。
+                        -- 字体缺竖排形时引擎自己旋转字形（ATTR_VERT_ROTATE），
+                        -- 位置写在 pdf_literal 的变换矩阵里、xoffset/yoffset 被清零，
+                        -- 这里挪不动它——那条退路仍是字面居中。
+                        -- 脚注标号组（︻一︼）同样不参与：组内字幅由 flush_buffer
+                        -- 按组高分配、括号已按真实墨迹缩放居中（#134），再挪半格
+                        -- 会把一对括号推出组外。
+                        local is_marker =
+                            (D.get_attribute(t, constants.ATTR_FOOTNOTE_MARKER) or 0) > 0
+                        if not metric_done and em_sp and em_sp > 0 and not is_marker
+                            and D.get_attribute(t, constants.ATTR_VERT_ROTATE) ~= 1 then
+                            local h_em = (D.getfield(t, "height") or 0) / em_sp
+                            local d_em = (D.getfield(t, "depth") or 0) / em_sp
+                            local dy_em = punct_anchors.vert_bracket_dy(
+                                ptype, bb, upem, h_em, d_em)
+                            if dy_em then
+                                D.setfield(t, "yoffset",
+                                    cur_y + math.floor(dy_em * em_sp + 0.5))
+                                count = count + 1
+                                metric_done = true
+                            end
+                        end
                     end
 
                     -- Font ink-center compensation: some fonts have punctuation

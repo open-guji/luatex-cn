@@ -21,14 +21,14 @@
 
 > `ltc-guji` 和 `ltc-book` 仍可使用，但推荐使用上述新名称。
 
-## 3. 横排：`luatex-cn-hori` 宏包
+## 3. 横排：`\usepackage{luatex-cn}`
 
-按 W3C clreq 实现的现代中文横排管道。它是宏包而非文档类，加载到 `article` 等任意横排文档类之上即可；规则内核与竖排共用 `tex/shared/` 下的同一份实现。
+按 W3C clreq 实现的现代中文横排管道，主包名 `luatex-cn` 即其统一入口（内部实现名 `luatex-cn-hori` 仍可直接加载）。它是宏包而非文档类，加载到 `article` 等任意横排文档类之上即可；规则内核与竖排共用 `tex/shared/` 下的同一份实现。
 
 ```latex
 \usepackage{fontspec}
 \setmainfont{Source Han Serif SC}[Script=CJK, Language={Chinese Simplified}]
-\usepackage[style=taiwan]{luatex-cn-hori}
+\usepackage[style=taiwan]{luatex-cn}
 ```
 
 - **中西间距**：1/4 em，可挤至 1/8、拉至 1/2，含 clreq 规定的三类例外。

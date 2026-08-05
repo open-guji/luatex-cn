@@ -1,8 +1,10 @@
 English | [中文版](Horizontal)
 
-# Modern Horizontal Typesetting (luatex-cn-hori)
+# Modern Horizontal Typesetting (\usepackage{luatex-cn})
 
-`luatex-cn-hori` implements **horizontal** Chinese typesetting per the W3C [Requirements for Chinese Text Layout (clreq)](https://www.w3.org/TR/clreq/). It is a *package*, not a document class: load it on top of any horizontal class (`article`, `book`, `report`, …) and it inserts kinsoku penalties and adjustable glue in `pre_linebreak_filter` / `post_linebreak_filter`.
+`\usepackage{luatex-cn}` implements **horizontal** Chinese typesetting per the W3C [Requirements for Chinese Text Layout (clreq)](https://www.w3.org/TR/clreq/) — it is the unified entry point of the whole bundle: in package form the default is horizontal, while vertical books use the `ltc-guji` / `ltc-cn-vbook` document classes. It is a *package*, not a document class: load it on top of any horizontal class (`article`, `book`, `report`, …) and it inserts kinsoku penalties and adjustable glue in `pre_linebreak_filter` / `post_linebreak_filter`.
+
+> The internal package name of the horizontal implementation is `luatex-cn-hori`; loading it directly still works, and the unified entry passes its options through verbatim. `\usepackage[vertical]{luatex-cn}` loads the vertical bundle instead (the historical 0.3.x semantics).
 
 The rule kernel lives in `tex/shared/` (the full clreq punctuation table, a one-dimensional priority space allocator, and the four-level kinsoku module) and is shared with the vertical engine — one source of truth for both writing modes.
 
@@ -22,7 +24,7 @@ The rule kernel lives in `tex/shared/` (the full clreq punctuation table, a one-
 \usepackage[paperwidth=10cm, paperheight=16cm, margin=1.2cm]{geometry}
 \usepackage{fontspec}
 \setmainfont{Source Han Serif SC}[Script=CJK, Language={Chinese Simplified}]
-\usepackage{luatex-cn-hori}
+\usepackage{luatex-cn}
 \begin{document}
 中文与 Western text 混排时，中西之间会自动插入四分之一字宽的可调间距。
 \end{document}
@@ -31,14 +33,14 @@ The rule kernel lives in `tex/shared/` (the full clreq punctuation table, a one-
 Taiwan style (centered punctuation):
 
 ```latex
-\usepackage[style=taiwan]{luatex-cn-hori}
+\usepackage[style=taiwan]{luatex-cn}
 ```
 
 ---
 
 ## Package options
 
-Options may be given at `\usepackage[...]{luatex-cn-hori}` time, or changed mid-document with `\horiSetup{...}` (CN alias `\横排设置{...}`); changes take effect for subsequent paragraphs.
+Options may be given at `\usepackage[...]{luatex-cn}` time, or changed mid-document with `\horiSetup{...}` (CN alias `\横排设置{...}`); changes take effect for subsequent paragraphs.
 
 ### Punctuation and spacing
 

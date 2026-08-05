@@ -26,7 +26,7 @@ Welcome to the LuaTeX-CN Wiki. This site provides comprehensive documentation fo
 - [[cn-vbook / tw-vbook (Modern Books) | EN:ltc-book]] - Modern vertical books with punct squeeze and footnotes
 
 **Horizontal — one package**
-- [[luatex-cn-hori | EN:Horizontal]] <sup>main branch</sup> - Modern horizontal Chinese per W3C clreq: CJK–Western spacing, four kinsoku levels, per-line compression/stretch, interlinear marks and ruby, paragraph and widow control. Loads on top of `article` and friends — it is a package, not a class
+- [[\usepackage{luatex-cn} (horizontal) | EN:Horizontal]] <sup>main branch</sup> - Modern horizontal Chinese per W3C clreq: CJK–Western spacing, four kinsoku levels, per-line compression/stretch, interlinear marks and ruby, paragraph and widow control. Loads on top of `article` and friends — it is a package, not a class
 
 ### 3. Punctuation & Judou
 - [[Punctuation System | EN:Punctuation]] - Modern punct styles (mainland/Taiwan), squeeze, kinsoku

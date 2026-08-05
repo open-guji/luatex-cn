@@ -1,8 +1,10 @@
 [English Version](EN:Horizontal) | 中文版
 
-# 现代横排（luatex-cn-hori）
+# 现代横排（\usepackage{luatex-cn}）
 
-`luatex-cn-hori` 是按 W3C [《中文排版需求》(clreq)](https://www.w3.org/TR/clreq/) 实现的**横排**中文排版宏包。它不是文档类，而是一个可以加载到任何横排文档类（`article`、`book`、`report` 等）之上的宏包，负责在 `pre_linebreak_filter` / `post_linebreak_filter` 阶段插入禁则罚点与可调间距。
+`\usepackage{luatex-cn}` 是按 W3C [《中文排版需求》(clreq)](https://www.w3.org/TR/clreq/) 实现的**横排**中文排版宏包（本包全部行为的统一入口：宏包形态默认即横排；竖排请用 `ltc-guji` / `ltc-cn-vbook` 等文档类）。它不是文档类，而是一个可以加载到任何横排文档类（`article`、`book`、`report` 等）之上的宏包，负责在 `pre_linebreak_filter` / `post_linebreak_filter` 阶段插入禁则罚点与可调间距。
+
+> 横排实现的内部包名是 `luatex-cn-hori`，直接 `\usepackage{luatex-cn-hori}` 仍完全可用；统一入口会把选项原样透传给它。`\usepackage[vertical]{luatex-cn}` 则加载竖排 bundle（0.3.x 的历史语义）。
 
 规则内核放在 `tex/shared/`（clreq 附录标点全表、一维优先级空间分配器、四级禁则模块），与竖排共用同一份数据源。
 
@@ -22,7 +24,7 @@
 \usepackage[paperwidth=10cm, paperheight=16cm, margin=1.2cm]{geometry}
 \usepackage{fontspec}
 \setmainfont{Source Han Serif SC}[Script=CJK, Language={Chinese Simplified}]
-\usepackage{luatex-cn-hori}
+\usepackage{luatex-cn}
 \begin{document}
 中文与 Western text 混排时，中西之间会自动插入四分之一字宽的可调间距。
 标点、禁则、段首缩排两字都按 clreq 自动处理。
@@ -32,14 +34,14 @@
 台湾式（居中标点）：
 
 ```latex
-\usepackage[style=taiwan]{luatex-cn-hori}
+\usepackage[style=taiwan]{luatex-cn}
 ```
 
 ---
 
 ## 宏包选项
 
-选项可在 `\usepackage[...]{luatex-cn-hori}` 时给出，也可以在正文中用 `\horiSetup{...}`（中文别名 `\横排设置{...}`）随时修改，改动对其后的段落生效。
+选项可在 `\usepackage[...]{luatex-cn}` 时给出，也可以在正文中用 `\horiSetup{...}`（中文别名 `\横排设置{...}`）随时修改，改动对其后的段落生效。
 
 ### 标点与间距
 

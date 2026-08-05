@@ -15,14 +15,14 @@ A grid-based layout system built on LuaTeX for high-precision vertical text flow
 - **[guji-digital](https://github.com/open-guji/luatex-cn/tree/main/test/digital_test)**: Digitization mode — one source line is one vertical column, with `\双列{\右小列{…}\左小列{…}}` for manual interlinear splitting, to reproduce a source edition's page layout exactly.
 - **[[cn-vbook / tw-vbook | EN:ltc-book]]** (v0.2.7+): Modern vertical books with clean design, built-in footnotes and punctuation system.
 
-## 3. Horizontal: the `luatex-cn-hori` Package
+## 3. Horizontal: `\usepackage{luatex-cn}`
 
 A modern horizontal Chinese pipeline implementing W3C clreq. It is a package, not a class: load it on top of `article` or any other horizontal class. Its rule kernel in `tex/shared/` is the same implementation the vertical engine uses.
 
 ```latex
 \usepackage{fontspec}
 \setmainfont{Source Han Serif SC}[Script=CJK, Language={Chinese Simplified}]
-\usepackage[style=taiwan]{luatex-cn-hori}
+\usepackage[style=taiwan]{luatex-cn}
 ```
 
 - **CJK–Western spacing**: 1/4 em, shrinkable to 1/8 and stretchable to 1/2, with the three clreq exceptions.

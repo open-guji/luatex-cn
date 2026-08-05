@@ -1560,6 +1560,12 @@ local function est_inter_gap_sp(prev_node, prev_ch, next_node)
         and D.get_attribute(next_node, constants.ATTR_SIDEWAYS) == 1 then
         return 0
     end
+    -- 中横排组内部：整组共占一格，组内无字距
+    local tcy = D.get_attribute(prev_node, constants.ATTR_TCY)
+    if tcy and tcy > 0
+        and D.get_attribute(next_node, constants.ATTR_TCY) == tcy then
+        return 0
+    end
     if D.get_attribute(next_node, constants.ATTR_CJK_WESTERN_PREV) == 1 then
         local em = get_node_font_size(prev_node) or prev_ch
         return math.floor(em * 0.25)
@@ -1664,6 +1670,13 @@ local function inter_gap_desc(entries, i, grid_height, locked, two_em)
         -- 横置西文串内部：无字距且刚性（字母连排成词，不可拉开）
         if D.get_attribute(e.node, constants.ATTR_SIDEWAYS) == 1
             and D.get_attribute(nxt.node, constants.ATTR_SIDEWAYS) == 1 then
+            return { width = 0, min = 0, max = 0 }
+        end
+        -- 中横排组内部：整组共占一格，无字距且刚性（组内横向排布由
+        -- render 负责，列方向上组只有组首那一个字幅）
+        local tcy = D.get_attribute(e.node, constants.ATTR_TCY)
+        if tcy and tcy > 0
+            and D.get_attribute(nxt.node, constants.ATTR_TCY) == tcy then
             return { width = 0, min = 0, max = 0 }
         end
         if locked then
@@ -1949,6 +1962,18 @@ local function handle_glyph_node(t, ctx, col_buffer, layout_map, grid_height,
         -- Natural mode: 0.1em gap (proportional to font size); grid mode: 0
         local gap = ctx.default_cell_height and 0 or math.floor(cell_h * GAP_RATIO)
 
+        -- 中横排（\中横排）：整组共占一个字幅——组首按普通字幅入格，组内
+        -- 其余字形字幅与字距归零（列方向不再前进，横向排布由 render 负责）。
+        -- 组员因此永远不会触发换列，整组天然不可拆。组号递增，靠「与上一个
+        -- 字形同号」识别组内续字（相邻两组不会误并）。
+        local tcy = D.get_attribute(t, constants.ATTR_TCY)
+        tcy = (tcy and tcy > 0) and tcy or nil
+        if tcy and ctx.prev_tcy_group == tcy then
+            cell_h = 0
+            gap = 0
+        end
+        ctx.prev_tcy_group = tcy
+
         -- Column overflow check (sp-based)
         -- Natural mode: use actual accumulated height from buffer instead of cur_y_sp
         -- Grid mode: use cur_y_sp (which is synchronized with cur_row * grid_height)
@@ -1985,23 +2010,35 @@ local function handle_glyph_node(t, ctx, col_buffer, layout_map, grid_height,
                     "natural kinsoku: SQUEEZE (char 0x%04X) [p:%d c:%d]",
                     D.getfield(t, "char") or 0, ctx.cur_page, ctx.cur_col))
             elseif kinsoku_action == "stretch" then
-                local pulled = table.remove(col_buffer)
+                local pulled_list = { table.remove(col_buffer) }
+                -- 中横排组是一个整体：被拉走的若是组尾，整组一并同行
+                local pv = D.get_attribute(pulled_list[1].node,
+                    constants.ATTR_TCY)
+                if pv and pv > 0 then
+                    while #col_buffer > 0
+                        and D.get_attribute(col_buffer[#col_buffer].node,
+                            constants.ATTR_TCY) == pv do
+                        table.insert(pulled_list, 1, table.remove(col_buffer))
+                    end
+                end
                 flush_fn("wrap")
                 accumulate_free_mode_col_width(ctx, params)
                 wrap_to_next_column(ctx, p_cols, interval, grid_height, base_indent or indent, false, false)
                 apply_indentation(ctx, base_indent or indent)
-                table.insert(col_buffer, {
-                    node = pulled.node,
-                    page = ctx.cur_page,
-                    col = ctx.cur_col,
-                    band = ctx.cur_band,
-                    y_sp = ctx.cur_y_sp,
-                    height = pulled.height,
-                    cell_height = pulled.cell_height,
-                    cell_width = pulled.cell_width,
-                })
-                local ph = pulled.cell_height or grid_height
-                ctx.cur_y_sp = ctx.cur_y_sp + ph + math.floor(ph * GAP_RATIO)
+                for _, pulled in ipairs(pulled_list) do
+                    table.insert(col_buffer, {
+                        node = pulled.node,
+                        page = ctx.cur_page,
+                        col = ctx.cur_col,
+                        band = ctx.cur_band,
+                        y_sp = ctx.cur_y_sp,
+                        height = pulled.height,
+                        cell_height = pulled.cell_height,
+                        cell_width = pulled.cell_width,
+                    })
+                    local ph = pulled.cell_height or grid_height
+                    ctx.cur_y_sp = ctx.cur_y_sp + ph + math.floor(ph * GAP_RATIO)
+                end
                 ctx.cur_row = math.floor(ctx.cur_y_sp / grid_height + 0.5)
                 ctx.page_has_content = true
                 should_wrap = false

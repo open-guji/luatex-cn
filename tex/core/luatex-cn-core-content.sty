@@ -469,6 +469,27 @@
     \group_end:
   }
 
+% CombineUpright Command (clreq 直排中西混排配置之「横排入一个字格」，
+% 即 CSS text-combine-upright / 日文縦中横)
+% Syntax: \CombineUpright{12} / \中横排{12}
+% 组内字形共占一个字幅：layout 让整组只占组首一格，render 把组员横排进
+% 这一格，总宽超过 1em 时只做横向压缩。适合两三位数字/极短西文（日期
+% 「\中横排{12}月」、卷次等）；较长的词句用 \横置。组号递增，相邻两组
+% 不会误并为一格。
+\int_new:N \g__luatexcn_content_tcy_int
+\NewDocumentCommand{\CombineUpright}{ m }
+  {
+    \group_begin:
+    \int_gincr:N \g__luatexcn_content_tcy_int
+    \lua_now:e
+      {
+        local~c~=~require('core.luatex-cn-constants')
+        tex.setattribute(c.ATTR_TCY,~\int_use:N \g__luatexcn_content_tcy_int)
+      }
+    #1
+    \group_end:
+  }
+
 % ============================================================================
 % Shared Helper Functions for Content Environments
 % ============================================================================
@@ -575,6 +596,8 @@
 \NewCommandCopy{\缺字}{\MissingChar}
 \NewCommandCopy{\横置}{\Sideways}
 \NewCommandCopy{\橫置}{\Sideways}
+\NewCommandCopy{\中横排}{\CombineUpright}
+\NewCommandCopy{\中橫排}{\CombineUpright}
 \NewCommandCopy{\内容设置}{\contentSetup}
 \NewCommandCopy{\内容}{\Content}
 \NewEnvironmentCopy{正文}{BodyText}

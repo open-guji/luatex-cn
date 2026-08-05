@@ -57,6 +57,10 @@ local dbg = debug.get_debugger('render')
 local glyph_dims = {}
 local glyph_params = {}
 
+-- 中横排组的渲染偏移缓存：组首前扫时为全组写入 {s, x, y}，组员处理到时
+-- 取走即删（键是 direct 节点索引，会跨页复用，不能留存）
+local tcy_render_cache = {}
+
 --- clreq 挤压方向：把「缩短的字幅」还原成「字面该放在哪」。
 --
 -- 上下文相关挤压把标点的字面空白收回，缩短的字幅只用于列内排版算术；
@@ -196,8 +200,61 @@ local function handle_glyph_node(curr, p_head, pos, params, ctx)
     end
 
     local sideways = D.get_attribute(curr, constants.ATTR_SIDEWAYS) == 1
+    local tcy_val = D.get_attribute(curr, constants.ATTR_TCY)
 
-    if sideways then
+    if tcy_val and tcy_val > 0 then
+        -- 中横排（\中横排，clreq 直排中西混排之「横排入一个字格」）。
+        -- layout 已让整组只占组首那一个字幅（组内字幅/字距归零），这里把
+        -- 组员横排进这一格：以组首的格与列心为锚，逐字沿横向排开；总宽
+        -- 超过 1em 时只做横向压缩（字高与笔画竖向粗细不变，同 JIS 縦中横
+        -- 的通行做法），竖向按字体升降部把基线居中于格。组首一次前扫算出
+        -- 全组偏移（组员的 layout 位置是列方向的零宽占位，不可用）。
+        local info = tcy_render_cache[curr]
+        if not info then
+            local run, run_w = { curr }, w
+            local nx = D.getnext(curr)
+            while nx do
+                local id = D.getid(nx)
+                if id == constants.GLYPH then
+                    if D.get_attribute(nx, constants.ATTR_TCY) == tcy_val then
+                        run[#run + 1] = nx
+                        run_w = run_w + (D.getfield(nx, "width") or 0)
+                    else
+                        break
+                    end
+                elseif id == constants.HLIST or id == constants.VLIST then
+                    break
+                end
+                nx = D.getnext(nx)
+            end
+            local fsize = (fdata and fdata.size) or 655360
+            local s = (run_w > fsize and run_w > 0) and (fsize / run_w) or 1
+            local pms = fdata and fdata.parameters
+            local asc = (pms and pms.ascender) or math.floor(fsize * 0.8)
+            local desc = math.abs((pms and pms.descender)
+                or math.floor(fsize * 0.2))
+            local cell = (type(pos.cell_height) == "number"
+                and pos.cell_height > 0) and pos.cell_height or fsize
+            local top = -(pos.y_sp + (pos.band_y_offset_sp or 0)) - ctx.shift_y
+            local base_y = top - cell / 2 - (asc - desc) / 2
+            local gx = final_x + w / 2 - (run_w * s) / 2
+            for _, g in ipairs(run) do
+                tcy_render_cache[g] = { s = s, x = gx, y = base_y }
+                gx = gx + (D.getfield(g, "width") or 0) * s
+            end
+            info = tcy_render_cache[curr]
+        end
+        tcy_render_cache[curr] = nil
+        D.setfield(curr, "xoffset", 0)
+        D.setfield(curr, "yoffset", 0)
+        local n_start = utils.create_pdf_literal(string.format(
+            "q %.4f 0 0 1 %.4f %.4f cm", info.s,
+            info.x * utils.sp_to_bp, info.y * utils.sp_to_bp))
+        local n_end = utils.create_pdf_literal(
+            utils.create_graphics_state_end())
+        p_head = D.insert_before(p_head, curr, n_start)
+        D.insert_after(p_head, curr, n_end)
+    elseif sideways then
         -- 横置西文（\横置，clreq 直排中西混排之「顺时针旋转 90°」）。
         -- 与 needs_rotate（缺字旋转）不同：那是单字绕墨心旋转、字幅仍一格；
         -- 这里整串字母连排成词（字幅 = advance、串内字距 0），各字形必须

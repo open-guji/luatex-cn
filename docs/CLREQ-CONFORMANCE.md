@@ -40,7 +40,7 @@
 
 ```bash
 texlua test/run_all.lua                  # 单元测试（43 个文件）
-python3 test/clreq_test.py               # clreq 度量断言（113 条，每条注明条款）
+python3 test/clreq_test.py               # clreq 度量断言（119 条，每条注明条款）
 python3 test/geometry_test.py            # 列内基线等距自校验
 python3 test/regression_test.py check    # 像素回归（basic/past_issue/complete）
 ```
@@ -56,8 +56,8 @@ python3 test/regression_test.py check    # 像素回归（basic/past_issue/compl
 | 后端 | 适用条款 | ✅ | 🟡/⚠️ | ❌ | 覆盖率 |
 |------|---------|----|-------|----|--------|
 | 横排 `luatex-cn-hori` | 43 | 29 | 5 | 9 | **≈ 73%** |
-| 竖排 `ltc-cn-vbook` / `ltc-tw-vbook` | 43 | 21 | 11 | 11 | **≈ 62%** |
-| 两后端合并 | 86 | 50 | 16 | 20 | **≈ 67%** |
+| 竖排 `ltc-cn-vbook` / `ltc-tw-vbook` | 43 | 22 | 10 | 11 | **≈ 63%** |
+| 两后端合并 | 86 | 51 | 15 | 20 | **≈ 68%** |
 
 百分比只是速览，**逐条状态与证据（下文各表）才是本文的声明本体**；
 条款等权也意味着它与工作量完成度（见差距分析第 7 节，按人日约 54%）不是
@@ -71,7 +71,7 @@ python3 test/regression_test.py check    # 像素回归（basic/past_issue/compl
 |------|------|------|------|------------|
 | 2.1.1 | 中文的行文模式（横排左起 / 直排右起换列向左） | ✅ | ✅ | 竖排网格引擎（`core/luatex-cn-layout-grid.lua`）；直排列右→左、页序右翻 |
 | 2.1.2 | 横直排差异点（标点直排形式、装订方向、页面镜像） | ➖ | 🟡 | vert 形替换 + PUA/tounicode 还原（`core/luatex-cn-core-punct.lua`）、`twoside` 镜像边距；个别标点直排形式依赖字体，缺字时对 `—`/`…` 退化为旋转 |
-| 2.1.3 | 直排的中、西文混排配置（全角直立 / 旋转 90° / 中横排；汉字与西文间距） | ➖ | 🟡 | **中西间距已实现**（P3 第一步）：汉字与西文字母/数字边界 1/4em、可挤 1/8 拉 1/2、点号旁与夹注号内侧不加——规则本体 `shared/luatex-cn-cjk-western.lua` 与横排同源，`western-space` 键可关，仅 context 挡位生效；断言 8 条 + 负对照。三种西文配置：全角直立 = 默认逐字入格；**旋转 90° 已实现**（`\横置`/`\Sideways`：字幅 = advance、串内零字距、共用竖直基线，断言「字母连排步长 0.5em vs 直立 1.1em」，回归 `sideways.tex`）；中横排未做（`\填充文本框` 可手工近似） |
+| 2.1.3 | 直排的中、西文混排配置（全角直立 / 旋转 90° / 中横排；汉字与西文间距） | ➖ | ✅ | **中西间距已实现**（P3 第一步）：汉字与西文字母/数字边界 1/4em、可挤 1/8 拉 1/2、点号旁与夹注号内侧不加——规则本体 `shared/luatex-cn-cjk-western.lua` 与横排同源，`western-space` 键可关，仅 context 挡位生效；断言 8 条 + 负对照。三种西文配置：全角直立 = 默认逐字入格；**旋转 90° 已实现**（`\横置`/`\Sideways`：字幅 = advance、串内零字距、共用竖直基线，断言「字母连排步长 0.5em vs 直立 1.1em」，回归 `sideways.tex`）；**中横排已实现**（`\中横排`/`\CombineUpright`：整组共占一个字幅，超 1em 只做横向压缩、字高不变，适合两三位数字/极短西文；断言 6 条含负对照——跨组步长 2.5em vs 直立 3.6em，回归 `combine-upright.tex`）。三种西文配置至此齐备 |
 | （2 章相关） | 双向文本（bidi） | 🚫 | 🚫 | 见第 10 节 |
 
 ## 2. 第 3 章 · 字形的变形与定位

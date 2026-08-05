@@ -5,11 +5,11 @@
 A LuaTeX package for Chinese typesetting with two goals: **faithful replication of classical (古籍) page layouts**, and **modern Chinese typesetting that follows the W3C *Requirements for Chinese Text Layout* (clreq)**.
 
 - **Classical vertical layout**: Banxin (版心), interlinear notes (夹注), side/top annotations (侧批/眉批), footnotes, seals, judou punctuation, character corrections and ruled borders — the bundled examples reproduce the page layout of sources such as the Wenyuange Siku Quanshu and the Jiaxu manuscript of *Dream of the Red Chamber*.
-- **Modern vertical layout**: traditional-Chinese vertical books, with separate Mainland China and Taiwan punctuation conventions; punctuation width adjustment, intra-line compression/expansion in clreq priority order, line-breaking rules, mixed Chinese-Western text (1/4em spacing and `\横置` sideways runs), emphasis marks and hanging end-of-line punctuation all follow clreq.
+- **Modern vertical layout**: traditional-Chinese vertical books, with separate Mainland China and Taiwan punctuation conventions; punctuation width adjustment, intra-line compression/expansion in clreq priority order, line-breaking rules, mixed Chinese-Western text (1/4em spacing, `\横置` sideways runs and `\中横排` tate-chū-yoko), emphasis marks and hanging end-of-line punctuation all follow clreq.
 - **Horizontal clreq mode** (unified entry `\usepackage{luatex-cn}`): punctuation width adjustment, four levels of line-breaking rules (禁则) plus symbol-separation rules, intra-line compression/expansion in clreq priority order, Chinese-Western spacing, hanging end-of-line punctuation, interlinear marks (proper-name / book-title / emphasis), pinyin ruby with word alignment, and widow/orphan control.
-
-The clreq rules of both directions are verified by 113 metric assertions made directly on the PDF content stream; per-clause status and intentional deviations are documented in the **[clreq conformance matrix](docs/CLREQ-CONFORMANCE.md)**.
 - **Customisable templates**: layout parameters and templates can be overridden.
+
+The clreq rules of both directions are verified by 119 metric assertions made directly on the PDF content stream; per-clause status and intentional deviations are documented in the **[clreq conformance matrix](docs/CLREQ-CONFORMANCE.md)**.
 
 CTAN: [v0.3.8](https://ctan.org/pkg/luatex-cn) | GitHub Release: [v0.3.8](https://github.com/open-guji/luatex-cn/releases)
 

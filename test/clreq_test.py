@@ -357,6 +357,9 @@ def parse_pdf_vertical(path, min_len=4):
     for line in parse_pdf(path):
         for g in line.glyphs:
             placements.append((line.page, g.x0, line.y, g.char, g.em))
+    # 供个别断言直接按坐标框选字形：中横排组的数字横向散开在列心两侧，
+    # x 聚类会把它劈出本列、再被 min_len 滤掉，从列里找不齐
+    parse_pdf_vertical.last_placements = placements
     if not placements:
         return []
 
@@ -1009,6 +1012,56 @@ def run_vert_mixed_assertions(cols):
             f"字母连排步长 = {['%.2f' % s for s in steps]}em"
             f"（应全部 < 0.75——直立入格是 1.1）",
             all(0.1 < s < 0.75 for s in steps), str(steps))
+
+    # ---- 中横排（clreq 直排中西混排配置之「横排入一个字格」，\中横排）
+    #      整组共占一格：跨组的两侧汉字基线距离 = 前字字幅 1 + 中西间距
+    #      0.25 + 组格 1 + 中西间距 0.25 ≈ 2.5em；「12」直立入格是
+    #      1+0.25+1+0.1+1+0.25 = 3.6em，判据有区分力。组内数字从原始
+    #      placements 按锚点坐标框选（横向散开的字形会被 x 聚类劈出本列）。
+    def tcy_digits(anchor, hi, lo, digits, em):
+        y_hi = anchor.glyphs[anchor.index_of(hi)][1]
+        y_lo = anchor.glyphs[anchor.index_of(lo)][1]
+        found = [(ch, x, y)
+                 for page, x, y, ch, _e in parse_pdf_vertical.last_placements
+                 if page == anchor.page and ch in digits
+                 and abs(x - anchor.x) < 0.9 * em and y_lo < y < y_hi]
+        found.sort(key=lambda t: t[1])
+        return found
+
+    tcyc = find_column(cols, "今年")
+    em = tcyc.glyphs[tcyc.index_of("年")][2]
+    span = tcyc.span_em(tcyc.index_of("年"), tcyc.index_of("月"))
+    r.check("中横排",
+            f"「年→月」跨组步长 = {span:.3f}em"
+            f"（应 ≈ 2.5——整组共占一格；「12」直立入格是 3.6）",
+            abs(span - 2.5) < 0.05)
+    d = tcy_digits(tcyc, "年", "月", "12", em)
+    r.check("中横排", f"「12」按坐标框选出 {len(d)} 个数字字形（应 2）",
+            len(d) == 2)
+    if len(d) == 2:
+        r.check("中横排",
+                f"「12」两字基线同高（Δy = {abs(d[0][2] - d[1][2]) / em:.3f}em）"
+                f"且横向排开（Δx = {(d[1][1] - d[0][1]) / em:.3f}em）",
+                abs(d[0][2] - d[1][2]) < 0.02 * em
+                and (d[1][1] - d[0][1]) > 0.3 * em)
+
+    tcyd = find_column(cols, "而成一年")
+    em = tcyd.glyphs[tcyd.index_of("合")][2]
+    span = tcyd.span_em(tcyd.index_of("合"), tcyd.index_of("天"))
+    r.check("中横排",
+            f"「合→天」跨组步长 = {span:.3f}em（应 ≈ 2.5——三位数仍只占一格）",
+            abs(span - 2.5) < 0.05)
+    d = tcy_digits(tcyd, "合", "天", "365", em)
+    r.check("中横排", f"「365」按坐标框选出 {len(d)} 个数字字形（应 3）",
+            len(d) == 3)
+    if len(d) == 3:
+        xsteps = [(d[k + 1][1] - d[k][1]) / em for k in range(2)]
+        r.check("中横排",
+                f"「365」超 1em 只做横向压缩：数字横向步长 = "
+                f"{['%.3f' % s for s in xsteps]}em（应 < 0.4——未压缩的"
+                f"advance ≈ 0.5），三字基线同高",
+                all(0.1 < s < 0.4 for s in xsteps)
+                and max(t[2] for t in d) - min(t[2] for t in d) < 0.02 * em)
 
     return r
 

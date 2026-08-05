@@ -126,6 +126,14 @@ constants.ATTR_CJK_WESTERN_PREV = luatexbase.attributes.cnverticalcjkwestern or
 constants.ATTR_SIDEWAYS = luatexbase.attributes.cnverticalsideways or
     luatexbase.new_attribute("cnverticalsideways")
 
+-- 该字形属于「中横排」短串（clreq 直排中西混排配置之「横排入一个字格」，
+-- \中横排{...} 标记，即 CSS text-combine-upright / 日文縦中横）。值为
+-- 递增的组号（≥1），同组同号——相邻两个组因组号不同不会误并成一格。
+-- 三处协同：组首字幅 = 一字（组内其余为 0，整组共占一格）、组内字距归零
+-- 且刚性、渲染把整组横排进这一格（超过 1em 时只做横向压缩，字高不变）。
+constants.ATTR_TCY = luatexbase.attributes.cnverticaltcy or
+    luatexbase.new_attribute("cnverticaltcy")
+
 -- 该标点是可悬挂的点号（clreq 行尾点号悬挂，仅 hanging-punct=true 时标）。
 -- 1 = 是。与 TRIM_END 的区别：TRIM_END 只收回**空白**，悬挂让整个字幅
 -- （含墨迹）移出列内——落在列末时列高预算完全不含它，字形挂在版口之外。

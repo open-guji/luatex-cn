@@ -679,6 +679,29 @@ test_utils.run_test("build_column_gaps/估算: 横置串内部零字距且刚性
         2 * math.floor(gh * 0.5), "估算同口径：串内无字距")
 end)
 
+test_utils.run_test("build_column_gaps/估算: 中横排组内零字距且刚性", function()
+    -- \中横排 整组共占一格：组首字幅 1 字、组员 0，组内既无字距也不可拉开
+    local gh = 65536 * 14
+    local function mk(group, ch)
+        local n = D.new(constants.GLYPH)
+        D.setfield(n, "char", 0x31)
+        if group then D.set_attribute(n, constants.ATTR_TCY, group) end
+        return { node = n, cell_height = ch }
+    end
+    local a, b = mk(7, gh), mk(7, 0)
+    local col = layout_grid._internal.build_column_gaps({ a, b }, gh)
+    local inter = col.gaps[col.inter_idx[1]]
+    test_utils.assert_eq(inter.width, 0)
+    test_utils.assert_eq(inter.max, 0, "组内不可拉开——兜底均分会把组撑散")
+    test_utils.assert_eq(
+        layout_grid._internal.calculate_buffer_height({ mk(7, gh), mk(7, 0) }),
+        gh, "估算同口径：整组只占组首一个字幅")
+    -- 相邻两组组号不同，组间字距照常（不误并为一格）
+    test_utils.assert_eq(
+        layout_grid._internal.calculate_buffer_height({ mk(7, gh), mk(8, gh) }),
+        2 * gh + math.floor(gh * 0.1), "相邻两组组间保留基准字距")
+end)
+
 test_utils.run_test("build_column_gaps: 刚性单元边界上的三个 gap 全部锁死", function()
     -- clreq 符号分离禁则：两字幅标点等单元内部不得有任何伸缩，
     -- 横排的教训是只清 stretch 不清 shrink 会把单元压扁

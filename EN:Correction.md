@@ -73,12 +73,25 @@ Preset commands for marking text according to classical or modern standards.
 
 | Command | Alias | Description |
 |---------|-------|-------------|
-| `\EmphasisMark` | `\着重号` | Add small circles (。) to the right of each char |
-| `\圈点` | - | Same as above |
+| `\EmphasisMark` | `\着重号` / `\著重號` | Add an emphasis mark to the right of each character |
+| `\emphasisMarkSetup` | `\着重号设置` / `\圈点设置` | Global setup |
+
+| Parameter | CN alias | Default | Description |
+|-----------|----------|---------|-------------|
+| `char` | `字符` | `○` | Mark character |
+| `scale` | `缩放` | `0.3` | Mark scale factor |
+| `color` | `颜色` | `black` | Mark color |
+| `skip-punct` | `跳过标点` | `false` | No emphasis marks on punctuation (clreq 5.3.1) |
+
+**Per-class defaults** (main branch): `ltc-guji` keeps the traditional quandian convention — hollow circle `○` on every character including punctuation; `ltc-cn-vbook` / `ltc-tw-vbook` preset `char=●, skip-punct=true`, i.e. the solid dot with no marks on punctuation as specified by clreq 5.3.1.
+
+> Taiwan note: the Ministry of Education's Punctuation Guidance (2008 revision) does not include this mark, though it still appears in publishing practice; `ltc-tw-vbook` takes clreq's generic form (`●`), changeable per book via `\着重号设置{char=…}`.
 
 **Example**:
 ```latex
 \EmphasisMark{Very Important}
+\EmphasisMark[skip-punct=false]{标点，也加。}   % per-call override
+\emphasisMarkSetup{char=●, color=red}          % change the convention globally
 ```
 
 ### 3. FaSheng / Tone-Mark Circles <sup>v0.3.8+</sup>

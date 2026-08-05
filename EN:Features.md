@@ -39,7 +39,7 @@ The implementation is verified clause by clause by `test/clreq_test.py`, which m
 > ⚠️ Not yet in a release (latest is v0.3.8) — get it from the main branch.
 
 ## 4. Punctuation Processing
-- **[[Punctuation System | EN:Punctuation]]** (v0.2.7+): Modern punct squeeze, kinsoku, vertical quote replacement with mainland/Taiwan styles. Vertical punctuation width adjustment is context-sensitive per clreq, and glyph placement is anchored by measured ink extents rather than the font's own design.
+- **[[Punctuation System | EN:Punctuation]]** (v0.2.7+): Modern punct squeeze, kinsoku, vertical quote replacement with mainland/Taiwan styles. Vertical punctuation width adjustment is context-sensitive per clreq, and glyph placement is anchored by measured ink extents rather than the font's own design. On the main branch additionally: hanging punctuation at column end (`punct-hanging`), CJK-Western spacing (1/4 em, `western-space`), sideways Western text (`\Sideways`), and the extended connector/interpunct/solidus classes (mainland interpunct at half width).
 - **[[Judou | EN:Judou]]**: Traditional punctuation marks with three modes (normal/judou/none) switchable at any time.
 
 ## 5. Traditional Book Elements

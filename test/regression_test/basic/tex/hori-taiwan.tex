@@ -7,7 +7,9 @@
 % TW-Kai 的标点为台式居中字面，正是 style=taiwan 的正确测试字体
 \usepackage{fontspec}
 \setmainfont{TW-Kai}
-\usepackage[style=taiwan, quote-style=auto]{luatex-cn-hori}
+% 经统一入口加载并透传选项（等价于同选项的 luatex-cn-hori——
+% 本用例兼作选项透传的回归守卫）
+\usepackage[style=taiwan, quote-style=auto]{luatex-cn}
 \pagestyle{empty}
 \begin{document}
 

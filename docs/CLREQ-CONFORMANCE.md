@@ -15,7 +15,7 @@
 
 | 列 | 指代 | 说明 |
 |----|------|------|
-| **横排** | `luatex-cn-hori` 宏包（`tex/hori/` + `tex/shared/`） | 挂在任意 LaTeX 横排文档类上 |
+| **横排** | `\usepackage{luatex-cn}`（统一入口的默认分支；实现在 `tex/hori/` + `tex/shared/`，内部名 `luatex-cn-hori` 仍可直接加载） | 挂在任意 LaTeX 横排文档类上 |
 | **竖排** | `ltc-cn-vbook` / `ltc-tw-vbook` 文档类（`tex/core/` + `tex/shared/`） | 现代竖排书 |
 
 **`ltc-guji` / `ltc-guji-digital` 不在本矩阵声明范围内。** clreq 明确写道

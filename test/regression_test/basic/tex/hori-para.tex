@@ -5,7 +5,9 @@
 \usepackage[paperwidth=10cm, paperheight=16cm, margin=1.2cm]{geometry}
 \usepackage{fontspec}
 \setmainfont{Source Han Serif SC}[Script=CJK, Language={Chinese Simplified}]
-\usepackage{luatex-cn-hori}
+% 经统一入口加载（等价于 \usepackage{luatex-cn-hori}——本用例兼作
+% 入口透传的回归守卫：基线应与直接加载 hori 逐像素一致）
+\usepackage{luatex-cn}
 \pagestyle{empty}
 \begin{document}
 

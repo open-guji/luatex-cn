@@ -100,6 +100,17 @@ Per clreq, a **1/4 character width** of spacing is inserted automatically betwee
 - Digit runs remain unbreakable units (symbol-separation rules): base letter-spacing inside, normal CJK-Western spacing at both ends.
 - Only takes effect under `squeeze-mode=context`; disable with `western-space=false` (CN alias `中西间距`).
 
+### Short runs in one slot: `\CombineUpright`
+
+The third configuration — "set horizontally within one character frame" (Japanese tate-chū-yoko) — is provided by `\CombineUpright` (CN aliases `\中横排` / `\中橫排`): two- or three-character numbers and very short Western strings are set horizontally inside a **single character slot**, ideal for dates and volume numbers:
+
+```latex
+今年\CombineUpright{12}月\CombineUpright{8}日刊行。
+第\CombineUpright{365}回。
+```
+
+The group occupies exactly one character advance and can never be split across columns; glyphs inside share one baseline and run left to right; when the total width exceeds 1 em the group is compressed horizontally only (glyph height and vertical stroke weight unchanged); the usual 1/4 em CJK-Western spacing applies on both sides. For longer words and phrases use `\Sideways` instead.
+
 ### Sideways Western text: `\Sideways`
 
 Of clreq's three configurations for Western text in vertical writing, "rotated 90° clockwise" is provided by `\Sideways` (CN aliases `\横置` / `\橫置`) — suited to longer Western words and phrases; single letters and acronyms usually just sit upright, one per cell (the engine default):

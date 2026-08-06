@@ -56,5 +56,4 @@ For information on contributing or understanding the internal architecture:
 
 ## Contact
 
-- **Contact**: Sheldon Li
-- **Email**: sheldonli.dev@gmail.com
+- **Contact**: Sheldon Li (sheldonli.dev@gmail.com), Frank Lin (ctan@linshuang.info)

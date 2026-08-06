@@ -74,6 +74,5 @@
 
 ## 联系方式
 
-- **联系人**: Sheldon Li
-- **邮件**: sheldonli.dev@gmail.com
+- **联系人**: Sheldon Li（sheldonli.dev@gmail.com）、Frank Lin（ctan@linshuang.info）
 - **Issue**: [GitHub Issues](https://github.com/open-guji/luatex-cn/issues)

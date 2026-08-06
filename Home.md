@@ -4,7 +4,7 @@
 
 欢迎来到 LuaTeX-CN 的用户手册。本 Wiki 涵盖了从安装到高级排版的完整文档，帮助你用 LuaTeX-CN 排版高质量的中文古籍、现代竖排书籍与符合 clreq 的现代横排文档。
 
-> **当前版本**: [v0.3.8](https://github.com/open-guji/luatex-cn/releases) | **CTAN**: [v0.3.1](https://ctan.org/pkg/luatex-cn)
+> **当前版本**: [v0.4.0](https://github.com/open-guji/luatex-cn/releases) | **CTAN**: [v0.4.0](https://ctan.org/pkg/luatex-cn)
 
 ---
 
@@ -33,7 +33,7 @@
 
 | 宏包 | 用途 | 详情 |
 |------|------|------|
-| **`\usepackage{luatex-cn}`（横排）** <sup>main 分支</sup> | 按 W3C clreq 排版的现代中文横排：中西间距、四级禁则、行内挤压／拉伸、行间标号与拼音、段落与孤行控制。加载到 `article` 等任意横排文档类之上，非文档类 | [[现代横排 \| Horizontal]] |
+| **`\usepackage{luatex-cn}`（横排）** | 按 W3C clreq 排版的现代中文横排：中西间距、四级禁则、行内挤压／拉伸、行间标号与拼音、段落与孤行控制。加载到 `article` 等任意横排文档类之上，非文档类 | [[现代横排 \| Horizontal]] |
 
 ## 核心文档
 
@@ -42,6 +42,7 @@
 - [[字体设置 | Fonts]] — 自动探测、手动设置、字体递补链
 - [[布局与功能 | Features]] — 章节标题、目录条目及布局控制
 - [[现代横排 | Horizontal]] — `\usepackage{luatex-cn}`：clreq 横排管道、选项与命令
+- [clreq 符合度矩阵](https://github.com/open-guji/luatex-cn/blob/main/docs/CLREQ-CONFORMANCE.md) — 逐条款的横竖排符合状态、证据与有意偏离
 
 ### 标点与句读
 - [[标点系统 | Punctuation]] — 现代标点挤压、禁则处理，中国大陆/台湾风格

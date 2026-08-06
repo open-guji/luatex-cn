@@ -83,7 +83,7 @@
 | `color` | `颜色` | `black` | 标记颜色 |
 | `skip-punct` | `跳过标点` | `false` | 标点上不加着重号（clreq 5.3.1） |
 
-**按文档类分档的默认体例**（main 分支）：`ltc-guji` 保持古籍圈点体例——空心圈 `○`、逐字都加（含标点）；`ltc-cn-vbook` / `ltc-tw-vbook` 在配置里预设 `char=●, skip-punct=true`，即 clreq 5.3.1 规定的实心圆点、标点上不加。
+**按文档类分档的默认体例**（v0.4.0 起）：`ltc-guji` 保持古籍圈点体例——空心圈 `○`、逐字都加（含标点）；`ltc-cn-vbook` / `ltc-tw-vbook` 在配置里预设 `char=●, skip-punct=true`，即 clreq 5.3.1 规定的实心圆点、标点上不加。
 
 > 台湾式说明：台湾教育部《重订标点符号手册》（2008 年修订版）未收录着重号，但实务出版仍在使用；`ltc-tw-vbook` 取 clreq 的通用形态（`●`），可用 `\着重号设置{char=…}` 改成本书体例。
 

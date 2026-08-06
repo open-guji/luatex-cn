@@ -2,7 +2,7 @@ English | [中文版](Features)
 
 # Features Overview
 
-`luatex-cn` provides a rich set of features for Chinese typesetting, from the core vertical engine and traditional book elements to a clreq-conformant horizontal pipeline.
+`luatex-cn` provides a rich set of features for Chinese typesetting, from the core vertical engine and traditional book elements to a clreq-conformant horizontal pipeline. Per-clause conformance status and intentional deviations are documented in the [clreq conformance matrix](https://github.com/open-guji/luatex-cn/blob/main/docs/CLREQ-CONFORMANCE.md), verified by 119 PDF metric assertions.
 
 ## 1. Core Typesetting Engine
 A grid-based layout system built on LuaTeX for high-precision vertical text flows.
@@ -36,10 +36,8 @@ The implementation is verified clause by clause by `test/clreq_test.py`, which m
 
 > ⚠️ Requires LuaTeX and is mutually exclusive with `luatexja` (which `ctex` loads under LuaLaTeX).
 >
-> ⚠️ Not yet in a release (latest is v0.3.8) — get it from the main branch.
-
 ## 4. Punctuation Processing
-- **[[Punctuation System | EN:Punctuation]]** (v0.2.7+): Modern punct squeeze, kinsoku, vertical quote replacement with mainland/Taiwan styles. Vertical punctuation width adjustment is context-sensitive per clreq, and glyph placement is anchored by measured ink extents rather than the font's own design. On the main branch additionally: hanging punctuation at column end (`punct-hanging`), CJK-Western spacing (1/4 em, `western-space`), sideways Western text (`\Sideways`), short runs set horizontally in one slot (`\CombineUpright`, tate-chū-yoko), and the extended connector/interpunct/solidus classes (mainland interpunct at half width).
+- **[[Punctuation System | EN:Punctuation]]** (v0.2.7+): Modern punct squeeze, kinsoku, vertical quote replacement with mainland/Taiwan styles. Vertical punctuation width adjustment is context-sensitive per clreq, and glyph placement is anchored by measured ink extents rather than the font's own design. Since v0.4.0 additionally: hanging punctuation at column end (`punct-hanging`), CJK-Western spacing (1/4 em, `western-space`), sideways Western text (`\Sideways`), short runs set horizontally in one slot (`\CombineUpright`, tate-chū-yoko), and the extended connector/interpunct/solidus classes (mainland interpunct at half width).
 - **[[Judou | EN:Judou]]**: Traditional punctuation marks with three modes (normal/judou/none) switchable at any time.
 
 ## 5. Traditional Book Elements

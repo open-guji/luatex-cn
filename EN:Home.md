@@ -4,7 +4,7 @@ English | [中文版](Home)
 
 Welcome to the LuaTeX-CN Wiki. This site provides comprehensive documentation for users and developers to help you create high-quality Chinese typesetting with LuaTeX-CN — classical vertical books, modern vertical books, and clreq-conformant horizontal documents.
 
-> **Current Version**: [v0.3.8](https://github.com/open-guji/luatex-cn/releases) | **CTAN**: [v0.3.8](https://ctan.org/pkg/luatex-cn)
+> **Current Version**: [v0.4.0](https://github.com/open-guji/luatex-cn/releases) | **CTAN**: [v0.4.0](https://ctan.org/pkg/luatex-cn)
 
 ## Quick Access
 
@@ -26,7 +26,8 @@ Welcome to the LuaTeX-CN Wiki. This site provides comprehensive documentation fo
 - [[cn-vbook / tw-vbook (Modern Books) | EN:ltc-book]] - Modern vertical books with punct squeeze and footnotes
 
 **Horizontal — one package**
-- [[\usepackage{luatex-cn} (horizontal) | EN:Horizontal]] <sup>main branch</sup> - Modern horizontal Chinese per W3C clreq: CJK–Western spacing, four kinsoku levels, per-line compression/stretch, interlinear marks and ruby, paragraph and widow control. Loads on top of `article` and friends — it is a package, not a class
+- [[\usepackage{luatex-cn} (horizontal) | EN:Horizontal]] - Modern horizontal Chinese per W3C clreq: CJK–Western spacing, four kinsoku levels, per-line compression/stretch, interlinear marks and ruby, paragraph and widow control. Loads on top of `article` and friends — it is a package, not a class
+- [clreq conformance matrix](https://github.com/open-guji/luatex-cn/blob/main/docs/CLREQ-CONFORMANCE.md) - per-clause status for both directions, with evidence and documented deviations
 
 ### 3. Punctuation & Judou
 - [[Punctuation System | EN:Punctuation]] - Modern punct styles (mainland/Taiwan), squeeze, kinsoku

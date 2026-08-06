@@ -59,8 +59,6 @@ Configure punctuation behavior via `\punctSetup`:
 
 ### clreq preset keys (identical to the horizontal package)
 
-> ⚠️ These parameters are not yet in a release (latest is v0.3.8) — get them from the main branch.
-
 Beyond the original parameters above, `\punctSetup` (CN alias `\标点设置`) offers a set of clreq presets whose **key names and values match the [[horizontal pipeline | EN:Horizontal]] exactly**, so one manuscript can keep the same conventions in vertical and horizontal mode:
 
 | Parameter | Description | Default | Values |
@@ -78,8 +76,6 @@ Beyond the original parameters above, `\punctSetup` (CN alias `\标点设置`) o
 
 ## Hanging Punctuation (punct-hanging)
 
-> ⚠️ Not yet in a release (latest is v0.3.8) — get it from the main branch.
-
 clreq's hanging punctuation at line end: a period-type mark that lands at the **column end** moves entirely out of the column, hanging beyond the type area, so the column body is no longer compressed on its account. clreq notes that hanging suits vertical writing (in horizontal Taiwan/Hong Kong style the centered marks make it inadvisable).
 
 ```latex
@@ -89,8 +85,6 @@ clreq's hanging punctuation at line end: a period-type mark that lands at the **
 Off by default — hanging changes the layout of existing documents, so enabling it is a per-book style decision. Only takes effect under `squeeze-mode=context` (the `ltc-cn-vbook` / `ltc-tw-vbook` default).
 
 ## Mixed Chinese-Western Text (clreq)
-
-> ⚠️ Not yet in a release (latest is v0.3.8) — get it from the main branch.
 
 ### CJK-Western spacing
 

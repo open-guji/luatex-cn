@@ -8,8 +8,6 @@ English | [中文版](Horizontal)
 
 The rule kernel lives in `tex/shared/` (the full clreq punctuation table, a one-dimensional priority space allocator, and the four-level kinsoku module) and is shared with the vertical engine — one source of truth for both writing modes.
 
-> ⚠️ **Not yet in a release** (the latest release is v0.3.8). Get it from the [main branch](https://github.com/open-guji/luatex-cn).
-
 > **Prerequisites**
 > - Requires **LuaTeX** (`lualatex`); other engines abort with an error.
 > - **Mutually exclusive with luatexja.** `ctex` loads luatexja under LuaLaTeX; both insert CJK spacing and line-break penalties in the same callbacks, so loading both double-processes every paragraph. The package detects this and errors out. Use one or the other.

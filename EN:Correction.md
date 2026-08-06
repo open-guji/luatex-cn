@@ -83,7 +83,7 @@ Preset commands for marking text according to classical or modern standards.
 | `color` | `颜色` | `black` | Mark color |
 | `skip-punct` | `跳过标点` | `false` | No emphasis marks on punctuation (clreq 5.3.1) |
 
-**Per-class defaults** (main branch): `ltc-guji` keeps the traditional quandian convention — hollow circle `○` on every character including punctuation; `ltc-cn-vbook` / `ltc-tw-vbook` preset `char=●, skip-punct=true`, i.e. the solid dot with no marks on punctuation as specified by clreq 5.3.1.
+**Per-class defaults** (since v0.4.0): `ltc-guji` keeps the traditional quandian convention — hollow circle `○` on every character including punctuation; `ltc-cn-vbook` / `ltc-tw-vbook` preset `char=●, skip-punct=true`, i.e. the solid dot with no marks on punctuation as specified by clreq 5.3.1.
 
 > Taiwan note: the Ministry of Education's Punctuation Guidance (2008 revision) does not include this mark, though it still appears in publishing practice; `ltc-tw-vbook` takes clreq's generic form (`●`), changeable per book via `\着重号设置{char=…}`.
 

@@ -8,8 +8,6 @@
 
 规则内核放在 `tex/shared/`（clreq 附录标点全表、一维优先级空间分配器、四级禁则模块），与竖排共用同一份数据源。
 
-> ⚠️ **本页功能尚未进入发行版**（最新发行版为 v0.3.8）。请从 [main 分支](https://github.com/open-guji/luatex-cn) 获取。
-
 > **前置条件**
 > - 必须使用 **LuaTeX**（`lualatex`），其他引擎会直接报错。
 > - 与 **luatexja 互斥**。`ctex` 在 LuaLaTeX 下会自动载入 luatexja，两者都在同一批回调里做 CJK 间距与禁则，同时启用会双重处理，宏包检测到会报错。请只用其中一个。

@@ -84,7 +84,7 @@
 
 ## 5. 论辩的魂灵（鲁迅）— 现代横排（clreq）
 
-**文档类**: `article` + `\usepackage{luatex-cn}`（尚未进入发行版，需 main 分支）
+**文档类**: `article` + `\usepackage{luatex-cn}`（v0.4.0 起）
 
 同一篇文章的两种排法对照：繁体部分用 `style=taiwan`（标点居中），简体部分用 `style=mainland` + `quote-style=curly`（原文的直角引号自动转为弯引号，嵌套先双后单）。
 

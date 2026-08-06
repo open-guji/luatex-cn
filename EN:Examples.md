@@ -82,7 +82,7 @@ This directory contains multiple usage examples for the `luatex-cn` package, dem
 
 ### 5. 論辯的魂靈 by Lu Xun — Modern Horizontal (clreq)
 
-**Setup**: `article` + `\usepackage{luatex-cn}` (not yet in a release — main branch).
+**Setup**: `article` + `\usepackage{luatex-cn}` (v0.4.0+).
 
 The same essay set twice for comparison: the traditional-character part uses `style=taiwan` (centered punctuation), the simplified part uses `style=mainland` + `quote-style=curly` (corner quotes converted to curly, double outside and single inside).
 

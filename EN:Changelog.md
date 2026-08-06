@@ -4,6 +4,41 @@ English | [中文版](Changelog)
 
 All notable changes to this project will be documented here.
 
+## [0.4.0] - 2026-08-06
+
+Major clreq release: unified entry point `\usepackage{luatex-cn}`, a complete horizontal clreq pipeline, vertical clreq conformance (P1-P3), a shared rules kernel for both directions, a conformance declaration matrix backed by 119 metric assertions, and installation-free fonts.
+
+Added:
+- ✨ **Unified entry point**: `\usepackage{luatex-cn}` is now the single entry for everything - by default it loads the horizontal clreq pipeline (options pass through, e.g. `[style=taiwan]`); `[vertical]` or banxin-style keys load the vertical bundle (0.3.x semantics unchanged); under an ltc-* class it automatically takes the vertical branch (#148)
+- ✨ **Horizontal clreq pipeline** (luatex-cn-hori): CJK-Western spacing of 1/4 em (compressible to 1/8, stretchable to 1/2, with the three clreq exceptions), punctuation width adjustment with Mainland/Taiwan/none presets, quote style conversion, four-level line-break prohibition plus inseparability rules, second-pass intra-line compression/stretch in clreq priority order, half-width line-end punctuation, hanging punctuation, and even distribution (#127-#131)
+- ✨ **Horizontal interlinear marks**: `\专名` / `\书名号甲` / `\着重` (adjacent marks shrink 1/16 em on each side; no emphasis dots on punctuation), and `\拼音` / `\对照` word-aligned ruby (#129)
+- ✨ **Horizontal paragraph and page level**: avoidance of single-character last lines, widow/orphan control, hanging-indent and indent environments, four last-line alignments, and traditional type sizes via `\字号` (shared with vertical) (#131)
+- ✨ **All three vertical mixed-script configurations** (clreq P3): 1/4 em CJK-Western spacing wired into the solver; `\横置` rotates a Western string 90 degrees clockwise into the column; `\中横排` squeezes a short string (two-to-three digits etc.) horizontally into a single character cell (tate-chu-yoko) (#146, #147, #149)
+- ✨ **Vertical hanging punctuation** (clreq 6.1.3): `\标点设置{punct-hanging=true}` hangs a column-final stop outside the text area; off by default
+- ✨ **Vertical emphasis dots per clreq 5.3.1**: the two vbook classes default to solid dots `●` with no dots on punctuation; `\着重号设置` gains `char` / `scale` / `skip-punct` keys; ltc-guji keeps the classical circle convention
+- ✨ **Shared clreq rules kernel** `tex/shared/`: the full punctuation table, the intra-line space allocation solver, four-level prohibition rules, and ink anchors - a single data source for both directions, pure Lua, unit-testable with texlua (#125)
+- ✨ **clreq conformance matrix** [docs/CLREQ-CONFORMANCE.md](https://github.com/open-guji/luatex-cn/blob/main/docs/CLREQ-CONFORMANCE.md): per-clause status for both directions with evidence, documented intentional deviations, and not-implemented items with rationale
+- ✨ **clreq assertion tests**: 119 metric assertions parsed from PDF content streams (per-glyph x coordinates horizontally, per-column baseline distances vertically), running in CI (#128)
+- ✨ **Installation-free fonts**: `\设置字体族` accepts registry aliases and file paths; `download_fonts.py --user/--dest` installs without admin rights; SHA-256-pinned font manifest (#109, #122, #123)
+- ✨ **Geometry self-check tests**: assert equal baseline spacing per column straight from the PDF, catching whole-glyph offsets without baseline images (#113)
+- ✨ **Example "论辩的魂灵"** (Lu Xun): a real-world document for the horizontal clreq pipeline
+
+Changed:
+- ♻️ **Vertical layout now uses the shared intra-line solver** (clreq P2): 7 compression levels / 2 stretch levels plus a fallback, prohibition resolution by lexicographic comparison; digit runs, Western words and two-width punctuation locked as rigid units; all three ltc-guji baselines unchanged (#143)
+- ♻️ **Context-sensitive vertical punctuation width**: a lone punctuation mark keeps its full cell; only consecutive marks compress. vbook classes default to `squeeze-mode=context`; ltc-guji keeps legacy unconditional squeezing
+- ♻️ **Metrics-driven punctuation ink placement**: glyph bounding boxes anchor the ink to the style's canonical position (Mainland/Taiwan x horizontal/vertical), so the font's own glyph design no longer shifts layout
+- ♻️ **`\标点设置` unified with the horizontal backend**: new `style` / `squeeze-mode` / `adjacent-punct` / `line-start-bracket` / `line-end-punct` keys
+
+Fixed:
+- 🐛 **Vertical inline-note bracket ink in the correct half-cell** (clreq 6.3.2.1), anchored by ink-center offset and consistent across four fonts (fix #105)
+- 🐛 **Em dashes / ellipses as rigid two-cell units**: never split across columns, zero internal spacing so consecutive dashes join into one stroke; ccmp ligatures decomposed back to em dashes (fix #119)
+- 🐛 **Footnote label geometry**: labels excluded from punctuation width adjustment; brackets scaled and centered on real ink; Chinese numerals up to thousands
+- 🐛 **In-cell vertical centering now uses the em-box baseline**, fixing whole-glyph offsets for characters like 一 and 丶 whose ink does not cross the baseline (#113)
+- 🐛 Others: decoration mark misplacement (#118), digital-mode empty left sub-column (#120), column-break guard (#108), `os.name` platform detection (#100), `run_all.lua` swallowing failures (#121)
+
+Maintenance:
+- ✅ Tests and examples moved entirely to verifiably-licensed open fonts; pixel-exact zero-tolerance regression baselines; CI runs unit + regression tests on every PR (#101, #106-#117)
+
 ## [0.3.8] - 2026-05-09
 
 New gongche notation commands, tone-mark decorations, side note background color, and multiple sidenote/layout fixes.

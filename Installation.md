@@ -61,6 +61,12 @@ sudo pacman -S texlive
    texhash
    ```
 
+5. **（可选）安装 PDF 手册**：将压缩包中 `doc/` 下的内容（`luatex-cn-wiki-zh.pdf` / `luatex-cn-wiki-en.pdf` 等）放入：
+   ```
+   texmf/doc/latex/luatex-cn/
+   ```
+   之后即可用 `texdoc luatex-cn` 直接打开 PDF 手册（v0.4.0 起 Release 压缩包内含 `doc/`）。
+
 ### 方法 2：通过 CTAN 包管理器安装
 
 ```bash
@@ -71,7 +77,7 @@ tlmgr install luatex-cn
 # 打开 MiKTeX Console → Packages → 搜索 luatex-cn → 安装
 ```
 
-> **注意**：目前 CTAN 版本（v0.1.1）落后于 GitHub（v0.2.8），建议使用方法 1。
+> **注意**：CTAN 版本可能落后于 GitHub Release，建议使用方法 1。经 CTAN/包管理器安装时文档随包进入 texmf 文档树，`texdoc luatex-cn` 可直接打开 PDF 手册。
 
 ### 方法 3：直接放到项目目录
 

@@ -16,7 +16,7 @@ tlmgr install luatex-cn
 # Open MiKTeX Console → Packages → Search for luatex-cn
 ```
 
-> ⚠️ **Note**: The CTAN version may lag behind GitHub. We recommend using GitHub Release.
+> ⚠️ **Note**: The CTAN version may lag behind GitHub. We recommend using GitHub Release. When installed via CTAN/package manager, the documentation lands in the texmf doc tree automatically, so `texdoc luatex-cn` opens the PDF manual out of the box.
 
 ## Method 2: Manual Installation from GitHub Release
 
@@ -35,6 +35,12 @@ tlmgr install luatex-cn
    ```bash
    texhash
    ```
+
+5. **(Optional) Install the PDF manuals**: put the contents of `doc/` (`luatex-cn-wiki-zh.pdf` / `luatex-cn-wiki-en.pdf`, etc.) into:
+   ```
+   texmf/doc/latex/luatex-cn/
+   ```
+   After that, `texdoc luatex-cn` opens the PDF manual directly (the release zip ships `doc/` since v0.4.0).
 
 ## Method 3: Direct Usage
 

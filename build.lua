@@ -513,12 +513,36 @@ local function ctan_custom()
   for _, doc in ipairs(docfiles) do
     if path_exists(doc) then
       print("  Copying: " .. doc)
-      copy_path(doc, join_path(staging_path, doc))
+      local dest = join_path(staging_path, doc)
+      -- 目标含子目录（如 docs/CLREQ-CONFORMANCE.md）时先建父目录，
+      -- 否则 cp 静默失败、文件缺包
+      local parent = dest:match("^(.*)[/\\][^/\\]+$")
+      if parent and not is_dir(parent) then
+        if sep == "\\" then
+          os.execute('mkdir "' .. parent .. '" 2>nul')
+        else
+          os.execute('mkdir -p "' .. parent .. '"')
+        end
+      end
+      copy_path(doc, dest)
     end
   end
 
   -- Step 6: Post-process (copy tex folder, Chinese folders, translate names)
   post_process_ctan(staging_path)
+
+  -- Step 6.5: Prune junk files picked up from the working tree
+  -- (.DS_Store/__pycache__ 等只存在于本地目录，CI 干净 checkout 没有，
+  --  但本地打包会被 cp -r 整目录带入)
+  print("\n>>> Pruning junk files...")
+  if sep == "\\" then
+    os.execute('for /d /r "' .. staging_path .. '" %d in (__pycache__) do @if exist "%d" rd /s /q "%d"')
+    os.execute('del /s /q "' .. staging_path .. '\\.DS_Store" 2>nul')
+    os.execute('del /s /q "' .. staging_path .. '\\Thumbs.db" 2>nul')
+  else
+    os.execute('find "' .. staging_path .. '" \\( -name __pycache__ -type d \\) -prune -exec rm -rf {} + 2>/dev/null')
+    os.execute('find "' .. staging_path .. '" \\( -name .DS_Store -o -name Thumbs.db -o -name "*.pyc" \\) -delete 2>/dev/null')
+  end
 
   -- Step 7: Create final zip
   print("\n>>> Creating CTAN archive...")

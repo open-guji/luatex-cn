@@ -206,14 +206,14 @@
           \dim_set:Nn \l_tmpa_dim { \l__luatexcn_textbox_font_size_tl }
           \fontsize{\l_tmpa_dim}{\l_tmpa_dim}\selectfont
         }
-    % Inner line length: if height specified, constrain it; otherwise use max for auto-sizing
-    \tl_if_empty:NTF \l__luatexcn_textbox_height_tl
-      { \dim_set_eq:NN \hsize \c_max_dim }
-      {
-        \exp_args:NnV \regex_match:nnTF { [^0-9\.] } \l__luatexcn_textbox_height_tl
-          { \dim_set:Nn \hsize { \l__luatexcn_textbox_height_tl } }
-          { \dim_set:Nn \hsize { \l__luatexcn_textbox_inner_gh_dim * \l__luatexcn_textbox_height_tl } }
-      }
+    % Inner line length: always max — column wrapping is done by the grid
+    % layout (col_limit = height), not by TeX's line breaker. Letting TeX
+    % pre-break at height*grid_height splits Western words with hyphens and
+    % misaligns columns (issue #50): TeX measures Latin letters at natural
+    % width while the grid gives every glyph a full cell.
+    \dim_set_eq:NN \hsize \c_max_dim
+    \dim_set_eq:NN \hfuzz \c_max_dim
+    \int_set:Nn \hbadness { 10000 }
     #2
     }
 

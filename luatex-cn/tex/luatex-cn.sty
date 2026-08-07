@@ -1,0 +1,148 @@
+% Copyright 2026 Open-Guji (https://github.com/open-guji)
+%
+% Licensed under the Apache License, Version 2.0 (the "License");
+% you may not use this file except in compliance with the License.
+% You may obtain a copy of the License at
+%
+%     http://www.apache.org/licenses/LICENSE-2.0
+%
+% Unless required by applicable law or agreed to in writing, software
+% distributed under the License is distributed on an "AS IS" BASIS,
+% WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+% See the License for the specific language governing permissions and
+% limitations under the License.
+
+% luatex-cn.sty — 本包全部行为的统一入口（unified entry point）。
+%
+%   \usepackage[style=taiwan]{luatex-cn}   % 横排：clreq 管道（默认分支），
+%                                          %   选项原样透传给 luatex-cn-hori
+%   \usepackage[vertical]{luatex-cn}       % 竖排 bundle：core + banxin
+%                                          %   （0.3.x 的历史行为）
+%
+% 分支判定（从上到下，先命中者胜）：
+%   1. 显式 [vertical] / [horizontal]；
+%   2. 给了 banxin / no-banxin 键 → 竖排（这两个键只对竖排 bundle 有意义，
+%      0.3.x 的 \usepackage[no-banxin]{luatex-cn} 老用法因此原样不变）；
+%   3. luatex-cn-core 已加载（ltc-guji / ltc-cn-vbook 等文档类之下）
+%      → 竖排分支（各 RequirePackage 均为 no-op，与 0.3.x 行为一致）；
+%   4. 其余 → 横排。竖排的入口本来就是 ltc-* 文档类；宏包形态的入口
+%      只有横排在用，故裸 \usepackage{luatex-cn} 给最常见的那个。
+%
+\NeedsTeXFormat{LaTeX2e}
+\RequirePackage{expl3}
+\RequirePackage{l3keys2e}
+\ProvidesExplPackage {luatex-cn} {2026/08/07} {0.4.1}
+  {Chinese typesetting for LuaTeX (unified entry)}
+
+% ============================================================================
+% Package Options
+% ============================================================================
+\bool_new:N \g_luatexcn_banxin_bool
+\bool_new:N \g_luatexcn_no_banxin_bool
+% banxin 默认开（0.3.x 语义）。注意不能用 banxin 键的 .initial —— 它会
+% 触发该键的 .code，把「隐含竖排」的标志一并置位
+\bool_gset_true:N \g_luatexcn_banxin_bool
+\bool_new:N \g__luatexcn_entry_vertical_bool
+\bool_new:N \g__luatexcn_entry_horizontal_bool
+\tl_new:N \g__luatexcn_entry_hori_opts_tl
+
+\keys_define:nn { luatexcn }
+  {
+    vertical .code:n =
+      { \bool_gset_true:N \g__luatexcn_entry_vertical_bool },
+    horizontal .code:n =
+      { \bool_gset_true:N \g__luatexcn_entry_horizontal_bool },
+    banxin .code:n =
+      {
+        \bool_gset_true:N \g__luatexcn_entry_vertical_bool
+        \bool_gset_true:N \g_luatexcn_banxin_bool
+      },
+    banxin .default:n = { true },
+    no-banxin .code:n =
+      {
+        \bool_gset_true:N \g__luatexcn_entry_vertical_bool
+        \bool_gset_true:N \g_luatexcn_no_banxin_bool
+      },
+    % 其余键收集后原样透传给横排管道（竖排分支下若给了这些键，
+    % 会在 PassOptionsToPackage 之前被丢弃并警告）
+    unknown .code:n =
+      {
+        \tl_if_novalue:nTF { #1 }
+          {
+            \tl_gput_right:Nx \g__luatexcn_entry_hori_opts_tl
+              { \l_keys_key_str , }
+          }
+          {
+            \tl_gput_right:Nx \g__luatexcn_entry_hori_opts_tl
+              { \l_keys_key_str = \exp_not:n { #1 } , }
+          }
+      },
+  }
+
+\ProcessKeysOptions { luatexcn }
+
+% If no-banxin is explicitly set, override banxin
+\bool_if:NT \g_luatexcn_no_banxin_bool
+  {
+    \bool_set_false:N \g_luatexcn_banxin_bool
+  }
+
+% ============================================================================
+% Branch decision
+% ============================================================================
+\msg_new:nnn { luatex-cn } { both-modes }
+  { Options~'vertical'~and~'horizontal'~are~mutually~exclusive. }
+\msg_new:nnn { luatex-cn } { opts-ignored-vertical }
+  { Option(s)~'#1'~are~for~the~horizontal~pipeline~and~are~ignored~
+    in~vertical~mode. }
+
+\bool_lazy_and:nnT
+  { \g__luatexcn_entry_vertical_bool } { \g__luatexcn_entry_horizontal_bool }
+  { \msg_error:nn { luatex-cn } { both-modes } }
+
+% 规则 3：ltc-* 文档类之下（luatex-cn-core 已加载）默认竖排分支
+\bool_if:NF \g__luatexcn_entry_horizontal_bool
+  {
+    \@ifpackageloaded { luatex-cn-core }
+      { \bool_gset_true:N \g__luatexcn_entry_vertical_bool } { }
+  }
+
+% ============================================================================
+% Load Sub-packages
+% ============================================================================
+\bool_if:NTF \g__luatexcn_entry_vertical_bool
+  {
+    % 竖排 bundle（0.3.x 的历史行为）：
+    % core（竖排引擎 + 页面/拆页）与版心
+    \tl_if_empty:NF \g__luatexcn_entry_hori_opts_tl
+      {
+        \msg_warning:nnx { luatex-cn } { opts-ignored-vertical }
+          { \tl_use:N \g__luatexcn_entry_hori_opts_tl }
+      }
+    % geometry 是引擎运行的前提（\正文 里要 \newgeometry），ltc-* 文档类
+    % 都自带；0.3.x 的 bundle 漏了它，article 之下从来跑不起来
+    \RequirePackage{geometry}
+    \RequirePackage{luatex-cn-core}
+    \RequirePackage{banxin/luatex-cn-banxin}
+  }
+  {
+    % 横排：clreq 管道（实现在 luatex-cn-hori，选项原样透传）
+    \exp_args:NV \PassOptionsToPackage \g__luatexcn_entry_hori_opts_tl
+      { luatex-cn-hori }
+    \RequirePackage{luatex-cn-hori}
+  }
+
+% ============================================================================
+% Version info
+% ============================================================================
+\tl_const:Nn \c_luatexcn_version_tl {0.4.1}
+\cs_new:Npn \luatexcnversion { \c_luatexcn_version_tl }
+
+\PackageInfo { luatex-cn }
+  { Chinese~typesetting~\tl_use:N \c_luatexcn_version_tl \space loaded~
+    ( \bool_if:NTF \g__luatexcn_entry_vertical_bool
+        { vertical~bundle } { horizontal~clreq~pipeline } ) }
+
+\ExplSyntaxOff%
+%
+\endinput%

@@ -1,0 +1,507 @@
+% Copyright 2026 Open-Guji (https://github.com/open-guji)
+%
+% Licensed under the Apache License, Version 2.0 (the "License");
+% you may not use this file except in compliance with the License.
+% You may obtain a copy of the License at
+%
+%     http://www.apache.org/licenses/LICENSE-2.0
+%
+% Unless required by applicable law or agreed to in writing, software
+% distributed under the License is distributed on an "AS IS" BASIS,
+% WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+% See the License for the specific language governing permissions and
+% limitations under the License.
+% luatex-cn-decorate.sty
+% Character decoration support for vertical typesetting
+% This is a subpackage of luatex_cn
+%
+\RequirePackage{expl3}
+\RequirePackage{xparse}
+\ProvidesExplPackage {decorate/luatex-cn-decorate} {2026/08/07} {0.4.1} {Character Decoration Support}
+
+% Decorate Command - Apply decoration to each character in content
+% Syntax: \decorate[char=。, color=red, xshift=0pt, yshift=0pt]{content}
+% Each character in {content} will have the decoration character applied
+
+\tl_new:N \l__luatexcn_decorate_char_tl
+\tl_new:N \l__luatexcn_decorate_color_tl
+\tl_new:N \l__luatexcn_decorate_xshift_tl
+\tl_new:N \l__luatexcn_decorate_yshift_tl
+\tl_new:N \l__luatexcn_decorate_font_size_tl
+\tl_new:N \l__luatexcn_decorate_scale_tl
+
+\keys_define:nn { luatexcn / decorate }
+  {
+    char .tl_set:N = \l__luatexcn_decorate_char_tl,
+    char .initial:n = 。,
+    color .tl_set:N = \l__luatexcn_decorate_color_tl,
+    color .initial:n = red,
+    xshift .tl_set:N = \l__luatexcn_decorate_xshift_tl,
+    xshift .initial:n = 0pt,
+    yshift .tl_set:N = \l__luatexcn_decorate_yshift_tl,
+    yshift .initial:n = 0pt,
+    font-size .tl_set:N = \l__luatexcn_decorate_font_size_tl,
+    font-size .initial:n = ,
+    scale .tl_set:N = \l__luatexcn_decorate_scale_tl,
+    scale .initial:n = 1.0,
+  }
+
+% Internal command to add decoration marker after current character
+\cs_new:Npn \__luatexcn_decorate_one:n #1 {
+  #1
+  \lua_now:e {
+    local~constants~=~require('core.luatex-cn-constants')
+    constants.register_decorate(
+      "\luaescapestring{\l__luatexcn_decorate_char_tl}",
+      "\luaescapestring{\l__luatexcn_decorate_xshift_tl}",
+      "\luaescapestring{\l__luatexcn_decorate_yshift_tl}",
+      "\luaescapestring{\l__luatexcn_decorate_font_size_tl}",
+      "\luaescapestring{\l__luatexcn_decorate_color_tl}",
+      font.current(),
+      "\luaescapestring{\l__luatexcn_decorate_scale_tl}"
+    )
+  }
+  \box0\scan_stop:
+}
+
+\NewDocumentCommand{\decorateSetup}{ m }
+  {
+    \keys_set:nn { luatexcn / decorate } { #1 }
+  }
+
+\NewDocumentCommand{\decorate}{ O{} m }{%
+  \group_begin:
+    \keys_set:nn { luatexcn / decorate } { #1 }
+    \tl_map_function:nN { #2 } \__luatexcn_decorate_one:n
+  \group_end:
+}
+
+% ============================================================================
+% CJK Key Aliases (中文键值别名)
+% ============================================================================
+
+% --- decorate namespace ---
+\keys_define:nn { luatexcn / decorate }
+  {
+    字符 .tl_set:N = \l__luatexcn_decorate_char_tl,
+    颜色 .tl_set:N = \l__luatexcn_decorate_color_tl,
+    顏色 .tl_set:N = \l__luatexcn_decorate_color_tl,
+    横偏 .tl_set:N = \l__luatexcn_decorate_xshift_tl,
+    橫偏 .tl_set:N = \l__luatexcn_decorate_xshift_tl,
+    横移 .tl_set:N = \l__luatexcn_decorate_xshift_tl,
+    橫移 .tl_set:N = \l__luatexcn_decorate_xshift_tl,
+    纵偏 .tl_set:N = \l__luatexcn_decorate_yshift_tl,
+    縱偏 .tl_set:N = \l__luatexcn_decorate_yshift_tl,
+    纵移 .tl_set:N = \l__luatexcn_decorate_yshift_tl,
+    縱移 .tl_set:N = \l__luatexcn_decorate_yshift_tl,
+    字号 .tl_set:N = \l__luatexcn_decorate_font_size_tl,
+    字號 .tl_set:N = \l__luatexcn_decorate_font_size_tl,
+    缩放 .tl_set:N = \l__luatexcn_decorate_scale_tl,
+    縮放 .tl_set:N = \l__luatexcn_decorate_scale_tl,
+  }
+
+% ============================================================================
+% EmphasisMark (着重号/圈点) - Convenience command for emphasis marking
+% Applies a circle mark (。) to the right side of each character
+% Syntax: \EmphasisMark[color=red]{content}
+% ============================================================================
+\tl_new:N \l__luatexcn_emphasis_color_tl
+\tl_new:N \l__luatexcn_emphasis_char_tl
+\tl_new:N \l__luatexcn_emphasis_scale_tl
+\bool_new:N \l__luatexcn_emphasis_skip_punct_bool
+
+% char / scale 的默认值是古籍圈点体例（空心圈 ○），保持 ltc-guji 版面不变；
+% clreq 5.3.1 规定的着重号是**实心圆点**，vbook 两类在各自的 cfg 里改到
+% char=●（分档依据同 punct 的 squeeze-mode，见 CLREQ-GAP-ANALYSIS 风险 R5）。
+% skip-punct：clreq「标点符号上不加着重号」，同样按类分档。
+\keys_define:nn { luatexcn / emphasis }
+  {
+    color .tl_set:N = \l__luatexcn_emphasis_color_tl,
+    color .initial:n = black,
+    char .tl_set:N = \l__luatexcn_emphasis_char_tl,
+    char .initial:n = ○,
+    scale .tl_set:N = \l__luatexcn_emphasis_scale_tl,
+    scale .initial:n = 0.3,
+    skip-punct .bool_set:N = \l__luatexcn_emphasis_skip_punct_bool,
+    skip-punct .initial:n = false,
+  }
+
+% --- emphasis namespace CJK aliases ---
+\keys_define:nn { luatexcn / emphasis }
+  {
+    颜色 .tl_set:N = \l__luatexcn_emphasis_color_tl,
+    顏色 .tl_set:N = \l__luatexcn_emphasis_color_tl,
+    字符 .tl_set:N = \l__luatexcn_emphasis_char_tl,
+    缩放 .tl_set:N = \l__luatexcn_emphasis_scale_tl,
+    縮放 .tl_set:N = \l__luatexcn_emphasis_scale_tl,
+    跳过标点 .bool_set:N = \l__luatexcn_emphasis_skip_punct_bool,
+    跳過標點 .bool_set:N = \l__luatexcn_emphasis_skip_punct_bool,
+  }
+
+% ============================================================================
+% EmphasisMark Global Setup
+% ============================================================================
+\NewDocumentCommand{\emphasisMarkSetup}{ m }
+  {
+    \keys_set:nn { luatexcn / emphasis } { #1 }
+  }
+
+% ============================================================================
+% CJK Aliases (中文别名)
+% ============================================================================
+% Simplified Chinese / 简体
+\NewCommandCopy{\装饰}{\decorate}
+\NewCommandCopy{\装饰设置}{\decorateSetup}
+
+% clreq 5.3.1「标点符号上不加着重号」：skip-punct 开启时逐字判定基字，
+% 标点只输出、不注册装饰。判定在 Lua 侧走共享标点表（decorate.is_punct_char），
+% 与横排 hori-linemark 同一口径。
+\cs_new:Npn \__luatexcn_emphasis_one:n #1 {
+  \bool_if:NTF \l__luatexcn_emphasis_skip_punct_bool
+    {
+      \str_if_eq:eeTF
+        {
+          \lua_now:e
+            {
+              local~d~=~require('decorate/luatex-cn-decorate')
+              tex.sprint(d.is_punct_char("\luaescapestring{#1}")~and~"P"~or~"N")
+            }
+        }
+        { P }
+        { #1 }
+        { \__luatexcn_decorate_one:n { #1 } }
+    }
+    { \__luatexcn_decorate_one:n { #1 } }
+}
+
+\NewDocumentCommand{\EmphasisMark}{ O{} m }{%
+  \group_begin:
+    \keys_set:nn { luatexcn / emphasis } { #1 }
+    \group_begin:
+      \keys_set:nn { luatexcn / decorate }
+        {
+          char = \l__luatexcn_emphasis_char_tl,
+          scale = \l__luatexcn_emphasis_scale_tl,
+          xshift = -0.7em,
+          color = \l__luatexcn_emphasis_color_tl,
+        }
+      \tl_map_function:nN { #2 } \__luatexcn_emphasis_one:n
+    \group_end:
+  \group_end:
+}
+
+\NewCommandCopy{\着重号}{\EmphasisMark}
+\NewCommandCopy{\着重号设置}{\emphasisMarkSetup}
+\NewCommandCopy{\圈点设置}{\emphasisMarkSetup}
+
+% ============================================================================
+% 改 (Fix/Correction) Command - Mark a character as corrected
+% Used in classical Chinese text editing: 甲\改{乙} means "甲 is corrected to 乙"
+% This overlays a 、(deletion mark) on the previous character and places the
+% replacement character at bottom-right corner at half the font size
+% Syntax: \改{replacement character}
+\NewDocumentCommand{\fix}{ m }{%
+  \group_begin:
+    % First: overlay a 、 symbol to mark deletion (centered on the character)
+    % yshift=0.15em nudges the scaled 、 downward for better vertical centering
+    \lua_now:e {
+      local~constants~=~require('core.luatex-cn-constants')
+      constants.register_decorate(
+        "、",
+        "0em",
+        "0.15em",
+        nil,
+        "black",
+        nil,
+        2
+      )
+    }%
+    \box0\scan_stop:
+    % Second: add the replacement character at bottom-right, half size
+    \lua_now:e {
+      local~constants~=~require('core.luatex-cn-constants')
+      constants.register_decorate(
+        "\luaescapestring{#1}",
+        "-0.6em",
+        "0.5em",
+        nil,
+        "black",
+        nil,
+        0.6
+      )
+    }%
+    \box0\scan_stop:
+  \group_end:
+}
+
+\NewCommandCopy{\改}{\fix}
+% Traditional Chinese / 繁体
+\NewCommandCopy{\裝飾}{\decorate}
+\NewCommandCopy{\裝飾設置}{\decorateSetup}
+\NewCommandCopy{\著重號}{\EmphasisMark}
+\NewCommandCopy{\著重號設置}{\emphasisMarkSetup}
+
+% ============================================================================
+% FaSheng (发圈/圈发) - 平上去入声调圈点
+% Reference: 宋岳珂《九经三传沿革例》"音有平上去入之分，则随圈发"
+% Convention: 平=左下 上=左上 去=右上 入=右下
+% Sign convention from decorate.lua: xshift>0 = visual LEFT (toward next column),
+%                                     yshift>0 = visual DOWN (toward next char).
+% Syntax:
+%   \发圈[平]{字}                   bare tone shorthand
+%   \发圈[声=去, 颜色=red]{字}     explicit keys
+%   \发圈批{平上去入}{春夏秋冬}     parallel batch
+% ============================================================================
+\tl_new:N \l__luatexcn_fasheng_tone_tl
+\tl_new:N \l__luatexcn_fasheng_color_tl
+\tl_new:N \l__luatexcn_fasheng_char_tl
+\tl_new:N \l__luatexcn_fasheng_scale_tl
+\tl_new:N \l__luatexcn_fasheng_offset_tl
+\tl_new:N \l__luatexcn_fasheng_xshift_tl
+\tl_new:N \l__luatexcn_fasheng_yshift_tl
+
+\keys_define:nn { luatexcn / fasheng }
+  {
+    tone .tl_set:N = \l__luatexcn_fasheng_tone_tl,
+    tone .initial:n = ping,
+    color .tl_set:N = \l__luatexcn_fasheng_color_tl,
+    color .initial:n = black,
+    char .tl_set:N = \l__luatexcn_fasheng_char_tl,
+    char .initial:n = ○,
+    scale .tl_set:N = \l__luatexcn_fasheng_scale_tl,
+    scale .initial:n = 0.3,
+    offset .tl_set:N = \l__luatexcn_fasheng_offset_tl,
+    offset .initial:n = 0.45em,
+    % CJK aliases for value keys
+    声 .tl_set:N = \l__luatexcn_fasheng_tone_tl,
+    聲 .tl_set:N = \l__luatexcn_fasheng_tone_tl,
+    颜色 .tl_set:N = \l__luatexcn_fasheng_color_tl,
+    顏色 .tl_set:N = \l__luatexcn_fasheng_color_tl,
+    字符 .tl_set:N = \l__luatexcn_fasheng_char_tl,
+    缩放 .tl_set:N = \l__luatexcn_fasheng_scale_tl,
+    縮放 .tl_set:N = \l__luatexcn_fasheng_scale_tl,
+    偏移 .tl_set:N = \l__luatexcn_fasheng_offset_tl,
+    % Bare tone shortcuts (no value): \发圈[平]{字}
+    平 .meta:n = { tone = ping },
+    上 .meta:n = { tone = shang },
+    去 .meta:n = { tone = qu },
+    入 .meta:n = { tone = ru },
+    平声 .meta:n = { tone = ping },
+    上声 .meta:n = { tone = shang },
+    去声 .meta:n = { tone = qu },
+    入声 .meta:n = { tone = ru },
+    平聲 .meta:n = { tone = ping },
+    上聲 .meta:n = { tone = shang },
+    去聲 .meta:n = { tone = qu },
+    入聲 .meta:n = { tone = ru },
+    ping .meta:n = { tone = ping },
+    shang .meta:n = { tone = shang },
+    qu .meta:n = { tone = qu },
+    ru .meta:n = { tone = ru },
+  }
+
+% Resolve xshift/yshift from tone using current offset value
+\cs_new_protected:Npn \__luatexcn_fasheng_resolve:
+  {
+    \str_case:VnF \l__luatexcn_fasheng_tone_tl
+      {
+        { ping }
+          {
+            \tl_set:Nx \l__luatexcn_fasheng_xshift_tl
+              { \l__luatexcn_fasheng_offset_tl }
+            \tl_set:Nx \l__luatexcn_fasheng_yshift_tl
+              { \l__luatexcn_fasheng_offset_tl }
+          }
+        { shang }
+          {
+            \tl_set:Nx \l__luatexcn_fasheng_xshift_tl
+              { \l__luatexcn_fasheng_offset_tl }
+            \tl_set:Nx \l__luatexcn_fasheng_yshift_tl
+              { -\l__luatexcn_fasheng_offset_tl }
+          }
+        { qu }
+          {
+            \tl_set:Nx \l__luatexcn_fasheng_xshift_tl
+              { -\l__luatexcn_fasheng_offset_tl }
+            \tl_set:Nx \l__luatexcn_fasheng_yshift_tl
+              { -\l__luatexcn_fasheng_offset_tl }
+          }
+        { ru }
+          {
+            \tl_set:Nx \l__luatexcn_fasheng_xshift_tl
+              { -\l__luatexcn_fasheng_offset_tl }
+            \tl_set:Nx \l__luatexcn_fasheng_yshift_tl
+              { \l__luatexcn_fasheng_offset_tl }
+          }
+      }
+      {
+        \tl_set:Nx \l__luatexcn_fasheng_xshift_tl
+          { \l__luatexcn_fasheng_offset_tl }
+        \tl_set:Nx \l__luatexcn_fasheng_yshift_tl
+          { \l__luatexcn_fasheng_offset_tl }
+      }
+  }
+
+\NewDocumentCommand{\fashengSetup}{ m }
+  {
+    \keys_set:nn { luatexcn / fasheng } { #1 }
+  }
+
+\NewDocumentCommand{\faSheng}{ O{} m }
+  {
+    \group_begin:
+      \keys_set:nn { luatexcn / fasheng } { #1 }
+      \__luatexcn_fasheng_resolve:
+      \decorate
+        [
+          char = \l__luatexcn_fasheng_char_tl,
+          color = \l__luatexcn_fasheng_color_tl,
+          scale = \l__luatexcn_fasheng_scale_tl,
+          xshift = \l__luatexcn_fasheng_xshift_tl,
+          yshift = \l__luatexcn_fasheng_yshift_tl,
+        ]
+        { #2 }
+    \group_end:
+  }
+
+% Batch: \fashengBatch{tones}{chars} — parallel pairwise application
+\cs_new_protected:Npn \__luatexcn_fasheng_pair:nn #1 #2
+  {
+    \tl_if_blank:nF { #2 } { \faSheng [ #1 ] { #2 } }
+  }
+
+\NewDocumentCommand{\fashengBatch}{ m m }
+  {
+    \group_begin:
+      \int_zero:N \l_tmpa_int
+      \tl_map_inline:nn { #1 }
+        {
+          \int_incr:N \l_tmpa_int
+          \exp_args:Nne \__luatexcn_fasheng_pair:nn
+            { ##1 }
+            { \tl_item:nn {#2} { \int_use:N \l_tmpa_int } }
+        }
+    \group_end:
+  }
+
+% CJK aliases
+\NewCommandCopy{\发圈}{\faSheng}
+\NewCommandCopy{\發圈}{\faSheng}
+\NewCommandCopy{\圈发}{\faSheng}
+\NewCommandCopy{\圈發}{\faSheng}
+\NewCommandCopy{\发圈设置}{\fashengSetup}
+\NewCommandCopy{\發圈設置}{\fashengSetup}
+\NewCommandCopy{\发圈批}{\fashengBatch}
+\NewCommandCopy{\發圈批}{\fashengBatch}
+
+% Per-tone shortcut commands.
+% User options come first in the keylist; tone is enforced LAST so it can't be
+% overridden — \平声[声=去]{字} stays 平.
+\NewDocumentCommand{\平声}{ O{} m } { \faSheng [ #1 , tone = ping  ] { #2 } }
+\NewDocumentCommand{\上声}{ O{} m } { \faSheng [ #1 , tone = shang ] { #2 } }
+\NewDocumentCommand{\去声}{ O{} m } { \faSheng [ #1 , tone = qu    ] { #2 } }
+\NewDocumentCommand{\入声}{ O{} m } { \faSheng [ #1 , tone = ru    ] { #2 } }
+\NewCommandCopy{\平聲}{\平声}
+\NewCommandCopy{\上聲}{\上声}
+\NewCommandCopy{\去聲}{\去声}
+\NewCommandCopy{\入聲}{\入声}
+
+% ============================================================================
+% Underline / WavyUnderline - Now provided by luatex-cn-linemark.sty
+% The old glyph-based implementation has been replaced with PDF line drawing.
+% Commands \Underline, \WavyUnderline, \下划线, \波浪线 etc. are defined there.
+% ============================================================================
+
+% ============================================================================
+% SideText (旁注) - Small text on left/right sides of a character
+% Used in genealogy typesetting to annotate individual characters.
+% New API: \SideText{主字}{右内容}{左内容?}
+%   #1 = main character (mandatory)
+%   #2 = right side content (mandatory)
+%   #3 = left side content (optional, g-type brace-delimited)
+% Per-side formatting: use \文本框 inside content, not options on \旁注.
+% Global defaults (scale, color, offset) can be set via \sideTextSetup.
+% ============================================================================
+
+\tl_new:N \l__luatexcn_sidetext_scale_tl
+\tl_new:N \l__luatexcn_sidetext_color_tl
+\tl_new:N \l__luatexcn_sidetext_offset_tl
+\box_new:N \l__luatexcn_sidetext_right_box
+
+\keys_define:nn { luatexcn / sidetext }
+  {
+    scale .tl_set:N = \l__luatexcn_sidetext_scale_tl,
+    scale .initial:n = 0.5,
+    color .tl_set:N = \l__luatexcn_sidetext_color_tl,
+    color .initial:n = black,
+    offset .tl_set:N = \l__luatexcn_sidetext_offset_tl,
+    offset .initial:n = 0pt,
+  }
+
+% CJK aliases for sidetext global setup keys
+\keys_define:nn { luatexcn / sidetext }
+  {
+    缩放 .tl_set:N = \l__luatexcn_sidetext_scale_tl,
+    縮放 .tl_set:N = \l__luatexcn_sidetext_scale_tl,
+    颜色 .tl_set:N = \l__luatexcn_sidetext_color_tl,
+    顏色 .tl_set:N = \l__luatexcn_sidetext_color_tl,
+    偏移 .tl_set:N = \l__luatexcn_sidetext_offset_tl,
+  }
+
+% Content is captured in a vbox, supporting both plain text and \文本框.
+% Lua examines the vbox: if it contains a TextBox result (ATTR_TEXTBOX_WIDTH),
+% the box is stored for direct positioning; otherwise chars are extracted
+% for character-by-character rendering.
+\NewDocumentCommand{\SideText}{ m m g }{%
+  \group_begin:
+    #1
+    % Capture right content in a vbox (\文本框 uses \l_tmpa_box, so we use \l_tmpb_box)
+    \vbox_set:Nn \l_tmpb_box { #2 }
+    \IfValueTF{#3}{
+      % Save right box to dedicated register before overwriting \l_tmpb_box
+      \box_set_eq:NN \l__luatexcn_sidetext_right_box \l_tmpb_box
+      % Capture left content
+      \vbox_set:Nn \l_tmpb_box { #3 }
+      \lua_now:e {
+        local~constants~=~require('core.luatex-cn-constants')
+        constants.register_side_text(
+          \int_value:w~\l__luatexcn_sidetext_right_box,
+          \int_value:w~\l_tmpb_box,
+          "\luaescapestring{\l__luatexcn_sidetext_scale_tl}",
+          "\luaescapestring{\l__luatexcn_sidetext_color_tl}",
+          font.current(),
+          "\luaescapestring{\l__luatexcn_sidetext_offset_tl}"
+        )
+      }
+    }{
+      \lua_now:e {
+        local~constants~=~require('core.luatex-cn-constants')
+        constants.register_side_text(
+          \int_value:w~\l_tmpb_box,
+          nil,
+          "\luaescapestring{\l__luatexcn_sidetext_scale_tl}",
+          "\luaescapestring{\l__luatexcn_sidetext_color_tl}",
+          font.current(),
+          "\luaescapestring{\l__luatexcn_sidetext_offset_tl}"
+        )
+      }
+    }
+    \box0\scan_stop:
+  \group_end:
+  \ignorespaces
+}
+
+\NewDocumentCommand{\sideTextSetup}{ m }
+  {
+    \keys_set:nn { luatexcn / sidetext } { #1 }
+  }
+
+% Chinese aliases
+\NewCommandCopy{\旁注}{\SideText}
+\NewCommandCopy{\旁註}{\SideText}
+\NewCommandCopy{\旁注设置}{\sideTextSetup}
+\NewCommandCopy{\旁註設置}{\sideTextSetup}
+
+\ExplSyntaxOff%
+%
+\endinput%

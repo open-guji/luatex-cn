@@ -1,0 +1,183 @@
+% Copyright 2026 Open-Guji (https://github.com/open-guji)
+%
+% Licensed under the Apache License, Version 2.0 (the "License");
+% you may not use this file except in compliance with the License.
+% You may obtain a copy of the License at
+%
+%     http://www.apache.org/licenses/LICENSE-2.0
+%
+% Unless required by applicable law or agreed to in writing, software
+% distributed under the License is distributed on an "AS IS" BASIS,
+% WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+% See the License for the specific language governing permissions and
+% limitations under the License.
+
+% luatex-cn-core-punct.sty
+% Modern punctuation support: squeeze, kinsoku, vertical quotes, hanging
+% Works with both ltc-book and ltc-guji document classes.
+
+\NeedsTeXFormat{LaTeX2e}
+\RequirePackage{expl3}
+\RequirePackage{xparse}
+\ProvidesExplPackage {core/luatex-cn-core-punct}
+  {2026/08/07} {0.4.1} {Modern Punctuation Support for luatex-cn}
+
+\RequirePackage{core/luatex-cn-core-base}
+
+% ============================================================================
+% Load Lua module
+% ============================================================================
+
+\lua_now:n { punct_mod = require('core.luatex-cn-core-punct') }
+
+% ============================================================================
+% Variable Declarations
+% ============================================================================
+
+\tl_new:N \l__luatexcn_punct_style_tl
+\bool_new:N \l__luatexcn_punct_squeeze_bool
+\bool_new:N \l__luatexcn_punct_hanging_bool
+\bool_new:N \l__luatexcn_punct_kinsoku_bool
+\bool_new:N \l__luatexcn_punct_westernspace_bool
+\tl_new:N \l__luatexcn_punct_squeezemode_tl
+\tl_new:N \l__luatexcn_punct_adjacent_tl
+\tl_new:N \l__luatexcn_punct_linestartbracket_tl
+\tl_new:N \l__luatexcn_punct_lineendpunct_tl
+
+% ============================================================================
+% Key Definitions
+% ============================================================================
+
+\keys_define:nn { luatexcn / punct }
+  {
+    punct-style .tl_set:N = \l__luatexcn_punct_style_tl,
+    punct-style .initial:n = {taiwan},
+
+    punct-squeeze .bool_set:N = \l__luatexcn_punct_squeeze_bool,
+    punct-squeeze .initial:n = {true},
+    punct-squeeze .default:n = {true},
+
+    punct-hanging .bool_set:N = \l__luatexcn_punct_hanging_bool,
+    punct-hanging .initial:n = {false},
+    punct-hanging .default:n = {true},
+
+    kinsoku .bool_set:N = \l__luatexcn_punct_kinsoku_bool,
+    kinsoku .initial:n = {true},
+    kinsoku .default:n = {true},
+
+    % clreq 中西间距：汉字与西文字母/数字间 1/4em（可挤 1/8、拉 1/2），
+    % 点号旁与夹注号内侧不加。仅 squeeze-mode=context（vbook 两类）生效。
+    western-space .bool_set:N = \l__luatexcn_punct_westernspace_bool,
+    western-space .initial:n = {true},
+    western-space .default:n = {true},
+
+    % 与横排 (luatexcn/hori) 同名同值的整体风格预设：mainland | taiwan | none
+    % （none = 不调整：既不挤压也不偏靠）。竖排与横排共用同一套预设词汇。
+    style .choices:nn = { mainland , taiwan , none }
+      { \tl_set:Nn \l__luatexcn_punct_style_tl { #1 } },
+
+    % clreq 标点宽度调整的判定方式：
+    %   legacy  = 现行无条件挤压（ltc-guji 默认，版面零变化）
+    %   context = 上下文相关（仅相邻标点 / 行首行尾触发；vbook 两类默认）
+    squeeze-mode .choices:nn = { legacy , context }
+      { \tl_set:Nn \l__luatexcn_punct_squeezemode_tl { #1 } },
+    squeeze-mode .initial:n = { legacy },
+
+    % 连续标点缩减：1.5（clreq 原则调整量）| 1（紧凑风格）| natural（不缩）
+    adjacent-punct .choices:nn = { 1.5 , 1 , natural }
+      { \tl_set:Nn \l__luatexcn_punct_adjacent_tl { #1 } },
+    adjacent-punct .initial:n = { 1.5 },
+
+    % 列首开始夹注符号：trim（缩减始侧半字）| natural
+    line-start-bracket .choices:nn = { trim , natural }
+      { \tl_set:Nn \l__luatexcn_punct_linestartbracket_tl { #1 } },
+    line-start-bracket .initial:n = { trim },
+
+    % 列末点号：compress（缩减末侧半字）| natural
+    line-end-punct .choices:nn = { compress , natural }
+      { \tl_set:Nn \l__luatexcn_punct_lineendpunct_tl { #1 } },
+    line-end-punct .initial:n = { compress },
+  }
+
+% ============================================================================
+% Sync to Lua
+% ============================================================================
+
+\cs_new_protected:Nn \__luatexcn_punct_sync_lua:
+  {
+    \lua_now:e {
+      punct_mod.setup({
+        style~=~[=[\luaescapestring{\tl_use:N~\l__luatexcn_punct_style_tl}]=],
+        squeeze~=~\bool_if:NTF~\l__luatexcn_punct_squeeze_bool
+          {true}{false},
+        hanging~=~\bool_if:NTF~\l__luatexcn_punct_hanging_bool
+          {true}{false},
+        kinsoku~=~\bool_if:NTF~\l__luatexcn_punct_kinsoku_bool
+          {true}{false},
+        squeeze_mode~=~[=[\luaescapestring{\tl_use:N~\l__luatexcn_punct_squeezemode_tl}]=],
+        adjacent_punct~=~[=[\luaescapestring{\tl_use:N~\l__luatexcn_punct_adjacent_tl}]=],
+        line_start_bracket~=~[=[\luaescapestring{\tl_use:N~\l__luatexcn_punct_linestartbracket_tl}]=],
+        line_end_punct~=~[=[\luaescapestring{\tl_use:N~\l__luatexcn_punct_lineendpunct_tl}]=],
+        western_space~=~\bool_if:NTF~\l__luatexcn_punct_westernspace_bool
+          {true}{false},
+      })
+    }
+  }
+
+% Sync defaults on load
+\__luatexcn_punct_sync_lua:
+
+% ============================================================================
+% User Commands
+% ============================================================================
+
+\NewDocumentCommand{\punctSetup}{ m }
+  {
+    \keys_set:nn { luatexcn / punct } { #1 }
+    \__luatexcn_punct_sync_lua:
+  }
+
+% Convenience commands
+\NewDocumentCommand{\大陆标点风格}{}
+  { \punctSetup{punct-style=mainland} }
+\NewDocumentCommand{\台湾标点风格}{}
+  { \punctSetup{punct-style=taiwan} }
+
+% ============================================================================
+% CJK Key Aliases (中文键值别名)
+% ============================================================================
+\keys_define:nn { luatexcn / punct }
+  {
+    标点风格 .tl_set:N = \l__luatexcn_punct_style_tl,
+    標點風格 .tl_set:N = \l__luatexcn_punct_style_tl,
+    风格预设 .tl_set:N = \l__luatexcn_punct_style_tl,
+    風格預設 .tl_set:N = \l__luatexcn_punct_style_tl,
+    宽度调整 .tl_set:N = \l__luatexcn_punct_squeezemode_tl,
+    寬度調整 .tl_set:N = \l__luatexcn_punct_squeezemode_tl,
+    连续标点 .tl_set:N = \l__luatexcn_punct_adjacent_tl,
+    連續標點 .tl_set:N = \l__luatexcn_punct_adjacent_tl,
+    标点压缩 .bool_set:N = \l__luatexcn_punct_squeeze_bool,
+    標點壓縮 .bool_set:N = \l__luatexcn_punct_squeeze_bool,
+    标点悬挂 .bool_set:N = \l__luatexcn_punct_hanging_bool,
+    標點懸掛 .bool_set:N = \l__luatexcn_punct_hanging_bool,
+    禁则 .bool_set:N = \l__luatexcn_punct_kinsoku_bool,
+    禁則 .bool_set:N = \l__luatexcn_punct_kinsoku_bool,
+    中西间距 .bool_set:N = \l__luatexcn_punct_westernspace_bool,
+    中西間距 .bool_set:N = \l__luatexcn_punct_westernspace_bool,
+  }
+
+\ExplSyntaxOff%
+
+% ============================================================
+% Chinese aliases / 中文别名
+% ============================================================
+% Simplified Chinese / 简体
+\NewCommandCopy{\标点设置}{\punctSetup}
+\NewCommandCopy{\DaLuBiaoDianFengGe}{\大陆标点风格}
+\NewCommandCopy{\TaiWanBiaoDianFengGe}{\台湾标点风格}
+% Traditional Chinese / 繁体
+\NewCommandCopy{\標點設置}{\punctSetup}
+\NewCommandCopy{\大陸標點風格}{\大陆标点风格}
+\NewCommandCopy{\臺灣標點風格}{\台湾标点风格}
+
+\endinput%

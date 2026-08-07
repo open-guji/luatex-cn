@@ -1,0 +1,222 @@
+# LuaTeX-CN
+
+[English Version](README-EN.md)
+
+基于 LuaTeX 的中文排版包，做两件事：**古籍版式的精确复刻**，与**遵循 W3C《中文排版需求》(clreq) 的现代中文排版**。
+
+- **古籍竖排**：版心、夹注、侧批、眉批、脚注、印章、句读、改字、乌丝栏等开箱可用，示例已实现对四库全书文渊阁本、红楼梦甲戌本等底本的版面级复刻。
+- **现代竖排**：繁体竖排书籍版式，中国大陆式与台湾式标点两套体例；标点宽度调整、按 clreq 优先顺序的行内挤压／拉伸、换行禁则、中西混排（1/4em 间距、`\横置` 旋转与 `\中横排` 入格）、着重号、行尾点号悬挂等均按 clreq 实现。
+- **横排 clreq**（`\usepackage{luatex-cn}`，统一入口）：标点宽度调整、四级换行禁则与符号分离禁则、按 clreq 优先顺序的行内挤压／拉伸、中西间距、行尾点号悬挂、行间标点（专名号／书名号甲式／着重号）、拼音标音与词对齐、孤行孤字。
+- **模板可定制**：版式参数与模板均可覆盖。
+
+横竖排的 clreq 规则实现由 119 条 PDF 内容流度量断言逐条核验，逐条状态与有意偏离见 **[clreq 符合度矩阵](doc/CLREQ-CONFORMANCE.md)**。
+
+CTAN: [v0.4.1](https://ctan.org/pkg/luatex-cn) | GitHub Release: [v0.4.1](https://github.com/open-guji/luatex-cn/releases)
+
+> **[Wiki 用户手册](https://github.com/open-guji/luatex-cn/wiki)** ｜ **[快速入门](https://github.com/open-guji/luatex-cn/wiki/Quick-Start)** ｜ **[命令索引](https://github.com/open-guji/luatex-cn/wiki/Command-Reference)** ｜ **[更新日志](https://github.com/open-guji/luatex-cn/wiki/Changelog)**
+
+## Abstract (English)
+
+**luatex-cn** is a LuaTeX package for typesetting Chinese in both horizontal and
+vertical writing modes, following the W3C *Requirements for Chinese Text Layout*
+(clreq), and for reproducing the page layout of classical Chinese books.
+
+`\usepackage{luatex-cn}` is the unified entry point. By default it sets
+horizontal Chinese text per clreq: CJK–Western spacing, punctuation width
+adjustment (Mainland China / Taiwan presets), four-level line-breaking
+prohibitions, priority-ordered intra-line compression and stretching, hanging
+punctuation, interlinear marks (proper-name / book-title / emphasis) and
+word-aligned pinyin ruby. The `[vertical]` option selects vertical typesetting,
+which implements the clreq mixed-script rules: 1/4 em CJK–Western spacing,
+sideways Western text, tate-chu-yoko (short runs set upright in one cell),
+emphasis dots, hanging line-final punctuation, and a shared intra-line
+adjustment solver. The classical document classes (`ltc-guji`) add banxin,
+interlinear notes, side and top annotations, seals, judou punctuation and ruled
+borders.
+
+Conformance is measured rather than claimed:
+[doc/CLREQ-CONFORMANCE.md](doc/CLREQ-CONFORMANCE.md) records the per-clause
+status of both writing directions, backed by 119 assertions that measure glyph
+coordinates in the output PDF. Fonts can be used without installation through a
+download script with an SHA-256-pinned manifest; font selection accepts registry
+aliases as well as font file paths. PDF manuals in Chinese and English ship in
+`doc/`, so `texdoc luatex-cn` works after installation.
+
+Compile with **`lualatex`**. Full English documentation: [README-EN.md](README-EN.md).
+
+## 排版效果展示
+
+### 古籍排版 - 四库全书·文渊阁本
+
+| 《四库全书简明目录》 — 抬头、夹注、缩进 | 《史记·五帝本纪》 — 印章、夹注、乌丝栏 |
+| :---: | :---: |
+| ![四库全书目录](示例/首页展示/mulu-color.png) | ![史记](示例/首页展示/shiji-bw.png) |
+| [源码](示例/四库全书简明目录/目录.tex) ｜ [PDF](示例/四库全书简明目录/目录.pdf) | [源码](示例/史记五帝本纪/史记-黑白.tex) ｜ [PDF](示例/史记五帝本纪/史记-黑白.pdf) |
+
+### 手抄本 -《红楼梦》甲戌本
+
+| 第二页（标点） | 第一页（眉批） |
+| :---: | :---: |
+| ![红楼梦2](示例/首页展示/honglou-p2.png) | ![红楼梦1](示例/首页展示/honglou-p1.png) |
+
+> [查看源码](示例/红楼梦甲戌本/石头记.tex) | [查看 PDF](示例/红楼梦甲戌本/石头记.pdf)
+
+### 现代繁体竖排 -《史记·秦楚之际月表》
+
+| 第二页 | 第一页 |
+| :---: | :---: |
+| ![卷十六第二页](示例/首页展示/juan16-p2.png) | ![卷十六第一页](示例/首页展示/juan16-p1.png) |
+
+> [查看源码](示例/史记卷十六·现代/卷十六.tex) | [查看 PDF](示例/史记卷十六·现代/卷十六.pdf)
+
+更多示例请查看 [示例目录](示例/README.md) 或 [Wiki 示例页](https://github.com/open-guji/luatex-cn/wiki/Examples)。
+
+## 5 分钟快速开始
+
+### 第一步：安装 TeX 发行版
+
+如果你还没有安装 LaTeX 环境，需要先安装 **TeX Live**（推荐 2024 或更新版本）：
+
+| 系统 | 安装方式 |
+|------|---------|
+| **Windows** | 下载 [TeX Live 安装包](https://tug.org/texlive/acquire-netinstall.html)，运行 `install-tl-windows.exe` |
+| **macOS** | 下载 [MacTeX](https://tug.org/mactex/)，双击安装 |
+| **Linux** | `sudo apt install texlive-full`（Ubuntu/Debian）或 `sudo dnf install texlive-scheme-full`（Fedora） |
+
+> 详细指引请参阅 [Wiki 安装指南](https://github.com/open-guji/luatex-cn/wiki/Installation)。
+
+### 第二步：安装 luatex-cn
+
+推荐从 [GitHub Release](https://github.com/open-guji/luatex-cn/releases) 下载最新版本的 `luatex-cn-v*.zip`，解压后将 `luatex-cn/tex/` 下的内容放入：
+
+```
+~/texmf/tex/latex/luatex-cn/          (macOS/Linux)
+C:\Users\<用户名>\texmf\tex\latex\luatex-cn\  (Windows)
+```
+
+然后运行 `texhash` 刷新。
+
+也可以通过包管理器安装（CTAN 版本可能落后）：
+```bash
+tlmgr install luatex-cn
+```
+
+### 第三步：编译你的第一个古籍
+
+创建 `test.tex`，写入以下内容：
+
+```latex
+\documentclass[四库全书]{ltc-guji}
+\句读模式
+%\setmainfont{TW-Kai}
+
+\title{钦定四库全书}
+\chapter{史记\\卷一}
+
+\begin{document}
+\begin{正文}
+黄帝者，少典之子，姓公孫，名曰軒轅。\夹注{生而神靈，弱而能言，幼而徇齊，長而敦敏，成而聰明。}
+\end{正文}
+\end{document}
+```
+
+使用 **`lualatex`** 编译（注意不是 `pdflatex` 或 `xelatex`）：
+
+```bash
+lualatex test.tex
+```
+
+编译成功后打开 `test.pdf`，你将看到一个完整的古籍竖排页面。
+
+> 接下来请查看 **[Wiki 快速入门](https://github.com/open-guji/luatex-cn/wiki/Quick-Start)** 了解更多命令用法，或浏览 **[命令索引](https://github.com/open-guji/luatex-cn/wiki/Command-Reference)** 查看全部命令。
+
+### 排横排？同样一行开始
+
+```latex
+\documentclass{article}
+\usepackage{fontspec}
+\setmainfont{TW-Kai}
+\usepackage[style=taiwan]{luatex-cn}
+\begin{document}
+子曰：「學而時習之，不亦說乎？」本文以 LuaTeX 引擎排版，版本 1.18。
+\end{document}
+```
+
+标点宽度、行首行尾禁则、中西文间距等规则即刻生效，详见 [Wiki 横排页](https://github.com/open-guji/luatex-cn/wiki/Horizontal)。
+
+## 功能特性
+
+| 功能 | 说明 | Wiki 文档 |
+|------|------|-----------|
+| **竖排引擎** | 基于网格的高精度竖排文本流，支持自动分列分页 | [快速入门](https://github.com/open-guji/luatex-cn/wiki/Quick-Start) |
+| **版心与鱼尾** | 单鱼尾/双鱼尾、乌丝栏、四周双边 | [模板](https://github.com/open-guji/luatex-cn/wiki/Templates) |
+| **夹注** | 双栏小注自动平衡、跨列跨页 | [夹注](https://github.com/open-guji/luatex-cn/wiki/Side-Note) |
+| **侧批/眉批** | 行间侧批、页面顶部眉批 | [批注](https://github.com/open-guji/luatex-cn/wiki/Annotation) |
+| **句读** | 传统句读/现代标点/白文三种模式切换 | [句读](https://github.com/open-guji/luatex-cn/wiki/Judou) |
+| **印章** | 电子印章绝对定位，支持透明度 | [印章](https://github.com/open-guji/luatex-cn/wiki/Seal) |
+| **改字与装饰** | 古籍勘误、专名号、书名号、着重号 | [改字与装饰](https://github.com/open-guji/luatex-cn/wiki/Correction) |
+| **抬头** | 单抬/双抬/三抬/平抬，自动边框包裹 | [抬头](https://github.com/open-guji/luatex-cn/wiki/Taitou) |
+| **现代标点** | 标点挤压、禁则处理、中国大陆/台湾风格 | [标点系统](https://github.com/open-guji/luatex-cn/wiki/Punctuation) |
+| **横排 clreq** | 统一入口 `\usepackage{luatex-cn}`，标点宽度调整、禁则、中西间距、行间标点、拼音标音 | [横排](https://github.com/open-guji/luatex-cn/wiki/Horizontal) |
+| **脚注** | 段末注/页下注，鹿角/带圈编号 | [脚注](https://github.com/open-guji/luatex-cn/wiki/ltc-book) |
+| **模板系统** | 内置四库全书、红楼梦甲戌本、中华书局等预设 | [模板](https://github.com/open-guji/luatex-cn/wiki/Templates) |
+| **字体管理** | 跨平台自动探测、字体族递补（Fallback） | [字体设置](https://github.com/open-guji/luatex-cn/wiki/Fonts) |
+| **调试工具** | 网格可视化、坐标标尺、模块级日志 | [调试模式](https://github.com/open-guji/luatex-cn/wiki/Debug) |
+
+## 一个宏包，四个文档类
+
+| 入口 | 用途 |
+|------|------|
+| **`\usepackage{luatex-cn}`** | 现代横排——配合 article 等任意标准文档类使用 |
+| **`\documentclass{ltc-guji}`** | 传统古籍排版（版心、鱼尾、丝栏），写语义命令、引擎自动排版 |
+| **`\documentclass{ltc-guji-digital}`** | 古籍数字化录入——每行源码即一列，精确复刻原书版面 |
+| **`\documentclass{ltc-cn-vbook}`** | 现代竖排书籍，中国大陆式标点 |
+| **`\documentclass{ltc-tw-vbook}`** | 现代竖排书籍，台湾式标点 |
+
+> 所有命令都支持简体、繁体中文名称。例如 `\夹注{...}`、`\侧批{...}`、`\begin{正文}`。
+
+## 模板
+
+除了默认模板，luatex-cn 支持自定义模板。欢迎贡献新的模板！请将模板文件放在 [模板目录](模板/) 并提交 Pull Request。推荐模板：
+
+| 模板 | 说明 | 源码 |
+|------|------|------|
+| **四库全书文渊阁本** | 八行二十一字，正文首页带"文渊阁宝"印章，目录封面黄底，页面淡黄背景 | [cfg](模板/四库全书文渊阁本.cfg) |
+
+在文档中使用模板：
+```latex
+\documentclass[四库全书文渊阁本]{ltc-guji}
+\begin{document}
+  ...
+\end{document}
+```
+
+## 系统要求
+
+- LuaTeX（推荐 TeX Live 2024+）
+- `luaotfload` 和 `fontspec`（TeX Live 自带）
+- 中文字体（系统通常已自带，推荐思源宋体或楷体以获得最佳古籍效果）
+
+## 路线图
+
+- **已完成**：古籍竖排全套（版心、夹注、批注、句读、印章、表格、工尺谱等）、数字化录入模式、现代竖排两套标点体例、横排 clreq 管道与统一入口
+- **进行中（v0.4.x）**：clreq 符合度持续提升——目前横排约 73%、竖排约 63%，逐条状态见[符合度矩阵](doc/CLREQ-CONFORMANCE.md)
+- **后续**：注音符号（拼音／注音的竖排标注）、标题与页面层条款、注释符号的分离禁则等
+
+## 文档与社区
+
+- **[Wiki 用户手册](https://github.com/open-guji/luatex-cn/wiki)** — 完整的使用指南
+- **[命令索引](https://github.com/open-guji/luatex-cn/wiki/Command-Reference)** — 全部命令的参数速查
+- **[示例](示例/README.md)** — 查看完整的排版源码
+- **[Issue](https://github.com/open-guji/luatex-cn/issues)** — 报告 Bug 或提出建议
+
+联系人: Sheldon Li | 邮件: sheldonli.dev@gmail.com  
+联系人: Frank Lin | 邮件: ctan@linshuang.info
+
+## 开发与测试
+
+如果你希望参与开发或在本地测试源码更改，请参考 [开发者指南](文档/developer_guide.md) 或 [Wiki 开发文档](https://github.com/open-guji/luatex-cn/wiki/Development)。
+
+## 许可证
+
+Apache License 2.0

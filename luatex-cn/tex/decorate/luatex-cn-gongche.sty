@@ -1,0 +1,310 @@
+% Copyright 2026 Open-Guji (https://github.com/open-guji)
+%
+% Licensed under the Apache License, Version 2.0 (the "License");
+% you may not use this file except in compliance with the License.
+% You may obtain a copy of the License at
+%
+%     http://www.apache.org/licenses/LICENSE-2.0
+%
+% Unless required by applicable law or agreed to in writing, software
+% distributed under the License is distributed on an "AS IS" BASIS,
+% WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+% See the License for the specific language governing permissions and
+% limitations under the License.
+% luatex-cn-gongche.sty
+% 工尺谱 (Gongche notation) — 主字 + 右侧工尺音字
+%
+% Level 1 (current): plain string of gongche characters on the right side.
+%                    Pure wrapper around \SideText, no lua changes.
+% Level 2 (planned): \音[板]{尺} — per-unit decorations (banyan/octave).
+% Level 3 (planned): octave/extension/style presets.
+%
+\RequirePackage{expl3}
+\RequirePackage{xparse}
+\ProvidesExplPackage {decorate/luatex-cn-gongche} {2026/08/07} {0.4.1} {Gongche Notation Support}
+
+% ============================================================================
+% Key-Value Parameters
+% ============================================================================
+\tl_new:N \l__luatexcn_gongche_scale_tl
+\tl_new:N \l__luatexcn_gongche_color_tl
+\tl_new:N \l__luatexcn_gongche_offset_tl
+
+\keys_define:nn { luatexcn / gongche }
+  {
+    scale .tl_set:N = \l__luatexcn_gongche_scale_tl,
+    scale .initial:n = 0.5,
+    color .tl_set:N = \l__luatexcn_gongche_color_tl,
+    color .initial:n = black,
+    offset .tl_set:N = \l__luatexcn_gongche_offset_tl,
+    offset .initial:n = 0pt,
+    % CJK aliases
+    缩放 .tl_set:N = \l__luatexcn_gongche_scale_tl,
+    縮放 .tl_set:N = \l__luatexcn_gongche_scale_tl,
+    颜色 .tl_set:N = \l__luatexcn_gongche_color_tl,
+    顏色 .tl_set:N = \l__luatexcn_gongche_color_tl,
+    偏移 .tl_set:N = \l__luatexcn_gongche_offset_tl,
+  }
+
+\NewDocumentCommand{\gongcheSetup}{ m }
+  {
+    \keys_set:nn { luatexcn / gongche } { #1 }
+  }
+
+% ============================================================================
+% \GongChe (Level 1) — main char + right-side gongche string
+% Syntax:
+%   \工尺{主字}{工尺字串}                    basic
+%   \工尺[颜色=red, 缩放=0.4]{主字}{尺工六}   per-call options
+% Currently delegates to \SideText (右侧旁注). Level 2 will replace the
+% right-content path with a unit-list data model that supports per-音 板眼.
+% ============================================================================
+\NewDocumentCommand{\GongChe}{ O{} m m }
+  {
+    \group_begin:
+      \keys_set:nn { luatexcn / gongche } { #1 }
+      % Push gongche-specific defaults into the sidetext namespace within
+      % this group. Outer \sideTextSetup remains unchanged after group ends.
+      \keys_set:nn { luatexcn / sidetext }
+        {
+          scale = \l__luatexcn_gongche_scale_tl,
+          color = \l__luatexcn_gongche_color_tl,
+          offset = \l__luatexcn_gongche_offset_tl,
+        }
+      \SideText { #2 } { #3 }
+    \group_end:
+  }
+
+% CJK aliases
+\NewCommandCopy{\工尺}{\GongChe}
+\NewCommandCopy{\工尺设置}{\gongcheSetup}
+\NewCommandCopy{\工尺設置}{\gongcheSetup}
+
+% ============================================================================
+% \音[<options>]{字} (Level 2/3) — gongche char + orthogonal markers
+%
+% Two independent marker slots, both can be active in one \音 call:
+%   - rhythm slot: 板眼 marks (板/眼/头板/底板/底叮)
+%   - octave slot: 八度 marks (高/低/昆低)
+%
+% Syntax:
+%   \音{尺}                       bare char, no marks
+%   \音[板]{尺}                   rhythm only (red 。)
+%   \音[高]{尺}                   octave only (亻 prefix)
+%   \音[板, 高]{尺}               rhythm + octave (both markers)
+%   \音[板, 颜色=blue]{尺}        rhythm color override
+%   \音[高, 八度颜色=red]{尺}     octave color override
+%   \音[字符=●, 缩放=0.3, 颜色=green]{尺}  manual rhythm
+%
+% Sign convention (per decorate.lua): xshift>0 = visual LEFT (toward main),
+%                                     yshift>0 = visual DOWN.
+% Offsets are resolved against base font em; render multiplies by gongche
+% scale so 0.5em is "relative to the 工尺 char's visual size".
+% ============================================================================
+
+% --- Rhythm slot (板眼) ---
+\tl_new:N \l__luatexcn_yin_rhythm_char_tl
+\tl_new:N \l__luatexcn_yin_rhythm_xshift_tl
+\tl_new:N \l__luatexcn_yin_rhythm_yshift_tl
+\tl_new:N \l__luatexcn_yin_rhythm_scale_tl
+\tl_new:N \l__luatexcn_yin_rhythm_color_tl
+
+% --- Octave slot (八度) ---
+\tl_new:N \l__luatexcn_yin_octave_char_tl
+\tl_new:N \l__luatexcn_yin_octave_xshift_tl
+\tl_new:N \l__luatexcn_yin_octave_yshift_tl
+\tl_new:N \l__luatexcn_yin_octave_scale_tl
+\tl_new:N \l__luatexcn_yin_octave_color_tl
+
+\keys_define:nn { luatexcn / yin }
+  {
+    % --- Rhythm slot manual setters ---
+    rhythm-char .tl_set:N = \l__luatexcn_yin_rhythm_char_tl,
+    rhythm-xshift .tl_set:N = \l__luatexcn_yin_rhythm_xshift_tl,
+    rhythm-yshift .tl_set:N = \l__luatexcn_yin_rhythm_yshift_tl,
+    rhythm-scale .tl_set:N = \l__luatexcn_yin_rhythm_scale_tl,
+    rhythm-color .tl_set:N = \l__luatexcn_yin_rhythm_color_tl,
+    % CJK aliases for rhythm (most common; bare 颜色/缩放/字符 affect rhythm)
+    字符 .tl_set:N = \l__luatexcn_yin_rhythm_char_tl,
+    横偏 .tl_set:N = \l__luatexcn_yin_rhythm_xshift_tl,
+    橫偏 .tl_set:N = \l__luatexcn_yin_rhythm_xshift_tl,
+    纵偏 .tl_set:N = \l__luatexcn_yin_rhythm_yshift_tl,
+    縱偏 .tl_set:N = \l__luatexcn_yin_rhythm_yshift_tl,
+    缩放 .tl_set:N = \l__luatexcn_yin_rhythm_scale_tl,
+    縮放 .tl_set:N = \l__luatexcn_yin_rhythm_scale_tl,
+    颜色 .tl_set:N = \l__luatexcn_yin_rhythm_color_tl,
+    顏色 .tl_set:N = \l__luatexcn_yin_rhythm_color_tl,
+
+    % --- Octave slot manual setters ---
+    octave-char .tl_set:N = \l__luatexcn_yin_octave_char_tl,
+    octave-xshift .tl_set:N = \l__luatexcn_yin_octave_xshift_tl,
+    octave-yshift .tl_set:N = \l__luatexcn_yin_octave_yshift_tl,
+    octave-scale .tl_set:N = \l__luatexcn_yin_octave_scale_tl,
+    octave-color .tl_set:N = \l__luatexcn_yin_octave_color_tl,
+    % CJK aliases for octave overrides
+    八度字符 .tl_set:N = \l__luatexcn_yin_octave_char_tl,
+    八度颜色 .tl_set:N = \l__luatexcn_yin_octave_color_tl,
+    八度顏色 .tl_set:N = \l__luatexcn_yin_octave_color_tl,
+    八度缩放 .tl_set:N = \l__luatexcn_yin_octave_scale_tl,
+    八度縮放 .tl_set:N = \l__luatexcn_yin_octave_scale_tl,
+
+    % --- Rhythm presets (板眼) ---
+    板 .meta:n =
+      {
+        rhythm-char = 。, rhythm-xshift = -0.5em, rhythm-yshift = 0em,
+        rhythm-scale = 0.35, rhythm-color = red
+      },
+    眼 .meta:n =
+      {
+        rhythm-char = 、, rhythm-xshift = -0.5em, rhythm-yshift = 0em,
+        rhythm-scale = 0.35, rhythm-color = red
+      },
+    头板 .meta:n =
+      {
+        rhythm-char = ×, rhythm-xshift = -0.5em, rhythm-yshift = 0em,
+        rhythm-scale = 0.45, rhythm-color = red
+      },
+    頭板 .meta:n =
+      {
+        rhythm-char = ×, rhythm-xshift = -0.5em, rhythm-yshift = 0em,
+        rhythm-scale = 0.45, rhythm-color = red
+      },
+    底板 .meta:n =
+      {
+        rhythm-char = └, rhythm-xshift = -0.5em, rhythm-yshift = 0em,
+        rhythm-scale = 0.45, rhythm-color = red
+      },
+    底叮 .meta:n =
+      {
+        rhythm-char = ⌐, rhythm-xshift = -0.5em, rhythm-yshift = 0em,
+        rhythm-scale = 0.45, rhythm-color = red
+      },
+
+    % --- Octave presets (八度) ---
+    % 高 = 闽剧/粤剧高八度 — 亻 prefix above the gongche char
+    高 .meta:n =
+      {
+        octave-char = 亻, octave-xshift = 0em, octave-yshift = -0.85em,
+        octave-scale = 0.7, octave-color = black
+      },
+    % 低 = 粤剧低八度 — 彳 prefix above
+    低 .meta:n =
+      {
+        octave-char = 彳, octave-xshift = 0em, octave-yshift = -0.85em,
+        octave-scale = 0.7, octave-color = black
+      },
+    % 昆低 = 昆曲低八度 — 钩 below the gongche char (right side)
+    昆低 .meta:n =
+      {
+        octave-char = ⌒, octave-xshift = -0.5em, octave-yshift = 0.4em,
+        octave-scale = 0.6, octave-color = black
+      },
+  }
+
+% Helper: emit one decoration marker via register_decorate.
+% Parameters are TL variables (passed by name); \lua_now:e e-expands them.
+\cs_new_protected:Npn \__luatexcn_yin_emit:NNNNN #1 #2 #3 #4 #5
+  {
+    \lua_now:e
+      {
+        local~constants~=~require('core.luatex-cn-constants')
+        constants.register_decorate(
+          "\luaescapestring{#1}",
+          "\luaescapestring{#2}",
+          "\luaescapestring{#3}",
+          nil,
+          "\luaescapestring{#5}",
+          font.current(),
+          "\luaescapestring{#4}"
+        )
+      }
+    \box0\scan_stop:
+  }
+
+\NewDocumentCommand{\Yin}{ O{} m }
+  {
+    \group_begin:
+      % Reset slot chars (no marker emitted unless a preset/setter activates).
+      % Geometry defaults stay non-empty so manual char overrides (e.g.,
+      % \音[字符=●]{尺}) inherit a sensible position.
+      \tl_clear:N \l__luatexcn_yin_rhythm_char_tl
+      \tl_set:Nn \l__luatexcn_yin_rhythm_xshift_tl { -0.5em }
+      \tl_set:Nn \l__luatexcn_yin_rhythm_yshift_tl { 0em }
+      \tl_set:Nn \l__luatexcn_yin_rhythm_scale_tl  { 0.35 }
+      \tl_set:Nn \l__luatexcn_yin_rhythm_color_tl  { red }
+      \tl_clear:N \l__luatexcn_yin_octave_char_tl
+      \tl_set:Nn \l__luatexcn_yin_octave_xshift_tl { 0em }
+      \tl_set:Nn \l__luatexcn_yin_octave_yshift_tl { -0.85em }
+      \tl_set:Nn \l__luatexcn_yin_octave_scale_tl  { 0.7 }
+      \tl_set:Nn \l__luatexcn_yin_octave_color_tl  { black }
+      \keys_set:nn { luatexcn / yin } { #1 }
+      #2
+      \tl_if_empty:NF \l__luatexcn_yin_rhythm_char_tl
+        {
+          \__luatexcn_yin_emit:NNNNN
+            \l__luatexcn_yin_rhythm_char_tl
+            \l__luatexcn_yin_rhythm_xshift_tl
+            \l__luatexcn_yin_rhythm_yshift_tl
+            \l__luatexcn_yin_rhythm_scale_tl
+            \l__luatexcn_yin_rhythm_color_tl
+        }
+      \tl_if_empty:NF \l__luatexcn_yin_octave_char_tl
+        {
+          \__luatexcn_yin_emit:NNNNN
+            \l__luatexcn_yin_octave_char_tl
+            \l__luatexcn_yin_octave_xshift_tl
+            \l__luatexcn_yin_octave_yshift_tl
+            \l__luatexcn_yin_octave_scale_tl
+            \l__luatexcn_yin_octave_color_tl
+        }
+    \group_end:
+  }
+
+\NewCommandCopy{\音}{\Yin}
+
+% ============================================================================
+% \拖音[<rhythm>] — duration extension stroke (filler unit)
+% Uses 丨 (U+4E28 CJK STROKE) as the gongche char of a continuation unit.
+% Combines naturally with rhythm slots so each beat in a held note can be
+% marked appropriately.
+%
+% Example — 4-beat 尺 (attack on board, then 3 continuation beats):
+%   \工尺{春}{\音[板]{尺}\拖音[眼]\拖音[板]\拖音[眼]}
+%
+% Bare \拖音 = no rhythm marker (just the stroke).
+% ============================================================================
+\NewDocumentCommand{\Drag}{ O{} }
+  {
+    \Yin [ #1 ] { 丨 }
+  }
+
+\NewCommandCopy{\拖音}{\Drag}
+
+% ============================================================================
+% 句读 / 宫调 — 小字注释 (sentence/rhyme markers, tune annotations)
+%
+% 在工尺谱中常需要标注:
+%   - 句 (sentence end), 韵 (rhyme) — 短小句读符号
+%   - 宫调名 (仙吕调/南吕调/...), 别名 (一名XX) — 标题旁的小字注
+%
+% 这些都是约半个主字大小的灰度文字, 与正文同流但视觉上区分.
+% \句读字{X} 是底层命令; \句 \韵 \宫调 是语义糖.
+% ============================================================================
+\NewDocumentCommand{\句读字}{ m }
+  {
+    {\small #1}
+  }
+
+\NewDocumentCommand{\句}{} { \句读字{句} }
+\NewDocumentCommand{\韵}{} { \句读字{韻} }
+\NewDocumentCommand{\韻}{} { \句读字{韻} }
+
+\NewDocumentCommand{\宫调}{ m } { \句读字{#1} }
+\NewDocumentCommand{\宮調}{ m } { \句读字{#1} }
+\NewDocumentCommand{\曲牌}{ m } { \句读字{#1} }
+\NewDocumentCommand{\调名注}{ m } { \句读字{#1} }
+\NewDocumentCommand{\調名注}{ m } { \句读字{#1} }
+
+\ExplSyntaxOff%
+%
+\endinput%

@@ -1,0 +1,65 @@
+-- Copyright 2026 Open-Guji (https://github.com/open-guji)
+--
+-- Licensed under the Apache License, Version 2.0 (the "License");
+-- you may not use this file except in compliance with the License.
+-- You may obtain a copy of the License at
+--
+--     http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing, software
+-- distributed under the License is distributed on an "AS IS" BASIS,
+-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-- See the License for the specific language governing permissions and
+-- limitations under the License.
+
+--- luatex-cn-core-document.lua
+--- Document-level style management (base style layer)
+
+local M = {}
+
+local style_registry = require("util.luatex-cn-style-registry")
+
+--- Initialize document-level base style
+--- This is called at \begin{document} and pushes the document-level defaults
+--- onto the style stack. All subsequent styles (content, textbox, etc.) inherit
+--- from this base.
+function M.init_document_style()
+    -- Ensure _G.document exists
+    if not _G.document then
+        _G.document = {}
+    end
+
+    -- Build document-level base style from _G.document settings
+    local doc_style = {}
+
+    if _G.document.font_color and _G.document.font_color ~= "" then
+        doc_style.font_color = _G.document.font_color
+    end
+
+    if _G.document.font_size and _G.document.font_size ~= "" then
+        doc_style.font_size = _G.document.font_size
+    end
+
+    if _G.document.font and _G.document.font ~= "" then
+        doc_style.font = _G.document.font
+    end
+
+    if _G.document.background_color and _G.document.background_color ~= "" then
+        doc_style.background_color = _G.document.background_color
+    end
+
+    -- Debug state is now managed by setting_stack (reads _G.luatex_cn_debug.global_enabled).
+
+    -- Push document-level style as the base of the stack
+    -- (only when there are meaningful fields to push)
+    if next(doc_style) ~= nil then
+        local doc_id = style_registry.push(doc_style)
+        -- Set TeX attribute so all subsequent characters carry the document style ID
+        local constants_mod = package.loaded['core.luatex-cn-constants']
+        if doc_id and constants_mod and constants_mod.ATTR_STYLE_REG_ID then
+            tex.setattribute(constants_mod.ATTR_STYLE_REG_ID, doc_id)
+        end
+    end
+end
+
+return M

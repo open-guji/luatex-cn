@@ -379,6 +379,13 @@ end
 -- @param punct_config (table|nil) Punctuation config for natural mode fallback
 -- @return (number) Cell height in sp
 local function resolve_cell_height(node, grid_height, default_cell_height, punct_config)
+    -- 0. 横置西文（\横置）优先于固定格高：旋转 90° 后沿列方向的长度是
+    --    字形 advance 宽度，grid 模式若仍按整格分配，字母就无法连排成词
+    --    （render 只旋转不改字幅，布局必须同步用 advance 计）。
+    if D.get_attribute(node, constants.ATTR_SIDEWAYS) == 1 then
+        local w = D.getfield(node, "width")
+        if w and w > 0 then return w end
+    end
     -- 1. Check node style for per-character/paragraph grid_height override
     local sid = D.get_attribute(node, constants.ATTR_STYLE_REG_ID)
     if sid and sid > 0 then

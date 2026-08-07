@@ -4,6 +4,12 @@ English | [中文版](Changelog)
 
 All notable changes to this project will be documented here.
 
+## [0.4.1] - 2026-08-07
+
+- 🐛 **No more hyphenated Western words in annotations/TextBox**: TextBox no longer lets TeX pre-break collected content (the old logic split English in annotations into S-/tate and misaligned columns); column breaking is now entirely handled by the grid engine. In grid mode (fixed cell height, e.g. `ltc-guji`), `\Sideways` now sizes glyphs by their advance width so rotated words set contiguously (fix #50)
+- 📦 **CTAN packaging fixes** per CTAN review: upload renamed to `luatex-cn-v<version>.zip`, single top-level directory `luatex-cn/` on unpack, `README.md` at the package top level with an English abstract; the local build, CI release asset and CTAN upload are now one and the same file
+- 📖 **Slimmer wiki PDFs**: example previews downsampled to 300 dpi and embedded as 64-color indexed images, emoji embedded as a monochrome vector font subset — zh 4.8→2.7 MB, en 4.3→1.8 MB
+
 ## [0.4.0] - 2026-08-06
 
 Major clreq release: unified entry point `\usepackage{luatex-cn}`, a complete horizontal clreq pipeline, vertical clreq conformance (P1-P3), a shared rules kernel for both directions, a conformance declaration matrix backed by 119 metric assertions, and installation-free fonts.

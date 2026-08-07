@@ -4,7 +4,7 @@ English | [中文版](Home)
 
 Welcome to the LuaTeX-CN Wiki. This site provides comprehensive documentation for users and developers to help you create high-quality Chinese typesetting with LuaTeX-CN — classical vertical books, modern vertical books, and clreq-conformant horizontal documents.
 
-> **Current Version**: [v0.4.0](https://github.com/open-guji/luatex-cn/releases) | **CTAN**: [v0.4.0](https://ctan.org/pkg/luatex-cn)
+> **Current Version**: [v0.4.1](https://github.com/open-guji/luatex-cn/releases) | **CTAN**: [v0.4.1](https://ctan.org/pkg/luatex-cn)
 
 ## Quick Access
 

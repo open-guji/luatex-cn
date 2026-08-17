@@ -1,0 +1,24 @@
+% Issue #157: 四库全书彩色模板下句读变成正文色，且 句读颜色 设置不生效
+% https://github.com/open-guji/luatex-cn/issues/157
+% 彩色模板的 \documentSetup{font-color=...} 会把文档级 style id 贴到所有新建
+% 节点上（含句读装饰标记），从而顶掉句读自己的颜色。
+% 注意：句读颜色是全局状态，句读标记在 flatten 阶段统一生成，
+% 因此整篇文档只取最后一次 \句读设置 的颜色。
+\documentclass[四库全书彩色]{ltc-guji}
+\setmainfont{TW-Kai}
+\开启句读模式
+\句读设置{句读颜色=blue}
+
+\title{测试}
+\chapter{测试 Issue 157}
+
+\begin{document}
+
+\begin{正文}
+% 句读应为蓝色，而不是彩色模板的正文色 RGB(35,25,20)
+子曰，学而时习之，不亦说乎。有朋自远方来，不亦乐乎。
+
+人不知而不愠，不亦君子乎。
+\end{正文}
+
+\end{document}

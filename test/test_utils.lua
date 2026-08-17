@@ -150,6 +150,9 @@ node = {
             if type(n) == "table" and n.attributes then return n.attributes[id] ~= nil end
             return false
         end,
+        unset_attribute = function(n, id)
+            if type(n) == "table" and n.attributes then n.attributes[id] = nil end
+        end,
         getattr = function(n, id)
             if type(n) == "table" and n.attributes then return n.attributes[id] end
             return nil

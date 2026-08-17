@@ -92,4 +92,47 @@ test_utils.run_test("initialize: returns nil for normal mode", function()
     test_utils.assert_nil(ctx)
 end)
 
+-- ============================================================================
+-- create_judou_decorate_marker (Issue #157)
+-- ============================================================================
+
+local constants = require("core.luatex-cn-constants")
+
+-- 。 mark = REPLACEMENT_JU
+local REPLACEMENT_JU = 0x3002
+
+test_utils.run_test("marker: decorate style uses 句读颜色", function()
+    _G.judou = { punct_mode = "judou", pos = "right-bottom", size = "1em", color = "blue" }
+    local marker = judou.create_judou_decorate_marker(REPLACEMENT_JU, 1)
+    local dec_id = node.direct.get_attribute(marker, constants.ATTR_DECORATE_ID)
+    test_utils.assert_eq(_G.decorate_registry[dec_id].color, "blue")
+end)
+
+test_utils.run_test("marker: color change re-registers the styles", function()
+    _G.judou = { punct_mode = "judou", pos = "right-bottom", size = "1em", color = "blue" }
+    local blue_marker = judou.create_judou_decorate_marker(REPLACEMENT_JU, 1)
+    local blue_id = node.direct.get_attribute(blue_marker, constants.ATTR_DECORATE_ID)
+
+    _G.judou.color = "green"
+    local green_marker = judou.create_judou_decorate_marker(REPLACEMENT_JU, 1)
+    local green_id = node.direct.get_attribute(green_marker, constants.ATTR_DECORATE_ID)
+
+    test_utils.assert_eq(_G.decorate_registry[blue_id].color, "blue")
+    test_utils.assert_eq(_G.decorate_registry[green_id].color, "green")
+end)
+
+test_utils.run_test("marker: claims its own style id, not the ambient one", function()
+    -- Issue #157: nodes created with D.new inherit the current TeX attribute
+    -- state, so a document-level style (e.g. 四库全书彩色 font-color) would win
+    -- over the judou color in decorate.handle_node.
+    _G.judou = { punct_mode = "judou", pos = "right-bottom", size = "1em", color = "blue" }
+    local marker = judou.create_judou_decorate_marker(REPLACEMENT_JU, 1)
+    local dec_id = node.direct.get_attribute(marker, constants.ATTR_DECORATE_ID)
+    local style_id = node.direct.get_attribute(marker, constants.ATTR_STYLE_REG_ID)
+    test_utils.assert_eq(style_id, _G.decorate_registry[dec_id].style_reg_id)
+
+    local style_registry = require("util.luatex-cn-style-registry")
+    test_utils.assert_eq(style_registry.get_font_color(style_id), "blue")
+end)
+
 print("\nAll guji/judou-test tests passed!")

@@ -288,6 +288,7 @@ local function register_decorate(char_str, xoff_str, yoff_str, size_str, color_s
         font_id = font_id,              -- Store provided ID (may be nil)
         font_size = to_dimen(size_str),
         color = color_str,
+        style_reg_id = style_reg_id, -- own style (lets Lua-created markers claim it)
     }
     table.insert(_G.decorate_registry, reg)
     local reg_id = #_G.decorate_registry

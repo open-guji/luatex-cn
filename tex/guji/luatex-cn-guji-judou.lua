@@ -190,6 +190,9 @@ local REPLACEMENT_DOU = 0x3001 -- 、
 
 local ju_id = nil
 local dou_id = nil
+-- Color the registered styles were built with; a later \句读设置{句读颜色=...}
+-- must re-register instead of silently keeping the old color.
+local registered_color = nil
 
 --- Get the type of punctuation for a given character
 -- @param char (number) Unicode character code
@@ -204,15 +207,17 @@ end
 
 --- Initialize Judou styles in Decorate Registry
 local function ensure_judou_styles()
-    if ju_id and dou_id then return end
+    local color = (_G.judou and _G.judou.color) or "red"
+    if ju_id and dou_id and registered_color == color then return end
 
     -- Register default styles for Judou
     -- Position is calculated from the character's bottom edge (not grid center)
     -- X offset: positive = move left, negative = move right
     -- Y offset: positive = move down (from character bottom)
     -- Small Y offset since we're starting from character bottom, not grid center
-    ju_id = constants.register_decorate("。", "-0.6em", "0.5em", nil, "red", nil, 1.2)
-    dou_id = constants.register_decorate("、", "-0.6em", "0.5em", nil, "red", nil, 1.2)
+    ju_id = constants.register_decorate("。", "-0.6em", "0.5em", nil, color, nil, 1.2)
+    dou_id = constants.register_decorate("、", "-0.6em", "0.5em", nil, color, nil, 1.2)
+    registered_color = color
 end
 
 --- Create a JUDOU Decorate Marker node (GLYPH with ATTR_DECORATE_ID)
@@ -244,6 +249,20 @@ function judou.create_judou_decorate_marker(char_code, font_id)
     end
     if constants.ATTR_DECORATE_FONT and font_id then
         D.set_attribute(g, constants.ATTR_DECORATE_FONT, font_id)
+    end
+    -- D.new inherits the current TeX attribute state, so the marker would carry
+    -- the document-level style (e.g. \documentSetup{font-color=...} from the
+    -- 四库全书彩色 template) and that style wins over the decorate registry in
+    -- decorate.handle_node — turning the judou marks into the body text color.
+    -- Claim the judou style instead so 句读颜色 always decides.
+    if constants.ATTR_STYLE_REG_ID then
+        local reg = _G.decorate_registry and _G.decorate_registry[dec_id]
+        local style_reg_id = reg and reg.style_reg_id
+        if style_reg_id then
+            D.set_attribute(g, constants.ATTR_STYLE_REG_ID, style_reg_id)
+        else
+            D.unset_attribute(g, constants.ATTR_STYLE_REG_ID)
+        end
     end
 
     return g

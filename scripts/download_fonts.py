@@ -22,6 +22,8 @@ import hashlib
 import json
 import subprocess
 import sys
+import time
+import urllib.error
 import urllib.request
 from pathlib import Path
 
@@ -37,11 +39,43 @@ def sha256_of(path):
     return h.hexdigest()
 
 
+#: 可重试的 HTTP 状态：限流与服务端临时故障
+RETRY_STATUS = {408, 425, 429, 500, 502, 503, 504}
+#: 每次重试前的等待秒数（服务端给了 Retry-After 时以它为准）
+RETRY_BACKOFF = (2, 6, 15, 40)
+
+
+def _urlopen_with_retry(url):
+    """打开 url；遇到限流/临时故障按 RETRY_BACKOFF 退避重试。
+
+    CI 上并发跑多个作业时 raw.githubusercontent 很容易回 429，
+    单次失败就让整个字体下载步骤失败太脆。
+    """
+    last = None
+    for attempt, wait in enumerate((*RETRY_BACKOFF, None)):
+        try:
+            return urllib.request.urlopen(url, timeout=120)
+        except urllib.error.HTTPError as e:
+            last = e
+            if e.code not in RETRY_STATUS or wait is None:
+                raise
+            retry_after = e.headers.get("Retry-After") if e.headers else None
+            if retry_after and retry_after.isdigit():
+                wait = max(wait, int(retry_after))
+        except urllib.error.URLError as e:
+            last = e
+            if wait is None:
+                raise
+        print(f"  {last}，{wait}s 后重试（第 {attempt + 2} 次）...", file=sys.stderr)
+        time.sleep(wait)
+    raise last  # 不可达：最后一轮 wait 为 None 时已 raise
+
+
 def download(url, dest):
     """下载 url 到 dest；URL 以 .gz 结尾时边下边解压（sha256 校验解压后内容）。"""
     tmp = dest.with_suffix(dest.suffix + ".part")
     print(f"下载: {url}")
-    with urllib.request.urlopen(url, timeout=120) as resp, open(tmp, "wb") as out:
+    with _urlopen_with_retry(url) as resp, open(tmp, "wb") as out:
         if url.endswith(".gz"):
             import gzip
             with gzip.open(resp, "rb") as gz:

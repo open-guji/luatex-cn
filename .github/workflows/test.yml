@@ -64,6 +64,14 @@ jobs:
             pgf
             xcolor
 
+      # CTAN 镜像抽风时 tlmgr install 会整批下载失败，而 setup-texlive-action 仍把
+      # 这份装了一半的 TeX Live 按主键存进 Actions cache；之后每次运行命中主键就跳过
+      # 安装步骤，缺的宏包再也补不上，表现为几十个用例齐刷刷「Compilation failed」。
+      # 这里立即验伤，把「环境缺包」和「渲染结果变了」区分开；一旦命中，
+      # 需手工删掉坏缓存（gh cache list / gh cache delete <id>）再重跑。
+      - name: Verify TeX Live packages
+        run: kpsewhich xcolor.sty fontspec.sty pgf.sty luatexbase.sty > /dev/null
+
       - name: Install system dependencies
         run: |
           sudo apt-get update

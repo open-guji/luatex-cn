@@ -126,10 +126,10 @@ local TABLE = {
         vert_rotate = true, forbid_start = "basic" },
     [0x002D] = { name = "连接号", class = "connector",                 -- -
         width = both(0.5), space = both("none"), shrink = both(0),
-        vert_rotate = true, forbid_start = "basic" },
+        vert_rotate = true, forbid_start = "basic", western_form = true },
     [0x2013] = { name = "连接号", class = "connector",                 -- –
         width = both(0.5), space = both("none"), shrink = both(0),
-        vert_rotate = true, forbid_start = "basic" },
+        vert_rotate = true, forbid_start = "basic", western_form = true },
 
     -- Interpunct (间隔号): mainland GB style is fixed half width; Taiwan
     -- style takes one em centered, compressible from both sides down to
@@ -138,7 +138,7 @@ local TABLE = {
         width = { mainland = 0.5, taiwan = 1 },
         space = { mainland = "none", taiwan = "both" },
         shrink = { mainland = 0, taiwan = 0.5 },
-        shrink_class = "interpunct",
+        shrink_class = "interpunct", western_form = true,
         forbid_start = "basic" },
     [0x30FB] = { name = "间隔号", class = "interpunct",                -- ・
         width = both(1), space = both("both"), shrink = both(0.5),
@@ -153,7 +153,7 @@ local TABLE = {
     -- in Traditional Chinese, fixed. Line-end forbidden from the GB level.
     [0x002F] = { name = "分隔号", class = "solidus",                   -- /
         width = both(0.5), space = both("none"), shrink = both(0),
-        vert_rotate = true,
+        vert_rotate = true, western_form = true,
         forbid_start = "basic", forbid_end = "gb" },
     [0xFF0F] = { name = "分隔号", class = "solidus",                   -- ／
         width = both(1), space = both("none"), shrink = both(0),
@@ -230,6 +230,19 @@ local POINT_CLASSES = {
 --- Whether the codepoint is a pause/stop mark (点号).
 -- @param char (number) Unicode codepoint
 -- @return (boolean)
+--- 西文自带的那一份字面：ASCII/Latin-1 的半角连接号、分隔号、间隔号。
+-- 它们同时是中文的连接号/分隔号/间隔号，但字面就是西文的那个半角形式
+-- （中文另有满幅的 ／ ～ ‧ 可用），因此出现在西文串里时就是西文标点，
+-- 不构成中西间距规则里的「中文一侧」——`1/4 em`、`TW-Kai` 中间不该开口子。
+-- 只在「另一侧是西文」的边界上起作用：汉字旁的间隔号（玛丽·居里）走的是
+-- 中文↔中文标点那条路，不经过这里。
+-- @param char (number) 码位
+-- @return (boolean)
+function M.is_western_form(char)
+    local e = TABLE[char]
+    return (e and e.western_form) or false
+end
+
 function M.is_point(char)
     local e = TABLE[char]
     return (e and POINT_CLASSES[e.class]) or false

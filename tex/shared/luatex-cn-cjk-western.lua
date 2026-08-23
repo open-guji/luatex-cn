@@ -7,7 +7,10 @@
 --     stretchable to 1/2 em (clreq expansion step 2);
 --   * three exceptions where no spacing is added: next to pause/stop marks
 --     (在中文点号前后), after an opening bracket / before a closing bracket
---     (开始夹注符号之后、结束夹注符号之前).
+--     (开始夹注符号之后、结束夹注符号之前);
+--   * 中文标点（破折号、省略号……）与西文相邻时照加——它们是中文的一部分；
+--     但 - / · – 这几个西文自带的半角字面不算中文一侧（punct_table
+--     .is_western_form），否则 `1/4 em` 的斜杠两侧会平白开出两个 1/4 em。
 --
 -- Pure Lua, zero TeX dependency. Single data source per the clreq
 -- shared-core contract (ai_must_read/clreq-shared-core.md): both the
@@ -74,10 +77,22 @@ function M.suppresses(c)
     return cls == "open" or cls == "close"
 end
 
+--- Whether the CJK-side character at a punctuation↔Western boundary kills the
+-- spacing. Two reasons, and they are different in kind:
+--   * clreq 的例外：点号旁、开始夹注符号之后、结束夹注符号之前不加；
+--   * 那个「标点」其实是西文自带的半角字面（- / · –）。中文的破折号、
+--     省略号、书名号是中文的一部分，与西文相邻时照加 1/4 em；而 `1/4 em`
+--     里的分隔号只是西文的斜杠，两侧都是西文，本就不是中西边界。
+-- @param c (number) codepoint of the punctuation at the boundary
+-- @return (boolean)
+local function no_spacing_on_cjk_side(c)
+    return M.suppresses(c) or punct_table.is_western_form(c)
+end
+
 --- Whether the boundary prev→next_c takes the 1/4-em CJK–Western spacing.
--- True only for a Hanzi↔Western boundary not covered by the exceptions.
--- (Boundaries involving punctuation classify as cjk_punct, so the exception
--- check via suppresses() only ever sees the punctuation codepoint itself.)
+-- 中文一侧可以是汉字，也可以是中文标点（破折号、省略号……都是中文的一部分）；
+-- 不加的情形见 no_spacing_on_cjk_side：clreq 的点号/夹注符号例外，以及
+-- - / · – 这几个字面本就属于西文的半角标点。
 -- @param prev (number) codepoint before the boundary
 -- @param next_c (number) codepoint after the boundary
 -- @return (boolean)
@@ -88,10 +103,10 @@ function M.takes_spacing(prev, next_c)
         return not M.suppresses(prev)
     elseif pk == "western" and nk == "cjk" then
         return not M.suppresses(next_c)
-    elseif pk == "western" and nk == "cjk_punct" then
-        return false   -- 例外：点号旁、结束夹注号前不加
     elseif pk == "cjk_punct" and nk == "western" then
-        return false   -- 例外：点号旁、开始夹注号后不加
+        return not no_spacing_on_cjk_side(prev)
+    elseif pk == "western" and nk == "cjk_punct" then
+        return not no_spacing_on_cjk_side(next_c)
     end
     return false
 end

@@ -504,6 +504,30 @@ def run_assertions(lines):
     r.check("中西间距例外", f"「English|）」内侧无间距 gap={g:.3f}em ≈ 0",
             abs(g) <= EPS)
 
+    # ---- 中文一侧的边界：中西间距是「汉字与西文之间」的规则。中文标点
+    #      （破折号、省略号）是中文的一部分，照加；而 - / · – 的字面是西文
+    #      自带的半角标点，夹在西文串里不构成中西边界，不得开口子。
+    #      西文侧断言取「小于 1/8 em」而非「等于 0」：字体自己的 kern
+    #      （思源宋体在 1|/ 处约 0.02em）与本规则无关，只要没到 clreq
+    #      规定的下限，就说明管道没有插入中西间距。
+    line = find_in_case(lines, "west-form-punct", "1/4")
+    for sub, name in [("1", "1|/"), ("1/", "/|4")]:
+        g = gap_after(line, sub)
+        r.check("中西间距边界", f"「{name}」纯西文串内不加间距 gap={g:.3f}em < 1/8",
+                g < 0.125 - EPS)
+    g = gap_after(line, "a")
+    r.check("中西间距边界", f"「a|·」西文自带的半角间隔号不加 gap={g:.3f}em < 1/8",
+            g < 0.125 - EPS)
+
+    # 中文标点侧用省略号量：破折号在带 ccmp 的字体里于 shaping 阶段就被合成
+    # U+2E3A（见 #119），合字字形上管道未插入该间距——那是与本条规则无关的
+    # 既有行为，此处不混进来。省略号无合字，走的是本规则的正路。
+    line = find_in_case(lines, "cjk-punct-western", "xyz")
+    idx = line.text.find("xyz")
+    g = line.gap_em(idx - 1)
+    r.check("中西间距边界", f"「省略号|xyz」中文标点照加 gap={g:.3f}em ∈ [1/8, 1/2]",
+            0.125 - EPS <= g <= 0.5 + EPS)
+
     # ---- 符号分离禁则：数字串、数字+单位、货币同行不拆（clreq: 符号分离禁则）
     for token in ["1234", "5678", "95%", "37℃", "±3", "¥1280", "¥999"]:
         found = any(token in line.text for line in lines)

@@ -43,7 +43,7 @@ M.ADJUST_CLASS_CODES = {
 -- 竖排也消费同一份），这里只保留同名入口。
 
 M.kind = cjk_western.kind
-local suppresses_western_spacing = cjk_western.suppresses
+local takes_western_spacing = cjk_western.takes_spacing
 
 -- ============================================================================
 -- Boundary decision
@@ -130,14 +130,18 @@ function M.boundary(prev, next_c, opts)
     local forbidden, reason = kinsoku.no_break_between(prev, next_c,
         { level = opts.level or DEFAULT_OPTS.level })
 
+    -- Whether this boundary takes the 1/4-em spacing is the shared module's
+    -- call, not ours (HR5: clreq 规则只写在 shared/). It is a 汉字↔西文 rule:
+    -- a boundary whose CJK side is punctuation never takes it — 点号旁与夹注
+    -- 符号内侧是 clreq 明列的例外，而 —— · / 这些符号本身不是汉字，规则从
+    -- 一开始就不覆盖它们。Re-deriving the condition here is how `1/4 em` ended
+    -- up with a quarter em on both sides of the solidus: `/` classifies as
+    -- cjk_punct, so a boundary with no 汉字 anywhere read as CJK–Western.
     local glue
+    local space_on = opts.cjk_latin_space
+    if space_on == nil then space_on = DEFAULT_OPTS.cjk_latin_space end
     if (prev_cjk and nk == "western") or (pk == "western" and next_cjk) then
-        -- CJK–Western boundary: 1/4 em spacing unless suppressed by the
-        -- adjacent punctuation exception
-        local cjk_char = prev_cjk and prev or next_c
-        local space_on = opts.cjk_latin_space
-        if space_on == nil then space_on = DEFAULT_OPTS.cjk_latin_space end
-        if space_on and not suppresses_western_spacing(cjk_char) then
+        if space_on and takes_western_spacing(prev, next_c) then
             local G = cjk_western.GLUE
             glue = { width = G.width, shrink = G.shrink, stretch = G.stretch,
                      class = "cjk_western" }

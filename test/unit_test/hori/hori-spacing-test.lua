@@ -146,6 +146,30 @@ test_utils.run_test("digit-cjk gets the spacing too", function()
     test_utils.assert_eq(r.glue.width, 0.25)
 end)
 
+test_utils.run_test("西文↔中文标点不加间距：规则只管汉字↔西文", function()
+    -- 回归：`1/4 em` 里 / 的左右各被加了一个 1/4 em。分隔号登记在标点表里，
+    -- kind 为 cjk_punct，横排后端曾把 cjk_punct 当作「中文一侧」自行判断，
+    -- 于是一行里没有半个汉字也照加中西间距。判断权归 shared 的
+    -- takes_spacing（HR5），竖排后端一直用的就是它。
+    for _, pair in ipairs({
+        { 0x31, 0x2F },   -- 1|/  分隔号
+        { 0x2F, 0x34 },   -- /|4
+        { 0x61, 0x2D },   -- a|-  连接号
+        { 0x2013, 0x62 }, -- –|b  连接号（U+2013）
+        { 0x61, 0xB7 },   -- a|·  间隔号
+        { 0x2014, 0x61 }, -- —|a  破折号
+        { 0x61, 0x2026 }, -- a|…  省略号
+    }) do
+        local r = spacing.boundary(pair[1], pair[2])
+        test_utils.assert_eq(r.glue.width, 0,
+            string.format("U+%04X|U+%04X 不该有中西间距", pair[1], pair[2]))
+        test_utils.assert_true(r.glue.class ~= "cjk_western",
+            "不该被标成 cjk_western 而参与 H2 的中西间距调整")
+    end
+    -- 对照：真汉字在场时照加
+    test_utils.assert_eq(b(0x4E00, 0x61).glue.width, 0.25)
+end)
+
 test_utils.run_test("exception: no spacing next to pause/stop marks", function()
     -- clreq: 在中文点号前后的西文字母，不调整字距或加入空白
     -- （。的字面末侧空白仍可挤压，故 shrink > 0、class 为句号组）

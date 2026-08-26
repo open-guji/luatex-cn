@@ -608,6 +608,19 @@ local function render_middle_section_from_layout(p_head, element, middle_section
     return p_head
 end
 
+--- 解析版心页码应显示的字符串
+-- 数字化模式给出的显式页码优先；否则按 \pageSetup{页码样式=...} 格式化。
+-- 未设置样式时沿用版心的历史默认：位值中文数字（144 → 一百四十四）。
+-- @param page_number (number|nil) 运行时页码
+-- @param explicit_page_number (string|nil) 显式页码字符串
+-- @return (string) 页码字符串（"" 表示不显示）
+local function resolve_page_number_string(page_number, explicit_page_number)
+    if explicit_page_number then return explicit_page_number end
+    local style = _G.page and _G.page.number_style or nil
+    return utils.format_page_number(page_number, style)
+        or utils.to_chinese_numeral(page_number)
+end
+
 --- Render page number from layout data with runtime content
 -- @param p_head (node) Node list head
 -- @param element (table) Page number layout element
@@ -616,9 +629,7 @@ end
 local function render_page_number_from_layout(p_head, element, page_number, explicit_page_number)
     if not page_number and not explicit_page_number then return p_head end
 
-    -- Use explicit page number string if provided (digital mode),
-    -- otherwise auto-convert numeric page number to Chinese numeral
-    local page_str = explicit_page_number or utils.to_chinese_numeral(page_number)
+    local page_str = resolve_page_number_string(page_number, explicit_page_number)
     if page_str == "" then return p_head end
 
     local num_chars = count_utf8_chars(page_str)
@@ -779,6 +790,7 @@ local banxin = {
         create_divider_literal = create_divider_literal,
         parse_section_text = parse_section_text,
         render_pre_rendered_box = render_pre_rendered_box,
+        resolve_page_number_string = resolve_page_number_string,
     },
 }
 

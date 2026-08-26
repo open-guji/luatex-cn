@@ -325,6 +325,28 @@ local function to_circled_numeral(n)
     end
 end
 
+--- 按页码样式格式化页码
+-- 供竖排页码（vbook）与版心页码（guji）共用，保证 \pageSetup{页码样式=...}
+-- 在两条渲染路径上表现一致。
+-- @param n number 页码
+-- @param style string|nil "digits" 逐位中文 / "chinese" 位值中文 /
+--   "arabic" 阿拉伯数字 / "none" 不显示；nil 或 "" 时返回 nil 表示「未设置」
+-- @return string|nil 页码字符串；"none" 返回 ""，未设置返回 nil
+local function format_page_number(n, style)
+    if style == nil or style == "" then return nil end
+    if style == "none" then return "" end
+    if style == "digits" then
+        return to_chinese_digits(n)
+    elseif style == "chinese" then
+        return to_chinese_numeral(n)
+    elseif style == "arabic" then
+        if not n or n <= 0 then return "" end
+        return tostring(n)
+    end
+    -- 未知样式：退回位值中文，避免页码整个消失
+    return to_chinese_numeral(n)
+end
+
 -- Chapter Marker Registry
 _G.chapter_registry = _G.chapter_registry or {}
 -- _G.chapter_registry = _G.chapter_registry or {} -- Moved inside function
@@ -411,6 +433,7 @@ local utils = {
     to_chinese_numeral = to_chinese_numeral,
     to_chinese_digits = to_chinese_digits,
     to_circled_numeral = to_circled_numeral,
+    format_page_number = format_page_number,
 
     insert_chapter_marker = insert_chapter_marker,
 

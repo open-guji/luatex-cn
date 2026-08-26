@@ -162,4 +162,41 @@ test_utils.run_test("draw_banxin: color string in literals", function()
     test_utils.assert_true(color_found, "Color string should be in literals")
 end)
 
+-- ============================================================================
+-- resolve_page_number_string
+-- issue #161: \pageSetup{页码样式=digits} 对版心页码也要生效
+-- ============================================================================
+
+local resolve = banxin._internal.resolve_page_number_string
+
+test_utils.run_test("版心页码: 未设置样式沿用位值中文", function()
+    _G.page = nil
+    test_utils.assert_eq(resolve(144, nil), "一百四十四")
+    _G.page = {}
+    test_utils.assert_eq(resolve(144, nil), "一百四十四")
+    _G.page = { number_style = "" }
+    test_utils.assert_eq(resolve(144, nil), "一百四十四")
+end)
+
+test_utils.run_test("版心页码: 页码样式=digits 逐位输出", function()
+    _G.page = { number_style = "digits" }
+    test_utils.assert_eq(resolve(144, nil), "一四四")
+end)
+
+test_utils.run_test("版心页码: 页码样式=arabic", function()
+    _G.page = { number_style = "arabic" }
+    test_utils.assert_eq(resolve(144, nil), "144")
+end)
+
+test_utils.run_test("版心页码: 页码样式=none 不显示", function()
+    _G.page = { number_style = "none" }
+    test_utils.assert_eq(resolve(144, nil), "")
+end)
+
+test_utils.run_test("版心页码: 显式页码（数字化模式）优先于样式", function()
+    _G.page = { number_style = "digits" }
+    test_utils.assert_eq(resolve(144, "卷三"), "卷三")
+    _G.page = nil
+end)
+
 print("\nAll render-banxin tests passed!")

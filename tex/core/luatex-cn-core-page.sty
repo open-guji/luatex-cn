@@ -298,8 +298,11 @@
 
 \keys_define:nn { luatexcn / page }
   {
+    % 初始值留空 = 「用户未设置」：竖排页码（vbook）视同 none 不输出，
+    % 版心页码（guji）沿用其历史默认（位值中文数字）。若初始值写成 none，
+    % 任何一次 \pageSetup{纸宽=...} 都会把版心页码一并关掉。
     page-number-style .tl_set:N = \l__luatexcn_page_number_style_tl,
-    page-number-style .initial:n = {none},
+    page-number-style .initial:n = {},
 
     page-number-font-size .tl_set:N = \l__luatexcn_page_number_font_size_tl,
     page-number-font-size .initial:n = {9pt},
@@ -311,28 +314,12 @@
 \newcommand{\DrawVerticalPageNumber}{%
   \directlua{
     local style = _G.page and _G.page.number_style or "none"
-    if style ~= "none" and style ~= "" then
-      local utils = require('util.luatex-cn-utils')
-      local pg = tex.count[0]
-      local s
-      if style == "digits" then
-        s = utils.to_chinese_digits(pg)
-      elseif style == "chinese" then
-        s = utils.to_chinese_numeral(pg)
-      elseif style == "arabic" then
-        s = tostring(pg)
-      else
-        return
-      end
+    local utils = require('util.luatex-cn-utils')
+    local s = utils.format_page_number(tex.count[0], style)
+    if s and s ~= "" then
       local parts = {}
-      if style == "arabic" then
-        for i = 1, string.len(s) do
-          table.insert(parts, string.sub(s, i, i))
-        end
-      else
-        for p, c in utf8.codes(s) do
-          table.insert(parts, utf8.char(c))
-        end
+      for p, c in utf8.codes(s) do
+        table.insert(parts, utf8.char(c))
       end
       tex.sprint(table.concat(parts, "\\\\\\noexpand\\relax "))
     end

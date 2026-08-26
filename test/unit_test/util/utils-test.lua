@@ -159,6 +159,37 @@ test_utils.run_test("to_chinese_digits: zero/negative", function()
 end)
 
 -- ============================================================================
+-- format_page_number (issue #161: \pageSetup{页码样式=...} 需对版心/竖排页码统一生效)
+-- ============================================================================
+
+test_utils.run_test("format_page_number: digits 逐位", function()
+    test_utils.assert_eq(utils.format_page_number(144, "digits"), "一四四")
+    test_utils.assert_eq(utils.format_page_number(915, "digits"), "九一五")
+end)
+
+test_utils.run_test("format_page_number: chinese 位值", function()
+    test_utils.assert_eq(utils.format_page_number(144, "chinese"), "一百四十四")
+end)
+
+test_utils.run_test("format_page_number: arabic", function()
+    test_utils.assert_eq(utils.format_page_number(144, "arabic"), "144")
+    test_utils.assert_eq(utils.format_page_number(0, "arabic"), "")
+end)
+
+test_utils.run_test("format_page_number: none 返回空串（显式关闭）", function()
+    test_utils.assert_eq(utils.format_page_number(144, "none"), "")
+end)
+
+test_utils.run_test("format_page_number: 未设置返回 nil（区别于 none）", function()
+    test_utils.assert_eq(utils.format_page_number(144, nil), nil)
+    test_utils.assert_eq(utils.format_page_number(144, ""), nil)
+end)
+
+test_utils.run_test("format_page_number: 未知样式退回位值中文", function()
+    test_utils.assert_eq(utils.format_page_number(144, "bogus"), "一百四十四")
+end)
+
+-- ============================================================================
 -- to_circled_numeral
 -- ============================================================================
 

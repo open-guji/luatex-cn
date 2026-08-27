@@ -40,6 +40,8 @@
     font-color .tl_set:N = \l__luatexcn_jiazhu_font_color_tl,
     color .meta:n = { font-color = #1 },
     font-color .initial:n = {},
+    % Alias so \夹注设置{color=red} works like font-color (issue #163)
+    color .meta:n = { font-color = {#1} },
     align .tl_set:N = \l__luatexcn_jiazhu_align_tl,
     align .initial:n = {outward},
     % Forward unknown keys to textflow (auto-balance, grid-height, etc.)
@@ -138,11 +140,13 @@
     字号 .tl_set:N = \l__luatexcn_jiazhu_size_tl,
     字体 .tl_set:N = \l__luatexcn_jiazhu_font_tl,
     字体颜色 .tl_set:N = \l__luatexcn_jiazhu_font_color_tl,
+    颜色 .meta:n = { font-color = {#1} },
     对齐 .tl_set:N = \l__luatexcn_jiazhu_align_tl,
     % 繁体（与简体不同形的）
     字號 .tl_set:N = \l__luatexcn_jiazhu_size_tl,
     字體 .tl_set:N = \l__luatexcn_jiazhu_font_tl,
     字體顏色 .tl_set:N = \l__luatexcn_jiazhu_font_color_tl,
+    顏色 .meta:n = { font-color = {#1} },
     對齊 .tl_set:N = \l__luatexcn_jiazhu_align_tl,
   }
 \ExplSyntaxOff

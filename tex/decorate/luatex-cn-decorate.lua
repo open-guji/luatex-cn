@@ -90,6 +90,15 @@ end
 
 local color_map = constants.color_map
 
+--- 把用户写的颜色解析成 PDF 的 "r g b"。
+-- 先查颜色名表，再交给 normalize_rgb（它认逗号/空格分隔，且 0-255 与 0-1 皆可）。
+-- 以前这里是 color_map[c] or c，于是 \句读设置{句读颜色={255,128,0}} 会把
+-- "255,128,0" 原样写进 PDF literal —— 非法语法，整条 literal 失效，句读点直接没颜色。
+local function resolve_rgb(c)
+    if not c or c == "" then return "0 0 0" end
+    return color_map[c] or utils.normalize_rgb(c) or "0 0 0"
+end
+
 --- Resolve font size for decoration (uses PDF scaling, no new fonts)
 -- @param curr (node) Current node
 -- @param reg (table) Registry entry
@@ -240,7 +249,7 @@ function decorate.handle_node(curr, p_head, pos, params, ctx, reg_id)
     D.setfield(g, "xoffset", 0)
     D.setfield(g, "yoffset", 0)
 
-    local draw_rgb = (effective_reg.color and color_map[effective_reg.color]) or effective_reg.color or "0 0 0"
+    local draw_rgb = resolve_rgb(effective_reg.color)
 
     -- Build scaled matrix: [scale 0 0 scale x y]
     local color_part = string.format("%s %s", utils.create_color_literal(draw_rgb, false),
@@ -286,7 +295,7 @@ function decorate.handle_side_text_node(curr, p_head, pos, params, ctx, reg_id)
     local f_data = font.getfont(font_id)
     local base_size = f_data and f_data.size or 655360
 
-    local draw_rgb = (reg.color and color_map[reg.color]) or reg.color or "0 0 0"
+    local draw_rgb = resolve_rgb(reg.color)
     local color_part = string.format("%s %s",
         utils.create_color_literal(draw_rgb, false),
         utils.create_color_literal(draw_rgb, true))
@@ -423,7 +432,7 @@ function decorate.handle_side_text_node(curr, p_head, pos, params, ctx, reg_id)
                         local d_glyph_x = d_target_x - dv_center * d_scale
                         local d_ink_center = ((dgh - dgd) / 2) * d_scale
                         local d_glyph_y = unit_center_y - dy_sp - d_ink_center
-                        local d_rgb = (deco.color and color_map[deco.color]) or deco.color or "0 0 0"
+                        local d_rgb = resolve_rgb(deco.color)
                         emit_glyph(d_char, d_glyph_x, d_glyph_y, d_scale, d_rgb)
                     end
                 end
@@ -503,6 +512,11 @@ function decorate.handle_side_text_node(curr, p_head, pos, params, ctx, reg_id)
 
     return p_head
 end
+
+-- 白盒测试入口
+decorate._internal = {
+    resolve_rgb = resolve_rgb,
+}
 
 package.loaded['decorate.luatex-cn-decorate'] = decorate
 

@@ -44,6 +44,9 @@
     font-size .tl_set:N = \l__luatexcn_sidenote_font_size_tl,
     font-size .initial:n = 10pt,
     color .tl_set:N = \l__luatexcn_sidenote_color_tl,
+    % Alias: other modules spell this font-color; accept both so the key
+    % resolves here instead of leaking into the global style keyspace.
+    font-color .meta:n = { color = {#1} },
     color .initial:n = red,
     column-padding-top .tl_set:N = \l__luatexcn_sidenote_padding_top_tl,
     column-padding-top .initial:n = 0pt,
@@ -52,16 +55,7 @@
     background-color .tl_set:N = \l__luatexcn_sidenote_bgcolor_tl,
     background-color .initial:n = ,
     % Forward unknown keys: try settings first, then style
-    unknown .code:n =
-      {
-        \exp_args:Nnx \keys_if_exist:nnTF { luatexcn / settings } { \l_keys_key_str }
-          { \keys_set:nx { luatexcn / settings } { \l_keys_key_str = { \exp_not:n {#1} } } }
-          {
-            \exp_args:Nnx \keys_if_exist:nnTF { luatexcn / style } { \l_keys_key_str }
-              { \keys_set:nx { luatexcn / style } { \l_keys_key_str = { \exp_not:n {#1} } } }
-              { }
-          }
-      },
+    unknown .code:n = { \__luatexcn_keys_forward_unknown:n {#1} },
   }
 
 \NewDocumentCommand{\sidenoteSetup}{ m }
@@ -159,6 +153,7 @@
     格高 .tl_set:N = \l__luatexcn_sidenote_grid_height_tl,
     字号 .tl_set:N = \l__luatexcn_sidenote_font_size_tl,
     颜色 .tl_set:N = \l__luatexcn_sidenote_color_tl,
+    字体颜色 .meta:n = { color = {#1} },
     栏上填充 .tl_set:N = \l__luatexcn_sidenote_padding_top_tl,
     栏下填充 .tl_set:N = \l__luatexcn_sidenote_padding_bottom_tl,
     底色 .tl_set:N = \l__luatexcn_sidenote_bgcolor_tl,
@@ -170,6 +165,7 @@
     橫移 .tl_set:N = \l__luatexcn_sidenote_xshift_tl,
     字號 .tl_set:N = \l__luatexcn_sidenote_font_size_tl,
     顏色 .tl_set:N = \l__luatexcn_sidenote_color_tl,
+    字體顏色 .meta:n = { color = {#1} },
     背景色 .tl_set:N = \l__luatexcn_sidenote_bgcolor_tl,
   }
 \ExplSyntaxOff

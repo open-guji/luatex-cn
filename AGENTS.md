@@ -129,6 +129,15 @@ python3 test/regression_test.py save test/regression_test/basic/tex/guji.tex
 python3 test/geometry_test.py
 ```
 
+### 颜色 key 测试（Color Key Test）
+```bash
+# 不依赖基线图像的自校验：断言各模块「文字颜色」的两种拼法都真正落到 PDF 上——
+# core 层写 font-color / 字体颜色，批注/眉批/侧批/句读写 color / 颜色，两边互为别名；
+# 并断言颜色名、0-255 三元组、0-1 三元组三种写法等价，
+# 以及未知 key 会发警告而不是被静默丢弃（issue #163 拖延的根因）。
+python3 test/color_test.py
+```
+
 ### clreq 断言测试（横排规范符合性）
 ```bash
 # 解析横排 PDF 内容流（字形 x 坐标 + advance），对 clreq 条款做度量断言：

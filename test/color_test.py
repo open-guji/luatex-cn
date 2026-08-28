@@ -103,9 +103,11 @@ def compile_tex(tex_path, workdir, extra_env=None):
     )
     base = os.path.splitext(os.path.basename(tex_path))[0]
     pdf = os.path.join(workdir, base + ".pdf")
-    if not os.path.exists(pdf):
+    # 返回码才是准：nonstopmode 下 TeX 报错后仍会产出一份（内容不全的）PDF，
+    # 只判断文件是否存在会把出错的编译当成功，后面的颜色扫描还可能误通过。
+    if r.returncode != 0 or not os.path.exists(pdf):
         sys.stderr.write(r.stdout.decode(errors="replace")[-3000:])
-        raise SystemExit("FAIL: 编译失败 " + tex_path)
+        raise SystemExit("FAIL: 编译失败 (returncode=%d) %s" % (r.returncode, tex_path))
     return pdf, r.stdout.decode(errors="replace")
 
 
@@ -169,6 +171,38 @@ def check_color_formats(workdir):
     return 0
 
 
+# issue #163 报的就是这一行写法。color-keys.tex 里 \夹注设置 用的是中文
+# 「颜色」，它另有一条 .meta 通往 font-color，不经过 jiazhu 的英文 color 键；
+# 少了这个用例，英文别名失效也测不出来。
+JIAZHU_EN_TEX = r"""\documentclass{ltc-guji}
+\setmainfont{TW-Kai}
+\关闭分页
+\无标点模式
+\夹注设置{color=%s}
+\begin{document}
+\begin{正文}
+天地\夹注{夹注内容}玄黄
+\end{正文}
+\end{document}
+"""
+
+
+def check_jiazhu_english_color(workdir):
+    """\夹注设置{color=...}（#163 原文写法）必须生效。"""
+    tex = os.path.join(workdir, "jiazhu_en.tex")
+    with open(tex, "w", encoding="utf-8") as f:
+        f.write(JIAZHU_EN_TEX % "{0, 128, 255}")
+    pdf, log = compile_tex(tex, workdir)
+    if not has_color(collect_colors(pdf), (0, 128, 255)):
+        print("FAIL: \\夹注设置{color=...}（issue #163 原文写法）未生效")
+        return 1
+    if "luatex-cn Warning" in log:
+        print("FAIL: \\夹注设置{color=...} 触发了未知 key 警告")
+        return 1
+    print("PASS: \\夹注设置{color=...}（issue #163 原文写法）生效")
+    return 0
+
+
 UNKNOWN_KEY_TEX = r"""\documentclass{ltc-guji}
 \setmainfont{TW-Kai}
 \关闭分页
@@ -197,6 +231,7 @@ def main():
     rc = 0
     with tempfile.TemporaryDirectory() as workdir:
         rc |= check_color_keys(workdir)
+        rc |= check_jiazhu_english_color(workdir)
         rc |= check_color_formats(workdir)
         rc |= check_unknown_key_warns(workdir)
     return rc

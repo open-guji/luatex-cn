@@ -61,7 +61,6 @@ test_utils.run_test("is_punct_char: 非法输入不抛错", function()
     test_utils.assert_true(not decorate.is_punct_char(42))
 end)
 
-print("\nAll decorate/decorate-test tests passed!")
 
 -- ============================================================================
 -- resolve_rgb（issue #163 同族：颜色值格式）
@@ -94,3 +93,5 @@ test_utils.run_test("resolve_rgb: 空值与无法解析的值回落到黑色", f
     test_utils.assert_eq(resolve_rgb(""), "0 0 0")
     test_utils.assert_eq(resolve_rgb("完全不是颜色"), "0 0 0")
 end)
+
+print("\nAll decorate/decorate-test tests passed!")

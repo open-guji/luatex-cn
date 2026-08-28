@@ -61,4 +61,37 @@ test_utils.run_test("is_punct_char: 非法输入不抛错", function()
     test_utils.assert_true(not decorate.is_punct_char(42))
 end)
 
+
+-- ============================================================================
+-- resolve_rgb（issue #163 同族：颜色值格式）
+-- ============================================================================
+-- 装饰件（句读点、圈发等）的颜色以前是 color_map[c] or c：颜色名之外的写法
+-- 原样写进 PDF literal。"255,128,0" 不是合法的 PDF 语法，于是整条 literal
+-- 失效，\句读设置{句读颜色={255,128,0}} 的点直接没有颜色。
+
+test_utils.run_test("resolve_rgb: 颜色名走 color_map", function()
+    local resolve_rgb = decorate._internal.resolve_rgb
+    test_utils.assert_eq(resolve_rgb("red"), "1 0 0")
+    test_utils.assert_eq(resolve_rgb("orange"), "1 0.5 0")
+end)
+
+test_utils.run_test("resolve_rgb: 0-255 三元组归一化（逗号或空格分隔）", function()
+    local resolve_rgb = decorate._internal.resolve_rgb
+    test_utils.assert_eq(resolve_rgb("255,128,0"), "1.0000 0.5020 0.0000")
+    test_utils.assert_eq(resolve_rgb("255, 128, 0"), "1.0000 0.5020 0.0000")
+    test_utils.assert_eq(resolve_rgb("255 128 0"), "1.0000 0.5020 0.0000")
+end)
+
+test_utils.run_test("resolve_rgb: 0-1 三元组原样保留数值", function()
+    local resolve_rgb = decorate._internal.resolve_rgb
+    test_utils.assert_eq(resolve_rgb("0.5 0.5 0"), "0.5000 0.5000 0.0000")
+end)
+
+test_utils.run_test("resolve_rgb: 空值与无法解析的值回落到黑色", function()
+    local resolve_rgb = decorate._internal.resolve_rgb
+    test_utils.assert_eq(resolve_rgb(nil), "0 0 0")
+    test_utils.assert_eq(resolve_rgb(""), "0 0 0")
+    test_utils.assert_eq(resolve_rgb("完全不是颜色"), "0 0 0")
+end)
+
 print("\nAll decorate/decorate-test tests passed!")

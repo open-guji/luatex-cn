@@ -83,6 +83,46 @@
 % Common Helpers
 % ============================================================================
 
+% ----------------------------------------------------------------------------
+% Unknown key forwarding (未知 key 转发)
+% ----------------------------------------------------------------------------
+% Most keyspaces (textflow / column / pizhu / meipi / sidenote / textbox /
+% yinzhang / banxin ...) forward keys they do not define to the shared
+% "settings" and "style" keyspaces.  Previously each of them silently dropped
+% keys that no keyspace knew, so a typo or a wrong alias (e.g. issue #163's
+% \jiazhuSetup{color=red}) failed with no diagnostic at all.  These helpers
+% centralise that chain and warn on the dead end.
+
+\msg_new:nnnn { luatex-cn } { unknown-key }
+  { 未知选项~'#1'~已被忽略~(unknown~option~'#1'~ignored). }
+  {
+    该选项不属于任何已知的~luatex-cn~选项空间，因此没有任何效果。\\
+    请检查拼写，或参阅手册中该命令支持的选项列表。\\
+    This~option~is~not~known~to~any~luatex-cn~keyspace~and~had~no~effect.
+  }
+
+% #1 = key value.  Uses \l_keys_key_str for the key name.
+% Chain: current keyspace (already missed) -> settings -> style -> warn.
+\cs_new_protected:Npn \__luatexcn_keys_forward_unknown:n #1
+  {
+    \exp_args:Nnx \keys_if_exist:nnTF { luatexcn / settings } { \l_keys_key_str }
+      { \keys_set:nx { luatexcn / settings } { \l_keys_key_str = { \exp_not:n {#1} } } }
+      {
+        \exp_args:Nnx \keys_if_exist:nnTF { luatexcn / style } { \l_keys_key_str }
+          { \keys_set:nx { luatexcn / style } { \l_keys_key_str = { \exp_not:n {#1} } } }
+          { \msg_warning:nnx { luatex-cn } { unknown-key } { \l_keys_key_str } }
+      }
+  }
+
+% Variant for the "style" keyspace itself: forwarding to style would recurse
+% back into this very handler, so it only tries settings before warning.
+\cs_new_protected:Npn \__luatexcn_keys_forward_unknown_settings:n #1
+  {
+    \exp_args:Nnx \keys_if_exist:nnTF { luatexcn / settings } { \l_keys_key_str }
+      { \keys_set:nx { luatexcn / settings } { \l_keys_key_str = { \exp_not:n {#1} } } }
+      { \msg_warning:nnx { luatex-cn } { unknown-key } { \l_keys_key_str } }
+  }
+
 % Helper for unified dimension parsing (calls Lua)
 \cs_new:Npn \__luatexcn_to_dimen:n #1
   {

@@ -133,3 +133,9 @@ jobs:
         # 不依赖基线图像的自校验：解析 PDF 内容流，断言每列字形基线等距
         # （抓「一」「丶」等按墨迹框居中导致整字偏移的 bug，LEARNING.md 3.6）
         run: python3 test/geometry_test.py
+
+      - name: Run color key tests
+        # 不依赖基线图像的自校验：断言各模块颜色 key 的两种拼法
+        # （font-color/字体颜色 与 color/颜色）都真正落到 PDF 上，
+        # 且未知 key 会发警告而不是被静默丢弃（issue #163）
+        run: python3 test/color_test.py

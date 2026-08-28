@@ -47,19 +47,13 @@
         font-size .tl_set:N = \l__luatexcn_textflow_local_size_tl,
         font .tl_set:N = \l__luatexcn_textflow_local_font_tl,
         font-color .tl_set:N = \l__luatexcn_textflow_local_color_tl,
+        % Alias: "color" is what pizhu/meipi/sidenote/yinzhang use, and what
+        % users naturally write (issue #163).  Keep both spellings working.
+        color .meta:n = { font-color = {#1} },
         align .tl_set:N = \l__luatexcn_textflow_local_align_tl,
         grid-height .tl_set:N = \l__luatexcn_textflow_local_grid_height_tl,
         % Forward unknown keys: try settings first, then style
-        unknown .code:n =
-          {
-            \exp_args:Nnx \keys_if_exist:nnTF { luatexcn / settings } { \l_keys_key_str }
-              { \keys_set:nx { luatexcn / settings } { \l_keys_key_str = { \exp_not:n {#1} } } }
-              {
-                \exp_args:Nnx \keys_if_exist:nnTF { luatexcn / style } { \l_keys_key_str }
-                  { \keys_set:nx { luatexcn / style } { \l_keys_key_str = { \exp_not:n {#1} } } }
-                  { }
-              }
-          },
+        unknown .code:n = { \__luatexcn_keys_forward_unknown:n {#1} },
       }
 
     \NewDocumentCommand{\TextFlow}{ O{} +m }
@@ -290,6 +284,7 @@
     字号 .tl_set:N = \l__luatexcn_textflow_local_size_tl,
     字体 .tl_set:N = \l__luatexcn_textflow_local_font_tl,
     字体颜色 .tl_set:N = \l__luatexcn_textflow_local_color_tl,
+    颜色 .meta:n = { font-color = {#1} },
     对齐 .tl_set:N = \l__luatexcn_textflow_local_align_tl,
     格高 .tl_set:N = \l__luatexcn_textflow_local_grid_height_tl,
     字体大小 .tl_set:N = \l__luatexcn_textflow_local_size_tl,
@@ -300,6 +295,7 @@
     字號 .tl_set:N = \l__luatexcn_textflow_local_size_tl,
     字體 .tl_set:N = \l__luatexcn_textflow_local_font_tl,
     字體顏色 .tl_set:N = \l__luatexcn_textflow_local_color_tl,
+    顏色 .meta:n = { font-color = {#1} },
     對齊 .tl_set:N = \l__luatexcn_textflow_local_align_tl,
     格高 .tl_set:N = \l__luatexcn_textflow_local_grid_height_tl,
   }

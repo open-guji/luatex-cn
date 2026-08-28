@@ -40,6 +40,9 @@
     font-size .tl_set:N = \l__luatexcn_meipi_font_size_tl,
     font-size .initial:n = {18pt},
     color .tl_set:N = \l__luatexcn_meipi_color_tl,
+    % Alias: other modules spell this font-color; accept both so the key
+    % resolves here instead of leaking into the global style keyspace.
+    font-color .meta:n = { color = {#1} },
     color .initial:n = {1~0~0},
     grid-width .tl_set:N = \l__luatexcn_meipi_grid_width_tl,
     grid-width .initial:n = {20pt},
@@ -50,16 +53,7 @@
     gap .tl_set:N = \l__luatexcn_meipi_gap_tl,
     gap .initial:n = {0pt},
     % Forward unknown keys: try settings first, then style
-    unknown .code:n =
-      {
-        \exp_args:Nnx \keys_if_exist:nnTF { luatexcn / settings } { \l_keys_key_str }
-          { \keys_set:nx { luatexcn / settings } { \l_keys_key_str = { \exp_not:n {#1} } } }
-          {
-            \exp_args:Nnx \keys_if_exist:nnTF { luatexcn / style } { \l_keys_key_str }
-              { \keys_set:nx { luatexcn / style } { \l_keys_key_str = { \exp_not:n {#1} } } }
-              { }
-          }
-      },
+    unknown .code:n = { \__luatexcn_keys_forward_unknown:n {#1} },
   }
 
 \NewDocumentCommand{\meipiSetup}{ m }
@@ -123,7 +117,8 @@
          \exp_not:N \TextBox [
             height = \l__luatexcn_meipi_height_tl,
             font-size = \l__luatexcn_meipi_font_size_tl,
-            font-color = \l__luatexcn_meipi_color_tl,
+            % Braced: see pizhu - a comma-separated RGB triple must stay one value.
+            font-color = {\l__luatexcn_meipi_color_tl},
             grid-width = \l__luatexcn_meipi_grid_width_tl,
             grid-height = \l__luatexcn_meipi_grid_height_tl,
             floating = false,
@@ -261,6 +256,7 @@
     高度 .tl_set:N = \l__luatexcn_meipi_height_tl,
     字号 .tl_set:N = \l__luatexcn_meipi_font_size_tl,
     颜色 .tl_set:N = \l__luatexcn_meipi_color_tl,
+    字体颜色 .meta:n = { color = {#1} },
     格宽 .tl_set:N = \l__luatexcn_meipi_grid_width_tl,
     格高 .tl_set:N = \l__luatexcn_meipi_grid_height_tl,
     间距 .tl_set:N = \l__luatexcn_meipi_spacing_tl,
@@ -270,6 +266,7 @@
     縱坐標 .tl_set:N = \l__luatexcn_meipi_y_tl,
     字號 .tl_set:N = \l__luatexcn_meipi_font_size_tl,
     顏色 .tl_set:N = \l__luatexcn_meipi_color_tl,
+    字體顏色 .meta:n = { color = {#1} },
     格寬 .tl_set:N = \l__luatexcn_meipi_grid_width_tl,
     間距 .tl_set:N = \l__luatexcn_meipi_spacing_tl,
     間隔 .tl_set:N = \l__luatexcn_meipi_gap_tl,

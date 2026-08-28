@@ -56,6 +56,7 @@
         font-size .tl_set:N = \l__luatexcn_column_local_size_tl,
         font .tl_set:N = \l__luatexcn_column_local_font_tl,
         font-color .tl_set:N = \l__luatexcn_column_local_color_tl,
+        color .meta:n = { font-color = {#1} },
 
         % 行宽参数
         width .tl_set:N = \l__luatexcn_column_width_tl,
@@ -88,16 +89,7 @@
         grid-height .tl_set:N = \l__luatexcn_column_grid_height_tl,
         grid-height .initial:n = {},
         % Forward unknown keys: try settings first, then style
-        unknown .code:n =
-          {
-            \exp_args:Nnx \keys_if_exist:nnTF { luatexcn / settings } { \l_keys_key_str }
-              { \keys_set:nx { luatexcn / settings } { \l_keys_key_str = { \exp_not:n {#1} } } }
-              {
-                \exp_args:Nnx \keys_if_exist:nnTF { luatexcn / style } { \l_keys_key_str }
-                  { \keys_set:nx { luatexcn / style } { \l_keys_key_str = { \exp_not:n {#1} } } }
-                  { }
-              }
-          },
+        unknown .code:n = { \__luatexcn_keys_forward_unknown:n {#1} },
       }
 
     \NewDocumentCommand{\Column}{ O{} +m }
@@ -163,21 +155,13 @@
               { \setmainfont{\l_tmpb_tl}[RawFeature={+vert,+vrt2}] \fontsize{\l_tmpc_tl}{\l_tmpc_tl}\selectfont }
           }
 
-        % Apply Color (visual appearance)
-        \tl_if_empty:NF \l_tmpd_tl
-          {
-            \tl_if_in:NnTF \l_tmpd_tl { , }
-              { \color[rgb]{\l_tmpd_tl} }
-              {
-                \tl_if_in:NnTF \l_tmpd_tl { ~ }
-                  {
-                    \tl_set:Nx \l_tmpe_tl { \l_tmpd_tl }
-                    \tl_replace_all:Nnn \l_tmpe_tl { ~ } { , }
-                    \color[rgb]{\l_tmpe_tl}
-                  }
-                  { \color{\l_tmpd_tl} }
-              }
-          }
+        % DO NOT apply color here via \color - same reasoning as TextFlow:
+        % it creates pdf_colorstack nodes that leak across page boundaries, and
+        % \color[rgb] only accepts 0-1 components, so the 0-255 triples used
+        % everywhere else in this package (e.g. font-color = {35, 25, 20} in the
+        % Siku Quanshu templates) errored out.  The colour is already handed to
+        % column.push_style below and rendered as a PDF literal by the Lua layer,
+        % which normalises both 0-1 and 0-255 forms.
 
         % Push style to stack and get style ID
         % style_extra from forwarded \样式 keys (xshift, yshift, spacing, indent, etc.)
@@ -266,6 +250,7 @@
     字号 .tl_set:N = \l__luatexcn_column_local_size_tl,
     字体 .tl_set:N = \l__luatexcn_column_local_font_tl,
     字体颜色 .tl_set:N = \l__luatexcn_column_local_color_tl,
+    颜色 .meta:n = { font-color = {#1} },
     宽度 .tl_set:N = \l__luatexcn_column_width_tl,
     行宽 .tl_set:N = \l__luatexcn_column_width_tl,
     自动宽度 .bool_set:N = \l__luatexcn_column_auto_width_bool,
@@ -282,6 +267,7 @@
     字號 .tl_set:N = \l__luatexcn_column_local_size_tl,
     字體 .tl_set:N = \l__luatexcn_column_local_font_tl,
     字體顏色 .tl_set:N = \l__luatexcn_column_local_color_tl,
+    顏色 .meta:n = { font-color = {#1} },
     寬度 .tl_set:N = \l__luatexcn_column_width_tl,
     行寬 .tl_set:N = \l__luatexcn_column_width_tl,
     自動寬度 .bool_set:N = \l__luatexcn_column_auto_width_bool,

@@ -222,16 +222,7 @@
         { \tl_set:Nn \l__luatexcn_banxin_lower_section_text_tl { #1 } }
     },
     % Forward unknown keys: try settings first, then style
-    unknown .code:n =
-      {
-        \exp_args:Nnx \keys_if_exist:nnTF { luatexcn / settings } { \l_keys_key_str }
-          { \keys_set:nx { luatexcn / settings } { \l_keys_key_str = { \exp_not:n {#1} } } }
-          {
-            \exp_args:Nnx \keys_if_exist:nnTF { luatexcn / style } { \l_keys_key_str }
-              { \keys_set:nx { luatexcn / style } { \l_keys_key_str = { \exp_not:n {#1} } } }
-              { }
-          }
-      },
+    unknown .code:n = { \__luatexcn_keys_forward_unknown:n {#1} },
   }
 
 % =============================================================================

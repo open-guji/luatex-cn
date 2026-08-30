@@ -711,10 +711,34 @@ local function generate_physical_pages(list, params, engine_ctx, plugin_contexts
     return #_G.vertical_pending_pages
 end
 
+--- Collect which grid cells a block occupies on its first and last page.
+-- Used by process() to tell "this block reuses cells the previous one already
+-- printed on" (overprint) from "the two blocks sit in disjoint bands/columns of
+-- the same page" (a legitimate two-column-on-one-page layout).
+-- @param layout_results (table) Result of compute_grid_layout
+-- @return first (table), last (table) — sets keyed by "band:col"
+local function collect_page_cells(layout_results)
+    local first, last = {}, {}
+    local layout_map = layout_results and layout_results.layout_map
+    if not layout_map then return first, last end
+    local last_page = (layout_results.total_pages or 1) - 1
+    for _, e in pairs(layout_map) do
+        local p = e.page or 0
+        if p == 0 or p == last_page then
+            local key = (e.band or 0) .. ":" .. (e.col or 0)
+            if p == 0 then first[key] = true end
+            if p == last_page then last[key] = true end
+        end
+    end
+    return first, last
+end
+
 --- Main entry point for typesetting
 -- @param box_num (number) TeX box register number
 -- @param params (table) Parameter table
 -- @return (number) Total pages generated
+-- @return (table) Cells occupied on the first page (see collect_page_cells)
+-- @return (table) Cells occupied on the last page
 local function typeset(box_num, params)
     local list, engine_ctx, plugin_contexts, p_info = init_engine_context(box_num, params)
     if not list then return 0 end
@@ -735,9 +759,11 @@ local function typeset(box_num, params)
         end
     end
 
+    local first_cells, last_cells = collect_page_cells(layout_results)
+
     local total_pages = generate_physical_pages(list, params, engine_ctx, plugin_contexts, layout_results, p_info)
 
-    return total_pages
+    return total_pages, first_cells, last_cells
 end
 
 --- Load a prepared page into a TeX box register
@@ -758,14 +784,41 @@ local function load_page(box_num, index, copy)
     end
 end
 
+-- Cells the previous content block printed on its last page, still open (see
+-- the comment in process() below). nil when no page is open.
+local open_page_cells = nil
+
+--- Do two "band:col" cell sets share a cell?
+local function cells_collide(a, b)
+    if not a or not b then return false end
+    for key in pairs(b) do
+        if a[key] then return true end
+    end
+    return false
+end
+
 --- Interface for TeX to call to process and output pages
 local function process(box_num, params)
-    local total_pages = typeset(box_num, params)
+    local total_pages, first_cells, last_cells = typeset(box_num, params)
 
     -- Check if split page is enabled
     -- CRITICAL: Do NOT enable split page output for textboxes (Content, etc.)
     local is_textbox = (params.is_textbox == true)
     local split_enabled = page.split and page.split.is_enabled and page.split.is_enabled()
+
+    -- Break the page when this block would print over the previous one.
+    -- output_pages emits a page-break penalty only *between* the pages it
+    -- produces, so the last page stays open, and every page is a zero-height
+    -- \vbox placed at absolute coordinates: a following block restarts at column
+    -- 0 and silently overprints. Two blocks that land in disjoint bands/columns
+    -- (e.g. 分栏 + \换栏 to put two styles side by side) are a real layout and
+    -- must keep sharing the page, so only break on an actual cell collision.
+    -- Breaking here rather than after the previous block also leaves documents
+    -- with a single content block byte-identical.
+    if not is_textbox and total_pages > 0 and cells_collide(open_page_cells, first_cells) then
+        tex.print("\\vfill\\penalty-10000\\allowbreak")
+        open_page_cells = nil
+    end
 
     if split_enabled and not is_textbox then
         -- Split page mode: delegate to page.split module
@@ -773,6 +826,17 @@ local function process(box_num, params)
     else
         -- Normal mode: delegate to page module
         page.output_pages(box_num, total_pages)
+    end
+
+    if not is_textbox and total_pages > 0 then
+        -- A block that shared the open page adds its cells to the ones already
+        -- printed there, so a third block collides with either. A block that
+        -- broke to further pages of its own starts that page fresh.
+        if open_page_cells and total_pages == 1 then
+            for key in pairs(last_cells) do open_page_cells[key] = true end
+        else
+            open_page_cells = last_cells
+        end
     end
 
     -- Clear registries that are no longer needed (they were only used during prepare_grid)

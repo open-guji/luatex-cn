@@ -1038,6 +1038,55 @@ tex.set("global", "paperheight", target_h)
 
 ---
 
+### 8.3 连续两个「正文」块叠印在同一页
+
+**日期**: 2026-08-30
+
+**问题**：同一页上连续写两个 `正文` 环境，两块内容压在一起排成一页
+（版心同时印出「一」和「二」），另有三个报错：
+`You can't use \prevdepth in horizontal mode` → `Missing number` →
+`Illegal unit of measure`。
+
+**最小复现**：
+
+```latex
+\documentclass[四库全书]{ltc-guji}
+\关闭分页 \无标点模式 \setmainfont{TW-Kai} \title{測試}
+\begin{document}
+\begin{正文} 甲一一二三四五六七八九 \par \end{正文}
+\begin{正文} 乙一一二三四五六七八九 \end{正文}
+\end{document}
+```
+
+**根本原因**（两个，互相独立）：
+
+1. `page.output_pages` / `split.output_pages` 只在**它自己产出的页与页之间**
+   插 `\vfill\penalty-10000`，最后一页不收尾。而每一页都是
+   `\vbox to 0pt{...}` —— **高度为 0**、内容全靠绝对 kern 定位。页面于是
+   永远"装得下"下一块，第二块又从第 0 列排起，直接压印上去。
+2. `正文`/`\Content` 开头是 `\nointerlineskip \par\noindent`。
+   `\nointerlineskip` 是 `\prevdepth` 赋值，**只在竖直模式下合法**；
+   上一块留下的 `\noindent\kern...\vbox` 还开着水平模式，于是报错。
+   （`\vfill` 这类竖直命令会触发隐式 `\par`，`\prevdepth` 赋值不会。）
+
+**修复**：
+
+- `\par` 提到 `\nointerlineskip` 前面（content.sty 两处）。
+- `core.process` 记住上一块在**它最后一页**占掉的格子（`band:col` 集合），
+  下一块排完布局后比对**它第一页**的占格，**相交才**补分页 penalty。
+
+**为什么不是无脑收尾**：`分栏=2` + `\换栏` 把两个 `正文` 块放进同一页的
+上下两栏是**正当版式**（见 `bracket_ink_issue105.tex`，两栏要用不同
+`punct-style`，而标点风格是按块生效的）。所以判据必须是"占格是否相交"，
+不能是"是不是又来了一块"。
+
+另外，**在上一块末尾补分页会改动单块文档的输出**：实测给每块无条件收尾，
+`sideways` / `tw-vbook` 等 7 个用例的版心页码横向挪了约 4px
+（末页多出的 `\vfill` 参与了页面竖直列表）。把 penalty 放在**下一块开头**
+则单块文档一个字节都不动 —— **补页面级材料时，宁可加在需要它的那一侧**。
+
+---
+
 ### 8.4 `\抬头` 的强制缩进泄漏到后面的夹注
 
 **日期**: 2026-08-30

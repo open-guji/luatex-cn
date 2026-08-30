@@ -1038,6 +1038,96 @@ tex.set("global", "paperheight", target_h)
 
 ---
 
+### 8.3 连续两个「正文」块叠印在同一页
+
+**日期**: 2026-08-30
+
+**问题**：同一页上连续写两个 `正文` 环境，两块内容压在一起排成一页
+（版心同时印出「一」和「二」），另有三个报错：
+`You can't use \prevdepth in horizontal mode` → `Missing number` →
+`Illegal unit of measure`。
+
+**最小复现**：
+
+```latex
+\documentclass[四库全书]{ltc-guji}
+\关闭分页 \无标点模式 \setmainfont{TW-Kai} \title{測試}
+\begin{document}
+\begin{正文} 甲一一二三四五六七八九 \par \end{正文}
+\begin{正文} 乙一一二三四五六七八九 \end{正文}
+\end{document}
+```
+
+**根本原因**（两个，互相独立）：
+
+1. `page.output_pages` / `split.output_pages` 只在**它自己产出的页与页之间**
+   插 `\vfill\penalty-10000`，最后一页不收尾。而每一页都是
+   `\vbox to 0pt{...}` —— **高度为 0**、内容全靠绝对 kern 定位。页面于是
+   永远"装得下"下一块，第二块又从第 0 列排起，直接压印上去。
+2. `正文`/`\Content` 开头是 `\nointerlineskip \par\noindent`。
+   `\nointerlineskip` 是 `\prevdepth` 赋值，**只在竖直模式下合法**；
+   上一块留下的 `\noindent\kern...\vbox` 还开着水平模式，于是报错。
+   （`\vfill` 这类竖直命令会触发隐式 `\par`，`\prevdepth` 赋值不会。）
+
+**修复**：
+
+- `\par` 提到 `\nointerlineskip` 前面（content.sty 两处）。
+- `core.process` 记住上一块在**它最后一页**占掉的格子（`band:col` 集合），
+  下一块排完布局后比对**它第一页**的占格，**相交才**补分页 penalty。
+
+**为什么不是无脑收尾**：`分栏=2` + `\换栏` 把两个 `正文` 块放进同一页的
+上下两栏是**正当版式**（见 `bracket_ink_issue105.tex`，两栏要用不同
+`punct-style`，而标点风格是按块生效的）。所以判据必须是"占格是否相交"，
+不能是"是不是又来了一块"。
+
+另外，**在上一块末尾补分页会改动单块文档的输出**：实测给每块无条件收尾，
+`sideways` / `tw-vbook` 等 7 个用例的版心页码横向挪了约 4px
+（末页多出的 `\vfill` 参与了页面竖直列表）。把 penalty 放在**下一块开头**
+则单块文档一个字节都不动 —— **补页面级材料时，宁可加在需要它的那一侧**。
+
+---
+
+### 8.4 `\抬头` 的强制缩进泄漏到后面的夹注
+
+**日期**: 2026-08-30
+
+**问题**：`\抬头[1]` 之后，同列的夹注（「聖祖仁皇帝……臣南懐仁製」的小字
+「臣」）跳回列首落到版框上面；更糟的是**同一个「正文」块里后面每一列**的
+夹注都跟着跳。
+
+**根本原因**：`\抬头` 把行位编码进 `ATTR_INDENT`，这个属性一直留到组结束。
+字形每次换列都会经 `resolve_node_indent` 按 `ctx.taitou_col` 作用域重新解析
+（越出抬头列就丢弃），**夹注（textflow）却绕过它直接读原始属性** —— 代码里
+原本还特意注明「taitou 是有意的强制定位，要原样传给 textflow」。
+
+**判据不能只看一个信号**（三个用例互相制约，缺一个就翻车）：
+
+| 用例 | 期望 | 特征 |
+|---|---|---|
+| 抬头行自己的夹注（本 issue） | 接着正文往下排 | 在抬头列内，但抬头缩进已被正文用掉 |
+| 后续列的夹注（本 issue） | 接着正文往下排 | 已越出抬头列 |
+| 夹注**内部**的 `\单抬`（basic/paragraph.tex） | 凸进天头 | 越出（taitou_col 是旧的），但夹注起在列首 |
+| 夹注内 `\平抬` 后换列续排（basic/jiazhu.tex） | 回到段落缩进 | 越出，且起在列首 |
+
+最终条件（`layout-grid.lua` 的 textflow 分支）：
+
+```lua
+(outside and (after_text or bare_column)) or stale_page
+    or ctx.cur_column_indent == tf_taitou_val
+```
+
+- `outside` = 不在抬头所在的页/列；
+- `after_text` = `cur_row > cur_column_indent`，即本列缩进之后已经排了正文；
+- `bare_column` = 本列没有自己的缩进（夹注内的 `\单抬` 一定处在有缩进的段落里，
+  所以这一条不会误伤它）；
+- `stale_page` = 抬头压根在更早的页上。
+
+只用 `cur_row > 0` 会误伤第三、四行 —— **续排到新列时段落缩进已经把 cur_row
+顶上去了，「cur_row 不为零」并不等于「这一列已经排了东西」**，所以门槛要用
+`cur_column_indent` 而不是 0。
+
+---
+
 ## 九、 clreq 行内调整接线（P2）
 
 ### 9.1 「收回空白」不是「缩短字幅」——刚性尺寸的计算次序

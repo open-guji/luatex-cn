@@ -1,0 +1,31 @@
+% consecutive_bodytext_overprint.tex - 回归测试: 连续两个「正文」块叠印在同一页
+% 问题: page.output_pages 只在它产出的页与页之间插入分页 penalty，最后一页
+%       留着不收尾；而每一页都是一个高度为 0 的 \vbox、内容按绝对坐标摆放。
+%       于是紧接着的第二个「正文」块又从第 0 列排起，整块压印在前一块上面
+%       （版心同时印出「一」和「二」），并伴随
+%       "You can't use \prevdepth in horizontal mode" 等三个报错。
+% 触发条件: 同一页上连续两个「正文」环境，且两块占用同一批格子
+% 结果: 两块内容重叠成一页
+% 修复: process() 在本块与上一块占格相交时补一个分页 penalty；
+%       并把「正文」开头的 \nointerlineskip 移到 \par 之后（\prevdepth 赋值
+%       只在竖直模式下合法）。
+%       占格不相交的两块（分栏 + \换栏 的双栏对照）仍共用同一页，
+%       见 bracket_ink_issue105.tex。
+\documentclass[四库全书]{ltc-guji}
+\关闭分页
+\无标点模式
+\setmainfont{TW-Kai}
+
+\title{測試}
+
+\begin{document}
+\begin{正文}
+甲一一二三四五六七八九\换行
+甲二一二三四五六七八九
+\end{正文}
+
+\begin{正文}
+乙一一二三四五六七八九\换行
+乙二一二三四五六七八九
+\end{正文}
+\end{document}

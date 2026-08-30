@@ -2651,12 +2651,19 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
         -- already equals the forced indent value, it means apply_indentation was
         -- already called for preceding regular text — clear the forced indent so
         -- textflow continues from ctx.cur_row instead of jumping back.
-        -- IMPORTANT: Only clear suojin-encoded indents (\缩进[N]).
-        -- Taitou-encoded indents (\平抬/\单抬/\相对抬头) must be passed through
-        -- to textflow intact, as they represent intentional forced positioning.
+        -- IMPORTANT: Only clear suojin-encoded indents (\缩进[N]) this way.
+        -- Taitou-encoded indents (\平抬/\单抬/\相对抬头) are absolute row
+        -- overrides and are passed through intact — but only where the taitou
+        -- actually starts the column. \抬头 sets ATTR_INDENT, which stays set
+        -- until the end of the group; glyphs get their taitou scope re-resolved
+        -- on every column wrap, while textflow reads the raw attribute. A note
+        -- placed after regular text would therefore jump back to the taitou row
+        -- — in the taitou column itself and, worse, in every later column of the
+        -- block (「聖祖仁皇帝……臣南懐仁製」: the 臣 landed above the frame).
         if is_textflow_node then
             local tf_indent_attr = D.get_attribute(t, constants.ATTR_INDENT)
             local tf_is_suojin, tf_indent_val = constants.is_suojin_indent(tf_indent_attr)
+            local tf_is_taitou, tf_taitou_val = constants.is_taitou_indent(tf_indent_attr)
             if tf_is_suojin then
                 if (ctx.cur_column_indent or 0) == tf_indent_val then
                     -- Suojin forced indent already consumed by preceding regular text;
@@ -2664,6 +2671,39 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
                     D.set_attribute(t, constants.ATTR_INDENT, 0)
                 end
             else
+                if tf_is_taitou then
+                    -- Taitou is an absolute row override and belongs to its own
+                    -- column only. Drop it when it is not this note's:
+                    --   (a) we are outside the taitou column — the attribute is
+                    --       stale (it stays set to the end of the group, and only
+                    --       glyphs get re-resolved against the scope);
+                    --   (b) the taitou column's indent was already applied by
+                    --       regular text ahead of the note, so the note follows
+                    --       that text instead of jumping back to the top.
+                    --   (c) the taitou belongs to an earlier page altogether, so
+                    --       it cannot be about a note starting a column on this one.
+                    -- 「聖祖仁皇帝……臣南懐仁製」hits (b); later columns of the same
+                    -- block hit (a); a note that *starts* a column pages later hits
+                    -- (c). All three used to put the note above the frame.
+                    -- A taitou written inside the note itself (\夹注{…\单抬 …}) is
+                    -- not scoped by the penalty handler, so it stays on the current
+                    -- page and column and none of (a)–(c) fire.
+                    local outside = ctx.taitou_col ~= nil
+                        and (ctx.cur_col ~= ctx.taitou_col or ctx.cur_page ~= ctx.taitou_page)
+                    local after_text = (ctx.cur_row or 0) > (ctx.cur_column_indent or 0)
+                    local stale_page = ctx.taitou_page ~= nil
+                        and ctx.cur_page ~= ctx.taitou_page
+                    -- A note that starts a column with no indent of its own has
+                    -- nothing to be raised above: outside the taitou column that
+                    -- is a leftover attribute, not this note's taitou. (A note
+                    -- carrying its own \单抬 sits in an indented paragraph, so
+                    -- cur_column_indent is non-zero there.)
+                    local bare_column = (ctx.cur_column_indent or 0) == 0
+                    if (outside and (after_text or bare_column)) or stale_page
+                        or (ctx.cur_column_indent or 0) == tf_taitou_val then
+                        D.set_attribute(t, constants.ATTR_INDENT, 0)
+                    end
+                end
                 apply_indentation(ctx, indent)
             end
         else

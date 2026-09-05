@@ -1,0 +1,30 @@
+% pagesetup_after_disable_split.tex - 回归测试: \pageSetup 重开分页、并在正文里设 \topskip
+% 问题一: \disableSplitPage 只调用 Lua 端的 split.disable()，从不清 TeX 端的
+%         \l__luatexcn_page_split_enabled_bool。而 \__luatexcn_page_apply_split:
+%         在每次 \pageSetup 末尾都跑，于是 \关闭分页 之后任何一次 \pageSetup
+%         （连空参数都算）都把分页重新打开：纸宽砍半、页数加倍。
+%         \enableSplitPage 同样只 sync 布尔值到 Lua，自己从不置 true。
+% 问题二: \pageSetup 无条件设 \topskip。\luatexcn_apply_geometry: 的注释已写明
+%         在正文里设 \topskip 会与 shipout 钩子互动、产生假空页；\pageSetup 的
+%         注释假定它只在导言区调用，但没有任何东西保证这件事。
+% 触发条件: \关闭分页 之后再调用 \pageSetup —— 导言区一次触发问题一，
+%           正文里一次再触发问题二
+% 结果: 本该 1 页，实得 3 页；且纸宽从 1131.756pt 变成 565.878pt
+% 修复: \disableSplitPage / \enableSplitPage 同时维护 TeX 端布尔值并 sync；
+%       \pageSetup 的 \topskip 赋值加导言区守卫（沿用本文件既有的
+%       \@onlypreamble / \@notprerr 惯用法）。
+\documentclass[四库全书]{ltc-guji}
+\关闭分页
+\无标点模式
+\setmainfont{TW-Kai}
+\pageSetup{}
+
+\title{測試}
+
+\begin{document}
+\pageSetup{}
+\begin{正文}
+甲一二三四五六七八九十一二三四五六七八九十\换行
+乙一二三四五六七八九十一二三四五六七八九十
+\end{正文}
+\end{document}

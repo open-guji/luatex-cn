@@ -114,9 +114,15 @@
     }
     % Apply geometry when called in preamble (sets paper size)
     \luatexcn_apply_geometry:
-    % Set topskip (only safe in \pageSetup, not in per-page \luatexcn_apply_geometry:
-    % where it can trigger spurious blank pages via shipout hook interactions)
-    \dim_set:Nn \topskip { \l__luatexcn_page_topskip_tl }
+    % Set topskip -- preamble only.  Setting \topskip in the document body
+    % interacts with the shipout hooks and ships a spurious blank page, the same
+    % hazard \luatexcn_apply_geometry: documents below.  This used to be
+    % unconditional, on the assumption that \pageSetup is never called after
+    % \begin{document}; nothing enforces that, so guard it here.
+    \if_meaning:w \@onlypreamble \@notprerr
+    \else
+      \dim_set:Nn \topskip { \l__luatexcn_page_topskip_tl }
+    \fi
     % Apply split page settings if enabled
     \__luatexcn_page_apply_split:
   }
@@ -264,14 +270,21 @@
 % Enable split page processing
 \NewDocumentCommand{\enableSplitPage}{ O{} }
   {
+    \bool_set_true:N \l__luatexcn_page_split_enabled_bool
     \tl_if_empty:nF { #1 } { \keys_set:nn { luatexcn / page } { #1 } }
     \__luatexcn_page_split_sync:
     \lua_now:n { require('core.luatex-cn-core-page').split.enable() }
   }
 
 % Disable split page processing
+% Both sides must be cleared.  \__luatexcn_page_apply_split: runs at the end of
+% every \pageSetup and re-enables split whenever the TeX boolean is still true,
+% so disabling only the Lua side makes any later \pageSetup silently halve the
+% paper width and double the page count.
 \NewDocumentCommand{\disableSplitPage}{ }
   {
+    \bool_set_false:N \l__luatexcn_page_split_enabled_bool
+    \__luatexcn_page_split_sync:
     \lua_now:n { require('core.luatex-cn-core-page').split.disable() }
   }
 

@@ -284,13 +284,19 @@ function pipeline.process(head_d)
                     spacing.ADJUST_CLASS_CODES.western_word)
                 if prev_glyph then
                     local em = em_size(prev_glyph)
+                    -- The bounds only narrow the font's own elasticity;
+                    -- a space whose natural width already lies outside them
+                    -- (Source Sans 3: 0.2 em) keeps its shrink/stretch as
+                    -- is — clamping to min(w, floor) would zero it, and a
+                    -- line of Western words could then never compress:
+                    -- overfull instead of a slightly tighter line.
                     local w = D.getfield(curr, "width")
-                    local floor_w = math.min(w, math.floor(0.25 * em))
-                    if w - D.getfield(curr, "shrink") < floor_w then
+                    local floor_w = math.floor(0.25 * em)
+                    if w >= floor_w and w - D.getfield(curr, "shrink") < floor_w then
                         D.setfield(curr, "shrink", w - floor_w)
                     end
-                    local ceil_w = math.max(w, math.floor(0.5 * em))
-                    if w + D.getfield(curr, "stretch") > ceil_w then
+                    local ceil_w = math.floor(0.5 * em)
+                    if w <= ceil_w and w + D.getfield(curr, "stretch") > ceil_w then
                         D.setfield(curr, "stretch", ceil_w - w)
                     end
                 end

@@ -1,0 +1,29 @@
+% hori-word-space.tex - 横排西文词距 clreq 界限回归测试
+% 覆盖：空格窄于 1/4 em 的西文字体，其 shrink 不能被界限截成 0。
+%       Source Sans 3 的空格只有 0.2 em；这里用 \spaceskip 显式造出同样的
+%       词距（0.2 em minus 0.07 em），不依赖测试字体清单之外的西文字体。
+%       版宽 = 句子自然宽度 - 每个空格 0.05 em：整句必须靠 shrink 挤进一行；
+%       若 shrink 被清成 0，TeX 只能把末词折到第二行（像素差立现）。
+\documentclass[12pt]{article}
+\usepackage[paperwidth=12cm, paperheight=8cm, margin=1cm]{geometry}
+\usepackage{fontspec}
+\setmainfont{TW-Kai}
+\usepackage{luatex-cn-hori}
+\pagestyle{empty}
+
+\newlength{\naturalwd}
+\newlength{\boxwd}
+\newcommand{\sentence}{alpha beta gamma delta epsilon zeta eta}
+
+\begin{document}
+
+{\small 【測試配置】\verb|\spaceskip=0.2em minus 0.07em|（模擬 Source Sans 3 的窄空格），版寬 = 自然寬度 − 6 × 0.05 em。正確：整句一行；若詞距 shrink 被截成 0：折成兩行。}
+
+\begingroup
+\spaceskip=0.2em plus 0.1em minus 0.07em\relax
+\settowidth{\naturalwd}{\sentence}
+\setlength{\boxwd}{\dimexpr\naturalwd - 0.30em\relax}
+\noindent\fbox{\parbox{\boxwd}{\sentence}}
+\endgroup
+
+\end{document}

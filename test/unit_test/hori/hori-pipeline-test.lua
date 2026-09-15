@@ -89,6 +89,58 @@ test_utils.run_test("existing glue blocks insertion (source space wins)", functi
     test_utils.assert_eq(seq[2].width, 100000)
 end)
 
+-- 西文词距（源码空格）的 clreq 界限：最小 1/4 em、最大 1/2 em
+local function word_space(w, stretch, shrink)
+    -- subtype 13 = spaceskip（字体空格）
+    return test_utils.make_direct_node(GLUE,
+        { subtype = 13, width = w, stretch = stretch, shrink = shrink })
+end
+
+test_utils.run_test("word space: shrink clamped so the gap stays >= 1/4 em", function()
+    -- 0.33 em 空格、shrink 0.2 em：最小只能挤到 1/4 em → shrink 收窄为 0.08 em
+    local w = math.floor(0.33 * EM)
+    local seq = run({ glyph(0x61), word_space(w, 0, math.floor(0.2 * EM)), glyph(0x62) })
+    test_utils.assert_eq(#seq, 3)
+    test_utils.assert_eq(seq[2].class, spacing.ADJUST_CLASS_CODES.western_word)
+    test_utils.assert_eq(seq[2].shrink, w - math.floor(0.25 * EM))
+end)
+
+test_utils.run_test("word space narrower than 1/4 em keeps the font's own shrink", function()
+    -- Source Sans 3 的空格只有 0.2 em，本就低于下限：界限只收窄弹性，不能把
+    -- shrink 清成 0——否则纯西文行没有任何可挤压量，只能出 Overfull
+    local w = math.floor(0.2 * EM)
+    local shrink = math.floor(0.07 * EM)
+    local seq = run({ glyph(0x61), word_space(w, 0, shrink), glyph(0x62) })
+    test_utils.assert_eq(seq[2].shrink, shrink)
+    test_utils.assert_eq(seq[2].width, w)
+end)
+
+test_utils.run_test("word space wider than 1/2 em keeps the font's own stretch", function()
+    local w = math.floor(0.6 * EM)
+    local stretch = math.floor(0.3 * EM)
+    local seq = run({ glyph(0x61), word_space(w, stretch, 0), glyph(0x62) })
+    test_utils.assert_eq(seq[2].stretch, stretch)
+end)
+
+test_utils.run_test("word space: stretch clamped so the gap stays <= 1/2 em", function()
+    local w = math.floor(0.33 * EM)
+    local seq = run({ glyph(0x61), word_space(w, math.floor(0.5 * EM), 0), glyph(0x62) })
+    test_utils.assert_eq(seq[2].stretch, math.floor(0.5 * EM) - w)
+end)
+
+test_utils.run_test("word space exactly 1/2 em (TW-Kai) still has stretch clamped to 0", function()
+    -- 界限含端点：空格已顶到上限，任何 stretch 都会把词距拉过 1/2 em
+    local w = math.floor(0.5 * EM)
+    local seq = run({ glyph(0x61), word_space(w, math.floor(0.25 * EM), 0), glyph(0x62) })
+    test_utils.assert_eq(seq[2].stretch, 0)
+end)
+
+test_utils.run_test("word space exactly 1/4 em still has shrink clamped to 0", function()
+    local w = math.floor(0.25 * EM)
+    local seq = run({ glyph(0x61), word_space(w, 0, math.floor(0.1 * EM)), glyph(0x62) })
+    test_utils.assert_eq(seq[2].shrink, 0)
+end)
+
 test_utils.run_test("font kern is transparent for the boundary", function()
     local k = test_utils.make_direct_node(KERN, { kern = 500 })
     local seq = run({ glyph(0x4E00), k, glyph(0x4E8C) })

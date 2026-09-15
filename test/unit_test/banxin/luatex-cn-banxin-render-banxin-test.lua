@@ -199,4 +199,87 @@ test_utils.run_test("版心页码: 显式页码（数字化模式）优先于样
     _G.page = nil
 end)
 
+-- ============================================================================
+-- get_scaled_font: 缩放字体记忆化（issue #167）
+-- ============================================================================
+
+local function with_font_mock(fn)
+    local orig_getfont, orig_define = font.getfont, font.define
+    local define_calls, next_id = 0, 100
+    font.getfont = function(id)
+        if id == 7 then return { size = 655360 } end   -- 10pt 原字体
+        return nil                                      -- 缩放后的 id 拿不到（LEARNING 3.4）
+    end
+    font.define = function(data)
+        define_calls = define_calls + 1
+        next_id = next_id + 1
+        return next_id
+    end
+    for k in pairs(internal.scaled_font_cache) do internal.scaled_font_cache[k] = nil end
+    local ok, err = pcall(fn, function() return define_calls end)
+    font.getfont, font.define = orig_getfont, orig_define
+    for k in pairs(internal.scaled_font_cache) do internal.scaled_font_cache[k] = nil end
+    if not ok then error(err, 0) end
+end
+
+test_utils.run_test("get_scaled_font: 无缩放参数时原样返回", function()
+    with_font_mock(function(calls)
+        local fid, scale = internal.get_scaled_font(7, {})
+        test_utils.assert_eq(fid, 7)
+        test_utils.assert_eq(scale, 1.0)
+        test_utils.assert_eq(calls(), 0)
+    end)
+end)
+
+test_utils.run_test("get_scaled_font: font_size 分支只 define 一次，命中缓存返回同 id 与同 scale", function()
+    with_font_mock(function(calls)
+        local fid1, s1 = internal.get_scaled_font(7, { font_size = "5pt" })
+        test_utils.assert_eq(calls(), 1)
+        test_utils.assert_eq(s1, 0.5)
+        local fid2, s2 = internal.get_scaled_font(7, { font_size = "5pt" })
+        test_utils.assert_eq(calls(), 1)
+        test_utils.assert_eq(fid2, fid1)
+        test_utils.assert_eq(s2, 0.5)
+    end)
+end)
+
+test_utils.run_test("get_scaled_font: font_scale 分支只 define 一次，scale 原样缓存", function()
+    with_font_mock(function(calls)
+        local fid1, s1 = internal.get_scaled_font(7, { font_scale = 0.8 })
+        test_utils.assert_eq(calls(), 1)
+        test_utils.assert_eq(s1, 0.8)
+        local fid2, s2 = internal.get_scaled_font(7, { font_scale = 0.8 })
+        test_utils.assert_eq(calls(), 1)
+        test_utils.assert_eq(fid2, fid1)
+        test_utils.assert_eq(s2, 0.8)
+    end)
+end)
+
+test_utils.run_test("get_scaled_font: 不同字号 / 不同分支各自缓存，互不串", function()
+    with_font_mock(function(calls)
+        local a = internal.get_scaled_font(7, { font_size = "5pt" })
+        local b = internal.get_scaled_font(7, { font_size = "8pt" })
+        local c = internal.get_scaled_font(7, { font_scale = 0.5 })
+        test_utils.assert_eq(calls(), 3)
+        test_utils.assert_true(a ~= b and b ~= c and a ~= c)
+        -- 再来一轮全部命中
+        internal.get_scaled_font(7, { font_size = "5pt" })
+        internal.get_scaled_font(7, { font_size = "8pt" })
+        internal.get_scaled_font(7, { font_scale = 0.5 })
+        test_utils.assert_eq(calls(), 3)
+    end)
+end)
+
+test_utils.run_test("get_scaled_font: 原字体拿不到时不 define、不缓存", function()
+    with_font_mock(function(calls)
+        local fid, scale = internal.get_scaled_font(99, { font_size = "5pt" })
+        test_utils.assert_eq(fid, 99)
+        test_utils.assert_eq(scale, 1.0)
+        local fid2, scale2 = internal.get_scaled_font(99, { font_scale = 0.8 })
+        test_utils.assert_eq(fid2, 99)
+        test_utils.assert_eq(scale2, 0.8)
+        test_utils.assert_eq(calls(), 0)
+    end)
+end)
+
 print("\nAll render-banxin tests passed!")

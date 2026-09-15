@@ -284,6 +284,58 @@ end
 -- Text Rendering Functions (文字渲染)
 -- ============================================================================
 
+--- 缩放字体缓存：key = "<font_id>@<目标 size sp>" 或 "<font_id>@s<scale>"
+-- 版心每页每个文字元素（章节名、页码……）都会走一次 create_vertical_text，
+-- 而整本书里 (font_id, 目标字号) 的组合只有寥寥几种。每次都「复制字体表 →
+-- font.define」在 2000+ 页的文档里要花掉几十秒（issue #167）。LuaTeX 不会把
+-- 同一个 font id 重用于不同字体（重新定义会分配新 id），所以按 id 缓存是安全的。
+-- scale 因子必须一起缓存：它是相对*原*字体算的，命中缓存时已拿不到原字体 size。
+local scaled_font_cache = {}
+
+--- 取得缩放后的字体 id 与缩放系数
+-- @param font_id (number) 原字体 id
+-- @param params (table) 含 font_size（dimen 字符串/数值）或 font_scale（数值）
+-- @return font_id (number) 缩放后的字体 id（无需缩放时即原 id）
+-- @return font_scale_factor (number) 字形尺寸相对原字体的比例
+local function get_scaled_font(font_id, params)
+    local ckey, target_size, scale
+    if params.font_size then
+        local fs = constants.to_dimen(params.font_size)
+        if fs and fs > 0 then
+            ckey = font_id .. "@" .. fs
+            target_size = fs
+        end
+    elseif params.font_scale then
+        ckey = font_id .. "@s" .. params.font_scale
+        scale = params.font_scale
+    end
+    if not ckey then
+        return font_id, 1.0
+    end
+
+    local hit = scaled_font_cache[ckey]
+    if hit then
+        return hit.fid, hit.scale
+    end
+
+    local current_font_data = font.getfont(font_id)
+    if not current_font_data then
+        return font_id, scale or 1.0
+    end
+
+    local new_font_data = {}
+    for k, v in pairs(current_font_data) do new_font_data[k] = v end
+    if target_size then
+        scale = target_size / current_font_data.size
+        new_font_data.size = target_size
+    else
+        new_font_data.size = math.floor(current_font_data.size * scale + 0.5)
+    end
+    local new_id = font.define(new_font_data)
+    scaled_font_cache[ckey] = { fid = new_id, scale = scale }
+    return new_id, scale
+end
+
 -- Forward declaration
 local create_vertical_text
 
@@ -315,32 +367,12 @@ create_vertical_text = function(text, params)
     local font_id = params.font_id or font.current()
     local shift_y = params.shift_y or 0
 
-    local font_scale_factor = 1.0
+    -- 先保存原字体数据（font.define 之后新 id 的 getfont 可能拿不到，见 LEARNING 3.4）
     local base_font_data = font.getfont(font_id)
 
-    -- Handle font size if provided
-    if params.font_size then
-        local fs = constants.to_dimen(params.font_size)
-        if fs and fs > 0 then
-            local current_font_data = font.getfont(font_id)
-            if current_font_data then
-                font_scale_factor = fs / current_font_data.size
-                local new_font_data = {}
-                for k, v in pairs(current_font_data) do new_font_data[k] = v end
-                new_font_data.size = fs
-                font_id = font.define(new_font_data)
-            end
-        end
-    elseif params.font_scale then
-        font_scale_factor = params.font_scale
-        local current_font_data = font.getfont(font_id)
-        if current_font_data then
-            local new_font_data = {}
-            for k, v in pairs(current_font_data) do new_font_data[k] = v end
-            new_font_data.size = math.floor(new_font_data.size * params.font_scale + 0.5)
-            font_id = font.define(new_font_data)
-        end
-    end
+    -- 缩放字体（带缓存，见 get_scaled_font）
+    local font_scale_factor
+    font_id, font_scale_factor = get_scaled_font(font_id, params)
 
     -- Calculate cell height
     local cell_height = height / num_cells
@@ -791,6 +823,8 @@ local banxin = {
         parse_section_text = parse_section_text,
         render_pre_rendered_box = render_pre_rendered_box,
         resolve_page_number_string = resolve_page_number_string,
+        get_scaled_font = get_scaled_font,
+        scaled_font_cache = scaled_font_cache,
     },
 }
 

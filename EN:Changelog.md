@@ -4,6 +4,18 @@ English | [中文版](Changelog)
 
 All notable changes to this project will be documented here.
 
+## [0.4.2] - 2026-09-30
+
+- 🐛 **Annotations after taitou**: notes following `\抬头`/`\平抬`/`\单抬` no longer jump to the column head or fall into the top margin; the forced taitou indent no longer leaks into later annotations. `\单抬` *inside* an annotation still protrudes into the top margin (#165)
+- 🐛 **Two consecutive body blocks**: two `正文` environments on the same page no longer overprint each other (no more 「一」 and 「二」 in the same banxin) and no longer raise `\prevdepth` errors; two-column parallel layouts using `分栏` + `\换栏` still share one page (#165)
+- 🐛 **Banxin page-number style**: `\pageSetup{页码样式=digits}` (`digits`/`chinese`/`arabic`/`none`) now takes effect on banxin page numbers, sharing one formatter with vertical page numbers; the initial value is now "unset", so `\pageSetup{纸宽=...}` no longer switches banxin page numbers off as a side effect (#161)
+- 🐛 **`\pageSetup` after `\disableSplitPage`**: the paper width is no longer halved and the page count no longer doubled; no extra blank page when called after `\begin{document}`. `\pageSetup` no longer sets `\topskip` unconditionally, so a `\topskip` set in the body is kept (#166)
+- 🐛 **Horizontal CJK–Western spacing**: Western-only lines in fonts whose space is narrower than 1/4 em (e.g. Source Sans 3) no longer overflow the text block (#171); `/` `-` `·` `–` in strings like `1/4 em` or `a/b` are treated as Western half-width punctuation and no longer get 1/4em on both sides (#160)
+- 🐛 **Judou color**: judou marks are no longer drawn in the body-text color in the colored Siku Quanshu template; `\句读设置{句读颜色=...}` now actually works (#157)
+- 🐛 **Color key aliases and warnings**: `color`/`颜色` and `font-color`/`字体颜色` are interchangeable across jiazhu, textflow, line, textbox, judou, pizhu, meipi and sidenote; `\夹注设置{color=red}` no longer does nothing or recolors the whole text. Unknown keys now raise a warning instead of being silently dropped (#163)
+- ♻️ **Faster large books**: scaled fonts for banxin vertical text are cached by (font, size). 《欽定儀象考成》(875 pages): 170s → 141s, output PDF byte-identical (fix #167, #172)
+- ✅ **Tests**: new color-key self-check `test/color_test.py`, extra clreq assertions for CJK–Western spacing
+
 ## [0.4.1] - 2026-08-07
 
 - 🐛 **No more hyphenated Western words in annotations/TextBox**: TextBox no longer lets TeX pre-break collected content (the old logic split English in annotations into S-/tate and misaligned columns); column breaking is now entirely handled by the grid engine. In grid mode (fixed cell height, e.g. `ltc-guji`), `\Sideways` now sizes glyphs by their advance width so rotated words set contiguously (fix #50)

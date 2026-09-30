@@ -100,7 +100,7 @@ Fine-tune Judou appearance via `\judouSetup`:
 | Key | Description | Default |
 |-----|-------------|---------|
 | `punct-mode` | Punctuation mode | `normal` |
-| `judou-color` | Color of the marks | `red` |
+| `judou-color` | Color of the marks (aliases: `color`, `font-color`, `句读颜色`, `句讀顏色`) | `red` |
 | `judou-size` | Size of the marks | `1em` |
 | `judou-pos` | Position relative to character | `right-bottom` |
 

@@ -53,7 +53,7 @@
 | margin-outer | 外边距 | 外邊距 | 度量 | _(空)_ | 外侧边距（两面模式） |
 | header-enabled | 启用页眉 | 啟用頁眉 | 是/否 | false | 启用运行页眉 |
 | header-font-size | 页眉字号 | 頁眉字號 | 字号 | 9pt | 页眉字号 |
-| page-number-style | 页码样式 | 頁碼樣式 | 字符串 | none | 页码显示风格 |
+| page-number-style | 页码样式 | 頁碼樣式 | 字符串 | 空（未设置） | 页码显示风格：`digits`（逐位中文）／`chinese`（位值中文）／`arabic`／`none`。未设置时竖排页码不输出，版心页码沿用位值中文数字 |
 | page-number-font-size | 页码字号 | 頁碼字號 | 字号 | 9pt | 页码字号 |
 
 ### `\enableSplitPage`  `\开启分页`  `\開啟分頁`

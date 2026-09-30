@@ -105,7 +105,7 @@ v0.2.1 起扩展了标点符号支持范围，包括：
 | 参数 | 说明 | 默认值 |
 |------|------|--------|
 | `punct-mode` | 标点模式 | `normal` |
-| `judou-color` | 句读标记的颜色 | `red` (朱批) |
+| `judou-color` | 句读标记的颜色（别名：`color`、`font-color`、`句读颜色`、`句讀顏色`） | `red` (朱批) |
 | `judou-size` | 标记的大小 | `1em` (相对字号) |
 | `judou-pos` | 标记的位置 | `right-bottom` |
 

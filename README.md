@@ -11,7 +11,7 @@
 
 横竖排的 clreq 规则实现由 119 条 PDF 内容流度量断言逐条核验，逐条状态与有意偏离见 **[clreq 符合度矩阵](docs/CLREQ-CONFORMANCE.md)**。
 
-CTAN: [v0.4.1](https://ctan.org/pkg/luatex-cn) | GitHub Release: [v0.4.1](https://github.com/open-guji/luatex-cn/releases)
+CTAN: [v0.4.2](https://ctan.org/pkg/luatex-cn) | GitHub Release: [v0.4.2](https://github.com/open-guji/luatex-cn/releases)
 
 > **[Wiki 用户手册](https://github.com/open-guji/luatex-cn/wiki)** ｜ **[快速入门](https://github.com/open-guji/luatex-cn/wiki/Quick-Start)** ｜ **[命令索引](https://github.com/open-guji/luatex-cn/wiki/Command-Reference)** ｜ **[更新日志](https://github.com/open-guji/luatex-cn/wiki/Changelog)**
 

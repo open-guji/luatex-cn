@@ -96,6 +96,14 @@ test_utils.run_test("copy_node_with_attributes: keeps glyph's own positive inden
     test_utils.assert_eq(D.get_attribute(copy, constants.ATTR_INDENT), 4)
 end)
 
+test_utils.run_test("copy_node_with_attributes: larger running indent still wins over smaller glyph indent", function()
+    -- 盒子 shift / 前导 glue 推出的缩进更大时，仍按最大值传播
+    local g = D.new(constants.GLYPH)
+    D.set_attribute(g, constants.ATTR_INDENT, 2)
+    local copy = flatten._internal.copy_node_with_attributes(g, 4, 0)
+    test_utils.assert_eq(D.get_attribute(copy, constants.ATTR_INDENT), 4)
+end)
+
 test_utils.run_test("copy_node_with_attributes: zero glyph indent inherits running indent", function()
     local g = D.new(constants.GLYPH)
     D.set_attribute(g, constants.ATTR_INDENT, 0)

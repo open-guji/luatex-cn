@@ -159,8 +159,12 @@ local function copy_node_with_attributes(t, indent, r_indent)
         if indent > 0 then
             -- Don't overwrite command-level indent values on individual nodes
             -- (e.g., \缩进 or \抬头 set via tex.setattribute with encode_suojin/taitou_indent)
+            -- Likewise keep a positive indent the glyph already carries (set by
+            -- the enclosing \begin{段落}[indent=N] at typeset time): the line
+            -- HLIST is built at line-break time, after inner groups closed, so
+            -- its indent attribute (and hence running_indent) can be stale.
             local existing = D.get_attribute(copy, constants.ATTR_INDENT) or 0
-            if not constants.is_any_command_indent(existing) then
+            if existing <= 0 and not constants.is_any_command_indent(existing) then
                 D.set_attribute(copy, constants.ATTR_INDENT, indent)
             end
         end

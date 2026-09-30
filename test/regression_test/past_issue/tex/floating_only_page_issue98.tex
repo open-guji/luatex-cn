@@ -1,0 +1,23 @@
+\documentclass{ltc-guji}
+\setmainfont{TW-Kai}
+\关闭分页
+
+% issue #98: 只含浮动元素（\悬浮文本框）而没有正文字的页，\newpage 不得被当成
+% 「多余的分页」吞掉，且该页也必须被渲染出来（不能留下空洞把后面的页截断）。
+% 预期 4 页：1 正文 → 2 仅浮动框 → 3 仅浮动框 → 4 正文。
+\begin{document}
+\begin{正文}
+
+甲页有正文
+
+\newpage
+\悬浮文本框[x=9.3cm, y=8cm, 格高=30pt]{{世系}}
+
+\newpage
+\悬浮文本框[x=9.8cm, y=6cm, 格高=30pt]{{始迁祖}}
+
+\newpage
+丁页有正文
+
+\end{正文}
+\end{document}

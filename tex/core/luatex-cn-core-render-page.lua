@@ -241,6 +241,8 @@ local function group_nodes_by_page(d_head, layout_map, total_pages)
         page_nodes[p] = { head = nil, tail = nil, max_col = 0, max_y_sp = 0 }
     end
 
+    local floating_only = {}
+
     local t = d_head
     while t do
         local next_node = D.getnext(t)
@@ -265,10 +267,30 @@ local function group_nodes_by_page(d_head, layout_map, total_pages)
             else
                 node.flush_node(D.tonode(t))
             end
+        elseif pos and pos.mode == "floating" and page_nodes[pos.page or 0]
+            and not floating_only[pos.page or 0] then
+            -- Remember the first floating anchor of each page; used below if the
+            -- page ends up with no other node.
+            floating_only[pos.page or 0] = t
         else
             node.flush_node(D.tonode(t))
         end
         t = next_node
+    end
+
+    -- A page holding only floating boxes (no glyph/cell nodes) would otherwise
+    -- have no head: render_single_page drops it, the floating boxes are never
+    -- drawn, and result_pages gets a hole that cuts off every later page
+    -- (issue #98). Keep the anchor whatsit as the page's head;
+    -- process_page_nodes removes it once the page is set up. No col/y
+    -- bookkeeping: the anchor occupies no grid cell.
+    for p, anchor in pairs(floating_only) do
+        if not page_nodes[p].head then
+            page_nodes[p].head = anchor
+            page_nodes[p].tail = anchor
+        else
+            node.flush_node(D.tonode(anchor))
+        end
     end
     return page_nodes
 end
@@ -342,7 +364,8 @@ local function render_single_page(p_head, p_max_col, p, layout_map, params, ctx,
             local scan_t = p_head
             while scan_t do
                 local pos = layout_map[scan_t]
-                if pos then
+                -- floating-only pages keep an anchor with no grid col (see group_nodes_by_page)
+                if pos and pos.col then
                     local col = pos.col
                     -- First-node-per-column: check for no-silk marker
                     if not col_seen[col] then

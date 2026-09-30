@@ -306,7 +306,7 @@
 % 由字号推出：上下留白、书名列高、小字区高、所需签条高
 \cs_new_protected:Npn \__luatexcn_tcover_measure:
   {
-    \dim_set:Nn \l__luatexcn_tcover_pad_dim { 0.3 \l__luatexcn_tcover_fs_dim }
+    \dim_set:Nn \l__luatexcn_tcover_pad_dim { 0.2 \l__luatexcn_tcover_fs_dim }
     \dim_set:Nn \l__luatexcn_tcover_title_h_dim
       { \fp_eval:n { 1.05 * \l__luatexcn_tcover_nt_int } \l__luatexcn_tcover_fs_dim }
     \dim_set:Nn \l__luatexcn_tcover_small_h_dim
@@ -318,7 +318,7 @@
       {
         \l__luatexcn_tcover_title_h_dim + \l__luatexcn_tcover_small_h_dim
         + \dim_compare:nNnTF \l__luatexcn_tcover_small_h_dim > \c_zero_dim
-            { 0.6 \l__luatexcn_tcover_fs_dim } { 0pt }
+            { 0.45 \l__luatexcn_tcover_fs_dim } { 0pt }
         + 2 \l__luatexcn_tcover_pad_dim
         + 2 \l__luatexcn_tcover_ext_dim + 2 \l__luatexcn_tcover_m_dim
       }
@@ -330,15 +330,15 @@
     \dim_set:Nn \l__luatexcn_tcover_ph_dim { \__luatexcn_tcover_page_height: }
     % ---- 自动比例（参照标准图 1/2 与实物量取）----
     \dim_compare:nNnT \l__luatexcn_tcover_w_dim = \c_zero_dim
-      { \dim_set:Nn \l__luatexcn_tcover_w_dim { 0.27 \l__luatexcn_tcover_pw_dim } }
+      { \dim_set:Nn \l__luatexcn_tcover_w_dim { 0.23 \l__luatexcn_tcover_pw_dim } }
     \dim_compare:nNnT \l__luatexcn_tcover_left_dim = \c_zero_dim
-      { \dim_set:Nn \l__luatexcn_tcover_left_dim { 0.07 \l__luatexcn_tcover_pw_dim } }
+      { \dim_set:Nn \l__luatexcn_tcover_left_dim { 0.05 \l__luatexcn_tcover_pw_dim } }
     \dim_compare:nNnT \l__luatexcn_tcover_top_dim = \c_zero_dim
-      { \dim_set:Nn \l__luatexcn_tcover_top_dim { 0.045 \l__luatexcn_tcover_ph_dim } }
+      { \dim_set:Nn \l__luatexcn_tcover_top_dim { 0.04 \l__luatexcn_tcover_ph_dim } }
     \dim_compare:nNnT \l__luatexcn_tcover_minh_dim = \c_zero_dim
-      { \dim_set:Nn \l__luatexcn_tcover_minh_dim { 0.55 \l__luatexcn_tcover_ph_dim } }
+      { \dim_set:Nn \l__luatexcn_tcover_minh_dim { 0.5 \l__luatexcn_tcover_ph_dim } }
     \dim_compare:nNnT \l__luatexcn_tcover_fs_dim = \c_zero_dim
-      { \dim_set:Nn \l__luatexcn_tcover_fs_dim { 0.55 \l__luatexcn_tcover_w_dim } }
+      { \dim_set:Nn \l__luatexcn_tcover_fs_dim { 0.56 \l__luatexcn_tcover_w_dim } }
     \dim_compare:nNnT \l__luatexcn_tcover_sfs_dim = \c_zero_dim
       { \dim_set:Nn \l__luatexcn_tcover_sfs_dim { 0.3 \l__luatexcn_tcover_fs_dim } }
     % ---- 签条内部尺寸 ----
@@ -413,7 +413,7 @@
               {
                 \l__luatexcn_tcover_top_dim + \l__luatexcn_tcover_m_dim + \l__luatexcn_tcover_ext_dim
                 + \l__luatexcn_tcover_pad_dim + \l__luatexcn_tcover_title_h_dim
-                + 0.4 \l__luatexcn_tcover_fs_dim
+                + 0.3 \l__luatexcn_tcover_fs_dim
               }
           }
           {

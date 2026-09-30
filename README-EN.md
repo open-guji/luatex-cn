@@ -11,7 +11,7 @@ A LuaTeX package for Chinese typesetting with two goals: **faithful replication 
 
 "Follows clreq" is not a slogan: the test suite measures the coordinates of every glyph in the output PDF and checks them against the specification clause by clause (currently 119 automated checks). Per-clause status and the few intentional deviations are documented in the **[clreq conformance matrix](docs/CLREQ-CONFORMANCE.md)**.
 
-CTAN: [v0.4.1](https://ctan.org/pkg/luatex-cn) | GitHub Release: [v0.4.1](https://github.com/open-guji/luatex-cn/releases)
+CTAN: [v0.4.2](https://ctan.org/pkg/luatex-cn) | GitHub Release: [v0.4.2](https://github.com/open-guji/luatex-cn/releases)
 
 > **[Wiki user manual](https://github.com/open-guji/luatex-cn/wiki/EN:Home)** ｜ **[Quick start](https://github.com/open-guji/luatex-cn/wiki/EN:Quick-Start)** ｜ **[Changelog](https://github.com/open-guji/luatex-cn/wiki/EN:Changelog)**
 

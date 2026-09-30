@@ -142,6 +142,7 @@ DOCS = [
             Png("示例/线装书封面/page-1.png", page=1),
             Png("示例/线装书封面/page-2.png", page=2),
             Png("示例/线装书封面/page-3.png", page=3),
+            Png("示例/线装书封面/page-4.png", page=4),
         ],
     ),
     Doc(

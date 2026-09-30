@@ -133,6 +133,11 @@
 \dim_new:N \l__luatexcn_tcover_small_h_dim
 \dim_new:N \l__luatexcn_tcover_x_dim
 \dim_new:N \l__luatexcn_tcover_y_dim
+\bool_new:N \l__luatexcn_tcover_thread_bool
+\tl_new:N \l__luatexcn_tcover_thread_color_tl
+\int_new:N \l__luatexcn_tcover_holes_int
+\dim_new:N \l__luatexcn_tcover_thread_x_dim
+\dim_new:N \l__luatexcn_tcover_thread_w_dim
 \int_new:N \l__luatexcn_tcover_nt_int
 \int_new:N \l__luatexcn_tcover_nv_int
 \dim_new:N \l__luatexcn_tcover_title_h_dim
@@ -160,7 +165,21 @@
     small-position .choices:nn = { bottom, follow }
       { \tl_set_eq:NN \l__luatexcn_tcover_small_pos_tl \l_keys_choice_tl },
     small-position .initial:n = bottom,
+    % 订线（仅供预览：印制封面时不印）
+    binding-thread .bool_set:N = \l__luatexcn_tcover_thread_bool,
+    binding-thread .default:n = true,
+    binding-thread .initial:n = false,
+    thread-color .tl_set:N = \l__luatexcn_tcover_thread_color_tl,
+    thread-color .initial:n = { 236, 236, 230 },
+    thread-holes .int_set:N = \l__luatexcn_tcover_holes_int,
+    thread-holes .initial:n = 4,
+    thread-distance .dim_set:N = \l__luatexcn_tcover_thread_x_dim,
     % 简体
+    订线 .meta:n = { binding-thread = {#1} },
+    订线 .default:n = true,
+    订线颜色 .meta:n = { thread-color = {#1} },
+    订线眼数 .meta:n = { thread-holes = {#1} },
+    订线距 .meta:n = { thread-distance = {#1} },
     底色 .meta:n = { background-color = {#1} },
     签条底色 .meta:n = { label-color = {#1} },
     墨色 .meta:n = { ink-color = {#1} },
@@ -184,6 +203,11 @@
     書名字號 .meta:n = { title-font-size = {#1} },
     小字字號 .meta:n = { small-font-size = {#1} },
     冊次 .meta:n = { volume = {#1} },
+    訂線 .meta:n = { binding-thread = {#1} },
+    訂線 .default:n = true,
+    訂線顏色 .meta:n = { thread-color = {#1} },
+    訂線眼數 .meta:n = { thread-holes = {#1} },
+    訂線距 .meta:n = { thread-distance = {#1} },
     小字位置 / 隨後 .meta:n = { small-position = follow },
   }
 
@@ -237,6 +261,47 @@
       }
   }
 \cs_generate_variant:Nn \__luatexcn_tcover_small:nnn { nnV }
+
+% 订线：一条竖线 + 每个订眼一条横线（绕到书背），用纯色悬浮框画出。
+% 位置参照 CY/T 247—2021 图 2：订线距右边约页宽 8%，首末订眼距上下边约页高 11.5%，
+% 其余订眼等分。
+\cs_new_protected:Npn \__luatexcn_tcover_bar:nnnn #1 #2 #3 #4
+  {
+    % #1 左距, #2 上距, #3 宽, #4 高
+    \__luatexcn_tcover_float:nnnnn {#1} {#2} {#3}
+      {
+        grid-width = \dim_eval:n {#3},
+        grid-height = \dim_eval:n {#4},
+        height = 1,
+        background-color = { \l__luatexcn_tcover_thread_color_tl },
+      }
+      { \char"200B }
+  }
+\cs_new_protected:Npn \__luatexcn_tcover_thread:
+  {
+    \dim_compare:nNnT \l__luatexcn_tcover_thread_x_dim = \c_zero_dim
+      { \dim_set:Nn \l__luatexcn_tcover_thread_x_dim { 0.08 \l__luatexcn_tcover_pw_dim } }
+    \dim_set:Nn \l__luatexcn_tcover_thread_w_dim
+      { \dim_max:nn { 0.8pt } { 0.0022 \l__luatexcn_tcover_pw_dim } }
+    % 竖线
+    \__luatexcn_tcover_bar:nnnn
+      { \l__luatexcn_tcover_pw_dim - \l__luatexcn_tcover_thread_x_dim - 0.5 \l__luatexcn_tcover_thread_w_dim }
+      { 0pt } { \l__luatexcn_tcover_thread_w_dim } { \l__luatexcn_tcover_ph_dim }
+    % 横线（订眼）
+    \int_step_inline:nn { \int_max:nn { 2 } { \l__luatexcn_tcover_holes_int } }
+      {
+        \__luatexcn_tcover_bar:nnnn
+          { \l__luatexcn_tcover_pw_dim - \l__luatexcn_tcover_thread_x_dim }
+          {
+            \fp_eval:n
+              { 0.115 + 0.77 * ( ##1 - 1 ) / ( \int_max:nn { 2 } { \l__luatexcn_tcover_holes_int } - 1 ) }
+              \l__luatexcn_tcover_ph_dim
+            - 0.5 \l__luatexcn_tcover_thread_w_dim
+          }
+          { \l__luatexcn_tcover_thread_x_dim }
+          { \l__luatexcn_tcover_thread_w_dim }
+      }
+  }
 
 % 由字号推出：上下留白、书名列高、小字区高、所需签条高
 \cs_new_protected:Npn \__luatexcn_tcover_measure:
@@ -305,6 +370,7 @@
       }
     \dim_set:Nn \l__luatexcn_tcover_h_dim
       { \dim_max:nn \l__luatexcn_tcover_minh_dim \l__luatexcn_tcover_need_dim }
+    \bool_if:NT \l__luatexcn_tcover_thread_bool { \__luatexcn_tcover_thread: }
     % ---- 第一层：底纸 ----
     \__luatexcn_tcover_float:nnnnn
       { \l__luatexcn_tcover_left_dim } { \l__luatexcn_tcover_top_dim } { \l__luatexcn_tcover_w_dim }

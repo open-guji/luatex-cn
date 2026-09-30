@@ -1,0 +1,24 @@
+% nested_paragraph_indent_issue168.tex - 回归测试: 嵌套段落环境时内层缩进回退 (issue #168)
+% 问题: 外层 \begin{段落}[indent=2] 里再嵌 \begin{段落}[indent=4]，内层首列缩进正确，
+%       其余列（含跨列续排的夹注）却回退成外层的 2。
+% 根因: 行盒（HLIST）在断行时才建，落到内层分组关闭之后，ATTR_INDENT 停留在外层旧值；
+%       flatten 的 copy_node_with_attributes 用这个滞后的 running_indent 覆盖了
+%       字形自带的正确缩进（命令级 \缩进/\抬头 有保护，普通正值没有）。
+% 修复: 字形自带的正值缩进不再被 running_indent 覆盖。
+% 预期: 外层各列缩进 2；内层各列（含夹注续排列）缩进 4。
+\documentclass{ltc-guji}
+\setmainfont{TW-Kai}
+\关闭分页
+\无标点模式
+\夹注捷径
+
+\begin{document}
+\begin{正文}
+\begin{段落}[indent=2]
+外层甲乙丙丁戊己庚辛壬癸子丑寅卯辰巳午未申酉戌亥
+\begin{段落}[indent=4]
+内层一二三四五六七八九\夹注{很长很长夹注应该自动换列到下一列并且保持缩进很长很长夹注应该自动换列到下一列并且保持缩进}十一二三四五六七八九十一二三四五六七八九十一二三四五六七八九十一二三四五六七八九十一二三四五六七八九十
+\end{段落}
+\end{段落}
+\end{正文}
+\end{document}

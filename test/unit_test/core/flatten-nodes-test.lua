@@ -88,6 +88,21 @@ test_utils.run_test("copy_node_with_attributes: preserves taitou indent", functi
     test_utils.assert_eq(D.get_attribute(copy, constants.ATTR_INDENT), taitou)
 end)
 
+test_utils.run_test("copy_node_with_attributes: keeps glyph's own positive indent (issue #168)", function()
+    -- 嵌套段落：字形自带内层缩进 4，行盒（断行时才建）传来的是过期的外层缩进 2
+    local g = D.new(constants.GLYPH)
+    D.set_attribute(g, constants.ATTR_INDENT, 4)
+    local copy = flatten._internal.copy_node_with_attributes(g, 2, 0)
+    test_utils.assert_eq(D.get_attribute(copy, constants.ATTR_INDENT), 4)
+end)
+
+test_utils.run_test("copy_node_with_attributes: zero glyph indent inherits running indent", function()
+    local g = D.new(constants.GLYPH)
+    D.set_attribute(g, constants.ATTR_INDENT, 0)
+    local copy = flatten._internal.copy_node_with_attributes(g, 2, 0)
+    test_utils.assert_eq(D.get_attribute(copy, constants.ATTR_INDENT), 2)
+end)
+
 test_utils.run_test("copy_node_with_attributes: preserves suojin indent", function()
     local g = D.new(constants.GLYPH)
     local suojin = constants.encode_suojin_indent(2)

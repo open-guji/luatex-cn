@@ -580,10 +580,17 @@ local function render_single_page(p_head, p_max_col, p, layout_map, params, ctx,
     end
 
     -- Render Floating TextBoxes (mode="floating" entries in layout_map)
+    -- Draw in registration order so later boxes stack on top of earlier ones
+    -- (pairs() order over node keys is arbitrary).
+    local floating_items = {}
     for _, pos in pairs(layout_map) do
         if pos.mode == "floating" and pos.page == p then
-            p_head = textbox_mod.render_floating_box(p_head, pos, params)
+            floating_items[#floating_items + 1] = pos
         end
+    end
+    table.sort(floating_items, function(a, b) return (a.order or 0) < (b.order or 0) end)
+    for _, pos in ipairs(floating_items) do
+        p_head = textbox_mod.render_floating_box(p_head, pos, params)
     end
 
     -- Debug: draw table cell coordinates if debug is enabled

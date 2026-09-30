@@ -466,6 +466,7 @@ local function find_floating_boxes(list, layout_map, registry)
                 if item then
                     layout_map[t] = {
                         mode = "floating",
+                        order = fid,
                         page = current_page,
                         x = item.x,
                         y = item.y,

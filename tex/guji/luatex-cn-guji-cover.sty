@@ -88,11 +88,386 @@
     }
 }
 
+
+% ============================================================================
+% 线装书封面 (issue #170)
+% ============================================================================
+% 现代蓝色线装书封面（中华书局、广陵书社等影印古籍常见样式），参照
+% CY/T 247—2021《线装书籍要求》图 1、图 2：
+%   藏青色封面，左上角贴一条米色签条；签条内为「文武线」双框（外粗内细），
+%   框外留一圈纸边；书名大字自上而下；册次、卷次等小字排在签条下部
+%  （或紧随书名之后）。封面上不印作者、出版者。
+%
+%   \线装书封面[键值]{书名}
+%
+% 签条宽、位置、书名字号默认按页面尺寸比例取值；签条高度取「最小高度」与
+% 「书名 + 小字所需高度」中的较大者，书名越长签条越高。
+%
+% 实现：签条由三层悬浮文本框叠成——底纸（仅底色）、文武线框 + 书名、小字。
+% 悬浮框按注册先后绘制（见 render-page.lua），后者叠在前者之上。
+
+\tl_new:N \l__luatexcn_tcover_title_tl
+\tl_new:N \l__luatexcn_tcover_volume_tl
+\tl_new:N \l__luatexcn_tcover_juan_tl
+\tl_new:N \l__luatexcn_tcover_small_pos_tl
+\tl_new:N \l__luatexcn_tcover_bg_tl
+\tl_new:N \l__luatexcn_tcover_label_bg_tl
+\tl_new:N \l__luatexcn_tcover_ink_tl
+\dim_new:N \l__luatexcn_tcover_pw_dim          % 页宽（逻辑页）
+\dim_new:N \l__luatexcn_tcover_ph_dim          % 页高
+\dim_new:N \l__luatexcn_tcover_w_dim           % 签条宽
+\dim_new:N \l__luatexcn_tcover_left_dim        % 签条左距
+\dim_new:N \l__luatexcn_tcover_top_dim         % 签条上距
+\dim_new:N \l__luatexcn_tcover_minh_dim        % 签条最小高
+\dim_new:N \l__luatexcn_tcover_fs_dim          % 书名字号
+\dim_new:N \l__luatexcn_tcover_sfs_dim         % 小字字号
+\dim_new:N \l__luatexcn_tcover_h_dim           % 签条实际高
+\dim_new:N \l__luatexcn_tcover_m_dim           % 纸边
+\dim_new:N \l__luatexcn_tcover_thick_dim       % 外粗线
+\dim_new:N \l__luatexcn_tcover_thin_dim        % 内细线
+\dim_new:N \l__luatexcn_tcover_sep_dim         % 粗细线间距
+\dim_new:N \l__luatexcn_tcover_pad_dim         % 内框到书名的上下留白
+\dim_new:N \l__luatexcn_tcover_ext_dim         % 内框外扩（细线半宽 + 间距 + 粗线）
+\dim_new:N \l__luatexcn_tcover_gw_dim          % 字格宽
+\dim_new:N \l__luatexcn_tcover_need_dim
+\dim_new:N \l__luatexcn_tcover_small_h_dim
+\dim_new:N \l__luatexcn_tcover_x_dim
+\dim_new:N \l__luatexcn_tcover_y_dim
+\bool_new:N \l__luatexcn_tcover_thread_bool
+\tl_new:N \l__luatexcn_tcover_thread_color_tl
+\int_new:N \l__luatexcn_tcover_holes_int
+\dim_new:N \l__luatexcn_tcover_thread_x_dim
+\dim_new:N \l__luatexcn_tcover_thread_w_dim
+\int_new:N \l__luatexcn_tcover_nt_int
+\int_new:N \l__luatexcn_tcover_nv_int
+\dim_new:N \l__luatexcn_tcover_title_h_dim
+\dim_new:N \l__luatexcn_tcover_maxh_dim
+\fp_new:N \l__luatexcn_tcover_ratio_fp
+\int_new:N \l__luatexcn_tcover_nj_int
+
+\keys_define:nn { luatexcn / threadcover }
+  {
+    background-color .tl_set:N = \l__luatexcn_tcover_bg_tl,
+    background-color .initial:n = { 30, 50, 90 },
+    label-color .tl_set:N = \l__luatexcn_tcover_label_bg_tl,
+    label-color .initial:n = { 232, 228, 212 },
+    ink-color .tl_set:N = \l__luatexcn_tcover_ink_tl,
+    ink-color .initial:n = { 25, 25, 25 },
+    % 以下长度取 0pt 表示「按页面比例自动」
+    label-width .dim_set:N = \l__luatexcn_tcover_w_dim,
+    label-left .dim_set:N = \l__luatexcn_tcover_left_dim,
+    label-top .dim_set:N = \l__luatexcn_tcover_top_dim,
+    label-min-height .dim_set:N = \l__luatexcn_tcover_minh_dim,
+    title-font-size .dim_set:N = \l__luatexcn_tcover_fs_dim,
+    small-font-size .dim_set:N = \l__luatexcn_tcover_sfs_dim,
+    volume .tl_set:N = \l__luatexcn_tcover_volume_tl,
+    juan .tl_set:N = \l__luatexcn_tcover_juan_tl,
+    small-position .choices:nn = { bottom, follow }
+      { \tl_set_eq:NN \l__luatexcn_tcover_small_pos_tl \l_keys_choice_tl },
+    small-position .initial:n = bottom,
+    % 订线（仅供预览：印制封面时不印）
+    binding-thread .bool_set:N = \l__luatexcn_tcover_thread_bool,
+    binding-thread .default:n = true,
+    binding-thread .initial:n = false,
+    thread-color .tl_set:N = \l__luatexcn_tcover_thread_color_tl,
+    thread-color .initial:n = { 236, 236, 230 },
+    thread-holes .int_set:N = \l__luatexcn_tcover_holes_int,
+    thread-holes .initial:n = 4,
+    thread-distance .dim_set:N = \l__luatexcn_tcover_thread_x_dim,
+    % 简体
+    订线 .meta:n = { binding-thread = {#1} },
+    订线 .default:n = true,
+    订线颜色 .meta:n = { thread-color = {#1} },
+    订线眼数 .meta:n = { thread-holes = {#1} },
+    订线距 .meta:n = { thread-distance = {#1} },
+    底色 .meta:n = { background-color = {#1} },
+    签条底色 .meta:n = { label-color = {#1} },
+    墨色 .meta:n = { ink-color = {#1} },
+    签条宽 .meta:n = { label-width = {#1} },
+    签条左距 .meta:n = { label-left = {#1} },
+    签条上距 .meta:n = { label-top = {#1} },
+    签条最小高 .meta:n = { label-min-height = {#1} },
+    书名字号 .meta:n = { title-font-size = {#1} },
+    小字字号 .meta:n = { small-font-size = {#1} },
+    册次 .meta:n = { volume = {#1} },
+    卷次 .meta:n = { juan = {#1} },
+    小字位置 .choice:,
+    小字位置 / 底部 .meta:n = { small-position = bottom },
+    小字位置 / 随后 .meta:n = { small-position = follow },
+    % 繁體
+    簽條底色 .meta:n = { label-color = {#1} },
+    簽條寬 .meta:n = { label-width = {#1} },
+    簽條左距 .meta:n = { label-left = {#1} },
+    簽條上距 .meta:n = { label-top = {#1} },
+    簽條最小高 .meta:n = { label-min-height = {#1} },
+    書名字號 .meta:n = { title-font-size = {#1} },
+    小字字號 .meta:n = { small-font-size = {#1} },
+    冊次 .meta:n = { volume = {#1} },
+    訂線 .meta:n = { binding-thread = {#1} },
+    訂線 .default:n = true,
+    訂線顏色 .meta:n = { thread-color = {#1} },
+    訂線眼數 .meta:n = { thread-holes = {#1} },
+    訂線距 .meta:n = { thread-distance = {#1} },
+    小字位置 / 隨後 .meta:n = { small-position = follow },
+  }
+
+% 当前逻辑页宽 / 页高（对开模式下取半页宽；悬浮框 x 以逻辑页右边计）
+\cs_new:Npn \__luatexcn_tcover_page_width:
+  {
+    \lua_now:n
+      {
+        local~sp = require('core.luatex-cn-core-page').split ;
+        local~w = _G.page.paper_width~or~0 ;
+        if~sp.is_enabled()~and~sp.get_target_width()~>~0~then~
+          w = sp.get_target_width() ;
+        end ;
+        tex.sprint((w~/~65536)~..~'pt') ;
+      }
+  }
+\cs_new:Npn \__luatexcn_tcover_page_height:
+  { \lua_now:n { tex.sprint(((_G.page.paper_height~or~0)~/~65536)~..~'pt') } }
+
+% 放一个悬浮文本框：#1 = 左距, #2 = 上距, #3 = 盒宽（含边框外扩）, #4 = 其余键值, #5 = 内容
+\cs_new_protected:Npn \__luatexcn_tcover_float:nnnnn #1 #2 #3 #4 #5
+  {
+    \tl_set:Nx \l_tmpa_tl
+      {
+        [
+          floating = true,
+          x = \dim_eval:n { \l__luatexcn_tcover_pw_dim - (#1) - (#3) },
+          y = \dim_eval:n {#2},
+          #4
+        ]
+      }
+    \exp_after:wN \TextBox \l_tmpa_tl {#5}
+  }
+
+% 竖排小字一列：#1 = 列中心距页面左边, #2 = 上距, #3 = 文字
+\cs_new_protected:Npn \__luatexcn_tcover_small:nnn #1 #2 #3
+  {
+    \tl_if_blank:nF {#3}
+      {
+    \__luatexcn_tcover_float:nnnnn
+      { (#1) - 0.6 \l__luatexcn_tcover_sfs_dim } {#2} { 1.2 \l__luatexcn_tcover_sfs_dim }
+      {
+        font-size = \dim_use:N \l__luatexcn_tcover_sfs_dim,
+        grid-height = \dim_eval:n { 1.1 \l__luatexcn_tcover_sfs_dim },
+        grid-width = \dim_eval:n { 1.2 \l__luatexcn_tcover_sfs_dim },
+        height = \int_eval:n { \tl_count:n {#3} },
+        column-align = center,
+        font-color = { \l__luatexcn_tcover_ink_tl },
+      }
+      {#3}
+      }
+  }
+\cs_generate_variant:Nn \__luatexcn_tcover_small:nnn { nnV }
+
+% 订线：一条竖线 + 每个订眼一条横线（绕到书背），用纯色悬浮框画出。
+% 位置参照 CY/T 247—2021 图 2：订线距右边约页宽 8%，首末订眼距上下边约页高 11.5%，
+% 其余订眼等分。
+\cs_new_protected:Npn \__luatexcn_tcover_bar:nnnn #1 #2 #3 #4
+  {
+    % #1 左距, #2 上距, #3 宽, #4 高
+    \__luatexcn_tcover_float:nnnnn {#1} {#2} {#3}
+      {
+        grid-width = \dim_eval:n {#3},
+        grid-height = \dim_eval:n {#4},
+        height = 1,
+        background-color = { \l__luatexcn_tcover_thread_color_tl },
+      }
+      { \char"200B }
+  }
+\cs_new_protected:Npn \__luatexcn_tcover_thread:
+  {
+    \dim_compare:nNnT \l__luatexcn_tcover_thread_x_dim = \c_zero_dim
+      { \dim_set:Nn \l__luatexcn_tcover_thread_x_dim { 0.08 \l__luatexcn_tcover_pw_dim } }
+    \dim_set:Nn \l__luatexcn_tcover_thread_w_dim
+      { \dim_max:nn { 0.8pt } { 0.0022 \l__luatexcn_tcover_pw_dim } }
+    % 竖线
+    \__luatexcn_tcover_bar:nnnn
+      { \l__luatexcn_tcover_pw_dim - \l__luatexcn_tcover_thread_x_dim - 0.5 \l__luatexcn_tcover_thread_w_dim }
+      { 0pt } { \l__luatexcn_tcover_thread_w_dim } { \l__luatexcn_tcover_ph_dim }
+    % 横线（订眼）
+    \int_step_inline:nn { \int_max:nn { 2 } { \l__luatexcn_tcover_holes_int } }
+      {
+        \__luatexcn_tcover_bar:nnnn
+          { \l__luatexcn_tcover_pw_dim - \l__luatexcn_tcover_thread_x_dim }
+          {
+            \fp_eval:n
+              { 0.115 + 0.77 * ( ##1 - 1 ) / ( \int_max:nn { 2 } { \l__luatexcn_tcover_holes_int } - 1 ) }
+              \l__luatexcn_tcover_ph_dim
+            - 0.5 \l__luatexcn_tcover_thread_w_dim
+          }
+          { \l__luatexcn_tcover_thread_x_dim }
+          { \l__luatexcn_tcover_thread_w_dim }
+      }
+  }
+
+% 由字号推出：上下留白、书名列高、小字区高、所需签条高
+\cs_new_protected:Npn \__luatexcn_tcover_measure:
+  {
+    \dim_set:Nn \l__luatexcn_tcover_pad_dim { 0.2 \l__luatexcn_tcover_fs_dim }
+    \dim_set:Nn \l__luatexcn_tcover_title_h_dim
+      { \fp_eval:n { 1.05 * \l__luatexcn_tcover_nt_int } \l__luatexcn_tcover_fs_dim }
+    \dim_set:Nn \l__luatexcn_tcover_small_h_dim
+      {
+        \fp_eval:n { 1.1 * max ( \l__luatexcn_tcover_nv_int , \l__luatexcn_tcover_nj_int ) }
+          \l__luatexcn_tcover_sfs_dim
+      }
+    \dim_set:Nn \l__luatexcn_tcover_need_dim
+      {
+        \l__luatexcn_tcover_title_h_dim + \l__luatexcn_tcover_small_h_dim
+        + \dim_compare:nNnTF \l__luatexcn_tcover_small_h_dim > \c_zero_dim
+            { 0.45 \l__luatexcn_tcover_fs_dim } { 0pt }
+        + 2 \l__luatexcn_tcover_pad_dim
+        + 2 \l__luatexcn_tcover_ext_dim + 2 \l__luatexcn_tcover_m_dim
+      }
+  }
+
+\cs_new_protected:Npn \__luatexcn_tcover_body:
+  {
+    \dim_set:Nn \l__luatexcn_tcover_pw_dim { \__luatexcn_tcover_page_width: }
+    \dim_set:Nn \l__luatexcn_tcover_ph_dim { \__luatexcn_tcover_page_height: }
+    % ---- 自动比例（参照标准图 1/2 与实物量取）----
+    \dim_compare:nNnT \l__luatexcn_tcover_w_dim = \c_zero_dim
+      { \dim_set:Nn \l__luatexcn_tcover_w_dim { 0.23 \l__luatexcn_tcover_pw_dim } }
+    \dim_compare:nNnT \l__luatexcn_tcover_left_dim = \c_zero_dim
+      { \dim_set:Nn \l__luatexcn_tcover_left_dim { 0.05 \l__luatexcn_tcover_pw_dim } }
+    \dim_compare:nNnT \l__luatexcn_tcover_top_dim = \c_zero_dim
+      { \dim_set:Nn \l__luatexcn_tcover_top_dim { 0.04 \l__luatexcn_tcover_ph_dim } }
+    \dim_compare:nNnT \l__luatexcn_tcover_minh_dim = \c_zero_dim
+      { \dim_set:Nn \l__luatexcn_tcover_minh_dim { 0.5 \l__luatexcn_tcover_ph_dim } }
+    \dim_compare:nNnT \l__luatexcn_tcover_fs_dim = \c_zero_dim
+      { \dim_set:Nn \l__luatexcn_tcover_fs_dim { 0.56 \l__luatexcn_tcover_w_dim } }
+    \dim_compare:nNnT \l__luatexcn_tcover_sfs_dim = \c_zero_dim
+      { \dim_set:Nn \l__luatexcn_tcover_sfs_dim { 0.3 \l__luatexcn_tcover_fs_dim } }
+    % ---- 签条内部尺寸 ----
+    \dim_set:Nn \l__luatexcn_tcover_m_dim { 0.055 \l__luatexcn_tcover_w_dim }
+    \dim_set:Nn \l__luatexcn_tcover_thick_dim { 0.013 \l__luatexcn_tcover_w_dim }
+    \dim_set:Nn \l__luatexcn_tcover_thin_dim { 0.004 \l__luatexcn_tcover_w_dim }
+    \dim_set:Nn \l__luatexcn_tcover_sep_dim { 0.025 \l__luatexcn_tcover_w_dim }
+    \dim_set:Nn \l__luatexcn_tcover_ext_dim
+      { 0.5 \l__luatexcn_tcover_thin_dim + \l__luatexcn_tcover_sep_dim + \l__luatexcn_tcover_thick_dim }
+    \dim_set:Nn \l__luatexcn_tcover_gw_dim
+      { \l__luatexcn_tcover_w_dim - 2 \l__luatexcn_tcover_m_dim - 2 \l__luatexcn_tcover_ext_dim }
+    % ---- 高度：书名 + 小字 + 留白，与最小高取大 ----
+    \int_set:Nn \l__luatexcn_tcover_nv_int { \tl_count:V \l__luatexcn_tcover_volume_tl }
+    \int_set:Nn \l__luatexcn_tcover_nj_int { \tl_count:V \l__luatexcn_tcover_juan_tl }
+    \int_set:Nn \l__luatexcn_tcover_nt_int { \tl_count:V \l__luatexcn_tcover_title_tl }
+    \__luatexcn_tcover_measure:
+    % 书名过长、签条超出页面时，按比例缩小书名与小字
+    \dim_set:Nn \l__luatexcn_tcover_maxh_dim
+      { \l__luatexcn_tcover_ph_dim - 2 \l__luatexcn_tcover_top_dim }
+    \dim_compare:nNnT \l__luatexcn_tcover_need_dim > \l__luatexcn_tcover_maxh_dim
+      {
+        \fp_set:Nn \l__luatexcn_tcover_ratio_fp
+          { \dim_to_fp:n \l__luatexcn_tcover_maxh_dim / \dim_to_fp:n \l__luatexcn_tcover_need_dim }
+        \dim_set:Nn \l__luatexcn_tcover_fs_dim
+          { \fp_use:N \l__luatexcn_tcover_ratio_fp \l__luatexcn_tcover_fs_dim }
+        \dim_set:Nn \l__luatexcn_tcover_sfs_dim
+          { \fp_use:N \l__luatexcn_tcover_ratio_fp \l__luatexcn_tcover_sfs_dim }
+        \__luatexcn_tcover_measure:
+      }
+    \dim_set:Nn \l__luatexcn_tcover_h_dim
+      { \dim_max:nn \l__luatexcn_tcover_minh_dim \l__luatexcn_tcover_need_dim }
+    \bool_if:NT \l__luatexcn_tcover_thread_bool { \__luatexcn_tcover_thread: }
+    % ---- 第一层：底纸 ----
+    \__luatexcn_tcover_float:nnnnn
+      { \l__luatexcn_tcover_left_dim } { \l__luatexcn_tcover_top_dim } { \l__luatexcn_tcover_w_dim }
+      {
+        grid-width = \dim_use:N \l__luatexcn_tcover_w_dim,
+        grid-height = \dim_use:N \l__luatexcn_tcover_h_dim,
+        height = 1,
+        background-color = { \l__luatexcn_tcover_label_bg_tl },
+      }
+      { \char"200B }
+    % ---- 第二层：文武线框 + 书名 ----
+    \__luatexcn_tcover_float:nnnnn
+      { \l__luatexcn_tcover_left_dim + \l__luatexcn_tcover_m_dim }
+      { \l__luatexcn_tcover_top_dim + \l__luatexcn_tcover_m_dim }
+      { \l__luatexcn_tcover_w_dim - 2 \l__luatexcn_tcover_m_dim }
+      {
+        font-size = \dim_use:N \l__luatexcn_tcover_fs_dim,
+        grid-height = \dim_eval:n { 1.05 \l__luatexcn_tcover_fs_dim },
+        grid-width = \dim_use:N \l__luatexcn_tcover_gw_dim,
+        height = \dim_eval:n
+          { \l__luatexcn_tcover_h_dim - 2 \l__luatexcn_tcover_m_dim - 2 \l__luatexcn_tcover_ext_dim },
+        padding-top = \dim_use:N \l__luatexcn_tcover_pad_dim,
+        column-align = center,
+        font-color = { \l__luatexcn_tcover_ink_tl },
+        border-color = { \l__luatexcn_tcover_ink_tl },
+        border-shape = rect,
+        border-width = \dim_use:N \l__luatexcn_tcover_thin_dim,
+        border-margin = 0pt,
+        outer-border = true,
+        outer-border-thickness = \dim_use:N \l__luatexcn_tcover_thick_dim,
+        outer-border-sep = \dim_use:N \l__luatexcn_tcover_sep_dim,
+      }
+      { \l__luatexcn_tcover_title_tl }
+    % ---- 第三层：册次 / 卷次 ----
+    \dim_compare:nNnT \l__luatexcn_tcover_small_h_dim > \c_zero_dim
+      {
+        \str_if_eq:VnTF \l__luatexcn_tcover_small_pos_tl { follow }
+          {
+            \dim_set:Nn \l__luatexcn_tcover_y_dim
+              {
+                \l__luatexcn_tcover_top_dim + \l__luatexcn_tcover_m_dim + \l__luatexcn_tcover_ext_dim
+                + \l__luatexcn_tcover_pad_dim + \l__luatexcn_tcover_title_h_dim
+                + 0.3 \l__luatexcn_tcover_fs_dim
+              }
+          }
+          {
+            \dim_set:Nn \l__luatexcn_tcover_y_dim
+              {
+                \l__luatexcn_tcover_top_dim + \l__luatexcn_tcover_h_dim
+                - \l__luatexcn_tcover_m_dim - \l__luatexcn_tcover_ext_dim
+                - \l__luatexcn_tcover_pad_dim - \l__luatexcn_tcover_small_h_dim
+              }
+          }
+        \dim_set:Nn \l__luatexcn_tcover_x_dim
+          { \l__luatexcn_tcover_left_dim + 0.5 \l__luatexcn_tcover_w_dim }
+        \bool_lazy_and:nnTF
+          { \int_compare_p:nNn \l__luatexcn_tcover_nv_int > 0 }
+          { \int_compare_p:nNn \l__luatexcn_tcover_nj_int > 0 }
+          {
+            % 两列：册次在右，卷次在左
+            \__luatexcn_tcover_small:nnV
+              { \l__luatexcn_tcover_x_dim + 0.7 \l__luatexcn_tcover_sfs_dim }
+              { \l__luatexcn_tcover_y_dim } \l__luatexcn_tcover_volume_tl
+            \__luatexcn_tcover_small:nnV
+              { \l__luatexcn_tcover_x_dim - 0.7 \l__luatexcn_tcover_sfs_dim }
+              { \l__luatexcn_tcover_y_dim } \l__luatexcn_tcover_juan_tl
+          }
+          {
+            \__luatexcn_tcover_small:nnV
+              { \l__luatexcn_tcover_x_dim } { \l__luatexcn_tcover_y_dim } \l__luatexcn_tcover_volume_tl
+            \__luatexcn_tcover_small:nnV
+              { \l__luatexcn_tcover_x_dim } { \l__luatexcn_tcover_y_dim } \l__luatexcn_tcover_juan_tl
+          }
+      }
+  }
+
+\NewDocumentCommand \ThreadBoundCover { O{} m }
+  {
+    \group_begin:
+      \keys_set:nn { luatexcn / threadcover } {#1}
+      \tl_set:Nn \l__luatexcn_tcover_title_tl {#2}
+      \tl_set:Nx \l_tmpb_tl
+        { \exp_not:N \begin{Cover} [ background-color = { \l__luatexcn_tcover_bg_tl } ] }
+      \exp_last_unbraced:No \use:n \l_tmpb_tl
+        \__luatexcn_tcover_body:
+      \end{Cover}
+    \group_end:
+  }
+
 % ============================================================================
 % CJK Aliases (中文别名)
 % ============================================================================
 % Simplified Chinese / 简体 (封面简繁同形)
 \NewEnvironmentCopy{封面}{Cover}
+\NewCommandCopy{\线装书封面}{\ThreadBoundCover}
+% Traditional / 繁體
+\NewCommandCopy{\線裝書封面}{\ThreadBoundCover}
 
 \ExplSyntaxOff
 \endinput

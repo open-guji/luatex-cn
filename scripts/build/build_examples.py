@@ -136,6 +136,15 @@ DOCS = [
         images=[Png("示例/欧式族谱/p1.png", page=1)],
     ),
     Doc(
+        tex="示例/线装书封面/封面.tex",
+        pdfs=["示例/线装书封面/封面.pdf"],
+        images=[
+            Png("示例/线装书封面/page-1.png", page=1),
+            Png("示例/线装书封面/page-2.png", page=2),
+            Png("示例/线装书封面/page-3.png", page=3),
+        ],
+    ),
+    Doc(
         tex="示例/论辩的魂灵/论辩的魂灵.tex",
         pdfs=["示例/论辩的魂灵/论辩的魂灵.pdf"],
     ),

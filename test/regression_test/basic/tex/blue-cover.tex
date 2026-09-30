@@ -1,0 +1,22 @@
+% 现代蓝色线装书封面模板回归测试（issue #170）
+% 书名短 / 书名长两种封面：书名签边框高度须随字数自适应
+\documentclass{ltc-guji}
+% 模板 cfg 位于 模板/ 目录，测试中显式载入（cfg 需在 expl3 语法下读入）
+\ExplSyntaxOn
+\input{../../../../模板/现代蓝色线装书封面/现代蓝色线装书封面.cfg}
+\ExplSyntaxOff
+\setmainfont{TW-Kai}
+\无标点模式
+
+\begin{document}
+\begin{封面}[底色={38, 72, 120}]
+  \蓝签书名{史記卷一}
+  \蓝签小字[x=118mm, y=100mm]{漢　司馬遷　撰}
+  \蓝签小字[x=100mm, y=200mm, font-size=18pt]{中華書局}
+\end{封面}
+\begin{封面}[底色={38, 72, 120}]
+  \蓝签书名{欽定四庫全書簡明目錄卷一}
+  \蓝签小字[x=118mm, y=150mm]{清　紀昀等　撰}
+  \蓝签小字[x=100mm, y=200mm, font-size=18pt]{廣陵書社}
+\end{封面}
+\end{document}

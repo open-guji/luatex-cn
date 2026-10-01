@@ -34,6 +34,12 @@ local utils = package.loaded['util.luatex-cn-utils'] or
 local constants = package.loaded['core.luatex-cn-constants'] or
     require('core.luatex-cn-constants')
 
+-- Margin resolution lives in core-page (twoside decides inner/outer vs left/right)
+local function page_module()
+    return package.loaded['core.luatex-cn-core-page'] or
+        require('core.luatex-cn-core-page')
+end
+
 -- ============================================================================
 -- Shared Layout Calculation Helpers
 -- ============================================================================
@@ -308,31 +314,8 @@ end
 -- Supports two-side margin mode (inner/outer for alternating odd/even pages)
 local function calc_content_area_width()
     local p_width = _G.page and _G.page.paper_width or 0
-    local m_left = _G.page and _G.page.margin_left or 0
-    local m_right = _G.page and _G.page.margin_right or 0
-    local twoside = _G.page and _G.page.twoside or false
-    local m_inner = _G.page and _G.page.margin_inner or 0
-    local m_outer = _G.page and _G.page.margin_outer or 0
-
-    -- When inner/outer margins are set, they take priority over left/right.
-    -- twoside controls whether odd/even pages swap inner/outer.
-    -- Without twoside: inner=left, outer=right (fixed).
-    -- With twoside: odd pages inner=left, even pages inner=right (mirrored).
-    if m_inner > 0 or m_outer > 0 then
-        if twoside then
-            local page_num = _G.page.current_page_number or 1
-            if page_num % 2 == 1 then
-                m_left = m_inner
-                m_right = m_outer
-            else
-                m_left = m_outer
-                m_right = m_inner
-            end
-        else
-            m_left = m_inner
-            m_right = m_outer
-        end
-    end
+    -- twoside=true: inner/outer (swapped on even pages); false: left/right only
+    local m_left, m_right = page_module().get_effective_margins()
 
     -- Layer 1: Total Box (Page - Margins)
     local total_width = p_width - m_left - m_right
@@ -409,30 +392,9 @@ local function calc_auto_layout()
 
     local p_width = _G.page and _G.page.paper_width or 0
     local p_height = _G.page and _G.page.paper_height or 0
-    local m_left = _G.page and _G.page.margin_left or 0
-    local m_right = _G.page and _G.page.margin_right or 0
     local m_top = _G.page and _G.page.margin_top or 0
     local m_bottom = _G.page and _G.page.margin_bottom or 0
-    local twoside = _G.page and _G.page.twoside or false
-    local m_inner = _G.page and _G.page.margin_inner or 0
-    local m_outer = _G.page and _G.page.margin_outer or 0
-
-    -- When inner/outer margins are set, they take priority over left/right.
-    if m_inner > 0 or m_outer > 0 then
-        if twoside then
-            local page_num = _G.page.current_page_number or 1
-            if page_num % 2 == 1 then
-                m_left = m_inner
-                m_right = m_outer
-            else
-                m_left = m_outer
-                m_right = m_inner
-            end
-        else
-            m_left = m_inner
-            m_right = m_outer
-        end
-    end
+    local m_left, m_right = page_module().get_effective_margins()
 
     -- ========== Layer 1: Total Box ==========
     local total_width = p_width - m_left - m_right
@@ -527,8 +489,7 @@ local function guji_auto_layout(params)
     -- Get page dimensions from _G.page (already synced)
     local p_width = _G.page and _G.page.paper_width or 0
     local p_height = _G.page and _G.page.paper_height or 0
-    local m_left = _G.page and _G.page.margin_left or 0
-    local m_right = _G.page and _G.page.margin_right or 0
+    local m_left, m_right = page_module().get_effective_margins()
     local m_top = _G.page and _G.page.margin_top or 0
     local m_bottom = _G.page and _G.page.margin_bottom or 0
 

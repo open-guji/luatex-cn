@@ -45,6 +45,10 @@ _G.page.saved_stack = _G.page.saved_stack or {}
 -- @param params (table) Parameters from TeX keyvals
 function page.setup(params)
     params = params or {}
+    local old = {
+        left = _G.page.margin_left, right = _G.page.margin_right,
+        inner = _G.page.margin_inner, outer = _G.page.margin_outer,
+    }
     if params.paper_width then _G.page.paper_width = constants.to_dimen(params.paper_width) end
     if params.paper_height then _G.page.paper_height = constants.to_dimen(params.paper_height) end
     if params.margin_top then _G.page.margin_top = constants.to_dimen(params.margin_top) end
@@ -55,6 +59,34 @@ function page.setup(params)
     if params.twoside ~= nil then _G.page.twoside = params.twoside end
     if params.margin_inner then _G.page.margin_inner = constants.to_dimen(params.margin_inner) end
     if params.margin_outer then _G.page.margin_outer = constants.to_dimen(params.margin_outer) end
+    page.warn_ignored_margins(old)
+end
+
+--- Silence (true) or re-enable (false) the ignored-margin warning, used while
+-- a class config file loads its defaults.
+function page.set_quiet(flag)
+    _G.page.quiet = flag and true or false
+end
+
+--- Warn when this call changed a margin that twoside makes inert.
+-- twoside=true ignores margin-left/right; twoside=false ignores margin-inner/outer.
+-- Only values changed by this call are reported (every \pageSetup re-sends all keys),
+-- and not while a class config file is loading defaults (_G.page.quiet).
+-- @param old (table) margins before the call: left, right, inner, outer
+function page.warn_ignored_margins(old)
+    if _G.page.quiet then return end
+    local p = _G.page
+    local msg
+    if p.twoside then
+        if p.margin_left ~= old.left or p.margin_right ~= old.right then
+            msg = "twoside=true uses only margin-inner/margin-outer; "
+                .. "margin-left/margin-right are ignored."
+        end
+    elseif p.margin_inner ~= old.inner or p.margin_outer ~= old.outer then
+        msg = "twoside=false uses only margin-left/margin-right; "
+            .. "margin-inner/margin-outer are ignored."
+    end
+    if msg then texio.write_nl("term and log", "luatex-cn Warning: " .. msg) end
 end
 
 --- Save current page settings to stack
@@ -105,31 +137,28 @@ function page.restore()
 end
 
 --- Get effective left/right margins for a given page number.
--- When inner/outer margins are set, they take priority over left/right.
--- twoside controls whether odd/even pages swap inner/outer.
+-- The two margin groups are mutually exclusive, selected by twoside:
+--   twoside=true  : only margin_inner / margin_outer are read
+--                   (odd pages: inner left, outer right; even pages swapped)
+--   twoside=false : only margin_left / margin_right are read (same on every page)
 -- @param page_num (number, optional) Page number (defaults to current_page_number)
 -- @return m_left, m_right (sp values)
 function page.get_effective_margins(page_num)
-    local m_left = _G.page.margin_left or 0
-    local m_right = _G.page.margin_right or 0
-    local m_inner = _G.page.margin_inner or 0
-    local m_outer = _G.page.margin_outer or 0
-    if m_inner > 0 or m_outer > 0 then
-        if _G.page.twoside then
-            local pn = page_num or _G.page.current_page_number or 1
-            if pn % 2 == 1 then
-                m_left = m_inner
-                m_right = m_outer
-            else
-                m_left = m_outer
-                m_right = m_inner
-            end
-        else
-            m_left = m_inner
-            m_right = m_outer
+    if _G.page.twoside then
+        local m_inner = _G.page.margin_inner or 0
+        local m_outer = _G.page.margin_outer or 0
+        local pn = page_num or _G.page.current_page_number or 1
+        if pn % 2 == 1 then
+            return m_inner, m_outer
         end
+        return m_outer, m_inner
     end
-    return m_left, m_right
+    return _G.page.margin_left or 0, _G.page.margin_right or 0
+end
+
+--- Whether odd/even pages swap sides (true) or every page is identical (false)
+function page.is_twoside()
+    return _G.page.twoside and true or false
 end
 
 --- Get restored dimension as string for TeX

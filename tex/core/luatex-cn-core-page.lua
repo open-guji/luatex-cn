@@ -77,12 +77,15 @@ function page.warn_ignored_margins(old)
     if _G.page.quiet then return end
     local p = _G.page
     local msg
+    -- An unset key reaches Lua as "" and converts to nil, while the previous value
+    -- is 0: compare as numbers, or every ltc-guji load would warn spuriously.
+    local function n(v) return tonumber(v) or 0 end
     if p.twoside then
-        if p.margin_left ~= old.left or p.margin_right ~= old.right then
+        if n(p.margin_left) ~= n(old.left) or n(p.margin_right) ~= n(old.right) then
             msg = "twoside=true uses only margin-inner/margin-outer; "
                 .. "margin-left/margin-right are ignored."
         end
-    elseif p.margin_inner ~= old.inner or p.margin_outer ~= old.outer then
+    elseif n(p.margin_inner) ~= n(old.inner) or n(p.margin_outer) ~= n(old.outer) then
         msg = "twoside=false uses only margin-left/margin-right; "
             .. "margin-inner/margin-outer are ignored."
     end

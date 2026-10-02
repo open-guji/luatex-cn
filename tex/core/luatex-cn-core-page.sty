@@ -377,6 +377,8 @@
   {
     \RenewDocumentCommand{\newpage}{}{\penalty-10003 }
     \RenewDocumentCommand{\clearpage}{}{\penalty-10003 }
+    % Inside a content block a blank page is a layout penalty, not a TeX page
+    \RenewDocumentCommand{\InsertBlankPage}{ O{} }{ \__luatexcn_page_blank_penalty:n {##1} }
     % Override \chapter inside BodyText: insert marker node + optional text output
     % \chapter{text}          → marker + styled text
     % \chapter[banxin]{text}  → marker (banxin title) + styled text (body text)
@@ -398,6 +400,76 @@
       }
   }
 
+% ============================================================================
+% Facing pages and blank pages (issue #176)
+% ============================================================================
+% \pageSetup{facing-pages=true}  (对页补页)
+%     A chapter that opens a page must open an odd (right-hand) one: when the
+%     previous chapter ended on an odd page, one blank page is added. Default off.
+% \pageSetup{blank-page-style=blank}  (补页样式=空白)
+%     Style of the pages added that way and by \InsertBlankPage:
+%     header (default)  -- border, banxin / running header and page number as usual
+%     blank             -- completely blank, no header or page number
+% \InsertBlankPage[blank-page-style=...]  (\补空白页)
+%     Force one blank page here.
+% The keys are .code:n handlers that write straight into Lua state, so that
+% \pageSetup itself stays untouched (it also carries the margin / twoside logic).
+
+\tl_new:N \l__luatexcn_page_blank_style_tl
+
+\cs_new_protected:Npn \__luatexcn_page_set_facing:n #1
+  {
+    \lua_now:e { require('core.luatex-cn-core-page').set_facing_pages("\tl_to_str:n {#1}") }
+  }
+
+\cs_new_protected:Npn \__luatexcn_page_set_blank_style:n #1
+  {
+    \lua_now:e { require('core.luatex-cn-core-page').set_blank_page_style("\tl_to_str:n {#1}") }
+  }
+
+\keys_define:nn { luatexcn / page }
+  {
+    facing-pages .code:n = { \__luatexcn_page_set_facing:n {#1} },
+    facing-pages .default:n = { true },
+    blank-page-style .code:n = { \__luatexcn_page_set_blank_style:n {#1} },
+  }
+
+% Per-call keys of \InsertBlankPage (do not touch the document default)
+\keys_define:nn { luatexcn / blankpage }
+  {
+    blank-page-style .tl_set:N = \l__luatexcn_page_blank_style_tl,
+    unknown .code:n = {},
+  }
+
+% Inside a content block: the blank page is a penalty the layout engine acts on.
+\cs_new_protected:Npn \__luatexcn_page_blank_penalty:n #1
+  {
+    \group_begin:
+      \tl_clear:N \l__luatexcn_page_blank_style_tl
+      \keys_set:nn { luatexcn / blankpage } { #1 }
+      \int_set:Nn \l_tmpa_int
+        {
+          \lua_now:e
+            {
+              tex.sprint(require('core.luatex-cn-core-page').blank_penalty_for(
+                "\tl_to_str:N \l__luatexcn_page_blank_style_tl"))
+            }
+        }
+      \tex_penalty:D \l_tmpa_int
+    \group_end:
+  }
+
+% Between content blocks: ship what is open, then typeset a block that holds
+% nothing but the blank page.
+\NewDocumentCommand{\InsertBlankPage}{ O{} }
+  {
+    \par
+    \newpage
+    \begin{BodyText}
+      \InsertBlankPage[#1]
+    \end{BodyText}
+  }
+
 % ============================================================
 % Chinese aliases / 中文别名
 % ============================================================
@@ -411,6 +483,8 @@
 % \换页 must delegate to \newpage (not copy) because \newpage is
 % overridden inside Content groups to emit PENALTY_FORCE_PAGE.
 \NewDocumentCommand{\换页}{}{\newpage}
+% Same for \补空白页: it is a penalty inside content blocks.
+\NewDocumentCommand{\补空白页}{ O{} }{\InsertBlankPage[#1]}
 % Traditional Chinese / 繁体
 \NewCommandCopy{\頁面設置}{\pageSetup}
 \NewCommandCopy{\開啟分頁}{\enableSplitPage}
@@ -418,6 +492,7 @@
 \NewCommandCopy{\設置頁碼}{\SetPageNumber}
 \NewCommandCopy{\重置頁碼}{\ResetPageNumber}
 \NewCommandCopy{\換頁}{\换页}
+\NewDocumentCommand{\補空白頁}{ O{} }{\InsertBlankPage[#1]}
 
 % ============================================================
 % Chinese key aliases / 中文 Key 别名
@@ -455,6 +530,22 @@
     頁碼字號 .tl_set:N = \l__luatexcn_page_number_font_size_tl,
     啟用頁眉 .bool_set:N = \l__luatexcn_page_header_enabled_bool,
     頁眉字號 .tl_set:N = \l__luatexcn_page_header_font_size_tl,
+  }
+
+% 对页补页 / 补页样式 (issue #176)
+\keys_define:nn { luatexcn / page }
+  {
+    对页补页 .meta:n = { facing-pages = {#1} },
+    对页补页 .default:n = { true },
+    補頁樣式 .meta:n = { blank-page-style = {#1} },
+    补页样式 .meta:n = { blank-page-style = {#1} },
+    對頁補頁 .meta:n = { facing-pages = {#1} },
+    對頁補頁 .default:n = { true },
+  }
+\keys_define:nn { luatexcn / blankpage }
+  {
+    补页样式 .tl_set:N = \l__luatexcn_page_blank_style_tl,
+    補頁樣式 .tl_set:N = \l__luatexcn_page_blank_style_tl,
   }
 
 \endinput

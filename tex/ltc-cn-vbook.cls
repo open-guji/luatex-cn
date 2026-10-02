@@ -169,9 +169,14 @@
 \ExplSyntaxOff
 
 % Default shipout hook: running header + page number
+% (a 补页样式=空白 blank page, issue #176, gets neither)
 % Uses Lua to determine odd/even page and conditionally output TeX commands
 \newcommand{\cnVbookPageNumberHook}{%
   \directlua{
+    if require('core.luatex-cn-core-page').is_plain_blank_page(tex.box[\the\ShipoutBox]) then
+      _G.vbook_skip_header_page = false
+      return
+    end
     local pg = tex.count[0]
     local style = _G.page and _G.page.number_style or "none"
     local header_on = _G.page and _G.page.header_enabled or false

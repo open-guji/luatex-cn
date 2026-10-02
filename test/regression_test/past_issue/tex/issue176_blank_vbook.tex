@@ -1,0 +1,19 @@
+% 竖排书：补页默认带页眉页码，补页样式=空白 则页眉页码也没有
+% Issue #176: 对页的章节末奇偶页按需创建，或者主动添加空白页面
+% https://github.com/open-guji/luatex-cn/issues/176
+\documentclass{ltc-cn-vbook}
+\setmainfont{TW-Kai}
+\pageSetup{page-number-style=arabic, header-enabled=true, facing-pages=true}
+\title{測試書}
+\chapter{甲卷}
+
+\begin{document}
+\begin{正文}
+甲卷第一页
+\clearpage
+\chapter*{乙卷}
+乙卷第一页（第 2 页补空白页，第 3 页起）
+\补空白页[补页样式=空白]
+乙卷之后强制补一页空白（无页眉页码）
+\end{正文}
+\end{document}

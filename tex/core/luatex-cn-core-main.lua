@@ -494,6 +494,11 @@ local function compute_grid_layout(list, params, engine_ctx, plugin_contexts, p_
         shift_x = engine_ctx.shift_x or 0,
         shift_y = engine_ctx.shift_y or 0,
         half_thickness = engine_ctx.half_thickness or 0,
+        -- 对页补页 (issue #176): pad so that a chapter opening a page opens an odd one.
+        -- Not for textboxes, and not in 筒子页 mode, where every sheet is already a spread.
+        facing_pages = not p_info.is_textbox and params.facing_pages == true,
+        blank_page_style = params.blank_page_style,
+        physical_page_base = params.physical_page_base,
     }
 
     -- Banxin: textbox uses center-gap logic; non-textbox uses global banxin_on
@@ -504,13 +509,14 @@ local function compute_grid_layout(list, params, engine_ctx, plugin_contexts, p_
         layout_params.banxin_on = engine_ctx.banxin_on
     end
 
-    local layout_map, total_pages, page_chapter_titles, banxin_registry, page_resets = layout.calculate_grid_positions(list,
+    local layout_map, total_pages, page_chapter_titles, banxin_registry, page_resets, blank_pages = layout.calculate_grid_positions(list,
         engine_ctx.g_height,
         engine_ctx.line_limit, engine_ctx.n_column, engine_ctx.page_columns,
         layout_params)
     engine_ctx.banxin_registry = banxin_registry
     engine_ctx.page_chapter_titles = page_chapter_titles
     engine_ctx.page_resets = page_resets or {}
+    engine_ctx.blank_pages = blank_pages or {}
     engine_ctx.total_pages = total_pages
 
     dbg.log(string.format("Stage 2: Laid out total_pages = %d", total_pages))
@@ -539,6 +545,7 @@ local function compute_grid_layout(list, params, engine_ctx, plugin_contexts, p_
         total_pages = total_pages,
         page_chapter_titles = page_chapter_titles,
         banxin_registry = banxin_registry,
+        blank_pages = blank_pages or {},
     }
 end
 
@@ -618,6 +625,7 @@ local function generate_physical_pages(list, params, engine_ctx, plugin_contexts
 
         total_pages = total_pages,
         start_page_number = start_page,
+        blank_pages = layout_results.blank_pages or {},
     }
 
     local pages = render.apply_positions(list, layout_map, render_ctx)
@@ -669,6 +677,13 @@ local function generate_physical_pages(list, params, engine_ctx, plugin_contexts
         end
 
         new_box.list = content_head
+        if not p_info.is_textbox and layout_results.blank_pages
+            and layout_results.blank_pages[i - 1] == "plain" then
+            -- Lets the shipout hook of the vertical-book classes know this page
+            -- is meant to carry no running header / page number.
+            node.set_attribute(new_box, constants.ATTR_BLANK_PAGE, 1)
+            _G.page.plain_blank_used = true
+        end
         new_box.width = page_info.cols * engine_ctx.g_width + engine_ctx.border_thickness + outer_shift * 2
         new_box.height = 0
         -- For textbox with auto-height: size the box to exactly the outer
@@ -722,6 +737,16 @@ local function collect_page_cells(layout_results)
     local layout_map = layout_results and layout_results.layout_map
     if not layout_map then return first, last end
     local last_page = (layout_results.total_pages or 1) - 1
+    local blank_pages = layout_results.blank_pages
+    if blank_pages and next(blank_pages) then
+        -- A blank page leaves the cursor on a fresh page after it. If nothing
+        -- follows, that page is never rendered, so the last page that is
+        -- actually printed is the highest one with an entry (issue #176).
+        last_page = 0
+        for _, e in pairs(layout_map) do
+            if (e.page or 0) > last_page then last_page = e.page end
+        end
+    end
     for _, e in pairs(layout_map) do
         local p = e.page or 0
         if p == 0 or p == last_page then
@@ -797,8 +822,35 @@ local function cells_collide(a, b)
     return false
 end
 
+-- Number of pages shipped when the last content page was left open (nil when
+-- unknown). The page stays open until something ships it, so "still open" is
+-- "nothing has been shipped since" — see physical_page_base().
+local open_page_mark = nil
+
+--- Physical (1-based) page number the next content block starts at.
+-- Counts pages already shipped, so \SetPageNumber, \chapter's page-number
+-- reset and the like do not disturb it. When the previous block left a page
+-- open the new block will not reuse it (it prints over the same cells; see
+-- cells_collide below), so it starts one page further on.
+local function physical_page_base()
+    local shipped = (status and status.total_pages) or 0
+    local open = open_page_mark ~= nil and shipped == open_page_mark
+    return shipped + 1 + (open and 1 or 0)
+end
+
 --- Interface for TeX to call to process and output pages
 local function process(box_num, params)
+    local is_textbox_block = (params.is_textbox == true)
+    if not is_textbox_block then
+        -- 对页补页 (issue #176) settings, set by \pageSetup{对页补页=...}
+        local pg = _G.page or {}
+        params.facing_pages = pg.facing_pages == true
+        params.blank_page_style = pg.blank_page_style or "normal"
+        params.physical_page_base = physical_page_base()
+    end
+    local shipped_before = (status and status.total_pages) or 0
+    local was_open = open_page_mark ~= nil and shipped_before == open_page_mark
+
     local total_pages, first_cells, last_cells = typeset(box_num, params)
 
     -- Check if split page is enabled
@@ -815,9 +867,11 @@ local function process(box_num, params)
     -- must keep sharing the page, so only break on an actual cell collision.
     -- Breaking here rather than after the previous block also leaves documents
     -- with a single content block byte-identical.
+    local broke_open_page = false
     if not is_textbox and total_pages > 0 and cells_collide(open_page_cells, first_cells) then
         tex.print("\\vfill\\penalty-10000\\allowbreak")
         open_page_cells = nil
+        broke_open_page = was_open
     end
 
     if split_enabled and not is_textbox then
@@ -829,6 +883,13 @@ local function process(box_num, params)
     end
 
     if not is_textbox and total_pages > 0 then
+        -- Remember how many pages will have shipped once this block is out, so
+        -- the next block can tell the last page is still open.
+        if split_enabled then
+            open_page_mark = nil
+        else
+            open_page_mark = shipped_before + (broke_open_page and 1 or 0) + (total_pages - 1)
+        end
         -- A block that shared the open page adds its cells to the ones already
         -- printed there, so a third block collides with either. A block that
         -- broke to further pages of its own starts that page fresh.

@@ -429,6 +429,11 @@ test_utils.run_test("PENALTY_FORCE_PAGE value", function()
     test_utils.assert_eq(constants.PENALTY_FORCE_PAGE, -10003)
 end)
 
+test_utils.run_test("PENALTY_BLANK_PAGE values", function()
+    test_utils.assert_eq(constants.PENALTY_BLANK_PAGE, -10011)
+    test_utils.assert_eq(constants.PENALTY_BLANK_PAGE_PLAIN, -10012)
+end)
+
 test_utils.run_test("PENALTY_TAITOU value", function()
     test_utils.assert_eq(constants.PENALTY_TAITOU, -10004)
 end)

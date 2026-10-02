@@ -1,0 +1,23 @@
+% 对页补页：默认关闭——页数不变（4 页，没有空白页）
+% Issue #176: 对页的章节末奇偶页按需创建，或者主动添加空白页面
+% https://github.com/open-guji/luatex-cn/issues/176
+\documentclass{ltc-guji}
+\setmainfont{TW-Kai}
+\关闭分页
+\无标点模式
+\title{測試書}
+\chapter{甲卷}
+
+\begin{document}
+\begin{正文}
+甲卷第一页（章末在第 1 页，奇数页）
+\clearpage
+\chapter{乙卷}
+乙卷第一页（对页补页开启时在第 3 页）
+\clearpage
+乙卷第二页（章末在偶数页，不补页）
+\clearpage
+\chapter{丙卷}
+丙卷第一页
+\end{正文}
+\end{document}

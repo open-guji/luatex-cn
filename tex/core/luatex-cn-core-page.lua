@@ -266,6 +266,79 @@ function page.output_pages(box_num, total_pages)
     end
 end
 
+-- ============================================================================
+-- Facing pages / blank pages (issue #176)
+-- ============================================================================
+
+-- Accepted spellings of 补页样式. Anything that is not "plain" gets the normal
+-- blank page (border + banxin + running header / page number).
+local PLAIN_STYLE_NAMES = {
+    ["blank"] = true, ["plain"] = true, ["empty"] = true, ["none"] = true,
+    ["空白"] = true, ["全空白"] = true, ["空白頁"] = true, ["空白页"] = true,
+}
+local NORMAL_STYLE_NAMES = {
+    [""] = true, ["normal"] = true, ["default"] = true, ["header"] = true,
+    ["默认"] = true, ["默認"] = true, ["带页眉页码"] = true, ["帶頁眉頁碼"] = true,
+    ["带页眉"] = true, ["帶頁眉"] = true,
+}
+
+--- Normalise a 补页样式 value.
+-- @param value (string|nil)
+-- @return (string) "normal" or "plain"
+function page.normalize_blank_page_style(value)
+    local v = tostring(value or ""):gsub("^%s+", ""):gsub("%s+$", ""):lower()
+    if PLAIN_STYLE_NAMES[v] then return "plain" end
+    if not NORMAL_STYLE_NAMES[v] and texio and texio.write_nl then
+        texio.write_nl("luatex-cn Warning: unknown 补页样式/blank-page-style '" .. v ..
+            "', using the default (blank page with header and page number)")
+    end
+    return "normal"
+end
+
+--- 对页补页 switch (set from the 对页补页 / facing-pages page key).
+function page.set_facing_pages(enabled)
+    _G.page.facing_pages = (enabled == true or enabled == "true")
+end
+
+--- Default style of inserted blank pages (set from 补页样式 / blank-page-style).
+function page.set_blank_page_style(value)
+    _G.page.blank_page_style = page.normalize_blank_page_style(value)
+end
+
+--- Penalty value that inserts a blank page of the given style.
+-- @param style (string|nil) empty/nil = the document default (补页样式 of \pageSetup)
+-- @return (number) PENALTY_BLANK_PAGE or PENALTY_BLANK_PAGE_PLAIN
+function page.blank_penalty_for(style)
+    if style == nil or style == "" then
+        style = _G.page.blank_page_style or "normal"
+    else
+        style = page.normalize_blank_page_style(style)
+    end
+    if style == "plain" then return constants.PENALTY_BLANK_PAGE_PLAIN end
+    return constants.PENALTY_BLANK_PAGE
+end
+
+--- Does this page box carry the plain-blank-page mark?
+-- Used by the shipout hook of the vertical-book classes: the page about to be
+-- shipped is a 补页样式=空白 page, so no running header / page number.
+-- @param box (node|nil) the shipout box
+-- @return (boolean)
+function page.is_plain_blank_page(box)
+    -- Documents without plain blank pages (nearly all) never pay for the scan.
+    if not box or not _G.page.plain_blank_used then return false end
+    local attr = constants.ATTR_BLANK_PAGE
+    local function scan(list, depth)
+        for n in node.traverse(list) do
+            if node.has_attribute(n, attr) then return true end
+            if depth < 6 and (n.id == node.id("hlist") or n.id == node.id("vlist")) and n.list then
+                if scan(n.list, depth + 1) then return true end
+            end
+        end
+        return false
+    end
+    return scan(box.list, 0)
+end
+
 -- Register module in package.loaded
 package.loaded['core.luatex-cn-core-page'] = page
 

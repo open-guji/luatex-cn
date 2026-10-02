@@ -346,6 +346,15 @@ local function render_single_page(p_head, p_max_col, p, layout_map, params, ctx,
     local draw_band_border = engine.draw_band_border
     local draw_outer_border = page.is_outer_border
 
+    -- Plain-style blank page (补页样式=空白): no border, no silk lines, no
+    -- outer frame. (The banxin plugin and the shipout hooks skip it as well.)
+    if not page.is_textbox and params.blank_pages and params.blank_pages[p] == "plain" then
+        draw_border = false
+        draw_column_border = false
+        draw_band_border = false
+        draw_outer_border = false
+    end
+
     -- Per-column column border override from style stack (插图页 / IllustrationPage):
     -- Scan all nodes of this page; collect which columns have column_border=false.
     -- If ALL columns have it, suppress globally; otherwise build no_silk_cols set.

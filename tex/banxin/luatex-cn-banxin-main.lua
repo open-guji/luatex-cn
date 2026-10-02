@@ -328,6 +328,8 @@ end
 function banxin_main.render(head, layout_map, params, context, engine_ctx, page_idx, _)
     if not (context and context.active) then return head end
     if engine_ctx.n_column <= 0 then return head end
+    -- Plain-style blank page (补页样式=空白, issue #176): no banxin at all.
+    if engine_ctx.blank_pages and engine_ctx.blank_pages[page_idx] == "plain" then return head end
 
     local page_layout = context.layout_cache and context.layout_cache[page_idx]
     if not page_layout then return head end

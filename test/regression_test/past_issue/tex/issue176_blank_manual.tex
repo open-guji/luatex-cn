@@ -1,0 +1,23 @@
+% \补空白页 / \InsertBlankPage：强制补一页（块内、块外、连续两次、空白样式）
+% Issue #176: 对页的章节末奇偶页按需创建，或者主动添加空白页面
+% https://github.com/open-guji/luatex-cn/issues/176
+\documentclass{ltc-guji}
+\setmainfont{TW-Kai}
+\关闭分页
+\无标点模式
+\title{測試書}
+\chapter{甲卷}
+
+\begin{document}
+\begin{正文}
+第一页
+\补空白页
+第二页（前面是带版心的补页）
+\InsertBlankPage[补页样式=空白]
+第三页（前面是完全空白的补页）
+\end{正文}
+\补空白页
+\begin{正文}
+第四页（前面是块外补的页）
+\end{正文}
+\end{document}

@@ -168,6 +168,7 @@ local function create_grid_context(params, line_limit, p_cols)
         chapter_title = initial_chapter,
         page_chapter_titles = {}, -- To store chapter title for each page
         page_resets = {}, -- page_resets[page] = true when a \chapter marker resets page number
+        blank_pages = {}, -- blank_pages[page] = "normal"|"plain" for pages inserted as blank
         last_glyph_row = -1, -- Track last glyph row for detecting line changes
         -- Unified layout: grid = fixed cell_height + zero gap; natural = font-size + configurable gap
         default_cell_height = default_cell_height,
@@ -661,6 +662,78 @@ end
 
 _internal.apply_cell_valign = apply_cell_valign
 
+--- Start a fresh page: cursor back to the top of column 0 of the next page.
+-- Shared by the explicit page break and the blank-page insertion.
+local function start_new_page(ctx, interval, grid_height, indent)
+    ctx.cur_page = ctx.cur_page + 1
+    ctx.cur_col = 0
+    ctx.cur_row = 0
+    ctx.cur_y_sp = 0
+    ctx.cur_column_indent = 0
+    ctx.page_has_content = false
+    -- Reset band to 0 on explicit page break
+    if ctx.n_bands > 1 then
+        ctx.cur_band = 0
+        ctx.line_limit = ctx.band_line_limits[0]
+        ctx.col_height_sp = ctx.band_heights_sp[0]
+    end
+    move_to_next_valid_position(ctx, interval, grid_height, indent)
+end
+
+--- Is the cursor at the top of an untouched page?
+local function at_fresh_page(ctx)
+    return not ctx.page_has_content and ctx.cur_col == 0 and ctx.cur_row == 0
+end
+
+--- Put one blank page at the cursor, then move on to the page after it.
+-- A page with no node would be dropped by the render stage (and take every
+-- later page with it), so the blank page is anchored by `anchor`, a node that
+-- is mapped to it as a position-less placeholder. `anchor` is the blank-page
+-- penalty itself, or a spare penalty node the chapter-start check inserted.
+-- @param style (string) "normal" (border + banxin + header/page number) or
+--   "plain" (nothing at all)
+local function insert_blank_page(ctx, interval, grid_height, indent, anchor, style)
+    -- Close the page the text is on; an already-fresh page is the blank page.
+    if not at_fresh_page(ctx) then
+        start_new_page(ctx, interval, grid_height, indent)
+    end
+    ctx.layout_map[anchor] = {
+        page = ctx.cur_page,
+        col = 0,
+        row = 0,
+        y_sp = 0,
+        mode = "placeholder",
+        blank_page = style,
+    }
+    ctx.blank_pages[ctx.cur_page] = style
+    start_new_page(ctx, interval, grid_height, indent)
+end
+
+--- 对页补页: a chapter that opens a page must open an odd (right-hand) one.
+-- Called when a chapter marker is reached. If the marker sits at the top of an
+-- untouched page whose physical number is even, the previous chapter ended on
+-- an odd page and the next one would start on the left of the spread: put a
+-- blank page in between. A chapter that starts mid-page is left alone.
+-- The physical number of page 0 comes from the caller (params.physical_page_base,
+-- 1-based, counting pages already shipped), so it keeps its parity across blocks.
+-- @param d_head (direct node) head of the node list (for inserting the anchor)
+-- @param marker (direct node) the chapter marker node
+local function pad_for_facing_pages(ctx, d_head, marker, flush_buffer_fn, interval, grid_height)
+    local params = ctx.params
+    if not params or not params.facing_pages then return end
+    if ctx.n_bands > 1 or ctx.page_has_content then return end
+    local physical = (params.physical_page_base or 1) + ctx.cur_page
+    if physical % 2 == 1 then return end
+    flush_buffer_fn()
+    -- The blank page needs a node of its own to hang on to; it is spliced in
+    -- after the marker, so the head of the list does not change.
+    local anchor = D.new(constants.PENALTY)
+    D.setfield(anchor, "penalty", 0)
+    D.insert_after(d_head, marker, anchor)
+    insert_blank_page(ctx, interval, grid_height, 0, anchor, params.blank_page_style or "normal")
+end
+_internal.pad_for_facing_pages = pad_for_facing_pages
+
 --- Handle penalty node for column/page breaks
 -- @param p_val (number) Penalty value
 -- @param ctx (table) Grid context
@@ -797,19 +870,13 @@ local function handle_penalty_breaks(p_val, ctx, flush_buffer_fn, p_cols, interv
             end
         end
         flush_buffer_fn()
-        ctx.cur_page = ctx.cur_page + 1
-        ctx.cur_col = 0
-        ctx.cur_row = 0
-        ctx.cur_y_sp = 0
-        ctx.cur_column_indent = 0
-        ctx.page_has_content = false
-        -- Reset band to 0 on explicit page break
-        if ctx.n_bands > 1 then
-            ctx.cur_band = 0
-            ctx.line_limit = ctx.band_line_limits[0]
-            ctx.col_height_sp = ctx.band_heights_sp[0]
-        end
-        move_to_next_valid_position(ctx, interval, grid_height, indent)
+        start_new_page(ctx, interval, grid_height, indent)
+        return true
+    elseif p_val == constants.PENALTY_BLANK_PAGE or p_val == constants.PENALTY_BLANK_PAGE_PLAIN then
+        -- \补空白页 / \InsertBlankPage: one blank page here, never elided.
+        flush_buffer_fn()
+        insert_blank_page(ctx, interval, grid_height, indent, penalty_node,
+            p_val == constants.PENALTY_BLANK_PAGE_PLAIN and "plain" or "normal")
         return true
     elseif p_val == constants.PENALTY_BAND_BREAK then
         -- Forced band break (\换栏 command)
@@ -2439,7 +2506,8 @@ end
 -- @param page_columns (number) Total columns before a page break
 -- @param params (table) Optional parameters:
 --   - distribute (boolean) If true, distribute nodes evenly in columns
--- @return (table, number, table, table) layout_map, total_pages, page_chapter_titles, banxin_registry
+-- @return (table, number, table, table, table, table) layout_map, total_pages, page_chapter_titles,
+--   banxin_registry, page_resets, blank_pages (page → "normal"|"plain" for inserted blank pages)
 local function calculate_grid_positions(head, grid_height, line_limit, n_column, page_columns, params)
     local d_head = D.todirect(head)
     params = params or {}
@@ -2515,6 +2583,7 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
         if reg_id and reg_id > 0 then
             local new_title = _G.chapter_registry and _G.chapter_registry[reg_id]
             if new_title then
+                pad_for_facing_pages(ctx, d_head, t, do_flush, interval, grid_height)
                 ctx.chapter_title = new_title
                 ctx.page_chapter_titles[ctx.cur_page] = new_title
                 ctx.page_resets[ctx.cur_page] = true
@@ -3001,7 +3070,8 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
         _G.content.page_table_bands = ctx.page_table_bands
     end
 
-    return layout_map, ctx.cur_page + 1, ctx.page_chapter_titles, ctx.banxin_registry, ctx.page_resets
+    return layout_map, ctx.cur_page + 1, ctx.page_chapter_titles, ctx.banxin_registry, ctx.page_resets,
+        ctx.blank_pages
 end
 
 -- Create module table

@@ -64,6 +64,11 @@ constants.ATTR_DECORATE_FONT = 202612
 constants.ATTR_CHAPTER_REG_ID = 202613
 constants.ATTR_LINE_MARK_ID = luatexbase.attributes.cnverticallinemark or luatexbase.new_attribute("cnverticallinemark")
 
+-- Marks the page box of a plain-style blank page (补页样式=空白) so the
+-- shipout hook of the vertical-book classes can leave header/page number off.
+constants.ATTR_BLANK_PAGE = luatexbase.attributes.cnverticalblankpage or
+    luatexbase.new_attribute("cnverticalblankpage")
+
 -- Style Registry Attribute (for cross-page style preservation - Phase 2)
 constants.ATTR_STYLE_REG_ID = luatexbase.attributes.cnverticalstyle or luatexbase.new_attribute("cnverticalstyle")
 
@@ -651,6 +656,17 @@ constants.PENALTY_TABLE_END = -10009
 --- and advances to the start of the next half-page.
 --- Used by: \换半页 / \NewHalfPage command
 constants.PENALTY_HALF_PAGE = -10010
+
+--- Blank page: Insert one blank page here (带版框/版心/页眉页码的补页).
+--- Closes the current page if it holds content, then emits a page with no
+--- text. Unlike \newpage it is never dropped as redundant: two in a row make
+--- two blank pages.
+--- Used by: \补空白页 / \InsertBlankPage inside a content block
+constants.PENALTY_BLANK_PAGE = -10011
+
+--- Blank page, plain style: same as PENALTY_BLANK_PAGE but the page carries
+--- no border, no banxin and no running header / page number (补页样式=空白).
+constants.PENALTY_BLANK_PAGE_PLAIN = -10012
 
 --- Page fill marker: Allow page break, used in page splitting
 --- Note: This keeps standard TeX value for compatibility

@@ -143,8 +143,6 @@ test_utils.run_test("page-twoside: Page.setup() stores twoside settings", functi
     page_mod.setup({
         paper_width = "170mm",
         paper_height = "240mm",
-        margin_left = "22mm",
-        margin_right = "18mm",
         margin_top = "25mm",
         margin_bottom = "15mm",
         twoside = true,
@@ -167,6 +165,62 @@ test_utils.run_test("page-twoside: Fallback to margin-left/right when twoside is
     local expected = (170 - 22 - 18) * 65536
 
     test_utils.assert_eq(width, expected, "Uses margin-left and margin-right when twoside=false")
+end)
+
+-- Test 9: twoside=false ignores inner/outer entirely
+test_utils.run_test("page-twoside: twoside=false ignores inner/outer", function()
+    local width = calc_content_width(1, false, 16 * 65536, 24 * 65536, 20 * 65536, 20 * 65536)
+    test_utils.assert_eq(width, (170 - 20 - 20) * 65536, "Only margin-left/right used")
+    local l, r = page_mod.get_effective_margins(2)
+    test_utils.assert_eq(l, 20 * 65536, "even page left = margin-left")
+    test_utils.assert_eq(r, 20 * 65536, "even page right = margin-right")
+end)
+
+-- Test 10: twoside=true ignores left/right entirely
+test_utils.run_test("page-twoside: twoside=true ignores left/right", function()
+    local width = calc_content_width(1, true, 16 * 65536, 24 * 65536, 5 * 65536, 5 * 65536)
+    test_utils.assert_eq(width, (170 - 16 - 24) * 65536, "Only inner/outer used")
+    local l1, r1 = page_mod.get_effective_margins(1)
+    local l2, r2 = page_mod.get_effective_margins(2)
+    test_utils.assert_eq(l1, 16 * 65536, "odd left = inner")
+    test_utils.assert_eq(r1, 24 * 65536, "odd right = outer")
+    test_utils.assert_eq(l2, 24 * 65536, "even left = outer")
+    test_utils.assert_eq(r2, 16 * 65536, "even right = inner")
+end)
+
+-- Test 11: twoside=false with only margin-left/right (no inner/outer) is symmetric per page
+test_utils.run_test("page-twoside: twoside=false pages are identical", function()
+    local l1, r1 = page_mod.get_effective_margins(1)
+    _G.page.twoside = false
+    _G.page.margin_left = 16 * 65536
+    _G.page.margin_right = 16 * 65536
+    for pn = 1, 4 do
+        local l, r = page_mod.get_effective_margins(pn)
+        test_utils.assert_eq(l, 16 * 65536, "page " .. pn .. " left")
+        test_utils.assert_eq(r, 16 * 65536, "page " .. pn .. " right")
+    end
+end)
+
+-- Test 12: warning only when the ignored group is changed by the call
+test_utils.run_test("page-twoside: ignored-margin warning", function()
+    local msgs = {}
+    local orig = texio.write_nl
+    texio.write_nl = function(_, m) msgs[#msgs + 1] = m end
+    _G.page.quiet = false
+    _G.page.twoside = false
+    _G.page.margin_inner = 0
+    _G.page.margin_outer = 0
+    page_mod.setup({ twoside = false, margin_left = "16mm", margin_right = "16mm" })
+    test_utils.assert_eq(#msgs, 0, "no warning for the active group")
+    page_mod.setup({ twoside = false, margin_left = "16mm", margin_right = "16mm", margin_inner = "10mm" })
+    test_utils.assert_eq(#msgs, 1, "warning when inner is set with twoside=false")
+    page_mod.setup({ twoside = false, margin_left = "16mm", margin_right = "16mm", margin_inner = "10mm" })
+    test_utils.assert_eq(#msgs, 1, "no repeat warning for unchanged value")
+    _G.page.quiet = true
+    page_mod.setup({ twoside = true, margin_left = "30mm" })
+    test_utils.assert_eq(#msgs, 1, "quiet suppresses warning")
+    _G.page.quiet = false
+    texio.write_nl = orig
 end)
 
 print("\nAll page-twoside tests passed!")

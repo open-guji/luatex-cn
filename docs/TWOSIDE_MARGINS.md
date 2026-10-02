@@ -41,8 +41,9 @@
 ### 参数说明
 
 - `twoside = true|false`：是否启用两侧模式（默认：false）
-- `margin-inner`：内侧边距，应用到每页靠近装订线的一侧
-- `margin-outer`：外侧边距，应用到每页远离装订线的一侧
+- `margin-inner`：内侧边距，仅 `twoside=true` 时使用
+- `margin-outer`：外侧边距，仅 `twoside=true` 时使用
+- `margin-left` / `margin-right`：左右边距，仅 `twoside=false` 时使用
 
 ### 页码与边距的对应关系
 
@@ -56,17 +57,28 @@
   - 左边距 = margin-outer（外侧）
   - 右边距 = margin-inner（内侧）
 
-### 回退行为
+### 互斥规则（twoside 决定读哪一组边距）
 
-如果 `twoside = false`，系统将使用传统的 `margin-left` 和 `margin-right` 参数。
+| `twoside` | 只读取 | 另一组 |
+|-----------|--------|--------|
+| `true` | `margin-inner`、`margin-outer`（偶数页左右互换） | `margin-left`、`margin-right` 被忽略，设置时给出警告 |
+| `false` | `margin-left`、`margin-right`（每页相同） | `margin-inner`、`margin-outer` 被忽略，设置时给出警告 |
+
+> 不向后兼容：旧版 `twoside=false` 时 `margin-inner`/`margin-outer` 会当作左/右边距，现在不再生效。
+
+### 不对页、每页版心固定（不装订打印 / 电子阅读）
 
 ```latex
+\documentclass{ltc-tw-vbook}
 \pageSetup{
-    twoside = false,        % 禁用 twoside
-    margin-left = 22mm,
-    margin-right = 18mm,
+    twoside = false,
+    margin-left = 16mm,
+    margin-right = 16mm,
 }
 ```
+
+现代竖排书默认配置同时给出两组默认值（`twoside=true` 时 16/24mm；`twoside=false` 时左右各 20mm）。
+`twoside=false` 时页眉、页码也固定在左侧（沿用奇数页版式），不再随页码奇偶交替。
 
 ## 实际应用示例
 

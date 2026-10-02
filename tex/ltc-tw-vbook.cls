@@ -108,7 +108,7 @@
 % Displays running header and page number on each page.
 % Both on inner margin (binding side): header at top, page number at bottom.
 %
-% Layout:
+% Layout (twoside=true; with twoside=false every page uses the odd-page layout):
 %   Odd pages (right page):  left side — chapter title (top) + page number (bottom)
 %   Even pages (left page):  right side — book name (top) + page number (bottom)
 %
@@ -183,7 +183,8 @@
 
     if not show_number and not show_header then return end
 
-    local is_odd = (math.fmod(pg, 2) == 1)
+    local twoside = _G.page and _G.page.twoside or false
+    local is_odd = (not twoside) or (math.fmod(pg, 2) == 1)
 
     local header_text = ""
     if show_header then

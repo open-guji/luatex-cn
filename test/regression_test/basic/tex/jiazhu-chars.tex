@@ -1,0 +1,23 @@
+% issue #82：正文每列 15 字、夹注每小列 20 字
+% \contentSetup 的 n-char-per-col 管正文；\夹注[n-char-per-col=20] 管夹注
+% （夹注格高 = 正文列高 ÷ 20）。夹注字号 font-size 另行指定。
+\documentclass{ltc-guji}
+\setmainfont{TW-Kai}
+\关闭分页
+\无标点模式
+
+\contentSetup{
+  n-char-per-col = 15,
+}
+
+\title{夹注字数}
+\chapter{夹注字数}
+\出版商{出版商}
+
+\begin{document}
+\begin{正文}
+正文一二三四五六七八九十一二三四五
+\夹注[font-size=22pt, n-char-per-col=20]{夹注一二三四五六七八九十一二三四五六七八九十夹注一二三四五六七八九十一二三四五六七八九十}
+正文一二三四五六七八九十一二三四五
+\end{正文}
+\end{document}

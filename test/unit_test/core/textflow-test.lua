@@ -233,4 +233,20 @@ test_utils.run_test("smart-break: column with textflow content flushes pending a
     test_utils.assert_eq(ctx.cur_row, 0)  -- new column starts at top
 end)
 
+test_utils.run_test("push_style: n_char is stored for layout-time grid height (issue #82)", function()
+    local style_registry = require("util.luatex-cn-style-registry")
+    local id = textflow.push_style(nil, "20pt", nil, nil, true, nil, nil, 20)
+    test_utils.assert_eq(style_registry.get(id).textflow_n_char, 20)
+    test_utils.assert_eq(style_registry.get(id).textflow_grid_height, nil)
+    textflow.pop_style()
+end)
+
+test_utils.run_test("push_style: explicit grid height wins over n_char", function()
+    local style_registry = require("util.luatex-cn-style-registry")
+    local id = textflow.push_style(nil, "20pt", nil, nil, true, 655360, nil, 20)
+    test_utils.assert_eq(style_registry.get(id).textflow_n_char, nil)
+    test_utils.assert_eq(style_registry.get(id).textflow_grid_height, 655360)
+    textflow.pop_style()
+end)
+
 print("\nAll textflow tests passed!")

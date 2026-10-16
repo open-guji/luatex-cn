@@ -48,8 +48,10 @@ local textflow = {}
 -- @param textflow_align (string|nil) TextFlow alignment (outward, inward, center, left, right)
 -- @param auto_balance (boolean|nil) Whether to auto-balance last column (default true)
 -- @param grid_height_sp (number|nil) Grid height in sp for capacity calculation
+-- @param style_extra (table|nil) Extra style fields
+-- @param n_char (number|nil) Chars per sub-column; grid height is derived from the column height at layout time
 -- @return (number) Style ID
-function textflow.push_style(font_color, font_size, font, textflow_align, auto_balance, grid_height_sp, style_extra)
+function textflow.push_style(font_color, font_size, font, textflow_align, auto_balance, grid_height_sp, style_extra, n_char)
     -- Start with style_extra (from \样式 forwarded keys), then overlay textflow-specific fields
     local extra = style_extra or {}
     if textflow_align and textflow_align ~= "" then
@@ -60,6 +62,10 @@ function textflow.push_style(font_color, font_size, font, textflow_align, auto_b
     if gh_val then
         extra.grid_height = gh_val
         extra.textflow_grid_height = gh_val  -- mark as textflow-level (not inner \Style)
+    end
+    local n = n_char and tonumber(n_char) or 0
+    if not gh_val and n > 0 then
+        extra.textflow_n_char = n  -- resolved to a grid height at layout (issue #82)
     end
     return style_registry.push_content_style(font_color, font_size, font, extra)
 end
@@ -514,6 +520,20 @@ local function place_textflow_segment(ctx, nodes, layout_map, params, callbacks,
     -- which may come from inner \样式[grid-height=Y]
     local textflow_gh = nil
     local first_sid = D.get_attribute(nodes[1], constants.ATTR_STYLE_REG_ID)
+    -- n-char-per-col (issue #82): grid height = column height / N, known only now
+    local first_style = first_sid and first_sid > 0 and style_registry.get(first_sid)
+    local n_char = first_style and first_style.textflow_n_char
+    if n_char and ctx.col_height_sp and ctx.col_height_sp > 0 then
+        local n_gh = math.floor(ctx.col_height_sp / n_char)
+        first_style.textflow_grid_height = n_gh
+        for _, n in ipairs(nodes) do
+            local nsid = D.get_attribute(n, constants.ATTR_STYLE_REG_ID)
+            local nstyle = nsid and nsid > 0 and style_registry.get(nsid)
+            if nstyle and nstyle.textflow_n_char == n_char then
+                nstyle.grid_height = n_gh
+            end
+        end
+    end
     if first_sid and first_sid > 0 then
         textflow_gh = style_registry.get_textflow_grid_height(first_sid)
     end

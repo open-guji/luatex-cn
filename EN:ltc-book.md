@@ -75,6 +75,8 @@ vbook enables twoside mode (`twoside=true`) by default, automatically mirroring 
 }
 ```
 
+> Which pair is read is decided by `twoside` (v0.4.3+): `twoside=true` reads only `margin-inner` / `margin-outer`, `twoside=false` reads only `margin-left` / `margin-right`; setting the ignored pair emits a warning. With `twoside=false` the running-header page number is fixed on the left instead of alternating.
+
 ## Running Headers (v0.3.2+)
 
 vbook supports running headers that alternate between chapter name and book title.

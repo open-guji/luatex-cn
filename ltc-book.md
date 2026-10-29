@@ -108,7 +108,7 @@ vbook 默认启用双面模式（`twoside=true`），奇偶页自动镜像内外
 }
 ```
 
-> 设置 `margin-inner` / `margin-outer` 后，`margin-left` / `margin-right` 会被忽略。
+> 读哪一组边距由 `twoside` 决定（v0.4.3+）：`twoside=true` 只读 `margin-inner` / `margin-outer`，`twoside=false` 只读 `margin-left` / `margin-right`；设置了被忽略的一组会收到警告。`twoside=false` 时页眉页码固定在左侧，不随奇偶页交替。
 
 ## 运行页眉 (v0.3.2+)
 

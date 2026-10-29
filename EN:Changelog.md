@@ -4,6 +4,17 @@ English | [中文版](Changelog)
 
 All notable changes to this project will be documented here.
 
+## [0.4.3] - 2026-10-28
+
+- ✨ **Thread-bound book cover**: `\线装书封面[keys]{title}` (`\ThreadBoundCover` / `\線裝書封面`) — the modern blue thread-bound cover used by Zhonghua Book Company, Guangling Press and other facsimile publishers (after CY/T 247—2021 fig. 1–2): navy cover with a cream title label at the top left, double rules (thick outer, thin inner) inside the label; the label has a minimum height and grows with a long title, shrinking the type when it would overflow the page; `册次` (volume) and `卷次` (juan) run in small type at the bottom of the label or right after the title with `小字位置=随后`; `订线` draws the binding thread for preview. Example in `示例/线装书封面/` (#170)
+- 🐛 **Reversed-text colour**: `\反白` / `\墨围反白` / `\八角墨围反白` no longer draw a black box with dark text in the body of the Siku Quanshu colour template, nor inside interlinear notes under any template (#187)
+- 🐛 **Side-note wrap indent**: a long side note in an indented paragraph now stays level with the body text after wrapping to the next column, instead of sitting `indent` rows higher (#188)
+- 🐛 **Nested paragraph indent**: the inner indent of nested `段落` no longer falls back to the outer indent (#168)
+- 🐛 **Floating-only pages**: a page holding only floating text boxes / seals is no longer dropped together with every page after it (#98)
+- 🐛 **Floating text box z-order**: several floating boxes on one page are now drawn in registration order instead of a random order
+- 🐛 **Judou with `vert` substitutions**: when the `vert` feature maps `，` `。` to vertical glyphs without a Unicode code point (e.g. Windows SimSun), judou still classifies them instead of leaving the mark below the text (PR #186)
+- ♻️ **Margin selection (breaking)**: `twoside=true` reads only `margin-inner` / `margin-outer` (mirrored on odd/even pages); `twoside=false` reads only `margin-left` / `margin-right`; setting the ignored pair emits a warning; with `twoside=false` the vbook running-header page number is fixed on the left. The old `twoside=false` + `margin-inner/outer` combination no longer takes effect — use `margin-left/right` (#174)
+
 ## [0.4.2] - 2026-09-30
 
 - 🐛 **Annotations after taitou**: notes following `\抬头`/`\平抬`/`\单抬` no longer jump to the column head or fall into the top margin; the forced taitou indent no longer leaks into later annotations. `\单抬` *inside* an annotation still protrudes into the top margin (#165)

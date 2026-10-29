@@ -136,6 +136,23 @@ Reproduces the opening spread of 《陽氏宗譜》 vol. 1: generations divided 
 
 ---
 
+### 8. Thread-bound Cover — Modern Blue Cover
+
+**Class**: `ltc-guji` | **Template**: none (built-in command)
+
+![Thread-bound cover](https://raw.githubusercontent.com/open-guji/luatex-cn/main/示例/线装书封面/page-1.png)
+
+The modern blue thread-bound cover used by Zhonghua Book Company, Guangling Press and other facsimile publishers (after CY/T 247—2021 fig. 1–2): navy ground, cream title label at the top left with double rules. The four pages show a short title with volume, a juan number, a long title with volume and juan (the label grows automatically), and small type following the title.
+
+**Capabilities**:
+- `\线装书封面[册次=…, 卷次=…]{title}` (v0.4.3+)
+- `小字位置=随后` and the `订线` preview switch
+- `\pageSetup{paper-width=370mm, paper-height=260mm}` (a 16mo thread-bound spread)
+
+📂 [View Source](https://github.com/open-guji/luatex-cn/tree/main/示例/线装书封面) ｜ 📄 [View PDF](https://github.com/open-guji/luatex-cn/blob/main/示例/线装书封面/封面.pdf)
+
+---
+
 ## Full-Book Reproductions
 
 `示例/` holds one- to few-page feature demos; [`全书复刻/`](https://github.com/open-guji/luatex-cn/tree/main/全书复刻) holds complete volume-length reproductions — many pages, slow to compile.
@@ -170,6 +187,7 @@ The same book exists in both a semantic edition (`tex/`) and a digitization edit
 | Character correction `\改` | Full-book Honglou only |
 | Modern punctuation and kinsoku | Shiji vol. 16 |
 | Footnotes `\脚注` | Shiji vol. 16 |
+| Thread-bound cover `\线装书封面` | Thread-bound Cover |
 | Digitization double columns | Full-book Siku Catalogue only |
 | Horizontal clreq | 論辯的魂靈 |
 

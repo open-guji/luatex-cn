@@ -4,7 +4,7 @@
 
 欢迎来到 LuaTeX-CN 的用户手册。本 Wiki 涵盖了从安装到高级排版的完整文档，帮助你用 LuaTeX-CN 排版高质量的中文古籍、现代竖排书籍与符合 clreq 的现代横排文档。
 
-> **当前版本**: [v0.4.2](https://github.com/open-guji/luatex-cn/releases) | **CTAN**: [v0.4.2](https://ctan.org/pkg/luatex-cn)
+> **当前版本**: [v0.4.3](https://github.com/open-guji/luatex-cn/releases) | **CTAN**: [v0.4.3](https://ctan.org/pkg/luatex-cn)
 
 ---
 

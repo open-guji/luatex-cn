@@ -45,6 +45,7 @@ Full support for visual elements required by traditional binding:
 - **[[Banxin & Yuwei | EN:Templates]]**: Support for single/double fishtails, black silk frames, etc.
 - **Split Page**: Support for electronic reading and traditional "tube page" binding.
 - **Border System**: Double borders, inner borders, and customizable thickness.
+- **Thread-bound Cover** (v0.4.3+): `\线装书封面[keys]{title}` renders the modern blue thread-bound cover (navy ground, cream title label with double rules, volume/juan in small type); see [[Features | Features]] §8 for the key table.
 
 ## 6. Annotation & Revision System
 Multiple ways to add comments to the text:

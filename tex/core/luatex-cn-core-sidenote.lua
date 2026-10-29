@@ -351,16 +351,18 @@ local function calculate_start_position(anchor_y_sp, metadata, main_grid_height)
 end
 
 -- Advance to the next valid (non-reserved) column on the current/next page,
--- aligning the row with the target column's body-text top boundary (taitou).
--- Only negative col_min_row values (taitou) affect alignment; positive
--- indent is ignored. Bumps past existing filled rows when present.
+-- aligning the row with the target column's body-text top boundary: negative
+-- for taitou (#91), positive for an indented paragraph (#188) -- the wrapped
+-- sidenote keeps level with the body text it runs beside. An empty target
+-- column (no body glyph recorded) starts at row 0. Bumps past existing
+-- filled rows when present.
 local function wrap_to_next_column(curr_p, curr_c, config)
     local next_p, next_c = curr_p, curr_c + 1
     next_p, next_c = skip_to_valid_column(next_p, next_c, config.p_cols, config.banxin_on, config.interval)
 
     local next_r = 0
     if config.col_min_row and config.col_min_row[next_p] then
-        next_r = math.min(0, config.col_min_row[next_p][next_c] or 0)
+        next_r = config.col_min_row[next_p][next_c] or 0
     end
 
     local filled = config.tracker.get(next_p, next_c)

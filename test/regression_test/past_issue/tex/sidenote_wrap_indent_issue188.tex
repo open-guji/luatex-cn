@@ -1,0 +1,23 @@
+% Issue #188: 缩进段落里的长侧批换列后不随正文缩进
+% https://github.com/open-guji/luatex-cn/issues/188
+%
+% 修复前: 侧批换到下一列时从第 0 行（或抬头负行）起排，比缩进的正文高出 indent 格
+% 修复后: 换列后与目标列正文顶端齐平（indent=1 / indent=3 / 无缩进对照）
+\documentclass{ltc-guji}
+\setmainfont{TW-Kai}
+\关闭分页
+
+\title{測試}
+\chapter{Issue 188}
+
+\begin{document}
+\begin{正文}
+\begin{段落}[indent=1]
+太陽病，桂枝證，醫反下之，遂\侧批[color=black]{其脉促者，表未解也，此處側批甚長以致換列再換列}利不止，喘而汗出者，葛根黃連黃芩湯主之。\\
+\end{段落}
+\begin{段落}[indent=3]
+太陽病，桂枝證，醫反下之，遂\侧批[color=black]{其脉促者，表未解也，此處側批甚長以致換列再換列}利不止。\\
+\end{段落}
+無縮進對照，桂枝證，醫反下之，遂\侧批[color=black]{其脉促者，表未解也，此處側批甚長以致換列再換列}利不止。\\
+\end{正文}
+\end{document}

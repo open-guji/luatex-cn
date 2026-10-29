@@ -480,6 +480,19 @@ test_utils.run_test("wrap_to_next_column: aligns with target taitou", function()
     test_utils.assert_eq(nr, -3, "row aligned with column-5 taitou")
 end)
 
+test_utils.run_test("wrap_to_next_column: aligns with target column's paragraph indent (#188)", function()
+    local tracker = sidenote._internal.create_gap_tracker()
+    local config = {
+        p_cols = 13, line_limit = 10,
+        banxin_on = false, interval = 0,
+        tracker = tracker,
+        col_min_row = { [0] = { [5] = 2 } }, -- column 5 body text starts at row 2 (indent=2)
+    }
+    local _, nc, nr = sidenote._internal.wrap_to_next_column(0, 4, config)
+    test_utils.assert_eq(nc, 5)
+    test_utils.assert_eq(nr, 2, "wrapped sidenote keeps level with indented body text")
+end)
+
 test_utils.run_test("wrap_to_next_column: rolls over to next page when col >= p_cols", function()
     local tracker = sidenote._internal.create_gap_tracker()
     local config = {

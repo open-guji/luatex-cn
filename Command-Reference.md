@@ -945,9 +945,16 @@
 
 | 参数 | 简体 | 类型 | 默认值 | 说明 |
 |------|------|------|--------|------|
+| show | 显示 | 布尔 | true | 是否显示页码 |
 | font-size | 字号 | 字号 | 14pt | 页码字号 |
 | grid-height | 格高 | 度量 | _(空)_ | 页码格高 |
-| align | 对齐 | 字符串 | right-bottom | 页码对齐 |
+| align | 对齐 | 字符串 | right-bottom | 页码位置：`right-bottom` 版心下部靠右；`bottom-center` 版心下部横向居中；`center` 版心中部居中（紧接卷名之下，常见于明清刻本） |
+| bottom-padding | 下留白 | 度量 | 10pt | 页码区底部留白（`right-bottom` / `bottom-center` 时生效） |
+
+```latex
+\banxinSetup{ page-number = { align = center } }
+\版心设置{ 页码 = { 对齐 = center } }
+```
 
 **出版商区参数** (通过 `publisher={...}` 传入):
 

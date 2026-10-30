@@ -5,7 +5,7 @@
 ## [未发布]
 
 新增：
-- 现代竖排文档类（`ltc-cn-vbook`／`ltc-tw-vbook`）页码位置可选：`\pageSetup{ page-number-position = inner | outer | center }`（中文键 `页码位置 = 内侧 | 外侧 | 居中`），默认仍在装订侧；页眉位置不变 (#193)
+- 现代竖排文档类（`ltc-cn-vbook`／`ltc-tw-vbook`）页码位置可选：`\pageSetup{ page-number-position = inner | outer | center }`（中文键 `页码位置 = 内侧 | 外侧 | 居中`），默认仍在装订侧；页眉位置不变（古籍类版心页码早有 `page-number={align=center}`，见 #193）
 
 修复：
 - `page-number-x`、`page-number-y`、`header-y` 三个键此前定义在一个从未被 `\pageSetup` 读取的模块里，写了也无效；现在经 `\pageSetup` 直接生效，并增加中文键 `页码横移`／`页码纵移`／`页眉纵移`

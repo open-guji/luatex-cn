@@ -328,6 +328,7 @@
 | 传递给 xparse 可选参数 | `\use:x { \exp_not:N \Cmd [\l_opts]{\exp_not:n{#1}} }` |
 | 保护内容不被展开 | `\exp_not:n { content }` 或 `\exp_not:N \cmd` |
 | 条件展开 | `\bool_if:NTF \l_bool { true } { false }` |
+| `.choices:nn` 里保存所选值 | `\tl_set_eq:NN \l_my_tl \l_keys_choice_tl`（`\tl_set:Nn` 只会存入 `\l_keys_choice_tl` 这个 token，事后再展开得到的是空值或上一次的值；#193 页码居中曾因此失效） |
 
 ### 7. 调试技巧
 

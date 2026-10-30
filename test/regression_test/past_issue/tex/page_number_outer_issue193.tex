@@ -1,0 +1,22 @@
+% Issue #193 配套：页码在外侧（翻口侧），中文键名
+% https://github.com/open-guji/luatex-cn/issues/193
+%
+% 修复前: 頁碼位置 / 頁碼縱移 均不存在或被 \pageSetup 吞掉
+% 修复后: 奇数页页码在右下、偶数页在左下，页眉仍在内侧；纵向位置 20mm
+\documentclass{ltc-tw-vbook}
+\setmainfont{TW-Kai}
+\pageSetup{
+    twoside = true,
+    頁碼樣式 = digits,
+    頁碼位置 = 外側,
+    頁碼縱移 = 20mm,
+}
+\title{千字文}
+\chapter{天地玄黃篇}
+\begin{document}
+\begin{正文}
+天地玄黃，宇宙洪荒。日月盈昃，辰宿列張。寒來暑往，秋收冬藏。閏餘成歲，律呂調陽。
+\newpage
+雲騰致雨，露結為霜。金生麗水，玉出崑岡。劍號巨闕，珠稱夜光。果珍李柰，菜重芥薑。
+\end{正文}
+\end{document}

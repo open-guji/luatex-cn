@@ -114,47 +114,73 @@
 %
 % Users can override by redefining \cnVbookPageNumberHook.
 
-\tl_new:N \l_cn_vbook_page_number_x_tl
-\tl_new:N \l_cn_vbook_page_number_y_tl
-\tl_new:N \l_cn_vbook_header_y_tl
-
-\keys_define:nn { cn-vbook / page }
-  {
-    page-number-x .tl_set:N = \l_cn_vbook_page_number_x_tl,
-    page-number-x .initial:n = {3mm},
-
-    page-number-y .tl_set:N = \l_cn_vbook_page_number_y_tl,
-    page-number-y .initial:n = {52mm},
-
-    header-y .tl_set:N = \l_cn_vbook_header_y_tl,
-    header-y .initial:n = {52mm},
-  }
-
-% Sync positions to plain TeX dimensions for shipout hook use
+% Position registers read by the shipout hook. The keys below live in the
+% luatexcn/page module so that \pageSetup{page-number-x=...} reaches them
+% (a separate cn-vbook/page module was never passed to \keys_set and the
+% unknown handler of \pageSetup swallowed these keys silently).
 \newdimen\cnVbookPageNumX
 \newdimen\cnVbookPageNumY
 \newdimen\cnVbookPageNumFontSize
 \newdimen\cnVbookHeaderY
 \newdimen\cnVbookHeaderFontSize
+\cnVbookPageNumX=3mm\relax
+\cnVbookPageNumY=52mm\relax
+\cnVbookHeaderY=52mm\relax
 
-\cnVbookPageNumX=\l_cn_vbook_page_number_x_tl\relax
-\cnVbookPageNumY=\l_cn_vbook_page_number_y_tl\relax
-\cnVbookPageNumFontSize=\l__luatexcn_page_number_font_size_tl\relax
-\cnVbookHeaderY=\l_cn_vbook_header_y_tl\relax
-\cnVbookHeaderFontSize=\l__luatexcn_page_header_font_size_tl\relax
+% page-number-position (#193):
+%   inner  - binding side (default; left on odd pages, right on even pages)
+%   outer  - fore-edge side (mirror of inner)
+%   center - horizontally centred at the foot of the page, as in many
+%            traditional books where the folio sits mid-page
+% The running header stays on the inner side regardless.
+\tl_new:N \l_cn_vbook_page_number_position_tl
+\tl_set:Nn \l_cn_vbook_page_number_position_tl { inner }
 
-% Re-sync when pageSetup is called
-\cs_new_protected:Npn \__cn_vbook_sync_page_num_dims:
+\keys_define:nn { luatexcn / page }
   {
-    \dim_set:Nn \cnVbookPageNumX { \l_cn_vbook_page_number_x_tl }
-    \dim_set:Nn \cnVbookPageNumY { \l_cn_vbook_page_number_y_tl }
-    \dim_set:Nn \cnVbookPageNumFontSize { \l__luatexcn_page_number_font_size_tl }
-    \dim_set:Nn \cnVbookHeaderY { \l_cn_vbook_header_y_tl }
-    \dim_set:Nn \cnVbookHeaderFontSize { \l__luatexcn_page_header_font_size_tl }
+    page-number-x .code:n = { \dim_set:Nn \cnVbookPageNumX { #1 } },
+    page-number-y .code:n = { \dim_set:Nn \cnVbookPageNumY { #1 } },
+    header-y      .code:n = { \dim_set:Nn \cnVbookHeaderY { #1 } },
+
+    page-number-position .choices:nn = { inner, outer, center }
+      { \tl_set_eq:NN \l_cn_vbook_page_number_position_tl \l_keys_choice_tl },
+    page-number-position / centre .code:n =
+      { \tl_set:Nn \l_cn_vbook_page_number_position_tl { center } },
+    page-number-position / 内侧 .code:n =
+      { \tl_set:Nn \l_cn_vbook_page_number_position_tl { inner } },
+    page-number-position / 內側 .code:n =
+      { \tl_set:Nn \l_cn_vbook_page_number_position_tl { inner } },
+    page-number-position / 外侧 .code:n =
+      { \tl_set:Nn \l_cn_vbook_page_number_position_tl { outer } },
+    page-number-position / 外側 .code:n =
+      { \tl_set:Nn \l_cn_vbook_page_number_position_tl { outer } },
+    page-number-position / 居中 .code:n =
+      { \tl_set:Nn \l_cn_vbook_page_number_position_tl { center } },
+
+    % 中文键名
+    页码横移 .meta:n = { page-number-x = #1 },
+    页码纵移 .meta:n = { page-number-y = #1 },
+    页眉纵移 .meta:n = { header-y = #1 },
+    页码位置 .meta:n = { page-number-position = #1 },
+    頁碼橫移 .meta:n = { page-number-x = #1 },
+    頁碼縱移 .meta:n = { page-number-y = #1 },
+    頁眉縱移 .meta:n = { header-y = #1 },
+    頁碼位置 .meta:n = { page-number-position = #1 },
   }
 
-% Hook into pageSetup to sync dimensions
+% Font sizes come from the core page keys; sync them at begindocument and
+% after every \pageSetup.
+\cs_new_protected:Npn \__cn_vbook_sync_page_num_dims:
+  {
+    \dim_set:Nn \cnVbookPageNumFontSize { \l__luatexcn_page_number_font_size_tl }
+    \dim_set:Nn \cnVbookHeaderFontSize { \l__luatexcn_page_header_font_size_tl }
+    \lua_now:e { _G.vbook_page_number_position = "\l_cn_vbook_page_number_position_tl" }
+  }
+\__cn_vbook_sync_page_num_dims:
+
 \hook_gput_code:nnn { begindocument } { cn-vbook }
+  { \__cn_vbook_sync_page_num_dims: }
+\hook_gput_code:nnn { cmd / pageSetup / after } { cn-vbook }
   { \__cn_vbook_sync_page_num_dims: }
 
 % \skipHeader — mark current page to suppress header display (e.g. title page)
@@ -195,20 +221,21 @@
     end
 
     local pw_cmd = "\\paperwidth-\\cnVbookPageNumX-2em"
-    if is_odd then
-      if show_header then
-        tex.sprint("\\AtPageUpperLeft{\\put(\\LenToUnit{\\cnVbookPageNumX},-\\LenToUnit{\\cnVbookHeaderY}){\\parbox[t]{2em}{\\centering\\fontsize{\\cnVbookHeaderFontSize}{13pt}\\selectfont\\DrawVerticalText{" .. header_text .. "}}}}")
-      end
-      if show_number then
-        tex.sprint("\\AtPageLowerLeft{\\put(\\LenToUnit{\\cnVbookPageNumX},\\LenToUnit{\\cnVbookPageNumY}){\\parbox[b]{2em}{\\centering\\fontsize{\\cnVbookPageNumFontSize}{13pt}\\selectfont\\DrawVerticalPageNumber}}}")
-      end
+    local header_x = is_odd and "\\cnVbookPageNumX" or pw_cmd
+    local pos = _G.vbook_page_number_position or "inner"
+    local number_x
+    if pos == "center" then
+      number_x = "0.5\\paperwidth-1em"
+    elseif pos == "outer" then
+      number_x = is_odd and pw_cmd or "\\cnVbookPageNumX"
     else
-      if show_header then
-        tex.sprint("\\AtPageUpperLeft{\\put(\\LenToUnit{" .. pw_cmd .. "},-\\LenToUnit{\\cnVbookHeaderY}){\\parbox[t]{2em}{\\centering\\fontsize{\\cnVbookHeaderFontSize}{13pt}\\selectfont\\DrawVerticalText{" .. header_text .. "}}}}")
-      end
-      if show_number then
-        tex.sprint("\\AtPageLowerLeft{\\put(\\LenToUnit{" .. pw_cmd .. "},\\LenToUnit{\\cnVbookPageNumY}){\\parbox[b]{2em}{\\centering\\fontsize{\\cnVbookPageNumFontSize}{13pt}\\selectfont\\DrawVerticalPageNumber}}}")
-      end
+      number_x = header_x
+    end
+    if show_header then
+      tex.sprint("\\AtPageUpperLeft{\\put(\\LenToUnit{" .. header_x .. "},-\\LenToUnit{\\cnVbookHeaderY}){\\parbox[t]{2em}{\\centering\\fontsize{\\cnVbookHeaderFontSize}{13pt}\\selectfont\\DrawVerticalText{" .. header_text .. "}}}}")
+    end
+    if show_number then
+      tex.sprint("\\AtPageLowerLeft{\\put(\\LenToUnit{" .. number_x .. "},\\LenToUnit{\\cnVbookPageNumY}){\\parbox[b]{2em}{\\centering\\fontsize{\\cnVbookPageNumFontSize}{13pt}\\selectfont\\DrawVerticalPageNumber}}}")
     end
   }%
 }

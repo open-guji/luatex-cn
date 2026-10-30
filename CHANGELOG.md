@@ -4,7 +4,11 @@
 
 ## [未发布]
 
+新增：
+- 现代竖排文档类（`ltc-cn-vbook`／`ltc-tw-vbook`）页码位置可选：`\pageSetup{ page-number-position = inner | outer | center }`（中文键 `页码位置 = 内侧 | 外侧 | 居中`），默认仍在装订侧；页眉位置不变 (#193)
+
 修复：
+- `page-number-x`、`page-number-y`、`header-y` 三个键此前定义在一个从未被 `\pageSetup` 读取的模块里，写了也无效；现在经 `\pageSetup` 直接生效，并增加中文键 `页码横移`／`页码纵移`／`页眉纵移`
 - `ltc-guji` 古籍模板（默认／红楼梦／欧氏族谱）补上 `margin-inner`／`margin-outer` 默认值（与 `margin-left`／`margin-right` 相同）。0.4.3 起 `twoside = true` 只读 inner/outer（#174），而古籍模板原来只设 left/right，用户文档一写 `twoside = true` 左右边距就变成 0，正文顶到纸边、右侧列出页。另外，`\pageSetup` 切换 `twoside` 时若当前生效的边距组仍为 0，现在会发出警告，之前只在同一次调用改了被忽略的那组键时才报
 
 ## [0.4.3] - 2026-10-28

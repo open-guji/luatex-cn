@@ -1,0 +1,24 @@
+% Issue #187: 反白在彩色模板正文、以及任意模板的夹注中不生效
+% https://github.com/open-guji/luatex-cn/issues/187
+%
+% 修复前: 反白只画出黑底，字仍沿用外层字色（彩色模板的深褐色 / 夹注样式色），
+%         黑底黑字看不见。原因是字形的样式 id 在排版时已冻结，文本框的
+%         font-color 只在 Lua 侧随后压栈，渲染时字形颜色≠页面默认色而被包上外层色。
+% 修复后: 文本框在组盒子前就把 font-color 压入样式栈并打到字形上，反白为黑底白字。
+\documentclass[四库全书彩色]{ltc-guji}
+\setmainfont{TW-Kai}
+\关闭分页
+
+\title{測試}
+\chapter{Issue 187}
+
+\begin{document}
+\begin{正文}
+正文反白\反白{衍義曰}對照\\
+\夹注{夹注内\反白{唐本注}云，薤乃}\\
+\反白{衍義曰}\夹注{韭，春食}\\
+墨圍反白\墨围反白{校}八角\八角墨围反白{注}\\
+自訂色\反白[font-color=yellow]{黃字}\反白[background-color=red]{紅底}\\
+嵌套樣式\反白{白\Style[font-color=red]{紅}白}\\
+\end{正文}
+\end{document}

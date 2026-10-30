@@ -94,6 +94,9 @@ local translation_map = {
   ["论辩的魂灵"] = "lunbian-de-hunling",
   ["论辩的魂灵.tex"] = "lunbian-de-hunling.tex",
   ["论辩的魂灵.pdf"] = "lunbian-de-hunling.pdf",
+  ["线装书封面"] = "thread-bound-cover",
+  ["封面.tex"] = "cover.tex",
+  ["封面.pdf"] = "cover.pdf",
 }
 
 -- Check if string contains Chinese characters

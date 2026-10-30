@@ -20,7 +20,7 @@
 \RequirePackage{core/luatex-cn-core-base}
 \RequirePackage{expl3}
 \RequirePackage{xparse}
-\ProvidesExplPackage {core/luatex-cn-core-textbox} {2026/09/30} {0.4.2} {TextBox Support for Vertical Typesetting}
+\ProvidesExplPackage {core/luatex-cn-core-textbox} {2026/10/28} {0.4.3} {TextBox Support for Vertical Typesetting}
 
 % Grid Textbox Command (Simplified for Single Column)
 % Syntax: \GridTextbox[height=N, fill=true/false]{content}
@@ -169,6 +169,32 @@
       { \dim_set:Nn \l__luatexcn_textbox_inner_gh_dim { \l__luatexcn_content_grid_height_tl } }
       { \dim_set:Nn \l__luatexcn_textbox_inner_gh_dim { \l__luatexcn_textbox_inner_gh_tl } }
 
+    % Expand variables to ensure they contain the color string, not a macro name
+    % Use o-expansion to preserve spaces (standard x-expansion strips them in ExplSyntax)
+    \tl_set:No \l__luatexcn_textbox_bg_color_tl { \l__luatexcn_textbox_bg_color_tl }
+    \tl_set:No \l__luatexcn_textbox_font_color_tl { \l__luatexcn_textbox_font_color_tl }
+
+    % Convert background color to RGB
+    \cs_if_exist:cTF { color @ \l__luatexcn_textbox_bg_color_tl }
+      {
+        \exp_args:NV \extractcolorspec \l__luatexcn_textbox_bg_color_tl \l_tmpa_tl
+        \exp_args:NNx \convertcolorspec \l_tmpa_tl { rgb } \l_tmpb_tl
+        \tl_set:Nx \l__luatexcn_textbox_bg_rgb_tl { \l_tmpb_tl }
+      }
+      { \tl_set_eq:NN \l__luatexcn_textbox_bg_rgb_tl \l__luatexcn_textbox_bg_color_tl }
+    \tl_replace_all:Nnn \l__luatexcn_textbox_bg_rgb_tl { , } { ~ }
+
+    % Convert font color to RGB. Done BEFORE the content box is built because
+    % the glyphs inside need a style id that already carries this color (#187).
+    \cs_if_exist:cTF { color @ \l__luatexcn_textbox_font_color_tl }
+      {
+        \exp_args:NV \extractcolorspec \l__luatexcn_textbox_font_color_tl \l_tmpa_tl
+        \exp_args:NNx \convertcolorspec \l_tmpa_tl { rgb } \l_tmpb_tl
+        \tl_set:Nx \l__luatexcn_textbox_font_rgb_tl { \l_tmpb_tl }
+      }
+      { \tl_set_eq:NN \l__luatexcn_textbox_font_rgb_tl \l__luatexcn_textbox_font_color_tl }
+    \tl_replace_all:Nnn \l__luatexcn_textbox_font_rgb_tl { , } { ~ }
+
     % Capture content in a box and process it via Lua for inner verticality
     \vbox_set:Nn \l_tmpa_box {
       \setluatexattribute\cnverticaltextboxwidth{0}
@@ -206,33 +232,30 @@
     \dim_set_eq:NN \hsize \c_max_dim
     \dim_set_eq:NN \hfuzz \c_max_dim
     \int_set:Nn \hbadness { 10000 }
+    % Font color: push a style carrying the textbox font-color and stamp it on
+    % the glyphs NOW, while the content is being typeset (fix #187).
+    % Glyph style ids are frozen at typesetting time; the textbox style that
+    % process_inner_box pushes later only sets the page-level default. Without
+    % this, glyphs keep the outer style (e.g. the colored template's
+    % font-color, or the jiazhu style) and the renderer wraps them with that
+    % color because it differs from the page default -> 反白 text stays dark.
+    \tl_if_empty:NF \l__luatexcn_textbox_font_rgb_tl
+      {
+        \edef\textbox_font_style_id{\lua_now:e {
+          local ~ sr = require('util.luatex-cn-style-registry')
+          tex.print(tostring(sr.push_content_style([=[\l__luatexcn_textbox_font_rgb_tl]=], nil, nil, nil)))
+        }}
+        \setluatexattribute\cnverticalstyle{\textbox_font_style_id}
+      }
     #2
+    \tl_if_empty:NF \l__luatexcn_textbox_font_rgb_tl
+      {
+        \lua_now:n {
+          local ~ sr = require('util.luatex-cn-style-registry')
+          sr.pop()
+        }
+      }
     }
-
-    % Expand variables to ensure they contain the color string, not a macro name
-    % Use o-expansion to preserve spaces (standard x-expansion strips them in ExplSyntax)
-    \tl_set:No \l__luatexcn_textbox_bg_color_tl { \l__luatexcn_textbox_bg_color_tl }
-    \tl_set:No \l__luatexcn_textbox_font_color_tl { \l__luatexcn_textbox_font_color_tl }
-
-    % Convert background color to RGB
-    \cs_if_exist:cTF { color @ \l__luatexcn_textbox_bg_color_tl }
-      {
-        \exp_args:NV \extractcolorspec \l__luatexcn_textbox_bg_color_tl \l_tmpa_tl
-        \exp_args:NNx \convertcolorspec \l_tmpa_tl { rgb } \l_tmpb_tl
-        \tl_set:Nx \l__luatexcn_textbox_bg_rgb_tl { \l_tmpb_tl }
-      }
-      { \tl_set_eq:NN \l__luatexcn_textbox_bg_rgb_tl \l__luatexcn_textbox_bg_color_tl }
-    \tl_replace_all:Nnn \l__luatexcn_textbox_bg_rgb_tl { , } { ~ }
-
-    % Convert font color to RGB
-    \cs_if_exist:cTF { color @ \l__luatexcn_textbox_font_color_tl }
-      {
-        \exp_args:NV \extractcolorspec \l__luatexcn_textbox_font_color_tl \l_tmpa_tl
-        \exp_args:NNx \convertcolorspec \l_tmpa_tl { rgb } \l_tmpb_tl
-        \tl_set:Nx \l__luatexcn_textbox_font_rgb_tl { \l_tmpb_tl }
-      }
-      { \tl_set_eq:NN \l__luatexcn_textbox_font_rgb_tl \l__luatexcn_textbox_font_color_tl }
-    \tl_replace_all:Nnn \l__luatexcn_textbox_font_rgb_tl { , } { ~ }
 
     % Convert border color to RGB
     \tl_set:No \l__luatexcn_textbox_border_color_tl { \l__luatexcn_textbox_border_color_tl }

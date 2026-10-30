@@ -1,0 +1,13 @@
+% 回归：字体 vert GSUB 把 ，。 换成无 Unicode 的竖排字形后，luaotfload 给它们
+% 分配 PUA 码位（U+F0000+），句读模式必须经 tounicode 还原，仍打成侧边句读标记。
+% 字体为自绘小字体，生成脚本 scripts/make_pua_vert_test_font.py。
+\documentclass{ltc-guji}
+\setmainfont{PuaVertTest.ttf}[Path=./fonts/, RawFeature={+vert,+vrt2}]
+\关闭分页
+\开启句读模式
+
+\begin{document}
+\begin{正文}
+天地玄黄，宇宙洪荒。日月盈昃，辰宿列张。
+\end{正文}
+\end{document}

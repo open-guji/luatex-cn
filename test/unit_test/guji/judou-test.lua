@@ -135,4 +135,34 @@ test_utils.run_test("marker: claims its own style id, not the ambient one", func
     test_utils.assert_eq(style_registry.get_font_color(style_id), "blue")
 end)
 
+-- ============================================================================
+-- PUA 码位还原（#627：vert GSUB 换形后 char 落到私用区）
+-- ============================================================================
+
+test_utils.run_test("flatten: PUA vert-substituted 。，recognised via tounicode", function()
+    local orig_getfont = font and font.getfont
+    font = font or {}
+    font.getfont = function(fid)
+        if fid == 99001 then
+            return { characters = {
+                [0xF0003] = { tounicode = "3002" },
+                [0xF0005] = { tounicode = "FF0C" },
+            } }
+        end
+        return orig_getfont and orig_getfont(fid)
+    end
+    local chars = { 0x5929, 0xF0005, 0x5730, 0xF0003 }
+    local nodes = {}
+    for i, c in ipairs(chars) do nodes[i] = test_utils.make_glyph(c, 99001) end
+    for i = 1, #nodes - 1 do nodes[i].next = nodes[i + 1]; nodes[i + 1].prev = nodes[i] end
+    local out = judou.flatten(nodes[1], {}, { mode = "none" })
+    font.getfont = orig_getfont
+    local left = {}
+    local n = out
+    while n do left[#left + 1] = n.char; n = n.next end
+    test_utils.assert_eq(#left, 2) -- 两个 PUA 标点被识别并移除
+    test_utils.assert_eq(left[1], 0x5929)
+    test_utils.assert_eq(left[2], 0x5730)
+end)
+
 print("\nAll guji/judou-test tests passed!")

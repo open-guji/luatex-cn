@@ -1,0 +1,28 @@
+% ltc-guji + twoside=true: 古籍模板必须同时提供 margin-inner/outer 默认值
+% 背景: #174 让 twoside=true 只读 margin-inner/outer，但古籍模板原来只设
+%       margin-left/right，用户文档一写 twoside = true 左右边距就变成 0，
+%       正文顶到纸边、右侧列被裁出页面（0.4.3 用户反馈）
+%
+% 修复前: 左右边距为 0，第一列「扁鵲陰陽脈法第二」出页
+% 修复后: 与不写 twoside 时相同（模板 left/right 与 inner/outer 一致）
+\documentclass[四库全书]{ltc-guji}
+\setmainfont{TW-Kai}
+\关闭分页
+
+\contentSetup{ n-column = 9, font-size = 28pt, n-char-per-col = 21 }
+\pageSetup{
+    page-split-enabled = true,
+    page-split-right-first = true,
+    twoside = true,
+    page-number-style = none,
+}
+
+\begin{document}
+\chapter{傷寒論}
+\begin{正文}
+\Space[3]扁鵲陰陽脈法第二\\
+脈，平旦曰太陽，日中曰陽明，晡時曰少陽，黃昏曰少陰，夜半曰太陰，雞鳴曰厥陰，是三陰三陽時也\\
+少陽之脈，乍小乍大，乍長乍短，動搖六分。王十一月甲子夜半，正月、二月甲子王\\
+太陽之脈，洪大以長，其來浮於筋上，動搖九分。三月、四月甲子王\\
+\end{正文}
+\end{document}

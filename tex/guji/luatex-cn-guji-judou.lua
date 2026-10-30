@@ -26,6 +26,44 @@ local dbg = debug.get_debugger('judou')
 local judou = {}
 
 -- =============================================================================
+-- PUA 码位还原（vert GSUB 换形后的标点）
+-- =============================================================================
+-- 部分字体（如 Windows 宋体 SimSun）的 vert GSUB 把 ，。 等换成没有标准 Unicode
+-- 的竖排字形，luaotfload 给这类字形分配私用区码位（U+F0000+ 等），glyph.char 不再
+-- 是 U+FF0C / U+3002，判型会落空，句读标记就退回成正文下方的原标点。
+-- 字形的 tounicode 仍指向原始码位，这里据此还原；结果按字体缓存。
+local pua_origin_cache = {} -- font_id -> { [pua_char] = original_codepoint }
+
+local function is_pua(c)
+    return (c >= 0xE000 and c <= 0xF8FF) or (c >= 0xF0000 and c <= 0xFFFFF) or c >= 0x100000
+end
+
+--- Read a glyph's char, mapping PUA vert-substituted glyphs back to their
+--- original Unicode codepoint (via the font's tounicode).
+-- @param t (direct node) Glyph node
+-- @return (number) Original codepoint, or the glyph's own char if not resolvable
+local function glyph_char(t)
+    local char = D.getfield(t, "char")
+    if not is_pua(char) then return char end
+    local fid = D.getfield(t, "font")
+    local map = pua_origin_cache[fid]
+    if not map then
+        map = {}
+        pua_origin_cache[fid] = map
+        local fdata = font.getfont(fid)
+        if fdata and fdata.characters then
+            for code, ch in pairs(fdata.characters) do
+                local tu = ch.tounicode
+                if is_pua(code) and tu and #tu == 4 then
+                    map[code] = tonumber(tu, 16)
+                end
+            end
+        end
+    end
+    return map[char] or char
+end
+
+-- =============================================================================
 -- Global State (全局状态)
 -- =============================================================================
 -- Initialize global judou table
@@ -117,7 +155,7 @@ function judou.flatten(head, params, ctx)
         local next_node = D.getnext(t)
 
         if id == constants.GLYPH then
-            local char = D.getfield(t, "char")
+            local char = glyph_char(t)
             local ptype = judou.get_punctuation_type(char)
 
             if mode == "none" then
@@ -302,7 +340,7 @@ function judou.handle_judou_mode(head, t, ptype, last_visible)
         return head, D.getnext(t), t
     end
 
-    local char = D.getfield(t, "char")
+    local char = glyph_char(t)
     local next_node = D.getnext(t)
     local nodes_to_remove = { t }
     local replacement_code = nil
@@ -311,7 +349,7 @@ function judou.handle_judou_mode(head, t, ptype, last_visible)
         replacement_code = REPLACEMENT_JU
         -- Merge consecutive duplicates (e.g., —— or ……)
         if SET_MERGE_CONSECUTIVE[char] and next_node and D.getid(next_node) == constants.GLYPH then
-            local next_char = D.getfield(next_node, "char")
+            local next_char = glyph_char(next_node)
             if next_char == char then
                 table.insert(nodes_to_remove, next_node)
                 next_node = D.getnext(next_node)
@@ -319,7 +357,7 @@ function judou.handle_judou_mode(head, t, ptype, last_visible)
         end
         -- Peek next for close quote
         if next_node and D.getid(next_node) == constants.GLYPH then
-            local next_char = D.getfield(next_node, "char")
+            local next_char = glyph_char(next_node)
             if SET_CLOSE_QUOTE[next_char] then
                 table.insert(nodes_to_remove, next_node)
                 next_node = D.getnext(next_node)
@@ -329,7 +367,7 @@ function judou.handle_judou_mode(head, t, ptype, last_visible)
         replacement_code = REPLACEMENT_DOU
         -- Peek next for open quote if char is ':'
         if char == 0xFF1A and next_node and D.getid(next_node) == constants.GLYPH then
-            local next_char = D.getfield(next_node, "char")
+            local next_char = glyph_char(next_node)
             if SET_OPEN_QUOTE[next_char] then
                 table.insert(nodes_to_remove, next_node)
                 next_node = D.getnext(next_node)

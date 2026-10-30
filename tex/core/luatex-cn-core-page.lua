@@ -48,6 +48,7 @@ function page.setup(params)
     local old = {
         left = _G.page.margin_left, right = _G.page.margin_right,
         inner = _G.page.margin_inner, outer = _G.page.margin_outer,
+        twoside = _G.page.twoside,
     }
     if params.paper_width then _G.page.paper_width = constants.to_dimen(params.paper_width) end
     if params.paper_height then _G.page.paper_height = constants.to_dimen(params.paper_height) end
@@ -68,11 +69,12 @@ function page.set_quiet(flag)
     _G.page.quiet = flag and true or false
 end
 
---- Warn when this call changed a margin that twoside makes inert.
+--- Warn when this call changed a margin that twoside makes inert, or switched
+-- twoside onto a margin group that is still all zero.
 -- twoside=true ignores margin-left/right; twoside=false ignores margin-inner/outer.
 -- Only values changed by this call are reported (every \pageSetup re-sends all keys),
 -- and not while a class config file is loading defaults (_G.page.quiet).
--- @param old (table) margins before the call: left, right, inner, outer
+-- @param old (table) state before the call: left, right, inner, outer, twoside
 function page.warn_ignored_margins(old)
     if _G.page.quiet then return end
     local p = _G.page
@@ -80,14 +82,23 @@ function page.warn_ignored_margins(old)
     -- An unset key reaches Lua as "" and converts to nil, while the previous value
     -- is 0: compare as numbers, or every ltc-guji load would warn spuriously.
     local function n(v) return tonumber(v) or 0 end
+    local switched = (p.twoside and true or false) ~= (old.twoside and true or false)
     if p.twoside then
         if n(p.margin_left) ~= n(old.left) or n(p.margin_right) ~= n(old.right) then
             msg = "twoside=true uses only margin-inner/margin-outer; "
                 .. "margin-left/margin-right are ignored."
+        elseif switched and n(p.margin_inner) == 0 and n(p.margin_outer) == 0 then
+            -- A document that only flips twoside on (its class config set just
+            -- margin-left/right) would silently get zero side margins.
+            msg = "twoside=true but margin-inner/margin-outer are both 0; "
+                .. "set them (margin-left/margin-right are ignored)."
         end
     elseif n(p.margin_inner) ~= n(old.inner) or n(p.margin_outer) ~= n(old.outer) then
         msg = "twoside=false uses only margin-left/margin-right; "
             .. "margin-inner/margin-outer are ignored."
+    elseif switched and n(p.margin_left) == 0 and n(p.margin_right) == 0 then
+        msg = "twoside=false but margin-left/margin-right are both 0; "
+            .. "set them (margin-inner/margin-outer are ignored)."
     end
     if msg then texio.write_nl("term and log", "luatex-cn Warning: " .. msg) end
 end

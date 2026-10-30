@@ -1,0 +1,24 @@
+% Issue #193: 现代竖排文档类页码支持居中
+% https://github.com/open-guji/luatex-cn/issues/193
+%
+% 修复前: 页码只能在装订侧下角（page-number-x/y 等键还被 \pageSetup 静默吞掉）
+% 修复后: page-number-position = inner | outer | center；页码位置键经 \pageSetup 生效
+%
+% 本文件：twoside，页码居中于页脚，页眉仍在内侧；共两页看奇偶页
+\documentclass{ltc-cn-vbook}
+\setmainfont{TW-Kai}
+\pageSetup{
+    twoside = true,
+    page-number-style = chinese,
+    page-number-position = center,
+    page-number-y = 15mm,
+}
+\title{千字文}
+\chapter{天地玄黄篇}
+\begin{document}
+\begin{正文}
+天地玄黄，宇宙洪荒。日月盈昃，辰宿列张。寒来暑往，秋收冬藏。闰余成岁，律吕调阳。
+\newpage
+云腾致雨，露结为霜。金生丽水，玉出昆冈。剑号巨阙，珠称夜光。果珍李柰，菜重芥姜。
+\end{正文}
+\end{document}

@@ -223,4 +223,39 @@ test_utils.run_test("page-twoside: ignored-margin warning", function()
     texio.write_nl = orig
 end)
 
+-- Test 13: switching twoside onto an all-zero margin group warns even when
+-- no margin key changed in the same call (ltc-guji user writing only twoside=true)
+test_utils.run_test("page-twoside: warning when twoside switches to a zero margin group", function()
+    local msgs = {}
+    local orig = texio.write_nl
+    texio.write_nl = function(_, m) msgs[#msgs + 1] = m end
+    _G.page.quiet = false
+    -- class config: only left/right set, like ltc-guji before this fix
+    _G.page.twoside = false
+    _G.page.margin_left = 133 * 65536
+    _G.page.margin_right = 133 * 65536
+    _G.page.margin_inner = 0
+    _G.page.margin_outer = 0
+    page_mod.setup({ twoside = true, margin_left = "133pt", margin_right = "133pt" })
+    test_utils.assert_eq(#msgs, 1, "warns: twoside=true with inner/outer both 0")
+    test_utils.assert_true(msgs[1]:find("margin%-inner/margin%-outer are both 0") ~= nil, "message names the empty group")
+    -- same call again: twoside did not switch, no repeat
+    page_mod.setup({ twoside = true, margin_left = "133pt", margin_right = "133pt" })
+    test_utils.assert_eq(#msgs, 1, "no repeat warning when twoside unchanged")
+    -- with inner/outer provided (templates after this fix) there is nothing to warn
+    _G.page.twoside = false
+    _G.page.margin_inner = 133 * 65536
+    _G.page.margin_outer = 133 * 65536
+    page_mod.setup({ twoside = true, margin_left = "133pt", margin_right = "133pt" })
+    test_utils.assert_eq(#msgs, 1, "no warning when inner/outer are set")
+    -- the mirror case: twoside switched off with left/right both 0
+    _G.page.twoside = true
+    _G.page.margin_left = 0
+    _G.page.margin_right = 0
+    page_mod.setup({ twoside = false, margin_inner = "133pt", margin_outer = "133pt" })
+    test_utils.assert_eq(#msgs, 2, "warns: twoside=false with left/right both 0")
+    _G.page.quiet = false
+    texio.write_nl = orig
+end)
+
 print("\nAll page-twoside tests passed!")

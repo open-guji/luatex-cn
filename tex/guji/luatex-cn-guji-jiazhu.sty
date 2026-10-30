@@ -30,6 +30,7 @@
 \tl_new:N \l__luatexcn_jiazhu_font_tl
 \tl_new:N \l__luatexcn_jiazhu_font_color_tl
 \tl_new:N \l__luatexcn_jiazhu_align_tl
+\tl_new:N \l__luatexcn_jiazhu_n_char_tl
 
 \keys_define:nn { luatexcn / jiazhu }
   {
@@ -43,6 +44,9 @@
     color .meta:n = { font-color = {#1} },
     align .tl_set:N = \l__luatexcn_jiazhu_align_tl,
     align .initial:n = {outward},
+    % Chars per sub-column for every note (issue #82); \夹注[n-char-per-col=N] overrides
+    n-char-per-col .tl_set:N = \l__luatexcn_jiazhu_n_char_tl,
+    n-char-per-col .initial:n = {},
     % Forward unknown keys to textflow (auto-balance, grid-height, etc.)
     unknown .code:n =
       {
@@ -59,6 +63,7 @@
     \tl_set_eq:NN \l__luatexcn_textflow_default_font_tl \l__luatexcn_jiazhu_font_tl
     \tl_set_eq:NN \l__luatexcn_textflow_default_color_tl \l__luatexcn_jiazhu_font_color_tl
     \tl_set_eq:NN \l__luatexcn_textflow_default_align_tl \l__luatexcn_jiazhu_align_tl
+    \tl_set_eq:NN \l__luatexcn_textflow_default_n_char_tl \l__luatexcn_jiazhu_n_char_tl
   }
 
 % ============================================================================
@@ -141,6 +146,8 @@
     字体颜色 .tl_set:N = \l__luatexcn_jiazhu_font_color_tl,
     颜色 .meta:n = { font-color = {#1} },
     对齐 .tl_set:N = \l__luatexcn_jiazhu_align_tl,
+    每行字数 .tl_set:N = \l__luatexcn_jiazhu_n_char_tl,
+    每行字數 .tl_set:N = \l__luatexcn_jiazhu_n_char_tl,
     % 繁体（与简体不同形的）
     字號 .tl_set:N = \l__luatexcn_jiazhu_size_tl,
     字體 .tl_set:N = \l__luatexcn_jiazhu_font_tl,

@@ -249,4 +249,62 @@ test_utils.run_test("push_style: explicit grid height wins over n_char", functio
     textflow.pop_style()
 end)
 
+test_utils.run_test("place: n_char derives grid height from column height (issue #82)", function()
+    local style_registry = require("util.luatex-cn-style-registry")
+    -- column = 20 body rows; N = 10 per sub-column => note grid height = 2 * GH
+    local ctx, params, callbacks = make_env({})
+    local id = textflow.push_style(nil, "20pt", nil, nil, true, nil, nil, 10)
+    local nodes = {}
+    for i = 1, 4 do
+        nodes[i] = make_tf_glyph()
+        D.set_attribute(nodes[i], constants.ATTR_STYLE_REG_ID, id)
+    end
+    local layout_map = {}
+    textflow._internal.place_textflow_segment(ctx, nodes, layout_map, params, callbacks, nil)
+    textflow.pop_style()
+    -- 4 nodes balance 2/2: node 2 sits one note-row below node 1
+    test_utils.assert_eq(layout_map[nodes[1]].y_sp, 0)
+    test_utils.assert_eq(layout_map[nodes[2]].y_sp, 2 * GH)
+    test_utils.assert_eq(layout_map[nodes[1]].cell_height, 2 * GH)
+    -- the registry style is not mutated by layout
+    test_utils.assert_eq(style_registry.get(id).textflow_grid_height, nil)
+    test_utils.assert_eq(style_registry.get(id).grid_height, false)
+end)
+
+test_utils.run_test("place: inner \\样式[grid-height] inside an n_char note is kept (issue #82)", function()
+    local style_registry = require("util.luatex-cn-style-registry")
+    local ctx, params, callbacks = make_env({})
+    local id = textflow.push_style(nil, "20pt", nil, nil, true, nil, nil, 10)
+    local inner = style_registry.push_content_style(nil, nil, nil, { grid_height = 3 * GH })
+    local nodes = {}
+    for i = 1, 4 do
+        nodes[i] = make_tf_glyph()
+        D.set_attribute(nodes[i], constants.ATTR_STYLE_REG_ID, i == 1 and inner or id)
+    end
+    local layout_map = {}
+    textflow._internal.place_textflow_segment(ctx, nodes, layout_map, params, callbacks, nil)
+    style_registry.pop()
+    textflow.pop_style()
+    test_utils.assert_eq(layout_map[nodes[1]].cell_height, 3 * GH)  -- inner override
+    test_utils.assert_eq(layout_map[nodes[2]].y_sp, 3 * GH)         -- placed below it
+    test_utils.assert_eq(layout_map[nodes[2]].cell_height, 2 * GH)  -- derived height
+end)
+
+test_utils.run_test("place: n_char without column height warns and falls back", function()
+    local msgs = {}
+    local orig = texio.write_nl
+    texio.write_nl = function(_, m) msgs[#msgs + 1] = m end
+    local ctx, params, callbacks = make_env({ col_height_sp = 0 })
+    local id = textflow.push_style(nil, "20pt", nil, nil, true, nil, nil, 10)
+    local g = make_tf_glyph()
+    D.set_attribute(g, constants.ATTR_STYLE_REG_ID, id)
+    local layout_map = {}
+    textflow._internal.place_textflow_segment(ctx, { g }, layout_map, params, callbacks, nil)
+    textflow.pop_style()
+    texio.write_nl = orig
+    test_utils.assert_eq(#msgs, 1)
+    test_utils.assert_true(msgs[1]:find("n%-char%-per%-col ignored") ~= nil)
+    test_utils.assert_eq(layout_map[g].cell_height, GH)
+end)
+
 print("\nAll textflow tests passed!")

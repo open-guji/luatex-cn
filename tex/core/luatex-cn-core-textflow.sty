@@ -28,6 +28,8 @@
 \tl_new:N \l__luatexcn_textflow_default_color_tl
 \tl_new:N \l__luatexcn_textflow_default_align_tl
 \tl_new:N \l__luatexcn_textflow_local_n_char_tl
+\tl_new:N \l__luatexcn_textflow_default_n_char_tl
+\tl_new:N \l__luatexcn_textflow_resolved_n_char_tl
 \tl_set:Nn \l__luatexcn_textflow_default_align_tl {outward}
 
 % TextFlow Command (双行小注/夹注)
@@ -105,6 +107,11 @@
           { \tl_set_eq:NN \l__luatexcn_textflow_resolved_align_tl \l__luatexcn_textflow_default_align_tl }
           { \tl_set_eq:NN \l__luatexcn_textflow_resolved_align_tl \l__luatexcn_textflow_local_align_tl }
 
+        % 5. Determine chars per sub-column (Local > Core Default), issue #82
+        \tl_if_empty:NTF \l__luatexcn_textflow_local_n_char_tl
+          { \tl_set_eq:NN \l__luatexcn_textflow_resolved_n_char_tl \l__luatexcn_textflow_default_n_char_tl }
+          { \tl_set_eq:NN \l__luatexcn_textflow_resolved_n_char_tl \l__luatexcn_textflow_local_n_char_tl }
+
         % Apply Font and Size
         \tl_if_empty:NTF \l_tmpb_tl
           { \fontsize{\l_tmpc_tl}{\l_tmpc_tl}\selectfont }
@@ -138,7 +145,7 @@
               \tl_if_empty:NTF \l__luatexcn_style_padding_top_tl { nil } { [=[\luaescapestring{\l__luatexcn_style_padding_top_tl}]=] },
               \tl_if_empty:NTF \l__luatexcn_style_padding_bottom_tl { nil } { [=[\luaescapestring{\l__luatexcn_style_padding_bottom_tl}]=] }
             ),
-            \tl_if_empty:NTF \l__luatexcn_textflow_local_n_char_tl { nil } { \int_eval:n { \l__luatexcn_textflow_local_n_char_tl } }
+            \tl_if_empty:NTF \l__luatexcn_textflow_resolved_n_char_tl { nil } { \int_eval:n { \l__luatexcn_textflow_resolved_n_char_tl } }
           )
           tex.print(tostring(style_id))
         }}
@@ -214,6 +221,11 @@
           { \tl_set_eq:NN \l__luatexcn_textflow_resolved_align_tl \l__luatexcn_textflow_default_align_tl }
           { \tl_set_eq:NN \l__luatexcn_textflow_resolved_align_tl \l__luatexcn_textflow_local_align_tl }
 
+        % 5. Determine chars per sub-column (Local > Core Default), issue #82
+        \tl_if_empty:NTF \l__luatexcn_textflow_local_n_char_tl
+          { \tl_set_eq:NN \l__luatexcn_textflow_resolved_n_char_tl \l__luatexcn_textflow_default_n_char_tl }
+          { \tl_set_eq:NN \l__luatexcn_textflow_resolved_n_char_tl \l__luatexcn_textflow_local_n_char_tl }
+
         % Apply Font and Size
         \tl_if_empty:NTF \l_tmpb_tl
           { \fontsize{\l_tmpc_tl}{\l_tmpc_tl}\selectfont }
@@ -242,7 +254,7 @@
               \tl_if_empty:NTF \l__luatexcn_style_padding_top_tl { nil } { [=[\luaescapestring{\l__luatexcn_style_padding_top_tl}]=] },
               \tl_if_empty:NTF \l__luatexcn_style_padding_bottom_tl { nil } { [=[\luaescapestring{\l__luatexcn_style_padding_bottom_tl}]=] }
             ),
-            \tl_if_empty:NTF \l__luatexcn_textflow_local_n_char_tl { nil } { \int_eval:n { \l__luatexcn_textflow_local_n_char_tl } }
+            \tl_if_empty:NTF \l__luatexcn_textflow_resolved_n_char_tl { nil } { \int_eval:n { \l__luatexcn_textflow_resolved_n_char_tl } }
           )
           tex.print(tostring(style_id))
         }}
@@ -294,7 +306,7 @@
     颜色 .meta:n = { font-color = {#1} },
     对齐 .tl_set:N = \l__luatexcn_textflow_local_align_tl,
     格高 .tl_set:N = \l__luatexcn_textflow_local_grid_height_tl,
-    每列字数 .tl_set:N = \l__luatexcn_textflow_local_n_char_tl,
+    每行字数 .tl_set:N = \l__luatexcn_textflow_local_n_char_tl,
     字体大小 .tl_set:N = \l__luatexcn_textflow_local_size_tl,
     % 繁体（与简体不同形的）
     單列 .meta:n = { only-column = #1 },
@@ -305,7 +317,8 @@
     字體顏色 .tl_set:N = \l__luatexcn_textflow_local_color_tl,
     顏色 .meta:n = { font-color = {#1} },
     對齊 .tl_set:N = \l__luatexcn_textflow_local_align_tl,
-    格高 .tl_set:N = \l__luatexcn_textflow_local_grid_height_tl,    每列字數 .tl_set:N = \l__luatexcn_textflow_local_n_char_tl,
+    格高 .tl_set:N = \l__luatexcn_textflow_local_grid_height_tl,
+    每行字數 .tl_set:N = \l__luatexcn_textflow_local_n_char_tl,
   }
 \ExplSyntaxOff
 

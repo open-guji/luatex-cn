@@ -65,7 +65,12 @@ function textflow.push_style(font_color, font_size, font, textflow_align, auto_b
     end
     local n = n_char and tonumber(n_char) or 0
     if not gh_val and n > 0 then
-        extra.textflow_n_char = n  -- resolved to a grid height at layout (issue #82)
+        -- Resolved to a grid height at layout time (issue #82). grid_height is
+        -- set to false (not nil) so that a grid-height inherited from an outer
+        -- \样式 does not leak in: an explicit value is only expected from an
+        -- inner \样式[grid-height=...] inside the note.
+        extra.textflow_n_char = n
+        extra.grid_height = false
     end
     return style_registry.push_content_style(font_color, font_size, font, extra)
 end
@@ -520,22 +525,33 @@ local function place_textflow_segment(ctx, nodes, layout_map, params, callbacks,
     -- which may come from inner \样式[grid-height=Y]
     local textflow_gh = nil
     local first_sid = D.get_attribute(nodes[1], constants.ATTR_STYLE_REG_ID)
-    -- n-char-per-col (issue #82): grid height = column height / N, known only now
-    local first_style = first_sid and first_sid > 0 and style_registry.get(first_sid)
-    local n_char = first_style and first_style.textflow_n_char
-    if n_char and ctx.col_height_sp and ctx.col_height_sp > 0 then
-        local n_gh = math.floor(ctx.col_height_sp / n_char)
-        first_style.textflow_grid_height = n_gh
-        for _, n in ipairs(nodes) do
-            local nsid = D.get_attribute(n, constants.ATTR_STYLE_REG_ID)
-            local nstyle = nsid and nsid > 0 and style_registry.get(nsid)
-            if nstyle and nstyle.textflow_n_char == n_char then
-                nstyle.grid_height = n_gh
+    -- n-char-per-col (issue #82): grid height = column height / N. The column
+    -- height is only known here, so the style carries textflow_n_char and the
+    -- value is derived per segment (bands may differ in height). Nothing is
+    -- written back into the registry: styles are shared between segments, and
+    -- an inner \样式[grid-height=Y] inside the note must keep its own value.
+    local n_char_gh = nil
+    if first_sid and first_sid > 0 then
+        textflow_gh = style_registry.get_textflow_grid_height(first_sid)
+        local n_char = (not textflow_gh) and style_registry.get_attr(first_sid, "textflow_n_char")
+        if n_char and n_char > 0 then
+            if ctx.col_height_sp and ctx.col_height_sp > 0 then
+                n_char_gh = math.floor(ctx.col_height_sp / n_char)
+                textflow_gh = n_char_gh
+            else
+                texio.write_nl("term and log", "luatex-cn Warning: n-char-per-col ignored: "
+                    .. "column height is unknown in this context")
             end
         end
     end
-    if first_sid and first_sid > 0 then
-        textflow_gh = style_registry.get_textflow_grid_height(first_sid)
+    -- Per-node grid height: an explicit style value (inner \样式[grid-height])
+    -- wins; other nodes of an n-char note get the derived height.
+    local function node_style_gh(sid)
+        local sgh = style_registry.get_grid_height(sid)
+        if not sgh and n_char_gh and style_registry.get_attr(sid, "textflow_n_char") then
+            return n_char_gh
+        end
+        return sgh or nil
     end
 
     local available_in_first = params.effective_limit - ctx.cur_row
@@ -591,7 +607,7 @@ local function place_textflow_segment(ctx, nodes, layout_map, params, callbacks,
         else
             local sid = D.get_attribute(n, constants.ATTR_STYLE_REG_ID)
             if sid and sid > 0 then
-                local sgh = style_registry.get_grid_height(sid)
+                local sgh = node_style_gh(sid)
                 -- sgh == 0 is a valid override: zero-advance overlay glyph
                 -- (e.g. the compressed closing bracket of a jiao note that
                 -- shares its cell with the following character)
@@ -712,7 +728,7 @@ local function place_textflow_segment(ctx, nodes, layout_map, params, callbacks,
                 node_cell_h = gh  -- default: global grid_height
                 local sid = D.get_attribute(node_info.node, constants.ATTR_STYLE_REG_ID)
                 if sid and sid > 0 then
-                    local style_ch = style_registry.get_grid_height(sid)
+                    local style_ch = node_style_gh(sid)
                     if style_ch and style_ch >= 0 then
                         node_cell_h = style_ch
                     end

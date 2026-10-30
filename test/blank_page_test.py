@@ -255,8 +255,24 @@ def check_unknown_style_warns(workdir):
     return []
 
 
+def check_split_mode_no_padding(workdir):
+    """筒子页模式（\\开启分页）下不自动补页：开/关 对页补页 页数相同。"""
+    off_pdf, _ = compile_tex(
+        GUJI % {"setup": r"\开启分页", "body": CHAPTERS}, workdir, "split_off"
+    )
+    on_pdf, _ = compile_tex(
+        GUJI % {"setup": r"\开启分页 \pageSetup{对页补页=true}", "body": CHAPTERS},
+        workdir, "split_on",
+    )
+    n_off, n_on = page_count(off_pdf), page_count(on_pdf)
+    if n_off != n_on:
+        return ["筒子页模式下开启对页补页不应改变页数：关 %d 页，开 %d 页" % (n_off, n_on)]
+    return []
+
+
 CHECKS = [
     ("开关关闭时页数不变", check_switch_off),
+    ("筒子页模式下不自动补页", check_split_mode_no_padding),
     ("开启后奇数页收尾补一页、偶数页收尾不补", check_facing_on),
     ("补页样式=空白 整页无字", check_plain_style),
     ("手动命令 \\补空白页 / \\InsertBlankPage", check_manual),

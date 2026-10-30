@@ -825,10 +825,16 @@ end
 --- Interface for TeX to call to process and output pages
 local function process(box_num, params)
     local is_textbox_block = (params.is_textbox == true)
+    -- Check if split page is enabled
+    -- CRITICAL: Do NOT enable split page output for textboxes (Content, etc.)
+    local split_enabled = page.split and page.split.is_enabled and page.split.is_enabled()
     if not is_textbox_block then
         -- 对页补页 (issue #176) settings, set by \pageSetup{对页补页=...}
+        -- Not in 筒子页 (split) mode: every sheet is already a facing pair, and
+        -- physical_page_base() counts shipped half-pages while the layout counts
+        -- sheets, so the parity test would be meaningless there.
         local pg = _G.page or {}
-        params.facing_pages = pg.facing_pages == true
+        params.facing_pages = (not split_enabled) and pg.facing_pages == true
         params.blank_page_style = pg.blank_page_style or "normal"
         params.physical_page_base = physical_page_base()
     end
@@ -837,10 +843,7 @@ local function process(box_num, params)
 
     local total_pages, first_cells, last_cells = typeset(box_num, params)
 
-    -- Check if split page is enabled
-    -- CRITICAL: Do NOT enable split page output for textboxes (Content, etc.)
-    local is_textbox = (params.is_textbox == true)
-    local split_enabled = page.split and page.split.is_enabled and page.split.is_enabled()
+    local is_textbox = is_textbox_block
 
     -- Break the page when this block would print over the previous one.
     -- output_pages emits a page-break penalty only *between* the pages it

@@ -416,15 +416,16 @@
 % \pageSetup itself stays untouched (it also carries the margin / twoside logic).
 
 \tl_new:N \l__luatexcn_page_blank_style_tl
+\int_new:N \l__luatexcn_page_blank_penalty_int
 
 \cs_new_protected:Npn \__luatexcn_page_set_facing:n #1
   {
-    \lua_now:e { require('core.luatex-cn-core-page').set_facing_pages("\tl_to_str:n {#1}") }
+    \lua_now:e { require('core.luatex-cn-core-page').set_facing_pages("\luaescapestring{\tl_to_str:n {#1}}") }
   }
 
 \cs_new_protected:Npn \__luatexcn_page_set_blank_style:n #1
   {
-    \lua_now:e { require('core.luatex-cn-core-page').set_blank_page_style("\tl_to_str:n {#1}") }
+    \lua_now:e { require('core.luatex-cn-core-page').set_blank_page_style("\luaescapestring{\tl_to_str:n {#1}}") }
   }
 
 \keys_define:nn { luatexcn / page }
@@ -438,7 +439,16 @@
 \keys_define:nn { luatexcn / blankpage }
   {
     blank-page-style .tl_set:N = \l__luatexcn_page_blank_style_tl,
-    unknown .code:n = {},
+    补页样式 .tl_set:N = \l__luatexcn_page_blank_style_tl,
+    補頁樣式 .tl_set:N = \l__luatexcn_page_blank_style_tl,
+    % A mistyped key must not be swallowed silently (cf. issue #163)
+    unknown .code:n =
+      {
+        \lua_now:e
+          {
+            texio.write_nl("term~and~log", "luatex-cn~Warning:~InsertBlankPage:~unknown~key~'\luaescapestring{\l_keys_key_str}'~ignored")
+          }
+      },
   }
 
 % Inside a content block: the blank page is a penalty the layout engine acts on.
@@ -447,15 +457,15 @@
     \group_begin:
       \tl_clear:N \l__luatexcn_page_blank_style_tl
       \keys_set:nn { luatexcn / blankpage } { #1 }
-      \int_set:Nn \l_tmpa_int
+      \int_set:Nn \l__luatexcn_page_blank_penalty_int
         {
           \lua_now:e
             {
               tex.sprint(require('core.luatex-cn-core-page').blank_penalty_for(
-                "\tl_to_str:N \l__luatexcn_page_blank_style_tl"))
+                "\luaescapestring{\tl_to_str:N \l__luatexcn_page_blank_style_tl}"))
             }
         }
-      \tex_penalty:D \l_tmpa_int
+      \tex_penalty:D \l__luatexcn_page_blank_penalty_int
     \group_end:
   }
 

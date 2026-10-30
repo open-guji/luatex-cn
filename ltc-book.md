@@ -226,8 +226,12 @@ vbook 提供专用的标题命令：
 |------|------|--------|
 | `page-number-style` | 页码样式 | `digits` |
 | `page-number-font-size` | 页码字号 | `9pt` |
-| `page-number-x` | 页码 X 位置 | `3mm` |
-| `page-number-y` | 页码 Y 位置 | `8mm` |
+| `page-number-position` | 页码位置：`inner` 装订侧、`outer` 翻口侧、`center` 页脚横向居中（中文键 `页码位置 = 内侧 / 外侧 / 居中`，v0.4.4+） | `inner` |
+| `page-number-x` | 页码距页边的水平距离（`页码横移`） | `3mm` |
+| `page-number-y` | 页码距页底的垂直距离（`页码纵移`） | `52mm` |
+| `header-y` | 页眉距页顶的垂直距离（`页眉纵移`） | `52mm` |
+
+页眉始终在装订侧，`page-number-position` 只移动页码。
 
 页码样式：
 - `digits`：逐位中文数字（如 一二三）

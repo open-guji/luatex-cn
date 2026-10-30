@@ -155,8 +155,12 @@ Auto vertical page numbers at lower-left. Configure via `\pageSetup`:
 |-----------|---------|
 | `page-number-style` | `digits` (also: `chinese`, `arabic`, `none`) |
 | `page-number-font-size` | `9pt` |
-| `page-number-x` | `3mm` |
-| `page-number-y` | `8mm` |
+| `page-number-position` | `inner` (binding side; also `outer`, `center` = centred at the foot of the page; v0.4.4+) |
+| `page-number-x` | `3mm` (distance from the page edge) |
+| `page-number-y` | `52mm` (distance from the page bottom) |
+| `header-y` | `52mm` (running header, distance from the page top) |
+
+The running header always stays on the binding side; `page-number-position` moves only the page number.
 
 ## Custom Templates
 

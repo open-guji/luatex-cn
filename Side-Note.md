@@ -26,9 +26,24 @@
   font = {FandolSong-Regular},
   font-color = red,
   auto-balance = true, % 是否自动平衡左右列长度
-  align = outward      % 对齐方式
+  align = outward,     % 对齐方式
+  n-char-per-col = 20  % 夹注每小列字数（v0.4.4+，见下）
 }
 ```
+
+### 夹注每小列字数与正文不同 <sup>v0.4.4+</sup>
+
+古籍常见正文每列 15 字、夹注每小列 20 字。`n-char-per-col`（`每行字数`）按「正文列高 ÷ N」取夹注格高，字号另用 `font-size` 配：
+
+```latex
+\contentSetup{ n-char-per-col = 15 }                 % 正文每列 15 字
+\jiazhuSetup{ n-char-per-col = 20, font-size = 22pt } % 全书夹注每小列 20 字
+正文……\夹注[n-char-per-col=15]{临时改回 15 字}……      % 单个夹注覆盖
+```
+
+- 夹注从列首起时每小列恰好 N 字；夹注前面还有正文时，该列的小列只剩余下的格数，不足 N 字是正常的。
+- 同时给 `grid-height` 时以 `grid-height` 为准；夹注内 `\样式[grid-height=…]` 仍可覆盖局部格高。
+- 旧写法 `\夹注[grid-height=22.5pt]` 依然可用，但要自己算格高。
 
 
 ---

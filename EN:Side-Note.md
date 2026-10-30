@@ -26,9 +26,24 @@ Main text\\夹注{This is interlinear note content. If it is long, it will autom
   font = {FandolSong-Regular},
   font-color = red,
   auto-balance = true, % Whether to auto-balance sub-column lengths
-  align = outward      % Alignment mode
+  align = outward,     % Alignment mode
+  n-char-per-col = 20  % Characters per sub-column (v0.4.4+, see below)
 }
 ```
+
+### A Different Character Count for Notes <sup>v0.4.4+</sup>
+
+Traditional books often set 15 characters per body column and 20 per note sub-column. `n-char-per-col` (`每行字数`) derives the note grid height as *body column height ÷ N*; set the font size separately with `font-size`:
+
+```latex
+\contentSetup{ n-char-per-col = 15 }                 % 15 characters per body column
+\jiazhuSetup{ n-char-per-col = 20, font-size = 22pt } % 20 per note sub-column, book-wide
+Text…\夹注[n-char-per-col=15]{back to 15 for this note}…
+```
+
+- A note that starts at the top of a column holds exactly N characters per sub-column; a note that starts mid-column only has the remaining cells, so fewer than N is expected there.
+- When `grid-height` is also given it takes precedence; an inner `\样式[grid-height=…]` inside the note still overrides locally.
+- The older `\夹注[grid-height=22.5pt]` form still works but requires computing the height by hand.
 
 
 ---

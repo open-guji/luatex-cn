@@ -70,8 +70,16 @@ Use `border-margin-x` / `border-margin-y` for separate horizontal and vertical p
 `\FillTextBox` (or `\填充文本框`) is a variant of `\TextBox` with default fill alignment.
 
 ```latex
-\FillTextBox[height=10]{Content}
+\FillTextBox[17]{……}            % a bare integer means height=17 (grid cells)
+\FillTextBox[height=17]{……}     % same, key-value form
+\FillTextBox[height=120pt]{……}  % absolute height
+\FillTextBox[height=4]{天地玄黄宇宙}洪荒   % 6 characters squeezed into 4 cells
 ```
+
+- **Flat text**: when the content exceeds the cell count the glyphs are compressed vertically as a whole, keeping their width; ratio = cells ÷ characters (83 characters in 17 cells is about 1/5 and nearly a line, so reduce `font-size` or add cells). Shorter content is spread out evenly.
+- A bare integer in the brackets is `height=N`; use the key-value form to add other keys (`font-size`, `border`, …).
+- Unlike `\TextBox[height=N]`, which never compresses and only top-aligns in N cells.
+- Works directly inside `正文`, `列表` and `段落`; no extra package needed.
 
 ---
 

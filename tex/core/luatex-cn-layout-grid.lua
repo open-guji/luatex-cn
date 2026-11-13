@@ -2477,6 +2477,11 @@ local function flush_buffer(col_buffer, ctx, grid_height, distribute, layout_map
         if lm_id and lm_id > 0 then
             map_entry.line_mark_id = lm_id
         end
+        -- Inline 反白 (issue #201): background drawn per segment at render
+        local inv_id = h.get_invert_id(entry.node)
+        if inv_id then
+            map_entry.invert_id = inv_id
+        end
 
         layout_map[entry.node] = map_entry
 

@@ -775,6 +775,11 @@ local function place_textflow_segment(ctx, nodes, layout_map, params, callbacks,
             if lm_id and lm_id > 0 then
                 entry.line_mark_id = lm_id
             end
+            -- Inline 反白 (issue #201)
+            local inv_id = helpers.get_invert_id(node_info.node)
+            if inv_id then
+                entry.invert_id = inv_id
+            end
 
             layout_map[node_info.node] = entry
 

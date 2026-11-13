@@ -440,7 +440,10 @@ function fontdetect.prepare_family(id, namelist)
     local fallback_id, fallback_key = "", ""
     if #entries > 0 then
         local lazy = fontdetect._internal.lazy_fallback()
-        if lazy and lazy.available() then
+        -- 环境变量 LUATEXCN_NATIVE_FALLBACK=1 强制用 luaotfload 原生 fallback
+        -- （排查用；test/font_fallback_test.py 用它确认内存断言确实灵敏）
+        local force_native = os.getenv and os.getenv("LUATEXCN_NATIVE_FALLBACK") == "1"
+        if lazy and not force_native and lazy.available() then
             fallback_id = lazy.register(id, entries)
             fallback_key = lazy.FEATURE
         elseif luaotfload and luaotfload.add_fallback then

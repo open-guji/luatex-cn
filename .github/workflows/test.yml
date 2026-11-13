@@ -140,6 +140,11 @@ jobs:
         # 且未知 key 会发警告而不是被静默丢弃（issue #163）
         run: python3 test/color_test.py
 
+      - name: Run font fallback tests
+        # 不依赖基线图像的自校验：回退链补字仍生效，且字号数目不再乘以
+        # 回退链的体量（按需加载，issue #197）
+        run: python3 test/font_fallback_test.py
+
       - name: Run blank page tests
         # 不依赖基线图像的自校验：对页补页 / 补空白页的页数与奇偶页（issue #176）
         run: python3 test/blank_page_test.py

@@ -138,6 +138,14 @@ python3 test/geometry_test.py
 python3 test/color_test.py
 ```
 
+### 字体回退链测试（Font Fallback Test）
+```bash
+# 不依赖基线图像的自校验（issue #197）：\设置字体族 的回退链仍能补上扩展 B 字，
+# 且每多一种字号，挂链文档的 Lua 堆增长与单字体文档相当（回退字体按需载入）。
+# 会用 LUATEXCN_NATIVE_FALLBACK=1 切回 luaotfload 原生 fallback 做灵敏度自检。
+python3 test/font_fallback_test.py
+```
+
 ### 边距测试（Margin Test）
 ```bash
 # 不依赖基线图像的自校验（issue #198）：用 pdftotext -bbox 读字的位置，断言

@@ -382,19 +382,140 @@
 %   带圈     = 圆形边框（独立）
 % ============================================================
 
+% ============================================================
+% 反白系列：行内可断行实现（issue #201）
+%
+% 旧实现把整段反白装进一个文本框，文本框是不可分割的整体：
+% 剩余格数不够时整块被推到下一列（或夹注的下一小列），前面空出若干格。
+% 现在默认逐字打上 \cnverticalinvert 组 id，正文/夹注照常排版、照常换列，
+% 底色（和墨围/八角边框）在渲染阶段按「每列连续的一段」分别绘制
+% （decorate/luatex-cn-linemark.lua，与专名号/书名号共用管线）。
+%
+% 断口（break / 断口）：被换列截断处的角型
+%   square / 直角（默认）：只有整段的首尾画八角，断口处画直角
+%   octagon / 八角：每一段都画完整八角
+%
+% 兼容：传入文本框专有的 key（高度、填充、padding-top……）或 inline=false
+% 时，回退为旧的整块文本框实现（如族谱 \八角墨围反白[高度=3, 填充]）。
+% ============================================================
+\tl_new:N \l__luatexcn_inverted_font_color_tl
+\tl_new:N \l__luatexcn_inverted_bg_color_tl
+\tl_new:N \l__luatexcn_inverted_border_color_tl
+\tl_new:N \l__luatexcn_inverted_border_width_tl
+\tl_new:N \l__luatexcn_inverted_break_tl
+\tl_new:N \l__luatexcn_inverted_font_rgb_tl
+\tl_new:N \l__luatexcn_inverted_bg_rgb_tl
+\tl_new:N \l__luatexcn_inverted_border_rgb_tl
+\bool_new:N \l__luatexcn_inverted_inline_bool
+\bool_new:N \l__luatexcn_inverted_fallback_bool
+
+\keys_define:nn { luatexcn / inverted }
+  {
+    font-color .tl_set:N = \l__luatexcn_inverted_font_color_tl,
+    color .tl_set:N = \l__luatexcn_inverted_font_color_tl,
+    background-color .tl_set:N = \l__luatexcn_inverted_bg_color_tl,
+    border-color .tl_set:N = \l__luatexcn_inverted_border_color_tl,
+    border-width .tl_set:N = \l__luatexcn_inverted_border_width_tl,
+    break .choices:nn = { square, octagon }
+      { \tl_set_eq:NN \l__luatexcn_inverted_break_tl \l_keys_choice_tl },
+    inline .bool_set:N = \l__luatexcn_inverted_inline_bool,
+    % 中文别名
+    字体颜色 .tl_set:N = \l__luatexcn_inverted_font_color_tl,
+    字體顏色 .tl_set:N = \l__luatexcn_inverted_font_color_tl,
+    颜色 .tl_set:N = \l__luatexcn_inverted_font_color_tl,
+    顏色 .tl_set:N = \l__luatexcn_inverted_font_color_tl,
+    底色 .tl_set:N = \l__luatexcn_inverted_bg_color_tl,
+    边框色 .tl_set:N = \l__luatexcn_inverted_border_color_tl,
+    邊框色 .tl_set:N = \l__luatexcn_inverted_border_color_tl,
+    边框宽 .tl_set:N = \l__luatexcn_inverted_border_width_tl,
+    邊框寬 .tl_set:N = \l__luatexcn_inverted_border_width_tl,
+    断口 .choice:,
+    断口 / 直角 .code:n = { \tl_set:Nn \l__luatexcn_inverted_break_tl { square } },
+    断口 / 八角 .code:n = { \tl_set:Nn \l__luatexcn_inverted_break_tl { octagon } },
+    断口 / square .code:n = { \tl_set:Nn \l__luatexcn_inverted_break_tl { square } },
+    断口 / octagon .code:n = { \tl_set:Nn \l__luatexcn_inverted_break_tl { octagon } },
+    斷口 .meta:n = { 断口 = {#1} },
+    可断行 .bool_set:N = \l__luatexcn_inverted_inline_bool,
+    可斷行 .bool_set:N = \l__luatexcn_inverted_inline_bool,
+    % 其余 key 属于文本框（高度、填充、padding……）：回退整块实现
+    unknown .code:n = { \bool_set_true:N \l__luatexcn_inverted_fallback_bool },
+  }
+
+% Color name / spec -> "r g b" (same conversion as \TextBox)
+\cs_new_protected:Nn \__luatexcn_inverted_to_rgb:NN
+  {
+    \tl_set:No #1 { #1 }
+    \cs_if_exist:cTF { color @ #1 }
+      {
+        \exp_args:NV \extractcolorspec #1 \l_tmpa_tl
+        \exp_args:NNx \convertcolorspec \l_tmpa_tl { rgb } \l_tmpb_tl
+        \tl_set:Nx #2 { \l_tmpb_tl }
+      }
+      { \tl_set_eq:NN #2 #1 }
+    \tl_replace_all:Nnn #2 { , } { ~ }
+  }
+
+% #1 = shape (none / rect / octagon)
+% #2 = textbox fallback options (旧整块实现的默认参数)
+% #3 = user options
+% #4 = content
+\cs_new_protected:Nn \__luatexcn_inverted:nnnn
+  {
+    \group_begin:
+    \tl_set:Nn \l__luatexcn_inverted_font_color_tl { white }
+    \tl_set:Nn \l__luatexcn_inverted_bg_color_tl { 0.2~0.2~0.2 }
+    \tl_clear:N \l__luatexcn_inverted_border_color_tl
+    \tl_set:Nn \l__luatexcn_inverted_border_width_tl { 0.4pt }
+    \tl_set:Nn \l__luatexcn_inverted_break_tl { square }
+    \bool_set_true:N \l__luatexcn_inverted_inline_bool
+    \bool_set_false:N \l__luatexcn_inverted_fallback_bool
+    \keys_set:nn { luatexcn / inverted } { #3 }
+    \bool_lazy_or:nnTF
+      { \l__luatexcn_inverted_fallback_bool }
+      { ! \l__luatexcn_inverted_inline_bool }
+      {
+        \group_end:
+        \__luatexcn_textbox_resolve_cell_gw:N \l_tmpa_dim
+        \__luatexcn_textbox_resolve_cell_gh:N \l_tmpb_dim
+        \TextBox [ grid-width = \l_tmpa_dim , grid-height = \l_tmpb_dim , #2 , #3 ] { #4 }
+      }
+      {
+        \__luatexcn_inverted_to_rgb:NN \l__luatexcn_inverted_font_color_tl \l__luatexcn_inverted_font_rgb_tl
+        \__luatexcn_inverted_to_rgb:NN \l__luatexcn_inverted_bg_color_tl \l__luatexcn_inverted_bg_rgb_tl
+        \__luatexcn_inverted_to_rgb:NN \l__luatexcn_inverted_border_color_tl \l__luatexcn_inverted_border_rgb_tl
+        \lua_now:e
+          {
+            require('core.luatex-cn-constants').register_inverted(
+              "#1",
+              [=[\l__luatexcn_inverted_bg_rgb_tl]=],
+              [=[\l__luatexcn_inverted_border_rgb_tl]=],
+              [=[\luaescapestring{\l__luatexcn_inverted_border_width_tl}]=],
+              "\l__luatexcn_inverted_break_tl"
+            )
+          }
+        \setluatexattribute \cnverticalinvert { \g__luatexcn_invert_gid }
+        % 字色：与 \TextBox 相同，排版时就把字色样式打到字形上（#187）
+        \edef \l__luatexcn_inverted_style_id_tl
+          {
+            \lua_now:e
+              {
+                local ~ sr = require('util.luatex-cn-style-registry')
+                tex.print(tostring(sr.push_content_style([=[\l__luatexcn_inverted_font_rgb_tl]=], nil, nil, nil)))
+              }
+          }
+        \setluatexattribute \cnverticalstyle { \l__luatexcn_inverted_style_id_tl }
+        #4
+        \lua_now:n { require('util.luatex-cn-style-registry').pop() }
+        \group_end:
+      }
+  }
+
 % -- 反白：黑底白字，无边框 --
-% 不强制 1.2x 高度（无边框，字格高度即可）
 \NewDocumentCommand{\反白}{ O{} m }
   {
-    \__luatexcn_textbox_resolve_cell_gw:N \l_tmpa_dim
-    \__luatexcn_textbox_resolve_cell_gh:N \l_tmpb_dim
-    \TextBox[
-      background-color={0.2~0.2~0.2},
-      font-color=white,
-      grid-width=\l_tmpa_dim,
-      grid-height=\l_tmpb_dim,
-      #1
-    ]{#2}
+    \__luatexcn_inverted:nnnn { none }
+      { background-color = {0.2~0.2~0.2}, font-color = white }
+      { #1 } { #2 }
   }
 
 % -- 墨围：矩形黑色边框 --
@@ -414,23 +535,16 @@
   }
 
 % -- 墨围反白：矩形黑色边框 + 黑底白字 --
-% border-offset 使黑色边框线画在背景之外（白色区域上可见）
+% 边框画在底色之外 0.1em，留出白缝
 \NewDocumentCommand{\墨围反白}{ O{} m }
   {
-    \__luatexcn_textbox_resolve_cell_gw:N \l_tmpa_dim
-    \__luatexcn_textbox_resolve_cell_gh:N \l_tmpb_dim
-    \TextBox[
-      background-color={0.2~0.2~0.2},
-      font-color=white,
-      border-shape=rect,
-      grid-width=\l_tmpa_dim,
-      grid-height=\l_tmpb_dim,
-      border-margin-x=0.05em,
-      border-margin-y=0.1em,
-      border-offset=0.1em,
-      outer-margin=0.15em,
-      #1
-    ]{#2}
+    \__luatexcn_inverted:nnnn { rect }
+      {
+        background-color = {0.2~0.2~0.2}, font-color = white, border-shape = rect,
+        border-margin-x = 0.05em, border-margin-y = 0.1em,
+        border-offset = 0.1em, outer-margin = 0.15em
+      }
+      { #1 } { #2 }
   }
 
 % -- 八角墨围：八角形黑色边框 --
@@ -450,23 +564,15 @@
   }
 
 % -- 八角墨围反白：八角形黑色边框 + 黑底白字 --
-% border-offset 使黑色边框线画在背景之外（白色区域上可见）
 \NewDocumentCommand{\八角墨围反白}{ O{} m }
   {
-    \__luatexcn_textbox_resolve_cell_gw:N \l_tmpa_dim
-    \__luatexcn_textbox_resolve_cell_gh:N \l_tmpb_dim
-    \TextBox[
-      background-color={0.2~0.2~0.2},
-      font-color=white,
-      border-shape=octagon,
-      grid-width=\l_tmpa_dim,
-      grid-height=\l_tmpb_dim,
-      border-margin-x=0.05em,
-      border-margin-y=0.1em,
-      border-offset=0.1em,
-      outer-margin=0.15em,
-      #1
-    ]{#2}
+    \__luatexcn_inverted:nnnn { octagon }
+      {
+        background-color = {0.2~0.2~0.2}, font-color = white, border-shape = octagon,
+        border-margin-x = 0.05em, border-margin-y = 0.1em,
+        border-offset = 0.1em, outer-margin = 0.15em
+      }
+      { #1 } { #2 }
   }
 
 % -- 带圈：圆形边框 --

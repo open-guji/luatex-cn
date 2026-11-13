@@ -112,6 +112,7 @@ function sidenote.render(head, layout_map, params, context, engine_ctx, page_idx
     local sn_head = nil
     local sidenote_color = nil  -- Track color from first sidenote node's attribute
     local linemark_entries = {}  -- Collect linemark entries for batch rendering
+    local inv_seen = {}  -- 反白 glyph count per group (issue #201)
 
     for i = #sidenote_for_page, 1, -1 do
         local item = sidenote_for_page[i]
@@ -178,6 +179,21 @@ function sidenote.render(head, layout_map, params, context, engine_ctx, page_idx
                         font_size = cell_h,
                     })
             end
+            -- Inline 反白 (issue #201)
+            local inv_id = helpers.get_invert_id(curr)
+            if inv_id then
+                inv_seen[inv_id] = (inv_seen[inv_id] or 0) + 1
+                local e = helpers.create_linemark_entry({
+                    group_id = inv_id,
+                    col = item.col,
+                    y_sp = pos.y_sp,
+                    cell_height = cell_h,
+                    x_center_sp = boundary_x,
+                    font_size = cell_h,
+                })
+                e.ordinal = inv_seen[inv_id]
+                linemark_entries[#linemark_entries + 1] = e
+            end
 
             local k = D.new(constants.KERN)
             D.setfield(k, "kern", -w)
@@ -197,6 +213,11 @@ function sidenote.render(head, layout_map, params, context, engine_ctx, page_idx
         end
 
         sn_head = render_page._internal.handle_debug_drawing(curr, sn_head, pos, engine_ctx)
+    end
+
+    -- Inline 反白 totals: a sidenote is rendered in one piece
+    for _, e in ipairs(linemark_entries) do
+        if e.ordinal then e.total = inv_seen[e.group_id] end
     end
 
     -- Render linemark lines for sidenote characters (专名号/书名号)

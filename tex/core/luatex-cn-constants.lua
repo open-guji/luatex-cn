@@ -63,6 +63,8 @@ constants.ATTR_DECORATE_VISUAL_CENTER = 202611
 constants.ATTR_DECORATE_FONT = 202612
 constants.ATTR_CHAPTER_REG_ID = 202613
 constants.ATTR_LINE_MARK_ID = luatexbase.attributes.cnverticallinemark or luatexbase.new_attribute("cnverticallinemark")
+-- 反白（行内可断行）：字形上的组 id，指向 _G.line_mark_registry 中 type="inverted" 的条目
+constants.ATTR_INVERT_ID = luatexbase.attributes.cnverticalinvert or luatexbase.new_attribute("cnverticalinvert")
 
 -- Marks the page box of a plain-style blank page (补页样式=空白) so the
 -- shipout hook of the vertical-book classes can leave header/page number off.
@@ -489,6 +491,36 @@ local function register_line_mark(type_str, color_str, offset_str, amplitude_str
 end
 
 constants.register_line_mark = register_line_mark
+
+--- Register an inline inverted (反白) group and return group_id (issue #201)
+-- Inline 反白 marks each glyph instead of boxing the whole run, so the run
+-- wraps across columns / jiazhu sub-columns like ordinary text; the
+-- background (and optional frame) is drawn per continuous segment at render
+-- time by decorate/luatex-cn-linemark. Shares the line-mark id space.
+-- @param shape (string) "none" | "rect" | "octagon"
+-- @param bg_rgb (string) Background "r g b"
+-- @param border_rgb (string|nil) Frame "r g b" (default black)
+-- @param border_width (string|nil) Frame line width, e.g. "0.4pt"
+-- @param break_style (string|nil) Corner style where a run is cut by a
+--        column break: "square" (default) or "octagon"
+-- @return (number) group_id
+local function register_inverted(shape, bg_rgb, border_rgb, border_width, break_style)
+    _G.line_mark_group_counter = _G.line_mark_group_counter + 1
+    local gid = _G.line_mark_group_counter
+    local utils = package.loaded['util.luatex-cn-utils'] or require('util.luatex-cn-utils')
+    _G.line_mark_registry[gid] = {
+        type = "inverted",
+        shape = (shape and shape ~= "") and shape or "none",
+        background = utils.normalize_rgb(bg_rgb) or "0.2 0.2 0.2",
+        border_color = utils.normalize_rgb(border_rgb) or "0 0 0",
+        border_width = to_dimen(border_width) or tex.sp("0.4pt"),
+        break_style = (break_style == "octagon") and "octagon" or "square",
+    }
+    token.set_macro("g__luatexcn_invert_gid", tostring(gid))
+    return gid
+end
+
+constants.register_inverted = register_inverted
 
 -- ============================================================================
 -- Indent Constants

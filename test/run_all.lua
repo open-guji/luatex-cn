@@ -67,6 +67,7 @@ local tests = {
 
     -- Plugin/Feature layer: fonts
     "test/unit_test/fonts/luatex-cn-font-autodetect-test.lua",
+    "test/unit_test/fonts/luatex-cn-font-fallback-test.lua",
 }
 
 print("=== Running All Project Tests ===")

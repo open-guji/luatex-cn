@@ -477,6 +477,22 @@ local function create_linemark_entry(opts)
 end
 
 helpers.create_linemark_entry = create_linemark_entry
+
+--- Inline 反白 group id of a node, or nil (issue #201)
+-- Only real glyphs count: decoration markers (ATTR_DECORATE_ID) are removed
+-- at render time and must not be part of the run.
+-- @param n (number) Direct node
+-- @return (number|nil) group id
+local function get_invert_id(n)
+    if not n or D.getid(n) ~= constants.GLYPH then return nil end
+    local inv = D.get_attribute(n, constants.ATTR_INVERT_ID)
+    if not inv or inv <= 0 then return nil end
+    local dec = D.get_attribute(n, constants.ATTR_DECORATE_ID)
+    if dec and dec > 0 then return nil end
+    return inv
+end
+
+helpers.get_invert_id = get_invert_id
 helpers.glyph_ink_span = glyph_ink_span
 helpers.glyph_ink_hspan = glyph_ink_hspan
 

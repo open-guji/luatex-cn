@@ -40,6 +40,8 @@ local debug = package.loaded['debug.luatex-cn-debug'] or
     require('debug.luatex-cn-debug')
 local helpers = package.loaded['core.luatex-cn-layout-grid-helpers'] or
     require('core.luatex-cn-layout-grid-helpers')
+local linemark_mod = package.loaded['decorate.luatex-cn-linemark'] or
+    require('decorate.luatex-cn-linemark')
 local style_registry = package.loaded['util.luatex-cn-style-registry'] or
     require('util.luatex-cn-style-registry')
 local setting_stack = package.loaded['util.luatex-cn-setting-stack'] or
@@ -621,6 +623,27 @@ local function process_page_nodes(p_head, layout_map, params, ctx)
                                         sub_col = pos.sub_col,
                                         x_center_sp = x_center,
                                     })
+                            end
+                            -- Collect inline 反白 entries (issue #201): drawn
+                            -- per continuous segment by render_line_marks
+                            if pos.invert_id then
+                                local gw = D.getfield(curr, "width") or 0
+                                local gx = D.getfield(curr, "xoffset") or 0
+                                local inv_style_id = D.get_attribute(curr, constants.ATTR_STYLE_REG_ID)
+                                local inv_font_size = inv_style_id and style_registry.get_font_size(inv_style_id)
+                                local e = helpers.create_linemark_entry({
+                                    group_id = pos.invert_id,
+                                    col = pos.col,
+                                    -- table bands: draw where the glyph is drawn
+                                    y_sp = pos.y_sp + (pos.band_y_offset_sp or 0),
+                                    cell_height = pos.cell_height,
+                                    font_size = inv_font_size,
+                                    sub_col = pos.sub_col,
+                                    x_center_sp = gx + gw / 2,
+                                })
+                                e.ordinal, e.total = linemark_mod.inverted_ordinal(layout_map, pos.invert_id)
+                                e.glyph_width = gw
+                                ctx.line_mark_entries[#ctx.line_mark_entries + 1] = e
                             end
                         end
                     else

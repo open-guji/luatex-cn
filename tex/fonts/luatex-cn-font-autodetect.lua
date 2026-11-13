@@ -368,6 +368,12 @@ local function report_missing(family, missing)
     end
 end
 
+--- 按需回退模块（单独文件，便于测试替换）。
+fontdetect._internal.lazy_fallback = function()
+    local ok, mod = pcall(require, "fonts.luatex-cn-font-fallback")
+    return ok and mod or nil
+end
+
 --- \设置字体族 的统一入口：解析字体族并注册回退链。
 -- namelist 为单个注册表别名（如 "Jigmo"）时展开为成员列表，逐成员解析：
 -- 系统装了就按名字用系统的，否则找本地文件，都没有则报错并提示下载脚本。
@@ -376,6 +382,8 @@ end
 --   l__luatexcn_family_main_tl     主字体名或文件名
 --   l__luatexcn_family_dir_tl      主字体所在目录（fontspec Path=，名字方式为空）
 --   l__luatexcn_family_fallback_tl 回退链 id（无回退时为空）
+--   l__luatexcn_family_fallback_key_tl 引用回退链的特性名：
+--       luatexcnfallback（按需回退，见 luatex-cn-font-fallback.lua）或 fallback（luaotfload 原生）
 -- @return (table) 解析结果 {kind=..., value=...} 列表（供测试断言）
 function fontdetect.prepare_family(id, namelist)
     namelist = trim(namelist)
@@ -427,16 +435,29 @@ function fontdetect.prepare_family(id, namelist)
     for i = 2, #resolved do
         table.insert(entries, fallback_entry(resolved[i].kind, resolved[i].value))
     end
-    local fallback_id = ""
-    if #entries > 0 and luaotfload and luaotfload.add_fallback then
-        luaotfload.add_fallback(id, entries)
-        fallback_id = id
+    -- 优先用按需加载的回退链（issue #197：luaotfload fallback 每个字号都把整条链
+    -- 载入一遍，约 90 MB/字号）；环境不支持时退回 luaotfload 原生 fallback。
+    local fallback_id, fallback_key = "", ""
+    if #entries > 0 then
+        local lazy = fontdetect._internal.lazy_fallback()
+        -- 环境变量 LUATEXCN_NATIVE_FALLBACK=1 强制用 luaotfload 原生 fallback
+        -- （排查用；test/font_fallback_test.py 用它确认内存断言确实灵敏）
+        local force_native = os.getenv and os.getenv("LUATEXCN_NATIVE_FALLBACK") == "1"
+        if lazy and not force_native and lazy.available() then
+            fallback_id = lazy.register(id, entries)
+            fallback_key = lazy.FEATURE
+        elseif luaotfload and luaotfload.add_fallback then
+            luaotfload.add_fallback(id, entries)
+            fallback_id = id
+            fallback_key = "fallback"
+        end
     end
 
     if token and token.set_macro then
         token.set_macro("l__luatexcn_family_main_tl", main_name)
         token.set_macro("l__luatexcn_family_dir_tl", main_dir)
         token.set_macro("l__luatexcn_family_fallback_tl", fallback_id)
+        token.set_macro("l__luatexcn_family_fallback_key_tl", fallback_key)
     end
     return resolved
 end

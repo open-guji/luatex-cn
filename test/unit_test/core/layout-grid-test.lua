@@ -291,6 +291,46 @@ test_utils.run_test("handle_penalty_breaks: PENALTY_FORCE_PAGE skips on empty pa
 end)
 
 -- ============================================================================
+-- Issue #98: 只有浮动元素的页，\newpage 不能被当作冗余分页吞掉
+-- ============================================================================
+
+-- Build: whatsit(uid) → PENALTY_FORCE_PAGE → whatsit(uid), run full layout,
+-- return the pages the two whatsits landed on.
+local function layout_two_whatsits_across_newpage(user_id)
+    local function make_whatsit()
+        local w = D.new(constants.WHATSIT)
+        D.setfield(w, "user_id", user_id)
+        return w
+    end
+    local w1, w2 = make_whatsit(), make_whatsit()
+    local p = D.new(constants.PENALTY)
+    D.setfield(p, "penalty", constants.PENALTY_FORCE_PAGE)
+    D.setlink(w1, p)
+    D.setlink(p, w2)
+    local map, total_pages = layout_grid.calculate_grid_positions(
+        D.tonode(w1), 65536 * 20, 20, 10, nil, {})
+    return map[w1].page, map[w2].page, total_pages
+end
+
+test_utils.run_test("issue #98: 悬浮文本框独占一页时 \\newpage 仍然分页", function()
+    -- 页面上只有 \悬浮文本框（不进入列流），其锚点 whatsit 必须把
+    -- page_has_content 置真，否则后面的 \newpage 被跳过、两页叠成一页。
+    local p1, p2, total = layout_two_whatsits_across_newpage(constants.FLOATING_TEXTBOX_USER_ID)
+    test_utils.assert_eq(p1, 0)
+    test_utils.assert_eq(p2, 1, "second floating textbox must land on the next page")
+    test_utils.assert_eq(total, 2)
+end)
+
+test_utils.run_test("issue #98: 不可见 whatsit 不算页面内容，页首 \\newpage 仍视为冗余", function()
+    -- 对照：普通（非悬浮文本框）whatsit 不产生可见内容，
+    -- 页首的 \newpage 照旧被吞掉，避免多出空白页。
+    local p1, p2, total = layout_two_whatsits_across_newpage(constants.CHAPTER_MARKER_USER_ID)
+    test_utils.assert_eq(p1, 0)
+    test_utils.assert_eq(p2, 0)
+    test_utils.assert_eq(total, 1)
+end)
+
+-- ============================================================================
 -- Natural Mode Kinsoku helpers
 -- ============================================================================
 

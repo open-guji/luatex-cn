@@ -1,0 +1,31 @@
+% Issue #196: \circled / \bordered 不随所在字号缩放
+% https://github.com/open-guji/luatex-cn/issues/196
+%
+% 修复前: 夹注或小字号中，\circled 的圈仍按正文行高画（过大，干涉邻字）；
+%         \bordered 只有宽度随字号缩小，高度仍是正文行高（细高框，干涉下方文字）。
+% 修复后: 圈与框的宽、高都按 (当前字号 / 正文字号) 等比缩放，并在所占行内垂直居中。
+\documentclass[四库全书]{ltc-guji}
+\setmainfont{TW-Kai}
+\关闭分页
+\无标点模式
+
+\title{测试}
+\chapter{Issue 196}
+
+\begin{document}
+\begin{正文}
+
+% 测试 1: 正文字号（基线对照，不应受影响）
+正文\circled{一}正文\bordered{甲}正文\八角墨围{乙}正文
+
+% 测试 2: 夹注中的带圈、墨围、八角墨围、反白
+正文\夹注{小字\circled{一}小字\bordered{甲}小字\八角墨围{乙}小字\反白{丙}夹注文字\circled{二}继续\bordered{丁}}后正文
+
+% 测试 3: 正文中临时改小字号
+正文{\fontsize{14pt}{14pt}\selectfont 小\circled{三}小\bordered{戊}小}后正文
+
+% 测试 4: 夹注中多字墨围
+正文\夹注{夹注\bordered{集解}夹注文字继续\circled{四}}后正文
+
+\end{正文}
+\end{document}

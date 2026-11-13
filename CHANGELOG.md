@@ -10,6 +10,7 @@
 - 现代竖排文档类（`ltc-cn-vbook`／`ltc-tw-vbook`）页码位置可选：`\pageSetup{ page-number-position = inner | outer | center }`（中文键 `页码位置 = 内侧 | 外侧 | 居中`），默认仍在装订侧；页眉位置不变（古籍类版心页码早有 `page-number={align=center}`，见 #193）
 
 修复：
+- `\设置字体族` 的回退链改为按需加载：此前用 luaotfload 原生 fallback，每出现一个新字号就把整条回退链的每支字体按该字号全部载入（六支链约 90 MB/字号），按比例缩排产生几十种零碎字号的长书会 OOM。现在某支回退字体只在某字号下真出现要它补的字时才载入，主字体字够用的字号不再为回退链付内存；排版结果不变 (#197)
 - `page-number-x`、`page-number-y`、`header-y` 三个键此前定义在一个从未被 `\pageSetup` 读取的模块里，写了也无效；现在经 `\pageSetup` 直接生效，并增加中文键 `页码横移`／`页码纵移`／`页眉纵移`
 - `ltc-guji` 古籍模板（默认／红楼梦／欧氏族谱）补上 `margin-inner`／`margin-outer` 默认值（与 `margin-left`／`margin-right` 相同）。0.4.3 起 `twoside = true` 只读 inner/outer（#174），而古籍模板原来只设 left/right，用户文档一写 `twoside = true` 左右边距就变成 0，正文顶到纸边、右侧列出页。另外，`\pageSetup` 切换 `twoside` 时若当前生效的边距组仍为 0，现在会发出警告，之前只在同一次调用改了被忽略的那组键时才报
 

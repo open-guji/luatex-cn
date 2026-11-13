@@ -196,7 +196,19 @@ local function with_family_mocks(opts, body)
     _G.luaotfload = _G.luaotfload or {}
     local org_fb = luaotfload.add_fallback
     local org_set_macro = token.set_macro
-    local captured = { macros = {}, fb = nil }
+    local org_lazy = fontdetect._internal.lazy_fallback
+    local captured = { macros = {}, fb = nil, lazy = nil }
+    -- 默认模拟「按需回退不可用」，走 luaotfload 原生 fallback；opts.lazy=true 时模拟可用
+    fontdetect._internal.lazy_fallback = function()
+        return {
+            FEATURE = "luatexcnfallback",
+            available = function() return opts.lazy == true end,
+            register = function(id, entries)
+                captured.lazy = { id = id, entries = entries }
+                return id
+            end,
+        }
+    end
     fontdetect._internal.name_lookup = opts.name_lookup or function() return false end
     fontdetect._internal.file_exists = opts.file_exists or function() return false end
     luaotfload.add_fallback = function(id, entries)
@@ -210,6 +222,7 @@ local function with_family_mocks(opts, body)
     fontdetect._internal.file_exists = org_exists
     luaotfload.add_fallback = org_fb
     token.set_macro = org_set_macro
+    fontdetect._internal.lazy_fallback = org_lazy
     if not ok then error(err, 0) end
 end
 
@@ -229,6 +242,23 @@ test_utils.run_test("prepare_family: alias mixes system name and local file", fu
         test_utils.assert_eq(captured.macros.l__luatexcn_family_main_tl, "Jigmo")
         test_utils.assert_eq(captured.macros.l__luatexcn_family_dir_tl, "")
         test_utils.assert_eq(captured.macros.l__luatexcn_family_fallback_tl, "famchain")
+        test_utils.assert_eq(captured.macros.l__luatexcn_family_fallback_key_tl, "fallback")
+    end)
+end)
+
+test_utils.run_test("prepare_family: uses on-demand fallback when available (#197)", function()
+    with_family_mocks({
+        lazy = true,
+        name_lookup = function(n) return n == "Jigmo" end,
+        file_exists = function(p) return p == "./fonts/Jigmo2.ttf" end,
+    }, function(captured)
+        fontdetect.prepare_family("famchain", "Jigmo")
+        -- 不再注册 luaotfload 原生 fallback（它每个字号都把整条链载一遍）
+        test_utils.assert_eq(captured.fb, nil)
+        test_utils.assert_eq(captured.lazy.id, "famchain")
+        test_utils.assert_eq(captured.lazy.entries[1], "[./fonts/Jigmo2.ttf]:mode=node;")
+        test_utils.assert_eq(captured.macros.l__luatexcn_family_fallback_tl, "famchain")
+        test_utils.assert_eq(captured.macros.l__luatexcn_family_fallback_key_tl, "luatexcnfallback")
     end)
 end)
 
@@ -260,6 +290,7 @@ test_utils.run_test("prepare_family: single name registers no fallback", functio
         test_utils.assert_eq(captured.fb, nil)
         test_utils.assert_eq(captured.macros.l__luatexcn_family_main_tl, "Source Han Serif SC")
         test_utils.assert_eq(captured.macros.l__luatexcn_family_fallback_tl, "")
+        test_utils.assert_eq(captured.macros.l__luatexcn_family_fallback_key_tl, "")
     end)
 end)
 

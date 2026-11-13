@@ -24,6 +24,7 @@ TW-Kai / Jigmo / Jigmo2 均为 regression-test 必需字体）。仅用标准库
 
 import os
 import re
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -100,6 +101,28 @@ def check_fallback_works(workdir):
     if b"Jigmo2" not in pdf:
         raise SystemExit("FAIL: PDF 中没有嵌入回退字体 Jigmo2")
     print("PASS  扩展 B 字在 3 种字号下均由回退字体 Jigmo2 补上")
+
+    # 与 luaotfload 原生 fallback 对照：同一文档的渲染应逐像素一致
+    native = {"LUATEXCN_NATIVE_FALLBACK": "1"}
+    compile_doc(workdir, "fb-extb-native", CHAIN, SIZES[:3], COMMON + EXT_B, native)
+    if shutil.which("pdftoppm") is None:
+        print("SKIP  未安装 pdftoppm，跳过与原生 fallback 的渲染对照")
+        return
+    out_dir = os.environ.get("FONT_FALLBACK_TEST_OUT")
+    pngs = {}
+    for name in ("fb-extb", "fb-extb-native"):
+        prefix = os.path.join(workdir, name)
+        subprocess.run(["pdftoppm", "-png", "-r", "100", "-singlefile",
+                        prefix + ".pdf", prefix], check=True)
+        with open(prefix + ".png", "rb") as f:
+            pngs[name] = f.read()
+        if out_dir:
+            os.makedirs(out_dir, exist_ok=True)
+            shutil.copy(prefix + ".png", out_dir)
+            shutil.copy(prefix + ".pdf", out_dir)
+    if pngs["fb-extb"] != pngs["fb-extb-native"]:
+        raise SystemExit("FAIL: 按需回退与原生 fallback 的渲染结果不一致")
+    print("PASS  渲染与 luaotfload 原生 fallback 逐像素一致")
 
 
 def check_memory_per_size(workdir):

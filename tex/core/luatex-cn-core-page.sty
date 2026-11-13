@@ -30,6 +30,9 @@
 \bool_new:N \l__luatexcn_page_twoside_bool
 \tl_new:N \l__luatexcn_page_margin_inner_tl
 \tl_new:N \l__luatexcn_page_margin_outer_tl
+% Fixed content area for facing pages (issue #198)
+\bool_new:N \l__luatexcn_page_mirror_margins_bool
+\tl_new:N \l__luatexcn_page_binding_offset_tl
 % Running header support (书名/章节名 displayed on outer margin)
 \bool_new:N \l__luatexcn_page_header_enabled_bool
 \tl_new:N \l__luatexcn_page_header_font_size_tl
@@ -80,6 +83,16 @@
     margin-outer .tl_set:N = \l__luatexcn_page_margin_outer_tl,
     margin-outer .initial:n = {},
 
+    % mirror-margins=false: under twoside, keep margin-left/right on every page
+    % (fixed content area); the running header / page number still alternate.
+    mirror-margins .bool_set:N = \l__luatexcn_page_mirror_margins_bool,
+    mirror-margins .initial:n = true,
+
+    % Gutter added on the spine side (vertical books: right of odd pages,
+    % left of even pages; right of every page when twoside=false).
+    binding-offset .tl_set:N = \l__luatexcn_page_binding_offset_tl,
+    binding-offset .initial:n = {0pt},
+
     % Running header (书名/章节名 on outer margin)
     header-enabled .bool_set:N = \l__luatexcn_page_header_enabled_bool,
     header-enabled .initial:n = false,
@@ -104,7 +117,9 @@
         margin_right~=~"\l__luatexcn_page_margin_right_tl",
         twoside~=~\bool_if:NTF~\l__luatexcn_page_twoside_bool~{true}~{false},
         margin_inner~=~"\l__luatexcn_page_margin_inner_tl",
-        margin_outer~=~"\l__luatexcn_page_margin_outer_tl"
+        margin_outer~=~"\l__luatexcn_page_margin_outer_tl",
+        mirror_margins~=~\bool_if:NTF~\l__luatexcn_page_mirror_margins_bool~{true}~{false},
+        binding_offset~=~"\l__luatexcn_page_binding_offset_tl"
       })
       _G.page~=~_G.page~or~{}
       _G.page.number_style~=~"\l__luatexcn_page_number_style_tl"
@@ -540,6 +555,13 @@
     頁碼字號 .tl_set:N = \l__luatexcn_page_number_font_size_tl,
     啟用頁眉 .bool_set:N = \l__luatexcn_page_header_enabled_bool,
     頁眉字號 .tl_set:N = \l__luatexcn_page_header_font_size_tl,
+    % 固定内容区 / 装订边距 (issue #198)
+    镜像边距 .meta:n = { mirror-margins = {#1} },
+    镜像边距 .default:n = { true },
+    鏡像邊距 .meta:n = { mirror-margins = {#1} },
+    鏡像邊距 .default:n = { true },
+    装订边距 .meta:n = { binding-offset = {#1} },
+    裝訂邊距 .meta:n = { binding-offset = {#1} },
   }
 
 % 对页补页 / 补页样式 (issue #176)

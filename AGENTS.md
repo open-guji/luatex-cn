@@ -146,6 +146,15 @@ python3 test/color_test.py
 python3 test/font_fallback_test.py
 ```
 
+### 边距测试（Margin Test）
+```bash
+# 不依赖基线图像的自校验（issue #198）：用 pdftotext -bbox 读字的位置，断言
+# 固定内容区（镜像边距=false）每页正文都在上下左右边距之内、奇偶页首列重合，
+# 书眉页码在内容区外侧、内侧无字，装订边距加在书脊侧（竖排书右侧装订：
+# 奇数页=左页、书脊在右），margin-inner 在书脊侧。
+python3 test/margin_test.py
+```
+
 ### clreq 断言测试（横排规范符合性）
 ```bash
 # 解析横排 PDF 内容流（字形 x 坐标 + advance），对 clreq 条款做度量断言：

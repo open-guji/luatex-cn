@@ -4,7 +4,7 @@
 % 修复前: 页码只能在装订侧下角（page-number-x/y 等键还被 \pageSetup 静默吞掉）
 % 修复后: page-number-position = inner | outer | center；页码位置键经 \pageSetup 生效
 %
-% 本文件：twoside，页码居中于页脚，页眉仍在内侧；共两页看奇偶页
+% 本文件：twoside，页码居中于页脚，书眉在外侧（#198 起按竖排书装订方向称外侧）；共两页看奇偶页
 \documentclass{ltc-cn-vbook}
 \setmainfont{TW-Kai}
 \pageSetup{

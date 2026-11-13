@@ -21,6 +21,8 @@ local function calc_content_width(page_num, twoside, margin_inner, margin_outer,
     _G.page.margin_outer = margin_outer
     _G.page.margin_left = margin_left
     _G.page.margin_right = margin_right
+    _G.page.mirror_margins = true
+    _G.page.binding_offset = 0
 
     _G.content = _G.content or {}
     _G.content.border_on = false
@@ -53,7 +55,7 @@ test_utils.run_test("page-twoside: Disabled twoside with symmetric margins", fun
     test_utils.assert_eq(width_odd, width_even, "Width unchanged for twoside=false")
 end)
 
--- Test 2: Enabled twoside - odd page should have inner on left, outer on right
+-- Test 2: Enabled twoside - odd (left) page: outer on left, inner (spine) on right
 test_utils.run_test("page-twoside: Enabled twoside - odd page margins", function()
     local page_num = 1  -- Odd page
     local inner = 18 * 65536
@@ -61,14 +63,14 @@ test_utils.run_test("page-twoside: Enabled twoside - odd page margins", function
 
     local width = calc_content_width(page_num, true, inner, outer, 0, 0)
 
-    -- For odd page: left=inner (18mm), right=outer (22mm)
+    -- For odd page (left page of a right-bound vertical book): left=outer, right=inner
     -- Content width = 170mm - 18mm - 22mm = 130mm
     local expected_width = (170 - 18 - 22) * 65536
 
-    test_utils.assert_eq(width, expected_width, "Odd page: inner on left, outer on right")
+    test_utils.assert_eq(width, expected_width, "Odd page: outer on left, inner on right")
 end)
 
--- Test 3: Enabled twoside - even page should have outer on left, inner on right
+-- Test 3: Enabled twoside - even (right) page: inner (spine) on left, outer on right
 test_utils.run_test("page-twoside: Enabled twoside - even page margins", function()
     local page_num = 2  -- Even page
     local inner = 18 * 65536
@@ -76,11 +78,11 @@ test_utils.run_test("page-twoside: Enabled twoside - even page margins", functio
 
     local width = calc_content_width(page_num, true, inner, outer, 0, 0)
 
-    -- For even page: left=outer (22mm), right=inner (18mm)
+    -- For even page: left=inner (18mm), right=outer (22mm)
     -- Content width = 170mm - 22mm - 18mm = 130mm
     local expected_width = (170 - 22 - 18) * 65536
 
-    test_utils.assert_eq(width, expected_width, "Even page: outer on left, inner on right")
+    test_utils.assert_eq(width, expected_width, "Even page: inner on left, outer on right")
 end)
 
 -- Test 4: Verify same content width for both odd and even with twoside
@@ -176,16 +178,17 @@ test_utils.run_test("page-twoside: twoside=false ignores inner/outer", function(
     test_utils.assert_eq(r, 20 * 65536, "even page right = margin-right")
 end)
 
--- Test 10: twoside=true ignores left/right entirely
+-- Test 10: twoside=true ignores left/right entirely; inner is the spine side
+-- (vertical books bind on the right: odd = left page, spine on its right)
 test_utils.run_test("page-twoside: twoside=true ignores left/right", function()
     local width = calc_content_width(1, true, 16 * 65536, 24 * 65536, 5 * 65536, 5 * 65536)
     test_utils.assert_eq(width, (170 - 16 - 24) * 65536, "Only inner/outer used")
     local l1, r1 = page_mod.get_effective_margins(1)
     local l2, r2 = page_mod.get_effective_margins(2)
-    test_utils.assert_eq(l1, 16 * 65536, "odd left = inner")
-    test_utils.assert_eq(r1, 24 * 65536, "odd right = outer")
-    test_utils.assert_eq(l2, 24 * 65536, "even left = outer")
-    test_utils.assert_eq(r2, 16 * 65536, "even right = inner")
+    test_utils.assert_eq(l1, 24 * 65536, "odd left = outer (fore-edge)")
+    test_utils.assert_eq(r1, 16 * 65536, "odd right = inner (spine)")
+    test_utils.assert_eq(l2, 16 * 65536, "even left = inner (spine)")
+    test_utils.assert_eq(r2, 24 * 65536, "even right = outer (fore-edge)")
 end)
 
 -- Test 11: twoside=false with only margin-left/right (no inner/outer) is symmetric per page
@@ -256,6 +259,101 @@ test_utils.run_test("page-twoside: warning when twoside switches to a zero margi
     test_utils.assert_eq(#msgs, 2, "warns: twoside=false with left/right both 0")
     _G.page.quiet = false
     texio.write_nl = orig
+end)
+
+-- ============================================================================
+-- Issue #198: fixed content area (mirror-margins=false) + binding offset
+-- ============================================================================
+
+local MM = 186467 -- sp per mm (rounded, as constants.to_dimen gives for "1mm")
+
+local function set_fixed(twoside, mirror, left, right, inner, outer, gutter)
+    _G.page.twoside = twoside
+    _G.page.mirror_margins = mirror
+    _G.page.margin_left = left
+    _G.page.margin_right = right
+    _G.page.margin_inner = inner
+    _G.page.margin_outer = outer
+    _G.page.binding_offset = gutter
+end
+
+test_utils.run_test("page-twoside #198: mirror-margins=false keeps left/right on every page", function()
+    set_fixed(true, false, 20 * 65536, 25 * 65536, 10 * 65536, 30 * 65536, 0)
+    for pn = 1, 4 do
+        local l, r = page_mod.get_effective_margins(pn)
+        test_utils.assert_eq(l, 20 * 65536, "page " .. pn .. " left = margin-left")
+        test_utils.assert_eq(r, 25 * 65536, "page " .. pn .. " right = margin-right")
+    end
+    test_utils.assert_true(page_mod.uses_left_right(), "left/right group in force")
+end)
+
+test_utils.run_test("page-twoside #198: binding offset goes to the spine side", function()
+    local g = 8 * 65536
+    -- fixed area: odd (left) page gets the gutter on its right, even on its left
+    set_fixed(true, false, 20 * 65536, 20 * 65536, 0, 0, g)
+    local l1, r1 = page_mod.get_effective_margins(1)
+    local l2, r2 = page_mod.get_effective_margins(2)
+    test_utils.assert_eq(l1, 20 * 65536, "odd left unchanged")
+    test_utils.assert_eq(r1, 28 * 65536, "odd right = right + gutter")
+    test_utils.assert_eq(l2, 28 * 65536, "even left = left + gutter")
+    test_utils.assert_eq(r2, 20 * 65536, "even right unchanged")
+    test_utils.assert_eq(l1 + r1, l2 + r2, "content width equal on both pages")
+    -- mirrored: gutter adds to inner
+    set_fixed(true, true, 0, 0, 16 * 65536, 24 * 65536, g)
+    l1, r1 = page_mod.get_effective_margins(1)
+    l2, r2 = page_mod.get_effective_margins(2)
+    test_utils.assert_eq(r1, 24 * 65536, "odd spine = inner + gutter")
+    test_utils.assert_eq(l2, 24 * 65536, "even spine = inner + gutter")
+    test_utils.assert_eq(l1, 24 * 65536, "odd fore-edge = outer")
+    -- twoside=false: every page bound on the right
+    set_fixed(false, true, 20 * 65536, 20 * 65536, 0, 0, g)
+    for pn = 1, 2 do
+        local l, r = page_mod.get_effective_margins(pn)
+        test_utils.assert_eq(l, 20 * 65536, "single-sided page " .. pn .. " left")
+        test_utils.assert_eq(r, 28 * 65536, "single-sided page " .. pn .. " right + gutter")
+    end
+    set_fixed(true, true, 0, 0, 16 * 65536, 24 * 65536, 0)
+end)
+
+test_utils.run_test("page-twoside #198: setup() parses mirror-margins and binding-offset", function()
+    _G.page.quiet = true
+    page_mod.setup({ twoside = true, mirror_margins = false, binding_offset = "8mm" })
+    test_utils.assert_eq(_G.page.mirror_margins, false, "mirror_margins stored")
+    test_utils.assert_true(math.abs(_G.page.binding_offset - 8 * MM) < 16, "binding_offset stored in sp")
+    page_mod.setup({ mirror_margins = true, binding_offset = "" })
+    test_utils.assert_eq(_G.page.binding_offset, 0, "empty binding_offset = 0")
+    _G.page.quiet = false
+end)
+
+test_utils.run_test("page-twoside #198: warning names mirror-margins=false", function()
+    local msgs = {}
+    local orig = texio.write_nl
+    texio.write_nl = function(_, m) msgs[#msgs + 1] = m end
+    _G.page.quiet = false
+    set_fixed(true, true, 20 * 65536, 20 * 65536, 16 * 65536, 16 * 65536, 0)
+    page_mod.setup({ twoside = true, mirror_margins = false })
+    test_utils.assert_eq(#msgs, 0, "switching to fixed with left/right set: no warning")
+    page_mod.setup({ twoside = true, mirror_margins = false, margin_inner = "10mm" })
+    test_utils.assert_eq(#msgs, 1, "inner changed while fixed: warning")
+    test_utils.assert_true(msgs[1]:find("mirror%-margins=false") ~= nil, "message names the mode")
+    texio.write_nl = orig
+    set_fixed(true, true, 0, 0, 16 * 65536, 24 * 65536, 0)
+end)
+
+test_utils.run_test("page-twoside #198: spine side and current page", function()
+    _G.page.twoside = true
+    test_utils.assert_true(page_mod.spine_on_right(1), "odd page: spine on right")
+    test_utils.assert_true(not page_mod.spine_on_right(2), "even page: spine on left")
+    _G.page.twoside = false
+    test_utils.assert_true(page_mod.spine_on_right(2), "single-sided: spine always on right")
+    _G.page.twoside = true
+    local old_count = tex.count
+    tex.count = { [0] = 7 }
+    test_utils.assert_eq(page_mod.current_page(), 7, "current page reads \\count0")
+    set_fixed(true, false, 20 * 65536, 30 * 65536, 0, 0, 0)
+    test_utils.assert_eq(page_mod.current_left_margin_str(), "20.00000pt", "left margin string")
+    tex.count = old_count
+    set_fixed(true, true, 0, 0, 16 * 65536, 24 * 65536, 0)
 end)
 
 print("\nAll page-twoside tests passed!")

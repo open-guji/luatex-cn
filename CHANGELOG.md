@@ -7,10 +7,16 @@
 新增：
 - `\夹注[n-char-per-col=20]`（`每行字数`）— 夹注每小列字数可与正文不同，如正文每列 15 字、夹注每小列 20 字；夹注格高取「正文列高 ÷ N」，字号用 `font-size` 另配，`grid-height` 同时给出时以其为准，夹注内 `\样式[grid-height]` 仍可覆盖。`\夹注设置{n-char-per-col=20}` 作全书默认。此前只能手算 `grid-height` (#82)
 - 对页补页：`\pageSetup{对页补页=true}`（`facing-pages`）— 对页（双页对开）装订时，章末落在奇数页就自动补一页空白页，使下一章落在奇数页（右页）起；章末在偶数页不补，章在页中间起也不动。默认关闭，不改变现有书的页数；按实体页序计，跨多个 `正文` 块也准。`\补空白页`（`\InsertBlankPage`）可在任意处强制补一页（块内、块间都行，连写两次补两页）。补出来的页默认带版框、版心／页眉页码，`补页样式=空白`（`blank-page-style=blank`，`\pageSetup` 与 `\补空白页[补页样式=空白]` 均可写）则整页完全空白。暂只做奇数页起章，不含偶数页起章；筒子页模式下不自动补页；只认 `正文` 块内的 `\chapter`。详见 `docs/BLANK_PAGES.md` (#176)
-- 现代竖排文档类（`ltc-cn-vbook`／`ltc-tw-vbook`）页码位置可选：`\pageSetup{ page-number-position = inner | outer | center }`（中文键 `页码位置 = 内侧 | 外侧 | 居中`），默认仍在装订侧；页眉位置不变（古籍类版心页码早有 `page-number={align=center}`，见 #193）
+- 现代竖排文档类（`ltc-cn-vbook`／`ltc-tw-vbook`）页码位置可选：`\pageSetup{ page-number-position = outer | inner | center }`（中文键 `页码位置 = 外侧 | 内侧 | 居中`），默认在外侧（翻口侧），与此前输出相同（古籍类版心页码早有 `page-number={align=center}`，见 #193）
+- 对页固定内容区（#198）：`\pageSetup{ 镜像边距 = false }`（`mirror-margins`）让 `twoside = true` 时奇偶页都用 `margin-left／right`，内容区在奇偶页同一位置，书眉页码仍奇偶交替；`装订边距`（`binding-offset`）在书脊一侧加装订边距（奇数页右、偶数页左；`twoside = false` 时加在右侧），三种边距模式都可用。现代竖排类新增 `页眉锚点 = 内容区`（`header-anchor = content`）：书眉与页码以内容区为准，放在内容区外侧 `页眉间距`（`header-sep`，默认 6mm）处，书眉顶端对齐内容区上边，页码底端对齐内容区下边，改边距后不用再手算 `页码横移`；此时 `页眉纵移`／`页码纵移` 若写了则作为相对偏移。另加 `页眉位置 = 外侧 | 内侧`（`header-position`）
+
+变更：
+- 竖排书「内侧／外侧」改按真正的装订方向算（#198）：竖排书右侧装订，奇数页是左页、书脊在其右侧。此前 `margin-inner` 与 `页码位置=内侧` 按横排习惯放在奇数页左侧，实际落在翻口一侧。`ltc-cn-vbook`／`ltc-tw-vbook` 默认配置同步互换为 `margin-inner = 24mm`、`margin-outer = 16mm`，`页码位置` 默认改为 `外侧`，默认版面不变；自己写了 `margin-inner ≠ margin-outer` 或 `页码位置` 的文档左右会对调，需把两个值互换。古籍模板的 inner／outer 相等，不受影响
 
 修复：
 - `\设置字体族` 的回退链改为按需加载：此前用 luaotfload 原生 fallback，每出现一个新字号就把整条回退链的每支字体按该字号全部载入（六支链约 90 MB/字号），按比例缩排产生几十种零碎字号的长书会 OOM。现在某支回退字体只在某字号下真出现要它补的字时才载入，主字体字够用的字号不再为回退链付内存；排版结果不变 (#197)
+- `twoside = true` 时，从偶数页开始的 `正文` 块按块内页序（而不是实际页码）选奇偶边距，整块用错一侧边距；现在按实际页码算 (#198)
+- 现代竖排类（自由列宽 `n-column = 0`）最后一列会越过左边距约 2–6mm，正文与左侧书眉页码挤在一起；现在下一列放不下就换页，正文始终在边距之内。受影响的版面每页可能少排一列 (#198)
 - `page-number-x`、`page-number-y`、`header-y` 三个键此前定义在一个从未被 `\pageSetup` 读取的模块里，写了也无效；现在经 `\pageSetup` 直接生效，并增加中文键 `页码横移`／`页码纵移`／`页眉纵移`
 - `ltc-guji` 古籍模板（默认／红楼梦／欧氏族谱）补上 `margin-inner`／`margin-outer` 默认值（与 `margin-left`／`margin-right` 相同）。0.4.3 起 `twoside = true` 只读 inner/outer（#174），而古籍模板原来只设 left/right，用户文档一写 `twoside = true` 左右边距就变成 0，正文顶到纸边、右侧列出页。另外，`\pageSetup` 切换 `twoside` 时若当前生效的边距组仍为 0，现在会发出警告，之前只在同一次调用改了被忽略的那组键时才报
 

@@ -447,8 +447,11 @@ local function wrap_to_next_column(ctx, p_cols, interval, grid_height, indent, r
                 apply_band_padding(ctx)
             end
         elseif ctx.is_free_mode and ctx.content_width > 0 then
-            -- Free mode: check if accumulated width exceeds available width
-            if ctx.accumulated_width_sp >= ctx.content_width then
+            -- Free mode: wrap when the next column would not fit. Checking only
+            -- the finished columns let the last column hang past margin-left
+            -- (issue #198: content must stay inside the content area).
+            local next_w = get_grid_width(ctx.params, grid_height)
+            if ctx.accumulated_width_sp + next_w > ctx.content_width then
                 should_wrap_page = true
                 ctx.accumulated_width_sp = 0 -- Reset for new page
             end

@@ -256,6 +256,21 @@ test_utils.run_test("handle_penalty_breaks: PENALTY_FORCE_PAGE advances page whe
     test_utils.assert_eq(ctx.page_has_content, false)
 end)
 
+test_utils.run_test("handle_penalty_breaks: PENALTY_FORCE_PAGE resets free-mode accumulated width (#199)", function()
+    -- Free mode (ltc-cn-vbook / ltc-tw-vbook) wraps pages by the width used on
+    -- the current page. A forced break (\clearpage, \include) must start the
+    -- next page empty, or that page breaks early by the width used before it.
+    local ctx = make_penalty_ctx({ cur_row = 3, cur_col = 5, cur_page = 0, page_has_content = true })
+    ctx.is_free_mode = true
+    ctx.accumulated_width_sp = 65536 * 100
+    local penalty_node = D.new(constants.PENALTY)
+    D.setfield(penalty_node, "penalty", constants.PENALTY_FORCE_PAGE)
+    layout_grid._internal.handle_penalty_breaks(
+        constants.PENALTY_FORCE_PAGE, ctx, function() end, 10, 0, 65536 * 20, 0, penalty_node)
+    test_utils.assert_eq(ctx.cur_page, 1)
+    test_utils.assert_eq(ctx.accumulated_width_sp, 0)
+end)
+
 test_utils.run_test("handle_penalty_breaks: PENALTY_FORCE_PAGE skips on empty page (no duplicate break)", function()
     -- After a natural page wrap (col overflow), the page resets to col=0, row=0,
     -- page_has_content=false. A subsequent \换页 penalty should be skipped to

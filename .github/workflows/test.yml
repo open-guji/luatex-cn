@@ -143,3 +143,8 @@ jobs:
       - name: Run blank page tests
         # 不依赖基线图像的自校验：对页补页 / 补空白页的页数与奇偶页（issue #176）
         run: python3 test/blank_page_test.py
+
+      - name: Run margin tests
+        # 不依赖基线图像的自校验：固定内容区 / 装订边距 / 书眉锚定内容区，
+        # 正文不越出边距、奇偶页内容区重合、内外侧按竖排书装订方向（issue #198）
+        run: python3 test/margin_test.py

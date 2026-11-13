@@ -156,6 +156,131 @@ local function build_wavy_cursive(x_bp, y_start_bp, period_bp, count, amp_bp, rg
     return table.concat(parts, " ")
 end
 
+-- ============================================================================
+-- Inline 反白 (issue #201)
+-- ============================================================================
+-- 反白 runs are marked glyph by glyph (ATTR_INVERT_ID) so they wrap across
+-- columns like ordinary text. Here every continuous piece of a run (one
+-- column / jiazhu sub-column) gets its own background (and optional frame).
+-- A piece that is cut by a column break is drawn with square corners at the
+-- cut by default (break_style="square"); the run's real start and end keep
+-- the octagon corners.
+
+-- Per-layout_map cache: totals[gid] = glyph count, seen[gid] = glyphs met so far
+local inverted_cache = setmetatable({}, { __mode = "k" })
+
+--- Running ordinal of an inline 反白 glyph within its group.
+-- Pages are rendered in reading order, and nodes within a page in stream
+-- order, so a running counter gives each glyph its position in the run.
+-- @param layout_map (table) node -> position map (the run's glyphs carry invert_id)
+-- @param gid (number) group id
+-- @return (number, number) ordinal (1-based), total glyphs in the group
+function linemark.inverted_ordinal(layout_map, gid)
+    local c = inverted_cache[layout_map]
+    if not c then
+        c = { totals = {}, seen = {} }
+        for _, pos in pairs(layout_map) do
+            local g = type(pos) == "table" and pos.invert_id
+            if g then c.totals[g] = (c.totals[g] or 0) + 1 end
+        end
+        inverted_cache[layout_map] = c
+    end
+    local n = (c.seen[gid] or 0) + 1
+    c.seen[gid] = n
+    return n, c.totals[gid] or n
+end
+
+--- PDF path for a (possibly half-)octagon: corners cut only where requested
+-- @return (string) path construction operators (no paint operator)
+local function octagon_path(x, y_top, w, h, corner, cut_top, cut_bot)
+    local ct = cut_top and corner or 0
+    local cb = cut_bot and corner or 0
+    local y_bot = y_top - h
+    return string.format(
+        "%.4f %.4f m %.4f %.4f l %.4f %.4f l %.4f %.4f l %.4f %.4f l %.4f %.4f l %.4f %.4f l %.4f %.4f l h",
+        x + ct, y_top,
+        x + w - ct, y_top,
+        x + w, y_top - ct,
+        x + w, y_bot + cb,
+        x + w - cb, y_bot,
+        x + cb, y_bot,
+        x, y_bot + cb,
+        x, y_top - ct)
+end
+
+local function rect_path(x, y_top, w, h)
+    return string.format("%.4f %.4f %.4f %.4f re", x, y_top - h, w, h)
+end
+
+--- Build the PDF literal for one continuous piece of an inline 反白 run
+-- @param seg (table) entries of the piece, in reading order
+-- @param reg (table) registry entry (type="inverted")
+-- @param ctx (table) render context (grid_height, shift_y)
+-- @return (string) PDF literal
+local function build_inverted_segment(seg, reg, ctx)
+    local first, last = seg[1], seg[#seg]
+    -- Geometric top / bottom entries (reading order is top to bottom, but
+    -- do not rely on it)
+    local top, bot = first, first
+    for _, e in ipairs(seg) do
+        if e.y_sp < top.y_sp then top = e end
+        if e.y_sp > bot.y_sp then bot = e end
+    end
+    local base_fs = ctx.grid_height or 655360
+    local efs = (first.font_size and first.font_size > 0) and first.font_size or base_fs
+
+    -- Horizontal: one em wide, centred on the glyphs
+    local w_sp = efs
+    local x_left_sp = (first.x_center_sp or 0) - w_sp / 2
+
+    -- Vertical: from the top of the first cell to the bottom of the last
+    local shift_y = ctx.shift_y or 0
+    local bot_h = bot.cell_height or ctx.grid_height or efs
+    local y_top_sp = -(top.y_sp) - shift_y
+    local y_bot_sp = -(bot.y_sp + bot_h) - shift_y
+
+    local x = x_left_sp * sp_to_bp
+    local y_top = y_top_sp * sp_to_bp
+    local w = w_sp * sp_to_bp
+    local h = (y_top_sp - y_bot_sp) * sp_to_bp
+
+    -- Is this piece the true start / end of the run, or cut by a break?
+    local is_start = (first.ordinal or 1) <= 1
+    local is_end = (last.ordinal or 1) >= (last.total or 1)
+    local always = reg.break_style == "octagon"
+    local cut_top = always or is_start
+    local cut_bot = always or is_end
+
+    local shape = reg.shape
+    local parts = {}
+    local fill_path
+    if shape == "octagon" then
+        fill_path = octagon_path(x, y_top, w, h, math.min(w, h) * 0.2, cut_top, cut_bot)
+    else
+        fill_path = rect_path(x, y_top, w, h)
+    end
+    parts[#parts + 1] = string.format("q %s rg %s f Q", reg.background, fill_path)
+
+    if shape == "rect" or shape == "octagon" then
+        -- Frame sits 0.1em outside the fill, leaving a white gap (墨围反白)
+        local off = efs * 0.1 * sp_to_bp
+        local lw = (constants.resolve_dimen(reg.border_width, efs) or 26214) * sp_to_bp
+        local fx, fy, fw, fh = x - off, y_top + off, w + 2 * off, h + 2 * off
+        local frame_path
+        if shape == "octagon" then
+            frame_path = octagon_path(fx, fy, fw, fh, math.min(fw, fh) * 0.2, cut_top, cut_bot)
+        else
+            frame_path = rect_path(fx, fy, fw, fh)
+        end
+        parts[#parts + 1] = string.format("q %s RG %.2f w %s S Q", reg.border_color, lw, frame_path)
+    end
+    return table.concat(parts, " ")
+end
+
+linemark._internal = linemark._internal or {}
+linemark._internal.octagon_path = octagon_path
+linemark._internal.build_inverted_segment = build_inverted_segment
+
 --- Render line marks for a single page
 -- Called after all glyph nodes on the page have been positioned.
 --
@@ -177,7 +302,33 @@ function linemark.render_line_marks(p_head, entries, ctx)
     -- Process each group
     for gid, group_entries in pairs(groups) do
         local reg = _G.line_mark_registry and _G.line_mark_registry[gid]
-        if reg then
+        if reg and reg.type == "inverted" then
+            -- Reading order: running ordinal assigned at collection time
+            table.sort(group_entries, function(a, b)
+                return (a.ordinal or 0) < (b.ordinal or 0)
+            end)
+            local cur_seg = { group_entries[1] }
+            local function emit(seg)
+                local lit = utils.create_pdf_literal(build_inverted_segment(seg, reg, ctx))
+                -- Bottom layer: background goes under the glyphs
+                p_head = D.insert_before(p_head, p_head, lit)
+            end
+            for i = 2, #group_entries do
+                local prev = group_entries[i - 1]
+                local curr = group_entries[i]
+                local prev_h = prev.cell_height or ctx.grid_height
+                local contiguous = curr.col == prev.col
+                    and (curr.sub_col or 0) == (prev.sub_col or 0)
+                    and math.abs(curr.y_sp - prev.y_sp) <= prev_h * 1.2
+                if contiguous then
+                    cur_seg[#cur_seg + 1] = curr
+                else
+                    emit(cur_seg)
+                    cur_seg = { curr }
+                end
+            end
+            emit(cur_seg)
+        elseif reg then
             -- Sort by col, sub_col, then y_sp
             table.sort(group_entries, function(a, b)
                 if a.col ~= b.col then return a.col < b.col end

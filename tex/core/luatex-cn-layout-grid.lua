@@ -671,6 +671,11 @@ local function start_new_page(ctx, interval, grid_height, indent)
     ctx.cur_y_sp = 0
     ctx.cur_column_indent = 0
     ctx.page_has_content = false
+    -- Free mode decides page wrap by the width used on the current page;
+    -- a fresh page starts empty. Without this, the columns before a
+    -- \clearpage/\newpage/\include were counted against the next page,
+    -- which then broke early (issue #199).
+    ctx.accumulated_width_sp = 0
     -- Reset band to 0 on explicit page break
     if ctx.n_bands > 1 then
         ctx.cur_band = 0
@@ -2471,6 +2476,11 @@ local function flush_buffer(col_buffer, ctx, grid_height, distribute, layout_map
         local lm_id = D.get_attribute(entry.node, constants.ATTR_LINE_MARK_ID)
         if lm_id and lm_id > 0 then
             map_entry.line_mark_id = lm_id
+        end
+        -- Inline 反白 (issue #201): background drawn per segment at render
+        local inv_id = h.get_invert_id(entry.node)
+        if inv_id then
+            map_entry.invert_id = inv_id
         end
 
         layout_map[entry.node] = map_entry

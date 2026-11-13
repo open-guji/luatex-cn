@@ -168,8 +168,11 @@
 
 % Command to set main font with a fallback chain in one step
 % Usage: \SetMainFontChain{Font1, Font2, Font3}
-% 字体族：首字体为主字体，其余各项注册为 luaotfload fallback 链，
+% 字体族：首字体为主字体，其余各项注册为回退链，
 % 首字体缺字时按顺序回退（如 {FandolSong, TW-Kai, TW-Kai-Ext-B}）。
+% 回退链按需加载（fonts/luatex-cn-font-fallback.lua）：某支回退字体只在某字号下
+% 真出现要它补的字时才按该字号载入，不像 luaotfload fallback 那样每个字号都
+% 把整条链载一遍（issue #197）。
 %
 % 三种规格均可混用，字体无需安装进系统：
 %   \设置字体族{Jigmo}                    -- 注册表别名，自动展开为 Jigmo+Jigmo2，
@@ -182,6 +185,7 @@
 \tl_new:N \l__luatexcn_family_main_tl
 \tl_new:N \l__luatexcn_family_dir_tl
 \tl_new:N \l__luatexcn_family_fallback_tl
+\tl_new:N \l__luatexcn_family_fallback_key_tl
 \DeclareDocumentCommand{\setfontfamily}{m}
   {
     \int_gincr:N \g__luatexcn_fontfamily_int
@@ -190,6 +194,7 @@
     \tl_clear:N \l__luatexcn_family_main_tl
     \tl_clear:N \l__luatexcn_family_dir_tl
     \tl_clear:N \l__luatexcn_family_fallback_tl
+    \tl_clear:N \l__luatexcn_family_fallback_key_tl
     % prepare_family 解析别名/名字/文件，注册回退链，
     % 并经 token.set_macro 回填 main/dir/fallback 三个 tl
     \lua_now:e
@@ -206,7 +211,13 @@
                 \tl_if_empty:NF \l__luatexcn_family_dir_tl
                   { Path = \l__luatexcn_family_dir_tl , }
                 \tl_if_empty:NF \l__luatexcn_family_fallback_tl
-                  { RawFeature = { fallback = \l__luatexcn_family_fallback_tl } }
+                  {
+                    RawFeature =
+                      {
+                        \l__luatexcn_family_fallback_key_tl
+                        = \l__luatexcn_family_fallback_tl
+                      }
+                  }
               ]
           }
       }

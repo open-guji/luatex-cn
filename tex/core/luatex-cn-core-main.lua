@@ -680,6 +680,20 @@ local function generate_physical_pages(list, params, engine_ctx, plugin_contexts
             local outer_gh = (_G.textbox and _G.textbox.outer_grid_height) or engine_ctx.g_height
             local tb_rows = math.max(1, math.floor(page_info.height_sp / engine_ctx.g_height + 0.5))
             new_box.depth = tb_rows * outer_gh
+            -- #196: a textbox whose inner row pitch was scaled down to a
+            -- smaller font (e.g. \circled / \bordered inside 夹注) is
+            -- shorter than the outer rows it occupies. Centre it vertically
+            -- in that slot so the shape lines up with neighbouring glyphs
+            -- (which are centred in their rows) instead of hugging the top.
+            local slack = tb_rows * (outer_gh - engine_ctx.g_height)
+            if slack > 0 then
+                local inner = node.new("hlist")
+                inner.dir = "TLT"
+                inner.list = new_box.list
+                inner.width = new_box.width
+                inner.shift = math.floor(slack / 2)
+                new_box.list = inner
+            end
         else
             new_box.depth = total_v_depth
         end

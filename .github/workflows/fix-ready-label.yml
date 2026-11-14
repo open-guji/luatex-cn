@@ -1,42 +1,163 @@
+# PR 合并后不关闭 issue，而是给它加 fix-ready 标签；
+# 发新版时在发布说明里写 "fix #xx"，再由发布关闭 issue。
+#
+# 触发方式：
+#   1. PR 合并（主路径）：从 PR 标题、描述、提交信息里找 "Refs/Fixes/Closes/Resolves #N"
+#      以及 GitHub 侧栏关联的 issue，统一加 fix-ready。
+#      如果 GitHub 因关闭关键词把 issue 自动关了，这里会重新打开它。
+#   2. 直接 push 到 main/dev（不经 PR 的提交）：只加标签，不改 issue 状态。
+#   3. 发布 Release（草稿被手动 publish 时）：发布说明里 "fix #N / fixes / closes / resolves #N"
+#      引用的 issue 被关闭，并去掉 fix-ready、留言说明在哪个版本发布。
+#      （GitHub 本身不会因发布说明里的关键词关闭 issue，所以由这里来做。）
+#
+# 用 pull_request_target 而非 pull_request：fork 来的 PR 也能拿到写 issue 的权限。
+# 本 workflow 不 checkout、不执行 PR 里的任何代码，只读 PR 元数据，因此是安全的。
 name: Add fix-ready label
 
 on:
+  pull_request_target:
+    types: [closed]
   push:
     branches: [main, dev]
+  release:
+    types: [published]
+
+permissions:
+  issues: write
+  pull-requests: read
 
 jobs:
   label-fixed-issues:
+    if: github.event_name == 'push' || (github.event_name == 'pull_request_target' && github.event.pull_request.merged == true)
     runs-on: ubuntu-latest
-    permissions:
-      issues: write
     steps:
-      - name: Add fix-ready label to referenced issues
+      - name: Label referenced issues as fix-ready
         uses: actions/github-script@v9
         with:
           script: |
-            const commits = context.payload.commits || [];
-            const issueNumbers = new Set();
+            const LABEL = 'fix-ready';
+            const { owner, repo } = context.repo;
+            // Refs #1 / Ref: #1 / Fixes #1 / closed #1 / resolves #1 / see #1，可写成 "Refs #1, #2"
+            const KEYWORD = /\b(?:refs?|references|see|fix(?:e[sd])?|close[sd]?|resolve[sd]?)\b:?\s+((?:#\d+(?:\s*(?:,|and|&)\s*)?)+)/gi;
 
-            const pattern = /(?:fix|fixes|fixed|close|closes|closed)\s+#(\d+)/gi;
-
-            for (const commit of commits) {
-              const message = commit.message;
-              let match;
-              while ((match = pattern.exec(message)) !== null) {
-                issueNumbers.add(parseInt(match[1], 10));
+            function collect(text, into) {
+              if (!text) return;
+              for (const m of text.matchAll(KEYWORD)) {
+                for (const n of m[1].matchAll(/#(\d+)/g)) into.add(Number(n[1]));
               }
             }
 
-            for (const issueNumber of issueNumbers) {
+            const issues = new Set();
+            let pr = null;
+
+            if (context.eventName === 'pull_request_target') {
+              pr = context.payload.pull_request;
+              collect(pr.title, issues);
+              collect(pr.body, issues);
+              // 标题末尾的 "(#123)" 也算（本仓库惯例：fix(xxx): 描述 (#197)）
+              for (const m of (pr.title || '').matchAll(/\(#(\d+)\)/g)) issues.add(Number(m[1]));
+
+              const commits = await github.paginate(github.rest.pulls.listCommits, {
+                owner, repo, pull_number: pr.number, per_page: 100,
+              });
+              for (const c of commits) collect(c.commit.message, issues);
+
+              // 侧栏 "Development" 里手动关联的 issue
               try {
-                await github.rest.issues.addLabels({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  issue_number: issueNumber,
-                  labels: ['fix-ready']
+                const q = await github.graphql(
+                  `query($owner:String!,$repo:String!,$n:Int!){
+                     repository(owner:$owner,name:$repo){
+                       pullRequest(number:$n){ closingIssuesReferences(first:50){ nodes{ number } } }
+                     }
+                   }`, { owner, repo, n: pr.number });
+                for (const node of q.repository.pullRequest.closingIssuesReferences.nodes) issues.add(node.number);
+              } catch (e) {
+                core.warning(`closingIssuesReferences 查询失败：${e.message}`);
+              }
+            } else {
+              for (const c of context.payload.commits || []) {
+                // 来自已合并 PR 的提交由 PR 事件处理，这里跳过以免重复
+                const { data: prs } = await github.rest.repos.listPullRequestsAssociatedWithCommit({ owner, repo, commit_sha: c.id });
+                if (prs.some(p => p.merged_at)) continue;
+                collect(c.message, issues);
+              }
+            }
+
+            issues.delete(pr?.number);
+            if (issues.size === 0) {
+              core.info('没有找到引用的 issue');
+              return;
+            }
+
+            // 等一下，让 GitHub 先完成关闭关键词触发的自动关闭，再判断是否要重新打开
+            if (pr) await new Promise(r => setTimeout(r, 15000));
+
+            for (const number of issues) {
+              let issue;
+              try {
+                ({ data: issue } = await github.rest.issues.get({ owner, repo, issue_number: number }));
+              } catch (e) {
+                core.warning(`#${number} 读取失败：${e.message}`);
+                continue;
+              }
+              if (issue.pull_request) continue; // 引用的是 PR，不是 issue
+
+              await github.rest.issues.addLabels({ owner, repo, issue_number: number, labels: [LABEL] });
+              core.info(`#${number} 已加 ${LABEL}`);
+
+              // 只重新打开"被本次合并自动关掉"的 issue：关闭时间在合并时间前后 2 分钟内
+              if (pr && issue.state === 'closed' && issue.state_reason === 'completed') {
+                const delta = Math.abs(new Date(issue.closed_at) - new Date(pr.merged_at));
+                if (delta < 120000) {
+                  await github.rest.issues.update({ owner, repo, issue_number: number, state: 'open' });
+                  core.info(`#${number} 被合并自动关闭，已重新打开（等发版时再关闭）`);
+                }
+              }
+            }
+
+  close-released-issues:
+    if: github.event_name == 'release'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Close issues fixed in this release
+        uses: actions/github-script@v9
+        with:
+          script: |
+            const LABEL = 'fix-ready';
+            const { owner, repo } = context.repo;
+            const release = context.payload.release;
+            const KEYWORD = /\b(?:fix(?:e[sd])?|close[sd]?|resolve[sd]?)\b:?\s+((?:#\d+(?:\s*(?:,|and|&)\s*)?)+)/gi;
+
+            const issues = new Set();
+            for (const m of (release.body || '').matchAll(KEYWORD)) {
+              for (const n of m[1].matchAll(/#(\d+)/g)) issues.add(Number(n[1]));
+            }
+            if (issues.size === 0) {
+              core.info('发布说明里没有 fix #N');
+              return;
+            }
+
+            for (const number of issues) {
+              let issue;
+              try {
+                ({ data: issue } = await github.rest.issues.get({ owner, repo, issue_number: number }));
+              } catch (e) {
+                core.warning(`#${number} 读取失败：${e.message}`);
+                continue;
+              }
+              if (issue.pull_request) continue;
+
+              if (issue.state === 'open') {
+                await github.rest.issues.createComment({
+                  owner, repo, issue_number: number,
+                  body: `已在 [${release.name || release.tag_name}](${release.html_url}) 中发布。`,
                 });
-                console.log(`Added fix-ready label to issue #${issueNumber}`);
-              } catch (error) {
-                console.log(`Failed to add label to issue #${issueNumber}: ${error.message}`);
+                await github.rest.issues.update({
+                  owner, repo, issue_number: number, state: 'closed', state_reason: 'completed',
+                });
+                core.info(`#${number} 已关闭`);
+              }
+              if (issue.labels.some(l => (l.name || l) === LABEL)) {
+                await github.rest.issues.removeLabel({ owner, repo, issue_number: number, name: LABEL });
               }
             }

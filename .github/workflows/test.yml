@@ -67,10 +67,39 @@ jobs:
       # CTAN 镜像抽风时 tlmgr install 会整批下载失败，而 setup-texlive-action 仍把
       # 这份装了一半的 TeX Live 按主键存进 Actions cache；之后每次运行命中主键就跳过
       # 安装步骤，缺的宏包再也补不上，表现为几十个用例齐刷刷「Compilation failed」。
-      # 这里立即验伤，把「环境缺包」和「渲染结果变了」区分开；一旦命中，
-      # 需手工删掉坏缓存（gh cache list / gh cache delete <id>）再重跑。
-      - name: Verify TeX Live packages
-        run: kpsewhich xcolor.sty fontspec.sty pgf.sty luatexbase.sty > /dev/null
+      # 缓存按分支隔离，坏缓存往往只落在某个 PR 名下（如 #203），main 不受影响。
+      # 这里先验伤；缺包就换用 mirror.ctan.org 自动补装（重试 3 次），
+      # 不再需要手工删缓存。补装后再验一次，仍缺包才判失败。
+      - name: Verify / repair TeX Live packages
+        env:
+          REQUIRED_STY: xcolor.sty fontspec.sty pgf.sty luatexbase.sty ctablestack.sty enumitem.sty environ.sty trimspaces.sty eso-pic.sty xkeyval.sty etoolbox.sty geometry.sty iftex.sty graphicx.sty
+          REPAIR_PKGS: latex-bin luatex luaotfload luatexbase ctablestack fontspec iftex geometry graphics enumitem environ trimspaces eso-pic xkeyval etoolbox l3kernel l3packages pgf xcolor
+        run: |
+          missing() {
+            for f in $REQUIRED_STY; do
+              kpsewhich "$f" > /dev/null || echo "$f"
+            done
+          }
+          m=$(missing)
+          if [ -z "$m" ]; then
+            echo "TeX Live packages OK"
+            exit 0
+          fi
+          echo "::warning::TeX Live 缓存缺包（$(echo $m)），自动补装"
+          for i in 1 2 3; do
+            if tlmgr --repository https://mirror.ctan.org/systems/texlive/tlnet \
+                 install --reinstall $REPAIR_PKGS; then
+              break
+            fi
+            echo "tlmgr 第 $i 次失败，30 秒后重试"
+            sleep 30
+          done
+          m=$(missing)
+          if [ -n "$m" ]; then
+            echo "::error::补装后仍缺：$(echo $m)"
+            exit 1
+          fi
+          echo "补装完成"
 
       - name: Install system dependencies
         run: |

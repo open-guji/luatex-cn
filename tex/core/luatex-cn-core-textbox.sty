@@ -333,8 +333,38 @@
 % ============================================================
 % Cell size resolution helpers (for border-shape commands)
 % Priority: content cell-width/cell-height param > font size (1em)
+%
+% #196: body-level sizes (content grid-height, cell-width, cell-height)
+% describe a body-size glyph. When the shape command is used in a different
+% font size (夹注, \fontsize{...}\selectfont), such absolute sizes are scaled
+% by (current 1em / body font-size), so the shape shrinks or grows in BOTH
+% directions. Previously only the width followed 1em while the height stayed
+% at the body row pitch: \circled became a body-size circle (radius uses
+% max(w, h)) and \bordered became a tall narrow box. em-relative values
+% already follow the current font and are left as-is. The core layout
+% centres a shorter textbox vertically inside the outer row(s) it occupies.
 % ============================================================
-\cs_new:Nn \__luatexcn_textbox_resolve_cell_gw:N
+% Set #1 to the body-level dimension stored in tl #2, scaled to the
+% current font size (see above).
+\bool_new:N \l__luatexcn_textbox_scale_bool
+\cs_new_protected:Nn \__luatexcn_textbox_set_body_dim:NN
+  {
+    \dim_set:Nn #1 { #2 }
+    \bool_set_true:N \l__luatexcn_textbox_scale_bool
+    \tl_if_empty:NT \l__luatexcn_content_font_size_tl
+      { \bool_set_false:N \l__luatexcn_textbox_scale_bool }
+    \tl_if_in:NnT #2 { em } { \bool_set_false:N \l__luatexcn_textbox_scale_bool }
+    \tl_if_in:NnT #2 { ex } { \bool_set_false:N \l__luatexcn_textbox_scale_bool }
+    \bool_if:NT \l__luatexcn_textbox_scale_bool
+      {
+        \dim_compare:nNnF { \l__luatexcn_content_font_size_tl } = { 1em }
+          {
+            \dim_set:Nn #1
+              { \fp_to_dim:n { #1 * ( 1em ) / ( \l__luatexcn_content_font_size_tl ) } }
+          }
+      }
+  }
+\cs_new_protected:Nn \__luatexcn_textbox_resolve_cell_gw:N
   {
     % Inside textflow (jiazhu), use current font's 1em (small size)
     % instead of content cell_width (body text size)
@@ -343,7 +373,7 @@
       {
         \tl_if_empty:NTF \l__luatexcn_content_cell_width_tl
           { \dim_set:Nn #1 { 1em } }
-          { \dim_set:Nn #1 { \l__luatexcn_content_cell_width_tl } }
+          { \__luatexcn_textbox_set_body_dim:NN #1 \l__luatexcn_content_cell_width_tl }
       }
   }
 % Resolve inner grid-height for border-shape textbox commands.
@@ -351,23 +381,23 @@
 % surrounding text — this prevents content overflow into the next row
 % (#96 follow-up: body \octagon{真珠} previously overlapped the next
 % glyph because gh = gw * 1.2 = 33.6pt > outer 28.5pt). Falls back to
-% 1.2em when no outer grid is set.
-\cs_new:Nn \__luatexcn_textbox_resolve_cell_gh:N
+% 1.2em when no outer grid is set. Scaled to the current font (#196).
+\cs_new_protected:Nn \__luatexcn_textbox_resolve_cell_gh:N
   {
     \int_compare:nNnTF { \the\cnverticaljiazhu } > { 0 }
       {
         \tl_if_empty:NTF \l__luatexcn_content_grid_height_tl
           { \dim_set:Nn #1 { 1.2em } }
-          { \dim_set:Nn #1 { \l__luatexcn_content_grid_height_tl } }
+          { \__luatexcn_textbox_set_body_dim:NN #1 \l__luatexcn_content_grid_height_tl }
       }
       {
         \tl_if_empty:NTF \l__luatexcn_content_cell_height_tl
           {
             \tl_if_empty:NTF \l__luatexcn_content_grid_height_tl
               { \dim_set:Nn #1 { 1.2em } }
-              { \dim_set:Nn #1 { \l__luatexcn_content_grid_height_tl } }
+              { \__luatexcn_textbox_set_body_dim:NN #1 \l__luatexcn_content_grid_height_tl }
           }
-          { \dim_set:Nn #1 { \l__luatexcn_content_cell_height_tl } }
+          { \__luatexcn_textbox_set_body_dim:NN #1 \l__luatexcn_content_cell_height_tl }
       }
   }
 

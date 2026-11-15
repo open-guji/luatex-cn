@@ -49,8 +49,12 @@
 | page-split-enabled | 开启分页 | 開啟分頁 | 是/否 | true | 是否启用筒子页裁剪 |
 | page-split-right-first | 右页优先 | 右頁優先 | 是/否 | true | 筒子页先印右页 |
 | twoside | 启用两面 | 啟用兩面 | 是/否 | false | 双面模式：为 true 时只读 `margin-inner`／`margin-outer`（奇偶页镜像），为 false 时只读 `margin-left`／`margin-right`；被忽略的一组若被设置会发出警告（v0.4.3+） |
-| margin-inner | 内边距 | 內邊距 | 度量 | _(空)_ | 装订侧边距（仅 `twoside=true` 时生效） |
-| margin-outer | 外边距 | 外邊距 | 度量 | _(空)_ | 外侧边距（仅 `twoside=true` 时生效） |
+| margin-inner | 内边距 | 內邊距 | 度量 | _(空)_ | 书脊侧边距（仅 `twoside=true` 且 `mirror-margins=true` 时生效）。竖排书奇数页是左页，书脊在右（v0.4.4 起按书脊算） |
+| margin-outer | 外边距 | 外邊距 | 度量 | _(空)_ | 翻口侧边距（仅 `twoside=true` 且 `mirror-margins=true` 时生效） |
+| mirror-margins | 镜像边距 | 鏡像邊距 | 是/否 | true | 为 false 时 `twoside=true` 也读 `margin-left`／`margin-right`，内容区在奇偶页同一位置，书眉页码仍奇偶交替（v0.4.4+） |
+| binding-offset | 装订边距 | 裝訂邊距 | 度量 | 0pt | 加在书脊一侧的装订边距：奇数页右、偶数页左；`twoside=false` 时加在右侧（v0.4.4+） |
+| facing-pages | 对页补页 | 對頁補頁 | 是/否 | false | 章（`\chapter`）落在偶数页顶端时，在它前面自动补一页，使每章从奇数页起；只认 `正文` 块内的 `\chapter`，筒子页模式下不自动补（v0.4.4+） |
+| blank-page-style | 补页样式 | 補頁樣式 | 字符串 | header | 补出来的页的样式：`header`（默认）带版框、版心／页眉页码；`blank`／`空白` 整页完全空白（v0.4.4+） |
 | header-enabled | 启用页眉 | 啟用頁眉 | 是/否 | false | 启用运行页眉 |
 | header-font-size | 页眉字号 | 頁眉字號 | 字号 | 9pt | 页眉字号 |
 | page-number-style | 页码样式 | 頁碼樣式 | 字符串 | 空（未设置） | 页码显示风格：`digits`（逐位中文）／`chinese`（位值中文）／`arabic`／`none`。未设置时竖排页码不输出，版心页码沿用位值中文数字 |
@@ -71,6 +75,10 @@
 ### `\ResetPageNumber`  `\重置页码`  `\重置頁碼`
 
 将页码重置为 1。
+
+### `\InsertBlankPage`  `\补空白页`  `\補空白頁`
+
+在此处强制补一页（v0.4.4+）。`正文` 块内、块间都可以写，连写两次补两页，紧跟在 `\换页` 之后不会多补。可选参数 `补页样式`（`blank-page-style`）只对这一页生效：`\补空白页[补页样式=空白]`。
 
 ### 环境 `Page`  `页`
 

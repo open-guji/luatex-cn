@@ -4,6 +4,23 @@ English | [中文版](Changelog)
 
 All notable changes to this project will be documented here.
 
+## [0.4.4] - 2026-11-16
+
+- ✨ **Jiazhu characters per column**: `\夹注[n-char-per-col=20]` — a jiazhu sub-column can hold a different number of characters from the main text; cell height = body column height ÷ N; `\夹注设置{n-char-per-col=20}` sets the book-wide default (fix #82)
+- ✨ **Facing-page padding**: `\pageSetup{facing-pages=true}` (`对页补页`) — when a chapter starts at the top of an even page, a blank page is inserted so every chapter starts on an odd page; `\InsertBlankPage` (`\补空白页`) forces one anywhere; `blank-page-style=blank` makes the added pages completely blank. Off by default (fix #176)
+- ✨ **Fixed content area on facing pages**: `mirror-margins = false` keeps `margin-left/right` on every page under `twoside = true`; `binding-offset` adds a gutter on the spine side; vbook classes add `header-anchor = content`, `header-sep` and `header-position` so the running header and page number follow the content area (fix #198)
+- ✨ **vbook page-number position**: `page-number-position = outer | inner | center`, default outer (fix #193)
+- ♻️ **Inner/outer follow the spine in vertical books**: vertical books bind on the right, so an odd page is the left page. `margin-inner` and `page-number-position=inner` used to land on the fore-edge; they now follow the spine, and the vbook defaults were swapped to inner 24mm / outer 16mm so the default layout is unchanged. Documents that set `margin-inner ≠ margin-outer` or `page-number-position` flip left/right — swap the two values (fix #198)
+- 🐛 **Inverted text across columns**: `\反白` / `\墨围反白` / `\八角墨围反白` now break character by character across columns instead of jumping as a block; new `break=square|octagon` (fix #201)
+- 🐛 **Premature page break in vbook**: after `\include` of several files, or `\clearpage` / `\换页`, the next page no longer breaks after only a few columns (fix #199)
+- 🐛 **Decorations scale with font size**: circles and frames of `\带圈`, `\墨围`, `\八角墨围`, `\反白` scale with the current font size inside jiazhu or small text (fix #196)
+- 🐛 **Fallback fonts loaded on demand**: the `\设置字体族` fallback chain is loaded per size only when actually needed, so long books with many sizes no longer run out of memory; output unchanged (fix #197)
+- 🐛 **Facing-page margins**: a `正文` block starting on an even page no longer uses the wrong side's margins for the whole block; the last column in free column-width mode no longer overruns the left margin (fix #198)
+- 🐛 **vbook header/page-number keys**: `page-number-x`, `page-number-y`, `header-y` now take effect through `\pageSetup`, with Chinese keys `页码横移` / `页码纵移` / `页眉纵移`
+- 🐛 **guji templates with twoside**: guji templates now set `margin-inner` / `margin-outer` defaults, so `twoside = true` no longer gives zero margins
+- ✅ **Tests**: end-to-end unit tests for pagination of float-only pages (fix #98); new `test/margin_test.py` margin measurement assertions
+- 📖 **Docs**: `\填充文本框` flat-character usage and example (fix #79)
+
 ## [0.4.3] - 2026-10-28
 
 - ✨ **Thread-bound book cover**: `\线装书封面[keys]{title}` (`\ThreadBoundCover` / `\線裝書封面`) — the modern blue thread-bound cover used by Zhonghua Book Company, Guangling Press and other facsimile publishers (after CY/T 247—2021 fig. 1–2): navy cover with a cream title label at the top left, double rules (thick outer, thin inner) inside the label; the label has a minimum height and grows with a long title, shrinking the type when it would overflow the page; `册次` (volume) and `卷次` (juan) run in small type at the bottom of the label or right after the title with `小字位置=随后`; `订线` draws the binding thread for preview. Example in `示例/线装书封面/` (#170)

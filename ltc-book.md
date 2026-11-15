@@ -95,20 +95,49 @@ luatex-cn 提供两个面向现代竖排中文书籍的文档类，与 `ltc-guji
 
 ## 双面镜像页边距 (v0.3.2+)
 
-vbook 默认启用双面模式（`twoside=true`），奇偶页自动镜像内外边距：
+竖排书在右侧装订：**奇数页是对开的左页**，书脊在它右边；偶数页是右页，书脊在它左边。vbook 默认启用双面模式（`twoside=true`），奇偶页自动镜像内外边距：
 
-- **内边距** (`margin-inner`)：装订侧边距（奇数页=右边距，偶数页=左边距）
-- **外边距** (`margin-outer`)：翻阅侧边距
+- **内边距** (`margin-inner`)：书脊侧边距（奇数页=右边距，偶数页=左边距），默认 `24mm`
+- **外边距** (`margin-outer`)：翻口侧边距（奇数页=左边距，偶数页=右边距），默认 `16mm`
 
 ```latex
 \pageSetup{
     twoside = true,
-    margin-inner = 16mm,   % 装订侧
-    margin-outer = 24mm,   % 外侧
+    margin-inner = 24mm,   % 书脊侧
+    margin-outer = 16mm,   % 翻口侧
 }
 ```
 
 > 读哪一组边距由 `twoside` 决定（v0.4.3+）：`twoside=true` 只读 `margin-inner` / `margin-outer`，`twoside=false` 只读 `margin-left` / `margin-right`；设置了被忽略的一组会收到警告。`twoside=false` 时页眉页码固定在左侧，不随奇偶页交替。
+
+> **v0.4.4 方向修正**：此前 `margin-inner` 按横排习惯放在奇数页左侧，实际落在翻口一侧。现在按书脊算，vbook 默认值同时互换为 inner 24mm／outer 16mm，默认版面不变。自己写了 `margin-inner ≠ margin-outer` 的文档左右会对调，把两个值互换即可。古籍模板的 inner／outer 相等，不受影响。
+
+### 对页固定内容区 (v0.4.4+)
+
+想让奇偶页的正文落在同一位置（类似 InDesign／Word 按上下左右边距固定内容区），用 `mirror-margins = false`：
+
+```latex
+\pageSetup{
+    twoside = true,
+    mirror-margins = false,     % 镜像边距 = false
+    margin-left = 22mm, margin-right = 22mm,
+    binding-offset = 8mm,       % 装订边距（要装订时加）
+    header-anchor = content,    % 页眉锚点 = 内容区
+}
+```
+
+| 参数 | 中文键 | 默认值 | 说明 |
+|------|--------|--------|------|
+| `mirror-margins` | `镜像边距`／`鏡像邊距` | `true` | 设为 `false` 时，`twoside = true` 也读 `margin-left`／`margin-right`，内容区在奇偶页同一位置；书眉、页码仍奇偶交替 |
+| `binding-offset` | `装订边距`／`裝訂邊距` | `0pt` | 加在书脊一侧：奇数页加在右边，偶数页加在左边；`twoside = false` 时加在右边。三种边距模式都生效 |
+
+三种边距模式：
+
+| `twoside` | `mirror-margins` | 读取的边距 | 适用 |
+|-----------|------------------|-----------|------|
+| `true` | `true`（默认） | `margin-inner`／`margin-outer`，奇偶镜像 | 装订成书的对开版式 |
+| `true` | `false` | `margin-left`／`margin-right`，每页相同 | 内容区固定、书眉页码仍交替 |
+| `false` | — | `margin-left`／`margin-right`，每页相同 | 不装订打印、屏幕阅读 |
 
 ## 运行页眉 (v0.3.2+)
 
@@ -128,10 +157,16 @@ vbook 支持运行页眉，自动在奇偶页交替显示章节名和书名。
 
 | 页面 | 页眉内容 | 位置 |
 |------|---------|------|
-| 奇数页（右页） | 章节名 (`\chapter{...}`) | 左侧（装订边） |
-| 偶数页（左页） | 书名 (`\title{...}`) | 右侧（装订边） |
+| 奇数页（左页） | 章节名 (`\chapter{...}`) | 左侧（翻口侧） |
+| 偶数页（右页） | 书名 (`\title{...}`) | 右侧（翻口侧） |
 
-页码与页眉显示在同一侧（装订边内侧）。
+页眉默认在外侧（翻口侧）上角，页码在外侧下角。`header-position = inner`（`页眉位置 = 内侧`）可把页眉移到书脊侧（v0.4.4+）。
+
+### 页眉锚点 (v0.4.4+)
+
+默认 `header-anchor = paper`（`页眉锚点 = 纸边`）：页眉、页码按 `header-y`／`page-number-x`／`page-number-y` 从纸边量。改了边距后要手动调这几个值。
+
+`header-anchor = content`（`页眉锚点 = 内容区`）让页眉、页码跟着内容区走：放在内容区外侧 `header-sep`（`页眉间距`，默认 `6mm`）处，页眉顶端对齐内容区上边，页码底端对齐内容区下边。此时 `header-y`／`page-number-y` 若写了，就作为相对这两条边的偏移。
 
 ### 跳过页眉
 
@@ -216,7 +251,7 @@ vbook 提供专用的标题命令：
 
 ## 页码
 
-现代竖排文档类自动显示竖排页码。启用 `twoside` 时，页码在装订侧（内侧）显示。
+现代竖排文档类自动显示竖排页码。启用 `twoside` 时，页码默认在外侧（翻口侧）下角，奇偶页交替。
 
 ### 页码配置
 
@@ -226,12 +261,17 @@ vbook 提供专用的标题命令：
 |------|------|--------|
 | `page-number-style` | 页码样式 | `digits` |
 | `page-number-font-size` | 页码字号 | `9pt` |
-| `page-number-position` | 页码位置：`inner` 装订侧、`outer` 翻口侧、`center` 页脚横向居中（中文键 `页码位置 = 内侧 / 外侧 / 居中`，v0.4.4+） | `inner` |
+| `page-number-position` | 页码位置：`outer` 翻口侧、`inner` 书脊侧、`center` 页脚横向居中（中文键 `页码位置 = 外侧 / 内侧 / 居中`，v0.4.4+） | `outer` |
+| `header-position` | 页眉位置：`outer` 翻口侧、`inner` 书脊侧（`页眉位置 = 外侧 / 内侧`，v0.4.4+） | `outer` |
+| `header-anchor` | 页眉页码的定位基准：`paper` 纸边、`content` 内容区（`页眉锚点 = 纸边 / 内容区`，v0.4.4+） | `paper` |
+| `header-sep` | `header-anchor = content` 时，页眉页码距内容区外边的距离（`页眉间距`，v0.4.4+） | `6mm` |
 | `page-number-x` | 页码距页边的水平距离（`页码横移`） | `3mm` |
-| `page-number-y` | 页码距页底的垂直距离（`页码纵移`） | `52mm` |
-| `header-y` | 页眉距页顶的垂直距离（`页眉纵移`） | `52mm` |
+| `page-number-y` | 页码距页底的垂直距离（`页码纵移`）；`header-anchor = content` 时为相对内容区下边的偏移 | `52mm` |
+| `header-y` | 页眉距页顶的垂直距离（`页眉纵移`）；`header-anchor = content` 时为相对内容区上边的偏移 | `52mm` |
 
-页眉始终在装订侧，`page-number-position` 只移动页码。
+`page-number-position` 只移动页码，`header-position` 只移动页眉。
+
+> v0.4.4 起「内侧／外侧」按真正的装订方向（书脊）算，默认改为 `outer`，默认版面与之前相同。之前写了 `页码位置 = 内侧` 的文档，现在要写 `外侧` 才是原来的位置。
 
 页码样式：
 - `digits`：逐位中文数字（如 一二三）

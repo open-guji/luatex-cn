@@ -54,6 +54,21 @@ Quick commands for adding borders and/or inverted (white-on-black) effects to in
 \带圈{一}
 ```
 
+### Inverted text across columns (v0.4.4+)
+
+`\反白` / `\墨围反白` / `\八角墨围反白` are now laid out inline: when a column runs out of cells the text continues character by character in the next column (or the next sub-column inside a jiazhu), instead of the whole block jumping to the next column and leaving a gap. The background and border are drawn per contiguous run in each column.
+
+| Key | Chinese key | Description |
+|-----|-------------|-------------|
+| `break` | `断口` / `斷口` | Corner shape where a run is cut by a column break: `square` (default; only the ends of the whole run are octagonal) or `octagon` (every run is a full octagon) |
+| `inline` | `可断行` / `可斷行` | `false` falls back to the old single-textbox implementation |
+
+Passing textbox-only keys (`高度`, `填充`, `padding-top`, …) also falls back to the single textbox, e.g. `\八角墨围反白[高度=3, 填充]{...}`.
+
+### Scaling with the font size (v0.4.4+)
+
+Inside a jiazhu or at a temporarily smaller size, the circle of `\带圈` and the frames of `\墨围` / `\八角墨围` / `\反白` scale with the current font size and are centred vertically in their row, instead of being drawn at body-text height and running into neighbouring characters.
+
 ### Border Padding Control
 
 Use `border-margin-x` / `border-margin-y` for separate horizontal and vertical padding:

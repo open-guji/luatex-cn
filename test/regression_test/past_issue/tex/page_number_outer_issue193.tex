@@ -2,13 +2,17 @@
 % https://github.com/open-guji/luatex-cn/issues/193
 %
 % 修复前: 頁碼位置 / 頁碼縱移 均不存在或被 \pageSetup 吞掉
-% 修复后: 奇数页页码在右下、偶数页在左下，页眉仍在内侧；纵向位置 20mm
+% 修复后: 頁碼位置 / 頁碼縱移 经 \pageSetup 生效；纵向位置 20mm
+%
+% #198 起内外侧按竖排书真实装订方向算（右侧装订：奇数页是左页、书脊在右），
+% 外側成了默认值，本文件改测非默认的內側：奇数页页码在右下、偶数页在左下
+% （书脊侧），书眉仍在外侧
 \documentclass{ltc-tw-vbook}
 \setmainfont{TW-Kai}
 \pageSetup{
     twoside = true,
     頁碼樣式 = digits,
-    頁碼位置 = 外側,
+    頁碼位置 = 內側,
     頁碼縱移 = 20mm,
 }
 \title{千字文}

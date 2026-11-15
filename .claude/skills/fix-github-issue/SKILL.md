@@ -369,9 +369,11 @@ git add test/regression_test/past_issue/tex/<new-test>.tex  # 如果创建了新
 
 ### 9.3 编写提交信息
 
-使用规范的提交信息格式。**标题必须包含 `fix #<number>`**（不是 `(#number)`），这样 GitHub Actions 才能自动关联 issue：
+使用规范的提交信息格式。标题写 `fix(<模块>): <简短标题> (#<number>)`，正文写 `Refs #<number>`。
+
+**不要在提交信息和 PR 描述里写 `Fixes / Closes / Resolves #N`（也不要写 `fix #N`）**：合并进 main 时 GitHub 会按这些关键词直接关闭 issue。本项目的约定是合并后 issue 保持打开、由 `.github/workflows/fix-ready-label.yml` 加 `fix-ready` 标签，等发版时发布说明里写 `fix #N` 再由同一 workflow 关闭。
 ```bash
-git commit -m "fix #<issue-number>: <简短标题>
+git commit -m "fix(<模块>): <简短标题> (#<issue-number>)
 
 <详细描述原问题是什么，为什么会出现>
 
@@ -381,12 +383,14 @@ Changes:
 
 <如有必要，说明技术实现细节>
 
+Refs #<issue-number>
+
 Co-Authored-By: Claude <model> <noreply@anthropic.com>
 "
 ```
 
 **提交信息要素**：
-1. **标题**：以 `fix #<number>:` 开头（**不要** 用 `(#number)` — GitHub 不会识别）
+1. **标题**：`fix(<模块>): ... (#<number>)`；正文用 `Refs #<number>` 关联 issue（**不要**用 Fixes/Closes/fix #N，会在合并时关闭 issue）
 2. **问题描述**：说明原来的问题及其原因
 3. **Changes**：列出具体的代码改动
 4. **技术细节**：如有必要，解释实现方案和考虑因素

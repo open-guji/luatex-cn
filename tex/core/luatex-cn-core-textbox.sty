@@ -441,6 +441,22 @@
 \tl_new:N \l__luatexcn_inverted_border_rgb_tl
 \bool_new:N \l__luatexcn_inverted_inline_bool
 \bool_new:N \l__luatexcn_inverted_fallback_bool
+\seq_new:N \l__luatexcn_inverted_fallback_keys_seq
+
+% 回退整块文本框时提醒（issue #210 复盘）：#206 之后 \反白 遇到不认识的 key
+% 会悄悄退回旧实现，用户和我们都看不出新代码根本没跑。回退本身保留（族谱
+% \八角墨围反白[高度=3, 填充] 依赖它），但要说出是哪个 key 触发的。
+% 显式写 inline=false / 可断行=false 是有意选旧实现，不提醒。
+\msg_new:nnnn { luatex-cn } { inverted-fallback }
+  { 反白：选项~'#1'~不是行内反白的选项，已改用整块文本框（不能跨列断开）。 }
+  {
+    反白、墨围反白、八角墨围反白~的行内实现只认颜色、边框色/宽、断口、
+    border-shape(none/rect/octagon)~等选项；其余选项属于文本框，
+    于是整段装进一个文本框排，列尾放不下时整块推到下一列。\\
+    若想要行内排版，请去掉这些选项；若确实要整块，写~inline=false~可消除此提醒。\\
+    Inverted~text:~option(s)~'#1'~are~textbox-only,~so~the~whole~text~is~set~
+    as~one~unbreakable~box.
+  }
 
 \keys_define:nn { luatexcn / inverted }
   {
@@ -462,7 +478,10 @@
             { rect } { \tl_set:Nn \l__luatexcn_inverted_shape_tl { rect } }
             { octagon } { \tl_set:Nn \l__luatexcn_inverted_shape_tl { octagon } }
           }
-          { \bool_set_true:N \l__luatexcn_inverted_fallback_bool }
+          {
+            \bool_set_true:N \l__luatexcn_inverted_fallback_bool
+            \seq_put_right:Nn \l__luatexcn_inverted_fallback_keys_seq { border-shape=#1 }
+          }
       },
     % 中文别名
     字体颜色 .tl_set:N = \l__luatexcn_inverted_font_color_tl,
@@ -485,7 +504,11 @@
     可断行 .bool_set:N = \l__luatexcn_inverted_inline_bool,
     可斷行 .bool_set:N = \l__luatexcn_inverted_inline_bool,
     % 其余 key 属于文本框（高度、填充、padding……）：回退整块实现
-    unknown .code:n = { \bool_set_true:N \l__luatexcn_inverted_fallback_bool },
+    unknown .code:n =
+      {
+        \bool_set_true:N \l__luatexcn_inverted_fallback_bool
+        \seq_put_right:NV \l__luatexcn_inverted_fallback_keys_seq \l_keys_key_str
+      },
   }
 
 % Color name / spec -> "r g b" (same conversion as \TextBox)
@@ -516,12 +539,20 @@
     \tl_set:Nn \l__luatexcn_inverted_break_tl { square }
     \bool_set_true:N \l__luatexcn_inverted_inline_bool
     \bool_set_false:N \l__luatexcn_inverted_fallback_bool
+    \seq_clear:N \l__luatexcn_inverted_fallback_keys_seq
     \tl_set:Nn \l__luatexcn_inverted_shape_tl { #1 }
     \keys_set:nn { luatexcn / inverted } { #3 }
     \bool_lazy_or:nnTF
       { \l__luatexcn_inverted_fallback_bool }
       { ! \l__luatexcn_inverted_inline_bool }
       {
+        \bool_lazy_and:nnT
+          { \l__luatexcn_inverted_fallback_bool }
+          { \l__luatexcn_inverted_inline_bool }
+          {
+            \msg_warning:nnx { luatex-cn } { inverted-fallback }
+              { \seq_use:Nn \l__luatexcn_inverted_fallback_keys_seq { ,~ } }
+          }
         \group_end:
         \__luatexcn_textbox_resolve_cell_gw:N \l_tmpa_dim
         \__luatexcn_textbox_resolve_cell_gh:N \l_tmpb_dim

@@ -16,7 +16,9 @@
 2. 颜色值的两种写法都生效——颜色名（red）与 RGB 三元组（{255, 128, 0}，
    模板里用的就是 0-255 形式）。
 
-另外断言未知 key 会发出警告而不是被静默丢弃（这正是 #163 难以被发现的原因）。
+另外断言未知 key 会发出警告而不是被静默丢弃（这正是 #163 难以被发现的原因）；
+同理，\反白 因文本框专有 key 退回整块文本框时也必须提醒（#210：用户写了
+border-shape，新的行内实现一行没跑，谁也看不出来）。
 
 用法：
     python3 test/color_test.py
@@ -227,6 +229,46 @@ def check_unknown_key_warns(workdir):
     return 0
 
 
+INVERTED_FALLBACK_TEX = r"""\documentclass{ltc-guji}
+\setmainfont{TW-Kai}
+\关闭分页
+\begin{document}
+\begin{正文}
+%s
+\end{正文}
+\end{document}
+"""
+
+
+def check_inverted_fallback_warns(workdir):
+    """\反白 退回整块文本框时要说出是哪个 key；行内能处理的写法不许误报（#210）。"""
+    cases = [
+        # (正文, 是否应提醒, 说明)
+        (r"一\反白[高度=3, 填充]{反白}二", True, "文本框专有 key"),
+        (r"一\反白[border-shape=circle]{反白}二", True, "行内画不了的形状"),
+        (r"一\反白[border-shape=none, background-color=black, 可斷行=true]{反白}二",
+         False, "#210 用户原写法"),
+        (r"一\八角墨围反白[断口=八角, 底色=red]{反白}二", False, "行内 key"),
+        (r"一\反白[inline=false, 高度=3]{反白}二", False, "显式 inline=false"),
+    ]
+    rc = 0
+    for i, (body, should_warn, desc) in enumerate(cases):
+        tex = os.path.join(workdir, "inverted%d.tex" % i)
+        with open(tex, "w", encoding="utf-8") as f:
+            f.write(INVERTED_FALLBACK_TEX % body)
+        _, log = compile_tex(tex, workdir)
+        # 日志按 79 列折行，中文提示可能被拆开
+        flat = re.sub(r"\n(?:\(luatex-cn\)\s*)?", "", log)
+        warned = "已改用整块文本框" in flat
+        if warned != should_warn:
+            print("FAIL: \\反白 回退提醒（%s）：应%s提醒，实际%s"
+                  % (desc, "" if should_warn else "不", "提醒了" if warned else "没提醒"))
+            rc = 1
+    if not rc:
+        print("PASS: \\反白 退回整块文本框时会提醒，行内写法不误报")
+    return rc
+
+
 def main():
     rc = 0
     with tempfile.TemporaryDirectory() as workdir:
@@ -234,6 +276,7 @@ def main():
         rc |= check_jiazhu_english_color(workdir)
         rc |= check_color_formats(workdir)
         rc |= check_unknown_key_warns(workdir)
+        rc |= check_inverted_fallback_warns(workdir)
     return rc
 
 

@@ -282,4 +282,57 @@ test_utils.run_test("get_scaled_font: 原字体拿不到时不 define、不缓�
     end)
 end)
 
+-- ============================================================================
+-- Book ear geometry (书耳, issue #87)
+-- ============================================================================
+
+local banxin_layout = require('banxin.luatex-cn-banxin-layout')
+local PT = 65536
+
+test_utils.run_test("book ear: no text -> no box", function()
+    local boxes = banxin_layout.calculate_book_ear_boxes({
+        frame_width = 400 * PT, frame_line = 2 * PT, grid_width = 20 * PT, text = "" })
+    test_utils.assert_eq(#boxes, 0)
+end)
+
+test_utils.run_test("book ear: default left box sits outside the frame's top-left", function()
+    local boxes = banxin_layout.calculate_book_ear_boxes({
+        frame_width = 400 * PT, frame_line = 2 * PT, grid_width = 20 * PT,
+        position = "left", text = "五帝本紀" })
+    test_utils.assert_eq(#boxes, 1)
+    local b = boxes[1]
+    test_utils.assert_eq(b.side, "left")
+    test_utils.assert_eq(b.width, 16 * PT)             -- 0.8 * grid_width
+    test_utils.assert_eq(b.x + b.width, 1 * PT)         -- right edge on frame line centre
+    test_utils.assert_eq(b.y_top, -1 * PT)              -- top flush with frame line centre
+    test_utils.assert_eq(b.num_cells, 4)
+    -- default height fits 4 chars plus padding
+    test_utils.assert_true(b.text_height >= 4 * b.font_size - 1, "text area holds all chars")
+    test_utils.assert_eq(b.height, b.text_height + 2 * (b.y_top - b.text_y_top))
+end)
+
+test_utils.run_test("book ear: right box starts at the frame's right edge", function()
+    local boxes = banxin_layout.calculate_book_ear_boxes({
+        frame_width = 400 * PT, frame_line = 2 * PT, grid_width = 20 * PT,
+        position = "right", text = "卷一" })
+    test_utils.assert_eq(#boxes, 1)
+    test_utils.assert_eq(boxes[1].side, "right")
+    test_utils.assert_eq(boxes[1].x, 399 * PT)
+end)
+
+test_utils.run_test("book ear: both -> two boxes; explicit size wins", function()
+    local boxes = banxin_layout.calculate_book_ear_boxes({
+        frame_width = 400 * PT, frame_line = 0, grid_width = 20 * PT,
+        position = "both", text = "卷一",
+        width = 12 * PT, height = 50 * PT, font_size = 8 * PT })
+    test_utils.assert_eq(#boxes, 2)
+    test_utils.assert_eq(boxes[1].side, "left")
+    test_utils.assert_eq(boxes[2].side, "right")
+    test_utils.assert_eq(boxes[1].width, 12 * PT)
+    test_utils.assert_eq(boxes[1].height, 50 * PT)
+    test_utils.assert_eq(boxes[1].font_size, 8 * PT)
+    test_utils.assert_eq(boxes[1].x, -12 * PT)
+    test_utils.assert_eq(boxes[2].x, 400 * PT)
+end)
+
 print("\nAll render-banxin tests passed!")

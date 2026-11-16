@@ -157,6 +157,14 @@ local function read_banxin_params()
         lower_section_bg_color = get_tl("l__luatexcn_banxin_lower_section_bg_color_tl") or "",
         lower_section_font_color = get_tl("l__luatexcn_banxin_lower_section_font_color_tl") or "",
 
+        -- Book ear (书耳, issue #87)
+        book_ear_show = get_bool("l__luatexcn_banxin_book_ear_show_bool"),
+        book_ear_text = get_tl("l__luatexcn_banxin_book_ear_text_tl") or "",
+        book_ear_position = get_tl("l__luatexcn_banxin_book_ear_position_tl") or "left",
+        book_ear_width = parse_dim(get_tl("l__luatexcn_banxin_book_ear_width_tl")),
+        book_ear_height = parse_dim(get_tl("l__luatexcn_banxin_book_ear_height_tl")),
+        book_ear_font_size = parse_dim(get_tl("l__luatexcn_banxin_book_ear_font_size_tl")),
+
         -- Banxin-level style overrides
         style_font_size = get_tl("l__luatexcn_banxin_style_font_size_tl") or "",
         style_font_color = get_tl("l__luatexcn_banxin_style_font_color_tl") or "",
@@ -325,7 +333,7 @@ end
 -- @param context (table) Plugin context (contains layout_cache)
 -- @param page_idx (number) Current page index (0-based)
 -- @param p_total_cols (number) Total columns on this page
-function banxin_main.render(head, layout_map, params, context, engine_ctx, page_idx, _)
+function banxin_main.render(head, layout_map, params, context, engine_ctx, page_idx, p_total_cols)
     if not (context and context.active) then return head end
     if engine_ctx.n_column <= 0 then return head end
     -- Plain-style blank page (补页样式=空白, issue #176): no banxin at all.
@@ -389,12 +397,63 @@ function banxin_main.render(head, layout_map, params, context, engine_ctx, page_
         })
     end
 
+    -- Book ear (书耳, issue #87): small box outside the frame's top corner
+    if bp.book_ear_show then
+        p_head = banxin_main.render_book_ear(p_head, bp, params, engine_ctx,
+            p_total_cols, middle_section_text)
+    end
+
     -- Pop banxin style layer
     if context.banxin_style then
         style_registry.pop()
     end
 
     return D.tonode(p_head)
+end
+
+--- 画本页的书耳（issue #87）
+-- 文字：book-ear 给了 text 就用它，否则用本页篇名（\chapter / 版心中部第一段）。
+-- 位置：整个版框（含外框）的左/右上角外侧。筒子页拆分时左右两半各成一页，
+-- 默认 left 只落在左半叶那一页上。
+function banxin_main.render_book_ear(p_head, bp, params, engine_ctx, p_total_cols, middle_section_text)
+    local text = bp.book_ear_text
+    if not text or text == "" then
+        local parts = banxin_layout.parse_section_text(middle_section_text or "")
+        text = parts[1] or ""
+    end
+    if text == "" then return p_head end
+
+    local page = params and params.page or {}
+    local gw = engine_ctx.g_width or 0
+    local bw = engine_ctx.banxin_width or 0
+    local iv = engine_ctx.n_column or 0
+    local cols = p_total_cols or 0
+    local content_w
+    if iv > 0 and bw > 0 and bw ~= gw then
+        local n_banxin = math.floor(cols / (iv + 1))
+        content_w = (cols - n_banxin) * gw + n_banxin * bw
+    else
+        content_w = cols * gw
+    end
+    local b_thick = engine_ctx.border_thickness or 0
+    local outer_shift = engine_ctx.outer_shift or 0
+    local frame_width = content_w + b_thick + 2 * outer_shift
+    local frame_line = page.is_outer_border and (page.ob_thickness or b_thick) or b_thick
+
+    local boxes = banxin_layout.calculate_book_ear_boxes({
+        frame_width = frame_width,
+        frame_line = frame_line,
+        grid_width = gw,
+        position = bp.book_ear_position,
+        text = text,
+        width = bp.book_ear_width,
+        height = bp.book_ear_height,
+        font_size = bp.book_ear_font_size,
+    })
+    return render_banxin.draw_book_ears(p_head, boxes, text, {
+        thickness = b_thick > 0 and b_thick or 26214,
+        color_str = engine_ctx.border_rgb_str,
+    })
 end
 
 local banxin_plugin = {

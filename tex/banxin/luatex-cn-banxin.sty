@@ -85,6 +85,14 @@
 \tl_new:N \l__luatexcn_banxin_lower_section_bg_color_tl
 \tl_new:N \l__luatexcn_banxin_lower_section_font_color_tl
 
+% Book ear variables (书耳, issue #87)
+\bool_new:N \l__luatexcn_banxin_book_ear_show_bool
+\tl_new:N \l__luatexcn_banxin_book_ear_text_tl
+\tl_new:N \l__luatexcn_banxin_book_ear_position_tl
+\tl_new:N \l__luatexcn_banxin_book_ear_width_tl
+\tl_new:N \l__luatexcn_banxin_book_ear_height_tl
+\tl_new:N \l__luatexcn_banxin_book_ear_font_size_tl
+
 % Banxin-level style overrides (forwarded from unknown handler)
 \tl_new:N \l__luatexcn_banxin_style_font_size_tl
 \tl_new:N \l__luatexcn_banxin_style_font_color_tl
@@ -170,6 +178,43 @@
     font-color .initial:n = {},
   }
 
+% book-ear sub-namespace (书耳, issue #87)
+% 书耳：刻在边栏外上角的小框，记篇名。默认文字取当前 \chapter 的篇名，
+% 画在左侧（筒子页拆分后落在左半叶那一页，奇偶页自然区分）。
+\keys_define:nn { luatexcn / banxin / book-ear }
+  {
+    show .bool_set:N = \l__luatexcn_banxin_book_ear_show_bool,
+    show .initial:n = false,
+    show .default:n = true,
+    text .tl_set:N = \l__luatexcn_banxin_book_ear_text_tl,
+    text .initial:n = {},
+    position .choice:,
+    position / left .code:n = { \tl_set:Nn \l__luatexcn_banxin_book_ear_position_tl { left } },
+    position / right .code:n = { \tl_set:Nn \l__luatexcn_banxin_book_ear_position_tl { right } },
+    position / both .code:n = { \tl_set:Nn \l__luatexcn_banxin_book_ear_position_tl { both } },
+    position / 左 .code:n = { \tl_set:Nn \l__luatexcn_banxin_book_ear_position_tl { left } },
+    position / 右 .code:n = { \tl_set:Nn \l__luatexcn_banxin_book_ear_position_tl { right } },
+    position / 两侧 .code:n = { \tl_set:Nn \l__luatexcn_banxin_book_ear_position_tl { both } },
+    position / 兩側 .code:n = { \tl_set:Nn \l__luatexcn_banxin_book_ear_position_tl { both } },
+    position .initial:n = left,
+    width .tl_set:N = \l__luatexcn_banxin_book_ear_width_tl,
+    width .initial:n = {},
+    height .tl_set:N = \l__luatexcn_banxin_book_ear_height_tl,
+    height .initial:n = {},
+    font-size .tl_set:N = \l__luatexcn_banxin_book_ear_font_size_tl,
+    font-size .initial:n = {},
+    % 中文键
+    显示 .meta:n = { show = {#1} },
+    顯示 .meta:n = { show = {#1} },
+    文字 .meta:n = { text = {#1} },
+    位置 .meta:n = { position = {#1} },
+    宽度 .meta:n = { width = {#1} },
+    寬度 .meta:n = { width = {#1} },
+    高度 .meta:n = { height = {#1} },
+    字号 .meta:n = { font-size = {#1} },
+    字號 .meta:n = { font-size = {#1} },
+  }
+
 % =============================================================================
 % Main Banxin Key Definitions
 % =============================================================================
@@ -221,6 +266,27 @@
         { \keys_set:nn { luatexcn / banxin / lower-section } { #1 } }
         { \tl_set:Nn \l__luatexcn_banxin_lower_section_text_tl { #1 } }
     },
+    % 书耳: book-ear = true | false | <文字> | { show=…, text=…, position=… }
+    book-ear .code:n = {
+      \tl_if_in:nnTF { #1 } { = }
+        {
+          \bool_set_true:N \l__luatexcn_banxin_book_ear_show_bool
+          \keys_set:nn { luatexcn / banxin / book-ear } { #1 }
+        }
+        {
+          \str_case:nnF { #1 }
+            {
+              { true } { \bool_set_true:N \l__luatexcn_banxin_book_ear_show_bool }
+              { false } { \bool_set_false:N \l__luatexcn_banxin_book_ear_show_bool }
+            }
+            {
+              \bool_set_true:N \l__luatexcn_banxin_book_ear_show_bool
+              \tl_set:Nn \l__luatexcn_banxin_book_ear_text_tl { #1 }
+            }
+        }
+    },
+    书耳 .meta:n = { book-ear = {#1} },
+    書耳 .meta:n = { book-ear = {#1} },
     % Forward unknown keys: try settings first, then style
     unknown .code:n = { \__luatexcn_keys_forward_unknown:n {#1} },
   }

@@ -640,6 +640,54 @@ local function render_middle_section_from_layout(p_head, element, middle_section
     return p_head
 end
 
+--- 取版心文字用的字体：banxin 样式指定了字体名就用它，否则用当前字体
+-- @return (number) font id
+local function resolve_base_font_id()
+    local current_style_id = style_registry.current_id()
+    local style_font_name = style_registry.get_font(current_style_id)
+    local base_font_id = font.current()
+    if style_font_name and style_font_name ~= "" then
+        -- font.fonts name field starts with the font name followed by ":mode=..." etc.
+        local prefix = style_font_name .. ":"
+        for fid, fdata in ipairs(font.fonts) do
+            if type(fdata) == "table" and fdata.name and fdata.name:sub(1, #prefix) == prefix then
+                base_font_id = fid
+                break
+            end
+        end
+    end
+    return base_font_id
+end
+
+--- 画书耳（issue #87）：边框 + 竖排文字
+-- @param p_head (node) 当前链表头 (direct)
+-- @param boxes (table) banxin_layout.calculate_book_ear_boxes 的结果
+-- @param text (string) 书耳文字
+-- @param line (table) { thickness = sp, color_str = "r g b" }
+-- @return (node) 新的链表头
+local function draw_book_ears(p_head, boxes, text, line)
+    if not boxes or #boxes == 0 then return p_head end
+    local font_id = resolve_base_font_id()
+    for _, b in ipairs(boxes) do
+        p_head = render_text_section(p_head, {
+            text = text,
+            x = b.x,
+            y_top = b.text_y_top,
+            width = b.width,
+            height = b.text_height,
+            num_cells = b.num_cells,
+            v_align = "center",
+            h_align = "center",
+            font_size = b.font_size,
+            font_id = font_id,
+        })
+        local lit = create_border_literal(b.x, b.y_top, b.width, b.height,
+            line.thickness or 0, line.color_str or "0 0 0")
+        p_head = D.insert_before(p_head, p_head, create_literal_node(lit))
+    end
+    return p_head
+end
+
 --- 解析版心页码应显示的字符串
 -- 数字化模式给出的显式页码优先；否则按 \pageSetup{页码样式=...} 格式化。
 -- 未设置样式时沿用版心的历史默认：位值中文数字（144 → 一百四十四）。
@@ -704,20 +752,7 @@ local function draw_from_layout(p_head, layout, runtime)
     local decorations = layout.decorations
     local regions = layout.regions
 
-    -- Resolve font_id from style_registry (banxin_style may specify a font name)
-    local current_style_id = style_registry.current_id()
-    local style_font_name = style_registry.get_font(current_style_id)
-    local base_font_id = font.current()
-    if style_font_name and style_font_name ~= "" then
-        -- font.fonts name field starts with the font name followed by ":mode=..." etc.
-        local prefix = style_font_name .. ":"
-        for fid, fdata in ipairs(font.fonts) do
-            if type(fdata) == "table" and fdata.name and fdata.name:sub(1, #prefix) == prefix then
-                base_font_id = fid
-                break
-            end
-        end
-    end
+    local base_font_id = resolve_base_font_id()
 
     -- 1. Draw border
     if col.draw_border then
@@ -812,6 +847,7 @@ end
 local banxin = {
     draw_banxin = draw_banxin,
     draw_from_layout = draw_from_layout,
+    draw_book_ears = draw_book_ears,
     -- Internal functions exported for testing
     _internal = {
         count_utf8_chars = count_utf8_chars,

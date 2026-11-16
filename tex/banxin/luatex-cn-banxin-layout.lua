@@ -438,6 +438,66 @@ function banxin_layout.calc_middle_available_height(params)
     return math.floor(h + 0.5)
 end
 
+--- 计算书耳（issue #87）的框位置
+-- 书耳是刻在边栏外上角的小框，紧贴版框外侧、与版框上沿齐平。坐标系与边框
+-- 绘制相同：原点为整个版框（含外框）的左上角，x 向右、y 向下为负。
+-- 框线与版框外沿那条线重合（框的贴边一侧画在版框线的中心上）。
+-- @param params (table)
+--   frame_width (sp) 整个版框宽度（含外框）
+--   frame_line (sp) 版框最外那条线的线宽
+--   grid_width (sp) 正文列宽，用来推默认尺寸（宽 = 0.8 列宽，字号 = 0.6 框宽）
+--   position "left" | "right" | "both"
+--   text (string) 书耳文字
+--   width / height / font_size (sp) 用户指定值，0 或 nil 用默认
+-- @return (table) 框列表，每项 { side, x, y_top, width, height, font_size,
+--   text_y_top, text_height, num_cells }；没有文字时返回空表
+function banxin_layout.calculate_book_ear_boxes(params)
+    local text = params.text or ""
+    local n = count_utf8_chars(text)
+    if n == 0 then return {} end
+
+    local gw = params.grid_width or 0
+    local width = (params.width and params.width > 0) and params.width
+        or math.floor(gw * 0.8 + 0.5)
+    if width <= 0 then return {} end
+    local font_size = (params.font_size and params.font_size > 0) and params.font_size
+        or math.floor(width * 0.6 + 0.5)
+    local pad = math.floor(font_size * 0.3 + 0.5)
+    local height = (params.height and params.height > 0) and params.height
+        or (n * font_size + 2 * pad)
+    -- 用户给的高度太小时，文字区不能为负
+    if height <= 2 * pad then pad = 0 end
+
+    local half_line = (params.frame_line or 0) / 2
+    local y_top = -half_line
+    local sides = {}
+    local pos = params.position or "left"
+    if pos == "left" or pos == "both" then sides[#sides + 1] = "left" end
+    if pos == "right" or pos == "both" then sides[#sides + 1] = "right" end
+
+    local boxes = {}
+    for _, side in ipairs(sides) do
+        local x
+        if side == "left" then
+            x = half_line - width
+        else
+            x = (params.frame_width or 0) - half_line
+        end
+        boxes[#boxes + 1] = {
+            side = side,
+            x = x,
+            y_top = y_top,
+            width = width,
+            height = height,
+            font_size = font_size,
+            text_y_top = y_top - pad,
+            text_height = height - 2 * pad,
+            num_cells = n,
+        }
+    end
+    return boxes
+end
+
 banxin_layout.count_utf8_chars = count_utf8_chars
 banxin_layout.calculate_yuwei_dimensions = calculate_yuwei_dimensions
 banxin_layout.calculate_yuwei_total_height = calculate_yuwei_total_height

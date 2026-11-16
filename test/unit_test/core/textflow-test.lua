@@ -307,4 +307,33 @@ test_utils.run_test("place: n_char without column height warns and falls back", 
     test_utils.assert_eq(layout_map[g].cell_height, GH)
 end)
 
+test_utils.run_test("place: n_char note in an indented paragraph stays inside the column (issue #212)", function()
+    -- column = 20 body rows, paragraph indent = 5 rows; N = 10 => note row = 2 * GH.
+    -- Every column (first and wrapped) only has 15 body rows below the indent,
+    -- so no note glyph may extend past 20 * GH.
+    local ctx, params, callbacks = make_env({ cur_row = 5, cur_y_sp = 5 * GH })
+    params.base_indent = 5
+    callbacks.get_indent = function() return 5 end
+    local id = textflow.push_style(nil, "20pt", nil, nil, true, nil, nil, 10)
+    local nodes = {}
+    for i = 1, 40 do
+        nodes[i] = make_tf_glyph()
+        D.set_attribute(nodes[i], constants.ATTR_STYLE_REG_ID, id)
+    end
+    local layout_map = {}
+    textflow._internal.place_textflow_segment(ctx, nodes, layout_map, params, callbacks, nil)
+    textflow.pop_style()
+    local max_bottom, cols = 0, {}
+    for _, n in ipairs(nodes) do
+        local p = layout_map[n]
+        max_bottom = math.max(max_bottom, p.y_sp + p.cell_height)
+        test_utils.assert_true(p.y_sp >= 5 * GH, "note glyph above the indent")
+        cols[p.col] = true
+    end
+    test_utils.assert_true(max_bottom <= 20 * GH,
+        "note overflows column bottom: " .. max_bottom / GH .. " rows")
+    -- 7 note rows x 2 sub-columns per column => 40 nodes need 3 columns
+    test_utils.assert_true(cols[2] == true, "expected the note to wrap into a third column")
+end)
+
 print("\nAll textflow tests passed!")

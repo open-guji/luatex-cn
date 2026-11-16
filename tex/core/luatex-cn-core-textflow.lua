@@ -570,8 +570,13 @@ local function place_textflow_segment(ctx, nodes, layout_map, params, callbacks,
         -- For both first and subsequent columns, use ctx.col_height_sp (band height)
         -- as the constraint, not capacity_per_subsequent * gh which uses the global
         -- line_limit and may be far larger than the actual band height.
+        -- Subsequent columns start at the paragraph indent (see chunk placement
+        -- below: cur_row = indent) and stop above the right/bottom indent, so
+        -- deduct both, in body rows (issue #212: \段落[indent=5] + n-char-per-col
+        -- let the note's later columns overflow the bottom border).
         available_height_sp = ctx.col_height_sp - ctx.cur_y_sp
-        column_height_sp = ctx.col_height_sp
+        local indent_rows = (orig_base_indent or 0) + (params.r_indent or 0)
+        column_height_sp = math.max(ctx.col_height_sp - indent_rows * gh, gh)
     else
         available_height_sp = available_in_first * gh
         column_height_sp = capacity_per_subsequent * gh

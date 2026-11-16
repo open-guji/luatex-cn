@@ -126,6 +126,8 @@ python3 test/regression_test.py save test/regression_test/basic/tex/guji.tex
 # 不依赖基线图像的自校验：解析 PDF 内容流，断言每列字形基线等距。
 # 像素回归测试只能保证"和上次一样"——若 bug 已存在于基线中则无法发现；
 # 此测试能抓「一」「丶」等墨迹不跨基线的字被整字偏移的问题（LEARNING.md 3.6）
+# 另对 basic/jiazhu-combo.tex 断言：每个句读标记相对所附字的偏移（以字号计）
+# 全文一致，正文与各种格高的夹注都一样（issue #216）
 python3 test/geometry_test.py
 ```
 
@@ -134,7 +136,8 @@ python3 test/geometry_test.py
 # 不依赖基线图像的自校验：断言各模块「文字颜色」的两种拼法都真正落到 PDF 上——
 # core 层写 font-color / 字体颜色，批注/眉批/侧批/句读写 color / 颜色，两边互为别名；
 # 并断言颜色名、0-255 三元组、0-1 三元组三种写法等价，
-# 以及未知 key 会发警告而不是被静默丢弃（issue #163 拖延的根因）。
+# 以及未知 key 会发警告而不是被静默丢弃（issue #163 拖延的根因）；
+# \反白 因文本框专有 key 退回整块实现时也要提醒（issue #210）。
 python3 test/color_test.py
 ```
 

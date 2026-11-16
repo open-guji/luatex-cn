@@ -425,6 +425,8 @@
 %   square / 直角（默认）：只有整段的首尾画八角，断口处画直角
 %   octagon / 八角：每一段都画完整八角
 %
+% 形状 key：border-shape / 边框形状 = none / rect / octagon 行内实现照常处理
+%   （如 \反白[border-shape=none] 不会因此退回整块，issue #210）。
 % 兼容：传入文本框专有的 key（高度、填充、padding-top……）或 inline=false
 % 时，回退为旧的整块文本框实现（如族谱 \八角墨围反白[高度=3, 填充]）。
 % ============================================================
@@ -433,6 +435,7 @@
 \tl_new:N \l__luatexcn_inverted_border_color_tl
 \tl_new:N \l__luatexcn_inverted_border_width_tl
 \tl_new:N \l__luatexcn_inverted_break_tl
+\tl_new:N \l__luatexcn_inverted_shape_tl
 \tl_new:N \l__luatexcn_inverted_font_rgb_tl
 \tl_new:N \l__luatexcn_inverted_bg_rgb_tl
 \tl_new:N \l__luatexcn_inverted_border_rgb_tl
@@ -449,6 +452,18 @@
     break .choices:nn = { square, octagon }
       { \tl_set_eq:NN \l__luatexcn_inverted_break_tl \l_keys_choice_tl },
     inline .bool_set:N = \l__luatexcn_inverted_inline_bool,
+    % border-shape 也是文本框的 key，但 none / rect / octagon 三种形状
+    % 行内实现都能画，不必回退整块文本框（issue #210）；其他形状（circle）才回退
+    border-shape .code:n =
+      {
+        \str_case:nnF {#1}
+          {
+            { none } { \tl_set:Nn \l__luatexcn_inverted_shape_tl { none } }
+            { rect } { \tl_set:Nn \l__luatexcn_inverted_shape_tl { rect } }
+            { octagon } { \tl_set:Nn \l__luatexcn_inverted_shape_tl { octagon } }
+          }
+          { \bool_set_true:N \l__luatexcn_inverted_fallback_bool }
+      },
     % 中文别名
     字体颜色 .tl_set:N = \l__luatexcn_inverted_font_color_tl,
     字體顏色 .tl_set:N = \l__luatexcn_inverted_font_color_tl,
@@ -465,6 +480,8 @@
     断口 / square .code:n = { \tl_set:Nn \l__luatexcn_inverted_break_tl { square } },
     断口 / octagon .code:n = { \tl_set:Nn \l__luatexcn_inverted_break_tl { octagon } },
     斷口 .meta:n = { 断口 = {#1} },
+    边框形状 .meta:n = { border-shape = {#1} },
+    邊框形狀 .meta:n = { border-shape = {#1} },
     可断行 .bool_set:N = \l__luatexcn_inverted_inline_bool,
     可斷行 .bool_set:N = \l__luatexcn_inverted_inline_bool,
     % 其余 key 属于文本框（高度、填充、padding……）：回退整块实现
@@ -499,6 +516,7 @@
     \tl_set:Nn \l__luatexcn_inverted_break_tl { square }
     \bool_set_true:N \l__luatexcn_inverted_inline_bool
     \bool_set_false:N \l__luatexcn_inverted_fallback_bool
+    \tl_set:Nn \l__luatexcn_inverted_shape_tl { #1 }
     \keys_set:nn { luatexcn / inverted } { #3 }
     \bool_lazy_or:nnTF
       { \l__luatexcn_inverted_fallback_bool }
@@ -516,7 +534,7 @@
         \lua_now:e
           {
             require('core.luatex-cn-constants').register_inverted(
-              "#1",
+              "\l__luatexcn_inverted_shape_tl",
               [=[\l__luatexcn_inverted_bg_rgb_tl]=],
               [=[\l__luatexcn_inverted_border_rgb_tl]=],
               [=[\luaescapestring{\l__luatexcn_inverted_border_width_tl}]=],

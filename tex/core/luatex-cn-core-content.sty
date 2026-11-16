@@ -31,6 +31,7 @@
 \tl_new:N \l__luatexcn_content_grid_width_tl
 \tl_new:N \l__luatexcn_content_grid_height_tl
 \tl_new:N \l__luatexcn_content_valign_tl
+\tl_new:N \l__luatexcn_content_halign_tl
 \tl_new:N \l__luatexcn_content_font_size_tl
 \int_new:N \l__luatexcn_content_n_column_int
 \tl_new:N \l__luatexcn_content_page_columns_tl
@@ -128,6 +129,18 @@
 
     vertical-align .tl_set:N = \l__luatexcn_content_valign_tl,
     vertical-align .initial:n = {center},
+
+    % 行块在内容区内的水平位置（issue #175）：right（默认，从右起排）/ center / left
+    % 竖排页面列数不满时，center 让这几列整体居中（扉页、卷标题页）
+    horizontal-align .choice:,
+    horizontal-align / right .code:n = { \tl_set:Nn \l__luatexcn_content_halign_tl { right } },
+    horizontal-align / center .code:n = { \tl_set:Nn \l__luatexcn_content_halign_tl { center } },
+    horizontal-align / left .code:n = { \tl_set:Nn \l__luatexcn_content_halign_tl { left } },
+    horizontal-align / 居右 .code:n = { \tl_set:Nn \l__luatexcn_content_halign_tl { right } },
+    horizontal-align / 居中 .code:n = { \tl_set:Nn \l__luatexcn_content_halign_tl { center } },
+    horizontal-align / 居左 .code:n = { \tl_set:Nn \l__luatexcn_content_halign_tl { left } },
+    horizontal-align .initial:n = right,
+    h-align .meta:n = { horizontal-align = {#1} },
 
     font-size .tl_set:N = \l__luatexcn_content_font_size_tl,
     font-size .initial:n = {12pt},
@@ -256,6 +269,7 @@
         grid_height~=~[=[\luaescapestring{\l__luatexcn_content_grid_height_tl}]=],
         page_columns~=~[=[\luaescapestring{\l__luatexcn_content_page_columns_tl}]=],
         vertical_align~=~[=[\luaescapestring{\l__luatexcn_content_valign_tl}]=],
+        horizontal_align~=~[=[\luaescapestring{\l__luatexcn_content_halign_tl}]=],
         border_color~=~[=[\l__luatexcn_content_border_rgb_tl]=],
         background_color~=~[=[\l__luatexcn_content_background_rgb_tl]=],
         font_color~=~[=[\l__luatexcn_content_font_rgb_tl]=],
@@ -608,6 +622,29 @@
 \NewCommandCopy{\内容设置}{\contentSetup}
 \NewCommandCopy{\内容}{\Content}
 \NewEnvironmentCopy{正文}{BodyText}
+
+% ============================================================================
+% CenteredPage environment (居中页) — issue #175
+% 扉页、卷标题页等：在新页上排一段正文，行块在内容区内整体水平居中。
+% 各行的上下位置用 \行[align=center] 等控制。
+% Usage:
+%   \begin{居中页}
+%     \行[align=center]{王又朴集}
+%     \行[align=center]{上}
+%   \end{居中页}
+% 可选参数传给正文（如 [horizontal-align=left]）。不要嵌套在另一个正文里。
+% ============================================================================
+\NewDocumentEnvironment{CenteredPage}{ O{} }
+  {
+    \clearpage
+    \begin{BodyText}[horizontal-align = center, #1]
+  }
+  {
+    \end{BodyText}
+    \clearpage
+  }
+\NewEnvironmentCopy{居中页}{CenteredPage}
+\NewEnvironmentCopy{居中頁}{CenteredPage}
 % Traditional Chinese / 繁体
 \NewCommandCopy{\內容設置}{\contentSetup}
 \NewCommandCopy{\內容}{\Content}
@@ -636,6 +673,7 @@
     格宽 .tl_set:N = \l__luatexcn_content_grid_width_tl,
     格高 .tl_set:N = \l__luatexcn_content_grid_height_tl,
     纵对齐 .tl_set:N = \l__luatexcn_content_valign_tl,
+    横对齐 .meta:n = { horizontal-align = {#1} },
     字号 .tl_set:N = \l__luatexcn_content_font_size_tl,
     字体 .tl_set:N = \l__luatexcn_content_font_name_tl,
     字体特性 .tl_set:N = \l__luatexcn_content_font_features_tl,
@@ -677,6 +715,7 @@
     每行字數 .int_set:N = \l__luatexcn_content_n_char_per_col_int,
     格寬 .tl_set:N = \l__luatexcn_content_grid_width_tl,
     縱對齊 .tl_set:N = \l__luatexcn_content_valign_tl,
+    橫對齊 .meta:n = { horizontal-align = {#1} },
     字號 .tl_set:N = \l__luatexcn_content_font_size_tl,
     字體 .tl_set:N = \l__luatexcn_content_font_name_tl,
     字體特性 .tl_set:N = \l__luatexcn_content_font_features_tl,

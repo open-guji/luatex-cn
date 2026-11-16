@@ -157,6 +157,8 @@ _G.content.border_overhead_height = _G.content.border_overhead_height or 0
 
 -- ========== Visual Parameters ==========
 _G.content.vertical_align = _G.content.vertical_align or "center"
+-- 行块在内容区内的水平位置：right（默认）/ center / left（issue #175）
+_G.content.horizontal_align = _G.content.horizontal_align or "right"
 _G.content.background_color = _G.content.background_color or nil
 _G.content.font_color = _G.content.font_color or nil
 _G.content.font_size = _G.content.font_size or 0
@@ -195,6 +197,9 @@ end
 local function parse_visual_params(params)
     if params.vertical_align and params.vertical_align ~= "" then
         _G.content.vertical_align = params.vertical_align
+    end
+    if params.horizontal_align and params.horizontal_align ~= "" then
+        _G.content.horizontal_align = params.horizontal_align
     end
     if params.border_color and params.border_color ~= "" and params.border_color ~= "nil" then
         _G.content.border_color = params.border_color

@@ -303,6 +303,28 @@ _internal.position_floating_box = textbox_mod.render_floating_box
 -- Local reference to process_page_nodes from the process module
 local process_page_nodes = page_process.process_page_nodes
 
+local halign_warned = false
+
+--- 行块水平对齐偏移（issue #175）
+-- 竖排从右往左排，列数不满一页时行块默认贴右。horizontal-align=center/left
+-- 时把整块左移：center 移空隙的一半，left 移全部空隙。
+-- @param h_align (string|nil) "right"（默认）/ "center" / "left"
+-- @param content_width_sp (number) 内容区宽度 (sp)
+-- @param used_width_sp (number) 本页实际占用的行宽之和 (sp)
+-- @return (number) 向左平移量 (sp)，>= 0
+local function calc_halign_offset(h_align, content_width_sp, used_width_sp)
+    local gap = (content_width_sp or 0) - (used_width_sp or 0)
+    if gap <= 0 then return 0 end
+    if h_align == "center" then
+        return math.floor(gap / 2)
+    elseif h_align == "left" then
+        return gap
+    end
+    return 0
+end
+
+_internal.calc_halign_offset = calc_halign_offset
+
 -- 辅助函数：渲染单个页面
 local function render_single_page(p_head, p_max_col, p, layout_map, params, ctx, p_max_y_sp)
     if not p_head then return nil, 0 end
@@ -454,6 +476,7 @@ local function render_single_page(p_head, p_max_col, p, layout_map, params, ctx,
     end
 
     local shift_x = ctx.shift_x
+    local halign_offset = 0
     local outer_shift = ctx.outer_shift
     local b_rgb_str = ctx.b_rgb_str
 
@@ -499,6 +522,32 @@ local function render_single_page(p_head, p_max_col, p, layout_map, params, ctx,
         local content_width_sp = grid.content_width or 0
         if content_width_sp > total_cols_width_sp then
             shift_x = shift_x + (content_width_sp - total_cols_width_sp)
+        end
+
+        -- Horizontal alignment of the column block (issue #175)
+        -- 固定网格模式下 p_total_cols 被补满整页，实际占用按 actual_cols 计；
+        -- 自由模式下 page_col_widths_sp 本来就只含本页用到的列。
+        local h_align = _G.content and _G.content.horizontal_align or "right"
+        -- 有行线/边框或筒子页拆分时，列位置被网格和版心固定，挪动行块会和
+        -- 行线错位，这时不生效（古籍书名页请用 \书名页）。
+        local split_on = _G.page and _G.page.split and _G.page.split.enabled
+        if h_align ~= "right" and (split_on or draw_border or draw_column_border) then
+            if not halign_warned then
+                halign_warned = true
+                texio.write_nl("term and log",
+                    "[luatex-cn] horizontal-align=" .. h_align
+                    .. " is ignored on pages with borders or page split (issue #175)")
+            end
+            h_align = "right"
+        end
+        if h_align ~= "right" then
+            local used_width_sp = total_cols_width_sp
+            if not has_free_mode_widths then
+                local col_gwidth = ctx.col_geom and ctx.col_geom.grid_width or 0
+                used_width_sp = actual_cols * col_gwidth
+            end
+            halign_offset = calc_halign_offset(h_align, content_width_sp, used_width_sp)
+            shift_x = shift_x - halign_offset
         end
     end
 
@@ -590,7 +639,7 @@ local function render_single_page(p_head, p_max_col, p, layout_map, params, ctx,
     -- Apply the computed right-alignment shift_x (for legacy calc_grid_position)
     ctx_node.shift_x = shift_x
     -- Original shift_x (without right-align correction) for RTL pos.x conversion
-    ctx_node.shift_x_base = ctx.shift_x
+    ctx_node.shift_x_base = ctx.shift_x - halign_offset
     -- Per-page content_width for RTL→LTR coordinate conversion.
     -- TextBox: total_cols * grid_width
     -- Main content: grid.content_width from page geometry

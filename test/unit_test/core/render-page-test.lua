@@ -141,4 +141,32 @@ test_utils.run_test("group_nodes_by_page: single node on page 0", function()
     test_utils.assert_eq(result[0].max_col, 0)
 end)
 
+-- ============================================================================
+-- _internal.calc_halign_offset (issue #175)
+-- ============================================================================
+
+test_utils.run_test("calc_halign_offset: right (default) never shifts", function()
+    local f = render_page._internal.calc_halign_offset
+    test_utils.assert_eq(f("right", 1000, 400), 0)
+    test_utils.assert_eq(f(nil, 1000, 400), 0)
+end)
+
+test_utils.run_test("calc_halign_offset: center shifts by half the gap", function()
+    local f = render_page._internal.calc_halign_offset
+    test_utils.assert_eq(f("center", 1000, 400), 300)
+    test_utils.assert_eq(f("center", 1001, 400), 300)
+end)
+
+test_utils.run_test("calc_halign_offset: left shifts by the whole gap", function()
+    local f = render_page._internal.calc_halign_offset
+    test_utils.assert_eq(f("left", 1000, 400), 600)
+end)
+
+test_utils.run_test("calc_halign_offset: full or overfull page is not shifted", function()
+    local f = render_page._internal.calc_halign_offset
+    test_utils.assert_eq(f("center", 1000, 1000), 0)
+    test_utils.assert_eq(f("center", 1000, 1200), 0)
+    test_utils.assert_eq(f("left", 0, 0), 0)
+end)
+
 print("\nAll core/render-page-test tests passed!")

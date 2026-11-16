@@ -1,0 +1,32 @@
+% Issue #175: 部分直排页面（扉页、卷标题页）需要内容区整体居中
+% https://github.com/open-guji/luatex-cn/issues/175
+%
+% 之前: 竖排从右往左排，列数不满一页时行块总是贴着内容区右边
+% 现在: 正文新增 horizontal-align（横对齐）= right | center | left；
+%       \begin{居中页} … \end{居中页} 在新页上排一段行块整体居中的正文
+%
+% 本文件：第 1 页居中扉页；第 2 页普通正文（仍从右起排）；第 3 页卷标题居中（繁体键）；
+%         第 4 页 横对齐=居左
+\documentclass{ltc-cn-vbook}
+\setmainfont{TW-Kai}
+\title{王又朴集}
+
+\begin{document}
+\begin{居中页}
+\行[align=center, font-size=28pt]{王又朴集}
+\行[align=center, font-size=20pt]{上}
+\行[align=bottom]{社會科學文獻出版社}
+\end{居中页}
+
+\begin{正文}
+秦初并天下，令丞相、御史曰：「寡人以眇眇之身，興兵誅暴亂，賴宗廟之靈，六王咸伏其辜，天下大定。」
+\end{正文}
+
+\begin{居中頁}
+\行[align=center, font-size=20pt]{詩集卷第一}
+\end{居中頁}
+
+\begin{正文}[橫對齊=居左]
+\行[align=center]{附錄}
+\end{正文}
+\end{document}

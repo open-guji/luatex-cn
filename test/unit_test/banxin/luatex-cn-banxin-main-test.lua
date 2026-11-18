@@ -60,6 +60,24 @@ test_utils.run_test("banxin_main: initialize returns active context with n_colum
     test_utils.assert_eq(ctx.active, true)
 end)
 
+-- \版心设置{font-size=12pt} 之类的样式 key：以前 banxin-main 没 require constants，
+-- 直接 constants.to_dimen 就报「attempt to index a nil value (global 'constants')」。
+test_utils.run_test("banxin_main: initialize converts style font-size / grid-height", function()
+    local saved = token.get_macro
+    local tls = {
+        l__luatexcn_banxin_style_font_size_tl = "12pt",
+        l__luatexcn_banxin_style_grid_height_tl = "20pt",
+        l__luatexcn_banxin_style_font_color_tl = "red",
+    }
+    token.get_macro = function(name) return tls[name] end
+    local ok, ctx = pcall(banxin_main.initialize, { n_column = 10 }, {})
+    token.get_macro = saved
+    test_utils.assert_true(ok, "initialize must not error: " .. tostring(ctx))
+    test_utils.assert_eq(ctx.banxin_style.font_size, 12 * 65536)
+    test_utils.assert_eq(ctx.banxin_style.grid_height, 20 * 65536)
+    test_utils.assert_eq(ctx.banxin_style.font_color, "red")
+end)
+
 -- ============================================================================
 -- require idempotency
 -- ============================================================================

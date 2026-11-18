@@ -520,6 +520,7 @@ local function handle_debug_drawing(curr, p_head, pos, ctx)
             end
         else
             -- Legacy uniform-width columns
+            local _
             _, tx_sp = text_position.calculate_rtl_position(pos.col, ctx.p_total_cols, ctx.col_geom,
                 ctx.half_thickness, ctx.shift_x)
             tw_sp = text_position.get_column_width(pos.col, ctx.col_geom)

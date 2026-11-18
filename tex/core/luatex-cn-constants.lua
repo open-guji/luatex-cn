@@ -717,5 +717,17 @@ constants.color_map = {
     orange = "1 0.5 0",
 }
 
+--- 把用户写的颜色解析成 PDF 的 "r g b"（装饰件、线标等共用）。
+-- 先查 color_map，再交给 utils.normalize_rgb（认逗号/空格分隔，0-255 与 0-1 皆可）。
+-- 不能写成 color_map[c] or c：「255,128,0」「gray」之类会原样进 PDF literal，
+-- 那是非法语法，整条 literal 失效（issue #163 同族）。
+-- @param c (string|nil) 颜色名或三元组
+-- @return (string) "r g b"，无法解析时回落到黑色 "0 0 0"
+function constants.resolve_rgb(c)
+    if not c or c == "" then return "0 0 0" end
+    local utils = package.loaded['util.luatex-cn-utils'] or require('util.luatex-cn-utils')
+    return constants.color_map[c] or utils.normalize_rgb(c) or "0 0 0"
+end
+
 package.loaded['core.luatex-cn-constants'] = constants
 return constants

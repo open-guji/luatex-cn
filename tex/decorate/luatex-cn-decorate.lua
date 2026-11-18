@@ -88,16 +88,8 @@ end
 -- Rendering Functions (moved from render-page.lua)
 -- ============================================================================
 
-local color_map = constants.color_map
-
---- 把用户写的颜色解析成 PDF 的 "r g b"。
--- 先查颜色名表，再交给 normalize_rgb（它认逗号/空格分隔，且 0-255 与 0-1 皆可）。
--- 以前这里是 color_map[c] or c，于是 \句读设置{句读颜色={255,128,0}} 会把
--- "255,128,0" 原样写进 PDF literal —— 非法语法，整条 literal 失效，句读点直接没颜色。
-local function resolve_rgb(c)
-    if not c or c == "" then return "0 0 0" end
-    return color_map[c] or utils.normalize_rgb(c) or "0 0 0"
-end
+-- 用户写的颜色 → PDF "r g b"，见 constants.resolve_rgb
+local resolve_rgb = constants.resolve_rgb
 
 --- Resolve font size for decoration (uses PDF scaling, no new fonts)
 -- @param curr (node) Current node

@@ -38,7 +38,6 @@ local sp_to_bp = utils.sp_to_bp
 
 local linemark = {}
 
-local color_map = constants.color_map
 
 -- Wavy amplitude presets (as fraction of 1em), keyed by style
 local amplitude_presets = {
@@ -62,13 +61,9 @@ local periods_per_char = {
     cursive  = 1,
 }
 
---- Resolve color string to RGB triplet
--- @param color_str (string) Color name or "r g b" triplet
--- @return (string) "r g b" format
-local function resolve_color(color_str)
-    if not color_str or color_str == "" then return "0 0 0" end
-    return color_map[color_str] or color_str
-end
+-- 用户写的颜色 → PDF "r g b"。以前是 color_map[c] or c，
+-- \LineMark[color=gray] / [color={255,0,0}] 会把 "gray"、"255,0,0" 原样写进 PDF。
+local resolve_color = constants.resolve_rgb
 
 --- Build PDF command string for a straight line segment
 -- @param x_bp (number) X position in big points
@@ -280,6 +275,7 @@ end
 linemark._internal = linemark._internal or {}
 linemark._internal.octagon_path = octagon_path
 linemark._internal.build_inverted_segment = build_inverted_segment
+linemark._internal.resolve_color = resolve_color
 
 --- Render line marks for a single page
 -- Called after all glyph nodes on the page have been positioned.

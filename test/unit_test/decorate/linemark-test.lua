@@ -81,4 +81,16 @@ test_utils.run_test("render_line_marks: inverted run split at column break", fun
     test_utils.assert_eq(n, 3)
 end)
 
+-- 线标颜色以前是 color_map[c] or c：\LineMark[color=gray] / [color={255,0,0}]
+-- 把 "gray"、"255,0,0" 原样写进 PDF 的 "q ... RG"，整条 literal 失效。
+test_utils.run_test("resolve_color: 名称与三元组都归一成 PDF r g b", function()
+    local rc = linemark._internal.resolve_color
+    test_utils.assert_eq(rc("red"), "1 0 0")
+    test_utils.assert_eq(rc("gray"), "0.5000 0.5000 0.5000")
+    test_utils.assert_eq(rc("255,0,0"), "1.0000 0.0000 0.0000")
+    test_utils.assert_eq(rc("0.2 0.4 0.6"), "0.2000 0.4000 0.6000")
+    test_utils.assert_eq(rc(""), "0 0 0")
+    test_utils.assert_eq(rc("不是颜色"), "0 0 0")
+end)
+
 print("\nAll decorate/linemark-test tests passed!")

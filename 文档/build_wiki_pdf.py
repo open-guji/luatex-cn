@@ -232,6 +232,7 @@ ZH_CHAPTERS = [
     ("Home", "LuaTeX-CN Wiki"),
     ("Installation", "安装指南"),
     ("Quick-Start", "快速入门"),
+    ("Anatomy", "古籍版式要素"),
     ("Examples", "示例"),
     # -- 排版功能 --
     ("Templates", "模板使用与自定义"),
@@ -263,6 +264,7 @@ EN_CHAPTERS = [
     ("EN:Home", "LuaTeX-CN Wiki"),
     ("EN:Installation", "Installation Guide"),
     ("EN:Quick-Start", "Quick Start"),
+    ("EN:Anatomy", "Page Anatomy"),
     ("EN:Examples", "Examples"),
     # -- Typesetting --
     ("EN:Templates", "Templates and Customization"),

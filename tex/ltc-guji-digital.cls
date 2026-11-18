@@ -27,6 +27,7 @@
 % ============================================================================
 
 \tl_new:N \l_luatexcn_digital_initial_template_tl
+\tl_new:N \l__luatexcn_digital_template_name_tl
 \prop_new:N \g_luatexcn_digital_template_map_prop
 
 % Template name mappings (Chinese -> Internal) - same as guji.cls
@@ -93,10 +94,13 @@
 \keys_define:nn { luatexcn / digital }
   {
     template .code:n = {
-      \luatexcn_if_template_exist:nnTF { #1 } { luatex-cn-guji- }
-        { \luatexcn_load_template:nn { #1 } { luatex-cn-guji- } }
-        { \msg_warning:nnn { luatexcn } { template-not-found } { #1 } }
+      \luatexcn_template_map_name:NnN \g_luatexcn_digital_template_map_prop {#1}
+        \l__luatexcn_digital_template_name_tl
+      \luatexcn_if_template_exist:VnTF \l__luatexcn_digital_template_name_tl { luatex-cn-guji- }
+        { \luatexcn_load_template:Vn \l__luatexcn_digital_template_name_tl { luatex-cn-guji- } }
+        { \msg_warning:nnx { luatexcn } { template-not-found } { \l__luatexcn_digital_template_name_tl } }
     },
+    unknown .code:n = { \luatexcn_template_forward_key:n {#1} },
   }
 
 \NewDocumentCommand{\digitalSetup}{ +m }

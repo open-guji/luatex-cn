@@ -158,6 +158,14 @@ python3 test/font_fallback_test.py
 python3 test/margin_test.py
 ```
 
+### 模板设置测试（Template Setup Test）
+```bash
+# 不依赖基线图像的自校验：\gujiSetup 与 \defineGujiTemplate 中的布局 key
+# （n-column、字号、margin-top、border…）转发给 page/content/banxin；
+# template= 接受模板中文名（ltc-guji 与 ltc-guji-digital）；未知模板与未知 key 发警告。
+python3 test/template_setup_test.py
+```
+
 ### clreq 断言测试（横排规范符合性）
 ```bash
 # 解析横排 PDF 内容流（字形 x 坐标 + advance），对 clreq 条款做度量断言：

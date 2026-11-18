@@ -49,6 +49,45 @@
 \cs_generate_variant:Nn \luatexcn_if_template_exist:nnTF { Vn, nV, VV }
 \cs_generate_variant:Nn \luatexcn_load_template:nn { Vn, nV, VV }
 
+\msg_new:nnn { luatexcn } { template-not-found }
+  { 模板~'#1'~不存在，已忽略~(template~'#1'~not~found). }
+
+% Map a template name through a class's 中文名 -> internal name table
+% (the same table the class options use), so \gujiSetup{template=四库全书}
+% behaves like \documentclass[四库全书]{ltc-guji}.
+% #1 = name→internal prop, #2 = template name, #3 = tl receiving the result
+\cs_new_protected:Npn \luatexcn_template_map_name:NnN #1#2#3
+  {
+    \prop_get:NnNF #1 {#2} #3
+      { \tl_set:Nn #3 {#2} }
+  }
+
+% Forward a layout key that the class-level setup (\gujiSetup / \digitalSetup)
+% does not own to the setup command that does: page -> content -> banxin.
+% Lets \defineGujiTemplate{名}{n-column=8, font-size=24pt, ...} work like a .cfg.
+% #1 = value; key name from \l_keys_key_str. A bare key (no "=") stays bare,
+% so boolean keys keep their default.
+\cs_new_protected:Npn \__luatexcn_template_forward_to:Nn #1#2
+  {
+    \tl_if_blank:nTF {#2}
+      { \exp_args:Nx #1 { \l_keys_key_str } }
+      { \exp_args:Nx #1 { \l_keys_key_str = { \exp_not:n {#2} } } }
+  }
+\cs_new_protected:Npn \luatexcn_template_forward_key:n #1
+  {
+    \exp_args:Nnx \keys_if_exist:nnTF { luatexcn / page } { \l_keys_key_str }
+      { \__luatexcn_template_forward_to:Nn \pageSetup {#1} }
+      {
+        \exp_args:Nnx \keys_if_exist:nnTF { luatexcn / content } { \l_keys_key_str }
+          { \__luatexcn_template_forward_to:Nn \contentSetup {#1} }
+          {
+            \exp_args:Nnx \keys_if_exist:nnTF { luatexcn / banxin } { \l_keys_key_str }
+              { \__luatexcn_template_forward_to:Nn \banxinSetup {#1} }
+              { \msg_warning:nnx { luatex-cn } { unknown-key } { \l_keys_key_str } }
+          }
+      }
+  }
+
 % CJK Alias
 \cs_new_eq:NN \加载模板 \luatexcn_load_template:nn
 

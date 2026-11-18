@@ -208,3 +208,8 @@ jobs:
         # 不依赖基线图像的自校验：固定内容区 / 装订边距 / 书眉锚定内容区，
         # 正文不越出边距、奇偶页内容区重合、内外侧按竖排书装订方向（issue #198）
         run: python3 test/margin_test.py
+
+      - name: Run template setup tests
+        # 不依赖基线图像的自校验：\gujiSetup/\defineGujiTemplate 里的布局 key
+        # 转发到 page/content/banxin，模板中文名可用于 template=，未知模板/key 发警告
+        run: python3 test/template_setup_test.py

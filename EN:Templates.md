@@ -2,42 +2,52 @@
 
 # Templates and Customization
 
-`luatex-cn` provides a flexible template system with built-in and custom templates.
+In `luatex-cn` a "template" is a configuration file (`.cfg`) containing setup commands such as `\pageSetup`, `\contentSetup` and `\banxinSetup`. Give the template name as a document class option to load it.
 
 ## Built-in Templates
 
 | Template Name | Document Class | Description |
 |--------------|----------------|-------------|
-| `四库全书` | `ltc-guji` | Classic official book style (B&W) |
-| `四库全书彩色` | `ltc-guji` | Classic official book style (Color) |
-| `红楼梦甲戌本` | `ltc-guji` | Manuscript style with side/top notes |
-| `default` | `ltc-cn-vbook` / `ltc-tw-vbook` | Default modern vertical style (Taiwan punct) |
-| `中华书局` | `ltc-cn-vbook` | Zhonghua Shuju modern style (Mainland punct) |
+| `四库全书` (`default`) | `ltc-guji` | Classic official book style (B&W); the `ltc-guji` default |
+| `四库全书彩色` (`SiKuQuanShu-colored`) | `ltc-guji` | Classic official book style (color) |
+| `红楼梦甲戌本` (`HongLouMengJiaXuBen`) | `ltc-guji` | Manuscript style with side/top notes |
+| `欧式族谱` (`oushizupu`) | `ltc-guji` | Genealogy style |
+| (default config) | `ltc-cn-vbook` | Modern vertical, mainland punctuation |
+| (default config) | `ltc-tw-vbook` | Modern vertical, Taiwan punctuation |
+
+The two modern vertical classes have no named templates; each loads its default configuration. See [[ltc-book | EN:ltc-book]].
 
 ## Using Templates
 
-Specify the template name in document class options:
+Specify the template name in the document class options:
 
 ```latex
-% guji templates
 \documentclass[四库全书彩色]{ltc-guji}
 \documentclass[红楼梦甲戌本]{ltc-guji}
 
-% cn-vbook / tw-vbook templates (v0.2.7+)
-\documentclass{ltc-cn-vbook}              % Default template
-\documentclass[中华书局]{ltc-cn-vbook}     % Zhonghua Shuju template
+% Or switch in the preamble (use the English name here)
+\gujiSetup{ template = HongLouMengJiaXuBen }
 ```
 
 ## Custom Templates
 
-### Method 1: Create Configuration File
+### Method 1: Create a Configuration File (recommended)
+
+For a template named `<name>`, the class first looks for `<name>.cfg` in the document folder, then in `configs/` on the TeX path.
+
+| Class | File name |
+|-------|-----------|
+| `ltc-guji` | `<name>.cfg` or `configs/luatex-cn-guji-<name>.cfg` |
+| `ltc-cn-vbook` / `ltc-tw-vbook` | `<name>.cfg` or `configs/luatex-cn-vbook-<name>.cfg` |
+
+Then load it with `\documentclass[<name>]{ltc-guji}`.
 
 #### guji Template
 
-Create a `luatex-cn-guji-<template-name>.cfg` file in the `configs/` directory:
-
 ```latex
-\gujiSetup{ template = default }
+% MyTemplate.cfg (in the document folder)
+
+\gujiSetup{ template = default }   % start from Siku Quanshu, then change below
 
 \pageSetup{
     paper-width = 1077.2pt,
@@ -58,22 +68,24 @@ Create a `luatex-cn-guji-<template-name>.cfg` file in the `configs/` directory:
 \endinput
 ```
 
-#### cn-vbook / tw-vbook Template (v0.2.7+)
+#### cn-vbook / tw-vbook Template
 
-Create a `luatex-cn-book-<template-name>.cfg` file in the `configs/` directory:
+The template is loaded after the default configuration, so only list what you change:
 
 ```latex
+% mytemplate.cfg
+
 \pageSetup{
     paper-width = 148mm,
     paper-height = 210mm,
+    margin-inner = 18mm,
+    margin-outer = 15mm,
     page-number-style = digits,
 }
 
 \contentSetup{
     font-size = 11pt,
     line-spacing = 13pt,
-    n-column = 0,
-    border = false,
 }
 
 \punctSetup{punct-style=taiwan}
@@ -81,15 +93,12 @@ Create a `luatex-cn-book-<template-name>.cfg` file in the `configs/` directory:
 \endinput
 ```
 
-### Method 2: Direct Configuration in Document
+### Method 2: Direct Configuration in the Document
+
+Write the setup commands in the preamble; set the book and chapter titles with `\title` and `\chapter`:
 
 ```latex
 \documentclass{ltc-guji}
-
-\gujiSetup{
-    book-name = My Book Title,
-    chapter-title = Chapter One,
-}
 
 \contentSetup{
     n-column = 10,
@@ -97,33 +106,45 @@ Create a `luatex-cn-book-<template-name>.cfg` file in the `configs/` directory:
     border = true,
 }
 
+\title{My Book Title}
+
 \begin{document}
+\begin{正文}
+\chapter{Chapter One}
 % ...
+\end{正文}
 \end{document}
 ```
 
-## Configuration Reference Table
+> `\gujiSetup` currently accepts only the `template` key. The `\gujiSetup{book-name=…}` form shown in older versions of this wiki, and packing layout keys into `\defineGujiTemplate`, both fail with an unknown-key error.
+
+## Common Settings
+
+Defaults below are the code defaults with no template loaded; templates override some of them. For every key see [[Command Reference | Command-Reference]].
 
 | Command | Parameter | Description | Default |
 |---------|-----------|-------------|---------|
-| `\gujiSetup` | `book-name` | Book name | - |
-| | `chapter-title` | Chapter title | - |
-| | `template` | Template name | `default` |
-| `\contentSetup` | `n-column` | Columns per half page | 12 |
-| | `font-size` | Font size | 30pt |
-| | `line-spacing` | Line spacing | 45pt |
-| | `n-char-per-col` | Characters per column | 18 |
-| | `border` | Show border | true |
-| | `layout-mode` | Layout mode (v0.2.7+) | `grid` |
-| `\pageSetup` | `paper-width` | Paper width | - |
-| | `paper-height` | Paper height | - |
-| | `margin-*` | Margins | - |
-| | `page-number-style` | Number style (v0.2.7+) | `none` |
-| `\banxinSetup` | `banxin-upper-ratio` | Upper section ratio | 0.18 |
-| | `upper-yuwei` | Upper fish tail | true |
-| `\punctSetup` | `punct-style` | Punct style (v0.2.7+) | `taiwan` |
-| | `punct-squeeze` | Squeeze (v0.2.7+) | `true` |
-| | `kinsoku` | Line-breaking rules (v0.2.7+) | `true` |
+| `\gujiSetup` | `template` | Template name (English) | — |
+| `\contentSetup` | `n-column` | Columns per half page (0 = free width) | 8 |
+| | `n-char-per-col` | Characters per column (0 = auto) | 0 |
+| | `font-size` | Font size | 12pt |
+| | `grid-width` / `grid-height` | Cell width / height | 1.5em / 1.2em |
+| | `line-spacing` | Line spacing (natural mode) | `\baselineskip` |
+| | `border` | Show column rules | false |
+| | `border-color` | Rule color | black |
+| | `font-color` | Text color | _(empty)_ |
+| | `layout-mode` | `grid` / `natural` | `grid` |
+| | `horizontal-align` | Horizontal position of the column block: `right` / `center` / `left` (v0.4.5+) | `right` |
+| `\pageSetup` | `paper-width` / `paper-height` | Paper size | 210mm / 297mm |
+| | `margin-*` | Margins | 0pt |
+| | `twoside` | Facing pages (mirrored margins) | false |
+| | `page-number-style` | Page number style | _(empty)_ |
+| `\banxinSetup` | `banxin-upper-ratio` | Upper section ratio | 0.28 |
+| | `upper-yuwei` / `lower-yuwei` | Upper / lower fishtail | true |
+| | `book-ear` | Book ear (v0.4.5+) | false |
+| `\punctSetup` | `punct-style` | Punctuation style | `taiwan` |
+| | `punct-squeeze` | Squeeze | `true` |
+| | `kinsoku` | Line-breaking rules | `true` |
 
 ---
 

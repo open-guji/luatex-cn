@@ -63,7 +63,7 @@ This directory contains multiple usage examples for the `luatex-cn` package, dem
 
 ### 4. Records of the Grand Historian, Vol. 16 - Modern Vertical
 
-**Class**: `ltc-cn-vbook` | **Template**: `中华书局` (Zhonghua Shuju)
+**Class**: `ltc-cn-vbook` (default config)
 
 **Capabilities**:
 - Modern punctuation squeeze (`\punctSetup{punct-squeeze=true}`)

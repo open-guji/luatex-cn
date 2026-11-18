@@ -137,14 +137,14 @@ The system automatically replaces horizontal bracket/quote forms with Unicode Ve
 
 ## Using with cn-vbook / tw-vbook
 
-The `ltc-cn-vbook` / `ltc-tw-vbook` document classes enable the punctuation system by default. Choose styles via templates:
+The `ltc-cn-vbook` / `ltc-tw-vbook` document classes enable the punctuation system by default, with different default styles:
 
 ```latex
-% Default template: Taiwan style
+% Mainland style (default punct-style=mainland)
 \documentclass{ltc-cn-vbook}
 
-% Zhonghua Shuju template: Mainland style
-\documentclass[中华书局]{ltc-cn-vbook}
+% Taiwan style (default punct-style=taiwan)
+\documentclass{ltc-tw-vbook}
 ```
 
 ## Using with guji

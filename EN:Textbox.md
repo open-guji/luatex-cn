@@ -1,4 +1,4 @@
-[English Version] | [中文版](Textbox)
+English | [中文版](Textbox)
 
 # Textbox
 
@@ -22,6 +22,7 @@ The `\TextBox` (or `\文本框`) command creates an independent vertical text ar
 | `n-cols` | Number of columns. | `0` |
 | `border` | Show border. | `false` |
 | `background-color` | Background color. | None |
+| `fill` | Spread the content evenly (same as `box-align=fill`). | — |
 | `floating` | Enable floating mode (needs x, y). | `false` |
 | `transparent` | Whether background is transparent (v0.3.6+). When false, fills with page background color. | `true` |
 
@@ -62,8 +63,11 @@ Quick commands for adding borders and/or inverted (white-on-black) effects to in
 |-----|-------------|-------------|
 | `break` | `断口` / `斷口` | Corner shape where a run is cut by a column break: `square` (default; only the ends of the whole run are octagonal) or `octagon` (every run is a full octagon) |
 | `inline` | `可断行` / `可斷行` | `false` falls back to the old single-textbox implementation |
+| `border-shape` | `边框形状` / `邊框形狀` | `none` / `rect` / `octagon` keep the inline implementation and can break across columns (v0.4.5+, #210); `circle` falls back to the single textbox |
 
-Passing textbox-only keys (`高度`, `填充`, `padding-top`, …) also falls back to the single textbox, e.g. `\八角墨围反白[高度=3, 填充]{...}`.
+The inline implementation also accepts `font-color` (`color` / `字体颜色` / `颜色`), `background-color` (`底色`), `border-color` (`边框色`) and `border-width` (`边框宽`).
+
+Passing textbox-only keys (`高度`, `填充`, `padding-top`, …) falls back to the single textbox (which cannot break across columns), e.g. `\八角墨围反白[高度=3, 填充]{...}`. Since v0.4.5 the fallback writes a warning to the log naming the key that caused it; write `inline=false` when you really want the single box and the warning goes away.
 
 ### Scaling with the font size (v0.4.4+)
 
@@ -94,7 +98,21 @@ Use `border-margin-x` / `border-margin-y` for separate horizontal and vertical p
 - **Flat text**: when the content exceeds the cell count the glyphs are compressed vertically as a whole, keeping their width; ratio = cells ÷ characters (83 characters in 17 cells is about 1/5 and nearly a line, so reduce `font-size` or add cells). Shorter content is spread out evenly.
 - A bare integer in the brackets is `height=N`; use the key-value form to add other keys (`font-size`, `border`, …).
 - Unlike `\TextBox[height=N]`, which never compresses and only top-aligns in N cells.
+- Equivalent to `\TextBox[height=…, box-align=fill]{content}`.
 - Works directly inside `正文`, `列表` and `段落`; no extra package needed.
+
+## Floating Box
+
+With `floating=true` a text box is placed at absolute page coordinates, typically for **annotations**. `\FloatingTextBox[…]{…}` (`\悬浮文本框`) is short for `\TextBox[floating=true, …]`.
+
+```latex
+\FloatingTextBox[
+  x=2cm, y=3cm,
+  height=5,
+  border=true
+]{a floating note}
+```
+The simpler `\PiZhu` (`\批注`) command does the same for annotations. For every key see [[Command Reference | Command-Reference]]; `\textboxSetup` (`\文本框设置`) sets defaults.
 
 ---
 

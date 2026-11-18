@@ -137,14 +137,14 @@ lualatex test.tex
 
 ### cn-vbook / tw-vbook（现代竖排）
 
-| 选项 | 说明 |
+| 文档类 | 说明 |
 |------|------|
-| (默认) | 简洁现代竖排，台湾标点风格 |
-| `中华书局` | 中华书局风格，中国大陆标点 |
+| `ltc-cn-vbook` | 简洁现代竖排，中国大陆标点风格 |
+| `ltc-tw-vbook` | 简洁现代竖排，台湾标点风格 |
 
 ```latex
 \documentclass{ltc-cn-vbook}
-\documentclass[中华书局]{ltc-cn-vbook}
+\documentclass{ltc-tw-vbook}
 ```
 
 详见 [[模板与自定义 | Templates]] 和 [[现代竖排 | ltc-book]]。

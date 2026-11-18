@@ -8,7 +8,6 @@ luatex-cn 提供两个面向现代竖排中文书籍的文档类，与 `ltc-guji
 |--------|---------|------|
 | **`ltc-cn-vbook`** (v0.2.8+) | 中国大陆 | 简体中文竖排书籍 |
 | **`ltc-tw-vbook`** (v0.2.8+) | 台湾 | 繁体中文竖排书籍 |
-| `ltc-book` | 台湾 | 旧名称，仍可使用 |
 
 ## 基本用法
 
@@ -26,20 +25,14 @@ luatex-cn 提供两个面向现代竖排中文书籍的文档类，与 `ltc-guji
 
 ## 模板系统
 
-通过文档类选项选择预设模板：
+两个文档类各自加载一份默认配置，共用 `configs/luatex-cn-vbook-common.cfg`：16 开（170×240mm），14pt 字号，自由列宽（`n-column=0`），对页（`twoside=true`，书脊侧 24mm、翻口侧 16mm），运行页眉与页码，脚注鹿角编号。
 
-| 选项 | 说明 | 标点风格 |
-|------|------|---------|
-| (无) | 默认模板，16 开 (170×240mm)，12pt 字号 | 台湾 |
-| `中华书局` | 中华书局风格，15pt 字号，启用脚注 | 中国大陆 |
+| 文档类 | 默认配置文件 | 标点风格 |
+|--------|------------|---------|
+| `ltc-cn-vbook` | `luatex-cn-vbook-default.cfg` | 中国大陆（`punct-style=mainland`） |
+| `ltc-tw-vbook` | `luatex-cn-tw-vbook-default.cfg` | 台湾（`punct-style=taiwan`） |
 
-```latex
-% 使用默认模板
-\documentclass{ltc-cn-vbook}
-
-% 使用中华书局模板
-\documentclass[中华书局]{ltc-cn-vbook}
-```
+文档类选项中写模板名会再加载 `<名>.cfg`（文档目录）或 `configs/luatex-cn-vbook-<名>.cfg`，见 [[模板与自定义 | Templates]]。目前没有内置的命名模板（旧版 wiki 提到的 `中华书局` 模板并不存在）。
 
 ## 与 guji 的区别
 
@@ -57,24 +50,19 @@ luatex-cn 提供两个面向现代竖排中文书籍的文档类，与 `ltc-guji
 
 `ltc-cn-vbook` / `ltc-tw-vbook` 默认启用现代标点系统。详见 [[标点系统 | Punctuation]]。
 
-### 台湾风格 (默认)
+### 台湾风格（`ltc-tw-vbook` 默认）
 
 ```latex
-\documentclass{ltc-cn-vbook}
-% 标点居中，这是默认设置
+\documentclass{ltc-tw-vbook}
+% 标点居中，这是 tw-vbook 的默认设置
 ```
 
-### 中国大陆风格
+### 中国大陆风格（`ltc-cn-vbook` 默认）
 
 ```latex
 \documentclass{ltc-cn-vbook}
+% 或在任一类中显式指定：
 \punctSetup{punct-style=mainland}
-```
-
-或直接使用中华书局模板（自动设置为中国大陆风格）：
-
-```latex
-\documentclass[中华书局]{ltc-cn-vbook}
 ```
 
 ### 句读模式
@@ -215,7 +203,7 @@ vbook 提供专用的标题命令：
 
 ```latex
 \documentclass{ltc-cn-vbook}
-\脚注设置{number-style=lujiao, indent=1em}
+\脚注设置{number-style=lujiao, indent=2}
 
 \begin{document}
 \begin{正文}
@@ -233,10 +221,11 @@ vbook 提供专用的标题命令：
 |------|------|--------|--------|
 | `mode` | 脚注模式 | `endnote` | `endnote` (段末注), `page` (页下注) |
 | `number-style` | 编号样式 | `lujiao` | `lujiao` (【一】), `circled` (①) |
-| `separator` | 分隔方式 | `blank` | `blank` (空行), `none` |
+| `separator` | 各条之间的分隔 | `blank` | `blank`（1em 空白）, `none` |
 | `font-size` | 脚注字号 | `0.8em` | 任意尺寸 |
 | `font-color` | 脚注颜色 | (继承) | 任意颜色 |
-| `indent` | 缩进 | `1em` | 任意尺寸 |
+| `indent` | 悬挂缩进（格数） | `2` | 整数 |
+| `marker-height` | 编号占用格数 | `2` | 整数 |
 | `spacing` | 间距 | `0.5em` | 任意尺寸 |
 
 ### 命令一览
@@ -281,17 +270,17 @@ vbook 提供专用的标题命令：
 
 ## 自定义模板
 
-创建 `configs/luatex-cn-book-<模板名>.cfg` 文件：
+在文档目录下创建 `<模板名>.cfg`（或放到 TeX 路径中的 `configs/luatex-cn-vbook-<模板名>.cfg`）。模板在默认配置之后加载，只写要改的项：
 
 ```latex
-% configs/luatex-cn-book-mytemplate.cfg
+% mytemplate.cfg
 \pageSetup{
     paper-width = 148mm,
     paper-height = 210mm,
     margin-top = 20mm,
     margin-bottom = 15mm,
-    margin-left = 18mm,
-    margin-right = 15mm,
+    margin-inner = 18mm,
+    margin-outer = 15mm,
     page-number-style = digits,
 }
 
@@ -300,9 +289,6 @@ vbook 提供专用的标题命令：
     line-spacing = 13pt,
     grid-width = 13pt,
     grid-height = 13pt,
-    vertical-align = center,
-    n-column = 0,
-    border = false,
 }
 
 \punctSetup{punct-style=taiwan}

@@ -27,7 +27,7 @@
 | **`ltc-cn-vbook`** | 现代中国大陆竖排书籍（标点挤压、脚注） | [[ltc-book \| ltc-book]] |
 | **`ltc-tw-vbook`** | 现代台湾竖排书籍（居中标点） | [[ltc-book \| ltc-book]] |
 
-> `ltc-book` 仍可使用，但推荐使用上述新名称。
+> 旧名 `ltc-book` 已不再提供，请用 `ltc-cn-vbook`／`ltc-tw-vbook`。
 
 ### 横排：一个宏包
 

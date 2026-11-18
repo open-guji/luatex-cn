@@ -34,12 +34,10 @@ Since v0.2.1, the range of supported punctuation has been extended to include:
 
 ```latex
 % Enable judou mode
-\JudouOn
 \开启句读模式
 \句读模式
 
 % Return to modern punctuation
-\JudouOff
 \关闭句读模式
 \正常标点模式
 
@@ -116,12 +114,10 @@ Fine-tune Judou appearance via `\judouSetup`:
 
 | Command | Chinese Alias | Description |
 |---------|--------------|-------------|
-| `\JudouOn` | `\开启句读模式` | Enable judou mode |
-| `\JudouOff` | `\关闭句读模式` | Disable judou mode |
-| `\NormalPunctuationMode` | `\正常标点模式` | Switch to modern punct |
-| `\JudouPunctuationMode` | `\句读模式` | Switch to judou mode |
-| `\NonePunctuationMode` | `\无标点模式` | Switch to plain text |
-| `\judouSetup{...}` | - | Configure judou parameters |
+| `\NormalPunctuationMode` | `\正常标点模式`, `\关闭句读模式`, `\正常標點模式` | Switch to modern punct |
+| `\JudouPunctuationMode` | `\句读模式`, `\开启句读模式`, `\句讀模式` | Switch to judou mode |
+| `\NonePunctuationMode` | `\无标点模式`, `\开启无标点模式`, `\無標點模式` | Switch to plain text |
+| `\judouSetup{...}` | `\句读设置`, `\句讀設置` | Configure judou parameters |
 
 ## Technical Details
 Implemented via `luatex-cn-guji-judou.lua`:

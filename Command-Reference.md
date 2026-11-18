@@ -48,9 +48,9 @@
 | topskip | 页头距 | 頁頭距 | 度量 | 0pt | 页头偏移 |
 | page-split-enabled | 开启分页 | 開啟分頁 | 是/否 | true | 是否启用筒子页裁剪 |
 | page-split-right-first | 右页优先 | 右頁優先 | 是/否 | true | 筒子页先印右页 |
-| twoside | 启用两面 | 啟用兩面 | 是/否 | false | 双面模式：为 true 时只读 `margin-inner`／`margin-outer`（奇偶页镜像），为 false 时只读 `margin-left`／`margin-right`；被忽略的一组若被设置会发出警告（v0.4.3+） |
-| margin-inner | 内边距 | 內邊距 | 度量 | _(空)_ | 书脊侧边距（仅 `twoside=true` 且 `mirror-margins=true` 时生效）。竖排书奇数页是左页，书脊在右（v0.4.4 起按书脊算） |
-| margin-outer | 外边距 | 外邊距 | 度量 | _(空)_ | 翻口侧边距（仅 `twoside=true` 且 `mirror-margins=true` 时生效） |
+| twoside | — | — | 是/否 | false | 双面模式：为 true 时只读 `margin-inner`／`margin-outer`（奇偶页镜像），为 false 时只读 `margin-left`／`margin-right`；被忽略的一组若被设置会发出警告（v0.4.3+） |
+| margin-inner | — | — | 度量 | _(空)_ | 书脊侧边距（仅 `twoside=true` 且 `mirror-margins=true` 时生效）。竖排书奇数页是左页，书脊在右（v0.4.4 起按书脊算） |
+| margin-outer | — | — | 度量 | _(空)_ | 翻口侧边距（仅 `twoside=true` 且 `mirror-margins=true` 时生效） |
 | mirror-margins | 镜像边距 | 鏡像邊距 | 是/否 | true | 为 false 时 `twoside=true` 也读 `margin-left`／`margin-right`，内容区在奇偶页同一位置，书眉页码仍奇偶交替（v0.4.4+） |
 | binding-offset | 装订边距 | 裝訂邊距 | 度量 | 0pt | 加在书脊一侧的装订边距：奇数页右、偶数页左；`twoside=false` 时加在右侧（v0.4.4+） |
 | facing-pages | 对页补页 | 對頁補頁 | 是/否 | false | 章（`\chapter`）落在偶数页顶端时，在它前面自动补一页，使每章从奇数页起；只认 `正文` 块内的 `\chapter`，筒子页模式下不自动补（v0.4.4+） |
@@ -75,6 +75,10 @@
 ### `\ResetPageNumber`  `\重置页码`  `\重置頁碼`
 
 将页码重置为 1。
+
+### `\换页`  `\換頁`
+
+强制换页，等价于 `\newpage`。
 
 ### `\InsertBlankPage`  `\补空白页`  `\補空白頁`
 
@@ -105,17 +109,18 @@
 | font-features | 字体特性 | 字體特性 | 字符串 | _(空)_ | 字体 OpenType 特性 |
 | font-color | 字体颜色 | 字體顏色 | 颜色 | _(空)_ | 正文字体颜色 |
 | vertical-align | 纵对齐 | 縱對齊 | 字符串 | center | 字符在格中的纵向对齐 |
+| horizontal-align | 横对齐 | 橫對齊 | 选项 | right | 整块行在内容区内的水平位置：`right`（居右，默认，从右边起排）`center`（居中）`left`（居左）；也可写中文值 `居右`／`居中`／`居左`。别名 `h-align`（v0.4.5+，#175） |
 | height | 高度 | 高度 | 度量 | _(自动)_ | 内容区高度 |
 | layout-mode | 布局模式 | 佈局模式 | 选项 | grid | 布局引擎：`grid` 或 `natural` |
-| spacing-col | 列间距 | 列間距 | 度量 | _(空)_ | 列间距 |
+| spacing-col | — | — | 度量 | _(空)_ | 列间距（中文 `行间距` 现指 `column-spacing`，见下） |
 | line-spacing | 行距 | 行距 | 度量 | \baselineskip | 行距（natural 模式） |
 | page-columns | 版面行数 | 版面行數 | 字符串 | _(空)_ | 每页行数覆盖 |
 | banxin-ratio | 版心比例 | 版心比例 | 字符串 | 0.7 | 版心在行中的比例（0-1） |
 | border | 边框 | 邊框 | 是/否 | false | 是否显示栏线 |
 | border-thickness | 边框粗细 | 邊框粗細 | 度量 | 0.4pt | 栏线粗细 |
 | border-color | 边框色 | 邊框色 | 颜色 | black | 栏线颜色 |
-| border-padding-top | 边框上填充 | 边框上填充 | 度量 | 0pt | 栏线上方留白 |
-| border-padding-bottom | 边框下填充 | 边框下填充 | 度量 | 0pt | 栏线下方留白 |
+| padding-top | 上填充 | — | 度量 | 0pt | 栏线上方留白（别名 `column-padding-top`／`栏上填充`） |
+| padding-bottom | 下填充 | — | 度量 | 0pt | 栏线下方留白（别名 `column-padding-bottom`／`栏下填充`） |
 | outer-border | 外边框 | 外邊框 | 是/否 | false | 是否显示外边框 |
 | outer-border-thickness | 外边框粗细 | 外邊框粗細 | 度量 | 1pt | 外边框线宽 |
 | outer-border-sep | 外边框间距 | 外邊框間距 | 度量 | 2pt | 外边框与栏线间距 |
@@ -123,19 +128,20 @@
 | cell-height | 字格高 | 字格高 | 度量 | _(空)_ | 单字格高度覆盖 |
 | cell-width | 字格宽 | 字格寬 | 度量 | _(空)_ | 单字格宽度覆盖 |
 | cell-gap | 字格间距 | 字格間距 | 度量 | _(空)_ | 字格间距覆盖 |
-| auto-column-width | 自动列宽 | 自動列寬 | 是/否 | false | 自动计算列宽 |
-| column-spacing-top | 列上间距 | 列上間距 | 度量 | 0pt | 列顶部留白 |
-| column-spacing-bottom | 列下间距 | 列下間距 | 度量 | 0pt | 列底部留白 |
-| column-spacing | 列间距(快捷) | 列間距(快捷) | 快捷 | — | 同时设置列上/下间距 |
+| auto-column-width | 自动行宽 | 自動行寬 | 是/否 | false | 自动计算列宽 |
+| column-spacing-top | 行上间距 | 行上間距 | 度量 | 0pt | 列顶部留白 |
+| column-spacing-bottom | 行下间距 | 行下間距 | 度量 | 0pt | 列底部留白 |
+| column-spacing | 行间距 | 行間距 | 快捷 | — | 同时设置列上/下间距 |
 | paragraph-spacing | 段间距 | 段間距 | 度量 | 0pt | 段落间距 |
 | n-bands | 分栏 | 分欄 | 整数 | 1 | 分栏数（水平分区） |
 | band-gap | 栏间距 | 欄間距 | 度量 | 0pt | 栏间距 |
 | band-mode | 栏模式 | 欄模式 | 选项 | auto | 栏流动模式：`auto`(跨页) `per-page`(逐页) |
 | band-heights | 栏高度 | 欄高度 | 列表 | _(空)_ | 各栏高度（逗号分隔） |
-| band-columns | 栏列数 | 欄列數 | 字符串 | _(空)_ | 每栏列数 |
-| column-border | 列边框 | 列邊框 | 字符串 | _(空)_ | 列边框 |
+| band-columns | 栏行数 | 欄行數 | 字符串 | _(空)_ | 每栏列数 |
+| column-border | 行边框 | 行邊框 | 字符串 | _(空)_ | 列（丝栏）边框 |
 | band-border | 栏边框 | 欄邊框 | 字符串 | _(空)_ | 栏间分隔线 |
 | digital-mode | 数字模式 | 數字模式 | 是/否 | false | 启用数字化模式（obeylines，每行=一列） |
+| ignore-spaces | 忽略空格 | — | 是/否 | true | 忽略源码中的半角空格 |
 | indent | 缩进 | 縮進 | 整数 | _(空)_ | 非首行缩进（格数） |
 | first-indent | 首行缩进 | 首行縮進 | 整数 | _(空)_ | 首行缩进（格数） |
 
@@ -148,6 +154,10 @@
 ### `\Space`  `\空格`
 
 插入 N 个全角空格（U+3000），用于网格中的手动间距。语法：`\Space[3]`
+
+### `\MissingChar`  `\缺字`
+
+插入白方框「□」（U+25A1）作缺字／漫漶字占位。语法：`\缺字` 或 `\缺字[3]`（连缺 3 字）。
 
 ### `\Sideways`  `\横置`  `\橫置`
 
@@ -166,13 +176,28 @@
 \end{正文}
 ```
 
-### `\NewHalfPage`  `\换半页`  <sup>v0.3.6+</sup>
+### 环境 `CenteredPage`  `居中页`  `居中頁`  <sup>v0.4.5+</sup>
+
+扉页、卷标题页等：前后各换一页，在新页上排一段正文，整块行在内容区内水平居中（即 `正文[horizontal-align=center]`）。各行的上下位置用 `\行[align=center]` 等控制；可选参数传给正文，如 `[horizontal-align=left]`。不要嵌套在另一个 `正文` 里。(#175)
+
+```latex
+\begin{居中页}
+  \行[align=center]{王又朴集}
+  \行[align=center]{上}
+\end{居中页}
+```
+
+### `\NewHalfPage`  `\换半页`  `\換半頁`  <sup>v0.3.6+</sup>
 
 强制换半页。在筒子页模式下，从当前半页跳到下一半页。
 
 ### `\IllustrationPage`  `\插图页`  `\插圖頁`  <sup>v0.3.6+</sup>
 
 将当前页面标记为插图页，自动隐藏丝栏（保留内外边框），默认先换半页。适用于需要在古籍中插入全页插图的场景。
+
+### `\EndIllustrationPage`  `\恢复丝栏`  `\恢復絲欄`  <sup>v0.3.6+</sup>
+
+结束 `\插图页` 的效果，恢复丝栏。通常在 `\clearpage` 之后调用。
 
 ---
 
@@ -198,11 +223,14 @@
 | spacing | 间距 | 間距 | 快捷 | — | 同时设置上/下间距 |
 | xshift | 横移 | 橫移 | 度量 | _(空)_ | X方向平移 |
 | yshift | 纵移 | 縱移 | 度量 | _(空)_ | Y方向平移 |
+| padding-top | 上填充 | — | 度量 | _(空)_ | 上方填充 |
+| padding-bottom | 下填充 | — | 度量 | _(空)_ | 下方填充 |
+| padding | 填充 | — | 快捷 | — | 同时设置上/下填充 |
 | indent | 缩进 | 縮進 | 整数 | _(空)_ | 非首行缩进（格数） |
 | first-indent | 首行缩进 | 首行縮進 | 整数 | _(空)_ | 首行缩进（格数） |
 | bottom-indent | 末行缩进 | 末行縮進 | 整数 | _(空)_ | 末行缩进（格数） |
 
-### 环境 `StyleEnv`  `样式环境`  `樣式環境`
+### 环境 `StyleEnv`  `样式设置`  `樣式設置`
 
 `\Style` 的环境形式，允许内容中使用命令展开。
 
@@ -221,20 +249,23 @@
 | 参数 | 简体 | 繁体 | 类型 | 默认值 | 说明 |
 |------|------|------|------|--------|------|
 | align | 对齐 | 對齊 | 选项 | top | 对齐方式：`top` `bottom` `center` `stretch` |
-| last | 末列 | 末列 | 是/否 | false | 放置在当前半页末列 |
+| last | 末行 | 末行 | 是/否 | false | 放置在当前半页末列 |
 | font-size | 字号 | 字號 | 字号 | _(空)_ | 覆盖字号 |
 | font | 字体 | 字體 | 字符串 | _(空)_ | 覆盖字体 |
-| font-color | 字体颜色 | 字體顏色 | 颜色 | _(空)_ | 覆盖字体颜色 |
+| font-color | 字体颜色 | 字體顏色 | 颜色 | _(空)_ | 覆盖字体颜色（别名 `color`／`颜色`／`顏色`） |
 | width | 宽度 | 寬度 | 度量 | _(空)_ | 列宽 |
-| column-width | 列宽 | 列寬 | 度量 | _(空)_ | 列宽（别名） |
+| column-width | 行宽 | 行寬 | 度量 | _(空)_ | 列宽（别名） |
 | auto-width | 自动宽度 | 自動寬度 | 是/否 | true | 自动计算列宽 |
 | width-scale | 宽度缩放 | 寬度縮放 | 字符串 | 1.2 | 自动宽度缩放系数 |
 | spacing-top | 上间距 | 上間距 | 度量 | _(空)_ | 列顶部间距 |
 | spacing-bottom | 下间距 | 下間距 | 度量 | _(空)_ | 列底部间距 |
 | spacing | 间距 | 間距 | 快捷 | — | 同时设置上/下间距 |
+| padding-top | 上填充 | — | 度量 | _(空)_ | 列内上方填充 |
+| padding-bottom | 下填充 | — | 度量 | _(空)_ | 列内下方填充 |
+| padding | 填充 | — | 快捷 | — | 同时设置上/下填充 |
 | grid-height | 格高 | 格高 | 度量 | _(空)_ | 覆盖格高 |
 
-### `\LastColumn`
+### `\LastColumn`  `\末行`
 
 放置内容到当前半页末列。等价于 `\Column[last]{内容}`。
 
@@ -253,15 +284,17 @@
 | 参数 | 简体 | 繁体 | 类型 | 默认值 | 说明 |
 |------|------|------|------|--------|------|
 | only-column | 单列 | 單列 | 选项 | none | 仅使用单列：`none`(双列) `right` `left` |
-| auto-balance | 自动均衡 | 自動均衡 | 是/否 | true | 自动均衡左右列字数 |
+| auto-balance | 自动均衡 | 自動均衡 | 是/否 | true | 自动均衡左右列字数（也可写 `自动平衡`／`自動平衡`） |
 | font-size | 字号 | 字號 | 字号 | _(空)_ | 覆盖字号 |
 | font | 字体 | 字體 | 字符串 | _(空)_ | 覆盖字体 |
-| font-color | 字体颜色 | 字體顏色 | 颜色 | _(空)_ | 覆盖字体颜色 |
+| font-color | 字体颜色 | 字體顏色 | 颜色 | _(空)_ | 覆盖字体颜色（别名 `color`／`颜色`／`顏色`） |
 | align | 对齐 | 對齊 | 字符串 | _(空)_ | 对齐方式 |
+| grid-height | 格高 | 格高 | 度量 | _(空)_ | 小字格高 |
+| n-char-per-col | 每行字数 | 每行字數 | 整数 | _(空)_ | 每小列字数，格高取「正文列高 ÷ N」（v0.4.4+，#82） |
 
 ### `\DanHangJiaZhu`  `\单行夹注`  `\單行夾注`
 
-单列夹注。语法：`\DanHangJiaZhu[列号]{内容}`
+单列夹注。语法：`\DanHangJiaZhu[right]{内容}`，可选参数为 `right`（默认）或 `left`，即只用右小列或左小列。
 
 ### 环境 `TextFlowEnv`  `文本流环境`  `文本流環境`
 
@@ -284,15 +317,16 @@
 | height | 高度 | 高度 | 整数 | 0 | 文本框高度（格数） |
 | n-cols | 列数 | 列數 | 整数 | 0 | 内部列数 |
 | outer-cols | 外列数 | 外列數 | 整数 | 0 | 外部占用列数 |
-| fill | 填充 | 填充 | 是/否 | false | 均分排布内容 |
+| fill | 填充 | 填充 | 快捷 | — | 均分排布内容（= `box-align=fill`） |
 | box-align | 框对齐 | 框對齊 | 字符串 | top | 文本框在列中的对齐 |
 | border | 边框 | 邊框 | 是/否 | false | 显示边框 |
-| border-shape | 边框形状 | 邊框形狀 | 选项 | none | 边框形状：`none` `octagon` `circle` |
+| border-shape | 边框形状 | 邊框形狀 | 选项 | none | 边框形状：`none` `rect` `octagon` `circle` |
 | border-color | 边框色 | 邊框色 | 颜色 | _(空)_ | 边框颜色 |
 | border-width | 边框宽 | 邊框寬 | 度量 | 0.4pt | 边框线宽 |
 | border-margin | 边框间距 | 邊框間距 | 度量 | 0pt | 边框与内容间距（统一） |
 | border-margin-x | 边框横距 | 邊框橫距 | 度量 | _(空)_ | 边框横向间距 |
 | border-margin-y | 边框纵距 | 邊框縱距 | 度量 | _(空)_ | 边框纵向间距 |
+| border-offset | — | — | 度量 | 0pt | 边框画在底色之外的距离（`\墨围反白` 用 0.1em 留出白缝） |
 | outer-margin | 外间距 | 外間距 | 度量 | 0pt | 文本框外部间距 |
 | outer-border | 外边框 | 外邊框 | 是/否 | false | 显示外边框 |
 | outer-border-thickness | 外边框粗细 | 外邊框粗細 | 度量 | 1pt | 外边框线宽 |
@@ -309,6 +343,10 @@
 | font-size | 字号 | 字號 | 字号 | _(空)_ | 字号 |
 | grid-width | 格宽 | 格寬 | 度量 | _(空)_ | 内部网格宽度 |
 | grid-height | 格高 | 格高 | 度量 | _(空)_ | 内部网格高度 |
+| padding-top | — | — | 度量 | _(空)_ | 框内上方填充（别名 `column-padding-top`、`fill-padding-top`） |
+| padding-bottom | — | — | 度量 | _(空)_ | 框内下方填充（别名 `column-padding-bottom`、`fill-padding-bottom`） |
+
+`fill`／`填充` 是快捷参数，等价于 `box-align=fill`（均分排布）。`font-color` 也可写 `color`／`颜色`。
 
 **TextBox 参数补充** <sup>v0.3.6+</sup>:
 
@@ -316,25 +354,33 @@
 |------|------|------|------|--------|------|
 | transparent | 透明 | 透明 | 是/否 | true | 背景是否透明（false 时使用页面背景色填充） |
 
+### `\textboxSetup`  `\文本框设置`  `\文本框設置`
+
+设置之后所有 `\TextBox` 的默认参数，参数同上。
+
+### `\FloatingTextBox`  `\悬浮文本框`
+
+悬浮文本框，等价于 `\TextBox[floating=true, …]{内容}`，用 `x`／`y` 指定在页面上的位置。
+
 ### `\FillTextBox`  `\填充文本框`
 
 向后兼容的文本框命令，接受整数高度（旧式）或 key-value 参数。
 
 ### `\反白`  `\inverted`
 
-反白效果快捷命令：黑底白字。语法：`\反白{内容}`
+反白效果快捷命令：黑底白字。语法：`\反白[参数]{内容}`
 
-### `\八角框`  `\octagon`
+`\反白`、`\墨围反白`、`\八角墨围反白` 默认是行内实现（v0.4.4+）：跨列时逐字换列，底色与边框按每列连续的一段分别绘制。行内实现认的参数如下；写了其他文本框参数（如 `高度`、`填充`）会退回整块文本框（不能跨列断开），并在日志中给出警告（v0.4.5+）。
 
-八角形边框快捷命令。语法：`\八角框{内容}`
-
-### `\带圈`  `\circled`  `\帶圈`
-
-圆形边框快捷命令。语法：`\带圈{内容}`
-
-### `\反白八角框`  `\invertedOctagon`
-
-反白 + 八角边框组合。
+| 参数 | 简体 | 繁体 | 类型 | 默认值 | 说明 |
+|------|------|------|------|--------|------|
+| font-color | 字体颜色 | 字體顏色 | 颜色 | white | 字色（别名 `color`／`颜色`／`顏色`） |
+| background-color | 底色 | 底色 | 颜色 | 0.2 0.2 0.2 | 底色 |
+| border-color | 边框色 | 邊框色 | 颜色 | _(空)_ | 边框颜色 |
+| border-width | 边框宽 | 邊框寬 | 度量 | 0.4pt | 边框线宽 |
+| break | 断口 | 斷口 | 选项 | square | 跨列断口：`square`（`直角`）或 `octagon`（`八角`，每段都画完整八角） |
+| border-shape | 边框形状 | 邊框形狀 | 选项 | — | `none`／`rect`／`octagon` 仍走行内实现（v0.4.5+，#210）；`circle` 退回整块 |
+| inline | 可断行 | 可斷行 | 是/否 | true | `false` 时有意使用整块文本框，不发警告 |
 
 ### `\墨围`  `\bordered`  `\墨圍`
 
@@ -350,7 +396,7 @@
 
 矩形黑色边框 + 黑底白字。语法：`\墨围反白{内容}`
 
-### `\八角墨围`  `\octagonBordered`  `\八角墨圍`
+### `\八角墨围`  `\octagonBordered`  `\octagon`  `\八角墨圍`
 
 八角形黑色边框。语法：`\八角墨围{内容}`
 
@@ -361,6 +407,8 @@
 ### `\带圈`  `\circled`  `\帶圈`
 
 圆形边框。语法：`\带圈{内容}`
+
+> `\八角墨围` 另有英文别名 `\octagon`。墨围、八角墨围、带圈的装饰框随所在字号等比缩放（v0.4.4+）。
 
 ---
 
@@ -377,11 +425,11 @@
 | n-bands | 分栏 | 分欄 | 整数 | 2 | 分栏数 |
 | band-gap | 栏间距 | 欄間距 | 度量 | 0pt | 栏间距 |
 | band-heights | 栏高度 | 欄高度 | 列表 | _(空)_ | 各栏高度（逗号分隔） |
-| n-columns | 列数 | 列數 | 字符串 | _(空)_ | 每栏列数 |
+| n-columns | 行数 | 行數 | 字符串 | _(空)_ | 每栏列数 |
 | header-rows | 表头栏数 | 表頭欄數 | 整数 | 0 | 表头栏数 |
-| column-border | 列边框 | 列邊框 | 字符串 | _(空)_ | 列边框样式 |
+| column-border | 行边框 | 行邊框 | 字符串 | _(空)_ | 列边框样式 |
 | band-border | 栏边框 | 欄邊框 | 字符串 | _(空)_ | 栏间分隔线 |
-| column-fill | 列填充 | 列填滿 | 字符串 | _(空)_ | 列填充方式：`page`(页/頁) |
+| column-fill | 行填充 | 行填滿 | 字符串 | _(空)_ | 列填充方式：`page`(页/頁) |
 
 ### `\Cell`  `\单元格`  `\單元格`
 
@@ -389,8 +437,9 @@
 
 | 参数 | 简体 | 繁体 | 类型 | 默认值 | 说明 |
 |------|------|------|------|--------|------|
-| col-width | 列宽 | 列寬 | 数字 | 1 | 列跨度（支持小数） |
+| col-width | 行宽 | 行寬 | 数字 | 1 | 列跨度（支持小数） |
 | vertical-align | 纵对齐 | 縱對齊 | 字符串 | _(空)_ | 纵向对齐 |
+| column-border | 行边框 | 行邊框 | 字符串 | _(空)_ | 本格列边框 |
 
 ### `\BandFormat`  `\栏格式`  `\欄格式`
 
@@ -398,7 +447,7 @@
 
 | 参数 | 简体 | 繁体 | 类型 | 默认值 | 说明 |
 |------|------|------|------|--------|------|
-| column-border | 列边框 | 列邊框 | 字符串 | _(空)_ | 当前栏列边框 |
+| column-border | 行边框 | 行邊框 | 字符串 | _(空)_ | 当前栏列边框 |
 | padding-top | 上填充 | — | 度量 | _(空)_ | 栏顶部填充 |
 | padding-bottom | 下填充 | — | 度量 | _(空)_ | 栏底部填充 |
 | padding | 填充 | — | 度量 | _(空)_ | 同时设置上下填充 |
@@ -428,13 +477,13 @@
 |------|------|------|------|--------|------|
 | indent | 缩进 | 縮進 | 整数 | 0 | 基础缩进（格数） |
 | first-indent | 首行缩进 | 首行縮進 | 整数 | _(空)_ | 首行缩进（空=跟随 indent，明确值覆盖） |
-| bottom-indent | 行尾缩进 | 行尾縮進 | 整数 | 0 | 行尾缩进（行末要空几格） |
+| bottom-indent | 末行缩进 | 末行縮進 | 整数 | 0 | 行尾缩进（行末要空几格） |
 
-### `\SetIndent`  `\设置缩进`  `\設置縮進`
+### `\Indent`  `\缩进`  `\縮進`
 
-强制设置当前行缩进值，在 `\\` 或行尾自动恢复。
+强制设置当前行缩进值，在 `\\` 或行尾自动恢复。负值等同抬头（伸入天头）。
 
-语法：`\SetIndent{3}`
+语法：`\缩进[3]`（默认 0）
 
 ### `\抬头`  `\TaiTou`
 
@@ -469,19 +518,19 @@
 
 ---
 
-## 侧批 (SideNode)
+## 侧批 (Sidenote)
 
 **文件**: `core/luatex-cn-core-sidenote.sty`
 
-### `\SideNode`  `\侧批`  `\側批`
+### `\Sidenote`  `\侧批`  `\側批`
 
 侧批注释，渲染在页面边缘。也可用拼音别名 `\CePi`。
 
 语法：
-- 基础：`\SideNode{批注内容}`
-- 位置参数（自动转换为 em）：`\SideNode[5pt]{高度调整}` 等同于 `\SideNode[yshift=5pt]{高度调整}`
-- 数值自动转换为 em：`\SideNode[0.5]{内容}` 等同于 `\SideNode[0.5em]{内容}`
-- 命名参数：`\SideNode[yshift=5pt, color=blue]{批注内容}`
+- 基础：`\Sidenote{批注内容}`
+- 位置参数（自动转换为 em）：`\Sidenote[5pt]{高度调整}` 等同于 `\Sidenote[yshift=5pt]{高度调整}`
+- 数值自动转换为 em：`\Sidenote[0.5]{内容}` 等同于 `\Sidenote[0.5em]{内容}`
+- 命名参数：`\Sidenote[yshift=5pt, color=blue]{批注内容}`
 
 | 参数 | 简体 | 繁体 | 类型 | 默认值 | 说明 |
 |------|------|------|------|--------|------|
@@ -490,9 +539,12 @@
 | xshift | 横移 | 橫移 | 度量 | 0pt | 水平偏移 <sup>v0.3.5+</sup> |
 | grid-height | 格高 | 格高 | 度量 | _(空)_ | 侧批格高（默认=字号） |
 | font-size | 字号 | 字號 | 字号 | 10pt | 侧批字号 |
-| color | 颜色 | 顏色 | 颜色 | red | 侧批颜色 |
-| column-padding-top | 栏上填充 | 欄上填充 | 度量 | 0pt | 上方填充 |
-| column-padding-bottom | 栏下填充 | 欄下填充 | 度量 | 0pt | 下方填充 |
+| color | 颜色 | 顏色 | 颜色 | red | 侧批颜色（别名 `font-color`／`字体颜色`／`字體顏色`） |
+| background-color | 底色 | 背景色 | 颜色 | _(空)_ | 侧批底色（简体也可写 `背景色`） |
+| column-padding-top | 栏上填充 | — | 度量 | 0pt | 上方填充 |
+| column-padding-bottom | 栏下填充 | — | 度量 | 0pt | 下方填充 |
+
+另外，`punct-mode`（`标点模式`）等标点设置也可直接写在侧批参数里，只对这条侧批生效，例如 `\侧批[标点模式=judou]{…}`。
 
 ### `\sidenoteSetup`  `\侧批设置`  `\側批設置`
 
@@ -522,7 +574,7 @@
 |------|------|------|------|--------|------|
 | mode | 模式 | 模式 | 选项 | endnote | 脚注模式：`endnote`(段末注) `page`(页下注) |
 | number-style | 编号样式 | 編號樣式 | 选项 | lujiao | 编号风格：`lujiao`(【一】) `circled`(①) |
-| separator | 分隔符 | 分隔符 | 选项 | blank | 分隔方式：`blank`(空格) `none` |
+| separator | 分隔符 | 分隔符 | 选项 | blank | 各条之间的分隔：`blank`（1em 空白）`none` |
 | font | 字体 | 字體 | 字符串 | _(空)_ | 脚注字体 |
 | font-size | 字号 | 字號 | 字号 | 0.8em | 脚注字号（相对于正文字号） |
 | font-color | 字体颜色 | 字體顏色 | 颜色 | _(空)_ | 脚注字体颜色 |
@@ -597,37 +649,48 @@
 | chapter-font-size | 章节字号 | 章節字號 | 字号 | _(空)_ | 章节标题字号 |
 | chapter-font-color | 章节字体颜色 | 章節字體顏色 | 颜色 | _(空)_ | 章节标题颜色 |
 | chapter-font | 章节字体 | 章節字體 | 字符串 | _(空)_ | 章节标题字体 |
-| chapter-spacing-top | 章节上间距 | 章節上間距 | 度量 | _(空)_ | 章节前附加间距 |
-| section-indent | 篇缩进 | 篇縮進 | 整数 | 1 | 小节标题缩进 |
-| section-font-size | 篇字号 | 篇字號 | 字号 | _(空)_ | 小节字号 |
-| section-font-color | 篇字体颜色 | 篇字體顏色 | 颜色 | _(空)_ | 小节颜色 |
-| section-font | 篇字体 | 篇字體 | 字符串 | _(空)_ | 小节字体 |
-| section-spacing-top | 篇上间距 | 篇上間距 | 度量 | _(空)_ | 小节前附加间距 |
+| chapter-spacing-top | — | — | 度量 | _(空)_ | 章节前附加间距 |
+| section-indent | 篇缩进 | — | 整数 | 1 | 小节标题缩进 |
+| section-font-size | 篇字号 | — | 字号 | _(空)_ | 小节字号 |
+| section-font-color | 篇字体颜色 | — | 颜色 | _(空)_ | 小节颜色 |
+| section-font | 篇字体 | — | 字符串 | _(空)_ | 小节字体 |
+| section-spacing-top | — | — | 度量 | _(空)_ | 小节前附加间距 |
 | subsection-indent | 节缩进 | 節縮進 | 整数 | 2 | 子节标题缩进 |
 | subsection-font-size | 节字号 | 節字號 | 字号 | _(空)_ | 子节字号 |
 | subsection-font-color | 节字体颜色 | 節字體顏色 | 颜色 | _(空)_ | 子节颜色 |
 | subsection-font | 节字体 | 節字體 | 字符串 | _(空)_ | 子节字体 |
-| subsection-spacing-top | 节上间距 | 節上間距 | 度量 | _(空)_ | 子节前附加间距 |
+| subsection-spacing-top | — | — | 度量 | _(空)_ | 子节前附加间距 |
 
 ---
 
-## 全局设置 (GlobalSettings) <sup>v0.3.5+</sup>
+## 组件级语义设置 (Settings)
 
 **文件**: `core/luatex-cn-core-settings.sty`
 
-### `\GlobalSettings`  `\全局设置`  `\全局設置`
-
-配置全局语义设置。这些设置通过 setting stack 管理，独立于视觉样式系统。
-
-语法：`\GlobalSettings{punct-mode=judou, punct-style=taiwan}`
+没有单独的全局设置命令（旧版 wiki 写的 `\GlobalSettings`／`\全局设置` 并不存在）。下面这几个键可以直接写在侧批、批注、眉批、文本框、`\样式` 等组件的可选参数里，只对该组件生效：
 
 | 参数 | 简体 | 繁体 | 类型 | 默认值 | 说明 |
 |------|------|------|------|--------|------|
 | punct-mode | 标点模式 | 標點模式 | 选项 | _(空)_ | 标点模式：`normal` `judou` `none` |
 | punct-style | 标点标准 | 標點標準 | 选项 | _(空)_ | 标点风格：`mainland` `taiwan` |
-| debug | 调试 | 調試 | 是/否 | false | 启用调试输出 |
+| debug | 调试 | 調試 | 是/否 | _(空)_ | 启用调试输出 |
 
-侧批、批注、眉批、TextBox 等组件可通过各自参数独立覆盖全局设置。
+全文的标点模式用 `\正常标点模式`／`\句读模式`／`\无标点模式` 切换（见「句读」一节），标点风格用 `\标点设置{标点风格=…}`。
+
+## 文档样式 (Document)
+
+**文件**: `core/luatex-cn-core-document.sty`
+
+### `\documentSetup`  `\文档设置`  `\文檔設置`
+
+设置文档级默认样式（样式栈的最底层），各组件未指定时沿用。只有英文键：
+
+| 参数 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| font-color | 颜色 | _(空)_ | 全文字色 |
+| font-size | 字号 | _(空)_ | 全文字号 |
+| font | 字符串 | _(空)_ | 全文字体 |
+| background-color | 颜色 | _(空)_ | 页面底色 |
 
 ---
 
@@ -645,6 +708,12 @@
 | punct-squeeze | 标点压缩 | 標點壓縮 | 是/否 | true | 连续标点压缩 |
 | punct-hanging | 标点悬挂 | 標點懸掛 | 是/否 | false | 标点悬挂 |
 | kinsoku | 禁则 | 禁則 | 是/否 | true | 禁则处理 |
+| western-space | 中西间距 | 中西間距 | 是/否 | true | 竖排中西文之间加 1/4em 间距 |
+| style | 风格预设 | 風格預設 | 选项 | — | clreq 预设：`mainland` `taiwan` `none`（与横排同名同值，见 [[标点系统 \| Punctuation]]） |
+| squeeze-mode | 宽度调整 | 寬度調整 | 选项 | legacy | 标点挤压算法：`legacy` `context`（上下文相关） |
+| adjacent-punct | 连续标点 | 連續標點 | 选项 | 1.5 | 相邻标点合计宽度：`1.5` `1` `natural` |
+| line-start-bracket | — | — | 选项 | trim | 列首开始夹注符号（开括号、开引号）：`trim`（缩减始侧半字）`natural` |
+| line-end-punct | — | — | 选项 | compress | 列末点号：`compress`（挤半宽）`natural` |
 
 ### `\大陆标点风格`  `\DaLuBiaoDianFengGe`  `\大陸標點風格`
 
@@ -668,11 +737,13 @@
 
 ### `\gujiSetup`  `\古籍设置`  `\古籍設置`
 
-古籍文档类的主配置命令。
+古籍文档类的配置命令，目前只有一个键：
 
 | 参数 | 简体 | 繁体 | 类型 | 默认值 | 说明 |
 |------|------|------|------|--------|------|
-| template | 模板 | 模板 | 字符串 | — | 加载预设模板 |
+| template | — | — | 字符串 | — | 加载预设模板 |
+
+版面参数请用 `\pageSetup`、`\contentSetup`、`\banxinSetup` 等设置。
 
 **内置模板**:
 
@@ -681,10 +752,13 @@
 | default | 四库全书 | 四庫全書 |
 | SiKuQuanShu-colored | 四库全书彩色 | 四庫全書彩色 |
 | HongLouMengJiaXuBen | 红楼梦甲戌本 | 紅樓夢甲戌本 |
+| oushizupu | 欧式族谱 | 歐式族譜 |
+
+中文模板名只在文档类选项中可用，如 `\documentclass[四库全书彩色]{ltc-guji}`；`\gujiSetup{template=…}` 请写英文名。
 
 ### `\defineGujiTemplate`  `\定义古籍模板`  `\定義古籍模板`
 
-定义自定义古籍模板。
+给 `\gujiSetup` 定义一个模板名。注意：模板体按 `\gujiSetup` 的键解析，目前只认 `template`，写 `n-column` 等内容参数会报未知键。自定义版式请用配置文件（见 [[模板与自定义 | Templates]]）。
 
 ---
 
@@ -700,7 +774,7 @@
 |------|------|------|------|--------|------|
 | judou-pos | 句读位置 | 句讀位置 | 字符串 | right-bottom | 句读符号位置 |
 | judou-size | 句读大小 | 句讀大小 | 字号 | 1em | 句读符号大小 |
-| judou-color | 句读颜色 | 句讀顏色 | 颜色 | red | 句读颜色 |
+| judou-color | 句读颜色 | 句讀顏色 | 颜色 | red | 句读颜色（别名 `color`／`font-color`／`颜色`／`字体颜色`） |
 | punct-mode | 标点模式 | 標點模式 | 选项 | normal | 标点模式 |
 
 ### `\NormalPunctuationMode`  `\正常标点模式`  `\正常標點模式`
@@ -765,12 +839,12 @@
 
 | 参数 | 简体 | 繁体 | 类型 | 默认值 | 说明 |
 |------|------|------|------|--------|------|
-| pizhu | 批注 | 批注 | 是/否 | true | 是否启用批注输出 <sup>v0.3.6+</sup> |
+| pizhu | 批注 | 批註 | 是/否 | true | 是否启用批注输出 <sup>v0.3.6+</sup> |
 | x | 横坐标 | 橫坐標 | 度量 | _(空)_ | X 坐标 |
 | y | 纵坐标 | 縱坐標 | 度量 | _(空)_ | Y 坐标 |
 | height | 高度 | 高度 | 整数 | _(空)_ | 批注高度（格数） |
 | font-size | 字号 | 字號 | 字号 | 18pt | 批注字号 |
-| color | 颜色 | 顏色 | 颜色 | 1 0 0 | 批注颜色 |
+| color | 颜色 | 顏色 | 颜色 | 1 0 0 | 批注颜色（别名 `font-color`／`字体颜色`） |
 | grid-width | 格宽 | 格寬 | 度量 | 20pt | 批注格宽 |
 | grid-height | 格高 | 格高 | 度量 | 19pt | 批注格高 |
 
@@ -797,7 +871,7 @@
 | y | 纵坐标 | 縱坐標 | 度量 | _(空)_ | Y 坐标覆盖 |
 | height | 高度 | 高度 | 整数 | 7 | 眉批高度（格数） |
 | font-size | 字号 | 字號 | 字号 | 18pt | 眉批字号 |
-| color | 颜色 | 顏色 | 颜色 | 1 0 0 | 眉批颜色 |
+| color | 颜色 | 顏色 | 颜色 | 1 0 0 | 眉批颜色（别名 `font-color`／`字体颜色`） |
 | grid-width | 格宽 | 格寬 | 度量 | 20pt | 眉批格宽 |
 | grid-height | 格高 | 格高 | 度量 | 19pt | 眉批格高 |
 | spacing | 间距 | 間距 | 度量 | 10pt | 眉批间距 |
@@ -821,12 +895,14 @@
 
 | 参数 | 简体 | 繁体 | 类型 | 默认值 | 说明 |
 |------|------|------|------|--------|------|
-| opacity | 不透明度 | 不透明度 | 字符串 | 0.7 | 印章不透明度（0-1） |
-| xshift | 横移 | 橫移 | 度量 | -5.3cm | 水平偏移 |
-| yshift | 纵移 | 縱移 | 度量 | -6.4cm | 垂直偏移 |
-| width | 宽度 | 寬度 | 度量 | 12.9cm | 印章宽度 |
+| opacity | 不透明度 | 不透明度 | 字符串 | 1 | 印章不透明度（0-1） |
+| xshift | 横移 | 橫移 | 度量 | 0cm | 水平偏移 |
+| yshift | 纵移 | 縱移 | 度量 | 0cm | 垂直偏移 |
+| width | 宽度 | 寬度 | 度量 | 10cm | 印章宽度 |
 | page | 页 | 頁 | 整数 | 1 | 目标页码 |
 | color | 颜色 | 顏色 | 颜色 | _(空)_ | 印章着色 |
+
+`\yinzhangSetup`（`\印章设置`／`\印章設置`）设置以上参数的默认值。
 
 ---
 
@@ -852,6 +928,10 @@
 ### 环境 `SinglePage`  `单页`  `單頁`
 
 单页模式（筒子页的半页），自动计算纸宽/2 和边距/2。无专属参数，继承页面（Page）参数。
+
+### 环境 `EmptySinglePage`  `空白页`  `空白頁`
+
+无边框（无丝栏、无外框）的单页，内容可空。语法：`\begin{空白页}[参数] … \end{空白页}`。
 
 ---
 
@@ -924,34 +1004,46 @@
 
 | 参数 | 简体 | 繁体 | 类型 | 默认值 | 说明 |
 |------|------|------|------|--------|------|
-| banxin | 版心 | 版心 | 是/否 | false | 是否启用版心 |
-| banxin-upper-ratio | 版心上比 | 版心上比 | 字符串 | 0.28 | 上鱼尾区占比（0-1） |
-| banxin-middle-ratio | 版心中比 | 版心中比 | 字符串 | 0.56 | 中间区占比（0-1） |
-| banxin-padding-top | 版心上填充 | 版心上填充 | 度量 | 2pt | 版心上方留白 |
-| banxin-padding-bottom | 版心下填充 | 版心下填充 | 度量 | 10pt | 版心下方留白 |
+| banxin | 版心 | 版心 | 是/否 | false（`ltc-guji` 默认开启） | 是否启用版心 |
+| banxin-upper-ratio | 版心上比 | 版心上比 | 字符串 | 0.28 | 上部（书名区）占比（0-1） |
+| banxin-middle-ratio | 版心中比 | 版心中比 | 字符串 | 0.56 | 中部（卷名区）占比（0-1） |
 | banxin-divider | 版心分隔线 | 版心分隔線 | 是/否 | true | 是否显示分隔线 |
 | upper-yuwei | 上鱼尾 | 上魚尾 | 是/否 | true | 是否显示上鱼尾 |
 | lower-yuwei | 下鱼尾 | 下魚尾 | 是/否 | true | 是否显示下鱼尾 |
-| chapter-title | 章节标题 | 章節標題 | 字符串 | _(空)_ | 章节标题 |
+| middle-section-text | 中部文字 | — | 字符串 | _(空)_ | 中部文字（通常由 `\chapter` 自动设置） |
+| upper-section | 上部 | — | 文字或键值 | — | 上部（书名区）：写文字即书名，写键值则设下表参数 |
+| middle-section | 中部 | — | 键值 | — | 中部（卷名区）参数 |
+| page-number | 页码 | 頁碼 | 键值 | — | 页码区参数 |
+| lower-section | 下部 | — | 文字或键值 | — | 下部（刻工／出版者区）：写文字即内容，写键值则设下表参数 |
+| book-ear | 书耳 | 書耳 | 是/否、文字或键值 | false | 书耳，见下（v0.4.5+，#87） |
 
-**书名区参数** (通过 `book-name={...}` 传入):
+书名默认取 `\title{...}`，卷名取 `\chapter{...}`。
+
+**上部参数** (`upper-section={...}` ／ `上部={...}`):
 
 | 参数 | 简体 | 类型 | 默认值 | 说明 |
 |------|------|------|--------|------|
 | font-size | 字号 | 字号 | _(空)_ | 书名字号 |
 | grid-height | 格高 | 度量 | _(空)_ | 书名格高 |
 | align | 对齐 | 字符串 | center | 书名对齐方式 |
+| top-padding | — | 度量 | 2pt | 上方留白 |
+| bottom-padding | — | 度量 | 10pt | 下方留白 |
+| background-color | 底色 | 颜色 | _(空)_ | 底色 |
+| font-color | 字体颜色 | 颜色 | _(空)_ | 字色 |
 
-**章节区参数** (通过 `chapter={...}` 传入):
+**中部参数** (`middle-section={...}` ／ `中部={...}`):
 
 | 参数 | 简体 | 繁体 | 类型 | 默认值 | 说明 |
 |------|------|------|------|--------|------|
-| font-size | 字号 | 字号 | 字号 | _(空)_ | 章节字号 |
-| grid-height | 格高 | 格高 | 度量 | _(空)_ | 章节格高 |
-| top-margin | 上留白 | 上留白 | 度量 | 20pt | 章节区上方留白 |
-| cols | 列数 | 列數 | 整数 | 1 | 章节标题列数 |
+| font-size | 字号 | — | 字号 | _(空)_ | 卷名字号 |
+| grid-height | 格高 | — | 度量 | _(空)_ | 卷名格高 |
+| top-margin | 上留白 | — | 度量 | 20pt | 中部上方留白 |
+| cols | 列数 | 列數 | 整数 | 1 | 卷名列数 |
+| align | 对齐 | 對齊 | 字符串 | center | 对齐方式 |
+| background-color | 底色 | — | 颜色 | _(空)_ | 底色 |
+| font-color | 字体颜色 | — | 颜色 | _(空)_ | 字色 |
 
-**页码区参数** (通过 `page-number={...}` 传入):
+**页码区参数** (`page-number={...}` ／ `页码={...}`):
 
 | 参数 | 简体 | 类型 | 默认值 | 说明 |
 |------|------|------|--------|------|
@@ -959,21 +1051,43 @@
 | font-size | 字号 | 字号 | 14pt | 页码字号 |
 | grid-height | 格高 | 度量 | _(空)_ | 页码格高 |
 | align | 对齐 | 字符串 | right-bottom | 页码位置：`right-bottom` 版心下部靠右；`bottom-center` 版心下部横向居中；`center` 版心中部居中（紧接卷名之下，常见于明清刻本） |
-| bottom-padding | 下留白 | 度量 | 10pt | 页码区底部留白（`right-bottom` / `bottom-center` 时生效） |
+| bottom-padding | — | 度量 | 10pt | 页码区底部留白（`right-bottom` / `bottom-center` 时生效） |
 
 ```latex
 \banxinSetup{ page-number = { align = center } }
 \版心设置{ 页码 = { 对齐 = center } }
 ```
 
-**出版商区参数** (通过 `publisher={...}` 传入):
+**下部参数** (`lower-section={...}` ／ `下部={...}`):
 
 | 参数 | 简体 | 类型 | 默认值 | 说明 |
 |------|------|------|--------|------|
-| font-size | 字号 | 字号 | 10pt | 出版商字号 |
-| grid-height | 格高 | 度量 | _(空)_ | 出版商格高 |
-| align | 对齐 | 字符串 | right | 出版商对齐 |
-| bottom-margin | 下留白 | 度量 | 5pt | 出版商下方留白 |
+| font-size | 字号 | 字号 | 10pt | 字号 |
+| grid-height | 格高 | 度量 | _(空)_ | 格高 |
+| align | 对齐 | 字符串 | right | 对齐 |
+| bottom-margin | 下留白 | 度量 | 5pt | 下方留白 |
+| top-padding | — | 度量 | 2pt | 上方留白 |
+| bottom-padding | — | 度量 | 10pt | 下方留白 |
+| background-color | 底色 | 颜色 | _(空)_ | 底色 |
+| font-color | 字体颜色 | 颜色 | _(空)_ | 字色 |
+
+**书耳** (`book-ear` ／ `书耳` ／ `書耳`) <sup>v0.4.5+</sup>:
+
+书耳是刻在边栏外上角的小框，记篇名。`书耳=true` 开启，文字默认取当前 `\chapter` 的篇名（换篇后跟着变）；也可直接写文字 `书耳=五帝本紀`，或写键值：
+
+| 参数 | 简体 | 繁体 | 类型 | 默认值 | 说明 |
+|------|------|------|------|--------|------|
+| show | 显示 | 顯示 | 是/否 | false | 是否显示（写了键值即开启） |
+| text | 文字 | 文字 | 字符串 | _(空)_ | 书耳文字，空则取篇名 |
+| position | 位置 | 位置 | 选项 | left | `left`（`左`）`right`（`右`）`both`（`两侧`／`兩側`）。默认在左侧，筒子页拆分后只落在左半叶上 |
+| width | 宽度 | 寬度 | 度量 | 0.8 × 列宽 | 框宽 |
+| height | 高度 | 高度 | 度量 | 按字数 | 框高 |
+| font-size | 字号 | 字號 | 字号 | 0.6 × 框宽 | 字号 |
+
+```latex
+\banxinSetup{ 书耳 = true }
+\banxinSetup{ book-ear = { position = both, font-size = 9pt } }
+```
 
 ---
 
@@ -1012,6 +1126,28 @@
 | scale | 缩放 | 縮放 | 数值 | 0.3 | 标记缩放比例 |
 | color | 颜色 | 顏色 | 颜色 | black | 着重号颜色 |
 | skip-punct | 跳过标点 | 跳過標點 | 是/否 | false | 标点上不加着重号（clreq 5.3.1，vbook 两类预设 true） |
+
+### `\decorateSetup`  `\装饰设置`  `\裝飾設置`
+
+设置 `\装饰` 的默认参数，参数同上。
+
+### `\faSheng`  `\发圈`  `\發圈`  `\圈发`  `\圈發`
+
+发圈（四声圈点）：在字的四角画小圈标声调。语法：`\发圈[tone=shang]{字}`，或用快捷命令 `\平声{字}` `\上声{字}` `\去声{字}` `\入声{字}`（繁体 `\平聲` 等）。批量：`\发圈批{平上去入}{春夏秋冬}`（`\fashengBatch`，声调串与字串逐个配对）。默认参数用 `\发圈设置`（`\fashengSetup`／`\發圈設置`）。
+
+| 参数 | 简体 | 繁体 | 类型 | 默认值 | 说明 |
+|------|------|------|------|--------|------|
+| tone | 声 | 聲 | 选项 | ping | `ping` `shang` `qu` `ru`（也可写 `平` `上` `去` `入`，或直接写 `上声` 当开关） |
+| color | 颜色 | 顏色 | 颜色 | black | 圈的颜色 |
+| char | 字符 | 字符 | 字符 | ○ | 圈的字符 |
+| scale | 缩放 | 縮放 | 数值 | 0.3 | 缩放比例 |
+| offset | 偏移 | 偏移 | 度量 | 0.45em | 离字中心的偏移 |
+
+详见 [[改字与装饰 | Correction]]。
+
+### `\SideText`  `\旁注`  `\旁註`
+
+在字旁加小字（如注音、校字）。语法：`\旁注{正文}{右侧小字}` 或 `\旁注{正文}{右侧小字}{左侧小字}`。默认参数用 `\旁注设置`（`\sideTextSetup`／`\旁註設置`）：`scale`（`缩放`，0.5）、`color`（`颜色`，black）、`offset`（`偏移`，0pt）。
 
 ### `\fix`  `\改`
 
@@ -1073,13 +1209,23 @@
 
 ---
 
+# 其他命令所在页面
+
+- 横排（`\usepackage{luatex-cn}`）的 `\horiSetup`、行间标号、行间注、`\字号` 等：见 [[现代横排 | Horizontal]]
+- 数字化文档类 `ltc-guji-digital` 的 `\双列`、`\右小列`、`\左小列`、`数字化内容` 环境等：见 [[数字化 | Digitalization]]
+- 工尺谱：见 [[工尺谱 | Gongche]]
+- 排版坐标导出 `\enableLayoutExport`（`\开启排版导出`）：见 [[排版坐标导出 | Layout-Export]]
+- 抬头相关命令：见 [[抬头 | Taitou]]
+
+---
+
 # Debug 调试宏包
 
 **文件**: `debug/luatex-cn-debug.sty`
 
 ---
 
-### `\LtcDebugOn`  `\开启调试`  `\開啟調試`
+### `\LtcDebugOn`  `\开启调试`  `\开启调试模式`  `\開啟調試`
 
 全局启用调试输出。
 
@@ -1103,7 +1249,7 @@
 
 显示页面文本区域边框。
 
-### `\LtcShowGrid`  `\显示网格`  `\顯示網格`
+### `\LtcShowGrid`  `\显示网格`  `\显示坐标`  `\顯示網格`
 
 显示页面坐标网格。原点在右上角。
 
@@ -1111,7 +1257,7 @@
 |------|------|------|------|--------|------|
 | measure | 单位 | 單位 | 选项 | _(空)_ | 坐标单位：`cm` `pt` `mm` |
 
-### `\LtcHideGrid`  `\隐藏网格`  `\隱藏網格`
+### `\LtcHideGrid`  `\隐藏网格`  `\隐藏坐标`  `\隱藏網格`
 
 隐藏页面坐标网格。
 
@@ -1128,7 +1274,7 @@
 
 类选项中传入模板名可加载对应配置文件。
 
-### `\skipHeader`  `\跳过页眉`  `\跳過頁眉`
+### `\skipHeader`  `\跳过页眉`
 
 跳过当前页的页眉和页码显示（如标题页、封面页）。语法：`\skipHeader`
 
@@ -1136,17 +1282,21 @@
 
 通过 `\pageSetup` 配置 vbook 专有参数（配合 `header-enabled=true`）：
 
-| 参数 | 简体 | 类型 | 默认值 | 说明 |
-|------|------|------|--------|------|
-| page-number-x | 页码横位 | 度量 | 3mm | 页码 X 坐标 |
-| page-number-y | 页码纵位 | 度量 | 52mm | 页码 Y 坐标 |
-| header-y | 页眉纵位 | 度量 | 52mm | 页眉 Y 坐标 |
+| 参数 | 简体 | 繁体 | 类型 | 默认值 | 说明 |
+|------|------|------|------|--------|------|
+| page-number-x | 页码横移 | 頁碼橫移 | 度量 | 3mm | 页码距纸边的横向距离 |
+| page-number-y | 页码纵移 | 頁碼縱移 | 度量 | 52mm | 页码纵向位置（`header-anchor=content` 时为相对偏移） |
+| header-y | 页眉纵移 | 頁眉縱移 | 度量 | 52mm | 页眉纵向位置（`header-anchor=content` 时为相对偏移） |
+| page-number-position | 页码位置 | 頁碼位置 | 选项 | outer | `outer`（`外侧`，翻口侧）`inner`（`内侧`，书脊侧）`center`（`居中`，页脚居中）（v0.4.4+） |
+| header-position | 页眉位置 | 頁眉位置 | 选项 | outer | `outer`（`外侧`）`inner`（`内侧`）（v0.4.4+） |
+| header-anchor | 页眉锚点 | 頁眉錨點 | 选项 | paper | `paper`（`纸边`）按纸边定位；`content`（`内容区`）书眉页码跟随内容区（v0.4.4+） |
+| header-sep | 页眉间距 | 頁眉間距 | 度量 | 6mm | `header-anchor=content` 时书眉页码离内容区外缘的距离（v0.4.4+） |
 
-> 页眉自动交替：奇数页显示章节名（左侧），偶数页显示书名（右侧）。页码显示在与页眉同侧（装订边）。
+> 竖排书右侧装订：奇数页是左页，书脊在其右侧。默认书眉页码在翻口侧（外侧）。详见 [[现代竖排 | ltc-book]]。
 
 ### `\卷名`
 
-vbook 卷名标题。语法：`\卷名{史記卷六}`。自动设置 24pt 字号和 48pt 上间距。
+vbook 卷名标题（定义在 `configs/luatex-cn-vbook-common.cfg`）。语法：`\卷名{史記卷六}`。自动设置 24pt 字号和 48pt 上间距。
 
 ### `\章节名`
 
@@ -1158,8 +1308,8 @@ vbook 章节名标题。语法：`\章节名{秦始皇本紀}`。自动设置 20
 
 繁体中文竖排书籍文档类。加载 `luatex-cn-tw-vbook-default.cfg`。其他与 `ltc-cn-vbook` 相同。
 
-## guji  ltc-guji
+## ltc-guji
 
-**文件**: `ltc-guji.cls`  `ltc-ltc-guji.cls`
+**文件**: `ltc-guji.cls`
 
 古籍文档类。加载全部古籍功能模块（句读、夹注、批注、眉批、印章、书名页、封面等）。

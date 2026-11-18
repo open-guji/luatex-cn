@@ -66,7 +66,7 @@
     * [[Elevation | EN:Taitou]]
 * [[Debug Mode | EN:Debug]]
 * [[Layout Export | EN:Layout-Export]]
-* [[Command Reference | Command-Reference]]
+* [[Command Reference | EN:Command-Reference]]
 * [[Changelog | EN:Changelog]]
 
 ### Developer Manual

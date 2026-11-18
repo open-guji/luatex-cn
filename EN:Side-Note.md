@@ -48,7 +48,7 @@ Text…\夹注[n-char-per-col=15]{back to 15 for this note}…
 
 ---
 
-## Side Notes (SideNode / 侧批)
+## Side Notes (Sidenote / 侧批)
 
 Small annotations placed between text columns or at page margins.
 
@@ -103,13 +103,12 @@ Side notes can use a different punctuation mode independent of the global settin
 ```latex
 % Side note uses judou mode (while global may be normal)
 \Sidenote[punct-mode=judou]{note content}
-
-% Or configure globally
-\GlobalSettings{punct-mode=judou}
 ```
 
+The document-wide mode is switched with `\JudouPunctuationMode` / `\NormalPunctuationMode` / `\NonePunctuationMode` (see [[Judou | EN:Judou]]).
+
 ### Aliases
-- Setup command: `\sidenoteSetup` / `\CePiSetup` / `\侧批设置` (Simplified) / `\側批設置` (Traditional)
+- Setup command: `\sidenoteSetup` / `\侧批设置` (Simplified) / `\側批設置` (Traditional)
 - Vertical shift parameter: `yshift` / `纵移` (Simplified) / `縱移` (Traditional)
 - Horizontal shift parameter: `xshift` / `横移` (Simplified) / `橫移` (Traditional)
 

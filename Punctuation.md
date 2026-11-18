@@ -166,14 +166,14 @@ clreq 直排中西混排的三种配置中，「顺时针旋转 90°」由 `\横
 
 ## 在 cn-vbook / tw-vbook 中使用
 
-`ltc-cn-vbook` / `ltc-tw-vbook` 文档类默认启用标点系统。通过模板选择不同风格：
+`ltc-cn-vbook` / `ltc-tw-vbook` 文档类默认启用标点系统，两者的默认风格不同：
 
 ```latex
-% 默认模板：台湾风格
+% 中国大陆风格（默认 punct-style=mainland）
 \documentclass{ltc-cn-vbook}
 
-% 中华书局模板：中国大陆风格
-\documentclass[中华书局]{ltc-cn-vbook}
+% 台湾风格（默认 punct-style=taiwan）
+\documentclass{ltc-tw-vbook}
 ```
 
 也可以在文档中随时切换：

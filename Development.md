@@ -227,7 +227,7 @@ end
 | `luatex-cn-core-page.sty` | 页面设置 | `\pageSetup{}` |
 | `luatex-cn-core-column.sty` | 列控制 | `\Column{}` / `\行{}` |
 | `luatex-cn-core-style.sty` | 样式覆盖 | `\Style{}` / `\样式{}` |
-| `luatex-cn-core-sidenote.sty` | 侧批 | `\SideNode{}` |
+| `luatex-cn-core-sidenote.sty` | 侧批 | `\Sidenote{}` |
 | `luatex-cn-core-textbox.sty` | 文本框 | `\TextBox{}` |
 | `luatex-cn-core-paragraph.sty` | 段落/抬头 | `\begin{段落}` / `\抬头` |
 | `luatex-cn-core-punct.sty` | 标点系统 | `\punctSetup{}` |
@@ -237,7 +237,7 @@ end
 
 | 文件 | 功能 | 关键命令 |
 |------|------|----------|
-| `luatex-cn-guji-judou.sty` | 句读 | `\JudouOn` / `\句读模式` |
+| `luatex-cn-guji-judou.sty` | 句读 | `\JudouPunctuationMode` / `\句读模式` |
 | `luatex-cn-guji-jiazhu.sty` | 夹注 | `\JiaZhu{}` / `\夹注{}` |
 | `luatex-cn-guji-pizhu.sty` | 批注 | `\PiZhu{}` / `\批注{}` |
 | `luatex-cn-guji-meipi.sty` | 眉批 | `\MeiPi{}` / `\眉批{}` |

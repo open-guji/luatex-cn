@@ -8,7 +8,6 @@ luatex-cn provides two document classes for modern vertical Chinese book typeset
 |-------|-------------|-------------|
 | **`ltc-cn-vbook`** (v0.2.8+) | Mainland | Simplified Chinese vertical books |
 | **`ltc-tw-vbook`** (v0.2.8+) | Taiwan | Traditional Chinese vertical books |
-| `ltc-book` | Taiwan | Legacy name, still works |
 
 ## Basic Usage
 
@@ -25,15 +24,14 @@ luatex-cn provides two document classes for modern vertical Chinese book typeset
 
 ## Template System
 
-| Option | Description | Punct Style |
-|--------|-------------|-------------|
-| (none) | Default, 16-kai (170x240mm), 12pt font | Taiwan |
-| `中华书局` | Zhonghua Shuju style, 15pt font, footnotes enabled | Mainland |
+Each class loads its own default configuration; both share `configs/luatex-cn-vbook-common.cfg`: 16-kai (170×240mm), 14pt font, free column width (`n-column=0`), facing pages (`twoside=true`, 24mm spine side, 16mm fore-edge side), running headers and page numbers, lujiao-numbered footnotes.
 
-```latex
-\documentclass{ltc-cn-vbook}           % Default
-\documentclass[中华书局]{ltc-cn-vbook}  % Zhonghua Shuju
-```
+| Class | Default config | Punct style |
+|-------|---------------|-------------|
+| `ltc-cn-vbook` | `luatex-cn-vbook-default.cfg` | Mainland (`punct-style=mainland`) |
+| `ltc-tw-vbook` | `luatex-cn-tw-vbook-default.cfg` | Taiwan (`punct-style=taiwan`) |
+
+A template name given as a class option loads `<name>.cfg` (document folder) or `configs/luatex-cn-vbook-<name>.cfg`; see [[Templates | EN:Templates]]. There are no built-in named templates (the `中华书局` template mentioned in older versions of this wiki does not exist).
 
 ## Differences from guji
 
@@ -51,14 +49,28 @@ luatex-cn provides two document classes for modern vertical Chinese book typeset
 
 `ltc-cn-vbook` / `ltc-tw-vbook` enable the modern punctuation system by default. See [[Punctuation System | EN:Punctuation]].
 
+`ltc-cn-vbook` defaults to mainland style and `ltc-tw-vbook` to Taiwan style. Override in either class:
+
 ```latex
-\documentclass{ltc-cn-vbook}
+\documentclass{ltc-tw-vbook}
 \punctSetup{punct-style=mainland}  % Override to mainland style
 ```
 
-Or use `\documentclass[中华书局]{ltc-cn-vbook}` which automatically sets mainland style.
+### Judou Mode
 
-You can also switch to judou mode: `\开启句读模式`
+The modern classes use modern punctuation by default, but can switch to judou mode:
+
+```latex
+\documentclass{ltc-cn-vbook}
+\开启句读模式  % switch to judou mode
+
+\begin{document}
+\begin{正文}
+天地玄黄，宇宙洪荒。
+% commas become small dots at the lower right, full stops small circles
+\end{正文}
+\end{document}
+```
 
 ## Two-side Mirror Margins (v0.3.2+)
 
@@ -125,7 +137,13 @@ The running header sits at the outer (fore-edge) top corner and the page number 
 
 `header-anchor = paper` (default) measures the header and page number from the paper edge with `header-y` / `page-number-x` / `page-number-y`. `header-anchor = content` (v0.4.4+) makes them follow the content area: placed `header-sep` (default `6mm`) outside its outer edge, header top aligned with the content top, page-number foot aligned with the content bottom; `header-y` / `page-number-y`, if given, become offsets from those edges.
 
-Use `\skipHeader` to suppress headers on specific pages (e.g., title pages).
+Use `\skipHeader` (`\跳过页眉`) to suppress headers on specific pages (e.g., title pages):
+
+```latex
+\skipHeader
+\卷名{史記卷六}
+\章节名{秦始皇本紀第六}
+```
 
 ## Paragraph Indentation (v0.3.2+)
 
@@ -137,7 +155,11 @@ vbook supports first-line paragraph indentation:
 }
 ```
 
-The layout engine automatically detects paragraph boundaries and applies indentation.
+The layout engine automatically detects paragraph boundaries (`\par` or a blank line) and applies indentation. It can also be set temporarily in `\Style`:
+
+```latex
+\Style[first-indent=0]{a paragraph without indent}
+```
 
 ## Volume & Chapter Title Commands (v0.3.2+)
 
@@ -153,7 +175,7 @@ The layout engine automatically detects paragraph boundaries and applies indenta
 Built-in footnote support with endnote and page-bottom modes.
 
 ```latex
-\脚注设置{number-style=lujiao, indent=1em}
+\脚注设置{number-style=lujiao, indent=2}
 天地玄黄\脚注{This is a footnote}。
 \输出脚注  % Output at paragraph end
 ```
@@ -164,9 +186,12 @@ Built-in footnote support with endnote and page-bottom modes.
 |-----------|-------------|---------|--------|
 | `mode` | Mode | `endnote` | `endnote`, `page` |
 | `number-style` | Style | `lujiao` | `lujiao` (【一】), `circled` (①) |
-| `separator` | Separator | `blank` | `blank`, `none` |
+| `separator` | Gap between notes | `blank` | `blank` (1em space), `none` |
 | `font-size` | Size | `0.8em` | Any dimension |
-| `indent` | Indent | `1em` | Any dimension |
+| `font-color` | Color | (inherited) | Any color |
+| `indent` | Hanging indent (cells) | `2` | Integer |
+| `spacing` | Spacing | `0.5em` | Any dimension |
+| `marker-height` | Cells taken by the number | `2` | Integer |
 
 ### Commands
 
@@ -198,7 +223,37 @@ Auto vertical page numbers at the outer (fore-edge) bottom corner, alternating o
 
 ## Custom Templates
 
-Create `configs/luatex-cn-book-<name>.cfg` with `\pageSetup`, `\contentSetup`, `\punctSetup`, then use `\documentclass[name]{ltc-cn-vbook}`.
+Create `<name>.cfg` in the document folder (or `configs/luatex-cn-vbook-<name>.cfg` on the TeX path). It is loaded after the default configuration, so only list what you change:
+
+```latex
+% mytemplate.cfg
+\pageSetup{
+    paper-width = 148mm,
+    paper-height = 210mm,
+    margin-inner = 18mm,
+    margin-outer = 15mm,
+}
+\contentSetup{ font-size = 11pt, line-spacing = 13pt }
+\punctSetup{punct-style=taiwan}
+```
+
+Then use `\documentclass[mytemplate]{ltc-cn-vbook}`.
+
+## Free Column Width Mode
+
+`ltc-cn-vbook` / `ltc-tw-vbook` use `n-column=0` by default: **free column width mode**. Unlike the fixed 8-column grid of `ltc-guji`, each column is as wide as its content; the layout engine tracks the column widths and starts a new page when the next column no longer fits.
+
+This suits modern books where column widths vary, e.g. mixed font sizes or `\行[width=3cm]{...}` columns.
+
+Enable it in a custom template:
+```latex
+\contentSetup{
+    n-column = 0,           % free column width
+    grid-width = 13pt,
+    grid-height = 13pt,
+    border = false,
+}
+```
 
 ---
 

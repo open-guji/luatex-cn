@@ -17,7 +17,7 @@
 \RequirePackage{expl3}
 \RequirePackage{l3keys2e}
 \RequirePackage{core/luatex-cn-core-template}
-\ProvidesExplClass {ltc-guji} {2026/11/15} {0.4.4} {Ancient Chinese Book Class}
+\ProvidesExplClass {ltc-guji} {2026/11/18} {0.4.5} {Ancient Chinese Book Class}
 
 % ============================================================================
 % Variables (must be defined before use)

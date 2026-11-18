@@ -148,14 +148,19 @@
 % ============================================================================
 \keys_define:nn { luatexcn / punct }
   {
-    标点风格 .tl_set:N = \l__luatexcn_punct_style_tl,
-    標點風格 .tl_set:N = \l__luatexcn_punct_style_tl,
-    风格预设 .tl_set:N = \l__luatexcn_punct_style_tl,
-    風格預設 .tl_set:N = \l__luatexcn_punct_style_tl,
-    宽度调整 .tl_set:N = \l__luatexcn_punct_squeezemode_tl,
-    寬度調整 .tl_set:N = \l__luatexcn_punct_squeezemode_tl,
-    连续标点 .tl_set:N = \l__luatexcn_punct_adjacent_tl,
-    連續標點 .tl_set:N = \l__luatexcn_punct_adjacent_tl,
+    % 选项类中文键名转发到英文 key；取值的中文写法由 zh-values 统一兜底
+    标点风格 .meta:n = { style = {#1} },
+    標點風格 .meta:n = { style = {#1} },
+    风格预设 .meta:n = { style = {#1} },
+    風格預設 .meta:n = { style = {#1} },
+    宽度调整 .meta:n = { squeeze-mode = {#1} },
+    寬度調整 .meta:n = { squeeze-mode = {#1} },
+    连续标点 .meta:n = { adjacent-punct = {#1} },
+    連續標點 .meta:n = { adjacent-punct = {#1} },
+    行首夹注符号 .meta:n = { line-start-bracket = {#1} },
+    行首夾注符號 .meta:n = { line-start-bracket = {#1} },
+    行末点号 .meta:n = { line-end-punct = {#1} },
+    行末點號 .meta:n = { line-end-punct = {#1} },
     标点压缩 .bool_set:N = \l__luatexcn_punct_squeeze_bool,
     標點壓縮 .bool_set:N = \l__luatexcn_punct_squeeze_bool,
     标点悬挂 .bool_set:N = \l__luatexcn_punct_hanging_bool,
@@ -179,5 +184,14 @@
 \NewCommandCopy{\標點設置}{\punctSetup}
 \NewCommandCopy{\大陸標點風格}{\大陆标点风格}
 \NewCommandCopy{\臺灣標點風格}{\台湾标点风格}
+
+% 中文取值（issue #85）：是/否、上/下/居中、内侧/外侧……见 shared/luatex-cn-zh-values.sty
+\ExplSyntaxOn
+\RequirePackage{shared/luatex-cn-zh-values}
+\luatexcn_zh_values_enable:nn { luatexcn / punct }
+  { punct-squeeze , punct-hanging , kinsoku , western-space , style , squeeze-mode ,
+    adjacent-punct , line-start-bracket , line-end-punct ,
+    标点压缩 , 標點壓縮 , 标点悬挂 , 標點懸掛 , 禁则 , 禁則 , 中西间距 , 中西間距 }
+\ExplSyntaxOff
 
 \endinput%

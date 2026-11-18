@@ -170,4 +170,11 @@
   }
 \ExplSyntaxOff
 
+% 中文取值（issue #85）：是/否、上/下/居中、内侧/外侧……见 shared/luatex-cn-zh-values.sty
+\ExplSyntaxOn
+\RequirePackage{shared/luatex-cn-zh-values}
+\luatexcn_zh_values_enable:nn { luatexcn / sidenote }
+  { sidenote , 侧批 , 側批 }
+\ExplSyntaxOff
+
 \endinput%

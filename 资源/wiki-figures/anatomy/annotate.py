@@ -27,10 +27,10 @@ SEAL = ROOT / "示例" / "史记五帝本纪" / "文渊阁宝印.png"
 
 DPI = 150
 LEFT = 330             # 左栏（版心放大图）宽度（px）
-RIGHT = 900            # 右栏（图例）宽度（px）
+RIGHT = 1180           # 右栏（图例）宽度（px）
 RED = (190, 30, 30)
 GRAY = (95, 95, 95)
-R = 21                 # 编号圆半径
+R = 26                 # 编号圆半径
 
 # 版心放大图：从整页裁出的范围（px, 150 dpi），放在左栏里的位置
 BANXIN_CROP = (1139, 400, 1218, 1480)
@@ -125,15 +125,19 @@ def render_page(workdir: Path) -> Image.Image:
     return Image.open(workdir / "page.png").convert("RGB")
 
 
+# 图例总高：起始 40 + 每组标题 72 + 组间 18 + 每项 118
+LEGEND_H = 40 + sum(72 + 18 + 118 * len(keys) for _, keys in GROUPS) + 60
+
+
 def draw_figure(page: Image.Image, lang: str) -> Image.Image:
     W, H = page.size
-    canvas = Image.new("RGB", (LEFT + W + RIGHT, H), "white")
+    canvas = Image.new("RGB", (LEFT + W + RIGHT, max(H, LEGEND_H)), "white")
     canvas.paste(page, (LEFT, 0))
     d = ImageDraw.Draw(canvas)
-    num_font = ImageFont.truetype(str(LABEL_FONT), 26)
-    group_font = ImageFont.truetype(str(LABEL_FONT), 30)
-    name_font = ImageFont.truetype(str(LABEL_FONT), 32)
-    cmd_font = ImageFont.truetype(str(LABEL_FONT), 24)
+    num_font = ImageFont.truetype(str(LABEL_FONT), 32)
+    group_font = ImageFont.truetype(str(LABEL_FONT), 42)
+    name_font = ImageFont.truetype(str(LABEL_FONT), 46)
+    cmd_font = ImageFont.truetype(str(LABEL_FONT), 33)
 
     # 版心放大图 + 原位置的虚线框
     inset = page.crop(BANXIN_CROP)
@@ -170,15 +174,15 @@ def draw_figure(page: Image.Image, lang: str) -> Image.Image:
     n = 1
     for group, keys in GROUPS:
         d.text((lx, y), GROUP_TITLES[lang][group], font=group_font, fill=RED)
-        y += 56
+        y += 72
         for key in keys:
             name, cmd = LABELS[lang][key]
-            marker(lx + R, y + 18, n)
+            marker(lx + R, y + 30, n)
             d.text((lx + 2 * R + 18, y), name, font=name_font, fill="black")
-            d.text((lx + 2 * R + 18, y + 44), cmd, font=cmd_font, fill=GRAY)
-            y += 88
+            d.text((lx + 2 * R + 18, y + 62), cmd, font=cmd_font, fill=GRAY)
+            y += 118
             n += 1
-        y += 14
+        y += 18
     return canvas
 
 

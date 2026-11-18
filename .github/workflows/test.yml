@@ -218,3 +218,8 @@ jobs:
         # 不依赖基线图像的自校验：\gujiSetup/\defineGujiTemplate 里的布局 key
         # 转发到 page/content/banxin，模板中文名可用于 template=，未知模板/key 发警告
         run: python3 test/template_setup_test.py
+
+      - name: Run parameter diagram checks
+        # 不依赖基线图像的自校验：wiki 参数标注图里每个尺寸「量出来的值 = 参数设定值」，
+        # 以及格宽、格高的推导公式（issue #195）。只断言不出图。
+        run: python3 scripts/build/build_figures.py --check

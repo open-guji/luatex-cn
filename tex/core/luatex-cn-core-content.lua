@@ -439,7 +439,7 @@ local function calc_auto_layout()
     local n_char = _G.content.n_char_per_col or 0
     local grid_h = _G.content.grid_height or 0
     local text_area_height = content_height - c_padding_top - c_padding_bottom
-    local new_grid_h, new_content_h = calc_grid_dimensions(text_area_height, n_char, grid_h)
+    local new_grid_h = calc_grid_dimensions(text_area_height, n_char, grid_h)
     if n_char > 0 or grid_h > 0 then
         _G.content.grid_height = new_grid_h
     end

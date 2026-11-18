@@ -142,32 +142,6 @@ function meipi.register(width, height)
     return x, y
 end
 
---- Get coordinates for the next MeiPi annotation
--- This is the main entry point called from TeX
--- @param width_str (string) Width as a dimension string or sp value
--- @param height_str (string) Height as a dimension string or sp value
--- @return (string) "x,y" coordinates in pt for TeX to parse
-function meipi.get_coordinates(width_str, height_str)
-    -- Handle both dimension strings and raw sp values
-    local width = tonumber(width_str)
-    if not width then
-        width = constants.to_dimen(width_str) or 0
-    end
-    local height = tonumber(height_str)
-    if not height then
-        height = constants.to_dimen(height_str) or 0
-    end
-
-    local x, y = meipi.register(width, height)
-
-    -- Convert to pt for TeX visualization (TextBox uses pt usually if unit not specified?)
-    -- Here we return "NNNpt,NNNpt" string.
-    local x_pt = x / 65536
-    local y_pt = y / 65536
-
-    return string.format("%.5fpt,%.5fpt", x_pt, y_pt)
-end
-
 --- Calculate coordinates and store them in global meipi_x and meipi_y
 -- This simplifies the TeX side by avoiding string parsing
 function meipi.calculate_and_store(width_str, height_str)
@@ -254,46 +228,6 @@ end
 function meipi.get_next_x_pt()
     local x = meipi.calculate_x(0)  -- 0 width just gets the starting position
     return string.format("%.5fpt", x / 65536)
-end
-
---- Output X coordinate for the next MeiPi annotation directly to TeX
--- @param width_sp (string|number) Width in scaled points
--- @param height_sp (string|number) Height in scaled points
-function meipi.output_x(width_sp, height_sp)
-    local width = tonumber(width_sp) or 0
-    local height = tonumber(height_sp) or 0
-
-    local x, _ = meipi.register(width, height)
-
-    -- Convert to pt and output directly
-    local x_pt = x / 65536
-    tex.sprint(string.format("%.5fpt", x_pt))
-end
-
---- Output Y coordinate for MeiPi annotation directly to TeX
--- @param height_sp (string|number) Height in scaled points
-function meipi.output_y(height_sp)
-    local height = tonumber(height_sp) or 0
-    local y = meipi.calculate_y(height)
-
-    -- Convert to pt and output directly
-    local y_pt = y / 65536
-    tex.sprint(string.format("%.5fpt", y_pt))
-end
-
---- Output both X and Y coordinates separated by comma
--- @param width_sp (string|number) Width in scaled points
--- @param height_sp (string|number) Height in scaled points
-function meipi.output_coordinates(width_sp, height_sp)
-    local width = tonumber(width_sp) or 0
-    local height = tonumber(height_sp) or 0
-
-    local x, y = meipi.register(width, height)
-
-    -- Convert to pt and output directly
-    local x_pt = x / 65536
-    local y_pt = y / 65536
-    tex.sprint(string.format("%.5fpt,%.5fpt", x_pt, y_pt))
 end
 
 -- Register module

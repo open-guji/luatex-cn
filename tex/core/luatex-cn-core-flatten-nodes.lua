@@ -64,8 +64,6 @@
 local constants = package.loaded['core.luatex-cn-constants'] or
     require('core.luatex-cn-constants')
 local D = constants.D
-local utils = package.loaded['util.luatex-cn-utils'] or
-    require('util.luatex-cn-utils')
 local debug = package.loaded['debug.luatex-cn-debug'] or
     require('debug.luatex-cn-debug')
 

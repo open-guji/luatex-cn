@@ -90,40 +90,11 @@ local function get_node_font(node)
     return nil
 end
 
--- P1: style fields (font_color, font_size, font, textflow_align, xshift, yshift)
--- are no longer copied into layout_map entries. Renderers read directly from
--- style_registry via ATTR_STYLE_REG_ID. This function is kept as a no-op for
--- backward compatibility with existing call sites.
-local function apply_style_attrs(map_entry, node_ptr)
-    -- no-op: style fields now read directly from style_registry at render time
-end
-
 -- =============================================================================
 -- P2: Absolute coordinate computation
 -- Mirrors render-position.lua's get_column_x / calculate_rtl_position logic,
 -- but callable from the layout stage (Stage 2) without requiring Stage 3 modules.
 -- =============================================================================
-
---- Compute the grid X offset for a given rtl_col in uniform-column mode.
--- Mirrors render-position.lua:get_column_x.
-local function get_column_x_uniform(rtl_col, params)
-    local grid_width = get_grid_width(params, params.grid_height or 0)
-    local banxin_width = params.banxin_width or 0
-    local interval = params.n_column or 0
-    if interval <= 0 or banxin_width <= 0 or banxin_width == grid_width then
-        return rtl_col * grid_width
-    end
-    local group_size = interval + 1
-    local full_groups = math.floor(rtl_col / group_size)
-    local remainder = rtl_col % group_size
-    local x = full_groups * (interval * grid_width + banxin_width)
-    if remainder < interval then
-        x = x + remainder * grid_width
-    else
-        x = x + interval * grid_width
-    end
-    return x
-end
 
 --- Compute the X coordinate (sp) for a layout_map entry.
 -- Coordinate system: origin at content area right edge, X increases from right to left.
@@ -446,7 +417,6 @@ helpers.get_chapter_title = get_chapter_title
 helpers.get_node_font_color = get_node_font_color
 helpers.get_node_font_size = get_node_font_size
 helpers.get_node_font = get_node_font
-helpers.apply_style_attrs = apply_style_attrs
 helpers.compute_x = compute_x
 helpers.compute_y = compute_y
 

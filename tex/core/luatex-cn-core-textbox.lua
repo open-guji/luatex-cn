@@ -333,7 +333,7 @@ local function execute_layout_pipeline(box_num, sub_params, current_indent)
     if sub_params.border_margin and sub_params.border_margin ~= "" then
         style_overrides.border_margin = sub_params.border_margin
     end
-    local textbox_style_id = style_registry.push(style_overrides)
+    style_registry.push(style_overrides)
 
     -- Clear indent attributes on all nodes in the textbox content (fix #37)
     -- This ensures textbox content does not inherit paragraph indent
@@ -387,7 +387,7 @@ local function apply_result_attributes(res_box, params, current_indent)
         outer_gh_sp = inner_gh_sp
     end
 
-    local h_sp = 0
+    local h_sp
     if type(h_raw) == "number" or (type(h_raw) == "string" and h_raw:match("^%d+$")) then
         -- Pure number: multiply by inner grid height
         h_sp = (tonumber(h_raw) or 0) * inner_gh_sp
@@ -646,13 +646,6 @@ function textbox.register_floating_box(box_num, params)
     node.write(create_floating_anchor(id))
 end
 
---- Write floating box positions into layout_map (mode="floating" entries)
--- @param layout_map (table) Main layout map (written in place)
--- @param params (table) { list = head_node }
-function textbox.calculate_floating_positions(layout_map, params)
-    find_floating_boxes(params.list, layout_map, textbox.floating_registry)
-end
-
 --- Place a textbox node into the grid
 -- @param ctx (table) Grid context
 -- @param node (node) Textbox node
@@ -755,8 +748,6 @@ function textbox.render_floating_box(p_head, item, params)
     local split_mod = page_mod and page_mod.split
     local full_paper_width = (_G.page and _G.page.paper_width and _G.page.paper_width > 0) and _G.page.paper_width or
         page.p_width or page.paper_width or page.width or 0
-    local full_paper_height = (_G.page and _G.page.paper_height and _G.page.paper_height > 0) and _G.page.paper_height or
-        page.p_height or page.paper_height or page.height or 0
     local logical_page_width = full_paper_width
 
     -- For split page: coordinates are relative to the logical page (half width)
@@ -805,7 +796,6 @@ function textbox.render_floating_box(p_head, item, params)
     D.setfield(k_post, "kern", -(final_x + w))
 
     -- Wrap floating box with q/Q to isolate graphics state (prevent color leakage)
-    local utils = package.loaded['util.luatex-cn-utils'] or require('util.luatex-cn-utils')
     local q_push = utils.create_pdf_literal("q")
     local q_pop = utils.create_pdf_literal("Q")
 

@@ -65,10 +65,6 @@
 local constants = package.loaded['core.luatex-cn-constants'] or
     require('core.luatex-cn-constants')
 local D = constants.D
-local utils = package.loaded['util.luatex-cn-utils'] or
-    require('util.luatex-cn-utils')
-local hooks = package.loaded['core.luatex-cn-hooks'] or
-    require('core.luatex-cn-hooks')
 local debug = package.loaded['debug.luatex-cn-debug'] or
     require('debug.luatex-cn-debug')
 local style_registry = package.loaded['util.luatex-cn-style-registry'] or
@@ -88,14 +84,11 @@ local get_banxin_on = h.get_banxin_on
 local get_grid_width = h.get_grid_width
 local get_margin_right = h.get_margin_right
 local get_chapter_title = h.get_chapter_title
-local get_node_font_color = h.get_node_font_color
 local get_node_font_size = h.get_node_font_size
-local apply_style_attrs = h.apply_style_attrs
 local is_reserved_col = h.is_reserved_col
 local is_center_gap_col = h.is_center_gap_col
 local is_occupied = h.is_occupied
 local mark_occupied = h.mark_occupied
-local get_cell_height = h.get_cell_height
 local resolve_cell_height = h.resolve_cell_height
 local resolve_cell_width = h.resolve_cell_width
 
@@ -581,14 +574,14 @@ local function apply_cell_valign_impl(valign, nodes, band_height, layout_map)
     for _, n in ipairs(nodes) do
         local entry = layout_map[n]
         if entry then
-            local h = entry.cell_height or 0
+            local node_h = entry.cell_height or 0
             if entry.is_block then
                 local precise_h = D.get_attribute(n, constants.ATTR_TEXTBOX_HEIGHT_SP)
                 if precise_h and precise_h > 0 then
-                    h = precise_h
+                    node_h = precise_h
                 end
             end
-            local bottom = entry.y_sp + h
+            local bottom = entry.y_sp + node_h
             if bottom > max_y then max_y = bottom end
         end
     end
@@ -1217,7 +1210,6 @@ local function handle_penalty_breaks(p_val, ctx, flush_buffer_fn, p_cols, interv
         ctx.page_table_bands = ctx.page_table_bands or {}
         local start_page = ctx.table_start_page or ctx.cur_page
         local end_page = ctx.cur_page
-        local band_max_page = ctx.table_band_max_page or {}
         for pg = start_page, end_page do
             do
             local tparams = _G.content and _G.content.table_params or {}
@@ -2020,8 +2012,6 @@ local function handle_glyph_node(t, ctx, col_buffer, layout_map, grid_height,
             y = h.compute_y(dec_y_sp, dec_band_y_off, ctx),
         }
 
-        apply_style_attrs(map_entry, t)
-
         layout_map[t] = map_entry
         -- DO NOT increment cur_row - marker is zero-width overlay
     else
@@ -2142,9 +2132,9 @@ local function handle_glyph_node(t, ctx, col_buffer, layout_map, grid_height,
                 if ctx.col_band_padding_applied then
                     -- Band padding was already applied; replace with style padding
                     local band_val = ctx.col_band_padding_value or 0
-                    local adjust = style_pt - band_val
-                    if adjust ~= 0 then
-                        ctx.cur_y_sp = ctx.cur_y_sp + adjust
+                    local pad_delta = style_pt - band_val
+                    if pad_delta ~= 0 then
+                        ctx.cur_y_sp = ctx.cur_y_sp + pad_delta
                     end
                 else
                     -- No band padding; apply style padding directly
@@ -2473,8 +2463,6 @@ local function flush_buffer(col_buffer, ctx, grid_height, distribute, layout_map
             x = h.compute_x(entry.col, entry.page, ctx),
             y = h.compute_y(y_sp, fl_band_y_off, ctx),
         }
-        apply_style_attrs(map_entry, entry.node)
-
         -- Check for line mark attribute (专名号/书名号)
         local lm_id = D.get_attribute(entry.node, constants.ATTR_LINE_MARK_ID)
         if lm_id and lm_id > 0 then
@@ -2620,8 +2608,6 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
                 x = h.compute_x(ctx.cur_col, ctx.cur_page, ctx),
                 y = h.compute_y(ctx.cur_y_sp, wh_band_y_off, ctx),
             }
-            apply_style_attrs(map_entry, t)
-
             -- Floating textbox anchors carry visible content for the page;
             -- mark page_has_content so a following \newpage isn't dropped as redundant.
             if D.getfield(t, "user_id") == constants.FLOATING_TEXTBOX_USER_ID then
@@ -3012,7 +2998,7 @@ local function calculate_grid_positions(head, grid_height, line_limit, n_column,
     do
         local has_widths = ctx.is_free_mode
         if not has_widths then
-            for _ in pairs(ctx.col_widths_sp) do has_widths = true; break end
+            has_widths = next(ctx.col_widths_sp) ~= nil
         end
         if has_widths then
             -- Pre-compute per-page content_width (sum of col_widths_sp)

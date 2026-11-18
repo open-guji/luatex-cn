@@ -165,9 +165,9 @@ function textflow.collect_nodes(start_node, opts)
         -- inline blocks within textflow. They will be placed in a sub-column
         -- alongside regular glyphs. (#96)
         --
-        -- Note: we set temp_t to the next sibling and goto continue_advance
-        -- (NOT continue_collect) because the label below also calls getnext;
-        -- jumping to continue_collect would double-advance and skip a node.
+        -- Note: we set temp_t to the next sibling and goto continue_advance,
+        -- skipping the getnext at the bottom of the loop (which would
+        -- double-advance and skip a node).
         if (tid == constants.HLIST or tid == constants.VLIST) then
             local tw = D.get_attribute(temp_t, constants.ATTR_TEXTBOX_WIDTH) or 0
             local th = D.get_attribute(temp_t, constants.ATTR_TEXTBOX_HEIGHT) or 0
@@ -220,7 +220,6 @@ function textflow.collect_nodes(start_node, opts)
             table.insert(nodes, temp_t)
             last_content_node = temp_t
         end
-        ::continue_collect::
         temp_t = D.getnext(temp_t)
         ::continue_advance::
     end
@@ -773,8 +772,6 @@ local function place_textflow_segment(ctx, nodes, layout_map, params, callbacks,
             if not node_info.sub_col then
                 entry.cell_width = helpers.resolve_cell_width(node_info.node, nil)
             end
-            helpers.apply_style_attrs(entry, node_info.node)
-
             -- Check for line mark attribute (专名号/书名号)
             local lm_id = D.get_attribute(node_info.node, constants.ATTR_LINE_MARK_ID)
             if lm_id and lm_id > 0 then
@@ -823,7 +820,6 @@ local function place_textflow_segment(ctx, nodes, layout_map, params, callbacks,
                             x = entry.x,
                             y = helpers.compute_y(dec_y_sp, entry.band_y_offset_sp, ctx),
                         }
-                        helpers.apply_style_attrs(dec_entry, dec_node)
                         layout_map[dec_node] = dec_entry
                     end
                 end

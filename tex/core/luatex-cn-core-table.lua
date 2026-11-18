@@ -160,14 +160,6 @@ function table_mod.set_band_format(params)
     _G.content.table_band_formats[cur_band] = params
 end
 
---- Reset render cell index for a new band (row)
--- Called by band break handler in layout-grid
-function table_mod.reset_render_band()
-    if _G.content and _G.content.table_mode then
-        _G.content.table_render_cell_idx = 0
-    end
-end
-
 -- Register module
 package.loaded['core.luatex-cn-core-table'] = table_mod
 

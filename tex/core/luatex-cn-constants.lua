@@ -620,16 +620,6 @@ function constants.encode_suojin_indent(indent_value)
     return constants.INDENT_SUOJIN_BASE - indent_value
 end
 
---- Deprecated: use is_taitou_indent or is_any_command_indent instead
-function constants.is_forced_indent(attr_value)
-    return constants.is_any_command_indent(attr_value)
-end
-
---- Deprecated: use encode_taitou_indent or encode_suojin_indent instead
-function constants.encode_forced_indent(indent_value)
-    return constants.encode_taitou_indent(indent_value)
-end
-
 -- ============================================================================
 -- Penalty Constants for Column/Page Breaks
 -- ============================================================================

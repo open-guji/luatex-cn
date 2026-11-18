@@ -1,0 +1,31 @@
+% Issue #216: 夹注设了 n-char-per-col 后，夹注里的句读偏离所附的字
+% https://github.com/open-guji/luatex-cn/issues/216
+%
+% 夹注 n-char-per-col（#82）让夹注有自己的格高（列高 ÷ N），但夹注里的句读
+% 标记没有记下这个格高，渲染时按正文格高找「所附字的那一格」，于是句读落在
+% 字的中部甚至上半，而不是右下角。\夹注[grid-height=…] 同理。
+%
+% 默认模板（正文每列 21 字）。从右到左：
+%   第一列：夹注不设字数（对照组，格高与正文相同，句读本来就对）
+%   第二列：夹注 n-char-per-col = 30（格高比正文小）
+%   第三列：夹注 n-char-per-col = 14（格高比正文大，偏移方向相反）
+%   第四列：夹注 grid-height = 30pt（同一条路径）
+% 修复后四列夹注里的句读都应在所附字的右下角。
+\documentclass{ltc-guji}
+\setmainfont{TW-Kai}
+\关闭分页
+\句读模式
+\judouSetup{ judou-pos = right-bottom, judou-color = red }
+
+
+\title{夹注句读}
+\chapter{夹注句读}
+
+\begin{document}
+\begin{正文}
+肺氣虛，則鼻息利。\夹注{靈樞本神作盈。沈刻本作懣，今從東洋本、廣勤堂本、宋本千金}少氣。\par
+肺氣虛，則鼻息利。\夹注[n-char-per-col=30]{靈樞本神作盈。沈刻本作懣，今從東洋本、廣勤堂本、宋本千金}少氣。\par
+肺氣虛，則鼻息利。\夹注[n-char-per-col=14]{靈樞本神作盈。沈刻本作懣，今從東洋本、廣勤堂本、宋本千金}少氣。\par
+肺氣虛，則鼻息利。\夹注[grid-height=30pt]{靈樞本神作盈。沈刻本作懣，今從東洋本、廣勤堂本、宋本千金}少氣。\par
+\end{正文}
+\end{document}

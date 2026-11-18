@@ -811,6 +811,14 @@ local function place_textflow_segment(ctx, nodes, layout_map, params, callbacks,
                             y_sp = dec_y_sp,
                             band_y_offset_sp = entry.band_y_offset_sp,
                             sub_col = entry.sub_col,
+                            -- The renderer finds the anchor cell as
+                            -- [y_sp - cell_height, y_sp]. Without this it falls
+                            -- back to the body grid height, which is wrong once
+                            -- the note has its own row height (n-char-per-col /
+                            -- grid-height): the mark drifts off its glyph
+                            -- (issue #216). Same as the body-text path in
+                            -- layout-grid handle_glyph_node.
+                            cell_height = node_cell_h,
                             -- P2: absolute coordinates (inherit x from anchor, y shifted down)
                             x = entry.x,
                             y = helpers.compute_y(dec_y_sp, entry.band_y_offset_sp, ctx),

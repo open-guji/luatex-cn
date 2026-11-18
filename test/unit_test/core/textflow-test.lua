@@ -336,4 +336,29 @@ test_utils.run_test("place: n_char note in an indented paragraph stays inside th
     test_utils.assert_true(cols[2] == true, "expected the note to wrap into a third column")
 end)
 
+test_utils.run_test("place: judou mark in an n_char note carries the note row height (issue #216)", function()
+    -- column = 20 body rows; N = 10 => note row = 2 * GH, body row = GH.
+    -- The renderer locates the anchor cell as [y_sp - cell_height, y_sp]; if
+    -- the mark has no cell_height it falls back to the body grid height and
+    -- lands half a note row above its glyph.
+    local ctx, params, callbacks = make_env({})
+    local id = textflow.push_style(nil, "20pt", nil, nil, true, nil, nil, 10)
+    local nodes = {}
+    for i = 1, 4 do
+        nodes[i] = make_tf_glyph()
+        D.set_attribute(nodes[i], constants.ATTR_STYLE_REG_ID, id)
+    end
+    local mark = D.new(constants.GLYPH)
+    local layout_map = {}
+    textflow._internal.place_textflow_segment(ctx, nodes, layout_map, params, callbacks,
+        { [nodes[2]] = { mark } })
+    textflow.pop_style()
+    local anchor, m = layout_map[nodes[2]], layout_map[mark]
+    test_utils.assert_true(m ~= nil, "judou mark not placed")
+    test_utils.assert_eq(m.cell_height, 2 * GH)
+    test_utils.assert_eq(m.y_sp, anchor.y_sp + anchor.cell_height)
+    test_utils.assert_eq(m.y_sp - m.cell_height, anchor.y_sp)  -- same cell as its glyph
+    test_utils.assert_eq(m.sub_col, anchor.sub_col)
+end)
+
 print("\nAll textflow tests passed!")

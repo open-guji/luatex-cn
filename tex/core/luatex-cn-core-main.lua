@@ -870,6 +870,14 @@ local function process(box_num, params)
     -- with a single content block byte-identical.
     local broke_open_page = false
     if not is_textbox and total_pages > 0 and cells_collide(open_page_cells, first_cells) then
+        if split_enabled then
+            -- The open page is the previous block's last half-page, but it is
+            -- shipped out here, inside this block's group, where
+            -- \luatexcn_apply_geometry: has locally reset \pagewidth to the
+            -- whole sheet. Without this the half-page ships at double width
+            -- (an unsplit 筒子页 between two 正文 blocks).
+            tex.print(page.split.page_dims_cmd())
+        end
         tex.print("\\vfill\\penalty-10000\\allowbreak")
         open_page_cells = nil
         broke_open_page = was_open

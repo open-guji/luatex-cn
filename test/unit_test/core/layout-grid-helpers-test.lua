@@ -139,6 +139,37 @@ test_utils.run_test("get_chapter_title: default empty", function()
 end)
 
 -- ============================================================================
+-- compute_band_geometry（页面分栏与表格分栏共用）
+-- ============================================================================
+
+test_utils.run_test("compute_band_geometry: 均分，末栏吸收取整余数", function()
+    local hs, ys, lim = helpers.compute_band_geometry(3, 1000, 10, nil, 100, 99)
+    -- available = 1000 - 20 = 980 → 每栏 floor(980/3) = 326，末栏 = 1000 - 672 = 328
+    test_utils.assert_eq(hs[0], 326)
+    test_utils.assert_eq(hs[1], 326)
+    test_utils.assert_eq(hs[2], 328)
+    test_utils.assert_eq(ys[0], 0)
+    test_utils.assert_eq(ys[1], 336)
+    test_utils.assert_eq(ys[2], 672)
+    test_utils.assert_eq(lim[0], 3)
+    test_utils.assert_eq(lim[2], 3)
+end)
+
+test_utils.run_test("compute_band_geometry: 指定高度的栏保持原值，其余均分", function()
+    local hs, ys = helpers.compute_band_geometry(3, 1000, 0, { 200 }, nil, 7)
+    test_utils.assert_eq(hs[0], 200)
+    test_utils.assert_eq(hs[1], 400)
+    test_utils.assert_eq(hs[2], 400)
+    test_utils.assert_eq(ys[2], 600)
+end)
+
+test_utils.run_test("compute_band_geometry: 无格高时用 fallback 行数", function()
+    local _, _, lim = helpers.compute_band_geometry(2, 1000, 0, nil, nil, 7)
+    test_utils.assert_eq(lim[0], 7)
+    test_utils.assert_eq(lim[1], 7)
+end)
+
+-- ============================================================================
 -- get_cell_height: punct_config parameter
 -- ============================================================================
 

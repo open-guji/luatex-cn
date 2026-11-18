@@ -196,46 +196,10 @@ local function create_grid_context(params, line_limit, p_cols)
     local n_bands = params.n_bands or 1
     if n_bands > 1 then
         local band_gap_sp = params.band_gap_sp or 0
-        local total_gap = band_gap_sp * (n_bands - 1)
         -- Band allocation uses full content height (no padding deduction)
-        local available_height = band_alloc_height - total_gap
-        local band_heights = params.band_heights  -- user-specified per-band heights
-
-        -- Pre-compute default height: unspecified bands share remaining space equally.
-        -- The last unspecified band absorbs any sp rounding remainder.
-        local specified_total = 0
-        local unspecified_count = 0
-        local last_unspecified = -1
-        for i = 0, n_bands - 1 do
-            if band_heights and band_heights[i + 1] then
-                specified_total = specified_total + band_heights[i + 1]
-            else
-                unspecified_count = unspecified_count + 1
-                last_unspecified = i
-            end
-        end
-        local default_h = unspecified_count > 0
-            and math.floor((available_height - specified_total) / unspecified_count)
-            or 0
-
-        local offset = 0
-        for i = 0, n_bands - 1 do
-            local h
-            if band_heights and band_heights[i + 1] then
-                h = band_heights[i + 1]
-            elseif i == last_unspecified then
-                -- Last unspecified band absorbs rounding remainder
-                h = band_alloc_height - offset
-                if h < 0 then h = 0 end
-            else
-                h = default_h
-            end
-            ctx.band_heights_sp[i] = h
-            ctx.band_y_offsets_sp[i] = offset
-            ctx.band_line_limits[i] = default_cell_height and math.floor(h / default_cell_height)
-                or line_limit
-            offset = offset + h + band_gap_sp
-        end
+        ctx.band_heights_sp, ctx.band_y_offsets_sp, ctx.band_line_limits =
+            h.compute_band_geometry(n_bands, band_alloc_height, band_gap_sp,
+                params.band_heights, default_cell_height, line_limit)
 
         ctx.n_bands = n_bands
         ctx.band_cols_per_band = (params.band_columns and params.band_columns > 0)
@@ -1058,48 +1022,9 @@ local function handle_penalty_breaks(p_val, ctx, flush_buffer_fn, p_cols, interv
         local orig_line_limit = ctx.saved_band_state.line_limit
 
         -- Calculate band layout
-        local total_gap = band_gap_sp * (n_bands - 1)
-        local available_height = alloc_height - total_gap
-        local band_heights_sp = {}
-        local band_y_offsets_sp = {}
-        local band_line_limits = {}
-        local band_heights = tp.band_heights
-
-        -- Pre-compute default height: unspecified bands share remaining space equally.
-        -- The last unspecified band absorbs any sp rounding remainder.
-        local specified_total = 0
-        local unspecified_count = 0
-        local last_unspecified = -1
-        for i = 0, n_bands - 1 do
-            if band_heights and band_heights[i + 1] then
-                specified_total = specified_total + band_heights[i + 1]
-            else
-                unspecified_count = unspecified_count + 1
-                last_unspecified = i
-            end
-        end
-        local default_h = unspecified_count > 0
-            and math.floor((available_height - specified_total) / unspecified_count)
-            or 0
-
-        local offset = 0
-        for i = 0, n_bands - 1 do
-            local h
-            if band_heights and band_heights[i + 1] then
-                h = band_heights[i + 1]
-            elseif i == last_unspecified then
-                -- Last unspecified band absorbs rounding remainder
-                h = alloc_height - offset
-                if h < 0 then h = 0 end
-            else
-                h = default_h
-            end
-            band_heights_sp[i] = h
-            band_y_offsets_sp[i] = offset
-            band_line_limits[i] = default_cell_height
-                and math.floor(h / default_cell_height) or orig_line_limit
-            offset = offset + h + band_gap_sp
-        end
+        local band_heights_sp, band_y_offsets_sp, band_line_limits =
+            h.compute_band_geometry(n_bands, alloc_height, band_gap_sp,
+                tp.band_heights, default_cell_height, orig_line_limit)
 
         ctx.n_bands = n_bands
         ctx.band_heights_sp = band_heights_sp

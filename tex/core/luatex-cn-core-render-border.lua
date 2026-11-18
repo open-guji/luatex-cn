@@ -821,6 +821,22 @@ local function render_borders(p_head, params)
         end
     end
 
+    -- Fields shared by every draw_column_borders / draw_content_frame call below
+    local function frame_params(extra)
+        local fp = {
+            total_cols = p_total_cols,
+            grid_width = grid_width,
+            col_geom = col_geom,
+            content_dim_h = content_dim_h,
+            border_thickness = border_thickness,
+            shift_x = params.shift_x,
+            outer_shift = params.outer_shift,
+            border_rgb_str = params.b_rgb_str,
+        }
+        for k, v in pairs(extra) do fp[k] = v end
+        return fp
+    end
+
     if draw_col_border and p_total_cols > 0 then
         -- Base skip set: banxin + no_silk regions are always skipped
         local base_skip = {}
@@ -835,19 +851,11 @@ local function render_borders(p_head, params)
         local non_table_skip = {}
         for k, v in pairs(base_skip) do non_table_skip[k] = v end
         for k in pairs(table_owned_cols) do non_table_skip[k] = true end
-        p_head = draw_column_borders(p_head, {
-            total_cols = p_total_cols,
-            grid_width = grid_width,
-            col_geom = col_geom,
-            content_dim_h = content_dim_h,
-            border_thickness = border_thickness,
-            shift_x = params.shift_x,
-            outer_shift = params.outer_shift,
-            border_rgb_str = params.b_rgb_str,
+        p_head = draw_column_borders(p_head, frame_params({
             banxin_cols = non_table_skip,
             col_min_y_sp = params.col_min_y_sp,
             c_padding_top = params.c_padding_top,
-        })
+        }))
 
         -- Step B: per-table segmented column borders restricted to that
         -- table's column range (skip everything outside).
@@ -862,15 +870,7 @@ local function render_borders(p_head, params)
                     table_skip[col] = true
                 end
             end
-            p_head = draw_column_borders(p_head, {
-                total_cols = p_total_cols,
-                grid_width = grid_width,
-                col_geom = col_geom,
-                content_dim_h = content_dim_h,
-                border_thickness = border_thickness,
-                shift_x = params.shift_x,
-                outer_shift = params.outer_shift,
-                border_rgb_str = params.b_rgb_str,
+            p_head = draw_column_borders(p_head, frame_params({
                 banxin_cols = table_skip,
                 col_min_y_sp = params.col_min_y_sp,
                 c_padding_top = params.c_padding_top,
@@ -882,37 +882,21 @@ local function render_borders(p_head, params)
                 actual_band_cols = ptb.actual_band_cols,
                 cell_column_borders = ptb.cell_column_borders,
                 col_groups = ptb.col_groups,
-            })
+            }))
         end
 
         -- Draw content frame for the no-silk region
         if no_silk_cols then
-            p_head = draw_content_frame(p_head, {
-                total_cols = p_total_cols,
-                grid_width = grid_width,
-                col_geom = col_geom,
-                content_dim_h = content_dim_h,
-                border_thickness = border_thickness,
-                shift_x = params.shift_x,
-                outer_shift = params.outer_shift,
-                border_rgb_str = params.b_rgb_str,
+            p_head = draw_content_frame(p_head, frame_params({
                 banxin_cols = params.reserved_cols,
                 only_cols = no_silk_cols,
-            })
+            }))
         end
     elseif not draw_col_border and params.draw_border and p_total_cols > 0 then
         -- column_border=false but border=true: draw content frame (内边框) without 丝栏
-        p_head = draw_content_frame(p_head, {
-            total_cols = p_total_cols,
-            grid_width = grid_width,
-            col_geom = col_geom,
-            content_dim_h = content_dim_h,
-            border_thickness = border_thickness,
-            shift_x = params.shift_x,
-            outer_shift = params.outer_shift,
-            border_rgb_str = params.b_rgb_str,
+        p_head = draw_content_frame(p_head, frame_params({
             banxin_cols = params.reserved_cols,
-        })
+        }))
     end
 
     -- 1b. Band divider lines (horizontal lines between bands)

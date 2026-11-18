@@ -2,6 +2,7 @@
 * [[首页 | Home]]
 * [[安装指南 | Installation]]
 * **[[快速入门 | Quick-Start]]**
+* [[古籍版式要素 | Anatomy]] <sup>new</sup>
 * [[示例 | Examples]]
 
 ### 排版功能
@@ -46,6 +47,7 @@
 * [[Home (EN) | EN:Home]]
 * [[Installation | EN:Installation]]
 * [[Quick Start | EN:Quick-Start]]
+* [[Page Anatomy | EN:Anatomy]] <sup>new</sup>
 * [[Templates | EN:Templates]]
 * [[Examples | EN:Examples]]
 * [[Features | EN:Features]]

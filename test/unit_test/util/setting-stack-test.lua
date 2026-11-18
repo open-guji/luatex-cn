@@ -158,3 +158,24 @@ test_utils.run_test("debug: push false inherits correctly (not clobbered by or)"
     setting_stack.push({ debug = false })
     test_utils.assert_eq(setting_stack.get("debug"), false, "explicit false should override parent true")
 end)
+
+-- get(key) 有不复制默认表的快速路径，必须与 current()[key] 完全一致
+test_utils.run_test("get: 栈空时与 current()[key] 一致（各种全局覆盖组合）", function()
+    local cases = {
+        {},
+        { judou = { punct_mode = "judou" } },
+        { judou = { punct_mode = "" } },
+        { punct = { style = "taiwan" } },
+        { dbg = { global_enabled = true } },
+        { judou = { punct_mode = "none" }, punct = { style = "taiwan" }, dbg = { global_enabled = true } },
+    }
+    for _, c in ipairs(cases) do
+        reset()
+        _G.judou, _G.punct, _G.luatex_cn_debug = c.judou, c.punct, c.dbg
+        local cur = setting_stack.current()
+        for _, key in ipairs({ "punct_mode", "punct_style", "debug", "unknown_key" }) do
+            test_utils.assert_eq(setting_stack.get(key), cur[key], "key " .. key)
+        end
+    end
+    reset()
+end)

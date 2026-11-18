@@ -83,6 +83,8 @@ local function store_lower_section_box(box_num)
     end
 end
 
+local constants = package.loaded['core.luatex-cn-constants'] or
+    require('core.luatex-cn-constants')
 local utils = package.loaded['util.luatex-cn-utils'] or
     require('util.luatex-cn-utils')
 local debug = package.loaded['debug.luatex-cn-debug'] or
@@ -468,8 +470,8 @@ local banxin_plugin = {
 }
 
 -- Registry as plugin if core engine is present
-if core and core.register_plugin then
-    core.register_plugin("banxin", banxin_plugin)
+if _G.core and _G.core.register_plugin then
+    _G.core.register_plugin("banxin", banxin_plugin)
 end
 
 package.loaded['banxin.luatex-cn-banxin-main'] = banxin_plugin

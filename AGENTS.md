@@ -63,7 +63,7 @@ tex/
 └── debug/          # 调试工具
 
 test/
-├── unit_test/        # 单元测试（43 个文件，texlua 运行）
+├── unit_test/        # 单元测试（47 个文件，texlua 运行）
 │   ├── util/         # 工具函数测试
 │   ├── core/         # 核心渲染引擎测试
 │   ├── shared/       # clreq 共享内核测试
@@ -305,7 +305,7 @@ Stage 3: Render Page  → 应用坐标、绘制 PDF
 
 - **测试顺序**: 先 `texlua test/run_all.lua` → 再 `python3 test/regression_test.py check`
 - **改动源码时必须同步更新 unit test**（如果会影响测试结果）
-- 43 个测试文件覆盖 util/core/shared/hori/guji/decorate/banxin/fonts/debug 层
+- 47 个测试文件覆盖 util/core/shared/hori/guji/decorate/banxin/fonts/debug 层
 - Mock 基础设施在 `test/test_utils.lua`，包含 node/tex/font/texio/luatexbase/token/utf8 的 mock
 - `_internal` 表用于白盒测试（layout-grid, flatten-nodes, render-page, render-position 等模块已导出）
 - **常见坑**: `new_attribute` mock 必须返回不同 ID（用递增计数器），否则属性碰撞导致测试失败

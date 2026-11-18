@@ -262,20 +262,17 @@ function sidenote.render(head, layout_map, params, context, engine_ctx, page_idx
         -- cross-page sidenotes where the second page's content may not have
         -- the colorstack push (which is on the first page).
         -- Also serves as a color reset to prevent leakage from unbalanced pops.
-        local last_inserted = q_push
         if sidenote_color and sidenote_color ~= "" then
             local rgb_str = utils.normalize_rgb(sidenote_color)
             if rgb_str then
                 local color_cmd = string.format("%s rg %s RG", rgb_str, rgb_str)
                 local color_literal = utils.create_pdf_literal(color_cmd)
                 D.insert_after(sn_head, q_push, color_literal)
-                last_inserted = color_literal
             end
         else
             -- Fallback: reset to black if no color specified
             local color_reset = utils.create_pdf_literal("0 0 0 rg 0 0 0 RG")
             D.insert_after(sn_head, q_push, color_reset)
-            last_inserted = color_reset
         end
 
         -- Find the tail and insert Q at the end
@@ -352,7 +349,7 @@ local function skip_to_valid_column(p, c, p_cols, banxin_on, interval)
 end
 
 local function extract_registry_content(registry_item)
-    local content = nil
+    local content
     local metadata = {}
 
     if type(registry_item) == "table" and registry_item.head then

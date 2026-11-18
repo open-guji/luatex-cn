@@ -59,23 +59,19 @@ local sp_to_bp = 0.0000152018
 --
 -- @param s (string|nil) RGB 颜色字符串
 -- @return (string|nil) 归一化的 "r g b" 字符串或 nil
-local function normalize_rgb(s)
-    if s == nil then return nil end
-    s = tostring(s)
-    if s == "nil" or s == "" then return nil end
+local RGB_NAMES = {
+    black  = "0.0000 0.0000 0.0000",
+    white  = "1.0000 1.0000 1.0000",
+    red    = "1.0000 0.0000 0.0000",
+    green  = "0.0000 1.0000 0.0000",
+    blue   = "0.0000 0.0000 1.0000",
+    yellow = "1.0000 1.0000 0.0000",
+    gray   = "0.5000 0.5000 0.5000",
+}
 
-    -- Map basic color names
-    local color_map = {
-        black  = "0.0000 0.0000 0.0000",
-        white  = "1.0000 1.0000 1.0000",
-        red    = "1.0000 0.0000 0.0000",
-        green  = "0.0000 1.0000 0.0000",
-        blue   = "0.0000 0.0000 1.0000",
-        yellow = "1.0000 1.0000 0.0000",
-        gray   = "0.5000 0.5000 0.5000",
-    }
+local function parse_rgb(s)
     local low_s = s:lower():gsub("^%s*(.-)%s*$", "%1")
-    local mapped = color_map[low_s]
+    local mapped = RGB_NAMES[low_s]
     if mapped then return mapped end
 
     -- Strip common prefixes and suffixes
@@ -101,6 +97,22 @@ local function normalize_rgb(s)
     end
 
     return string.format("%.4f %.4f %.4f", r, g, b)
+end
+
+-- 渲染阶段每个带颜色的字都会调用一次，输入只有寥寥几种写法：按原串缓存结果。
+-- （无法解析的串记为 false，返回时还原成 nil。）
+local rgb_cache = {}
+
+local function normalize_rgb(s)
+    if s == nil then return nil end
+    s = tostring(s)
+    if s == "nil" or s == "" then return nil end
+    local cached = rgb_cache[s]
+    if cached == nil then
+        cached = parse_rgb(s) or false
+        rgb_cache[s] = cached
+    end
+    return cached or nil
 end
 
 --- 使用 PDF literal 绘制调试矩形

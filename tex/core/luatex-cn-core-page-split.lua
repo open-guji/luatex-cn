@@ -115,6 +115,19 @@ function split.is_right_page(page_num)
     end
 end
 
+--- TeX code that globally sets the page/paper size to one half-page.
+-- Must be \global: the page it applies to may be shipped out while a later
+-- content block's group has locally reset \pagewidth to the full sheet.
+-- @return (string)
+function split.page_dims_cmd()
+    local w_pt = split.get_target_width() / 65536
+    local h_pt = split.get_target_height() / 65536
+    return string.format(
+        "\\global\\pagewidth=%.5fpt\\global\\paperwidth=%.5fpt" ..
+        "\\global\\pageheight=%.5fpt\\global\\paperheight=%.5fpt",
+        w_pt, w_pt, h_pt, h_pt)
+end
+
 --- Output pages in split mode (each page as two half-pages)
 -- @param box_num The TeX box number
 -- @param total_pages Total number of pages to output

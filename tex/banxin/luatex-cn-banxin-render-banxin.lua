@@ -52,11 +52,7 @@ local style_registry = package.loaded['util.luatex-cn-style-registry'] or
 local setting_stack = package.loaded['util.luatex-cn-setting-stack'] or
     require('util.luatex-cn-setting-stack')
 
--- Register banxin module if debug module is available
-local debug = package.loaded['debug.luatex-cn-debug'] or
-    require('debug.luatex-cn-debug')
 
-local dbg = debug.get_debugger('banxin')
 
 -- Conversion factor from scaled points to PDF big points
 local sp_to_bp = utils.sp_to_bp
@@ -554,7 +550,6 @@ local function render_pre_rendered_box(p_head, element, box)
     local copied = node.copy_list(box)
     local curr = D.todirect(copied)
 
-    local box_h = D.getfield(curr, "height") or 0
     local box_w = D.getfield(curr, "width") or 0
 
     -- The pre-rendered box contains TextBox pipeline output.

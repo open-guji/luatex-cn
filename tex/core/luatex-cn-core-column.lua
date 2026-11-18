@@ -67,21 +67,15 @@ function column.find_last_column_in_half_page(cur_col, p_cols, interval, banxin_
 
     -- Find the next banxin column after cur_col
     -- Banxin columns are at interval, 2*interval+1, 3*interval+2, etc.
-    -- Using hooks.is_reserved_column logic: col % (interval + 1) == interval
-    local hooks = package.loaded['core.luatex-cn-hooks'] or require('core.luatex-cn-hooks')
+    -- (hooks.is_reserved_column, default: col % (interval + 1) == interval)
+    local hooks = (_G.core and _G.core.hooks)
+        or package.loaded['core.luatex-cn-hooks'] or require('core.luatex-cn-hooks')
 
     -- Find last non-banxin column before the next banxin
     for col = cur_col, p_cols - 1 do
-        if _G.core and _G.core.hooks and _G.core.hooks.is_reserved_column then
-            if _G.core.hooks.is_reserved_column(col, interval) then
-                -- This is a banxin column, return the previous column
-                return math.max(cur_col, col - 1)
-            end
-        else
-            -- Fallback: simple modulo check
-            if col % (interval + 1) == interval then
-                return math.max(cur_col, col - 1)
-            end
+        if hooks.is_reserved_column(col, interval) then
+            -- This is a banxin column, return the previous column
+            return math.max(cur_col, col - 1)
         end
     end
 
@@ -153,14 +147,13 @@ function column.collect_nodes(start_node)
         if current_jiazhu_group and #current_jiazhu_group > 0 then
             -- Read auto_balance and mode from style
             local ab = true
-            local jz_mode = 0
             local first = current_jiazhu_group[1]
             local sid = D.get_attribute(first, constants.ATTR_STYLE_REG_ID)
             if sid then
                 local style = style_registry.get(sid)
                 if style and style.auto_balance == false then ab = false end
             end
-            jz_mode = D.get_attribute(first, constants.ATTR_JIAZHU_MODE) or 0
+            local jz_mode = D.get_attribute(first, constants.ATTR_JIAZHU_MODE) or 0
             local is_single = (jz_mode == 1 or jz_mode == 2)
             local rows_needed = (is_single or not ab)
                 and #current_jiazhu_group
@@ -390,7 +383,6 @@ function column.place_nodes(ctx, start_node, layout_map, params, callbacks)
                 x = helpers.compute_x(ctx.cur_col, ctx.cur_page, ctx),
                 y = helpers.compute_y(g_y_sp, g_band_y_off, ctx),
             }
-            helpers.apply_style_attrs(entry, item.node)
             layout_map[item.node] = entry
             cur_row = cur_row + row_step * v_scale + gap
 
@@ -422,7 +414,6 @@ function column.place_nodes(ctx, start_node, layout_map, params, callbacks)
                         x = jz_col_x,
                         y = helpers.compute_y(jz_y_sp, jz_band_y_off, ctx),
                     }
-                    helpers.apply_style_attrs(entry, a.node)
                     layout_map[a.node] = entry
                 end
             end
@@ -444,7 +435,6 @@ function column.place_nodes(ctx, start_node, layout_map, params, callbacks)
                 x = helpers.compute_x(ctx.cur_col, ctx.cur_page, ctx),
                 y = helpers.compute_y(tb_y_sp, tb_band_y_off, ctx),
             }
-            helpers.apply_style_attrs(entry, item.node)
             layout_map[item.node] = entry
             cur_row = cur_row + item.height * v_scale + gap
 

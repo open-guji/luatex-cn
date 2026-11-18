@@ -50,6 +50,31 @@ q %s RG %.2f w
     return utils.insert_pdf_literal(p_head, literal)
 end
 
+--- PDF path for an octagon whose corners are cut by 20% of the shorter side.
+-- @return (string) "x y m\nx y l ... h" (8 vertices, closed)
+local function octagon_path(params)
+    local sp_to_bp = utils.sp_to_bp
+    local x_bp = params.x * sp_to_bp
+    local y_bp = params.y * sp_to_bp
+    local w_bp = params.width * sp_to_bp
+    local h_bp = params.height * sp_to_bp
+    local corner = math.min(w_bp, h_bp) * 0.2
+
+    return string.format([[
+%.4f %.4f m
+%.4f %.4f l %.4f %.4f l %.4f %.4f l %.4f %.4f l
+%.4f %.4f l %.4f %.4f l %.4f %.4f l h]],
+        x_bp + corner, y_bp,
+        x_bp + w_bp - corner, y_bp,
+        x_bp + w_bp, y_bp - corner,
+        x_bp + w_bp, y_bp - h_bp + corner,
+        x_bp + w_bp - corner, y_bp - h_bp,
+        x_bp + corner, y_bp - h_bp,
+        x_bp, y_bp - h_bp + corner,
+        x_bp, y_bp - corner
+    )
+end
+
 --- Draw a filled octagon (background)
 -- @param p_head (node) Node list head
 -- @param params (table) Parameters:
@@ -60,73 +85,22 @@ end
 --   - color_str: RGB fill color string (default "0.5 0.5 0.5")
 -- @return (node) Updated head
 local function draw_octagon_fill(p_head, params)
-    local sp_to_bp = utils.sp_to_bp
-    local x_bp = params.x * sp_to_bp
-    local y_bp = params.y * sp_to_bp
-    local w_bp = params.width * sp_to_bp
-    local h_bp = params.height * sp_to_bp
     local color_str = params.color_str or "0.5 0.5 0.5"
-
-    -- Corner cut size: 20% of smaller dimension
-    local corner = math.min(w_bp, h_bp) * 0.2
-
-    local literal = string.format([[
-q %s rg
-%.4f %.4f m
-%.4f %.4f l %.4f %.4f l %.4f %.4f l %.4f %.4f l
-%.4f %.4f l %.4f %.4f l %.4f %.4f l h f Q]],
-        color_str,
-        x_bp + corner, y_bp,
-        x_bp + w_bp - corner, y_bp,
-        x_bp + w_bp, y_bp - corner,
-        x_bp + w_bp, y_bp - h_bp + corner,
-        x_bp + w_bp - corner, y_bp - h_bp,
-        x_bp + corner, y_bp - h_bp,
-        x_bp, y_bp - h_bp + corner,
-        x_bp, y_bp - corner
-    )
-
+    local literal = string.format("q %s rg\n%s f Q", color_str, octagon_path(params))
     return utils.insert_pdf_literal(p_head, literal)
 end
 
 --- Draw an octagon frame (stroke only)
 -- @param p_head (node) Node list head
 -- @param params (table) Parameters:
---   - x: Top-left X coordinate (sp)
---   - y: Top-left Y coordinate (sp, negative = down)
---   - width: Width (sp)
---   - height: Height (sp)
+--   - x, y, width, height: as draw_octagon_fill (sp)
 --   - line_width: Line width (sp)
 --   - color_str: RGB color string (default "0 0 0")
 -- @return (node) Updated head
 local function draw_octagon_frame(p_head, params)
-    local sp_to_bp = utils.sp_to_bp
-    local x_bp = params.x * sp_to_bp
-    local y_bp = params.y * sp_to_bp
-    local w_bp = params.width * sp_to_bp
-    local h_bp = params.height * sp_to_bp
-    local lw_bp = params.line_width * sp_to_bp
     local color_str = params.color_str or "0 0 0"
-
-    -- Corner cut size: 20% of smaller dimension
-    local corner = math.min(w_bp, h_bp) * 0.2
-
-    local literal = string.format([[
-q %s RG %.2f w
-%.4f %.4f m
-%.4f %.4f l %.4f %.4f l %.4f %.4f l %.4f %.4f l
-%.4f %.4f l %.4f %.4f l %.4f %.4f l h S Q]],
-        color_str, lw_bp,
-        x_bp + corner, y_bp,
-        x_bp + w_bp - corner, y_bp,
-        x_bp + w_bp, y_bp - corner,
-        x_bp + w_bp, y_bp - h_bp + corner,
-        x_bp + w_bp - corner, y_bp - h_bp,
-        x_bp + corner, y_bp - h_bp,
-        x_bp, y_bp - h_bp + corner,
-        x_bp, y_bp - corner
-    )
-
+    local lw_bp = params.line_width * utils.sp_to_bp
+    local literal = string.format("q %s RG %.2f w\n%s S Q", color_str, lw_bp, octagon_path(params))
     return utils.insert_pdf_literal(p_head, literal)
 end
 

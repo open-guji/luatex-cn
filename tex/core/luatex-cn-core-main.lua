@@ -237,7 +237,7 @@ local function init_engine_context(box_num, params)
 
     -- 0.7 Geometry Constraints
     local h_raw = params.height
-    local h_dim = 0
+    local h_dim
     if type(h_raw) == "number" or (type(h_raw) == "string" and h_raw:match("^%d+$")) then
         h_dim = (tonumber(h_raw) or 0) * g_height
     else
@@ -870,6 +870,14 @@ local function process(box_num, params)
     -- with a single content block byte-identical.
     local broke_open_page = false
     if not is_textbox and total_pages > 0 and cells_collide(open_page_cells, first_cells) then
+        if split_enabled then
+            -- The open page is the previous block's last half-page, but it is
+            -- shipped out here, inside this block's group, where
+            -- \luatexcn_apply_geometry: has locally reset \pagewidth to the
+            -- whole sheet. Without this the half-page ships at double width
+            -- (an unsplit 筒子页 between two 正文 blocks).
+            tex.print(page.split.page_dims_cmd())
+        end
         tex.print("\\vfill\\penalty-10000\\allowbreak")
         open_page_cells = nil
         broke_open_page = was_open

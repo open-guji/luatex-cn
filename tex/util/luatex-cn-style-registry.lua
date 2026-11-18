@@ -106,214 +106,25 @@ function style_registry.get_attr(id, attr)
     return style[attr]
 end
 
---- Get font color from style
--- @param id (number) Style ID
--- @return (string|nil) Font color string, or nil if not found
-function style_registry.get_font_color(id)
-    return style_registry.get_attr(id, "font_color")
-end
-
---- Get font size from style
--- @param id (number) Style ID
--- @return (number|nil) Font size in sp (scaled points), or nil if not found
-function style_registry.get_font_size(id)
-    return style_registry.get_attr(id, "font_size")
-end
-
---- Get font name/family from style
--- @param id (number) Style ID
--- @return (string|nil) Font name/family, or nil if not found
-function style_registry.get_font(id)
-    return style_registry.get_attr(id, "font")
-end
-
---- Get indent from style
--- @param id (number) Style ID
--- @return (number|nil) Indent value (grid units), or nil if not found
-function style_registry.get_indent(id)
-    return style_registry.get_attr(id, "indent")
-end
-
---- Get first indent from style
--- @param id (number) Style ID
--- @return (number|nil) First indent value (grid units), or nil if not found
-function style_registry.get_first_indent(id)
-    return style_registry.get_attr(id, "first_indent")
-end
-
---- Get border setting from style
--- @param id (number) Style ID
--- @return (boolean|nil) Border setting, or nil if not found
-function style_registry.get_border(id)
-    return style_registry.get_attr(id, "border")
-end
-
---- Get column_border setting from style
--- @param id (number) Style ID
--- @return (boolean|nil) Column border setting, or nil if not found
-function style_registry.get_column_border(id)
-    return style_registry.get_attr(id, "column_border")
-end
-
---- Get band_border setting from style
--- @param id (number) Style ID
--- @return (boolean|nil) Band border setting, or nil if not found
-function style_registry.get_band_border(id)
-    return style_registry.get_attr(id, "band_border")
-end
-
---- Get border width from style
--- @param id (number) Style ID
--- @return (string|nil) Border width (e.g., "0.4pt"), or nil if not found
-function style_registry.get_border_width(id)
-    return style_registry.get_attr(id, "border_width")
-end
-
---- Get border color from style
--- @param id (number) Style ID
--- @return (string|nil) Border color RGB string, or nil if not found
-function style_registry.get_border_color(id)
-    return style_registry.get_attr(id, "border_color")
-end
-
---- Get outer border setting from style
--- @param id (number) Style ID
--- @return (boolean|nil) Outer border setting, or nil if not found
-function style_registry.get_outer_border(id)
-    return style_registry.get_attr(id, "outer_border")
-end
-
---- Get outer border thickness from style
--- @param id (number) Style ID
--- @return (number|nil) Outer border thickness in sp, or nil if not found
-function style_registry.get_outer_border_thickness(id)
-    return style_registry.get_attr(id, "outer_border_thickness")
-end
-
---- Get outer border separation from style
--- @param id (number) Style ID
--- @return (number|nil) Outer border separation in sp, or nil if not found
-function style_registry.get_outer_border_sep(id)
-    return style_registry.get_attr(id, "outer_border_sep")
-end
-
---- Get background color from style
--- @param id (number) Style ID
--- @return (string|nil) Background color RGB string, or nil if not found
-function style_registry.get_background_color(id)
-    return style_registry.get_attr(id, "background_color")
-end
-
---- Get border shape from style
--- @param id (number) Style ID
--- @return (string|nil) Border shape ("none", "rect", "octagon", "circle"), or nil if not found
-function style_registry.get_border_shape(id)
-    return style_registry.get_attr(id, "border_shape")
-end
-
---- Get border margin from style
--- @param id (number) Style ID
--- @return (string|nil) Border margin value (e.g., "1pt"), or nil if not found
-function style_registry.get_border_margin(id)
-    return style_registry.get_attr(id, "border_margin")
-end
-
---- Get grid height override from style
--- @param id (number) Style ID
--- @return (number|nil) Grid height in sp (nil = use default/font-based)
-function style_registry.get_grid_height(id)
-    return style_registry.get_attr(id, "grid_height")
-end
-
---- Get textflow-level grid height override (set by \夹注[grid-height=X], not inner \样式)
--- @param id (number) Style ID
--- @return (number|nil) Textflow grid height in sp (nil = not set at textflow level)
-function style_registry.get_textflow_grid_height(id)
-    return style_registry.get_attr(id, "textflow_grid_height")
-end
-
---- Get cell height from style
--- @param id (number) Style ID
--- @return (number|nil) Cell height in sp, or nil
-function style_registry.get_cell_height(id)
-    return style_registry.get_attr(id, "cell_height")
-end
-
---- Get cell width from style
--- @param id (number) Style ID
--- @return (number|nil) Cell width in sp (nil = use grid_width)
-function style_registry.get_cell_width(id)
-    return style_registry.get_attr(id, "cell_width")
-end
-
---- Get cell gap from style
--- @param id (number) Style ID
--- @return (number|nil) Cell gap in sp, or nil
-function style_registry.get_cell_gap(id)
-    return style_registry.get_attr(id, "cell_gap")
-end
-
---- Get spacing-top (column right spacing) from style
--- @param id (number) Style ID
--- @return (number|nil) Spacing-top in sp, or nil if not found
-function style_registry.get_spacing_top(id)
-    return style_registry.get_attr(id, "spacing_top")
-end
-
---- Get spacing-bottom (column left spacing) from style
--- @param id (number) Style ID
--- @return (number|nil) Spacing-bottom in sp, or nil if not found
-function style_registry.get_spacing_bottom(id)
-    return style_registry.get_attr(id, "spacing_bottom")
-end
-
---- Get padding-top (column top padding) from style
--- @param id (number) Style ID
--- @return (number|nil) Padding-top in sp, or nil if not found
-function style_registry.get_padding_top(id)
-    return style_registry.get_attr(id, "padding_top")
-end
-
---- Get padding-bottom (column bottom padding) from style
--- @param id (number) Style ID
--- @return (number|nil) Padding-bottom in sp, or nil if not found
-function style_registry.get_padding_bottom(id)
-    return style_registry.get_attr(id, "padding_bottom")
-end
-
---- Get column width from style
--- @param id (number) Style ID
--- @return (number|nil) Column width in sp, or nil if not found
-function style_registry.get_column_width(id)
-    return style_registry.get_attr(id, "column_width")
-end
-
---- Get xshift from style
--- @param id (number) Style ID
--- @return (number|table|nil) xshift value (sp number or {value,unit} table), or nil
-function style_registry.get_xshift(id)
-    return style_registry.get_attr(id, "xshift")
-end
-
---- Get yshift from style
--- @param id (number) Style ID
--- @return (number|table|nil) yshift value (sp number or {value,unit} table), or nil
-function style_registry.get_yshift(id)
-    return style_registry.get_attr(id, "yshift")
-end
-
---- Get auto-width setting from style
--- @param id (number) Style ID
--- @return (boolean|nil) Auto-width setting, or nil if not found
-function style_registry.get_auto_width(id)
-    return style_registry.get_attr(id, "auto_width")
-end
-
---- Get width-scale from style
--- @param id (number) Style ID
--- @return (number|nil) Width scale factor, or nil if not found
-function style_registry.get_width_scale(id)
-    return style_registry.get_attr(id, "width_scale")
+-- 单字段 getter：style_registry.get_<field>(id) == style_registry.get_attr(id, "<field>")
+-- 字段含义见 register() 与各模块的 \样式 key（字号/颜色单位与 register 时一致：
+-- 长度为 sp，颜色为 "r g b"；xshift/yshift 可能是 {value, unit} 表）。
+local ATTR_GETTERS = {
+    "font_color", "font_size", "font",
+    "indent", "first_indent",
+    "border", "column_border", "band_border", "border_width", "border_color",
+    "outer_border", "outer_border_thickness", "outer_border_sep",
+    "background_color", "border_shape", "border_margin",
+    "grid_height", "textflow_grid_height",   -- textflow_*: \夹注[grid-height] 层级，非内层 \样式
+    "cell_height", "cell_width", "cell_gap",
+    "spacing_top", "spacing_bottom", "padding_top", "padding_bottom",
+    "column_width", "xshift", "yshift", "auto_width", "width_scale",
+}
+for _, field in ipairs(ATTR_GETTERS) do
+    style_registry["get_" .. field] = function(id)
+        local style = id and _G.style_registry.styles[id]
+        return style and style[field]
+    end
 end
 
 -- Debug functions have been moved to setting_stack (util/luatex-cn-setting-stack.lua).

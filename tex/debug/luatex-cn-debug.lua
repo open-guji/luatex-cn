@@ -721,7 +721,6 @@ function debug.draw_table_cells_debug(p_head, ptb, params)
     local shift_y = params.shift_y
     local half_thickness = params.half_thickness or 0
     local col_geom = params.col_geom
-    local grid_width = col_geom.grid_width
 
     local col_groups = ptb.col_groups or {}
     local n_bands = ptb.n_bands or 1
@@ -849,7 +848,6 @@ function debug.draw_table_cells_debug(p_head, ptb, params)
             if w_cmds ~= "" then table.insert(cmds, w_cmds) end
 
             -- 5. Draw height label (centered on right edge)
-            local _, h_w = draw_number(ch, 0, 0, label_scale)
             local h_cmds = draw_number(ch,
                 xr + 3, yb + (hb - 5 * label_scale) / 2, label_scale)
             if h_cmds ~= "" then table.insert(cmds, h_cmds) end

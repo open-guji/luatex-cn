@@ -237,7 +237,7 @@ local function init_engine_context(box_num, params)
 
     -- 0.7 Geometry Constraints
     local h_raw = params.height
-    local h_dim = 0
+    local h_dim
     if type(h_raw) == "number" or (type(h_raw) == "string" and h_raw:match("^%d+$")) then
         h_dim = (tonumber(h_raw) or 0) * g_height
     else

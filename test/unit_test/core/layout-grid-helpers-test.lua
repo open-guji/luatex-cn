@@ -139,49 +139,34 @@ test_utils.run_test("get_chapter_title: default empty", function()
 end)
 
 -- ============================================================================
--- apply_style_attrs
+-- compute_band_geometry（页面分栏与表格分栏共用）
 -- ============================================================================
 
--- P1: apply_style_attrs is now a no-op — style fields are read directly from
--- style_registry at render time, not copied into layout_map entries.
-
-test_utils.run_test("apply_style_attrs: no-op does not copy style fields", function()
-    style_registry.clear()
-    local id = style_registry.register({
-        font_color = "1 0 0",
-        font_size = 655360,
-        font = "SimSun",
-    })
-    local n = node.direct.new(node.id("glyph"))
-    node.direct.set_attribute(n, require("core.luatex-cn-constants").ATTR_STYLE_REG_ID, id)
-
-    local entry = {}
-    helpers.apply_style_attrs(entry, n)
-    test_utils.assert_nil(entry.font_color)
-    test_utils.assert_nil(entry.font_size)
-    test_utils.assert_nil(entry.font)
+test_utils.run_test("compute_band_geometry: 均分，末栏吸收取整余数", function()
+    local hs, ys, lim = helpers.compute_band_geometry(3, 1000, 10, nil, 100, 99)
+    -- available = 1000 - 20 = 980 → 每栏 floor(980/3) = 326，末栏 = 1000 - 672 = 328
+    test_utils.assert_eq(hs[0], 326)
+    test_utils.assert_eq(hs[1], 326)
+    test_utils.assert_eq(hs[2], 328)
+    test_utils.assert_eq(ys[0], 0)
+    test_utils.assert_eq(ys[1], 336)
+    test_utils.assert_eq(ys[2], 672)
+    test_utils.assert_eq(lim[0], 3)
+    test_utils.assert_eq(lim[2], 3)
 end)
 
-test_utils.run_test("apply_style_attrs: no-op does not copy xshift/yshift", function()
-    style_registry.clear()
-    local id = style_registry.register({
-        xshift = { value = -0.3, unit = "em" },
-        yshift = 32768,
-    })
-    local n = node.direct.new(node.id("glyph"))
-    node.direct.set_attribute(n, require("core.luatex-cn-constants").ATTR_STYLE_REG_ID, id)
-
-    local entry = {}
-    helpers.apply_style_attrs(entry, n)
-    test_utils.assert_nil(entry.xshift)
-    test_utils.assert_nil(entry.yshift)
+test_utils.run_test("compute_band_geometry: 指定高度的栏保持原值，其余均分", function()
+    local hs, ys = helpers.compute_band_geometry(3, 1000, 0, { 200 }, nil, 7)
+    test_utils.assert_eq(hs[0], 200)
+    test_utils.assert_eq(hs[1], 400)
+    test_utils.assert_eq(hs[2], 400)
+    test_utils.assert_eq(ys[2], 600)
 end)
 
-test_utils.run_test("apply_style_attrs: no style_id does nothing", function()
-    local n = node.direct.new(node.id("glyph"))
-    local entry = {}
-    helpers.apply_style_attrs(entry, n)
-    test_utils.assert_nil(entry.font_color)
+test_utils.run_test("compute_band_geometry: 无格高时用 fallback 行数", function()
+    local _, _, lim = helpers.compute_band_geometry(2, 1000, 0, nil, nil, 7)
+    test_utils.assert_eq(lim[0], 7)
+    test_utils.assert_eq(lim[1], 7)
 end)
 
 -- ============================================================================

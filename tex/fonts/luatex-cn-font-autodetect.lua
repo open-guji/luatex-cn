@@ -126,7 +126,7 @@ function fontdetect.detect_os()
     if os_name == "windows" then return "windows" end
     if os_name == "linux" then return "linux" end
     if os_name == "macosx" then return "mac" end
-    
+
     -- undetermined operating system
     return "common"
 end
@@ -169,36 +169,10 @@ function fontdetect.find_any_font(font_aliases)
     return nil
 end
 
--- Find the first available font from a list of font groups
--- Each group is a table of aliases (English/Chinese names for the same font)
--- @param font_list (table) A list of font groups, e.g. { {"SimSun", "宋体"}, {"NSimSun", "新宋体"} }
--- @return (string|nil) The first found font name
-function fontdetect.resolve_font(font_list)
-    if type(font_list) == "string" then
-        if fontdetect.font_exists(font_list) then return font_list end
-        return nil
-    end
-
-    for _, entry in ipairs(font_list) do
-        local found
-        if type(entry) == "table" then
-            -- Entry is a list of aliases for one font
-            found = fontdetect.find_any_font(entry)
-        else
-            -- Entry is a single font name
-            if fontdetect.font_exists(entry) then
-                found = entry
-            end
-        end
-        if found then return found end
-    end
-    return nil
-end
-
 -- Select best available font scheme (now returns the raw scheme with candidate lists)
 function fontdetect.auto_select_scheme()
     local os_name = fontdetect.detect_os()
-    local scheme = nil
+    local scheme
 
     texio.write_nl("term and log", "[Font Auto-Detect] Operating system detected: " .. os_name)
 

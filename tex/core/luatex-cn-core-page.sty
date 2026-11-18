@@ -580,4 +580,11 @@
     補頁樣式 .tl_set:N = \l__luatexcn_page_blank_style_tl,
   }
 
+% 中文取值（issue #85）：是/否、上/下/居中、内侧/外侧……见 shared/luatex-cn-zh-values.sty
+\ExplSyntaxOn
+\RequirePackage{shared/luatex-cn-zh-values}
+\luatexcn_zh_values_enable:nn { luatexcn / page }
+  { page-split-enabled , page-split-right-first , twoside , mirror-margins , header-enabled , 开启分页 , 右页优先 , 启用页眉 , 開啟分頁 , 右頁優先 , 啟用頁眉 }
+\ExplSyntaxOff
+
 \endinput

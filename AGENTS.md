@@ -25,6 +25,7 @@
 | `ai_must_read/LEARNING.md` | 开发经验与教训（Lua/TeX 陷阱、渲染问题） | **必读** - 避免重复踩坑 |
 | `ai_must_read/design.md` | 架构设计文档 | 实现新功能前 |
 | `ai_must_read/expl3_note.md` | expl3 语法详解（参数展开、xparse陷阱） | **遇到 expl3 问题时必读** |
+| `ai_must_read/naming-conventions.md` | 选项名 / 取值 / 中文译名规范与取值对照表 | **新增或修改 key 前必读** |
 
 ## expl3 问题速查
 
@@ -139,6 +140,14 @@ python3 test/geometry_test.py
 # 以及未知 key 会发警告而不是被静默丢弃（issue #163 拖延的根因）；
 # \反白 因文本框专有 key 退回整块实现时也要提醒（issue #210）。
 python3 test/color_test.py
+```
+
+### 中文取值测试（Chinese Value Test）
+```bash
+# 不依赖基线图像的自校验（issue #85）：每个 choice / 布尔 key 都登记了
+# shared/luatex-cn-zh-values.sty 的中文取值兜底（新增 key 忘登记会失败），
+# 且 对齐=顶、显示=是、页码位置=内侧 等中文值真正设到内部变量。
+python3 test/zh_value_test.py
 ```
 
 ### 字体回退链测试（Font Fallback Test）

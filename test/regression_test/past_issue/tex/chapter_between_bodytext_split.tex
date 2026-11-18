@@ -1,0 +1,22 @@
+% chapter_between_bodytext_split.tex - 回归测试: 筒子页模式下两个「正文」块之间
+%                                      的那一页输出成没拆开的整张筒子页
+% 问题: 两个「正文」块之间写 \chapter（或什么都不写）时，第一块最后一张筒子页的
+%       左半叶输出成整张纸宽（宽度是正常半叶的两倍），整张版面挤在一页里。
+% 原因: 上一块的最后半叶要等下一块排完布局、发现占格相交补分页 penalty 时才送出；
+%       而那时已经进了下一块的组，\luatexcn_apply_geometry: 在组内把 \pagewidth
+%       局部改回了整张纸宽。split.output_pages 的 \global 半叶宽度被覆盖。
+% 修复: process() 在筒子页模式下补分页 penalty 前，先 \global 重设半叶尺寸。
+% 期望: 4 页，每页都是半叶宽；第 2 页是卷一的左半叶，第 3、4 页是卷二。
+\documentclass{ltc-guji}
+\setmainfont{TW-Kai}
+\title{測試}
+\chapter{卷一}
+\begin{document}
+\begin{正文}
+天地玄黃宇宙洪荒日月盈昃辰宿列張寒來暑往秋收冬藏閏餘成歲律呂調陽雲騰致雨露結為霜金生麗水玉出崑岡
+\end{正文}
+\chapter{卷二}
+\begin{正文}
+劍號巨闕珠稱夜光果珍李柰菜重芥薑海鹹河淡鱗潛羽翔
+\end{正文}
+\end{document}

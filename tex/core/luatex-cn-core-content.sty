@@ -80,6 +80,17 @@
 % Flag: currently inside BodyText environment (used by \chapter to decide text output)
 \bool_new:N \g__luatexcn_in_bodytext_bool
 
+% 参数相互覆盖提醒（issue #195）：记下哪些 key 是用户设的。类文件与模板 .cfg
+% 加载期间（core/luatex-cn-core-param-check.lua 的 quiet 深度 > 0）设的不算。
+\cs_new_protected:Npn \__luatexcn_content_mark_user:n #1
+  { \lua_now:n { require('core.luatex-cn-core-param-check').mark('#1') } }
+\cs_new_protected:Npn \__luatexcn_content_user_tl:Nnn #1#2#3
+  { \tl_set:Nn #1 {#3} \__luatexcn_content_mark_user:n {#2} }
+\cs_new_protected:Npn \__luatexcn_content_user_int:Nnn #1#2#3
+  { \int_set:Nn #1 {#3} \__luatexcn_content_mark_user:n {#2} }
+% 本包各 key 的 .initial 值不算用户设置
+\lua_now:n { require('core.luatex-cn-core-param-check').quiet(true) }
+
 \keys_define:nn { luatexcn / content }
   {
     border .bool_set:N = \l__luatexcn_content_border_bool,
@@ -117,14 +128,14 @@
     band-border .initial:n = {},
 
     % Number of characters per column (used for auto-calculating grid-height)
-    n-char-per-col .int_set:N = \l__luatexcn_content_n_char_per_col_int,
+    n-char-per-col .code:n = { \__luatexcn_content_user_int:Nnn \l__luatexcn_content_n_char_per_col_int { n_char_per_col } {#1} },
     n-char-per-col .initial:n = 0,
 
     % Grid layout settings
-    grid-width .tl_set:N = \l__luatexcn_content_grid_width_tl,
+    grid-width .code:n = { \__luatexcn_content_user_tl:Nnn \l__luatexcn_content_grid_width_tl { grid_width } {#1} },
     grid-width .initial:n = {1.5em},
 
-    grid-height .tl_set:N = \l__luatexcn_content_grid_height_tl,
+    grid-height .code:n = { \__luatexcn_content_user_tl:Nnn \l__luatexcn_content_grid_height_tl { grid_height } {#1} },
     grid-height .initial:n = {1.2em},
 
     vertical-align .tl_set:N = \l__luatexcn_content_valign_tl,
@@ -139,7 +150,7 @@
     horizontal-align .initial:n = right,
     h-align .meta:n = { horizontal-align = {#1} },
 
-    font-size .tl_set:N = \l__luatexcn_content_font_size_tl,
+    font-size .code:n = { \__luatexcn_content_user_tl:Nnn \l__luatexcn_content_font_size_tl { font_size } {#1} },
     font-size .initial:n = {12pt},
 
     font .tl_set:N = \l__luatexcn_content_font_name_tl,
@@ -151,10 +162,10 @@
     font-color .tl_set:N = \l__luatexcn_content_font_color_tl,
     font-color .initial:n = {},
 
-    n-column .int_set:N = \l__luatexcn_content_n_column_int,
+    n-column .code:n = { \__luatexcn_content_user_int:Nnn \l__luatexcn_content_n_column_int { n_column } {#1} },
     n-column .initial:n = 8,
 
-    page-columns .tl_set:N = \l__luatexcn_content_page_columns_tl,
+    page-columns .code:n = { \__luatexcn_content_user_tl:Nnn \l__luatexcn_content_page_columns_tl { page_columns } {#1} },
     page-columns .initial:n = {},
 
     height .tl_set:N = \l__luatexcn_content_height_tl,
@@ -240,6 +251,8 @@
 
     unknown .code:n = { \keys_set:nx { luatexcn / page } { \l_keys_key_tl = { #1 } } },
   }
+
+\lua_now:n { require('core.luatex-cn-core-param-check').quiet(false) }
 
 % Internal: Sync content parameters to Lua (idempotent, can be called multiple times)
 \cs_new_protected:Npn \__luatexcn_content_sync_to_lua:
@@ -591,6 +604,7 @@
             n_column~=~\int_use:N~\l__luatexcn_content_n_column_int,
             n_char_per_col~=~\int_use:N~\l__luatexcn_content_n_char_per_col_int,
             grid_height~=~"\l__luatexcn_content_grid_height_tl",
+            font_size~=~"\l__luatexcn_content_font_size_tl",
             banxin_ratio~=~"\l__luatexcn_content_banxin_ratio_tl",
           })
         }
@@ -666,17 +680,17 @@
     边框色 .tl_set:N = \l__luatexcn_content_border_color_tl,
     行边框 .tl_set:N = \l__luatexcn_content_column_border_tl,
     栏边框 .tl_set:N = \l__luatexcn_content_band_border_tl,
-    每行字数 .int_set:N = \l__luatexcn_content_n_char_per_col_int,
-    格宽 .tl_set:N = \l__luatexcn_content_grid_width_tl,
-    格高 .tl_set:N = \l__luatexcn_content_grid_height_tl,
+    每行字数 .code:n = { \__luatexcn_content_user_int:Nnn \l__luatexcn_content_n_char_per_col_int { n_char_per_col } {#1} },
+    格宽 .code:n = { \__luatexcn_content_user_tl:Nnn \l__luatexcn_content_grid_width_tl { grid_width } {#1} },
+    格高 .code:n = { \__luatexcn_content_user_tl:Nnn \l__luatexcn_content_grid_height_tl { grid_height } {#1} },
     纵对齐 .tl_set:N = \l__luatexcn_content_valign_tl,
     横对齐 .meta:n = { horizontal-align = {#1} },
-    字号 .tl_set:N = \l__luatexcn_content_font_size_tl,
+    字号 .code:n = { \__luatexcn_content_user_tl:Nnn \l__luatexcn_content_font_size_tl { font_size } {#1} },
     字体 .tl_set:N = \l__luatexcn_content_font_name_tl,
     字体特性 .tl_set:N = \l__luatexcn_content_font_features_tl,
     字体颜色 .tl_set:N = \l__luatexcn_content_font_color_tl,
-    行数 .int_set:N = \l__luatexcn_content_n_column_int,
-    版面行数 .tl_set:N = \l__luatexcn_content_page_columns_tl,
+    行数 .code:n = { \__luatexcn_content_user_int:Nnn \l__luatexcn_content_n_column_int { n_column } {#1} },
+    版面行数 .code:n = { \__luatexcn_content_user_tl:Nnn \l__luatexcn_content_page_columns_tl { page_columns } {#1} },
     高度 .tl_set:N = \l__luatexcn_content_height_tl,
     行距 .tl_set:N = \l__luatexcn_content_line_spacing_tl,
     版心比例 .tl_set:N = \l__luatexcn_content_banxin_ratio_tl,
@@ -708,16 +722,16 @@
     邊框色 .tl_set:N = \l__luatexcn_content_border_color_tl,
     行邊框 .tl_set:N = \l__luatexcn_content_column_border_tl,
     欄邊框 .tl_set:N = \l__luatexcn_content_band_border_tl,
-    每行字數 .int_set:N = \l__luatexcn_content_n_char_per_col_int,
-    格寬 .tl_set:N = \l__luatexcn_content_grid_width_tl,
+    每行字數 .code:n = { \__luatexcn_content_user_int:Nnn \l__luatexcn_content_n_char_per_col_int { n_char_per_col } {#1} },
+    格寬 .code:n = { \__luatexcn_content_user_tl:Nnn \l__luatexcn_content_grid_width_tl { grid_width } {#1} },
     縱對齊 .tl_set:N = \l__luatexcn_content_valign_tl,
     橫對齊 .meta:n = { horizontal-align = {#1} },
-    字號 .tl_set:N = \l__luatexcn_content_font_size_tl,
+    字號 .code:n = { \__luatexcn_content_user_tl:Nnn \l__luatexcn_content_font_size_tl { font_size } {#1} },
     字體 .tl_set:N = \l__luatexcn_content_font_name_tl,
     字體特性 .tl_set:N = \l__luatexcn_content_font_features_tl,
     字體顏色 .tl_set:N = \l__luatexcn_content_font_color_tl,
-    行數 .int_set:N = \l__luatexcn_content_n_column_int,
-    版面行數 .tl_set:N = \l__luatexcn_content_page_columns_tl,
+    行數 .code:n = { \__luatexcn_content_user_int:Nnn \l__luatexcn_content_n_column_int { n_column } {#1} },
+    版面行數 .code:n = { \__luatexcn_content_user_tl:Nnn \l__luatexcn_content_page_columns_tl { page_columns } {#1} },
     佈局模式 .tl_set:N = \l__luatexcn_content_layout_mode_tl,
     字間隙 .tl_set:N = \l__luatexcn_content_inter_cell_gap_tl,
     字格寬 .tl_set:N = \l__luatexcn_content_cell_width_tl,

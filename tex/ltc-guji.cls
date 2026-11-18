@@ -120,6 +120,9 @@
 % Initialization
 % ============================================================================
 
+% 类文件与默认模板设的值不算用户设置（参数覆盖提醒，issue #195）
+\lua_now:n { require('core.luatex-cn-core-param-check').quiet(true) }
+\AtEndOfClass { \lua_now:n { require('core.luatex-cn-core-param-check').quiet(false) } }
 % Load default config
 \InputIfFileExists{configs/luatex-cn-guji-default.cfg}{}{
   \PackageWarning{ltc-guji}{Config~file~configs/luatex-cn-guji-default.cfg~not~found}

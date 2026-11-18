@@ -35,6 +35,9 @@ local constants = package.loaded['core.luatex-cn-constants'] or
     require('core.luatex-cn-constants')
 
 -- Margin resolution lives in core-page (twoside decides inner/outer vs left/right)
+local param_check = package.loaded['core.luatex-cn-core-param-check'] or
+    require('core.luatex-cn-core-param-check')
+
 local function page_module()
     return package.loaded['core.luatex-cn-core-page'] or
         require('core.luatex-cn-core-page')
@@ -459,6 +462,9 @@ local function sync_params(params)
     calc_content_area_width()
     calc_page_columns(explicit_page_cols)
     calc_auto_layout()
+
+    -- 3. Warn about settings that another one overrode (issue #195)
+    param_check.page_columns(explicit_page_cols, _G.banxin and _G.banxin.enabled)
 end
 
 --- Initialize content style (call once per content block, before processing)
@@ -534,6 +540,17 @@ local function guji_auto_layout(params)
     -- Calculate adjusted margin-top (bottom-aligned content)
     local total_box_height = content_height + border_overhead_height + 2 * 65536 -- +2pt
     local margin_top = p_height - m_bottom - total_box_height
+
+    -- The computed grid replaces any grid-width / grid-height the user set (issue #195)
+    param_check.guji_layout({
+        n_column = n_column, n_char_per_col = n_char_per_col,
+        grid_width_sp = grid_width, grid_height_sp = grid_height,
+    })
+    param_check.font_fit({
+        font_size_sp = constants.resolve_dimen(constants.to_dimen(params.font_size or "0pt"), _G.content.font_size),
+        grid_height_sp = grid_height,
+        layout_mode = _G.content.layout_mode,
+    })
 
     -- Store banxin dimensions in global state
     _G.content.banxin_width = banxin_width

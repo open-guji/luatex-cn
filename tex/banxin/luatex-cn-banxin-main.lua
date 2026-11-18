@@ -108,11 +108,15 @@ local function read_banxin_params()
     local get_bool = utils.get_tex_bool
     local get_int = utils.get_tex_int
     local parse_dim = utils.parse_dim_to_sp
+    local upper_ratio = tonumber(get_tl("l__luatexcn_banxin_upper_ratio_tl")) or 0.28
+    local middle_ratio = tonumber(get_tl("l__luatexcn_banxin_middle_ratio_tl")) or 0.56
+    -- 上比 + 中比 > 1 时下段没有空间（issue #195）
+    require('core.luatex-cn-core-param-check').banxin_ratios(upper_ratio, middle_ratio)
 
     return {
         -- Layout ratios
-        upper_ratio = tonumber(get_tl("l__luatexcn_banxin_upper_ratio_tl")) or 0.28,
-        middle_ratio = tonumber(get_tl("l__luatexcn_banxin_middle_ratio_tl")) or 0.56,
+        upper_ratio = upper_ratio,
+        middle_ratio = middle_ratio,
 
         -- Padding (from upper-section and page-number sub-namespaces)
         padding_top = parse_dim(get_tl("l__luatexcn_banxin_upper_section_top_padding_tl")),

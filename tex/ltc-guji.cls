@@ -24,6 +24,7 @@
 % ============================================================================
 
 \tl_new:N \l_luatexcn_guji_initial_template_tl
+\tl_new:N \l__luatexcn_guji_template_name_tl
 \prop_new:N \g_luatexcn_guji_template_map_prop
 \bool_new:N \g__luatexcn_guji_debug_pending_bool
 
@@ -89,11 +90,17 @@
 
 \keys_define:nn { luatexcn / guji }
   {
+    % 中文模板名（四库全书、红楼梦甲戌本……）与文档类选项共用同一张对照表
     template .code:n = {
-      \luatexcn_if_template_exist:nnTF { #1 } { luatex-cn-guji- }
-        { \luatexcn_load_template:nn { #1 } { luatex-cn-guji- } }
-        { \keys_set:nn { luatexcn / guji / templates } { #1 } }
+      \luatexcn_template_map_name:NnN \g_luatexcn_guji_template_map_prop {#1}
+        \l__luatexcn_guji_template_name_tl
+      \luatexcn_if_template_exist:VnTF \l__luatexcn_guji_template_name_tl { luatex-cn-guji- }
+        { \luatexcn_load_template:Vn \l__luatexcn_guji_template_name_tl { luatex-cn-guji- } }
+        { \keys_set:nV { luatexcn / guji / templates } \l__luatexcn_guji_template_name_tl }
     },
+    % 版式 key（n-column、font-size、margin-top……）转给 \pageSetup / \contentSetup /
+    % \banxinSetup，这样 \defineGujiTemplate 里可以像 .cfg 一样直接写版式
+    unknown .code:n = { \luatexcn_template_forward_key:n {#1} },
   }
 
 \NewDocumentCommand{\gujiSetup}{ +m }

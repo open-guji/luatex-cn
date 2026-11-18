@@ -90,12 +90,57 @@ local function get_node_font(node)
     return nil
 end
 
--- P1: style fields (font_color, font_size, font, textflow_align, xshift, yshift)
--- are no longer copied into layout_map entries. Renderers read directly from
--- style_registry via ATTR_STYLE_REG_ID. This function is kept as a no-op for
--- backward compatibility with existing call sites.
-local function apply_style_attrs(map_entry, node_ptr)
-    -- no-op: style fields now read directly from style_registry at render time
+-- =============================================================================
+-- Band (分栏) geometry
+-- =============================================================================
+
+--- Split a column height into n bands (页面分栏 and 表格分栏 share this).
+-- Bands with a user-specified height keep it; the rest share the remaining space
+-- equally, and the last unspecified band absorbs the sp rounding remainder.
+-- @param n_bands (number) Number of bands (>= 1)
+-- @param alloc_height (number) Total height to divide (sp)
+-- @param band_gap_sp (number) Gap between adjacent bands (sp)
+-- @param band_heights (table|nil) 1-indexed user-specified heights (sp)
+-- @param cell_height (number|nil) Default cell height; per-band row limit = floor(h / cell_height)
+-- @param fallback_limit (number) Row limit when cell_height is nil
+-- @return heights, y_offsets, line_limits (0-indexed tables)
+local function compute_band_geometry(n_bands, alloc_height, band_gap_sp, band_heights,
+                                     cell_height, fallback_limit)
+    local available_height = alloc_height - band_gap_sp * (n_bands - 1)
+
+    local specified_total = 0
+    local unspecified_count = 0
+    local last_unspecified = -1
+    for i = 0, n_bands - 1 do
+        if band_heights and band_heights[i + 1] then
+            specified_total = specified_total + band_heights[i + 1]
+        else
+            unspecified_count = unspecified_count + 1
+            last_unspecified = i
+        end
+    end
+    local default_h = unspecified_count > 0
+        and math.floor((available_height - specified_total) / unspecified_count)
+        or 0
+
+    local heights, y_offsets, line_limits = {}, {}, {}
+    local offset = 0
+    for i = 0, n_bands - 1 do
+        local band_h
+        if band_heights and band_heights[i + 1] then
+            band_h = band_heights[i + 1]
+        elseif i == last_unspecified then
+            band_h = alloc_height - offset
+            if band_h < 0 then band_h = 0 end
+        else
+            band_h = default_h
+        end
+        heights[i] = band_h
+        y_offsets[i] = offset
+        line_limits[i] = cell_height and math.floor(band_h / cell_height) or fallback_limit
+        offset = offset + band_h + band_gap_sp
+    end
+    return heights, y_offsets, line_limits
 end
 
 -- =============================================================================
@@ -103,27 +148,6 @@ end
 -- Mirrors render-position.lua's get_column_x / calculate_rtl_position logic,
 -- but callable from the layout stage (Stage 2) without requiring Stage 3 modules.
 -- =============================================================================
-
---- Compute the grid X offset for a given rtl_col in uniform-column mode.
--- Mirrors render-position.lua:get_column_x.
-local function get_column_x_uniform(rtl_col, params)
-    local grid_width = get_grid_width(params, params.grid_height or 0)
-    local banxin_width = params.banxin_width or 0
-    local interval = params.n_column or 0
-    if interval <= 0 or banxin_width <= 0 or banxin_width == grid_width then
-        return rtl_col * grid_width
-    end
-    local group_size = interval + 1
-    local full_groups = math.floor(rtl_col / group_size)
-    local remainder = rtl_col % group_size
-    local x = full_groups * (interval * grid_width + banxin_width)
-    if remainder < interval then
-        x = x + remainder * grid_width
-    else
-        x = x + interval * grid_width
-    end
-    return x
-end
 
 --- Compute the X coordinate (sp) for a layout_map entry.
 -- Coordinate system: origin at content area right edge, X increases from right to left.
@@ -438,6 +462,7 @@ end
 -- Module exports
 -- =============================================================================
 
+helpers.compute_band_geometry = compute_band_geometry
 helpers.get_banxin_on = get_banxin_on
 helpers.get_grid_width = get_grid_width
 helpers.get_margin_right = get_margin_right
@@ -446,7 +471,6 @@ helpers.get_chapter_title = get_chapter_title
 helpers.get_node_font_color = get_node_font_color
 helpers.get_node_font_size = get_node_font_size
 helpers.get_node_font = get_node_font
-helpers.apply_style_attrs = apply_style_attrs
 helpers.compute_x = compute_x
 helpers.compute_y = compute_y
 

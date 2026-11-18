@@ -29,8 +29,6 @@
 -- Load dependencies
 local utils = package.loaded['util.luatex-cn-utils'] or
     require('util.luatex-cn-utils')
-local constants = package.loaded['core.luatex-cn-constants'] or
-    require('core.luatex-cn-constants')
 local drawing = package.loaded['util.luatex-cn-drawing'] or
     require('util.luatex-cn-drawing')
 local page_mod = package.loaded['core.luatex-cn-core-page'] or
@@ -170,7 +168,7 @@ local function draw_column_borders(p_head, params)
                     -- For this column, determine per-band draw/skip using both
                     -- band_column_borders and cell-level overrides
                     local local_col = col - table_start_col
-                    local skips = {}
+                    local cell_skips = {}
                     for band = 0, n_bands - 1 do
                         -- Cell override > band default
                         local draw = band_column_borders[band]
@@ -181,14 +179,14 @@ local function draw_column_borders(p_head, params)
                         if draw == false then
                             local by = (band_y_offsets_sp[band] or 0) + band_y_to_seg
                             local bh = band_heights_sp[band] or 0
-                            skips[#skips + 1] = { by, by + bh }
+                            cell_skips[#cell_skips + 1] = { by, by + bh }
                         end
                     end
 
-                    -- Build segments from skips
+                    -- Build segments from cell_skips
                     local segments = {}
                     local cursor = 0
-                    for _, skip in ipairs(skips) do
+                    for _, skip in ipairs(cell_skips) do
                         if cursor < skip[1] then
                             segments[#segments + 1] = { cursor, skip[1] }
                         end
@@ -502,7 +500,6 @@ local function draw_band_borders(p_head, params)
     local col_geom = params.col_geom or {}
     local interval = col_geom.interval or 0
     local banxin_width = col_geom.banxin_width or 0
-    local grid_width = col_geom.grid_width or 0
     local total_cols = params.total_cols or 0
 
     -- Optional column range for inline table borders
@@ -617,10 +614,8 @@ local function draw_outer_border(p_head, params)
     -- Stepped outer border path for taitou columns
     local total_cols = params.total_cols
     local grid_width = params.grid_width
-    local grid_height = params.grid_height
     local half_thickness = params.half_thickness or 0
     local shift_x = params.shift_x or 0
-    local gh_bp = grid_height * sp_to_bp
 
     -- Bottom and right edges of outer border
     local by_bp = ty_bp + th_bp  -- bottom Y
@@ -761,7 +756,7 @@ local function render_borders(p_head, params)
     -- Calculate content dimensions (shared logic in content module)
     local content_mod = package.loaded['core.luatex-cn-core-content'] or
         require('core.luatex-cn-core-content')
-    local content_dim_w, content_dim_h, inner_width, inner_height = content_mod.calculate_content_dimensions({
+    local _, content_dim_h, inner_width, inner_height = content_mod.calculate_content_dimensions({
         is_textbox = is_textbox,
         actual_cols = actual_cols,
         actual_height_sp = params.actual_height_sp,
@@ -826,6 +821,22 @@ local function render_borders(p_head, params)
         end
     end
 
+    -- Fields shared by every draw_column_borders / draw_content_frame call below
+    local function frame_params(extra)
+        local fp = {
+            total_cols = p_total_cols,
+            grid_width = grid_width,
+            col_geom = col_geom,
+            content_dim_h = content_dim_h,
+            border_thickness = border_thickness,
+            shift_x = params.shift_x,
+            outer_shift = params.outer_shift,
+            border_rgb_str = params.b_rgb_str,
+        }
+        for k, v in pairs(extra) do fp[k] = v end
+        return fp
+    end
+
     if draw_col_border and p_total_cols > 0 then
         -- Base skip set: banxin + no_silk regions are always skipped
         local base_skip = {}
@@ -840,19 +851,11 @@ local function render_borders(p_head, params)
         local non_table_skip = {}
         for k, v in pairs(base_skip) do non_table_skip[k] = v end
         for k in pairs(table_owned_cols) do non_table_skip[k] = true end
-        p_head = draw_column_borders(p_head, {
-            total_cols = p_total_cols,
-            grid_width = grid_width,
-            col_geom = col_geom,
-            content_dim_h = content_dim_h,
-            border_thickness = border_thickness,
-            shift_x = params.shift_x,
-            outer_shift = params.outer_shift,
-            border_rgb_str = params.b_rgb_str,
+        p_head = draw_column_borders(p_head, frame_params({
             banxin_cols = non_table_skip,
             col_min_y_sp = params.col_min_y_sp,
             c_padding_top = params.c_padding_top,
-        })
+        }))
 
         -- Step B: per-table segmented column borders restricted to that
         -- table's column range (skip everything outside).
@@ -867,15 +870,7 @@ local function render_borders(p_head, params)
                     table_skip[col] = true
                 end
             end
-            p_head = draw_column_borders(p_head, {
-                total_cols = p_total_cols,
-                grid_width = grid_width,
-                col_geom = col_geom,
-                content_dim_h = content_dim_h,
-                border_thickness = border_thickness,
-                shift_x = params.shift_x,
-                outer_shift = params.outer_shift,
-                border_rgb_str = params.b_rgb_str,
+            p_head = draw_column_borders(p_head, frame_params({
                 banxin_cols = table_skip,
                 col_min_y_sp = params.col_min_y_sp,
                 c_padding_top = params.c_padding_top,
@@ -887,37 +882,21 @@ local function render_borders(p_head, params)
                 actual_band_cols = ptb.actual_band_cols,
                 cell_column_borders = ptb.cell_column_borders,
                 col_groups = ptb.col_groups,
-            })
+            }))
         end
 
         -- Draw content frame for the no-silk region
         if no_silk_cols then
-            p_head = draw_content_frame(p_head, {
-                total_cols = p_total_cols,
-                grid_width = grid_width,
-                col_geom = col_geom,
-                content_dim_h = content_dim_h,
-                border_thickness = border_thickness,
-                shift_x = params.shift_x,
-                outer_shift = params.outer_shift,
-                border_rgb_str = params.b_rgb_str,
+            p_head = draw_content_frame(p_head, frame_params({
                 banxin_cols = params.reserved_cols,
                 only_cols = no_silk_cols,
-            })
+            }))
         end
     elseif not draw_col_border and params.draw_border and p_total_cols > 0 then
         -- column_border=false but border=true: draw content frame (内边框) without 丝栏
-        p_head = draw_content_frame(p_head, {
-            total_cols = p_total_cols,
-            grid_width = grid_width,
-            col_geom = col_geom,
-            content_dim_h = content_dim_h,
-            border_thickness = border_thickness,
-            shift_x = params.shift_x,
-            outer_shift = params.outer_shift,
-            border_rgb_str = params.b_rgb_str,
+        p_head = draw_content_frame(p_head, frame_params({
             banxin_cols = params.reserved_cols,
-        })
+        }))
     end
 
     -- 1b. Band divider lines (horizontal lines between bands)

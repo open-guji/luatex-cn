@@ -288,9 +288,6 @@ function decorate.handle_side_text_node(curr, p_head, pos, params, ctx, reg_id)
     local base_size = f_data and f_data.size or 655360
 
     local draw_rgb = resolve_rgb(reg.color)
-    local color_part = string.format("%s %s",
-        utils.create_color_literal(draw_rgb, false),
-        utils.create_color_literal(draw_rgb, true))
 
     -- Main character cell geometry
     local cell_h = pos.cell_height or ctx.grid_height or base_size

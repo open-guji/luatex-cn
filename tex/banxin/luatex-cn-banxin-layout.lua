@@ -30,8 +30,6 @@
 
 local constants = package.loaded['core.luatex-cn-constants'] or
     require('core.luatex-cn-constants')
-local utils = package.loaded['util.luatex-cn-utils'] or
-    require('util.luatex-cn-utils')
 
 local banxin_layout = {}
 
@@ -204,8 +202,6 @@ end
 local function calculate_middle_section_layout(params, regions, decorations)
     -- Middle section is runtime content (changes per page)
     -- We calculate the position/dimensions but mark text as runtime
-    local text = params.middle_section_text or ""
-
     local yuwei_dims = decorations.yuwei_dims
     local upper_yuwei_total = decorations.upper_yuwei and calculate_yuwei_total_height(yuwei_dims) or 0
     local lower_yuwei_total = decorations.lower_yuwei and calculate_yuwei_total_height(yuwei_dims) or 0

@@ -690,7 +690,7 @@ local function process_page_nodes(p_head, layout_map, params, ctx)
                     shift_x_base = glyph_params.shift_x_base,
                     col_widths = glyph_params.col_widths,
                 }
-                local final_x, final_y = text_position.calc_grid_position(pos.col, glue_dims, glue_p)
+                local final_x = text_position.calc_grid_position(pos.col, glue_dims, glue_p)
 
                 -- Insert kern to move to correct position, then kern back
                 local k_pre = D.new(constants.KERN)

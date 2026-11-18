@@ -213,3 +213,8 @@ jobs:
         # 不依赖基线图像的自校验：固定内容区 / 装订边距 / 书眉锚定内容区，
         # 正文不越出边距、奇偶页内容区重合、内外侧按竖排书装订方向（issue #198）
         run: python3 test/margin_test.py
+
+      - name: Run parameter diagram checks
+        # 不依赖基线图像的自校验：wiki 参数标注图里每个尺寸「量出来的值 = 参数设定值」，
+        # 以及格宽、格高的推导公式（issue #195）。只断言不出图。
+        run: python3 scripts/build/build_figures.py --check

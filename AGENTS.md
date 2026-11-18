@@ -167,6 +167,15 @@ python3 test/font_fallback_test.py
 python3 test/margin_test.py
 ```
 
+### 参数标注图自校验（Parameter Diagram Check）
+```bash
+# wiki 参数标注图（资源/wiki-figures/params/）的底稿 params.tex 编译后，解析 PDF
+# 里实际画出的外框、界栏、版心分隔线与字形，断言四边距、外边框粗细/间距、上填充、
+# 版心宽与上/中比「量出来的值 = 参数设定值」，以及格宽、格高的推导公式（issue #195）。
+python3 scripts/build/build_figures.py --check   # 只校验（CI 跑这个）
+python3 scripts/build/build_figures.py           # 校验通过后重新出图（需 Pillow、pdftoppm）
+```
+
 ### clreq 断言测试（横排规范符合性）
 ```bash
 # 解析横排 PDF 内容流（字形 x 坐标 + advance），对 clreq 条款做度量断言：

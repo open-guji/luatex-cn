@@ -1,0 +1,46 @@
+% 参数标注图的底稿（issue #195 第二步）
+% 由 scripts/build/build_figures.py 编译，解析 PDF 里实际画出的线框，
+% 先断言「量出来的距离 = 这里设的参数值」，再画尺寸线。
+% 这里把四库全书默认模板（luatex-cn-guji-default.cfg）的几何参数显式写出，
+% 改了数值要同步改 build_figures.py 里的 PARAMS。
+\documentclass[四库全书]{ltc-guji}
+\setmainfont{TW-Kai}
+\关闭分页
+\pageSetup{
+    paper-width = 1136pt,
+    paper-height = 894.6pt,
+    margin-top = 190.5pt,
+    margin-bottom = 91.6pt,
+    margin-left = 133.2pt,
+    margin-right = 133.2pt,
+}
+\contentSetup{
+    n-column = 8,
+    n-char-per-col = 21,
+    border = true,
+    border-thickness = 0.4pt,
+    outer-border = true,
+    outer-border-thickness = 4pt,
+    outer-border-sep = 3pt,
+    banxin-ratio = 0.7,
+    padding-top = 5pt,
+    padding-bottom = 5pt,
+}
+\banxinSetup{
+    banxin-upper-ratio = 0.282,
+    banxin-middle-ratio = 0.563,
+}
+\title{欽定四庫全書}
+\chapter{史記卷一}
+
+\begin{document}
+\begin{正文}
+欽定四庫全書
+
+\begin{段落}[indent=1]
+史記卷一
+\end{段落}
+
+黃帝者，少典之子，姓公孫，名曰軒轅。生而神靈，弱而能言，幼而徇齊，長而敦敏，成而聰明。軒轅之時，神農氏世衰。諸侯相侵伐，暴虐百姓，而神農氏弗能征。於是軒轅乃習用干戈，以征不享，諸侯咸來賓從。而蚩尤最為暴，莫能伐。炎帝欲侵陵諸侯，諸侯咸歸軒轅。軒轅乃修德振兵，治五氣，蓺五種，撫萬民，度四方，教熊羆貔貅貙虎，以與炎帝戰於阪泉之野。三戰，然後得其志。蚩尤作亂，不用帝命。於是黃帝乃徵師諸侯，與蚩尤戰於涿鹿之野，遂禽殺蚩尤。而諸侯咸尊軒轅為天子，代神農氏，是為黃帝。天下有不順者，黃帝從而征之，平者去之，披山通道，未嘗寧居。東至于海，登丸山，及岱宗。西至于空桐，登雞頭。南至于江，登熊、湘。北逐葷粥，合符釜山，而邑于涿鹿之阿。遷徙往來無常處，以師兵為營衛。官名皆以雲命，為雲師。置左右大監，監于萬國。萬國和，而鬼神山川封禪與為多焉。
+\end{正文}
+\end{document}

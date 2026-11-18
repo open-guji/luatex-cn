@@ -191,9 +191,7 @@
     小字字号 .meta:n = { small-font-size = {#1} },
     册次 .meta:n = { volume = {#1} },
     卷次 .meta:n = { juan = {#1} },
-    小字位置 .choice:,
-    小字位置 / 底部 .meta:n = { small-position = bottom },
-    小字位置 / 随后 .meta:n = { small-position = follow },
+    小字位置 .meta:n = { small-position = {#1} },
     % 繁體
     簽條底色 .meta:n = { label-color = {#1} },
     簽條寬 .meta:n = { label-width = {#1} },
@@ -208,7 +206,6 @@
     訂線顏色 .meta:n = { thread-color = {#1} },
     訂線眼數 .meta:n = { thread-holes = {#1} },
     訂線距 .meta:n = { thread-distance = {#1} },
-    小字位置 / 隨後 .meta:n = { small-position = follow },
   }
 
 % 当前逻辑页宽 / 页高（对开模式下取半页宽；悬浮框 x 以逻辑页右边计）
@@ -470,4 +467,11 @@
 \NewCommandCopy{\線裝書封面}{\ThreadBoundCover}
 
 \ExplSyntaxOff
+% 中文取值（issue #85）：是/否、上/下/居中、内侧/外侧……见 shared/luatex-cn-zh-values.sty
+\ExplSyntaxOn
+\RequirePackage{shared/luatex-cn-zh-values}
+\luatexcn_zh_values_enable:nn { luatexcn / threadcover }
+  { small-position , binding-thread }
+\ExplSyntaxOff
+
 \endinput

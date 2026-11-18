@@ -176,6 +176,49 @@
       }
   }
 
+% 中文键名（issue #85，与竖排 \标点设置 同名同义）。
+% 取值的中文写法（大陆/台湾、压缩/自然、是/否……）由 zh-values 统一兜底。
+\keys_define:nn { luatexcn / hori }
+  {
+    标点风格 .meta:n = { style = {#1} },
+    標點風格 .meta:n = { style = {#1} },
+    风格预设 .meta:n = { style = {#1} },
+    風格預設 .meta:n = { style = {#1} },
+    禁则级别 .meta:n = { kinsoku-level = {#1} },
+    禁則級別 .meta:n = { kinsoku-level = {#1} },
+    汉字间拉伸 .meta:n = { inter-cjk-stretch = {#1} },
+    漢字間拉伸 .meta:n = { inter-cjk-stretch = {#1} },
+    段首缩进 .meta:n = { paragraph-indent = {#1} },
+    段首縮進 .meta:n = { paragraph-indent = {#1} },
+    行末点号 .meta:n = { line-end-punct = {#1} },
+    行末點號 .meta:n = { line-end-punct = {#1} },
+    连续标点 .meta:n = { adjacent-punct = {#1} },
+    連續標點 .meta:n = { adjacent-punct = {#1} },
+    行首夹注符号 .meta:n = { line-start-bracket = {#1} },
+    行首夾注符號 .meta:n = { line-start-bracket = {#1} },
+    引号体例 .meta:n = { quote-style = {#1} },
+    引號體例 .meta:n = { quote-style = {#1} },
+    末行对齐 .meta:n = { last-line = {#1} },
+    末行對齊 .meta:n = { last-line = {#1} },
+    注文字号 .meta:n = { ruby-size = {#1} },
+    注文字號 .meta:n = { ruby-size = {#1} },
+    注文间距 .meta:n = { ruby-gap = {#1} },
+    注文間距 .meta:n = { ruby-gap = {#1} },
+    中西间距 .bool_set:N = \l__luatexcn_hori_cjkspace_bool,
+    中西間距 .bool_set:N = \l__luatexcn_hori_cjkspace_bool,
+    行内调整 .bool_set:N = \l__luatexcn_hori_lineadjust_bool,
+    行內調整 .bool_set:N = \l__luatexcn_hori_lineadjust_bool,
+    标点悬挂 .bool_set:N = \l__luatexcn_hori_hanging_bool,
+    標點懸掛 .bool_set:N = \l__luatexcn_hori_hanging_bool,
+    避免孤字 .bool_set:N = \l__luatexcn_hori_orphanchar_bool,
+  }
+\RequirePackage{shared/luatex-cn-zh-values}
+\luatexcn_zh_values_enable:nn { luatexcn / hori }
+  { style , kinsoku-level , cjk-latin-space , line-adjust , line-end-punct ,
+    hanging-punct , adjacent-punct , line-start-bracket , quote-style ,
+    orphan-char , last-line ,
+    中西间距 , 中西間距 , 行内调整 , 行內調整 , 标点悬挂 , 標點懸掛 , 避免孤字 }
+
 \ProcessKeysOptions { luatexcn / hori }
 
 % ============================================================================

@@ -219,6 +219,12 @@ jobs:
         # 转发到 page/content/banxin，模板中文名可用于 template=，未知模板/key 发警告
         run: python3 test/template_setup_test.py
 
+      - name: Run parameter override checks
+        # 不依赖基线图像的自校验：会互相覆盖的参数组合（格高 / 每行字数、格宽 / 行数、
+        # 版面行数 / 版心、字号大于字格、版心比例之和 > 1）各发一次警告，
+        # 只用模板的文档不发（issue #195）
+        run: python3 test/param_check_test.py
+
       - name: Run parameter diagram checks
         # 不依赖基线图像的自校验：wiki 参数标注图里每个尺寸「量出来的值 = 参数设定值」，
         # 以及格宽、格高的推导公式（issue #195）。只断言不出图。

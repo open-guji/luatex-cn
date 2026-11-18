@@ -72,6 +72,9 @@
 % Initialization
 % ============================================================================
 
+% 类文件与默认模板设的值不算用户设置（参数覆盖提醒，issue #195）
+\lua_now:n { require('core.luatex-cn-core-param-check').quiet(true) }
+\AtEndOfClass { \lua_now:n { require('core.luatex-cn-core-param-check').quiet(false) } }
 % Load default config (for Taiwan variant)
 \InputIfFileExists{configs/luatex-cn-tw-vbook-default.cfg}{}{
   \PackageWarning{ltc-tw-vbook}{Config~file~configs/luatex-cn-tw-vbook-default.cfg~not~found}

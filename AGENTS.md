@@ -175,6 +175,15 @@ python3 test/margin_test.py
 python3 test/template_setup_test.py
 ```
 
+### 参数覆盖提醒测试（Parameter Override Check）
+```bash
+# 不依赖基线图像的自校验（issue #195）：几组参数会互相覆盖——每行字数 > 0 时格高不生效、
+# 古籍类 行数 > 0 时格宽不生效、版面行数 不给版心留位、字号大于字格、版心上比+中比 > 1。
+# 断言用户设的值确实没生效、且各发一次警告；只用模板（含全部内置模板）的文档一条都没有
+# （类文件与模板 .cfg 加载期间设的值不算用户设置，见 core/luatex-cn-core-param-check.lua）。
+python3 test/param_check_test.py
+```
+
 ### 参数标注图自校验（Parameter Diagram Check）
 ```bash
 # wiki 参数标注图（资源/wiki-figures/params/）的底稿 params.tex 编译后，解析 PDF

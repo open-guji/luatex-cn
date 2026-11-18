@@ -38,6 +38,13 @@
 % #2 = system config prefix
 \cs_new_protected:Npn \luatexcn_load_template:nn #1 #2
   {
+    % 模板设的值不算用户设置（参数覆盖提醒，issue #195）
+    \lua_now:n { require('core.luatex-cn-core-param-check').quiet(true) }
+    \__luatexcn_load_template:nn {#1} {#2}
+    \lua_now:n { require('core.luatex-cn-core-param-check').quiet(false) }
+  }
+\cs_new_protected:Npn \__luatexcn_load_template:nn #1 #2
+  {
     \file_if_exist:nTF { #1 .cfg }
       { \file_input:n { #1 .cfg } }
       {

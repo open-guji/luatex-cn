@@ -315,4 +315,14 @@ test_utils.run_test("insert_chapter_marker: returns incrementing IDs", function(
     test_utils.assert_eq(id2, 2)
 end)
 
+-- normalize_rgb 按原串缓存结果：重复调用（含无法解析的串）结果不变
+test_utils.run_test("normalize_rgb: 缓存后重复调用结果一致", function()
+    for _ = 1, 2 do
+        test_utils.assert_eq(utils.normalize_rgb("255,128,0"), "1.0000 0.5020 0.0000")
+        test_utils.assert_eq(utils.normalize_rgb(" Red "), "1.0000 0.0000 0.0000")
+        test_utils.assert_nil(utils.normalize_rgb("不是颜色"))
+        test_utils.assert_nil(utils.normalize_rgb(""))
+    end
+end)
+
 print("\nAll util/utils-test tests passed!")

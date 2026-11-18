@@ -136,9 +136,6 @@
     horizontal-align / right .code:n = { \tl_set:Nn \l__luatexcn_content_halign_tl { right } },
     horizontal-align / center .code:n = { \tl_set:Nn \l__luatexcn_content_halign_tl { center } },
     horizontal-align / left .code:n = { \tl_set:Nn \l__luatexcn_content_halign_tl { left } },
-    horizontal-align / 居右 .code:n = { \tl_set:Nn \l__luatexcn_content_halign_tl { right } },
-    horizontal-align / 居中 .code:n = { \tl_set:Nn \l__luatexcn_content_halign_tl { center } },
-    horizontal-align / 居左 .code:n = { \tl_set:Nn \l__luatexcn_content_halign_tl { left } },
     horizontal-align .initial:n = right,
     h-align .meta:n = { horizontal-align = {#1} },
 
@@ -681,7 +678,6 @@
     行数 .int_set:N = \l__luatexcn_content_n_column_int,
     版面行数 .tl_set:N = \l__luatexcn_content_page_columns_tl,
     高度 .tl_set:N = \l__luatexcn_content_height_tl,
-    行间距 .tl_set:N = \l__luatexcn_content_col_spacing_tl,
     行距 .tl_set:N = \l__luatexcn_content_line_spacing_tl,
     版心比例 .tl_set:N = \l__luatexcn_content_banxin_ratio_tl,
     布局模式 .tl_set:N = \l__luatexcn_content_layout_mode_tl,
@@ -722,7 +718,6 @@
     字體顏色 .tl_set:N = \l__luatexcn_content_font_color_tl,
     行數 .int_set:N = \l__luatexcn_content_n_column_int,
     版面行數 .tl_set:N = \l__luatexcn_content_page_columns_tl,
-    行間距 .tl_set:N = \l__luatexcn_content_col_spacing_tl,
     佈局模式 .tl_set:N = \l__luatexcn_content_layout_mode_tl,
     字間隙 .tl_set:N = \l__luatexcn_content_inter_cell_gap_tl,
     字格寬 .tl_set:N = \l__luatexcn_content_cell_width_tl,
@@ -821,5 +816,12 @@
 \NewCommandCopy{\插圖頁}{\IllustrationPage}
 \NewCommandCopy{\恢复丝栏}{\EndIllustrationPage}
 \NewCommandCopy{\恢復絲欄}{\EndIllustrationPage}
+
+% 中文取值（issue #85）：是/否、上/下/居中、内侧/外侧……见 shared/luatex-cn-zh-values.sty
+\ExplSyntaxOn
+\RequirePackage{shared/luatex-cn-zh-values}
+\luatexcn_zh_values_enable:nn { luatexcn / content }
+  { border , outer-border , horizontal-align , ignore-spaces , auto-column-width , digital-mode , 边框 , 外边框 , 忽略空格 , 自动行宽 , 数字模式 , 邊框 , 外邊框 , 自動行寬 , 數字模式 }
+\ExplSyntaxOff
 
 \endinput

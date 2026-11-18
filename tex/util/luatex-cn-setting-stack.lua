@@ -99,7 +99,22 @@ end
 -- @param key (string) Setting key name
 -- @return (any) Current value
 function setting_stack.get(key)
-    return setting_stack.current()[key]
+    -- 渲染阶段逐字调用（如 get("debug")）：栈非空时直接取栈顶，
+    -- 栈空时也不必像 current() 那样整表复制默认值。
+    local stack = _G.setting_stack.stack
+    if #stack > 0 then
+        return stack[#stack][key]
+    end
+    if key == "punct_mode" and _G.judou and _G.judou.punct_mode and _G.judou.punct_mode ~= "" then
+        return _G.judou.punct_mode
+    end
+    if key == "punct_style" and _G.punct and _G.punct.style and _G.punct.style ~= "" then
+        return _G.punct.style
+    end
+    if key == "debug" and _G.luatex_cn_debug and _G.luatex_cn_debug.global_enabled then
+        return true
+    end
+    return DEFAULTS[key]
 end
 
 --- Clear the stack (for testing or document reset).

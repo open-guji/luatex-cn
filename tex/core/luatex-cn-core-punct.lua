@@ -224,7 +224,7 @@ local function resolve_original_codepoint(fid, char)
     -- BMP PUA: U+E000..U+F8FF
     if not (char >= 0xE000 and char <= 0xF8FF)
        and not (char >= 0xF0000 and char <= 0xFFFFF)
-       and not (char >= 0x100000) then
+       and char < 0x100000 then
         return nil
     end
 

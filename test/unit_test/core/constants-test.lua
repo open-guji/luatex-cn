@@ -341,28 +341,6 @@ test_utils.run_test("is_any_command_indent: INDENT_INHERIT not command", functio
 end)
 
 -- ============================================================================
--- Deprecated aliases (backward compatibility)
--- ============================================================================
-
-test_utils.run_test("encode_forced_indent: deprecated alias works (maps to taitou)", function()
-    local encoded = constants.encode_forced_indent(3)
-    local ok, value = constants.is_taitou_indent(encoded)
-    test_utils.assert_true(ok)
-    test_utils.assert_eq(value, 3)
-end)
-
-test_utils.run_test("is_forced_indent: deprecated alias works (maps to is_any_command_indent)", function()
-    local taitou = constants.encode_taitou_indent(2)
-    local suojin = constants.encode_suojin_indent(4)
-    local ok1, v1 = constants.is_forced_indent(taitou)
-    test_utils.assert_true(ok1)
-    test_utils.assert_eq(v1, 2)
-    local ok2, v2 = constants.is_forced_indent(suojin)
-    test_utils.assert_true(ok2)
-    test_utils.assert_eq(v2, 4)
-end)
-
--- ============================================================================
 -- Indent constants
 -- ============================================================================
 

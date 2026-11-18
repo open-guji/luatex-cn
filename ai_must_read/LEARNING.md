@@ -1085,6 +1085,14 @@ tex.set("global", "paperheight", target_h)
 （末页多出的 `\vfill` 参与了页面竖直列表）。把 penalty 放在**下一块开头**
 则单块文档一个字节都不动 —— **补页面级材料时，宁可加在需要它的那一侧**。
 
+**后续（筒子页）**：补分页 penalty 时上一块的末页才真正送出，而此刻已经在
+**下一块的组里**，`\luatexcn_apply_geometry:` 在组内把 `\pagewidth` 局部改回了
+整张纸宽 —— `split.output_pages` 里设的 `\global` 半叶宽被覆盖，上一块最后的
+左半叶就输出成两倍宽的整张筒子页（两个 `正文` 之间写不写 `\chapter` 都会出现，
+用例 `chapter_between_bodytext_split.tex`）。修复：筒子页模式下补 penalty 前先
+`\global` 重设半叶尺寸（`split.page_dims_cmd()`）。**教训：页面在哪个组里被
+送出，就用哪个组里的 `\pagewidth`；推迟送出的页要在送出点重设尺寸。**
+
 ---
 
 ### 8.4 `\抬头` 的强制缩进泄漏到后面的夹注

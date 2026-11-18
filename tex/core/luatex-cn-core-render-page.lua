@@ -77,8 +77,6 @@ local debug = package.loaded['debug.luatex-cn-debug'] or
     require('debug.luatex-cn-debug')
 
 local dbg = debug.get_debugger('render')
-local page_mod = package.loaded['core.luatex-cn-core-page'] or
-    require('core.luatex-cn-core-page')
 local textbox_mod = package.loaded['core.luatex-cn-core-textbox'] or
     require('core.luatex-cn-core-textbox')
 local render_border = package.loaded['core.luatex-cn-core-render-border'] or
@@ -361,8 +359,6 @@ local function render_single_page(p_head, p_max_col, p, layout_map, params, ctx,
             actual_height_sp = target
         end
     end
-    local plugins = params.plugins
-
     local draw_border = engine.draw_border
     local draw_column_border = engine.draw_column_border
     local draw_band_border = engine.draw_band_border

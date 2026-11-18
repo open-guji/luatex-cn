@@ -108,4 +108,17 @@ test_utils.run_test("configure: does not error", function()
     split.configure()
 end)
 
+-- ============================================================================
+-- page_dims_cmd (issue: \chapter between 正文 blocks shipped a double-width page)
+-- ============================================================================
+
+test_utils.run_test("page_dims_cmd: globally sets half-page width and full height", function()
+    reset()
+    local cmd = split.page_dims_cmd()
+    test_utils.assert_match(cmd, "\\global\\pagewidth=100%.00000pt")
+    test_utils.assert_match(cmd, "\\global\\paperwidth=100%.00000pt")
+    test_utils.assert_match(cmd, "\\global\\pageheight=300%.00000pt")
+    test_utils.assert_match(cmd, "\\global\\paperheight=300%.00000pt")
+end)
+
 print("\nAll core/core-page-split-test tests passed!")

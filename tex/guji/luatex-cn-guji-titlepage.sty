@@ -94,4 +94,11 @@
 % Traditional Chinese / 繁体
 \NewEnvironmentCopy{書名頁}{TitlePage}
 
+% 中文取值（issue #85）：是/否、上/下/居中、内侧/外侧……见 shared/luatex-cn-zh-values.sty
+\ExplSyntaxOn
+\RequirePackage{shared/luatex-cn-zh-values}
+\luatexcn_zh_values_enable:nn { luatexcn / titlepage }
+  { border , outer-border , 边框 , 邊框 , 外边框 , 外邊框 }
+\ExplSyntaxOff
+
 \endinput

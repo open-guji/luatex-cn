@@ -493,11 +493,7 @@
     邊框色 .tl_set:N = \l__luatexcn_inverted_border_color_tl,
     边框宽 .tl_set:N = \l__luatexcn_inverted_border_width_tl,
     邊框寬 .tl_set:N = \l__luatexcn_inverted_border_width_tl,
-    断口 .choice:,
-    断口 / 直角 .code:n = { \tl_set:Nn \l__luatexcn_inverted_break_tl { square } },
-    断口 / 八角 .code:n = { \tl_set:Nn \l__luatexcn_inverted_break_tl { octagon } },
-    断口 / square .code:n = { \tl_set:Nn \l__luatexcn_inverted_break_tl { square } },
-    断口 / octagon .code:n = { \tl_set:Nn \l__luatexcn_inverted_break_tl { octagon } },
+    断口 .meta:n = { break = {#1} },
     斷口 .meta:n = { 断口 = {#1} },
     边框形状 .meta:n = { border-shape = {#1} },
     邊框形狀 .meta:n = { border-shape = {#1} },
@@ -761,6 +757,15 @@
     外邊框粗細 .tl_set:N = \l__luatexcn_textbox_outer_border_thickness_tl,
     外邊框間距 .tl_set:N = \l__luatexcn_textbox_outer_border_sep_tl,
   }
+\ExplSyntaxOff
+
+% 中文取值（issue #85）：是/否、上/下/居中、内侧/外侧……见 shared/luatex-cn-zh-values.sty
+\ExplSyntaxOn
+\RequirePackage{shared/luatex-cn-zh-values}
+\luatexcn_zh_values_enable:nn { luatexcn / textbox }
+  { border , banxin , floating , transparent , outer-border , 边框 , 版心 , 透明 , 悬浮 , 外边框 , 邊框 , 懸浮 , 外邊框 }
+\luatexcn_zh_values_enable:nn { luatexcn / inverted }
+  { break , inline , 可断行 , 可斷行 }
 \ExplSyntaxOff
 
 \endinput%

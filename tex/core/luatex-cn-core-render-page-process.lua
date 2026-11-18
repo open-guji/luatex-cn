@@ -520,6 +520,7 @@ local function handle_debug_drawing(curr, p_head, pos, ctx)
             end
         else
             -- Legacy uniform-width columns
+            local _
             _, tx_sp = text_position.calculate_rtl_position(pos.col, ctx.p_total_cols, ctx.col_geom,
                 ctx.half_thickness, ctx.shift_x)
             tw_sp = text_position.get_column_width(pos.col, ctx.col_geom)
@@ -689,7 +690,7 @@ local function process_page_nodes(p_head, layout_map, params, ctx)
                     shift_x_base = glyph_params.shift_x_base,
                     col_widths = glyph_params.col_widths,
                 }
-                local final_x, final_y = text_position.calc_grid_position(pos.col, glue_dims, glue_p)
+                local final_x = text_position.calc_grid_position(pos.col, glue_dims, glue_p)
 
                 -- Insert kern to move to correct position, then kern back
                 local k_pre = D.new(constants.KERN)

@@ -45,9 +45,6 @@
 -- Load dependencies
 local constants = package.loaded['core.luatex-cn-constants'] or
     require('core.luatex-cn-constants')
-local debug = package.loaded['debug.luatex-cn-debug'] or
-    require('debug.luatex-cn-debug')
-local dbg = debug.get_debugger('render')
 local D = constants.D
 
 
@@ -358,8 +355,8 @@ local function calc_grid_position(col, glyph_dims, params)
         end
     else
         -- Legacy uniform-width columns mode
-        local rtl_col
-        rtl_col, base_x = calculate_rtl_position(col, total_cols, col_geom, half_thickness, shift_x)
+        local _
+        _, base_x = calculate_rtl_position(col, total_cols, col_geom, half_thickness, shift_x)
         col_width = get_column_width(col, col_geom)
     end
     local sub_col = params.sub_col or 0
@@ -367,7 +364,6 @@ local function calc_grid_position(col, glyph_dims, params)
     -- Cell width for character centering (default to column width)
     -- cell_width may differ from col_width when per-character width override is set
     local cell_w = params.cell_width or col_width
-    local center_offset = (col_width - w) / 2
 
     -- Calculate X offset based on horizontal alignment
     local x_offset

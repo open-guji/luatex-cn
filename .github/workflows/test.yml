@@ -14,6 +14,20 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # 静态检查：未用的变量/函数、误写的全局变量（如漏了 require 的 constants）。
+  # 配置见仓库根目录 .luacheckrc。
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Install luacheck
+        run: sudo apt-get update -q && sudo apt-get install -y -q lua-check
+
+      - name: Run luacheck
+        run: luacheck tex
+
   unit-test:
     runs-on: ubuntu-latest
     steps:
@@ -168,6 +182,11 @@ jobs:
         # （font-color/字体颜色 与 color/颜色）都真正落到 PDF 上，
         # 且未知 key 会发警告而不是被静默丢弃（issue #163）
         run: python3 test/color_test.py
+
+      - name: Run Chinese value tests
+        # 不依赖基线图像的自校验：choice / 布尔 key 都登记了中文取值兜底，
+        # 且 对齐=顶、显示=是、页码位置=内侧 等中文值真正设到内部变量（issue #85）
+        run: python3 test/zh_value_test.py
 
       - name: Run font fallback tests
         # 不依赖基线图像的自校验：回退链补字仍生效，且字号数目不再乘以

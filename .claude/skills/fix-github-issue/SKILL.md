@@ -20,6 +20,23 @@ gh issue view <issue-number> --repo open-guji/luatex-cn
 - 查看附带的截图或示例
 - 了解用户期望的行为
 
+### 1.1 下载用户附带的原文件（必须）
+
+用户通常附了 `.txt`（改了后缀的 .tex）和编译出的 `.pdf`。**源文件和 PDF 都要下载**，
+放进仓库外一个单独的空目录。后面复现和验证修复都以这个原文件为准，最小用例只是补充。
+
+```bash
+mkdir -p /tmp/issue<N>-user && cd /tmp/issue<N>-user
+# 本地：直接下载 issue 里的 github.com/user-attachments/files/... 链接
+# 云端会话：curl 会被代理拦截。先用 WebFetch 打开该链接，拿到 302 指向的
+#          objects.githubusercontent.com 签名地址（5 分钟内有效），再用 curl 下载
+```
+
+**为什么**：#201 当时只用自己写的最小用例验证。用户原文件里写的是
+`\反白[border-shape=…]`，新实现整段退回了旧代码，修复对用户完全没生效，
+直到发版后用户又报了 #210。#216 也一样：用户的文件同时开着句读和夹注
+n-char-per-col，而我们的 n-char 用例开着 `\无标点模式`，碰不到句读。
+
 ## 2. 定位相关代码
 
 使用搜索工具找到相关的代码文件：
@@ -72,12 +89,27 @@ gh issue view <issue-number> --repo open-guji/luatex-cn
 
 **关键步骤**：在修复前，必须先成功重现问题。
 
-### 4.1 在 test_example 中重现
+### 4.1 先用用户原文件重现（必须）
 
-使用 `/home/lishaodong/workspace/luatex-cn/test_example` 目录创建最小复现用例：
+编译 1.1 下载的原文件，**只把字体换成测试字体**（`\setFontFamily{…}` 换成
+`\setmainfont{TW-Kai}`），其余一字不改：
 
 ```bash
-cd /home/lishaodong/workspace/luatex-cn/test_example
+cd /tmp/issue<N>-user
+sed 's/\\setFontFamily{[^}]*}/\\setmainfont{TW-Kai}/' default.txt > user.tex
+OSFONTDIR=<repo>/test/fonts TEXINPUTS=<repo>/tex//: LUAINPUTS=<repo>/tex//: \
+  lualatex -interaction=nonstopmode user.tex
+```
+
+把结果和用户附的 PDF 对照，确认看到的是**同一个**现象，位置和幅度都要对得上。
+对不上，说明还有别的触发条件没找到，先别急着写最小用例。
+
+### 4.2 再写最小复现用例
+
+在仓库外的临时目录创建最小复现用例：
+
+```bash
+mkdir -p /tmp/issue<N>-min && cd /tmp/issue<N>-min
 # 创建测试文件 issue_<number>.tex
 cat > issue_<number>.tex << 'EOF'
 \documentclass{ltc-guji}  % 或 ltc-cn-vbook 等
@@ -95,8 +127,10 @@ lualatex -interaction=nonstopmode issue_<number>.tex
 - 验证问题确实存在
 - 理解问题的触发条件
 - 创建简化的复现场景
+- **保留用户文件里与问题相关的全局设置**：句读/标点模式、模板、字号、夹注设置等。
+  不要顺手加 `\无标点模式` 之类让用例「更干净」的设置，#216 就是这样被藏起来的。
 
-### 4.2 决定测试用例位置
+### 4.3 决定测试用例位置
 
 成功重现后，根据用法频率选择测试位置：
 
@@ -139,7 +173,7 @@ lualatex -interaction=nonstopmode issue_<number>.tex
 | 简单示例（< 30 行） | basic（合并到已有文件） |
 | 复杂示例（> 30 行） | past_issue（独立文件） |
 
-### 4.3 创建测试用例
+### 4.4 创建测试用例
 
 **在 basic 中添加**（合并到已有文件）：
 ```latex
@@ -158,7 +192,7 @@ cat > vert_font_kinsoku_issue71.tex << 'EOF'
 \setmainfont[RawFeature={vert}]{KingHwa_OldSong}
 \begin{document}
 \begin{正文}
-% 从 test_example 复制已验证的最小复现用例
+% 从 4.2 复制已验证的最小复现用例
 \end{正文}
 \end{document}
 EOF
@@ -179,6 +213,18 @@ EOF
 - **布局问题**：检查网格计算和列宽行高设置
 
 ## 6. 验证修复（关键！）
+
+### 6.0 用户原文件修复前后对比（必须）
+
+用 4.1 的 `user.tex` 分别在 main 和修复分支上编译。main 可以用
+`git worktree add /tmp/main-wt origin/main`，`TEXINPUTS` / `LUAINPUTS` 指向各自的 `tex//`。
+渲染出问题所在的页面，左右拼成一张「修复前 / 修复后」对比图，放进 PR 描述。
+
+- **修复后，用户文件里的现象必须消失。** 如果只修好了最小用例、用户文件没变，
+  说明用户走的是另一条路径（#201 → #210 就是这样）。
+- 截图放在 `issue-assets` 分支的 `issue-<N>/` 下，PR 里用
+  `https://raw.githubusercontent.com/open-guji/luatex-cn/issue-assets/issue-<N>/<file>.png`
+  引用，不要提交到 PR 分支。
 
 **期望**：修复后，regression test 应该在相关测试文件上**显示变化**。
 
@@ -258,9 +304,18 @@ python3 scripts/overlay_compare.py \
 okular /tmp/overlay.png
 ```
 
-## 7. 创建 past-issue 回归测试（必须！）
+## 7. 创建 past-issue 回归测试（有代表性时）
 
-每个 issue 修复**必须**在 `test/regression_test/past_issue/tex/` 中创建对应的回归测试文件，防止问题复发。
+只有**有代表性、可能再出现**的问题才在 `test/regression_test/past_issue/tex/` 中加用例，
+比如常见写法、新功能、以后重构时容易再坏的路径。不太可能再出现的边角情况，有 unit test 就够了。
+先 `ls test/regression_test/past_issue/tex | grep <关键词>`，已有相关用例就优先往里加一页。
+加不加都要在 PR 描述里写明理由。
+
+问题出在**两个功能的交叉处**时（如句读 × 夹注格高），优先补进
+`basic/tex/jiazhu-combo.tex` 这类组合用例，不要只加在单功能用例里。
+
+**新功能自己的用例也不要关掉句读/标点**：#82（夹注 n-char-per-col）的用例开着
+`\无标点模式`，于是 #216 里句读在 n-char 夹注中偏移，没有任何测试能发现。
 
 ### 7.1 创建测试文件
 
@@ -275,14 +330,14 @@ cat > test/regression_test/past_issue/tex/<feature>_issue<number>.tex << 'EOF'
 \documentclass{ltc-guji}
 \setmainfont{TW-Kai}
 \关闭分页
-\无标点模式
+% 标点/句读模式与用户原文件保持一致；不要为了「干净」关掉它
 
 \title{测试}
 \chapter{Issue <number>}
 
 \begin{document}
 \begin{正文}
-% 从 test_example 复制已验证的最小复现用例
+% 从 4.2 复制已验证的最小复现用例
 % 包含多个测试场景（正常用法 + 边缘情况）
 \end{正文}
 \end{document}
@@ -365,7 +420,7 @@ git add test/regression_test/past_issue/tex/<new-test>.tex  # 如果创建了新
 - ❌ `test/regression_test/*/diff/*.png` - 差异图（临时文件）
 - ❌ `test/regression_test/*/current/*.png` - 当前输出（临时文件）
 - ❌ `*.aux`, `*.log`, `*.out` - LaTeX 辅助文件
-- ❌ `test_example/` 下的任何文件（仅用于本地测试）
+- ❌ 仓库外 /tmp/issue<N>-* 下的复现文件（仅用于本地测试）
 
 ### 9.3 编写提交信息
 

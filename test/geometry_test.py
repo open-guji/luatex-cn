@@ -9,9 +9,15 @@ PDF 的内容流，取出每个字形的 Tm 定位矩阵，按列（相同 x 坐
 一类的 bug（LEARNING.md 3.6）：那类 bug 会使列内基线间距抖动，
 而基线型像素对比测试会把错误渲染原样锁进基线,无法发现。
 
+第二项检查（句读，issue #216）：句读标记相对所附的字的竖向偏移，以所附字的
+字号为单位，全文必须一致——无论字在正文还是夹注、夹注格高是否与正文相同。
+夹注 n-char-per-col 曾让夹注里的句读按正文格高定位而偏离所附的字，
+像素基线会把这种偏移原样锁住，这里直接量出来。
+
 用法：
-    python3 test/geometry_test.py            # 编译并检查默认测试文件
-    python3 test/geometry_test.py file.pdf   # 直接检查已有 PDF
+    python3 test/geometry_test.py            # 编译并检查两个默认测试文件
+    python3 test/geometry_test.py file.pdf   # 直接检查已有 PDF（基线等距）
+    python3 test/geometry_test.py --judou file.pdf|file.tex  # 只做句读检查
 
 仅用标准库（zlib/re），无第三方依赖。
 """
@@ -26,6 +32,9 @@ import zlib
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DEFAULT_TEX = os.path.join(
     REPO_ROOT, "test", "regression_test", "basic", "tex", "baseline-align.tex"
+)
+JUDOU_TEX = os.path.join(
+    REPO_ROOT, "test", "regression_test", "basic", "tex", "jiazhu-combo.tex"
 )
 FONTS_DIR = os.path.join(REPO_ROOT, "test", "fonts")
 
@@ -107,6 +116,94 @@ def check(pdf_path):
     return 0
 
 
+# ---------------------------------------------------------------------------
+# 句读标记相对所附字的位置（issue #216）
+# ---------------------------------------------------------------------------
+
+# 句读颜色：jiazhu-combo.tex 用 \句读设置{句读颜色=red}，文中别无红色字形
+JUDOU_RGB = (1.0, 0.0, 0.0)
+# 偏移（以字号计）允许的差异。正常只有取整误差（<0.002）；
+# #216 那类 bug 造成的差异在 0.2 以上。
+JUDOU_TOLERANCE_EM = 0.01
+# 至少要找到这么多句读标记，防止解析失败时空转通过
+MIN_JUDOU_MARKS = 8
+# 句读标记按所附字字号的 1.2 倍绘制（judou.lua register_decorate 的 scale）。
+# 只认这个比例的红字为「紧跟所附字的句读」：连续的红字（彩色正文）、
+# 以及夹注收尾后正文标点挂在夹注末字上的大号句读（字号不同）不在本检查范围。
+JUDOU_SCALE = 1.2
+
+GLYPH_TOKEN_RE = re.compile(
+    rb"(?P<cm>(?:-?[\d.]+\s+){5}-?[\d.]+)\s+cm"
+    rb"|(?P<tm>(?:-?[\d.]+\s+){5}-?[\d.]+)\s+Tm\s*\[<[0-9A-Fa-f]+>\]TJ"
+    rb"|/\S+\s+(?P<tf>-?[\d.]+)\s+Tf"
+    rb"|(?P<rg>-?[\d.]+\s+-?[\d.]+\s+-?[\d.]+)\s+rg"
+    rb"|(?<![\w.])(?P<q>[qQ])(?![\w.])"
+)
+
+
+def collect_glyphs(pdf_path):
+    """按绘制顺序返回字形 [(x, y, 字号, 填充色)]，坐标已乘上 cm 矩阵。
+
+    句读标记由 decorate 用 `q 颜色 s 0 0 s x y cm ... Q` 包着画，
+    所以要跟踪 q/Q 与 cm，不能只看 Tm。
+    """
+    with open(pdf_path, "rb") as f:
+        pdf = f.read()
+    out = []
+    for stream in iter_content_streams(pdf):
+        ctm = [1.0, 0.0, 0.0, 1.0, 0.0, 0.0]
+        stack = []
+        size = 0.0
+        rgb = (0.0, 0.0, 0.0)
+        for t in GLYPH_TOKEN_RE.finditer(stream):
+            if t.group("cm"):
+                a, b, c, d, e, f = map(float, t.group("cm").split())
+                A, B, C, D, E, F = ctm
+                ctm = [a * A + b * C, a * B + b * D, c * A + d * C,
+                       c * B + d * D, e * A + f * C + E, e * B + f * D + F]
+            elif t.group("tm"):
+                _, _, _, _, e, f = map(float, t.group("tm").split())
+                A, B, C, D, E, F = ctm
+                out.append((e * A + f * C + E, e * B + f * D + F, size * D, rgb))
+            elif t.group("tf"):
+                size = float(t.group("tf"))
+            elif t.group("rg"):
+                rgb = tuple(round(float(v), 3) for v in t.group("rg").split())
+            elif t.group("q") == b"q":
+                stack.append((ctm[:], rgb))
+            elif stack:
+                ctm, rgb = stack.pop()
+    return out
+
+
+def check_judou(pdf_path):
+    """每个句读标记紧跟在所附的字之后绘制；量出两者基线之差（以所附字字号计）。"""
+    offsets = []
+    anchor = None
+    for x, y, size, rgb in collect_glyphs(pdf_path):
+        if rgb != JUDOU_RGB:
+            anchor = (x, y, size)
+            continue
+        if anchor and anchor[2] > 0 and abs(size / anchor[2] - JUDOU_SCALE) < 0.05:
+            offsets.append(((anchor[1] - y) / anchor[2], anchor, (x, y)))
+        anchor = None  # 一个字只配一个句读
+    if len(offsets) < MIN_JUDOU_MARKS:
+        print("FAIL: 只找到 %d 个句读标记（最少要求 %d），PDF 解析可能失效"
+              % (len(offsets), MIN_JUDOU_MARKS))
+        return 1
+    ref = sorted(o for o, _, _ in offsets)[len(offsets) // 2]
+    bad = [(o, a, m) for o, a, m in offsets if abs(o - ref) > JUDOU_TOLERANCE_EM]
+    if bad:
+        print("FAIL: %d/%d 个句读标记偏离所附的字（应为 %.3f 字高）：" % (len(bad), len(offsets), ref))
+        for o, a, m in bad:
+            print("  字 (%.2f, %.2f) %.2fpt → 句读 (%.2f, %.2f)：%.3f 字高"
+                  % (a[0], a[1], a[2], m[0], m[1], o))
+        return 1
+    print("PASS: %d 个句读标记相对所附字的偏移一致（%.3f 字高，容差 %g）"
+          % (len(offsets), ref, JUDOU_TOLERANCE_EM))
+    return 0
+
+
 def compile_tex(tex_path, workdir):
     env = dict(os.environ, OSFONTDIR=FONTS_DIR)
     r = subprocess.run(
@@ -128,12 +225,21 @@ def compile_tex(tex_path, workdir):
     return pdf
 
 
-def main():
-    target = sys.argv[1] if len(sys.argv) > 1 else DEFAULT_TEX
+def run(fn, target):
     if target.endswith(".pdf"):
-        return check(target)
+        return fn(target)
     with tempfile.TemporaryDirectory() as workdir:
-        return check(compile_tex(target, workdir))
+        return fn(compile_tex(target, workdir))
+
+
+def main():
+    args = sys.argv[1:]
+    if args and args[0] == "--judou":
+        return run(check_judou, args[1] if len(args) > 1 else JUDOU_TEX)
+    if args:
+        return run(check, args[0])
+    rc = run(check, DEFAULT_TEX)
+    return run(check_judou, JUDOU_TEX) or rc
 
 
 if __name__ == "__main__":

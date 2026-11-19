@@ -166,6 +166,14 @@ local function calculate_decorate_position(pos, reg, ctx, base_size, font_id, ch
     local scaled_v_center = v_center * scale
     local center_offset = (effective_col_width / 2) - scaled_v_center
 
+    -- The anchor character's real horizontal center, when the caller knows it
+    -- (aligned 夹注 sub-columns, issue #232; sidenotes on the column boundary,
+    -- issue #233). Follow the character instead of the cell center.
+    if pos.anchor_x_sp then
+        base_x = pos.anchor_x_sp
+        center_offset = -scaled_v_center
+    end
+
     local dec_cell_h = pos.cell_height or ctx.grid_height or 0
     local target_y_sp = math.max(0, pos.y_sp - dec_cell_h)
     local band_y_off = pos.band_y_offset_sp or 0

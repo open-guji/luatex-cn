@@ -33,6 +33,8 @@ local text_position = package.loaded['core.luatex-cn-render-position'] or
     require('core.luatex-cn-render-position')
 local helpers = package.loaded['core.luatex-cn-layout-grid-helpers'] or
     require('core.luatex-cn-layout-grid-helpers')
+local decorate_mod = package.loaded['decorate.luatex-cn-decorate'] or
+    require('decorate.luatex-cn-decorate')
 local D = node.direct
 
 local dbg = debug.get_debugger('sidenote')
@@ -120,7 +122,7 @@ function sidenote.render(head, layout_map, params, context, engine_ctx, page_idx
         D.setnext(curr, nil)
 
         -- Extract font_color from node's ATTR_STYLE_REG_ID (Phase 2: Style registry)
-        if not sidenote_color then
+        if not sidenote_color and not item.decorate then
             local style_id = D.get_attribute(curr, constants.ATTR_STYLE_REG_ID)
             if style_id then
                 sidenote_color = style_registry.get_font_color(style_id)
@@ -142,6 +144,36 @@ function sidenote.render(head, layout_map, params, context, engine_ctx, page_idx
         }
 
         local id = D.getid(curr)
+        if item.decorate then
+            -- 句读标记（issue #233）：按 decorate 注册表画真正的 。/、，
+            -- 横向跟随侧批字（列界线上），纵向落在所附字的格里
+            local dec_id = D.get_attribute(curr, constants.ATTR_DECORATE_ID)
+            local dec_reg = _G.decorate_registry and _G.decorate_registry[dec_id]
+            if dec_reg and dec_reg.type ~= "side_text" then
+                local rtl_col = p_total_cols - 1 - pos.col
+                local boundary_x = text_position.get_column_x(rtl_col + 1, engine_ctx.col_geom)
+                    + engine_ctx.half_thickness + engine_ctx.shift_x
+                local cell_h = item.cell_height or engine_ctx.g_height
+                local dec_pos = {
+                    col = item.col,
+                    y_sp = item.y_sp + cell_h,
+                    cell_height = cell_h,
+                    anchor_x_sp = boundary_x + (pos.xshift or 0),
+                }
+                local dec_ctx = {
+                    col_geom = engine_ctx.col_geom,
+                    p_total_cols = p_total_cols,
+                    half_thickness = engine_ctx.half_thickness,
+                    shift_x = engine_ctx.shift_x,
+                    shift_y = engine_ctx.shift_y,
+                    grid_height = engine_ctx.g_height,
+                }
+                sn_head = decorate_mod.handle_node(curr, sn_head, dec_pos, params or {}, dec_ctx, dec_id)
+            end
+            sn_head = D.remove(sn_head, curr)
+            node.flush_node(D.tonode(curr))
+            goto next_item
+        end
         if id == constants.GLYPH then
             local d = D.getfield(curr, "depth") or 0
             local h = D.getfield(curr, "height") or 0
@@ -213,6 +245,7 @@ function sidenote.render(head, layout_map, params, context, engine_ctx, page_idx
         end
 
         sn_head = render_page._internal.handle_debug_drawing(curr, sn_head, pos, engine_ctx)
+        ::next_item::
     end
 
     -- Inline 反白 totals: a sidenote is rendered in one piece
@@ -309,6 +342,14 @@ local function serialize(t)
     end
     s = s .. "}"
     return s
+end
+
+--- A zero-width decoration marker (judou mark etc., ATTR_DECORATE_ID > 0).
+-- Its glyph char is a dummy '?'; the real mark comes from the decorate registry.
+local function is_decorate_marker(n)
+    if D.getid(n) ~= constants.GLYPH or not constants.ATTR_DECORATE_ID then return false end
+    local dec_id = D.get_attribute(n, constants.ATTR_DECORATE_ID)
+    return dec_id ~= nil and dec_id > 0
 end
 
 local function create_gap_tracker()
@@ -507,8 +548,25 @@ local function place_individual_sidenote(sid, registry_item, last_node_pos, para
 
     local placed_nodes = {}
     local current_content_node = D.todirect(content)
+    local last_glyph_item = nil
 
     while current_content_node do
+        if is_decorate_marker(current_content_node) then
+            -- 句读等装饰标记（issue #233）：零宽，不占格，跟随前一个字
+            if last_glyph_item then
+                table.insert(placed_nodes, {
+                    node = current_content_node,
+                    page = last_glyph_item.page,
+                    col = last_glyph_item.col,
+                    y_sp = last_glyph_item.y_sp,
+                    cell_height = last_glyph_item.cell_height,
+                    metadata = metadata,
+                    decorate = true,
+                })
+            end
+            current_content_node = D.getnext(current_content_node)
+            goto continue
+        end
         table.insert(placed_nodes, {
             node = current_content_node,
             page = curr_p,
@@ -521,8 +579,12 @@ local function place_individual_sidenote(sid, registry_item, last_node_pos, para
         tracker.set(curr_p, curr_c, curr_r)
 
         local nid = D.getid(current_content_node)
+        if nid == constants.GLYPH then
+            last_glyph_item = placed_nodes[#placed_nodes]
+        end
         curr_p, curr_c, curr_r = calculate_next_node_pos(curr_p, curr_c, curr_r, nid, config)
         current_content_node = D.getnext(current_content_node)
+        ::continue::
     end
 
     return placed_nodes
@@ -590,7 +652,7 @@ function sidenote._build_bg_literals(sidenote_for_page, engine_ctx, p_total_cols
     local sp_to_bp = utils.sp_to_bp
     for _, item in ipairs(sidenote_for_page) do
         local id = D.getid(item.node)
-        local consumes_row = (id == constants.GLYPH or id == constants.HLIST
+        local consumes_row = not item.decorate and (id == constants.GLYPH or id == constants.HLIST
             or id == constants.VLIST or id == constants.RULE)
         if consumes_row then
             local bg_rgb = resolve_bg_color(
@@ -710,7 +772,10 @@ function sidenote.register_sidenote(box_num, metadata)
         local style_reg_id = style_registry.register(style)
         -- Traverse the node list and set ATTR_STYLE_REG_ID on all nodes
         for n in node.traverse(content_head) do
-            node.set_attribute(n, constants.ATTR_STYLE_REG_ID, style_reg_id)
+            -- 句读标记保留自己的样式（句读颜色），不随侧批文字颜色
+            if not is_decorate_marker(D.todirect(n)) then
+                node.set_attribute(n, constants.ATTR_STYLE_REG_ID, style_reg_id)
+            end
         end
     end
 

@@ -128,7 +128,8 @@ python3 test/regression_test.py save test/regression_test/basic/tex/guji.tex
 # 像素回归测试只能保证"和上次一样"——若 bug 已存在于基线中则无法发现；
 # 此测试能抓「一」「丶」等墨迹不跨基线的字被整字偏移的问题（LEARNING.md 3.6）
 # 另对 basic/jiazhu-combo.tex 断言：每个句读标记相对所附字的偏移（以字号计）
-# 全文一致，正文与各种格高的夹注都一样（issue #216）
+# 全文一致，正文与各种格高的夹注都一样（issue #216）；横向也一致——夹注五种
+# align 的各小列（issue #232）、侧批里的句读（issue #233）都在所附字右下同一位置
 python3 test/geometry_test.py
 ```
 

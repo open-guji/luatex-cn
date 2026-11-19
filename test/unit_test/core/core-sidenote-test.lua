@@ -151,6 +151,27 @@ test_utils.run_test("place_individual_sidenote: reverse flow goes to previous co
     test_utils.assert_eq(result[2].y_sp / gh, 8, "second glyph at row 8")
 end)
 
+test_utils.run_test("place_individual_sidenote: judou marker takes no row (issue #233)", function()
+    -- 字 a, 句读标记, 字 b：标记跟随 a，不占格；b 紧接 a 的下一格
+    local g1 = D.new(constants.GLYPH); g1.char = 97
+    local mark = D.new(constants.GLYPH); mark.char = 63
+    D.set_attribute(mark, constants.ATTR_DECORATE_ID, 5)
+    local g2 = D.new(constants.GLYPH); g2.char = 98
+    D.setnext(g1, mark); D.setnext(mark, g2)
+
+    local registry_item = { head = node.direct.tonode(g1), metadata = {} }
+    local last_node_pos = { page = 0, col = 1, y_sp = 2 * gh, indent = 0 }
+    local params = { page_columns = 13, line_limit = 10, grid_height = gh, banxin_on = false }
+    local tracker = sidenote._internal.create_gap_tracker()
+    local result = sidenote._internal.place_individual_sidenote(1, registry_item, last_node_pos, params, tracker)
+
+    test_utils.assert_eq(#result, 3, "all three nodes placed")
+    test_utils.assert_eq(result[2].decorate, true, "marker flagged as decoration")
+    test_utils.assert_eq(result[2].col, result[1].col, "marker in its anchor's column")
+    test_utils.assert_eq(result[2].y_sp, result[1].y_sp, "marker on its anchor's row")
+    test_utils.assert_eq(result[3].y_sp - result[1].y_sp, gh, "next glyph directly below the anchor")
+end)
+
 test_utils.run_test("place_individual_sidenote: wraps to next column at row 0", function()
     -- Create a sidenote with many glyphs to trigger wrap
     local head = nil

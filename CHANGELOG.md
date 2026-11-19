@@ -5,26 +5,25 @@
 ## [0.4.5] - 2026-11-18
 
 新增：
-- 书耳：`\banxinSetup{书耳=true}` 在版框左上角外侧画一个小框，竖排写本页篇名（随 `\chapter` 变化），也可 `书耳=<文字>` 指定；`位置 = 左（默认）| 右 | 两侧`，筒子页拆分后默认只落在左半叶，奇偶页自然区分；宽度、高度、字号可调，框线取版框内线粗细与边框颜色 (fix #87)
-- 竖排页面行块整体水平居中：正文新增 `horizontal-align`（`横对齐`）`= right（默认）| center | left`，按本页实际占用行宽把整块移到中间或左边；新环境 `\begin{居中页}`（`CenteredPage`）新起一页排一段居中正文，适合扉页、卷标题页。有界栏／边框或筒子页拆分的古籍版式列位置由网格固定，此键不生效并警告一次 (fix #175)
-- 选项取值支持中文写法：所有 choice／布尔 key 都接受中文值，如 `对齐=顶`、`单列=左`、`页码位置=内侧`、`显示=是`（此前报错）；全库共用一张中文取值对照表 `shared/luatex-cn-zh-values.sty`，查不到时报「不接受值」错误。标点设置的中文键改为转发到英文 key（此前写中文值会原样存入）；横排 `\horiSetup` 补中文键名。命名规范见 `ai_must_read/naming-conventions.md` (fix #85)
-- 参数相互覆盖时提醒：几组参数会互相覆盖，以前同时设了就静默失效。现在排版时各发一次警告：每行字数 > 0 时格高不生效；古籍类行数 > 0 时格宽不生效；版面行数不给版心留位；字号大于格高；版心上比 + 中比 > 1。只用模板设置的文档不会有提醒 (fix #195)
-- Wiki 新增「古籍版式要素」标注图（天头地脚、版框界栏、版心鱼尾、书耳、夹注、句读、侧批、眉批、印章，中英文对照）与参数标注图（页面几何、版框与字格、版心），标注图由真实编译的 PDF 量出尺寸、出图前自校验 (fix #195)
+- 书耳：`\banxinSetup{书耳=true}` 在版框外上角显示本页篇名 (fix #87)
+- 竖排页面整体水平居中：`横对齐`（`horizontal-align`）与 `居中页` 环境，用于扉页、卷标题页 (fix #175)
+- 选项取值可写中文，如 `对齐=顶`、`页码位置=内侧`、`显示=是` (fix #85)
+- 互相覆盖的参数同时设置时给出提醒（如每行字数与格高、行数与格宽） (fix #195)
+- Wiki 新增古籍版式要素标注图与参数标注图 (fix #195)
 
 变更：
-- `\gujiSetup`／`\defineGujiTemplate` 接受布局 key（`n-column`、字号、`margin-top`、`border` 等），转发给 `\pageSetup`／`\contentSetup`／`\banxinSetup`，没有模块认识的 key 发警告（此前直接报错）；`template=` 在 `ltc-guji` 与 `ltc-guji-digital` 中都接受模板中文名，未知模板改为警告而不是报错
+- `\gujiSetup`／`\defineGujiTemplate` 可直接写版面参数；`template=` 接受模板中文名
 
 修复：
-- 夹注设了 `n-char-per-col`（或 `grid-height`）时句读偏离所附的字：夹注格高比正文小时落在字中部，大时落进下一个字（0.4.4 引入） (fix #216)
-- 缩进段落里带 `n-char-per-col` 的夹注换列后冲出版框下沿：后续列可用高度没扣段落缩进（0.4.4 引入） (fix #212)
-- `\反白[border-shape=none, ...]` 退回整块文本框：正文里不换列冲出版框，夹注里字距变小。`border-shape` = none／rect／octagon 现在由行内实现处理；因其他文本框专有 key 退回整块时会发警告，说明是哪个 key 触发的 (fix #210)
-- 筒子页模式下两个 `正文` 块之间输出一张两倍宽的整张筒子页
-- `\版心设置{font-size=12pt}`（或 `grid-height`／`grid-width`）报 `attempt to index a nil value (global 'constants')` 而中止编译
-- `\LineMark[color=gray]`／`[color={255,0,0}]` 把颜色原样写进 PDF 指令，颜色失效并产生非法 PDF 语法
+- 夹注设了 `n-char-per-col` 时句读偏离所附的字 (fix #216)
+- 缩进段落里带 `n-char-per-col` 的夹注换列后冲出版框 (fix #212)
+- `\反白[border-shape=…]` 退回整块文本框，不换列 (fix #210)
+- 筒子页模式下两个 `正文` 块之间多出一张两倍宽的页
+- `\版心设置{font-size=…}` 编译报错
+- `\LineMark[color=…]` 颜色不生效
 
 维护：
-- 代码清理：删除从未调用的函数与逐字形热路径上的空调用，提取重复的分栏几何、样式 getter、八角形路径；新增 luacheck 静态检查并进 CI；渲染路径的颜色解析与设置栈读取去掉逐字重复计算。排版结果不变
-- 新增不依赖基线图像的自校验并进 CI：中文取值（`test/zh_value_test.py`）、模板设置（`test/template_setup_test.py`）、参数覆盖提醒（`test/param_check_test.py`）、参数标注图（`scripts/build/build_figures.py --check`）；几何测试新增句读相对所附字的偏移一致性检查，新增夹注组合回归用例 `basic/jiazhu-combo.tex`
+- 代码清理，加入 luacheck 静态检查；新增多项自校验测试
 
 ## [0.4.4] - 2026-11-16
 

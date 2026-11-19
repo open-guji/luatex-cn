@@ -18,7 +18,10 @@ description: 如何高效总结并更新项目的 CHANGELOG.md (How to update CH
 
 ## 2. 编写更新条目 (Write Entries)
 - **CRITICAL - Issue 完整性**：每个 `fix-ready` issue 都必须在 CHANGELOG 里有一条 `(fix #xxx)`，绝对不可遗漏。发版时 Release 说明取自 CHANGELOG，Release 发布后 workflow 会关闭说明里 `fix #xxx` 提到的 issue 并去掉 `fix-ready` 标签；漏写的 issue 会一直挂着。
-- **简洁性**：将同类改动合并，总量控制在 5-6 个条目以内。
+- **只写做了什么，不写怎么做的**：CHANGELOG 段落原样成为 GitHub Release 说明，读者是使用者。每条一行，说用户能看到的变化（新命令/新选项、修好了什么现象），不写实现方式、原因分析、内部模块名、测试细节、默认值推导过程。详细说明放 Wiki。
+  - 好：`- 夹注设了 `n-char-per-col` 时句读偏离所附的字 (fix #216)`
+  - 不好：`- ……textflow 给夹注里的句读标记建 layout 条目却没带 cell_height，渲染端缺省回落到正文格高……`
+- **简洁性**：将同类改动合并；按「新增 / 变更 / 修复 / 维护」分组，每组只列条目。
 - **纯文本**：不要使用粗体（着重号），确保列表整洁。
 - **关联 Issue**：在条目末尾使用 `(fix #xxx)` 标注对应的 Issue 编号。
 

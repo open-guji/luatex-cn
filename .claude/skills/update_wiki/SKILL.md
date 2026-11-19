@@ -85,6 +85,9 @@ git clone https://github.com/open-guji/luatex-cn.wiki.git
 - ✅ 测试
 - 📦 打包/发布
 
+条目内容与 `CHANGELOG.md` 同一版本段一致：只写做了什么，不写怎么做，每条一行
+（规则与正反例见 `/update_changelog`）。
+
 ### 4.2 版本号更新
 
 在 Home.md 中找到：

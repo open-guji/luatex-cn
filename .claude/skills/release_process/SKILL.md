@@ -80,7 +80,16 @@ git push origin vX.Y.Z
   **不要手动创建 Release**。CI 会：
   - 构建 CTAN 包（此时已含新 Wiki PDF）并推送 ctan 分支
   - 基于标签创建 Release 页面、附带 CHANGELOG 内容、上传构建产物
-- 确认 Actions 运行成功即可
+- **CI 建的是草稿（draft）Release**，不会自动发布。草稿没有正常的 tag 链接
+  （地址是 `releases/tag/untagged-…`，每次编辑都会变），只在
+  https://github.com/open-guji/luatex-cn/releases 顶部对有写权限的人可见。
+  确认 Actions 成功后，把草稿位置告诉用户：
+  `gh release view vX.Y.Z --json isDraft,url,body`
+- 核对草稿说明是否简洁（只写做了什么，见 `/update_changelog`）。需要改时用
+  `gh release edit vX.Y.Z --notes-file <file>` 只改说明，不动 draft 状态、tag 与附件；
+  同时把 `CHANGELOG.md` 与 Wiki Changelog 改成同样的文字，否则重新生成时会回到旧版
+- 发布（Publish）会公开 Release，并触发关闭 `fix #xxx` 提到的 issue，
+  由用户确认后再点，不要自行发布
 
 ## 7. 发布后 (Post-release)
 

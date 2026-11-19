@@ -1,0 +1,129 @@
+% Copyright 2026 Open-Guji (https://github.com/open-guji)
+%
+% Licensed under the Apache License, Version 2.0 (the "License");
+% you may not use this file except in compliance with the License.
+% You may obtain a copy of the License at
+%
+%     http://www.apache.org/licenses/LICENSE-2.0
+%
+% Unless required by applicable law or agreed to in writing, software
+% distributed under the License is distributed on an "AS IS" BASIS,
+% WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+% See the License for the specific language governing permissions and
+% limitations under the License.
+% luatex-cn-zh-values.sty
+% 选项「取值」的中文写法（issue #85）——横竖排共用
+%
+% 键名早已有简繁中文别名，但取值多数只认英文：`对齐=顶`、`显示=是`、
+% `页码位置=内侧` 都会报错。各模块此前零散地给个别 key 手写中文子选项
+% （书耳 左/右/两侧、横对齐 居中……），既不全也不统一。
+%
+% 这里改为「一张对照表 + 一个兜底」：
+%   * \g__luatexcn_zh_value_prop 是全库唯一的中文取值对照表：
+%       中文值 -> 候选英文值（逗号分隔，可多个，如「无」-> none, false）
+%   * \luatexcn_zh_values_enable:nn {模块} {key 列表} 给这些 choice/布尔 key
+%     装上 unknown 兜底：英文值照常直达；不认识的值查表，取第一个该 key
+%     真正接受的候选值再设一次；查不到就报「不接受此值」的错，并列出写法。
+% 中文键名若是 `.meta:n = { english-key = #1 }` 别名，只需对英文 key 启用；
+% 直接 `.bool_set:N` 的中文键名要一并列入。
+% 新增取值词汇只改对照表；新增 key 只在模块末尾的启用列表里加名字。
+%
+\RequirePackage{expl3}
+\ProvidesExplPackage {shared/luatex-cn-zh-values} {2026/11/19} {0.4.5}
+  {Chinese value aliases for luatex-cn keys}
+
+\prop_new:N \g__luatexcn_zh_value_prop
+\tl_new:N \l__luatexcn_zh_value_candidates_tl
+\tl_new:N \l__luatexcn_zh_value_hit_tl
+
+% #1 = 逗号分隔的中文同义写法（简繁都列），#2 = 候选英文值（逗号分隔）
+\cs_new_protected:Npn \luatexcn_zh_value_add:nn #1#2
+  {
+    \clist_map_inline:nn {#1}
+      { \prop_gput:Nnn \g__luatexcn_zh_value_prop {##1} {#2} }
+  }
+
+% ---------------------------------------------------------------------------
+% 对照表。术语依 CY/T 50-2008《出版术语》与 W3C clreq 中文版用语；
+% 同一中文词全库只对应一组英文值，避免各模块各译各的。
+% ---------------------------------------------------------------------------
+% 开关（布尔值）
+\luatexcn_zh_value_add:nn { 是 , 真 , 开 , 開 , 开启 , 開啟 , 启用 , 啟用 } { true }
+\luatexcn_zh_value_add:nn { 否 , 假 , 关 , 關 , 关闭 , 關閉 , 禁用 } { false }
+\luatexcn_zh_value_add:nn { 无 , 無 } { none , false }
+% 方位
+\luatexcn_zh_value_add:nn { 上 , 顶 , 頂 , 顶部 , 頂部 , 顶端 , 頂端 } { top }
+\luatexcn_zh_value_add:nn { 下 , 底 , 底部 , 底端 } { bottom }
+\luatexcn_zh_value_add:nn { 左 , 居左 , 左侧 , 左側 } { left }
+\luatexcn_zh_value_add:nn { 右 , 居右 , 右侧 , 右側 } { right }
+\luatexcn_zh_value_add:nn { 中 , 居中 , 中间 , 中間 } { center }
+\luatexcn_zh_value_add:nn { 两侧 , 兩側 , 两边 , 兩邊 } { both }
+\luatexcn_zh_value_add:nn { 撑满 , 撐滿 , 拉伸 , 分散 } { stretch , justify }
+\luatexcn_zh_value_add:nn { 两端对齐 , 兩端對齊 } { justify }
+\luatexcn_zh_value_add:nn { 内侧 , 內側 , 内 , 內 , 书脊侧 , 書脊側 } { inner }
+\luatexcn_zh_value_add:nn { 外侧 , 外側 , 外 , 切口侧 , 切口側 } { outer }
+\luatexcn_zh_value_add:nn { 纸张 , 紙張 , 纸 , 紙 , 页面 , 頁面 } { paper }
+\luatexcn_zh_value_add:nn { 内容区 , 內容區 } { content }
+\luatexcn_zh_value_add:nn { 随后 , 隨後 , 紧随 , 緊隨 } { follow }
+% 形状
+\luatexcn_zh_value_add:nn { 直角 , 方 , 方形 } { square }
+\luatexcn_zh_value_add:nn { 八角 , 八角形 } { octagon }
+% 标点（clreq 用语）
+\luatexcn_zh_value_add:nn { 大陆 , 大陸 , 内地 , 內地 } { mainland }
+\luatexcn_zh_value_add:nn { 台湾 , 臺灣 , 台灣 } { taiwan }
+\luatexcn_zh_value_add:nn { 旧式 , 舊式 , 无条件 , 無條件 } { legacy }
+\luatexcn_zh_value_add:nn { 上下文 , 按上下文 } { context }
+\luatexcn_zh_value_add:nn { 自然 , 不调整 , 不調整 } { natural }
+\luatexcn_zh_value_add:nn { 压缩 , 壓縮 , 挤压 , 擠壓 } { compress }
+\luatexcn_zh_value_add:nn { 缩减 , 縮減 } { trim }
+\luatexcn_zh_value_add:nn { 基本 } { basic }
+\luatexcn_zh_value_add:nn { 国标 , 國標 } { gb }
+\luatexcn_zh_value_add:nn { 严格 , 嚴格 } { strict }
+\luatexcn_zh_value_add:nn { 保持 , 不变 , 不變 , 原样 , 原樣 } { keep }
+\luatexcn_zh_value_add:nn { 自动 , 自動 } { auto }
+\luatexcn_zh_value_add:nn { 弯引号 , 彎引號 } { curly }
+\luatexcn_zh_value_add:nn { 直角引号 , 直角引號 } { corner }
+
+\msg_new:nnnn { luatex-cn } { unknown-value }
+  { 选项~'#1'~不接受值~'#2'~(option~'#1'~does~not~accept~value~'#2'). }
+  {
+    可用英文值，或《中文取值对照表》中的中文写法（如~是/否、上/下/居中、内侧/外侧）。\\
+    Use~an~English~value,~or~a~Chinese~synonym~from~the~luatex-cn~value~table.
+  }
+
+% #1 = 模块, #2 = key, #3 = 用户写的值
+\cs_new_protected:Npn \__luatexcn_zh_value_set:nnn #1#2#3
+  {
+    \tl_clear:N \l__luatexcn_zh_value_hit_tl
+    \prop_get:NnNT \g__luatexcn_zh_value_prop {#3} \l__luatexcn_zh_value_candidates_tl
+      {
+        \clist_map_inline:Nn \l__luatexcn_zh_value_candidates_tl
+          {
+            \keys_if_choice_exist:nnnT {#1} {#2} {##1}
+              {
+                \tl_set:Nn \l__luatexcn_zh_value_hit_tl {##1}
+                \clist_map_break:
+              }
+          }
+      }
+    \tl_if_empty:NTF \l__luatexcn_zh_value_hit_tl
+      { \msg_error:nnnn { luatex-cn } { unknown-value } {#2} {#3} }
+      {
+        \exp_args:Nne \keys_set:nn {#1}
+          { \exp_not:n {#2} = { \exp_not:V \l__luatexcn_zh_value_hit_tl } }
+      }
+  }
+
+% #1 = 模块（如 luatexcn / column），#2 = 逗号分隔的 key 名。
+% 必须在这些 key 定义之后调用（.bool_set:N 定义时会重设 unknown）。
+\cs_new_protected:Npn \luatexcn_zh_values_enable:nn #1#2
+  {
+    \clist_map_inline:nn {#2}
+      {
+        \keys_define:nn {#1}
+          {
+            ##1 / unknown .code:n =
+              { \__luatexcn_zh_value_set:nnn {#1} {##1} {####1} }
+          }
+      }
+  }

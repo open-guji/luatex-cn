@@ -175,6 +175,17 @@ local function handle_glyph_node(curr, p_head, pos, params, ctx)
         end
     end
 
+    -- Remember where a 夹注 character really sits: its sub-column alignment
+    -- (outward/inward/left/right) moves it off the sub-column center, and the
+    -- judou mark that follows it must move with it (issue #232).
+    if pos.sub_col and pos.sub_col > 0 then
+        ctx.anchor_col = pos.col
+        ctx.anchor_sub_col = pos.sub_col
+        ctx.anchor_x_sp = final_x + w / 2
+    else
+        ctx.anchor_x_sp = nil
+    end
+
     -- Check if glyph needs vertical rotation (font lacks vertical form)
     local needs_rotate = D.get_attribute(curr, constants.ATTR_VERT_ROTATE) == 1
 
@@ -591,6 +602,13 @@ local function process_page_nodes(p_head, layout_map, params, ctx)
                         if dec_id and dec_id > 0 then
                             -- Dispatch by decoration type
                             local dec_reg = _G.decorate_registry and _G.decorate_registry[dec_id]
+                            if ctx.anchor_x_sp and pos.sub_col and pos.sub_col > 0
+                                and pos.sub_col == ctx.anchor_sub_col and pos.col == ctx.anchor_col then
+                                local apos = {}
+                                for k, v in pairs(pos) do apos[k] = v end
+                                apos.anchor_x_sp = ctx.anchor_x_sp
+                                pos = apos
+                            end
                             if dec_reg and dec_reg.type == "side_text" then
                                 p_head = decorate_mod.handle_side_text_node(curr, p_head, pos, params, ctx, dec_id)
                             else

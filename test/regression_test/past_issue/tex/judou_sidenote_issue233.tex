@@ -1,0 +1,23 @@
+% Issue #233: 句读模式下，侧批里的逗号排成了问号
+% https://github.com/open-guji/luatex-cn/issues/233
+%
+% 句读模式把 ，。 换成零宽的装饰标记（字形是占位用的 ?，真正的 、。 由
+% decorate 注册表画）。正文渲染认得这种标记，侧批渲染却把它当普通字：
+% 画出一个 ?，还多占一格。
+% 修复后：侧批里的句读和正文一样画成 、。（红色，在所附字的右下），
+% 不占格，侧批字之间不留空。
+\documentclass{ltc-guji}
+\setmainfont{TW-Kai}
+\关闭分页
+\句读模式
+\judouSetup{ judou-pos = right-bottom, judou-color = red }
+
+\title{侧批句读}
+\chapter{侧批句读}
+
+\begin{document}
+\begin{正文}
+太陽之爲病，\侧批{此條總綱，下文分論。}脈浮，頭項強痛而惡寒。\par
+太陽病，發熱汗出\侧批[color=blue]{一本作，汗出惡風者。}，惡風，脈緩者，名爲中風。\par
+\end{正文}
+\end{document}

@@ -13,9 +13,11 @@ PDF 的内容流，取出每个字形的 Tm 定位矩阵，按列（相同 x 坐
 字号为单位，全文必须一致——无论字在正文还是夹注、夹注格高是否与正文相同。
 夹注 n-char-per-col 曾让夹注里的句读按正文格高定位而偏离所附的字，
 像素基线会把这种偏移原样锁住，这里直接量出来。
+横向同理（issue #232）：同一种标记（、或 。）相对所附字的横向偏移也必须
+一致——夹注五种 align 下的各小列、侧批（issue #233）都一样。
 
 用法：
-    python3 test/geometry_test.py            # 编译并检查两个默认测试文件
+    python3 test/geometry_test.py            # 编译并检查默认测试文件
     python3 test/geometry_test.py file.pdf   # 直接检查已有 PDF（基线等距）
     python3 test/geometry_test.py --judou file.pdf|file.tex  # 只做句读检查
 
@@ -36,6 +38,14 @@ DEFAULT_TEX = os.path.join(
 JUDOU_TEX = os.path.join(
     REPO_ROOT, "test", "regression_test", "basic", "tex", "jiazhu-combo.tex"
 )
+_PAST = os.path.join(REPO_ROOT, "test", "regression_test", "past_issue", "tex")
+# (文件, 至少应找到的句读标记数)
+JUDOU_TEXES = [
+    (JUDOU_TEX, 8),
+    (os.path.join(_PAST, "judou_jiazhu_align_issue232.tex"), 35),  # 五种夹注对齐
+    # 侧批里的 4 个句读修复前画成 ?，找不到标记就少 4 个（issue #233）
+    (os.path.join(_PAST, "judou_sidenote_issue233.tex"), 12),
+]
 FONTS_DIR = os.path.join(REPO_ROOT, "test", "fonts")
 
 # 基线间距允许的抖动（pt）。渲染只受 sp 取整影响，远小于 0.01pt；
@@ -134,7 +144,7 @@ JUDOU_SCALE = 1.2
 
 GLYPH_TOKEN_RE = re.compile(
     rb"(?P<cm>(?:-?[\d.]+\s+){5}-?[\d.]+)\s+cm"
-    rb"|(?P<tm>(?:-?[\d.]+\s+){5}-?[\d.]+)\s+Tm\s*\[<[0-9A-Fa-f]+>\]TJ"
+    rb"|(?P<tm>(?:-?[\d.]+\s+){5}-?[\d.]+)\s+Tm\s*\[<(?P<gid>[0-9A-Fa-f]+)>\]TJ"
     rb"|/\S+\s+(?P<tf>-?[\d.]+)\s+Tf"
     rb"|(?P<rg>-?[\d.]+\s+-?[\d.]+\s+-?[\d.]+)\s+rg"
     rb"|(?<![\w.])(?P<q>[qQ])(?![\w.])"
@@ -142,7 +152,7 @@ GLYPH_TOKEN_RE = re.compile(
 
 
 def collect_glyphs(pdf_path):
-    """按绘制顺序返回字形 [(x, y, 字号, 填充色)]，坐标已乘上 cm 矩阵。
+    """按绘制顺序返回字形 [(x, y, 字号, 填充色, 字形码)]，坐标已乘上 cm 矩阵。
 
     句读标记由 decorate 用 `q 颜色 s 0 0 s x y cm ... Q` 包着画，
     所以要跟踪 q/Q 与 cm，不能只看 Tm。
@@ -164,7 +174,8 @@ def collect_glyphs(pdf_path):
             elif t.group("tm"):
                 _, _, _, _, e, f = map(float, t.group("tm").split())
                 A, B, C, D, E, F = ctm
-                out.append((e * A + f * C + E, e * B + f * D + F, size * D, rgb))
+                out.append((e * A + f * C + E, e * B + f * D + F, size * D, rgb,
+                            t.group("gid")))
             elif t.group("tf"):
                 size = float(t.group("tf"))
             elif t.group("rg"):
@@ -176,32 +187,45 @@ def collect_glyphs(pdf_path):
     return out
 
 
-def check_judou(pdf_path):
+def check_judou(pdf_path, min_marks=MIN_JUDOU_MARKS):
     """每个句读标记紧跟在所附的字之后绘制；量出两者基线之差（以所附字字号计）。"""
     offsets = []
+    h_offsets = []  # 横向偏移：夹注 align 移动了字，句读要跟着走（issue #232）
     anchor = None
-    for x, y, size, rgb in collect_glyphs(pdf_path):
+    for x, y, size, rgb, gid in collect_glyphs(pdf_path):
         if rgb != JUDOU_RGB:
             anchor = (x, y, size)
             continue
         if anchor and anchor[2] > 0 and abs(size / anchor[2] - JUDOU_SCALE) < 0.05:
             offsets.append(((anchor[1] - y) / anchor[2], anchor, (x, y)))
+            h_offsets.append(((x - anchor[0]) / anchor[2], anchor, (x, y), gid))
         anchor = None  # 一个字只配一个句读
-    if len(offsets) < MIN_JUDOU_MARKS:
+    if len(offsets) < min_marks:
         print("FAIL: 只找到 %d 个句读标记（最少要求 %d），PDF 解析可能失效"
-              % (len(offsets), MIN_JUDOU_MARKS))
+              % (len(offsets), min_marks))
         return 1
-    ref = sorted(o for o, _, _ in offsets)[len(offsets) // 2]
-    bad = [(o, a, m) for o, a, m in offsets if abs(o - ref) > JUDOU_TOLERANCE_EM]
-    if bad:
-        print("FAIL: %d/%d 个句读标记偏离所附的字（应为 %.3f 字高）：" % (len(bad), len(offsets), ref))
-        for o, a, m in bad:
-            print("  字 (%.2f, %.2f) %.2fpt → 句读 (%.2f, %.2f)：%.3f 字高"
-                  % (a[0], a[1], a[2], m[0], m[1], o))
-        return 1
-    print("PASS: %d 个句读标记相对所附字的偏移一致（%.3f 字高，容差 %g）"
-          % (len(offsets), ref, JUDOU_TOLERANCE_EM))
-    return 0
+    rc = 0
+    # 横向按标记字形分组比较：、与 。墨迹中心离字形原点不一样远，
+    # 原点之差本来就不同；同一种标记则无论正文、夹注各小列与各种 align、
+    # 侧批，都应在所附字右侧同样的位置（issue #232 / #233）。
+    groups = [("竖向", offsets)]
+    for g in sorted({t[3] for t in h_offsets}):
+        groups.append(("横向（标记 <%s>）" % g.decode(),
+                       [t[:3] for t in h_offsets if t[3] == g]))
+    for name, offs in groups:
+        ref = sorted(o for o, _, _ in offs)[len(offs) // 2]
+        bad = [(o, a, m) for o, a, m in offs if abs(o - ref) > JUDOU_TOLERANCE_EM]
+        if bad:
+            print("FAIL: %d/%d 个句读标记%s偏离所附的字（应为 %.3f 字高）："
+                  % (len(bad), len(offs), name, ref))
+            for o, a, m in bad:
+                print("  字 (%.2f, %.2f) %.2fpt → 句读 (%.2f, %.2f)：%.3f 字高"
+                      % (a[0], a[1], a[2], m[0], m[1], o))
+            rc = 1
+        else:
+            print("PASS: %d 个句读标记相对所附字的%s偏移一致（%.3f 字高，容差 %g）"
+                  % (len(offs), name, ref, JUDOU_TOLERANCE_EM))
+    return rc
 
 
 def compile_tex(tex_path, workdir):
@@ -239,7 +263,10 @@ def main():
     if args:
         return run(check, args[0])
     rc = run(check, DEFAULT_TEX)
-    return run(check_judou, JUDOU_TEX) or rc
+    for tex, min_marks in JUDOU_TEXES:
+        print("[句读] " + os.path.relpath(tex, REPO_ROOT))
+        rc = run(lambda pdf: check_judou(pdf, min_marks), tex) or rc
+    return rc
 
 
 if __name__ == "__main__":

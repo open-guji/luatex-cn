@@ -1,0 +1,26 @@
+% Issue #232: 夹注 align=inward 时，句读和字的距离两小列不一样
+% https://github.com/open-guji/luatex-cn/issues/232
+%
+% 夹注字按 align 在小列里靠左/靠右/居中，但夹注里的句读一直按「小列中心」
+% 摆放，没有跟着字走：inward 时左小列的字向右靠，压到自己的句读上；右小列的
+% 字向左靠，离句读更远。outward 则反过来。
+% 修复后五列（outward / inward / center / left / right）里，每个句读相对
+% 所附字的位置都一样（字的右下角）。
+\documentclass{ltc-guji}
+\setmainfont{TW-Kai}
+\关闭分页
+\句读模式
+\judouSetup{ judou-pos = right-bottom, judou-color = red }
+
+\title{夹注对齐句读}
+\chapter{夹注对齐句读}
+
+\begin{document}
+\begin{正文}
+病人脈，\夹注[align=outward]{一作脈病人，不病。名曰行尸，以無王氣，卒眩仆。}死。\par
+病人脈，\夹注[align=inward]{一作脈病人，不病。名曰行尸，以無王氣，卒眩仆。}死。\par
+病人脈，\夹注[align=center]{一作脈病人，不病。名曰行尸，以無王氣，卒眩仆。}死。\par
+病人脈，\夹注[align=left]{一作脈病人，不病。名曰行尸，以無王氣，卒眩仆。}死。\par
+病人脈，\夹注[align=right]{一作脈病人，不病。名曰行尸，以無王氣，卒眩仆。}死。\par
+\end{正文}
+\end{document}

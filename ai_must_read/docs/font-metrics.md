@@ -42,6 +42,10 @@
 > 37.8% 基本区汉字，无 Ext-A/B；其授权自称 GPLv3 + font exception——
 > **并非 OFL**，且来源存疑）。现回归用例统一改用 manifest 钉定的
 > Source Han Serif SC，CI 装包列表已不含 `fandol`。
+> **上游状态（2026-11）**：CTAN `fandol` v0.4（2026-11-21）已把宋/黑/楷/仿宋
+> 六个汉字字体标为 obsolete（README 称思源系发布后其「已经完成了其历史
+> 使命」，仅留副本备考）；字体文件与 v0.3 逐字节相同，授权声明未变；盲文
+> 字体拆到新包 `fandol-braille`。不要再把 Fandol 加回默认族、测试或示例。
 > 旧坑备考：曾因 CI 删 `ctex` 丢失其传递依赖 fandol 导致回归全挂（PR #107）。
 
 ### 0.3 macOS 本地开发字体（mac scheme）
@@ -300,5 +304,5 @@ EOF
 数据来源链接：
 - 全字庫官方：https://data.gov.tw/dataset/5961 （双授权声明见页内）
 - 镜像仓库：https://github.com/free-fonts-npm/TW-CNS11643-Fonts （pinned commit 见下载脚本）
-- Fandol：https://ctan.org/pkg/fandol
+- Fandol（上游 v0.4 起标为 obsolete，本项目已不使用，仅备考）：https://ctan.org/pkg/fandol
 - LXGW WenKai：https://github.com/lxgw/LxgwWenKai

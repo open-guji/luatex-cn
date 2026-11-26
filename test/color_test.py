@@ -20,6 +20,9 @@
 同理，\反白 因文本框专有 key 退回整块文本框时也必须提醒（#210：用户写了
 border-shape，新的行内实现一行没跑，谁也看不出来）。
 
+还断言 \带圈 / \墨围 的边框色不取决于前面有没有封面或别的「正文」块
+（#238：「正文」的基础样式压栈后不出栈，漏给了下一个块）。
+
 用法：
     python3 test/color_test.py
 
@@ -269,6 +272,61 @@ def check_inverted_fallback_warns(workdir):
     return rc
 
 
+SHAPE_LEAK_TEX = r"""\documentclass[四库全书]{ltc-guji}
+\setmainfont{TW-Kai}
+\contentSetup{ border-color = {10, 200, 30} }
+\title{測試}
+\begin{document}
+%s
+\begin{正文}
+天\circled{地}玄\bordered{黃}宇
+\end{正文}
+\end{document}
+"""
+
+STROKE_OP_RE = re.compile(r"([\d.]+) ([\d.]+) ([\d.]+) RG")
+
+
+def collect_stroke_colors(pdf_path):
+    with open(pdf_path, "rb") as f:
+        pdf = f.read()
+    colors = set()
+    for stream in iter_content_streams(pdf):
+        for m in STROKE_OP_RE.finditer(stream.decode("latin1")):
+            colors.add(tuple(float(x) for x in m.groups()))
+    return colors
+
+
+def check_shape_color_independent_of_earlier_blocks(workdir):
+    """\带圈 / \墨围 的边框色不得取决于前面有没有别的「正文」块（#238）。
+
+    「正文」的基础样式（含 border-color）曾经压栈后不出栈，漏给下一个块：
+    文档第一个块里的圈是黑的，前面一旦有封面（内部包了一个「正文」）或
+    另一个「正文」，圈就变成内容边框色。
+    """
+    cases = [
+        ("", "单独一个正文"),
+        (r"\begin{正文}前一塊\end{正文}", "前面有另一个正文"),
+        (r"\线装书封面{測試}", "前面有线装书封面"),
+    ]
+    rc = 0
+    for i, (prefix, desc) in enumerate(cases):
+        tex = os.path.join(workdir, "shape_leak%d.tex" % i)
+        with open(tex, "w", encoding="utf-8") as f:
+            f.write(SHAPE_LEAK_TEX % prefix)
+        pdf, _ = compile_tex(tex, workdir)
+        strokes = collect_stroke_colors(pdf)
+        if not has_color(strokes, (10, 200, 30)):
+            print("FAIL: 自检失败——界栏的边框色没有出现在 PDF 里（%s）" % desc)
+            rc = 1
+        if not has_color(strokes, (0, 0, 0)):
+            print("FAIL: \\带圈/\\墨围 的边框不是黑色（%s）——被前一个块的边框色染了" % desc)
+            rc = 1
+    if not rc:
+        print("PASS: \\带圈/\\墨围 的边框色不受前面的正文块/封面影响（issue #238）")
+    return rc
+
+
 def main():
     rc = 0
     with tempfile.TemporaryDirectory() as workdir:
@@ -277,6 +335,7 @@ def main():
         rc |= check_color_formats(workdir)
         rc |= check_unknown_key_warns(workdir)
         rc |= check_inverted_fallback_warns(workdir)
+        rc |= check_shape_color_independent_of_earlier_blocks(workdir)
     return rc
 
 

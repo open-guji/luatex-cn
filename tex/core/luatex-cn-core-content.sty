@@ -331,6 +331,8 @@
         col_limit~=~\int_use:N~\l__luatexcn_content_n_char_per_col_int
       })
     }
+    % Pop the base style again: the stack is global, not scoped by TeX groups (#238)
+    \lua_now:n { require('core.luatex-cn-core-content').finish_style() }
   }
 
 % Define Main Command with Key-Value interface
@@ -459,6 +461,8 @@
         col_limit~=~\int_use:N~\l__luatexcn_content_n_char_per_col_int
       })
     }
+    % Pop the base style again: the stack is global, not scoped by TeX groups (#238)
+    \lua_now:n { require('core.luatex-cn-core-content').finish_style() }
     % Pop content-level indent from style stack (if pushed in begin)
     \bool_if:NT \l__luatexcn_content_has_indent_bool
       { \__luatexcn_style_pop_with_indent_reset: }

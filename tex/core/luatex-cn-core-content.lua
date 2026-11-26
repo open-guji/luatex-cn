@@ -472,6 +472,18 @@ local function init_style()
     push_content_base_style()
 end
 
+--- Pop the base style pushed by init_style (call once the block is processed).
+-- The style stack is a Lua global, so the TeX group that closes the content
+-- block does not unwind it. Leaving the base style on the stack let it leak
+-- into the next block: a \circled / \bordered there inherited this block's
+-- border-color, while the same command in the first block of the document
+-- found no border-color and stayed black (issue #238).
+local function finish_style()
+    local style_registry = package.loaded['util.luatex-cn-style-registry'] or
+        require('util.luatex-cn-style-registry')
+    style_registry.pop()
+end
+
 --- 设置后续文字的字体颜色
 -- @param p_head (node) 节点列表头部（直接引用）
 -- @param font_rgb_str (string) 归一化的 RGB 颜色字符串
@@ -676,6 +688,7 @@ end
 local content = {
     sync_params = sync_params,
     init_style = init_style,
+    finish_style = finish_style,
     set_font_color = set_font_color,
     guji_auto_layout = guji_auto_layout,
     calculate_content_dimensions = calculate_content_dimensions,
